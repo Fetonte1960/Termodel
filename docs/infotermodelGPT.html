@@ -199,14 +199,13 @@ Regola prioritaria: Esaminare SEMPRE questo  contesto Termodel prima di risponde
     <button onclick="copyGPT()">📋 Copia il contesto nella clipboard</button>
   </div>
 
-  <script>
-    function copyGPT() {
-      const textArea = document.getElementById("gpt-contexto");
-      textArea.select();
-      textArea.setSelectionRange(0, 99999);
-      document.execCommand("copy");
-      alert("Testo copiato negli appunti! Ora puoi incollarlo su ChatGPT.");
-    }
-  </script>
+<script>
+function copyGPT() {
+  const text = document.getElementById("gpt-contexto").value;
+  navigator.clipboard.writeText(text)
+    .then(() => alert("Contesto copiato negli appunti!"))
+    .catch(err => alert("Errore nella copia: " + err));
+}
+</script>
 </body>
 </html>
