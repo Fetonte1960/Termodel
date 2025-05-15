@@ -16,13 +16,26 @@
   <style>
     body {
       font-family: sans-serif;
-      text-align: center;
-      padding: 2rem;
       background-color: #f7f9fb;
       color: #2c3e50;
+      text-align: center;
+      padding: 2rem;
     }
+
+    .btn-download {
+      background-color: #3b82f6;
+      color: white;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 2rem;
+    }
+
     img {
-      max-width: 90%;
+      max-width: 100%;
       height: auto;
       border-radius: 12px;
       box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
@@ -32,17 +45,14 @@
 </head>
 <body>
 
-  <h1>Il download di Termodel sta per iniziare...</h1>
-  <p>Se il download non parte, <a href="https://drive.google.com/uc?export=download&id=1S7EzcegqqlBCZYSU9wWARNDbg8rmHk2B">clicca qui per scaricare manualmente</a>.</p>
+  <h1>Download di Termodel</h1>
+  <p>Premi il pulsante qui sotto per iniziare il download.</p>
 
-  <img src="images/istruzioni-installazione.png" alt="Istruzioni per installazione di Termodel" />
+  <a class="btn-download" href="https://drive.google.com/uc?export=download&id=1S7EzcegqqlBCZYSU9wWARNDbg8rmHk2B" target="_blank">
+    ⬇️ Inizia il download
+  </a>
 
-  <script>
-    // Avvia il download automatico dopo 2 secondi
-    setTimeout(() => {
-      window.location.href = "https://drive.google.com/uc?export=download&id=1S7EzcegqqlBCZYSU9wWARNDbg8rmHk2B";
-    }, 2000);
-  </script>
+  <img src="images/istruzioni-installazione.png" alt="Istruzioni per installare Termodel" />
 
 </body>
-</html>
+
