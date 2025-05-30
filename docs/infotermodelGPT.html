@@ -214,9 +214,12 @@ Gestione dei poligoni complessi drivati dalla sovrapposizione.
 -Più coperture indipendenti nello stesso disegno.
 -Generazione automatica dei ponti termici
 
-## Flusso Termodel per la realizzazione diTetti e locali mansardati
+## Flusso Termodel per la realizzazione di Tetti e locali mansardati
 I locali mansardati si realizzano implementando due layer di disegno , uno contenente 
 i locali veri e propri (Calpestabile), l'altro (Copertura) contenente la pianta del tetto
+I due layer potranno essere sovrapposti o dislocati in posizzione diverse
+Nel secondo caso dovra essere collocato in ciascuno di essi un blocco ALLINEA collocato in un filo fisso
+Questo permetterà a Termodel di ricostruire la tridimensionalità coretta.
 ### Copertura
 la pianta del tetto si realizza mediante un grafo chiuso per ogni tetto realizzate con linee colorate
 I differenti colori indicano tetti differenti conviventi nello stesso disegno ogniuno realizzante un grafo chiuso.
