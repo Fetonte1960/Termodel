@@ -214,6 +214,39 @@ Gestione dei poligoni complessi drivati dalla sovrapposizione.
 -Più coperture indipendenti nello stesso disegno.
 -Generazione automatica dei ponti termici
 
+## Flusso Termodel per la realizzazione diTetti e locali mansardati
+I locali mansardati si realizzano implementando due layer di disegno , uno contenente 
+i locali veri e propri (Calpestabile), l'altro (Copertura) contenente la pianta del tetto
+### Copertura
+la pianta del tetto si realizza mediante un grafo chiuso per ogni tetto realizzate con linee colorate
+I differenti colori indicano tetti differenti conviventi nello stesso disegno ogniuno realizzante un grafo chiuso.
+Il grafo può essere realizzato in modo generico con linee 3D che formano una mesh(se si dispone Autocad)
+o in modalità 2d (se si dispone di Autocad LT o se si vuole seguire un processo semplificato)
+in questo caso per dare la tridimensionalità al tetto bisogna posizionare in corrispondenza del colmo o dei colmi
+un BLOCCO,Colmo
+QUOTACOLMO,quota del colmo
+QUOTAGRONDA,quota della gronda
+Il programma si comporterà nel seguente modo
+1: assegnera la quota del colmo ad entrambi i vertici della linea su cui è collocata
+2: assegnerà la quota del colmo a tutti vertici delle linee collegate alla linea del colmo
+3: Assegnerà la quota della gronda a tutti gli altri vertici non collegati alla linea di colmo
+### Piano calpestabile
+Nel piano calpestabile contenente la pianta del fabbricato verranno estrusi solo i locali che scontengono
+settata una proprità ben precisa nel 
+BLOCCO,LOC
+DESCR.,Appartamento
+ZONA,Zona Termica 1
+CPAV,Automatico
+CSOF,Automatico
+CCOPERTURA,Solaio piano
+TPAV,Muratura a cassa vuota in laterizio forato (26.5 cm)
+TSOF,Muratura a cassa vuota in laterizio forato (26.5 cm)
+ALTEZZALORDA,Da piano
+ALTEZZANETTA,Da piano
+QUOTAPAVIMENTO,Da piano
+>>CCOPERTURA,Solaio piano >> il solaio non verrà estruso
+CCOPERTURA >> 1 - Rosso >> il solaio verrà estruso sino a raggiungere il tetto di colore rosso nel Layer copertura
+      
 # 🗂️ ORGANIZZAZIONE DEI FILES IN TERMODEL
 
 ---
