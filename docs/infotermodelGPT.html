@@ -258,6 +258,24 @@ Al posto del modello in termodel programma se in modalità modello e non plugin 
 Le linee saranno verdi se non è stata rilevata una anomalia rosse  se c'e anomalia.
 Per i blocchi invece sfere arancioni se corretti rosse di dimensioni maggiori se c'è errore
 in basso una riga info con la descrizione dell'errore.  
+##Files SVG-LFT di comunicazione con AI in caso di errore
+Per agevolare la comunicazione con AI Termodel ha sviluppato un formato SVG-LFT agevole per traformare i DXF in SVG
+LFT è un acronimo che sta per 'Lines and formatted test'
+I layer sono trasformati in dei gruppi g , ed i blocchi in testi che conservano il punto di inserimento del blocco con questo formato
+BLOCCO,LOC
+DESCR.,Appartamento
+ZONA,Zona Termica 1
+CPAV,Automatico
+CSOF,Automatico
+CCOPERTURA,Solaio piano
+TPAV,Muratura a cassa vuota in laterizio forato (26.5 cm)
+TSOF,Muratura a cassa vuota in laterizio forato (26.5 cm)
+ALTEZZALORDA,Da piano
+ALTEZZANETTA,Da piano
+QUOTAPAVIMENTO,Da piano
+
+BLOCCO,LOC>>> LOC è il nome del blocco, le altre righe sono gli atrbuti (etichetta , valore)
+
 # 🗂️ ORGANIZZAZIONE DEI FILES IN TERMODEL
 
 ---
@@ -343,7 +361,7 @@ Questo rende la segnalazione **autonoma e leggibile anche senza scaricare i file
 Se l’utente ha già caricato file o screenshot, l’IA li elenca automaticamente nel testo email.
 Se mancano file importanti, l’IA deve chiederli prima di completare la bozza 
     </textarea>
-    <button onclick="copyGPT()">📋 Copia il contesto nella clipboard (Versione 2.6 )</button>
+    <button onclick="copyGPT()">📋 Copia il contesto nella clipboard (Versione 2.7 )</button>
   </div>
 
 <script>
