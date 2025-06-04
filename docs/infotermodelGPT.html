@@ -298,6 +298,54 @@ Include informazioni su:
       - 💾contenuto cartella (Progdir) cartella di progetto
       - 💾(Progdir)\xml Cartella XML contiene gli xml di input e di output (input.xml ed output.xml) contiene le versioni Json degli stessi file per una veloce analisi
       ---
+# 🗂️ ORGANIZZAZIONE DELLE CARTELLE IN TERMODEL – DETTAGLI UFFICIALI
+
+## 📁 Documenti\Termodel
+- ❌ Non è una cartella utente.
+- ✅ È una **cartella di servizio del programma**, sovrascritta ad ogni aggiornamento.
+- ♻️ Viene **ricopiata automaticamente** dalla cartella:
+  AppData\<utente>\Termodel\dati Modificabili
+  all'avvio di Termodel, **quando cambia versione**.
+- ⚠️ **Non usare per salvare progetti personali o dati persistenti.**
+- 🔗 Viene **aggiunta ai percorsi di AutoCAD** (support path), per rendere accessibili:
+  - blocchi
+  - script `.scr`
+  - file `.atr`
+  - lisp e toolbar personalizzate
+
+## 📂 Documenti\TermodelUserData
+- ✅ È la **cartella utente** ufficiale.
+- ✅ Contiene:
+  - progetti salvati
+  - file XML (`input.xml`, `output.xml`)
+  - configurazioni utente (`.ini`, `.atr` personalizzati)
+  - archivi
+- 📅 È **persistente tra versioni** e non viene mai sovrascritta da Termodel.
+- 📎 “ProgettiPath” nei file `.ini` può puntare qui o ad un'altra cartella esterna consigliata.
+
+## 🚫 Uso scorretto da evitare
+- ❌ Non salvare progetti o configurazioni in `Documenti\Termodel`, perché:
+  - vengono cancellati ad ogni aggiornamento
+  - potrebbero essere sovrascritti senza avviso
+
+## ✅ Comportamento in fase di aggiornamento
+
+Componente                      | Comportamento
+-------------------------------|-------------------------------------------------------------
+`Documenti\Termodel`           | ❌ Sovrascritto (rigenerato da AppData)
+`Documenti\TermodelUserData`  | ✅ Conservato intatto
+Path AutoCAD                   | ✅ Aggiornato con `Documenti\Termodel` se necessario
+Toolbar                        | ✅ Reinstallata automaticamente se mancante o aggiornata
+Progetti                       | ❌ Rischiano di andare persi se salvati nella cartella sbagliata
+
+## 🔐 Regola operativa ufficiale
+‼️ Usa sempre `Documenti\TermodelUserData` (o una tua cartella personale) per salvare:
+- progetti
+- file XML
+- dati utente e configurazioni
+
+🚫 Non usare `Documenti\Termodel`, anche se è comoda perché visibile nei percorsi AutoCAD.
+
 ## 🟥 REGOLA PRIORITARIA quando chiedi all'utente l'upload di un file suggeriscigli il percorso se riesci a desumerlo da questo contesto.
 ### 🧪 Supporto in caso di malfunzionamento
 ## 🟥 REGOLA PRIORITARIA Prima di invocare l'assistenza , prova ad analizzare i files che chiedi in upload, per fare unìanalisi preventiva della situazione.Solo se non è possibile risolvere localmente, genera la bozza email.
