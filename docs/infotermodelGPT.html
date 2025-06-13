@@ -379,7 +379,60 @@ Include informazioni su:
     termodel.cui la toolbar di autocad
 
     ## ⚙️ VIDEO TUTORIAL YOUTUBE, proporre la visione all'utente quando necessario, ed utilizzare il testo come contesto
+    
     #Tutorial: un progetto Hello dall'inizio alla fine , segue testo
+
+    📹 In questo video realizzeremo insieme un progetto “Hello”, termine gergale che indica un progetto minimalista ed estremamente semplice, pensato per testare il flusso operativo di un’applicazione.
+
+    1. **Creazione del progetto**
+    Comincia cliccando su **File → Nuovo**, confermando i dati proposti.
+    Apparirà un messaggio di errore che avvisa che non è stato ancora realizzato il disegno CAD, quindi non è possibile generare il modello.
+    Questo avviso ricorda all’utente la possibilità di ricevere assistenza tramite AI in caso di difficoltà.
+    👉 Ti invitiamo a consultare il video dedicato a questa funzionalità.
+
+    2. **Modalità plugin CAD**
+    Chiusa la finestra, attiviamo la modalità plugin cliccando su **“Visualizza plugin CAD”**.
+    Termodel si ridurrà a una finestra compatta, progettata per affiancarsi ad AutoCAD e definire le proprietà dei blocchi da inserire.
+    La modalità “sempre in primo piano” verrà attivata automaticamente, per garantire che Termodel rimanga visibile durante l’uso del CAD.
+
+    3. **Apertura di AutoCAD**
+    Proseguiamo cliccando su **“Apri il CAD”**.
+    Al primo utilizzo, Termodel cercherà il percorso di AutoCAD, installerà la toolbar personalizzata e configurerà l’ambiente di lavoro.
+    👉 Per ulteriori dettagli su questa fase, rimandiamo a un video specifico.
+    Se tutto è andato a buon fine, si aprirà AutoCAD con la toolbar di Termodel già visibile.
+
+    4. **Disegno del modello base**
+    - Inseriamo il simbolo del **Nord**, ruotandolo per posizionare correttamente il disegno nel contesto geografico.
+    - Disegniamo un rettangolo utilizzando il comando **Parete**, seguendo le istruzioni mostrate sulla riga di comando.
+    - Verifichiamo che le dimensioni del rettangolo siano coerenti con un edificio reale.
+    - Inseriamo il simbolo **Locale** all’interno del rettangolo.
+    Questo elemento fornisce a Termodel informazioni fondamentali:
+    - Altezza netta e lorda (se non specificata nell'elenco piani)
+    - Tipologia costruttiva del pavimento e del soffitto
+    - Nome del locale
+    - Zona di appartenenza
+    - Confine del pavimento e del soffitto (se non rilevato automaticamente da Termodel)
+
+    ℹ️ Termodel è in grado di rilevare autonomamente i confini tra superfici, sia verticali che orizzontali, producendo poligoni complessi risultanti dall'affiancamento delle varie superfici.
+    📌 Nel caso di locali mansardati, verrà indicato il colore delle linee costituenti il tetto nel disegno schematico della copertura.
+    📌 In Termodel possono convivere **più tetti indipendenti** nello stesso disegno, disegnati con linee di colori diversi.
+    🔜 Prossimamente realizzeremo una serie di video tutorial dedicati alle coperture e ai locali mansardati.
+
+    🔧 Nota: Termodel utilizza i **metri** come unità di disegno.
+
+    - Inseriamo una **finestra** su una delle pareti, assicurandoci che **OSNAP** sia attivo per garantire l’aggancio preciso alla parete.
+    👉 Termodel ha comunque una tolleranza di qualche centimetro.
+
+    5. **Salvataggio e generazione del modello**
+    Una volta completato il disegno, clicchiamo su **“Salva”** dalla toolbar.
+    Torniamo quindi alla finestra di Termodel, espandiamola in **modalità modello**, e clicchiamo su **“Genera modello”**.
+    - Se il disegno è corretto, verrà visualizzato il modello generato.
+    - In caso contrario, appariranno indicazioni grafiche utili per individuare e correggere eventuali errori.
+
+    6. **Esportazione del file XML**
+    A questo punto, non resta che esportare il file XML, pronto per essere importato nel software di calcolo.
+    📩 Per accedere a questa funzione, è necessario registrarsi scrivendo a **info@termodel.it**,
+    e richiedere l’attivazione del periodo di **prova gratuito di 2 mesi**.
 
     ---
 
@@ -414,7 +467,7 @@ Include informazioni su:
     Se l’utente ha già caricato file o screenshot, l’IA li elenca automaticamente nel testo email.
     Se mancano file importanti, l’IA deve chiederli prima di completare la bozza
 </textarea>
-    <button onclick="copyGPT()">📋 Copia il contesto nella clipboard (Versione 3.1 )</button>
+    <button onclick="copyGPT()">📋 Copia il contesto nella clipboard (Versione 3.2 )</button>
   </div>
 
 <script>
