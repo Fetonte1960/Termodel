@@ -1,0 +1,810 @@
+﻿<Window x:Class="Termodel.MainWindow"
+        Loaded="Window_Loaded"
+        PreviewKeyDown="MainWindow_PreviewKeyDown"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Termodel"
+        xmlns:local1="clr-namespace:Termodel.utilities"
+        xmlns:local2="clr-namespace:Termodel.Tutor.codice"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="650" Width="1086">
+        
+    <!-- Definizione delle risorse di stile -->
+    <Window.Resources>
+        <Style x:Key="CustomToggleButtonStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="LightGray"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Background" Value="LightGray"/>
+                    <Setter Property="Foreground" Value="Black"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <DockPanel x:Name="MainDockPanel" Background="#FFE5E5E5">
+        <!-- Menu principale -->
+        <Menu x:Name="MainMenu" DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="Nuovo" Click="Nuovo_Click" />
+                <MenuItem Header="Apri..." Click="Apri_Click" />
+                <MenuItem Header="Carica progetto ZIP" Click="MenuCaricaProgettoZip_Click" />
+                <Separator />
+                <MenuItem Header="Salva" Click="SalvaTutto_Click" />
+                <MenuItem Header="Salva progetto ZIP" Click="MenuSalvaProgettoZip_Click" />
+                <MenuItem Header="Salva con nome" Click="SalvaConNome_Click" />
+                <Separator />
+                <MenuItem Header="Inporta XML nazionale" Click="XML_Click_Importa" />
+                <MenuItem Header="Esporta XML nazionale" Click="XML_Click" />
+                <MenuItem Header="Esporta BIM (ifc)" Click="BIM_Click" />
+                <Separator />
+                <MenuItem Header="Esempi" Click="Esci_Click" />
+                <Separator />
+                <MenuItem Header="Esci" Click="Esci_Click" />
+            </MenuItem>
+            <MenuItem Header="_Modifica">
+                <MenuItem Header="Visualizza/Edita disegni di input nel CAD" Click="Archivi_Click" />
+                <MenuItem x:Name="DatiClimatici" Header="Archivio dati climatici" Click="daticlimatici_Click" />
+                <MenuItem Header="Archivio Pareti" Click="MenuPareti_Click" />
+                <MenuItem Header="Archivio Finestre" Click="MenuFinestre_Click" />
+                <MenuItem Header="Archivio Ponti termici" Click="MenuPonti_Click" />
+                <MenuItem Header="Archivio Ponti Automatici pareti" Click="MenuPontiAutomatici_Click" />
+                <MenuItem Header="Archivio Ponti Automatici finestre" Click="MenuPontiAutomaticiFinestre_Click" />
+                <MenuItem Header="Archivio Confini" Click="MenuConfini_Click" />
+                <MenuItem Header="Archivio Zone" Click="MenuZone_Click" />
+            </MenuItem>
+            <MenuItem Header="_Visualizza">
+                <MenuItem Header="Modello" Click="Modello_Click"/>
+                <MenuItem x:Name="MenuArchivi" Header="Archivi" Click="Archivi_Click"/>
+                <MenuItem Header="Pluggin Autocad 2024 AutocadLT 2024" Click="Pluggin_Click"/>
+                <MenuItem Header="Visualizza tutor"
+                 IsCheckable="True"
+                Name="VisualizzaTutorMenu"
+                Click="VisualizzaTutorMenu_Click" />
+                <MenuItem Header="Genera il modello all'avvio" IsCheckable="True" Click="GeneraModelloAvvio_Click" Name="AggiornaModelloAvvioMenu"/>
+            </MenuItem>
+            <MenuItem x:Name="MenuCalcoli" Header="_Calcoli">
+            <MenuItem Header="Visualizza risultati dell'ultimo calcolo" Click="VisualizzaCalcolo_Click"/>
+             <!-- Modificato da Codex per realizzare: disattivare temporaneamente il comando APE preliminare.
+             Vecchio codice:
+             <MenuItem Header="Genera il modello ed esegui il calcolo APE preliminare" Click="Genera_Modello_calcolo_Click"/>
+             -->
+                
+            </MenuItem>
+
+        </Menu>
+        
+        <!--<md:MarkdownScrollViewer Name="markdownViewer" Padding="10" />-->
+        <!-- Tutor nella banda laterale destra -->
+        <Border DockPanel.Dock="Right" Width="300" Background="#F0F0F0" BorderBrush="#CCCCCC" BorderThickness="1" Name="TutorBorder">
+            <Grid>
+                <!-- Definizione del layout -->
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <!-- Titolo e descrizione -->
+                    <RowDefinition Height="*"/>
+                    <!-- Contenuto principale del Tutor -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Barra di controllo -->
+                </Grid.RowDefinitions>
+
+                <!-- Titolo e descrizione del Tutor -->
+                <StackPanel Grid.Row="0" Background="#E0E0E0" Margin="5" HorizontalAlignment="Stretch">
+                    <TextBlock Text="Tutor : che cosa puoi fare adesso .." FontSize="18" Foreground="DarkRed" 
+                       TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,0,0,10"/>
+                </StackPanel>
+
+                <!-- Contenuto principale del Tutor -->
+                <local2:Tutor x:Name="Tutor" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5"/>
+
+                <!-- Barra di controllo -->
+                <Grid Grid.Row="2" Background="#E0E0E0" Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- Colonna per il pulsante -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- Colonna per il testo informativo -->
+                    </Grid.ColumnDefinitions>
+
+                    <Button Content="Disattiva Tutor" Click="DisattivaTutor_Click" 
+                    HorizontalAlignment="Center" Padding="10,5" Margin="0,0,10,0" Grid.Column="0"/>
+                    <Button Content="Chiedi a chatgpt" Click="ChiedaGPT_Click" 
+                     HorizontalAlignment="Center" Padding="10,5" Margin="0,0,10,0" Grid.Column="1"/>
+                    <!--
+                    <TextBlock Text="Il tutor può essere riattivato dal menu Visualizza > Mostra tutor"
+                       FontSize="12" Foreground="Gray" TextWrapping="Wrap" 
+                       HorizontalAlignment="Left" TextAlignment="Left" Grid.Column="1" VerticalAlignment="Center"/>
+                    -->
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Grid Name="GridArchivi" Visibility="Collapsed" HorizontalAlignment="Stretch">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="5">
+                <ToggleButton x:Name="ElencoPianiButton" Content="Elenco Piani" Width="80" Margin="5" 
+              Style="{StaticResource CustomToggleButtonStyle}"
+              Click="ElencoPiani_Click" Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked" IsChecked="True"/>
+                <ToggleButton x:Name="ParetiButton" Content="Pareti" Width="50" Margin="5" 
+              Style="{StaticResource CustomToggleButtonStyle}"
+              Click="Pareti_Click" Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked"/>
+                <ToggleButton x:Name="ConfiniiButton" Content="Confini" Width="80" Margin="5" 
+             Style="{StaticResource CustomToggleButtonStyle}"
+             Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked" Click="ConfiniiButton_Click"/>
+                <ToggleButton x:Name="NonClimaButton" Content="NonClimatizzati" Width="120" Margin="5" 
+              Style="{StaticResource CustomToggleButtonStyle}"
+              Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked" Click="NonClimaButton_Click"/>
+                <ToggleButton x:Name="FinestreButton" Content="Finestre" Width="80" Margin="5" 
+              Style="{StaticResource CustomToggleButtonStyle}"
+              Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked" Click="FinestreButton_Click"/>
+                <ToggleButton x:Name="PontiButton" Content="Ponti termici" Width="80" Margin="5" 
+              Style="{StaticResource CustomToggleButtonStyle}"
+              Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked" Click="PontiButton_Click" />
+                <ToggleButton x:Name="PontiAutomaticiButton" Content="Ponti termici  automatici" Width="140" Margin="5" 
+              Style="{StaticResource CustomToggleButtonStyle}"
+              Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked" Click="PontiAutomaticiButton_Click" />
+                <ToggleButton x:Name="ZoneButton" Content="Zone" Width="60" Margin="5" 
+              Style="{StaticResource CustomToggleButtonStyle}"
+             Checked="ToggleButton_Checked" Unchecked="ToggleButton_Unchecked" Click="ZoneButton_Click"/>
+            </StackPanel>
+            <DataGrid x:Name="DbGridCor" Grid.Row="1" RowEditEnding="DbGridCor_RowEditEnding" CanUserAddRows="False" AutoGenerateColumns="False" Height="Auto" Width="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5"/>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="5">
+                <Button x:Name="VaiModello" Content="  Vai al modello  " Click="Modello_Click" Margin="5"/>
+                <Button x:Name="Aggiungiriga" Content="  Aggiungi riga vuota  " Click="Aggiungiriga_Click" Margin="5"/>
+                <Button x:Name="Aggiungirigaprima" Content="  Aggiungi riga prima  " Click="InserisciRigaPrima_Click" Margin="5"/>
+                <Button x:Name="Cancellariga" Content="  Cancella riga selezionata  " Click="Cancellariga_Click" Margin="5"/>
+                <Button x:Name="Salva" Content="  Salva  " Click="Salva_Click" Margin="5"/>
+                <Button x:Name="CaricaDaXML" Content="  Carica da Xml  " Click="CaricaDaXML_Click" Margin="5"/>
+                <Button x:Name="Leggipiani" Content="  Generazione del modello  " Click="Leggipiani_Click" Margin="5"/>
+                <Button x:Name="ApriCad" Content="  Apri  nel Cad  " Click="ApriCad_Click" Margin="5"/>
+                <!--
+<Button x:Name="Leggidxf" Content="Leggi il DXF" Click="Leggidxf_Click_1"/>
+<Button x:Name="AprienergyPlus" Content="Calcola con energy Plus" Click="AprienergyPlus_Click"/>
+<Button x:Name="RisultatienergyPlus" Content="Risultati energy Plus" Click="RisultatienergyPlus_Click"/>
+ -->
+            </StackPanel>
+        </Grid>
+        <Grid x:Name="Grid_DatiCad" Visibility="Collapsed" Background="#FFE5E5E5"   Margin="2,0,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid x:Name="Grid_piano" Grid.Row="0" >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    
+                </Grid.RowDefinitions>
+                <!-- Campo Piano -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0">
+                <Label Content="Piano:" Width="100"/>
+                <ComboBox x:Name="DatiCad_Piano" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                    <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="ApriArchivioPiani" ToolTip="Aggiungi un nuovo piano"/>
+                </StackPanel>
+            <!-- Campo Layer -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0">
+                <Label Content="Layer:" Width="100"/>
+                <TextBox x:Name="DatiCad_Layer" Width="200" Margin="5" IsReadOnly="True" />
+            </StackPanel>
+            </Grid>
+            <TabControl x:Name="PluginSezioniTabControl" Grid.Row="1" Margin="10">
+                <TabItem Header="Edificio">
+                    <TabControl x:Name="disegnoTabControl"
+                    SelectionChanged="disegnoTabControl_SelectionChanged"
+                    SelectedIndex="1">
+                        <TabItem x:Name="Modello" Header="Modello" Visibility="Collapsed">
+                    <Grid x:Name="Grid_modello">
+                        <Grid.RowDefinitions>
+                            <!-- Definizione delle righe per allineare i controlli uno sopra l'altro -->
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Campo Piano -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
+                            <Label Content="Calcolo superfici e volumi:" Width="100"/>
+                            <ComboBox x:Name="DatiCad_LordoNetto" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+                <TabItem x:Name="Pareti" Header="Pareti">
+                    <Grid x:Name="Grid_pareti">
+                        <Grid.RowDefinitions>
+                            <!-- Definizione delle righe per allineare i controlli uno sopra l'altro -->
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                       
+                        <!-- Campo Tipo Parete -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
+                            <Label Content="Tipo parete:" Width="100"/>
+                            <ComboBox x:Name="DatiCad_TipoParete" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuPareti_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+
+                        <!-- Campo Confine Parete -->
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
+                            <Label Content="Confine parete:" Width="100"/>
+                            <ComboBox x:Name="DatiCad_ConfineParete" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuConfini_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+
+                        <!-- Campo Tipo linea -->
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="5">
+                            <Label Content="Tipo linea:" Width="100"/>
+                            <TextBox x:Name="DatiCad_TipoLinea" Width="200" Margin="5" IsReadOnly="True" />
+                        </StackPanel>
+
+                        <!-- Campo Colore -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
+                            <Label Content="Colore:" Width="100"/>
+                            <TextBox x:Name="DatiCad_Colore" Width="200" Margin="5" IsReadOnly="True"/>
+                        </StackPanel>
+                        
+                    </Grid>
+                </TabItem>
+                <TabItem x:Name="Finestre" Header="Finestre">
+                    <!-- Contenuto per Finestre -->
+                    <Grid x:Name="Grid_Finestre">
+                        <Grid.RowDefinitions>
+                            <!-- Definizione delle righe per allineare i controlli uno sopra l'altro -->
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!---->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
+                            <Label Content="Porta o sup. opaca:" Width="150"/>
+                            <ComboBox x:Name="DatiCad_Porta" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuPareti_Click" ToolTip="Aggiungi una nuova porta"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
+                            <Label Content="Tipo finestra:" Width="150"/>
+                            <ComboBox x:Name="DatiCad_TipoFinestra" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuFinestre_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
+                            <Label Content="Larghezza (m):" Width="150"/>
+                            <TextBox x:Name="DatiCad_LarghezzaFinestra" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="5">
+                            <Label Content="Altezza (m):" Width="150"/>
+                            <TextBox x:Name="DatiCad_AltezzaFinestra" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="5">
+                            <Label Content="Numero Ante:" Width="150"/>
+                            <TextBox x:Name="DatiCad_AnteFinestra" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="5">
+                            <Label Content="Sottofinestra (m):" Width="150"/>
+                            <TextBox x:Name="DatiCad_SottoFinestra" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="5">
+                            <Label Content="Sopraluce (m):" Width="150"/>
+                            <TextBox x:Name="DatiCad_SopraLuce" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+
+                    </Grid>
+                </TabItem>
+                <TabItem x:Name="PontiTermici" Header="Ponti termici">
+                    <!-- Contenuto per Ponti termici -->
+                    <Grid x:Name="Grid_Ponti">
+                        <Grid.RowDefinitions>
+                            <!-- Definizione delle righe per allineare i controlli uno sopra l'altro -->
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Campo  Tipo ponte -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
+                            <Label Content="Tipo ponte:" Width="150"/>
+                            <ComboBox x:Name="DatiCad_TipoPonte" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuPonti_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+                        <!-- Campo  Orientamento  ponte -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
+                            <Label Content="Orientamento ponte:" Width="150"/>
+                            <ComboBox x:Name="DatiCad_OrientamentoPonte" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                        </StackPanel>
+                        <!-- Campo  Fonte Lunghezza Ponte  ponte -->
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
+                            <Label Content="Fonte lunghezza ponte:" Width="150"/>
+                            <ComboBox x:Name="DatiCad_FonteLunghezzaPonte" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                        </StackPanel>
+                        <!-- Campo Lunghezza ponte -->
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="5">
+                            <Label Content="Lunghezza ponte (m):" Width="170"/>
+                            <TextBox x:Name="DatiCad_LungPonte" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+                        
+                    </Grid>
+                </TabItem>
+                <TabItem x:Name="Locali" Header="Locali">
+                    <!-- Contenuto per Locali -->
+                    <Grid x:Name="Grid_Zone">
+                        <Grid.RowDefinitions>
+                            <!-- Definizione delle righe per allineare i controlli uno sopra l'altro -->
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Campo Descrizione Locale -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0">
+                            <Label Content="Descrizione Locale:" Width="170"/>
+                            <TextBox x:Name="DatiCad_DescrizioneLocale" Width="200" Margin="5" MaxLength="350" />
+                        </StackPanel>
+
+                        <!-- Campo Zona -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0">
+                            <Label Content="Zona:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_Zona" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuZone_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+                        <!-- Campo FonteAltezza -->
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0">
+                            <Label Content="Fonte altezza :" Width="170"/>
+                            <ComboBox x:Name="DatiCad_FonteAltezza" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                        </StackPanel>
+                        <!-- Campo AltezzaLorda -->
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0">
+                            <Label Content="Altezza lorda (m):" Width="170"/>
+                            <TextBox x:Name="DatiCad_AltezzaLorda" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+                        <!-- Campo AltezzaNetta -->
+                        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0">
+                            <Label Content="Altezza netta (m):" Width="170"/>
+                            <TextBox x:Name="DatiCad_AltezzaNetta" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+                        <!-- Campo FonteQuotaPavimento -->
+                        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0">
+                            <Label Content="Fonte quota pavimento:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_FonteQuotaPavimento" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                        </StackPanel>
+                        <!-- Campo QuotaPavimento -->
+                        <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="0">
+                            <Label Content="Quota pavimento (m):" Width="170"/>
+                            <TextBox x:Name="DatiCad_QuotaPavimento" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+                        <!-- Campo Tipo Soffitto -->
+                        <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="0">
+                            <Label Content="Tipo Soffitto:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_TipoSoffitto" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuPareti_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+
+                        <!-- Campo Confine Soffitto -->
+                        <StackPanel Grid.Row="8" Orientation="Horizontal" Margin="0">
+                            <Label Content="Confine Soffitto:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_ConfineSoffitto" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuConfini_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+                        <!-- Campo Colore falda -->
+                        <StackPanel Grid.Row="9" Orientation="Horizontal" Margin="0">
+                            <Label Content="Colore copertura:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_ColoreCopertura" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                        </StackPanel>
+                        <!-- Campo Tipo Pavimento -->
+                        <StackPanel Grid.Row="10" Orientation="Horizontal" Margin="0">
+                            <Label Content="Tipo Pavimento:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_TipoPavimento" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuPareti_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+
+                        <!-- Campo Confine Pavimento -->
+                        <StackPanel Grid.Row="11" Orientation="Horizontal" Margin="0">
+                            <Label Content="Confine Pavimento:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_ConfinePavimento" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuConfini_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+                        <!-- Campo Confine Soffitto automatico-->
+                        <StackPanel Grid.Row="12" Orientation="Horizontal" Margin="0">
+                            <Label Content="Confine soffitto se automatico:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_ConfineSoffittoAutomatico" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuConfini_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+                        <!-- Campo Confine Pavimento automatico-->
+                        <StackPanel Grid.Row="13" Orientation="Horizontal" Margin="0">
+                            <Label Content="Confine pavimento se automatico:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_ConfinePavimentoAutomatico" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuConfini_Click" ToolTip="Aggiungi un nuovo piano"/>
+                        </StackPanel>
+                        
+                    </Grid>
+                </TabItem>
+                <TabItem x:Name="Tetti" Header="Tetti" Visibility="Visible">
+                    <Grid x:Name="Grid_tetti">
+                        <Grid.RowDefinitions>
+                            <!-- Definizione delle righe per allineare i controlli uno sopra l'altro -->
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0">
+                            <Label Content="Quota colmo (m):" Width="170"/>
+                            <TextBox x:Name="DatiCad_QuotaColmo" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0">
+                            <Label Content="Quota gronda (m):" Width="170"/>
+                            <TextBox x:Name="DatiCad_QuotaGronda" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0">
+                            <Label Content="Quota shed (m):" Width="170"/>
+                            <TextBox x:Name="DatiCad_QuotaShed" Width="50" Margin="5" MaxLength="350" PreviewTextInput="NumericInputOnly"/>
+                        </StackPanel>
+                        <!-- Lato parte bassa -->
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0">
+                            <Label Content="Lato parte bassa dell shed:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_LatoParteBassaShed" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuPareti_Click" ToolTip="Gestisci archivio pareti"/>
+                        </StackPanel>
+                        <!-- Campo Tipo parete shed -->
+                        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0">
+                            <Label Content="Tipo di parete dello shed:" Width="170"/>
+                            <ComboBox x:Name="DatiCad_PareteShed" Width="200" Margin="5" SelectionChanged="DatiCad_Change"/>
+                            <Button Content=" Arc " Width="35" Height="25" Margin="0" Visibility="Visible" Click="MenuPareti_Click" ToolTip="Gestisci archivio pareti"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+                <TabItem x:Name="Varie" Header="Varie" Visibility="Collapsed">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="5">
+                            <Label Content="Programma Cad:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="DatiCad_ProgrammaCad" Width="200" Margin="0,0,10,0" SelectionChanged="DatiCad_Change"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
+                            <Label Content="Versione del Cad:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="DatiCad_VersioneCad" Width="200" Margin="0,0,10,0"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
+                            <Button Content="Conferma" Width="70" Margin="5" Click="DatiCad_button_Change"/>
+                            <Button Grid.Row="2" x:Name="btnApriAutoCAD" Content="Apri il CAD" Width="80"  Margin="5" Click="btnApriAutoCAD_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+                </TabItem>
+
+                <TabItem Header="Reti">
+                    <Grid>
+                        <TextBlock Text="Gestione reti in costruzione"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="18"
+                       Foreground="Gray"/>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0">
+                <!-- Bottone per modificare nel CAD -->
+                <Button x:Name="EditaNelCadButton_plugin"
+                Content="Apri il Cad"
+                Click="EditaNelCadPlugin_Click"
+                Width="80" Margin="0"/>
+                <Button Content="Conferma" Width="70" Margin="0" Click="DatiCad_button_Change"/>
+                <Button Content="Modello" Width="70" Margin="0" Click="Modello_Click"/>
+                <Button Content="Aggiorna Modello" Width="120" Margin="0" Click="AggiornaModelloButton_Click"/>
+               
+            </StackPanel>
+        </Grid>
+        <!-- Modello -->
+        <Grid Name="GridGenerale">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <!-- Prima riga -->
+                <RowDefinition Height="0" />
+                <!-- Seconda riga, inizialmente collassata -->
+            </Grid.RowDefinitions>
+
+            <!-- TabControl principale -->
+            <TabControl   Name="MainTabControl" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <!-- Primo Tab: Modello -->
+                <TabItem Header="Modello" Name="TabModello" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <Grid>
+                        <!-- Definizione del layout -->
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <!-- Contenuto principale (OpenGL) -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Barra di controllo -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Barra di controllo -->
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <!-- Colonna principale OpenGLView -->
+                            <ColumnDefinition Width="Auto"/>
+                            <!-- Colonna per GridSplitter -->
+                            <ColumnDefinition Width="Auto" x:Name="FiltriColumn"/>
+                            <!-- Colonna per il contenitore sulla destra -->
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Controllo OpenGL -->
+                        <local1:DrawBim x:Name="OpenGLView" 
+                        Grid.Row="0" Grid.Column="0"
+                       HorizontalAlignment="Stretch" 
+                       VerticalAlignment="Stretch" />
+
+                        <!-- GridSplitter per separare OpenGL e il contenitore a destra -->
+                        <GridSplitter Grid.Row="0" Grid.Column="1" 
+                      Width="5" 
+                      HorizontalAlignment="Center" 
+                      VerticalAlignment="Stretch"
+                      Background="Gray"/>
+
+                        <!-- Contenitore a destra con dimensione adattabile per i filtri grafici -->
+                        <StackPanel x:Name="FiltriGraficiPanel" Grid.Row="0" Grid.Column="2" 
+                        Margin="5"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Background="#F0F0F0"
+                        Visibility="Collapsed">
+                        <local1:FiltriGrafici x:Name="FiltriGraficiControl"/>
+                        </StackPanel>
+                        <!-- Barra informativa -->
+                        <StackPanel x:Name="PrimoErrore" Orientation="Horizontal" Grid.Row="1" Grid.ColumnSpan="3" Visibility="Visible" Background="#E0E0E0" Margin="1" HorizontalAlignment="Stretch">
+                            <Label  x:Name="LabPrimoErrore" Content="Modello non aggiornato, premi Aggiorna modello"   HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
+                        </StackPanel>
+                        
+                        <!-- Barra di controllo -->
+                        <StackPanel x:Name="BarraControlliModello" Orientation="Horizontal" Grid.Row="2" Grid.ColumnSpan="3" Background="#E0E0E0" Margin="0" HorizontalAlignment="Stretch">
+
+                            <Button x:Name="GestionePianiButton" Content="Gestione Piani" Click="ApriArchivioPiani" Margin="5"/>
+                            <!-- Modificato da Codex per realizzare: il comando AI ora crea un piano Termodel da una pianta raster. -->
+                            <Button x:Name="GeneraconIA" Content="Crea piano da raster con AI" Click="GeneraconIA_click" Margin="5"/>
+
+                            <!-- ComboBox per selezionare il disegno -->
+                            <ComboBox x:Name="ComboBoxDisegno" Width="100" Margin="5">
+                             </ComboBox>
+
+                             <!-- Bottone per modificare nel CAD -->
+                             <Button x:Name="EditaNelCadButton"
+                             Content="Edita nel Cad"
+                             Click="EditaNelCadButton_Click"
+                             Margin="5"
+                             Width="80"/>
+                            <!-- Bottone per visualizzare il plugin CAD -->
+                            <Button x:Name="VisualizzaPluginButton"
+                            Content="Visualizza Plugin Cad"
+                            Click="Pluggin_Click"
+                            Margin="5"
+                            Width="120"/>
+                            
+                            <Button x:Name="AggiornaModelloButton" Content="Aggiorna Modello" Click="AggiornaModelloButton_Click" Margin="5"/>
+                            <CheckBox x:Name="ToggleFiltriGrafici" Content="Mostra Filtri Grafici" 
+                            Margin="10,0,0,0" 
+                           Checked="ToggleFiltriGrafici_Checked" 
+                           Unchecked="ToggleFiltriGrafici_Unchecked" 
+                           VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Modificato da Codex per realizzare: registro comandi visibile nella modalità affiancata AdvancedAI. -->
+                        <Border x:Name="AdvancedAICommandPanel" Grid.Row="2" Grid.ColumnSpan="3"
+                                Visibility="Collapsed" Background="#151A20" BorderBrush="#34495E"
+                                BorderThickness="1" Padding="8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock x:Name="AdvancedAICommandText" Foreground="#DCE6F1"
+                                           FontFamily="Consolas" FontSize="13" TextWrapping="Wrap"
+                                           Text="In attesa di comandi AdvancedAI..."/>
+                                <TextBlock Grid.Row="1" Foreground="#8FB7D8" Margin="0,6,0,0"
+                                           Text="ESC per uscire dalla modalità minimale · comando: ui:normale"/>
+                            </Grid>
+                        </Border>
+                        
+                    </Grid>
+                </TabItem>
+               <!-- Secondo Tab: Informazioni sul modello -->
+                <TabItem Header="Informazioni sul modello" Name="TabInfoModello" >
+                    <TabControl x:Name="InformazioniTabControl"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SelectionChanged="MainTabControl_SelectionChanged">
+                        <TabItem Header="Dati Generali sul modello risultato del censimento" Name="InformazioniModello" >
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <RichTextBox Name="richTextBoxDati1" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" 
+                                    Grid.Row="0"/>
+                                    <RichTextBox Name="richTextBoxDati2" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                                     Grid.Row="1"/>
+                                    <RichTextBox Name="richTextBoxDati3" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                                    Grid.Row="2"/>
+                                </Grid>
+                            </ScrollViewer>
+                        </TabItem>
+                        <TabItem Header="XML nazionale esteso generato" Name="XMLModelloGenerato" >
+                        <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <!-- Altezza dinamica -->
+                            <RowDefinition Height="*"/>
+                            <!-- Il TreeView occupa il resto dello spazio -->
+                        </Grid.RowDefinitions>
+                        <!-- Dati generali o errori -->
+                        <TextBlock x:Name="txtInformazioniGenerali" Foreground="Red" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        
+                         <Run Text="N.B. ( la sezione risultati di calcolo non è significativa, verrà completata dal programma di calcolo )" FontSize="10" Foreground="Gray" />
+                        </TextBlock>
+                        <!-- TreeView per visualizzare la struttura -->
+                        <TreeView x:Name="treeXMLOut"
+                        Grid.Row="1"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Margin="10,10,10,10">
+                  
+                        </TreeView>
+                        </Grid>
+                        </TabItem>
+                        <TabItem Header="XML nazionale esteso di base importato" Name="XMLModelloBase" >
+                            <Grid>
+                                <TreeView x:Name="treeXMLBase"
+                                HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Stretch"
+                                 Margin="10,10,10,10">
+                                </TreeView>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
+                </TabItem>
+                <TabItem Header="Calcoli" Name="TabCalcoli">
+                    <TabControl>
+                        <TabItem Header="Dispersioni">
+                            <Grid>
+                                <RichTextBox x:Name="richTextBoxDispersioni"
+                                             IsReadOnly="True"
+                                             BorderThickness="0"
+                                             VerticalScrollBarVisibility="Auto"/>
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="Pannelli radianti">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0" Margin="8" Padding="8" Background="#FFF1F5F9" CornerRadius="4">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Motore spirali:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <!-- Modificato da Codex per realizzare: rendere SpiraliGPT
+                                             la selezione iniziale lasciando Vittorio disponibile. -->
+                                        <ComboBox x:Name="MotoreSpiraliComboBox"
+                                                  Width="130"
+                                                  SelectedIndex="1"
+                                                  SelectionChanged="MotoreSpiraliComboBox_SelectionChanged">
+                                            <ComboBoxItem Content="Vittorio" Tag="Vittorio"/>
+                                            <ComboBoxItem Content="GPT" Tag="GPT"/>
+                                        </ComboBox>
+                                        <TextBlock Text="  La scelta sarà usata alla prossima generazione del modello."
+                                                   VerticalAlignment="Center" Foreground="#FF475569"/>
+                                    </StackPanel>
+                                </Border>
+                                <RichTextBox x:Name="richTextBoxPannelli"
+                                             Grid.Row="1"
+                                             IsReadOnly="True"
+                                             BorderThickness="0"
+                                             VerticalScrollBarVisibility="Auto"/>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
+                </TabItem>
+            </TabControl>
+
+            <TabControl x:Name="ArchiviTabControl" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SelectionChanged="MainTabControl_SelectionChanged">
+
+                <!-- Nuovo TabItem per "Elaborazione" che contiene l'XAML esistente -->
+                <TabItem x:Name="Elaborazione" Header=" Dati di base necessari per il disegno">
+                    <Grid>
+                        <TabControl x:Name="DatiProgControl" Margin="10,10,10,-6">
+                            <TabItem x:Name="Dati_progetto_base" Header="XML importato dal programma di calcolo">
+                                <Grid Background="#FFE5E5E5" Height="703" Margin="2,0,-11,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="116*"/>
+                                        <ColumnDefinition Width="953*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TreeView x:Name="mytreeview" Margin="10,0,10,0" Grid.ColumnSpan="2" VerticalAlignment="Top" Height="442">
+                                        <Canvas/>
+                                    </TreeView>
+                                </Grid>
+                            </TabItem>
+                            <TabItem x:Name="Dati_progetto_finito" Header="XML esportato verso il programma di calcolo">
+                                <Grid Background="#FFE5E5E5" Height="703" Margin="2,0,-11,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="116*"/>
+                                        <ColumnDefinition Width="953*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TreeView x:Name="mytreeview_finito" Margin="10,0,10,0" Grid.ColumnSpan="2" VerticalAlignment="Top" Height="442">
+                                        <Canvas/>
+                                    </TreeView>
+                                </Grid>
+                            </TabItem>
+
+                            <TabItem x:Name="disegno" Visibility="Collapsed" Header="Disegno" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+
+                                        <RowDefinition Height="*"/>
+
+                                    </Grid.RowDefinitions>
+
+
+                                    <Label x:Name="InfoString" Content="Info:" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10"/>
+
+
+                                    <Canvas x:Name="drawingCanvas" Grid.Row="1" Background="White"/>
+                                </Grid>
+                            </TabItem>
+
+                            <TabItem x:Name="Dati" Header=" Archivi del programma ">
+                               
+                            </TabItem>
+                            <TabItem x:Name="coordinateLog" Visibility="Collapsed" Header="Coordinate Log">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="97*"/>
+                                        <ColumnDefinition Width="39*"/>
+                                        <ColumnDefinition Width="394*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ListBox x:Name="coordinateListBox" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Grid.ColumnSpan="3"/>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+                    </Grid>
+                </TabItem>
+
+                <!--  TabItem "Disegno"  -->
+                <TabItem x:Name="Disegno" Header="Impostazione degli oggetti usati per il disegno">
+                    
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </DockPanel>
+</Window>
