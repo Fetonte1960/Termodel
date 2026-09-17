@@ -1,0 +1,7 @@
+_backups/
+workspace/**/bin/
+workspace/**/obj/
+workspace/**/.vs/
+workspace/**/packages/
+*.user
+*.suo
