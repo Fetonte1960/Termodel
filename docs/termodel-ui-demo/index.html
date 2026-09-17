@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Termodel 3.2 - Web UI Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
+    button, select { font: inherit; }
+
+    #app { width: 100%; height: 100%; display: grid; grid-template-rows: 24px 23px 27px 1fr 34px; background: #d3d3d3; }
+
+    .titlebar {
+      display: flex; align-items: center; gap: 7px; padding: 0 6px;
+      background: #f4f4f4; border-bottom: 1px solid #c8c8c8; white-space: nowrap; overflow: hidden;
+    }
+    .app-icon { width: 15px; height: 15px; border-radius: 2px; background: linear-gradient(135deg,#ffd85a 0 50%,#b62020 50%); border: 1px solid #666; flex: 0 0 auto; }
+    .title-text { overflow: hidden; text-overflow: ellipsis; }
+
+    .menubar { display: flex; align-items: stretch; background: #f5f5f5; border-bottom: 1px solid #d0d0d0; padding-left: 2px; }
+    .menu { position: relative; }
+    .menu > button { height: 100%; border: 0; background: transparent; padding: 2px 8px; border-radius: 0; }
+    .menu > button:hover, .menu.open > button { background: #e3e3e3; }
+    .dropdown {
+      display: none; position: absolute; top: 100%; left: 0; min-width: 235px; z-index: 30;
+      background: #f7f7f7; border: 1px solid #aaa; box-shadow: 2px 3px 8px rgba(0,0,0,.18); padding: 3px 0;
+    }
+    .menu.open .dropdown { display: block; }
+    .dropdown button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 5px 22px 5px 24px; }
+    .dropdown button:hover { background: #dcecff; }
+    .sep { height: 1px; background: #ccc; margin: 3px 4px; }
+
+    .tabs { display: flex; align-items: end; gap: 1px; padding: 2px 4px 0; background: #ededed; border-bottom: 1px solid #aaa; }
+    .tab { height: 23px; padding: 2px 10px; border: 1px solid #aaa; border-bottom: 0; background: #e5e5e5; }
+    .tab.active { background: #d3d3d3; position: relative; top: 1px; }
+
+    .workspace { position: relative; min-height: 0; overflow: hidden; background: #d3d3d3; }
+    .page { position: absolute; inset: 0; display: none; }
+    .page.active { display: block; }
+
+    #viewer { position: absolute; inset: 0; background: #d3d3d3; }
+    #viewer canvas { display: block; width: 100%; height: 100%; }
+
+    .info-page, .calc-page { padding: 22px; overflow: auto; background: #e5e5e5; }
+    .classic-group { max-width: 650px; border: 1px solid #999; background: #efefef; padding: 14px; }
+    .classic-group h3 { margin: -23px 0 12px 4px; display: inline-block; padding: 0 5px; background: #e5e5e5; font-size: 12px; font-weight: 400; }
+    .classic-row { display: grid; grid-template-columns: 180px 1fr; padding: 4px 0; }
+
+    .bottom-bar {
+      display: flex; align-items: center; gap: 5px; padding: 3px 5px;
+      background: #e5e5e5; border-top: 1px solid #aaa; overflow-x: auto; white-space: nowrap;
+    }
+    .bottom-bar button, .bottom-bar select {
+      height: 26px; border: 1px solid #999; border-radius: 0; background: linear-gradient(#fff,#dedede); padding: 2px 7px; color: #111;
+    }
+    .bottom-bar button:active { background: #d3d3d3; }
+    .bottom-bar select { min-width: 100px; }
+    .check-wrap { display: inline-flex; align-items: center; gap: 5px; padding-left: 2px; }
+
+    .viewport-status {
+      position: absolute; left: 8px; top: 8px; padding: 3px 6px; color: #555; background: rgba(230,230,230,.78); border: 1px solid rgba(120,120,120,.35); z-index: 4;
+    }
+    .axis {
+      position: absolute; left: 18px; bottom: 18px; width: 54px; height: 54px; z-index: 4; pointer-events: none;
+    }
+    .axis .o { position: absolute; left: 25px; bottom: 12px; width: 5px; height: 5px; background: #555; border-radius: 50%; }
+    .axis .z { position:absolute; left:27px; bottom:14px; width:2px; height:31px; background:#38558d; transform-origin:bottom; }
+    .axis .x { position:absolute; left:27px; bottom:14px; width:24px; height:2px; background:#8f3434; transform:rotate(12deg); transform-origin:left; }
+    .axis .y { position:absolute; left:27px; bottom:14px; width:24px; height:2px; background:#397d3b; transform:rotate(155deg); transform-origin:left; }
+    .axis span { position:absolute; font-size:11px; font-weight:600; }
+    .axis .lz { left:27px; top:0; }.axis .lx { right:0; bottom:7px; }.axis .ly { left:0; bottom:4px; }
+
+    .view-cube {
+      position:absolute; right:20px; bottom:18px; width:58px; height:52px; z-index:4; opacity:.85; pointer-events:none;
+    }
+    .view-cube .cube-face { position:absolute; left:16px; top:7px; width:32px; height:32px; transform:rotate(30deg) skewY(-30deg) scaleY(.86); background:#e25b4f; border:1px solid rgba(255,255,255,.8); }
+    .view-cube .ring { position:absolute; left:4px; right:4px; bottom:0; height:14px; border:7px solid rgba(90,90,90,.35); border-radius:50%; }
+
+    @media (max-width: 760px) {
+      #app { grid-template-rows: 24px 23px 27px 1fr 39px; }
+      .bottom-bar { gap: 3px; }
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div class="titlebar">
+      <div class="app-icon"></div>
+      <div class="title-text">Termodel 3.2 : C:\Users\USER1\Documents\Termodel\esempi\Fabbricato con tetto a due falde</div>
+    </div>
+
+    <nav class="menubar" aria-label="Menu principale">
+      <div class="menu"><button type="button">File</button><div class="dropdown">
+        <button type="button">Nuovo</button><button type="button">Apri...</button><button type="button">Carica progetto ZIP</button><div class="sep"></div>
+        <button type="button">Salva</button><button type="button">Salva progetto ZIP</button><button type="button">Salva con nome</button><div class="sep"></div>
+        <button type="button">Importa XML nazionale</button><button type="button">Esporta XML nazionale</button><button type="button">Esporta BIM (ifc)</button>
+      </div></div>
+      <div class="menu"><button type="button">Modifica</button><div class="dropdown">
+        <button type="button">Visualizza/Edita disegni di input nel CAD</button><button type="button">Archivio dati climatici</button><button type="button">Archivio Pareti</button><button type="button">Archivio Finestre</button><button type="button">Archivio Ponti termici</button><button type="button">Archivio Confini</button><button type="button">Archivio Zone</button>
+      </div></div>
+      <div class="menu"><button type="button">Visualizza</button><div class="dropdown">
+        <button type="button">Modello</button><button type="button">Archivi</button><button type="button">Plugin Autocad</button><button type="button">Visualizza tutor</button><button type="button">Genera il modello all'avvio</button>
+      </div></div>
+      <div class="menu"><button type="button">Calcoli</button><div class="dropdown"><button type="button">Visualizza risultati dell'ultimo calcolo</button></div></div>
+    </nav>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-page="modelPage" type="button">Modello</button>
+      <button class="tab" data-page="infoPage" type="button">Informazioni sul modello</button>
+      <button class="tab" data-page="calcPage" type="button">Calcoli</button>
+    </div>
+
+    <main class="workspace">
+      <section id="modelPage" class="page active">
+        <div id="viewer"></div>
+        <div class="viewport-status">Three.js · prototipo Web della finestra grafica Termodel</div>
+        <div class="axis"><div class="o"></div><div class="z"></div><div class="x"></div><div class="y"></div><span class="lz">Z</span><span class="lx">X</span><span class="ly">Y</span></div>
+        <div class="view-cube"><div class="cube-face"></div><div class="ring"></div></div>
+      </section>
+      <section id="infoPage" class="page info-page">
+        <div class="classic-group"><h3>Informazioni sul modello</h3>
+          <div class="classic-row"><span>Progetto:</span><strong>Demo Web Termodel</strong></div>
+          <div class="classic-row"><span>Motore grafico:</span><strong>Three.js</strong></div>
+          <div class="classic-row"><span>Oggetti:</span><strong>1 cubo dimostrativo</strong></div>
+          <div class="classic-row"><span>Origine UI:</span><strong>MainWindow.xaml</strong></div>
+        </div>
+      </section>
+      <section id="calcPage" class="page calc-page">
+        <div class="classic-group"><h3>Calcoli</h3>
+          <p>Area lasciata volutamente dimostrativa. In futuro qui arriveranno i risultati prodotti dal motore C# Termodel sul server.</p>
+        </div>
+      </section>
+    </main>
+
+    <div class="bottom-bar">
+      <button type="button" data-action="Gestione Piani">Gestione Piani</button>
+      <button type="button" data-action="Crea piano da raster con AI">Crea piano da raster con AI</button>
+      <select aria-label="Disegno input"><option>DisegnoInput</option></select>
+      <button type="button" data-action="Edita nel Cad">Edita nel Cad</button>
+      <button type="button" data-action="Visualizza Plugin Cad">Visualizza Plugin Cad</button>
+      <button type="button" id="resetView">Aggiorna Modello</button>
+      <label class="check-wrap"><input type="checkbox" id="filtersCheck" /> Mostra Filtri Grafici</label>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
