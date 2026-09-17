@@ -3,5 +3,6 @@ workspace/**/bin/
 workspace/**/obj/
 workspace/**/.vs/
 workspace/**/packages/
+Locale/
 *.user
 *.suo
