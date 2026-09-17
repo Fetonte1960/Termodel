@@ -1,0 +1,63 @@
+name: Prepare DrawBim Work Copy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prepare-drawbim-work.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-drawbim:
+    if: github.event.head_commit.message == 'Prepare DrawBim Work automation'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create modified Work copy
+        shell: python
+        run: |
+          from pathlib import Path
+
+          src = Path('SorgentiTermodel/Library/utilities/DrawBim.xaml.cs')
+          dst = Path('SorgentiTermodel/Work/utilities/DrawBim.xaml.cs')
+          text = src.read_text(encoding='utf-8-sig')
+
+          replacements = []
+
+          replacements.append((
+          '''        public void SvuotaBuffer()\n        {\n            viewport.Children.Clear();\n            ResetLimits();''',
+          '''        public void SvuotaBuffer()\n        {\n            viewport.Children.Clear();\n            DrawBimJson.Clear();\n            ResetLimits();'''))
+
+          replacements.append((
+          '''        public void Redraw(bool RecalcView)\n        {        \n            if (viewport != null)\n            {\n                if (RecalcView) SetCamera();\n                viewport.InvalidateVisual(); // Forza il ridisegno del Viewport3D\n            }\n        }''',
+          '''        public void Redraw(bool RecalcView)\n        {        \n            if (viewport != null)\n            {\n                if (RecalcView) SetCamera();\n                viewport.InvalidateVisual(); // Forza il ridisegno del Viewport3D\n                DrawBimJson.SalvaJson();\n            }\n        }'''))
+
+          replacements.append((
+          '''            estruso.Transform = transformGroup;\n            viewport.Children.Add(estruso);\n            // Creazione del MeshBuilder per il corpo principale''',
+          '''            estruso.Transform = transformGroup;\n            viewport.Children.Add(estruso);\n\n            // Renderer parallelo Web: usa esattamente profilo, path e trasformazioni\n            // gia' calcolati per Helix. Con Enabled=false questa chiamata esce subito.\n            DrawBimJson.AddExtruded(\n                profilo,\n                estruso.Path,\n                transformGroup,\n                color,\n                Tipo,\n                ID,\n                Descrizione,\n                NumeroElemento,\n                "lati");\n\n            // Creazione del MeshBuilder per il corpo principale'''))
+
+          replacements.append((
+          '''            geometryModel.Transform = transformGroup;\n            // Aggiungere al viewport\n            viewport.Children.Add(new ModelVisual3D { Content = geometryModel });\n        }\n\n        public void DrawDebugCube''',
+          '''            geometryModel.Transform = transformGroup;\n            // Aggiungere al viewport\n            viewport.Children.Add(new ModelVisual3D { Content = geometryModel });\n\n            // I tappi sono gia' triangolati nel MeshBuilder: il JSON riceve la\n            // stessa mesh finale e la stessa trasformazione usate da Helix.\n            DrawBimJson.AddMesh(\n                mesh,\n                transformGroup,\n                color,\n                Tipo,\n                ID,\n                Descrizione,\n                NumeroElemento,\n                "tappi");\n        }\n\n        public void DrawDebugCube'''))
+
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Blocco atteso non univoco: trovato {count} volte')
+              text = text.replace(old, new, 1)
+
+          dst.parent.mkdir(parents=True, exist_ok=True)
+          dst.write_text(text, encoding='utf-8')
+
+      - name: Commit Work copy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add SorgentiTermodel/Work/utilities/DrawBim.xaml.cs
+          git diff --cached --quiet && exit 0
+          git commit -m "Add DrawBim JSON bridge hooks in Work"
+          git push
