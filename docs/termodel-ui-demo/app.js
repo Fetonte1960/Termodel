@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const MODEL_URL = 'https://raw.githubusercontent.com/Fetonte1960/Termodel/main/SorgentiTermodel/Work/Web/TermodelWebModel.json';
 
 const viewer = document.getElementById('viewer');
+const modelPage = document.getElementById('modelPage');
 const status = document.querySelector('.viewport-status');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd3d3d3);
@@ -32,6 +33,275 @@ scene.add(edgeGroup);
 let floor = null;
 let homeView = null;
 let loading = false;
+let lastModelData = null;
+
+const COMPONENTI = [
+  ['Parete', true],
+  ['Pavimento', true],
+  ['Soffitto', true],
+  ['Finestra', true],
+  ['Ponte', true],
+  ['Falda', true],
+  ['Mansardato', true],
+  ['Pannelli', false]
+];
+
+const CONFINI = [
+  ['Esterno', true],
+  ['Terreno', true],
+  ['AmbienteNonClimatizzato', true],
+  ['AmbienteClimatizzato', true],
+  ['StessaZona', true]
+];
+
+const SEPARAZIONE = [
+  ['Separatori', true],
+  ['NonSeparatori', true],
+  ['Fittizie', false]
+];
+
+function installFilterStyles() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .web-filter-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 228px;
+      background: #f2f2f2;
+      border-left: 1px solid #aaa;
+      padding: 7px 8px;
+      overflow: auto;
+      z-index: 8;
+      display: none;
+      color: #111;
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 12px;
+    }
+    .web-filter-panel.visible { display: block; }
+    .web-filter-tree {
+      min-height: 100%;
+      border: 1px solid #999;
+      background: #fafafa;
+      padding: 4px 5px 7px;
+    }
+    .web-filter-tree details { margin: 0; }
+    .web-filter-tree summary {
+      cursor: default;
+      user-select: none;
+      padding: 2px 0;
+      list-style-position: outside;
+    }
+    .web-filter-items { padding-left: 23px; }
+    .web-filter-row {
+      display: flex;
+      align-items: center;
+      min-height: 18px;
+      white-space: nowrap;
+    }
+    .web-filter-row input { margin: 0 4px 0 0; }
+    .web-filter-note {
+      margin: 7px 3px 1px;
+      padding-top: 6px;
+      border-top: 1px solid #ccc;
+      color: #666;
+      font-size: 11px;
+      line-height: 1.25;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function createFilterPanel() {
+  installFilterStyles();
+
+  const panel = document.createElement('aside');
+  panel.id = 'webFilterPanel';
+  panel.className = 'web-filter-panel';
+  panel.innerHTML = `
+    <div class="web-filter-tree">
+      <details open>
+        <summary>Piani</summary>
+        <div class="web-filter-items" data-filter-container="piani"></div>
+      </details>
+      <details open>
+        <summary>Componenti</summary>
+        <div class="web-filter-items" data-filter-container="componenti"></div>
+      </details>
+      <details open>
+        <summary>Confini</summary>
+        <div class="web-filter-items" data-filter-container="confini"></div>
+      </details>
+      <details open>
+        <summary>Separazione tra vani</summary>
+        <div class="web-filter-items" data-filter-container="separazione"></div>
+      </details>
+      <div class="web-filter-note" id="webFilterNote"></div>
+    </div>
+  `;
+  modelPage.appendChild(panel);
+
+  COMPONENTI.forEach(([name, checked]) => addFilterCheckbox('componenti', name, checked));
+  CONFINI.forEach(([name, checked]) => addFilterCheckbox('confini', name, checked));
+  SEPARAZIONE.forEach(([name, checked]) => addFilterCheckbox('separazione', name, checked));
+
+  return panel;
+}
+
+function addFilterCheckbox(group, name, checked) {
+  const container = document.querySelector(`[data-filter-container="${group}"]`);
+  if (!container) return null;
+
+  const row = document.createElement('label');
+  row.className = 'web-filter-row';
+
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = checked;
+  input.dataset.filterGroup = group;
+  input.dataset.filterName = name;
+  input.addEventListener('change', applyFilters);
+
+  const text = document.createElement('span');
+  text.textContent = name;
+
+  row.appendChild(input);
+  row.appendChild(text);
+  container.appendChild(row);
+  return input;
+}
+
+const filterPanel = createFilterPanel();
+
+function rebuildPianoFilters(primitives) {
+  const container = document.querySelector('[data-filter-container="piani"]');
+  if (!container) return;
+
+  const previous = new Map();
+  container.querySelectorAll('input[data-filter-name]').forEach((input) => {
+    previous.set(input.dataset.filterName, input.checked);
+  });
+
+  container.innerHTML = '';
+
+  const piani = [...new Set(
+    primitives
+      .filter((p) => p.filterMetadata && typeof p.piano === 'string' && p.piano.trim())
+      .map((p) => p.piano.trim())
+  )];
+
+  if (piani.length === 0) {
+    const row = document.createElement('div');
+    row.className = 'web-filter-row';
+    row.textContent = '—';
+    container.appendChild(row);
+    return;
+  }
+
+  piani.forEach((piano) => {
+    addFilterCheckbox('piani', piano, previous.has(piano) ? previous.get(piano) : true);
+  });
+}
+
+function isChecked(group, name, fallback = true) {
+  const input = document.querySelector(
+    `input[data-filter-group="${group}"][data-filter-name="${CSS.escape(name)}"]`
+  );
+  return input ? input.checked : fallback;
+}
+
+function primitiveFilterData(primitive) {
+  return {
+    filterMetadata: primitive.filterMetadata === true,
+    piano: primitive.piano || '',
+    confine: primitive.confine || '',
+    separatore: primitive.separatore === true,
+    stessaZona: primitive.stessaZona === true,
+    fittizia: primitive.fittizia === true,
+    falda: primitive.falda === true,
+    tipo: primitive.tipo || ''
+  };
+}
+
+function passesFilters(meta) {
+  // Componenti funziona anche con i vecchi JSON v2, perche' "tipo" esisteva gia'.
+  const pannelliMode = isChecked('componenti', 'Pannelli', false);
+  if (pannelliMode && meta.tipo !== 'Ponte' && meta.tipo !== 'Pannelli')
+    return false;
+
+  if (meta.tipo && meta.tipo !== 'Pannelli' && !isChecked('componenti', meta.tipo, true))
+    return false;
+
+  if (!meta.filterMetadata)
+    return true;
+
+  // Stesso ordine logico usato dal Redraw desktop di Polig3D.
+  if (meta.piano && !isChecked('piani', meta.piano, true))
+    return false;
+
+  if (meta.stessaZona && !isChecked('confini', 'StessaZona', true))
+    return false;
+
+  // Falde e separatori bypassano il filtro Confine nel desktop.
+  if (!meta.falda && !meta.separatore) {
+    if (meta.tipo === 'Mansardato') {
+      if (!isChecked('confini', 'Esterno', true))
+        return false;
+    } else if (meta.confine && !isChecked('confini', meta.confine, true)) {
+      return false;
+    }
+  }
+
+  // I ponti bypassano il filtro Separatore/NonSeparatore nel desktop.
+  if (meta.tipo !== 'Ponte') {
+    if (meta.separatore) {
+      if (!isChecked('separazione', 'Separatori', true))
+        return false;
+    } else if (!isChecked('separazione', 'NonSeparatori', true)) {
+      return false;
+    }
+  }
+
+  if (meta.separatore && meta.fittizia && !isChecked('separazione', 'Fittizie', false))
+    return false;
+
+  return true;
+}
+
+function applyFilters() {
+  let visible = 0;
+  let total = 0;
+
+  modelGroup.children.forEach((obj) => {
+    const meta = obj.userData.filter || {};
+    obj.visible = passesFilters(meta);
+    total += 1;
+    if (obj.visible) visible += 1;
+  });
+
+  edgeGroup.children.forEach((obj) => {
+    const meta = obj.userData.filter || {};
+    obj.visible = passesFilters(meta);
+  });
+
+  if (!loading && lastModelData) {
+    const count = lastModelData.primitiveCount ?? lastModelData.primitives.length;
+    status.textContent = `Termodel Web Model · ${count} primitive · visibili ${visible}/${total}`;
+  }
+}
+
+function updateFilterNote(data) {
+  const note = document.getElementById('webFilterNote');
+  if (!note) return;
+
+  const hasMetadata = data.primitives.some((p) => p.filterMetadata === true);
+  if (hasMetadata) {
+    note.textContent = 'Filtri Web applicati localmente alle primitive già caricate.';
+  } else {
+    note.textContent = 'JSON precedente: Componenti attivo; Piani, Confini e Separazione richiedono un nuovo JSON v3.';
+  }
+}
 
 function disposeObject(root) {
   root.traverse((obj) => {
@@ -46,7 +316,6 @@ function disposeObject(root) {
 
 function fromTermodelPoint(vertex) {
   // Termodel/Helix usa Z-up. Three.js usa Y-up.
-  // x resta x, z Termodel diventa y, y Termodel diventa -z.
   return [vertex[0], vertex[2], -vertex[1]];
 }
 
@@ -54,16 +323,13 @@ function createMeshPrimitive(primitive) {
   if (!Array.isArray(primitive.vertices) || primitive.vertices.length === 0) return;
 
   const positions = [];
-  primitive.vertices.forEach((vertex) => {
-    positions.push(...fromTermodelPoint(vertex));
-  });
+  primitive.vertices.forEach((vertex) => positions.push(...fromTermodelPoint(vertex)));
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
 
-  if (Array.isArray(primitive.indices) && primitive.indices.length >= 3) {
+  if (Array.isArray(primitive.indices) && primitive.indices.length >= 3)
     geometry.setIndex(primitive.indices);
-  }
 
   geometry.computeVertexNormals();
   geometry.computeBoundingBox();
@@ -79,22 +345,24 @@ function createMeshPrimitive(primitive) {
     opacity
   });
 
+  const filter = primitiveFilterData(primitive);
   const mesh = new THREE.Mesh(geometry, material);
   mesh.userData = {
     numero: primitive.numero,
     id: primitive.id || '',
     tipo: primitive.tipo || '',
     descrizione: primitive.descrizione || '',
-    parte: primitive.parte || ''
+    parte: primitive.parte || '',
+    filter
   };
   modelGroup.add(mesh);
 
-  // Contorno verde analogo al modello desktop mostrato da DrawBim.
   const edgeGeometry = new THREE.EdgesGeometry(geometry, 20);
   const edges = new THREE.LineSegments(
     edgeGeometry,
     new THREE.LineBasicMaterial({ color: 0x00e58a })
   );
+  edges.userData = { filter };
   edgeGroup.add(edges);
 }
 
@@ -102,21 +370,19 @@ function createLinePrimitive(primitive) {
   if (!Array.isArray(primitive.vertices) || primitive.vertices.length < 2) return;
 
   const positions = [];
-  primitive.vertices.forEach((vertex) => {
-    positions.push(...fromTermodelPoint(vertex));
-  });
+  primitive.vertices.forEach((vertex) => positions.push(...fromTermodelPoint(vertex)));
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
 
-  if (Array.isArray(primitive.indices) && primitive.indices.length >= 2) {
+  if (Array.isArray(primitive.indices) && primitive.indices.length >= 2)
     geometry.setIndex(primitive.indices);
-  }
 
   const line = new THREE.LineSegments(
     geometry,
     new THREE.LineBasicMaterial({ color: primitive.color || '#00e58a' })
   );
+  line.userData = { filter: primitiveFilterData(primitive) };
   modelGroup.add(line);
 }
 
@@ -165,11 +431,7 @@ function fitView() {
   controls.maxDistance = Math.max(maxSize * 12, 30);
   controls.update();
 
-  homeView = {
-    position: position.clone(),
-    target: center.clone()
-  };
-
+  homeView = { position: position.clone(), target: center.clone() };
   updateFloor(box);
 }
 
@@ -190,12 +452,14 @@ async function loadModel() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
-    if (data.format !== 'TermodelWebModel' || !Array.isArray(data.primitives)) {
+    if (data.format !== 'TermodelWebModel' || !Array.isArray(data.primitives))
       throw new Error('Formato TermodelWebModel non valido');
-    }
 
+    lastModelData = data;
     disposeObject(modelGroup);
     disposeObject(edgeGroup);
+    rebuildPianoFilters(data.primitives);
+    updateFilterNote(data);
 
     let meshCount = 0;
     let lineCount = 0;
@@ -212,11 +476,11 @@ async function loadModel() {
 
     fitView();
     edgeGroup.visible = true;
-
-    status.textContent = `Termodel Web Model · ${data.primitiveCount ?? data.primitives.length} primitive · ${meshCount} mesh${lineCount ? ` · ${lineCount} linee` : ''}`;
+    applyFilters();
 
     const objectInfo = document.querySelector('#infoPage .classic-row:nth-child(3) strong');
-    if (objectInfo) objectInfo.textContent = `${data.primitiveCount ?? data.primitives.length} primitive dal JSON Termodel`;
+    if (objectInfo)
+      objectInfo.textContent = `${data.primitiveCount ?? data.primitives.length} primitive dal JSON Termodel`;
   } catch (error) {
     console.error(error);
     status.textContent = `Errore caricamento modello: ${error.message}`;
@@ -243,7 +507,10 @@ document.getElementById('resetView').addEventListener('click', async () => {
 });
 
 document.getElementById('filtersCheck').addEventListener('change', (event) => {
-  edgeGroup.visible = !event.target.checked;
+  const visible = event.target.checked;
+  filterPanel.classList.toggle('visible', visible);
+  viewer.style.right = visible ? '228px' : '0';
+  requestAnimationFrame(resize);
 });
 
 document.querySelectorAll('.tab').forEach(tab => {
@@ -260,7 +527,9 @@ document.querySelectorAll('.menu > button').forEach(button => {
   button.addEventListener('click', (event) => {
     event.stopPropagation();
     const menu = button.parentElement;
-    document.querySelectorAll('.menu').forEach(m => { if (m !== menu) m.classList.remove('open'); });
+    document.querySelectorAll('.menu').forEach(m => {
+      if (m !== menu) m.classList.remove('open');
+    });
     menu.classList.toggle('open');
   });
 });
@@ -273,7 +542,7 @@ document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
     status.textContent = `${button.dataset.action} · comando dimostrativo non ancora collegato al C#`;
     setTimeout(() => {
-      if (!loading) status.textContent = 'Termodel Web Model · modello JSON generato dal desktop';
+      if (!loading && lastModelData) applyFilters();
     }, 1800);
   });
 });
