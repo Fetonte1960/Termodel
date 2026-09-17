@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Assemble uploaded JSON
+      - name: Assemble and validate uploaded JSON
         shell: bash
         run: |
           cat SorgentiTermodel/Work/Web/.TermodelWebModel.part1.b64 \
@@ -29,14 +29,16 @@ jobs:
           with open(p, encoding='utf-8') as f:
               d=json.load(f)
           assert d.get('format') == 'TermodelWebModel'
+          assert d.get('version') == 2
+          assert d.get('coordinateSystem') == 'Z-up'
           assert d.get('primitiveCount') == len(d.get('primitives', [])) == 546
-          print('OK:', d['format'], d['version'], d['primitiveCount'])
+          print('OK:', d['format'], 'v'+str(d['version']), d['primitiveCount'], 'primitive')
           PY
           rm SorgentiTermodel/Work/Web/.TermodelWebModel.part1.b64
           rm SorgentiTermodel/Work/Web/.TermodelWebModel.part2.b64
           rm .github/workflows/assemble-termodel-web-model.yml
 
-      - name: Commit model
+      - name: Commit model and cleanup
         shell: bash
         run: |
           git config user.name "Fetonte1960"
