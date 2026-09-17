@@ -1,0 +1,15 @@
+﻿<UserControl x:Class="Termodel.utilities.DrawBim"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helix="http://helix-toolkit.org/wpf"
+             HorizontalAlignment="Stretch" 
+             VerticalAlignment="Stretch">
+    <Grid>
+        <helix:HelixViewport3D Name="viewport" 
+                               ShowCoordinateSystem="True" 
+                               ShowViewCube="True" 
+                               Background="LightGray"
+                               HorizontalAlignment="Stretch" 
+                               VerticalAlignment="Stretch"/>
+    </Grid>
+</UserControl>
