@@ -7,8 +7,8 @@ set "DST=%~dp0Locale"
 
 echo ======================================
 echo   TERMODEL - COPIA DA GIT
- eecho   Work  ^>  Locale
- echo ======================================
+echo   Work  ^>  Locale
+echo ======================================
 echo.
 
 if not exist "%SRC%" (
