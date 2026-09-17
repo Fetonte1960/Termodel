@@ -1,0 +1,19 @@
+{
+  "projectRoot": "..",
+  "workspaceRoot": "workspace",
+  "excludeDirectories": [
+    "bin",
+    "obj",
+    ".vs",
+    ".git",
+    "packages"
+  ],
+  "mappings": [
+    {
+      "name": "SpiraliGPT",
+      "source": "Impianti\\Pannelli\\SpiraliGPT",
+      "target": "Impianti\\Pannelli\\SpiraliGPT",
+      "enabled": true
+    }
+  ]
+}
