@@ -11,43 +11,48 @@ namespace Termodel.utilities
 {
     /// <summary>
     /// Renderer JSON parallelo alle primitive finali usate da DrawBim/Helix.
-    ///
-    /// Non ricostruisce la logica geometrica di Termodel: riceve profili,
-    /// mesh e trasformazioni gia' calcolati da DrawBim e li converte in
-    /// coordinate 3D finali consumabili da Three.js.
-    ///
-    /// IMPORTANTE:
-    /// - Enabled e' false per default: Termodel normale non paga il costo
-    ///   della generazione JSON.
-    /// - SalvataggioAutomatico e' false per default: quando attivo si
-    ///   accumula il modello in memoria e si salva esplicitamente a fine redraw.
-    /// - Questa classe non tocca archivi Termodel e non dipende dal viewport.
+    /// Riceve geometria gia' elaborata da DrawBim e la salva in coordinate finali
+    /// per Three.js. Quando Enabled=false ogni ingresso termina immediatamente.
     /// </summary>
     public static class DrawBimJson
     {
         private static readonly object SyncRoot = new object();
         private static readonly List<PrimitiveWeb3D> Primitive = new List<PrimitiveWeb3D>();
         private static bool Dirty;
+        private static string PercorsoOutputPersonalizzato;
 
         /// <summary>
-        /// Switch generale. False = costo praticamente nullo: ogni metodo esce subito.
+        /// Switch generale. False = nessuna costruzione JSON e nessun I/O.
         /// </summary>
         public static bool Enabled { get; set; } = false;
 
         /// <summary>
-        /// Se true riscrive il file dopo ogni aggiunta. Utile solo per debug.
-        /// Per uso normale lasciare false e chiamare SalvaJson() a fine generazione.
+        /// Normalmente false: il file viene scritto una volta a fine Redraw().
         /// </summary>
         public static bool SalvataggioAutomatico { get; set; } = false;
 
         /// <summary>
-        /// File di comunicazione locale fra Termodel e il viewer Web.
+        /// Per default il JSON appartiene al progetto Termodel corrente.
+        /// Se GestProg.PathProg cambia, cambia automaticamente anche la destinazione.
         /// </summary>
-        public static string PercorsoOutput { get; set; } = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            "Termodel",
-            "WebBridge",
-            "TermodelWebModel.json");
+        public static string PercorsoOutput
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(PercorsoOutputPersonalizzato))
+                    return PercorsoOutputPersonalizzato;
+
+                string basePath = GestProg.PathProg;
+                if (string.IsNullOrWhiteSpace(basePath))
+                {
+                    basePath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                        "Termodel");
+                }
+
+                return Path.Combine(basePath, "WebBridge", "TermodelWebModel.json");
+            }
+        }
 
         public static void ImpostaPercorsoOutput(string percorso)
         {
@@ -56,14 +61,18 @@ namespace Termodel.utilities
 
             lock (SyncRoot)
             {
-                PercorsoOutput = percorso;
+                PercorsoOutputPersonalizzato = percorso;
             }
         }
 
-        /// <summary>
-        /// Attiva/disattiva esplicitamente il bridge. Se clearOnEnable e' true
-        /// l'attivazione parte con un modello vuoto.
-        /// </summary>
+        public static void UsaPercorsoProgetto()
+        {
+            lock (SyncRoot)
+            {
+                PercorsoOutputPersonalizzato = null;
+            }
+        }
+
         public static void SetEnabled(bool enabled, bool clearOnEnable = true)
         {
             if (enabled && !Enabled && clearOnEnable)
@@ -92,12 +101,8 @@ namespace Termodel.utilities
         }
 
         /// <summary>
-        /// Parallelo di ExtrudedVisual3D.
-        /// Crea SOLO le superfici laterali dell'estrusione: i tappi vengono
-        /// registrati separatamente tramite AddMesh(), come gia' avviene in DrawBim.
-        ///
-        /// section e path sono quelli gia' calcolati per Helix.
-        /// transform e' lo stesso Transform3D/Transform3DGroup assegnato all'oggetto Helix.
+        /// Parallelo di ExtrudedVisual3D. Registra solo le superfici laterali;
+        /// i tappi vengono registrati separatamente con AddMesh().
         /// </summary>
         public static void AddExtruded(
             PointCollection section,
@@ -114,14 +119,8 @@ namespace Termodel.utilities
             if (section == null || path == null || section.Count < 2 || path.Count < 2) return;
 
             var primitive = CreaBase(
-                kind: "mesh",
-                source: "ExtrudedVisual3D",
-                parte: parte,
-                color: color,
-                tipo: tipo,
-                id: id,
-                descrizione: descrizione,
-                numeroElemento: numeroElemento);
+                "mesh", "ExtrudedVisual3D", parte, color,
+                tipo, id, descrizione, numeroElemento);
 
             int n = section.Count;
             if (n > 1 && StessoPunto2D(section[0], section[n - 1]))
@@ -132,8 +131,6 @@ namespace Termodel.utilities
             Point3D p0 = path[0];
             Point3D p1 = path[path.Count - 1];
 
-            // Un quad per ciascun lato del profilo. Duplichiamo volutamente i
-            // vertici per mantenere il formato semplice e indipendente da Helix.
             for (int i = 0; i < n; i++)
             {
                 int j = (i + 1) % n;
@@ -154,7 +151,6 @@ namespace Termodel.utilities
                 primitive.Vertices.Add(Punto(b1));
                 primitive.Vertices.Add(Punto(a1));
 
-                // Due triangoli per il quad.
                 primitive.Indices.Add(k + 0);
                 primitive.Indices.Add(k + 1);
                 primitive.Indices.Add(k + 2);
@@ -168,8 +164,6 @@ namespace Termodel.utilities
 
         /// <summary>
         /// Parallelo di GeometryModel3D/MeshGeometry3D.
-        /// Salva la mesh gia' triangolata da DrawBim applicando la stessa trasformazione
-        /// prima di scrivere le coordinate finali nel JSON.
         /// </summary>
         public static void AddMesh(
             MeshGeometry3D mesh,
@@ -185,14 +179,8 @@ namespace Termodel.utilities
             if (mesh == null || mesh.Positions == null || mesh.Positions.Count == 0) return;
 
             var primitive = CreaBase(
-                kind: "mesh",
-                source: "MeshGeometry3D",
-                parte: parte,
-                color: color,
-                tipo: tipo,
-                id: id,
-                descrizione: descrizione,
-                numeroElemento: numeroElemento);
+                "mesh", "MeshGeometry3D", parte, color,
+                tipo, id, descrizione, numeroElemento);
 
             foreach (Point3D p in mesh.Positions)
                 primitive.Vertices.Add(Punto(ApplicaTrasformazione(p, transform)));
@@ -204,7 +192,6 @@ namespace Termodel.utilities
             }
             else
             {
-                // Fallback: alcune mesh possono non avere indici espliciti.
                 for (int i = 0; i + 2 < mesh.Positions.Count; i += 3)
                 {
                     primitive.Indices.Add(i);
@@ -216,10 +203,6 @@ namespace Termodel.utilities
             AggiungiPrimitive(primitive);
         }
 
-        /// <summary>
-        /// Parallelo di LinesVisual3D. I punti sono interpretati a coppie
-        /// (0-1, 2-3, ...), come in Helix.
-        /// </summary>
         public static void AddLine(
             Point3DCollection points,
             Transform3D transform,
@@ -235,14 +218,8 @@ namespace Termodel.utilities
             if (points == null || points.Count < 2) return;
 
             var primitive = CreaBase(
-                kind: "lineSegments",
-                source: "LinesVisual3D",
-                parte: parte,
-                color: color,
-                tipo: tipo,
-                id: id,
-                descrizione: descrizione,
-                numeroElemento: numeroElemento);
+                "lineSegments", "LinesVisual3D", parte, color,
+                tipo, id, descrizione, numeroElemento);
 
             primitive.LineWidth = SafeNumber(spessore);
 
@@ -258,10 +235,6 @@ namespace Termodel.utilities
             AggiungiPrimitive(primitive);
         }
 
-        /// <summary>
-        /// Parallelo opzionale di BillboardTextVisual3D.
-        /// Non serve per il primo viewer del fabbricato, ma il formato e' pronto.
-        /// </summary>
         public static void AddLabel(
             string testo,
             Point3D posizione,
@@ -275,24 +248,14 @@ namespace Termodel.utilities
             if (!Enabled) return;
 
             var primitive = CreaBase(
-                kind: "label",
-                source: "BillboardTextVisual3D",
-                parte: "etichetta",
-                color: color,
-                tipo: tipo,
-                id: id,
-                descrizione: descrizione,
-                numeroElemento: numeroElemento);
+                "label", "BillboardTextVisual3D", "etichetta", color,
+                tipo, id, descrizione, numeroElemento);
 
             primitive.Text = testo ?? string.Empty;
             primitive.Vertices.Add(Punto(ApplicaTrasformazione(posizione, transform)));
             AggiungiPrimitive(primitive);
         }
 
-        /// <summary>
-        /// Scrive il JSON solo se il bridge e' attivo. Se non ci sono modifiche
-        /// evita anche l'I/O su disco.
-        /// </summary>
         public static void SalvaJson()
         {
             if (!Enabled) return;
@@ -343,7 +306,7 @@ namespace Termodel.utilities
             string descrizione,
             int numeroElemento)
         {
-            return new PrimitiveWeb3D
+            var primitive = new PrimitiveWeb3D
             {
                 Kind = kind ?? string.Empty,
                 Source = source ?? string.Empty,
@@ -355,6 +318,75 @@ namespace Termodel.utilities
                 Color = ColorHex(color),
                 Opacity = SafeNumber(color.A / 255.0)
             };
+
+            ArricchisciFiltriDaElemento(primitive, numeroElemento);
+            return primitive;
+        }
+
+        /// <summary>
+        /// NumeroElemento e' l'indice 1-based usato da Polig3D nel foreach di
+        /// ElementiAssociati. In questo modo non dobbiamo cambiare la firma di
+        /// DrawBim.DrawPolyEstruso e non duplichiamo logica geometrica.
+        /// </summary>
+        private static void ArricchisciFiltriDaElemento(PrimitiveWeb3D primitive, int numeroElemento)
+        {
+            if (!Enabled || primitive == null || numeroElemento <= 0)
+                return;
+
+            try
+            {
+                var elementi = global::Polig3D.ElementiAssociati;
+                int indice = numeroElemento - 1;
+
+                if (elementi == null || indice < 0 || indice >= elementi.Count)
+                    return;
+
+                var elemento = elementi[indice];
+                if (elemento == null)
+                    return;
+
+                primitive.Piano = elemento.NomePiano ?? string.Empty;
+                primitive.Separatore = elemento.Separatore;
+                primitive.StessaZona = elemento.StessaZona;
+                primitive.Falda = elemento.Poligono != null && elemento.Poligono.Falda;
+
+                // Il desktop tratta il Mansardato come Esterno indipendentemente
+                // dalla determinazione generica del confine.
+                if (elemento.Tipo == global::Polig3D.TipoElemento.Mansardato)
+                {
+                    primitive.Confine = "Esterno";
+                }
+                else if (!primitive.Falda)
+                {
+                    try
+                    {
+                        primitive.Confine = global::GestXml.DeterminaTipoConfine(elemento).ToString();
+                    }
+                    catch
+                    {
+                        primitive.Confine = string.Empty;
+                    }
+                }
+
+                if (elemento.Separatore)
+                {
+                    try
+                    {
+                        primitive.Fittizia = global::Polig3D.IsFittizia(elemento);
+                    }
+                    catch
+                    {
+                        primitive.Fittizia = false;
+                    }
+                }
+
+                primitive.FilterMetadata = true;
+            }
+            catch
+            {
+                // Il bridge Web non deve mai interrompere il rendering desktop.
+                primitive.FilterMetadata = false;
+            }
         }
 
         private static Point3D ApplicaTrasformazione(Point3D p, Transform3D transform)
@@ -368,7 +400,6 @@ namespace Termodel.utilities
             }
             catch
             {
-                // Il bridge Web non deve mai interrompere il rendering desktop.
                 return p;
             }
         }
@@ -393,34 +424,33 @@ namespace Termodel.utilities
             return string.Format(
                 CultureInfo.InvariantCulture,
                 "#{0:X2}{1:X2}{2:X2}",
-                color.R,
-                color.G,
-                color.B);
+                color.R, color.G, color.B);
         }
 
         private static void SalvaJsonInternal()
         {
-            string directory = Path.GetDirectoryName(PercorsoOutput);
+            string percorso = PercorsoOutput;
+            string directory = Path.GetDirectoryName(percorso);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            string temp = PercorsoOutput + ".tmp";
+            string temp = percorso + ".tmp";
             File.WriteAllText(temp, CreaJson(), new UTF8Encoding(false));
 
-            if (File.Exists(PercorsoOutput))
-                File.Delete(PercorsoOutput);
+            if (File.Exists(percorso))
+                File.Delete(percorso);
 
-            File.Move(temp, PercorsoOutput);
+            File.Move(temp, percorso);
             Dirty = false;
         }
 
         private static string CreaJson()
         {
-            var sb = new StringBuilder(Math.Max(32 * 1024, Primitive.Count * 512));
+            var sb = new StringBuilder(Math.Max(32 * 1024, Primitive.Count * 640));
 
             sb.Append("{\n");
             Riga(sb, 1, "format", JsonString("TermodelWebModel"), true);
-            Riga(sb, 1, "version", "2", true);
+            Riga(sb, 1, "version", "3", true);
             Riga(sb, 1, "coordinateSystem", JsonString("Z-up"), true);
             Riga(sb, 1, "generatedAtUtc", JsonString(DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)), true);
             Riga(sb, 1, "primitiveCount", Primitive.Count.ToString(CultureInfo.InvariantCulture), true);
@@ -441,18 +471,30 @@ namespace Termodel.utilities
 
         private static void ScriviPrimitive(StringBuilder sb, PrimitiveWeb3D p, string ind)
         {
+            int livello = ind.Length / 2 + 1;
+
             sb.Append(ind).Append("{\n");
-            Riga(sb, ind.Length / 2 + 1, "kind", JsonString(p.Kind), true);
-            Riga(sb, ind.Length / 2 + 1, "source", JsonString(p.Source), true);
-            Riga(sb, ind.Length / 2 + 1, "parte", JsonString(p.Parte), true);
-            Riga(sb, ind.Length / 2 + 1, "numero", p.NumeroElemento.ToString(CultureInfo.InvariantCulture), true);
-            Riga(sb, ind.Length / 2 + 1, "id", JsonString(p.Id), true);
-            Riga(sb, ind.Length / 2 + 1, "tipo", JsonString(p.Tipo), true);
-            Riga(sb, ind.Length / 2 + 1, "descrizione", JsonString(p.Descrizione), true);
-            Riga(sb, ind.Length / 2 + 1, "color", JsonString(p.Color), true);
-            Riga(sb, ind.Length / 2 + 1, "opacity", Num(p.Opacity), true);
-            Riga(sb, ind.Length / 2 + 1, "lineWidth", Num(p.LineWidth), true);
-            Riga(sb, ind.Length / 2 + 1, "text", JsonString(p.Text), true);
+            Riga(sb, livello, "kind", JsonString(p.Kind), true);
+            Riga(sb, livello, "source", JsonString(p.Source), true);
+            Riga(sb, livello, "parte", JsonString(p.Parte), true);
+            Riga(sb, livello, "numero", p.NumeroElemento.ToString(CultureInfo.InvariantCulture), true);
+            Riga(sb, livello, "id", JsonString(p.Id), true);
+            Riga(sb, livello, "tipo", JsonString(p.Tipo), true);
+            Riga(sb, livello, "descrizione", JsonString(p.Descrizione), true);
+
+            // Metadati usati dal pannello Filtri Grafici Web.
+            Riga(sb, livello, "filterMetadata", Bool(p.FilterMetadata), true);
+            Riga(sb, livello, "piano", JsonString(p.Piano), true);
+            Riga(sb, livello, "confine", JsonString(p.Confine), true);
+            Riga(sb, livello, "separatore", Bool(p.Separatore), true);
+            Riga(sb, livello, "stessaZona", Bool(p.StessaZona), true);
+            Riga(sb, livello, "fittizia", Bool(p.Fittizia), true);
+            Riga(sb, livello, "falda", Bool(p.Falda), true);
+
+            Riga(sb, livello, "color", JsonString(p.Color), true);
+            Riga(sb, livello, "opacity", Num(p.Opacity), true);
+            Riga(sb, livello, "lineWidth", Num(p.LineWidth), true);
+            Riga(sb, livello, "text", JsonString(p.Text), true);
 
             sb.Append(ind).Append("  \"vertices\": [");
             for (int i = 0; i < p.Vertices.Count; i++)
@@ -469,7 +511,6 @@ namespace Termodel.utilities
                 sb.Append(p.Indices[i].ToString(CultureInfo.InvariantCulture));
             }
             sb.Append("]\n");
-
             sb.Append(ind).Append('}');
         }
 
@@ -492,6 +533,11 @@ namespace Termodel.utilities
         private static string Num(double value)
         {
             return SafeNumber(value).ToString("0.##########", CultureInfo.InvariantCulture);
+        }
+
+        private static string Bool(bool value)
+        {
+            return value ? "true" : "false";
         }
 
         private static double SafeNumber(double value)
@@ -520,6 +566,15 @@ namespace Termodel.utilities
             public string Id = string.Empty;
             public string Tipo = string.Empty;
             public string Descrizione = string.Empty;
+
+            public bool FilterMetadata;
+            public string Piano = string.Empty;
+            public string Confine = string.Empty;
+            public bool Separatore;
+            public bool StessaZona;
+            public bool Fittizia;
+            public bool Falda;
+
             public string Color = "#FFFFFF";
             public double Opacity = 1.0;
             public double LineWidth = 1.0;
