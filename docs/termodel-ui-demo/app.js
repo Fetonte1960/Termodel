@@ -1126,36 +1126,24 @@ function createPrismMeshPrimitive({
   };
 }
 
-function createExternalWallPrimitive(plan) {
-  if (!plan.edificio?.outerShell?.length || !plan.edificio?.innerShell?.length)
+function createWallMassPrimitive(plan) {
+  if (!plan.edificio?.outerShell?.length)
     return null;
+
+  const holes = (plan.locali || [])
+    .map(locale => locale.architecturalShell)
+    .filter(ring => Array.isArray(ring) && ring.length >= 3);
 
   return createPrismMeshPrimitive({
     shell: plan.edificio.outerShell,
-    holes: [plan.edificio.innerShell],
+    holes,
     zBottom: 0,
     zTop: AI_PREVIEW_WALL_HEIGHT_M,
-    id: 'PARETI-ESTERNE',
+    id: 'MASSA-MURARIA',
     numero: 1,
     tipo: 'Parete',
-    descrizione: 'Pareti esterne — spessore default 40 cm',
-    parte: 'parete-esterna-generapianta',
-    color: '#A86F43',
-    opacity: 0.92
-  });
-}
-
-function createInternalWallPrimitive(wall, index) {
-  return createPrismMeshPrimitive({
-    shell: wall.shell,
-    holes: [],
-    zBottom: 0,
-    zTop: AI_PREVIEW_WALL_HEIGHT_M,
-    id: wall.id || `W-AI-${String(index + 1).padStart(3, '0')}`,
-    numero: index + 2,
-    tipo: 'Parete',
-    descrizione: `Divisorio interno — spessore default ${AI_PREVIEW_INTERNAL_WALL_THICKNESS_M.toFixed(2)} m`,
-    parte: 'parete-interna-generapianta',
+    descrizione: 'Massa muraria GeneraPianta — E 40 cm, W 15 cm',
+    parte: 'massa-muraria-generapianta',
     color: '#A86F43',
     opacity: 0.92
   });
@@ -1167,8 +1155,8 @@ function createSlabMeshPrimitive(locale, index, tipo) {
   const zTop = isFloor ? 0 : AI_PREVIEW_WALL_HEIGHT_M + AI_PREVIEW_CEILING_THICKNESS_M;
 
   return createPrismMeshPrimitive({
-    shell: locale.shell,
-    holes: locale.holes || [],
+    shell: locale.architecturalShell || locale.shell,
+    holes: [],
     zBottom,
     zTop,
     id: `${locale.id}-${isFloor ? 'PAV' : 'SOF'}`,
@@ -1183,11 +1171,8 @@ function createSlabMeshPrimitive(locale, index, tipo) {
 
 function createAiPreviewModelFromPlan(plan) {
   const walls = [];
-  const externalWall = createExternalWallPrimitive(plan);
-  if (externalWall) walls.push(externalWall);
-  (plan.paretiInterne || []).forEach((wall, index) => {
-    walls.push(createInternalWallPrimitive(wall, index));
-  });
+  const wallMass = createWallMassPrimitive(plan);
+  if (wallMass) walls.push(wallMass);
 
   const floors = plan.locali.map((locale, index) =>
     createSlabMeshPrimitive(locale, index, 'Pavimento'));
@@ -1211,12 +1196,11 @@ function createAiPreviewModelFromPlan(plan) {
       internalWallThicknessMeters: AI_PREVIEW_INTERNAL_WALL_THICKNESS_M,
       floorThicknessMeters: AI_PREVIEW_FLOOR_THICKNESS_M,
       ceilingThicknessMeters: AI_PREVIEW_CEILING_THICKNESS_M,
-      note: 'Anteprima estrusa: pareti esterne 40 cm, divisori 15 cm, pavimenti e soffitti con valori geometrici convenzionali. Nessun confine termico viene dedotto nel Web.'
+      note: 'GeneraPianta v0.5: i lati esterni dei locali restano sul filo E; i lati interni sono spostati di 7.5 cm verso il locale; il perimetro edificio è spostato di 40 cm verso l’esterno.'
     },
     previewCounts: {
       walls: walls.length,
-      externalWallBodies: externalWall ? 1 : 0,
-      internalWalls: plan.paretiInterne?.length || 0,
+      wallMassBodies: wallMass ? 1 : 0,
       floors: floors.length,
       ceilings: ceilings.length,
       rooms: plan.locali.length
@@ -1482,8 +1466,9 @@ function processSvgText(text) {
     rasterValidation.textContent =
       `${extracted.transported ? '✓ Payload TERMODEL-SVG-TEXT-V1 decodificato\n' : ''}` +
       `✓ GeneraPianta.js: ${plan.stats.linee} linee lette · ${plan.stats.locali} locali\n` +
-      `✓ Pareti esterne: 40 cm · divisori interni: 15 cm\n` +
-      `✓ Raccordi architettonici costruiti con offset + intersezione delle rette\n` +
+      `✓ Classificazione JSTS: ${plan.stats.geometricExternalEdges} lati esterni · ${plan.stats.geometricInternalEdges} lati interni\n` +
+      `✓ Regola netta: E ferme · W spostate 7.5 cm verso il locale · esterno edificio +40 cm\n` +
+      `✓ Incongruenze E/W GPT vs geometria: ${plan.stats.classificationMismatches}\n` +
       `✓ ${counts.floors} pavimenti · spessore default ${AI_PREVIEW_FLOOR_THICKNESS_M.toFixed(2)} m\n` +
       `✓ ${counts.ceilings} soffitti · spessore default ${AI_PREVIEW_CEILING_THICKNESS_M.toFixed(2)} m\n` +
       `✓ Pianta SVG pulita generata\n` +
@@ -1604,7 +1589,7 @@ if (cadShowInput)
   cadShowInput.addEventListener('change', applyCadLayerVisibility);
 if (cadReturnModel)
   cadReturnModel.addEventListener('click', activateModelPage);
-// v0.4: pulsante volutamente predisposto e disabilitato; nessuna esportazione ancora.
+// v0.5: pulsante volutamente predisposto e disabilitato; nessuna esportazione ancora.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
