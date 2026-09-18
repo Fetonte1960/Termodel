@@ -226,6 +226,96 @@
       cursor: pointer;
     }
 
+    .svg-export-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0,0,0,.50);
+    }
+    .svg-export-modal.visible { display: flex; }
+    .svg-export-window {
+      width: min(920px, 94vw);
+      height: min(650px, 88vh);
+      min-height: 420px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background: #f4f5f7;
+      border: 1px solid #555;
+      box-shadow: 0 16px 46px rgba(0,0,0,.38);
+    }
+    .svg-export-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 14px;
+      background: #26384a;
+      color: #fff;
+    }
+    .svg-export-head h2 { margin: 0; font-size: 17px; }
+    .svg-export-head p { margin: 3px 0 0; color: #dce6ef; }
+    .svg-export-close {
+      width: 30px;
+      height: 28px;
+      border: 1px solid #8d9aa5;
+      background: #f5f5f5;
+      color: #111;
+      font-size: 20px;
+      line-height: 20px;
+      cursor: pointer;
+    }
+    .svg-export-body {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 7px;
+      padding: 12px;
+    }
+    .svg-export-label {
+      font-weight: 600;
+      color: #33404c;
+    }
+    .svg-export-text {
+      width: 100%;
+      height: 100%;
+      min-height: 280px;
+      resize: none;
+      border: 1px solid #8f969d;
+      background: #fff;
+      padding: 10px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.35;
+      white-space: pre;
+      overflow: auto;
+    }
+    .svg-export-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 12px;
+      border-top: 1px solid #aaa;
+      background: #e8e8e8;
+    }
+    .svg-export-status { color: #47515a; }
+    .svg-export-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .svg-export-actions button {
+      border: 1px solid #888;
+      background: linear-gradient(#fff,#e5e5e5);
+      padding: 7px 14px;
+      cursor: pointer;
+    }
+    .svg-export-actions button.primary {
+      background: #dff1ff;
+      border-color: #5c8db2;
+      font-weight: 700;
+    }
+
     @media (max-width: 900px) {
       .raster-ai-body {
         grid-template-columns: 1fr;
@@ -357,7 +447,7 @@
           </div>
 
           <div class="raster-ai-actions">
-            <button id="rasterDownloadSvg" type="button" disabled>Scarica SVG validato</button>
+            <button id="rasterExportSvg" type="button" class="primary" disabled>Esporta / Copia SVG</button>
           </div>
         </aside>
 
@@ -383,6 +473,33 @@
       <footer class="raster-ai-foot">
         <div class="raster-ai-foot-note">Questa demo valida lo SVG come Termodel desktop; la generazione 3D automatica arriverà con Termodel Core.</div>
         <button id="rasterAiCloseBottom" type="button">Chiudi</button>
+      </footer>
+    </section>
+  </div>
+
+
+  <div id="svgExportModal" class="svg-export-modal" aria-hidden="true">
+    <section class="svg-export-window" role="dialog" aria-modal="true" aria-labelledby="svgExportTitle">
+      <header class="svg-export-head">
+        <div>
+          <h2 id="svgExportTitle">Esporta SVG Termodel</h2>
+          <p>Testo SVG validato pronto per la clipboard o per il download.</p>
+        </div>
+        <button id="svgExportClose" class="svg-export-close" type="button" aria-label="Chiudi">×</button>
+      </header>
+
+      <div class="svg-export-body">
+        <label class="svg-export-label" for="svgExportText">DisegnoInput.svg validato</label>
+        <textarea id="svgExportText" class="svg-export-text" readonly spellcheck="false"></textarea>
+      </div>
+
+      <footer class="svg-export-foot">
+        <div id="svgExportStatus" class="svg-export-status" aria-live="polite">Pronto per la copia.</div>
+        <div class="svg-export-actions">
+          <button id="svgExportCopy" type="button" class="primary">Copia SVG</button>
+          <button id="svgExportDownload" type="button">Scarica SVG</button>
+          <button id="svgExportCloseBottom" type="button">Chiudi</button>
+        </div>
       </footer>
     </section>
   </div>
