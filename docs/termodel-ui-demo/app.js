@@ -919,13 +919,50 @@ async function copyValidatedSvg() {
   }
 }
 
+const TERMODEL_SVG_TEXT_START = '[TERMODEL-SVG-TEXT-V1]';
+const TERMODEL_SVG_TEXT_END = '[/TERMODEL-SVG-TEXT-V1]';
+
+function decodeHtmlEntitiesOnce(text) {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
+function decodeTermodelSvgTransport(text) {
+  const source = text ?? '';
+  const upper = source.toUpperCase();
+  const start = upper.indexOf(TERMODEL_SVG_TEXT_START);
+  if (start < 0) return { text: source, transported: false };
+
+  const payloadStart = start + TERMODEL_SVG_TEXT_START.length;
+  const end = upper.indexOf(TERMODEL_SVG_TEXT_END, payloadStart);
+  if (end < 0)
+    throw new Error('Payload TERMODEL-SVG-TEXT-V1 incompleto: manca il marcatore finale.');
+
+  const encoded = source.slice(payloadStart, end).trim();
+  if (!encoded)
+    throw new Error('Payload TERMODEL-SVG-TEXT-V1 vuoto.');
+
+  return {
+    text: decodeHtmlEntitiesOnce(encoded),
+    transported: true
+  };
+}
+
 function extractSvg(text) {
   if (!text || !text.trim()) throw new Error('Non è presente alcun testo SVG.');
-  const start = text.toLowerCase().indexOf('<svg');
-  const end = text.toLowerCase().lastIndexOf('</svg>');
+
+  const decoded = decodeTermodelSvgTransport(text);
+  const source = decoded.text;
+  const start = source.toLowerCase().indexOf('<svg');
+  const end = source.toLowerCase().lastIndexOf('</svg>');
   if (start < 0 || end < start)
-    throw new Error('Blocco <svg>...</svg> non trovato.');
-  return text.slice(start, end + '</svg>'.length).trim();
+    throw new Error('Blocco <svg>...</svg> non trovato, neppure dopo la decodifica TERMODEL-SVG-TEXT-V1.');
+
+  return {
+    svg: source.slice(start, end + '</svg>'.length).trim(),
+    transported: decoded.transported
+  };
 }
 
 function readNumberAttribute(line, name) {
@@ -1036,13 +1073,14 @@ function processSvgText(text) {
   rasterValidation.className = 'raster-ai-validation';
 
   try {
-    const svg = extractSvg(text);
+    const extracted = extractSvg(text);
+    const svg = extracted.svg;
     const result = validateTermodelSvg(svg);
     validatedSvg = svg;
     rasterSvgText.value = svg;
     showSvgPreview(svg);
     rasterValidation.textContent =
-      `✓ XML/SVG valido\n✓ gruppi calpestabile e copertura presenti\n✓ ${result.lineCount} linee\n✓ ${result.locCount} blocchi LOC\n✓ ${result.finCount} blocchi FIN\n✓ 0 estremità non collegate`;
+      `${extracted.transported ? '✓ Payload TERMODEL-SVG-TEXT-V1 decodificato\\n' : ''}✓ XML/SVG valido\n✓ gruppi calpestabile e copertura presenti\n✓ ${result.lineCount} linee\n✓ ${result.locCount} blocchi LOC\n✓ ${result.finCount} blocchi FIN\n✓ 0 estremità non collegate`;
     rasterValidation.classList.add('ok');
     rasterExportSvg.disabled = false;
     return true;
