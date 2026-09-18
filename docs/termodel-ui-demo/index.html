@@ -55,6 +55,12 @@
       height: 26px; border: 1px solid #999; border-radius: 0; background: linear-gradient(#fff,#dedede); padding: 2px 7px; color: #111;
     }
     .bottom-bar button:active { background: #d3d3d3; }
+    .bottom-bar button:disabled { opacity: .45; cursor: default; }
+    .bottom-bar #returnProject:not(:disabled) {
+      font-weight: 700;
+      background: linear-gradient(#eef9ff,#cfe8f6);
+      border-color: #5c8db2;
+    }
     .bottom-bar select { min-width: 100px; }
     .check-wrap { display: inline-flex; align-items: center; gap: 5px; padding-left: 2px; }
 
@@ -391,6 +397,7 @@
     <div class="bottom-bar">
       <button type="button" data-action="Gestione Piani">Gestione Piani</button>
       <button type="button" data-action="Crea piano da raster con AI">Crea piano da raster con AI</button>
+      <button type="button" id="returnProject" disabled>Ritorna al progetto</button>
       <select aria-label="Disegno input"><option>DisegnoInput</option></select>
       <button type="button" data-action="Edita nel Cad">Edita nel Cad</button>
       <button type="button" data-action="Visualizza Plugin Cad">Visualizza Plugin Cad</button>
@@ -435,7 +442,7 @@
 
           <div class="raster-ai-step">
             <h3>3. Riporta lo SVG creato</h3>
-            <p>Incolla direttamente il blocco <code>TERMODEL-SVG-TEXT-V1</code> copiato da ChatGPT. Restano compatibili anche un normale <code>&lt;svg&gt;...&lt;/svg&gt;</code> o il file <code>DisegnoInput.svg</code>.</p>
+            <p>Incolla direttamente il blocco <code>TERMODEL-SVG-TEXT-V1</code> copiato da ChatGPT. Restano compatibili anche un normale <code>&lt;svg&gt;...&lt;/svg&gt;</code> o il file <code>DisegnoInput.svg</code>. Dopo la validazione la demo genera automaticamente un JSON 3D provvisorio e lo mostra nel viewer principale.</p>
             <div class="raster-ai-actions">
               <button id="rasterLoadSvg" type="button">Apri SVG...</button>
               <input id="rasterSvgFileInput" type="file" accept=".svg,.txt,image/svg+xml,text/plain" hidden />
@@ -448,6 +455,7 @@
 
           <div class="raster-ai-actions">
             <button id="rasterExportSvg" type="button" class="primary" disabled>Esporta / Copia SVG</button>
+            <button id="rasterDownloadAiJson" type="button" disabled>Scarica JSON 3D AI</button>
           </div>
         </aside>
 
