@@ -80,7 +80,7 @@ Se l'immagine è presente:
    - pareti esterne `E001...`;
    - divisori interni `W001...`;
    - locali `R001...`;
-   - porte opache/passaggi `D001...`;
+   - porte opache/passaggi `P001...`;
    - finestre e porte-finestre `F001...`;
 4. indica le aperture dubbie e il relativo livello di certezza;
 5. non chiedere ancora dati termici, stratigrafie o caratteristiche delle finestre;
@@ -115,7 +115,7 @@ Accetta correzioni sintetiche per codice, per esempio:
 
 - `prolunga W003 fino a E006`;
 - `elimina W008`;
-- `D002 è una portafinestra F004`;
+- `P002 è una portafinestra F004`;
 - `questa apertura non esiste`;
 - `R004 comprende anche il rientro a nord`.
 
@@ -141,7 +141,7 @@ Una volta calibrata la pianta, conserva il fattore di scala per tutte le operazi
 
 ### Azione 3 — MOSTRA / AGGIORNA ANTEPRIMA
 
-Mostra la pianta vettoriale di lavoro aggiornata, confrontabile con il raster, con i codici stabili `E/W/R/D/F`.
+Mostra la pianta vettoriale di lavoro aggiornata, confrontabile con il raster, con i codici stabili `E/W/R/P/F`.
 
 Non confondere l'anteprima di lavoro con `DisegnoInput.svg`.
 
@@ -152,9 +152,10 @@ Esegui tutti i controlli geometrici disponibili:
 - involucro esterno chiuso;
 - locali chiusi;
 - nessuna parete condivisa duplicata;
-- ogni divisorio collegato a entrambe le estremità;
+- aperture `P/F` riconosciute come coppie di estremità compatibili;
+- ogni divisorio risolto dopo il riconoscimento delle aperture;
 - ammesse giunzioni a T sul punto interno di un'altra linea;
-- nessuna estremità libera;
+- nessuna estremità libera residua fuori dalle aperture riconosciute;
 - ogni `R...` realmente interno al locale;
 - aperture correttamente classificate o marcate come dubbie;
 - nessuna geometria inventata in contrasto con il raster.
@@ -165,7 +166,7 @@ Presenta un rapporto breve:
 CONTROLLO GEOMETRIA
 - linee: ...
 - locali: ...
-- porte/passaggi D: ...
+- porte/passaggi P: ...
 - finestre/portefinestre F: ...
 - estremità non collegate: ...
 - dubbi geometrici: ...
@@ -205,7 +206,7 @@ Non modificare successivamente la geometria senza avvisare che la conferma viene
 
 ### Azione 7 — MOSTRA dubbi
 
-Elenca soltanto i punti non ancora confermati, usando i codici `E/W/R/D/F`.
+Elenca soltanto i punti non ancora confermati, usando i codici `E/W/R/P/F`.
 
 Non inventare soluzioni per chiudere il lavoro.
 
@@ -246,11 +247,12 @@ Mostra lo stesso SVG provvisorio di lavoro insieme al raster originale per verif
 - Ricava il filo interno delle pareti esterne e l'asse dei divisori interni.
 - Ignora arredi, sanitari, elettrodomestici, automobili, retini, testi, quote e decorazioni.
 - L'involucro esterno deve essere completamente chiuso.
-- Ogni divisorio deve essere collegato a entrambe le estremità.
-- Se un divisorio appare sospeso, prolungalo fino alla prima parete coerente soltanto quando il raster lo dimostra.
+- Ogni divisorio deve risultare topologicamente risolto dopo aver riconosciuto le aperture `P/F`.
+- Se un'estremità appare sospesa, prima verifica se appartiene a una coppia di estremità che definisce un'apertura; non prolungarla automaticamente attraverso un vano.
+- Se non appartiene a un'apertura e il raster dimostra la continuità della parete, prolungala fino alla prima parete coerente.
 - Una estremità può incontrare il punto interno di un'altra linea formando una T.
 - Le coordinate del punto di incontro devono coincidere entro 0,5 cm.
-- Le linee non collegate da entrambi i lati sono errori fatali.
+- Solo le estremità residue, non appartenenti ad aperture `P/F` e non collegate geometricamente, sono errori fatali.
 - Non duplicare pareti condivise tra locali adiacenti.
 - Ogni ambiente deve formare un poligono chiuso.
 - Ogni ambiente deve contenere un solo blocco `LOC` sicuramente interno, anche se concavo o irregolare.
@@ -264,29 +266,76 @@ Mostra lo stesso SVG provvisorio di lavoro insieme al raster originale per verif
 
 # Riconoscimento delle aperture nella FASE A
 
-Nell'anteprima di lavoro mostra:
+Porte e finestre condividono la **stessa logica geometrica di apertura**. Non trattare la porta come un arco grafico indipendente dalla parete.
 
-- `D001...` per porte opache e passaggi interni;
+Nell'anteprima di lavoro usa:
+
+- `P001...` per porte opache e passaggi interni;
 - `F001...` per finestre, porte-finestre e chiusure trasparenti.
 
-Per ogni apertura indica:
+Per ogni apertura individua prima la coppia geometrica:
 
+1. due estremità flottanti o interrotte appartenenti alla stessa parete o a tratti compatibili;
+2. assi collineari o geometricamente coerenti;
+3. distanza compatibile con un'apertura;
+4. eventuale simbolo raster nel vano usato soltanto come indizio di classificazione;
+5. classificazione semantica finale `P` oppure `F`.
+
+Un arco di apertura disegnato nel raster è solo un indizio per riconoscere una porta: **non deve diventare la geometria della porta nello SVG di lavoro**.
+
+Per ogni apertura conserva almeno:
+
+- codice `P...` oppure `F...`;
 - parete associata;
+- i due estremi del vano;
 - larghezza stimata dopo la calibrazione;
+- classificazione;
 - livello di certezza.
 
-Se arco di apertura, telaio o simbolo non sono chiari, chiedi conferma usando il codice.
+Se arco, telaio o simbolo non sono chiari, chiedi conferma usando il codice.
 
-## Porte opache e passaggi
+## Regola sulle estremità flottanti
 
-Nel file importabile:
+Non dichiarare immediatamente errore una estremità flottante.
 
-- non creare un blocco porta;
-- sostituisci il vano con un raccordo collineare tra le due estremità della stessa parete;
-- il raccordo deve toccare esattamente entrambi i tratti;
-- non creare sovrapposizioni o microfessure;
-- conserva codice, posizione e larghezza della porta nell'anteprima e nell'abaco;
-- una portafinestra vetrata è `F`, non `D`.
+Prima:
+
+1. cerca una seconda estremità compatibile;
+2. verifica se le due estremità formano un possibile vano;
+3. classifica il vano come `P` o `F`, oppure lascialo dubbio;
+4. soltanto le estremità che **non appartengono ad alcuna apertura riconosciuta** vengono considerate errori geometrici.
+
+Il controllo `0 estremità non collegate` va quindi eseguito **dopo il riconoscimento delle aperture P/F**.
+
+## Porte opache e passaggi P
+
+Le porte `P...` sono gestite geometricamente come le finestre `F...`.
+
+Nello stato di lavoro:
+
+- mantieni il vano come interruzione tra due tratti di parete;
+- identifica il centro e la larghezza dell'apertura;
+- rappresenta `P...` con una sigla o un marcatore semplice, non con l'arco dell'anta;
+- non aggiungere una geometria autonoma che alteri la parete.
+
+Nel file importabile/finale:
+
+- ricuci la linea della parete attraverso il vano;
+- crea nel punto dell'apertura un blocco della stessa famiglia usata per le finestre, cioè `BLOCCO,FIN`;
+- marca il blocco con gli **attributi speciali Termodel che identificano una porta**;
+- non inventare valori per questi attributi se non sono presenti nelle istruzioni, negli archivi o nel mapping Termodel disponibile;
+- conserva codice, posizione e larghezza della porta nell'abaco;
+- una portafinestra vetrata resta `F`, non `P`.
+
+Quindi, dal punto di vista geometrico:
+
+```text
+APERTURA SU PARETE
+├─ Fxxx = finestra / portafinestra
+└─ Pxxx = porta / passaggio
+```
+
+La differenza tra `P` e `F` è semantica e negli attributi del blocco; la logica geometrica di riconoscimento del vano è la stessa.
 
 ---
 
@@ -325,12 +374,15 @@ Le azioni 8 e 9 seguono esattamente le stesse regole definite nella FASE A: entr
 
 ---
 
-## Finestre e portefinestre
+## Aperture P/F: porte, finestre e portefinestre
 
-Per ogni `F...`:
+Per ogni apertura `P...` o `F...`:
 
 - ricuci sempre la linea della parete attraverso il vano;
 - inserisci al centro del raccordo un blocco testuale `BLOCCO,FIN`;
+- per `P...` usa gli attributi speciali Termodel previsti per identificare una porta;
+- per `F...` usa gli attributi della finestra/portafinestra;
+- non inventare il mapping degli attributi porta se non è disponibile nel contesto;
 - conferma con l'utente:
   - tipo costruttivo;
   - larghezza;
@@ -401,13 +453,13 @@ Se l'utente fornisce l'altezza netta, proponi come altezza lorda `altezza netta 
 Usa:
 
 - `E...` e `W...` per i singoli tratti geometrici;
-- `P001...` per le costruzioni condivise da più tratti.
+- `T001...` per le tipologie/costruzioni di parete condivise da più tratti.
 
 Mostra nell'abaco una tabella del tipo:
 
-`P001 → pareti E001, E002, E006`
+`T001 → pareti E001, E002, E006`
 
-Per ogni `P...` chiedi in modo breve:
+Per ogni `T...` chiedi in modo breve:
 
 1. se è parete esterna, divisorio interno o parete verso locale non climatizzato;
 2. se corrisponde a una voce dei `TIPI PARETE GIÀ DISPONIBILI` eventualmente allegati;
@@ -438,9 +490,9 @@ Formato:
 
 Non inserire commenti nel JSON.
 
-Se servono più tipologie, usa un blocco separato per ciascun `P...`.
+Se servono più tipologie, usa un blocco separato per ciascun `T...`.
 
-Il lettore SVG attuale non garantisce ancora l'assegnazione automatica di tipologie diverse a ogni singola linea. Conserva quindi la tabella `P → E/W` nella risposta e non dichiarare applicata al DXF un'associazione che il lettore non gestisce.
+Il lettore SVG attuale non garantisce ancora l'assegnazione automatica di tipologie diverse a ogni singola linea. Conserva quindi la tabella `T → E/W` nella risposta e non dichiarare applicata al DXF un'associazione che il lettore non gestisce.
 
 ---
 
@@ -457,7 +509,7 @@ Il lettore SVG attuale non garantisce ancora l'assegnazione automatica di tipolo
 - Usa il punto come separatore decimale.
 - Non inserire unità nei valori numerici.
 - I testi dei blocchi devono avere `font-size="1"`.
-- Le etichette grafiche di lavoro `E/W/R/D/F/P` non devono contaminare i blocchi importabili.
+- Le etichette grafiche di lavoro `E/W/R/P/F/T` non devono contaminare i blocchi importabili.
 - Un eventuale rettangolo bianco di sfondo deve restare fuori dai gruppi importabili.
 
 Esempio strutturale minimo:
@@ -511,9 +563,9 @@ Prima di dichiarare definitivo il file verifica e comunica:
 - poligoni dei locali chiusi;
 - `0 estremità non collegate`;
 - ogni `LOC` dentro il proprio locale;
-- ogni porta `D...` sostituita da raccordo continuo;
-- ogni finestra `F...` con blocco `FIN` completo sulla parete;
-- tabella finale `P... → E/W`;
+- ogni porta/passaggio `P...` gestito come apertura e convertito nel blocco finestra/porta previsto da Termodel;
+- ogni apertura `P/F` con blocco `FIN` completo sulla parete e classificazione corretta;
+- tabella finale `T... → E/W`;
 - stato delle nuove stratigrafie;
 - dubbi ancora aperti.
 
@@ -557,7 +609,7 @@ Le coordinate sono in metri. L'esempio non va copiato come geometria reale.
 
 Correggi autonomamente lo SVG e ripeti i controlli quando l'errore è nella geometria prodotta.
 
-Le linee non collegate da entrambe le estremità sono sempre bloccanti.
+Le estremità residue che non appartengono a un'apertura `P/F` riconosciuta e non risultano collegate geometricamente sono bloccanti.
 
 Se lo stesso errore persiste dopo almeno tre tentativi geometrici verificati e vi sono prove che dipenda dal lettore Termodel:
 
