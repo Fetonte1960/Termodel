@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.2 — Demo interattiva</title>
+  <title>Termodel Web v0.3 — Demo interattiva</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -322,6 +322,43 @@
       font-weight: 700;
     }
 
+
+    .cad-page { background: #ececec; color: #222; }
+    .cad-toolbar {
+      position: absolute; left: 0; right: 0; top: 0; height: 42px; z-index: 6;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      padding: 6px 9px; background: #e5e5e5; border-bottom: 1px solid #aaa;
+    }
+    .cad-toolbar label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .cad-toolbar button {
+      height: 28px; border: 1px solid #888; border-radius: 0;
+      background: linear-gradient(#fff,#dedede); padding: 2px 9px; color: #111;
+    }
+    .cad-toolbar button:disabled { opacity: .5; cursor: default; }
+    .cad-toolbar .cad-spacer { flex: 1 1 auto; }
+    .cad-canvas {
+      position: absolute; left: 0; right: 0; top: 42px; bottom: 0;
+      overflow: hidden; background: #f6f6f6;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cad-canvas svg { width: 100%; height: 100%; display: block; }
+    .cad-empty {
+      max-width: 560px; padding: 22px; text-align: center; color: #666;
+      border: 1px solid #bbb; background: #fff;
+    }
+    .cad-legend {
+      position: absolute; left: 10px; bottom: 10px; z-index: 7;
+      display: flex; gap: 12px; flex-wrap: wrap;
+      padding: 5px 8px; background: rgba(245,245,245,.92); border: 1px solid #aaa;
+      font-size: 11px;
+    }
+    .cad-legend span { display: inline-flex; align-items: center; gap: 4px; }
+    .cad-swatch { width: 18px; height: 3px; display: inline-block; background: #888; }
+    .cad-swatch.external { background: #1565c0; }
+    .cad-swatch.internal { background: #d35400; }
+    .cad-swatch.opening { background: #7b1fa2; }
+    .cad-swatch.window { background: #00897b; }
+
     @media (max-width: 900px) {
       .raster-ai-body {
         grid-template-columns: 1fr;
@@ -348,7 +385,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.2</div>
+      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.3</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -378,6 +415,25 @@
         <div class="viewport-status">Three.js · prototipo Web della finestra grafica Termodel</div>
         <div class="axis"><div class="o"></div><div class="z"></div><div class="x"></div><div class="y"></div><span class="lz">Z</span><span class="lx">X</span><span class="ly">Y</span></div>
         <div class="view-cube"><div class="cube-face"></div><div class="ring"></div></div>
+      </section>
+      <section id="cadPage" class="page cad-page" aria-label="Viewer CAD Web">
+        <div class="cad-toolbar">
+          <label><input id="cadShowClean" type="checkbox" checked /> Pianta pulita</label>
+          <label><input id="cadShowInput" type="checkbox" checked /> Disegno input</label>
+          <span class="cad-spacer"></span>
+          <button id="cadExportArchitectural" type="button" disabled title="Funzione prevista per una versione successiva">Esporta pianta architettonica pulita</button>
+          <button id="cadReturnModel" type="button">Ritorna al modello</button>
+        </div>
+        <div id="cadCanvas" class="cad-canvas">
+          <div class="cad-empty">Genera prima una pianta da raster con AI. Qui verranno sovrapposti la pianta ripulita e il DisegnoInput.svg.</div>
+        </div>
+        <div class="cad-legend" aria-label="Legenda">
+          <span><i class="cad-swatch"></i> Pianta pulita</span>
+          <span><i class="cad-swatch external"></i> E esterne</span>
+          <span><i class="cad-swatch internal"></i> W interne</span>
+          <span><i class="cad-swatch opening"></i> P porte</span>
+          <span><i class="cad-swatch window"></i> F finestre</span>
+        </div>
       </section>
       <section id="infoPage" class="page info-page">
         <div class="classic-group"><h3>Informazioni sul modello</h3>
