@@ -442,7 +442,7 @@
 
           <div class="raster-ai-step">
             <h3>3. Riporta lo SVG creato e visualizza il 3D</h3>
-            <p>Incolla direttamente il blocco <code>TERMODEL-SVG-TEXT-V1</code> copiato da ChatGPT. Restano compatibili anche un normale <code>&lt;svg&gt;...&lt;/svg&gt;</code> o il file <code>DisegnoInput.svg</code>. Dopo la validazione la demo genera automaticamente un JSON 3D provvisorio e lo mostra nel viewer principale.</p>
+            <p>Incolla direttamente il blocco <code>TERMODEL-SVG-TEXT-V1</code> copiato da ChatGPT. Restano compatibili anche un normale <code>&lt;svg&gt;...&lt;/svg&gt;</code> o il file <code>DisegnoInput.svg</code>. Dopo il ritorno da GPT, GeneraPianta Web usa JSTS per costruire i locali e genera automaticamente pareti estruse, pavimenti e soffitti con spessore convenzionale, oltre alla pianta SVG pulita.</p>
             <div class="raster-ai-actions">
               <button id="rasterLoadSvg" type="button">Apri SVG...</button>
               <input id="rasterSvgFileInput" type="file" accept=".svg,.txt,image/svg+xml,text/plain" hidden />
