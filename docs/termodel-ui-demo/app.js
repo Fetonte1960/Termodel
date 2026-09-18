@@ -302,7 +302,7 @@ function createDemoHelpPanel() {
       <a href="https://www.youtube.com/@Termodel" target="_blank" rel="noopener">Video tutorial</a>
     </div>
   `;
-  modelPage.appendChild(panel);
+  document.querySelector('.workspace').appendChild(panel);
   panel.querySelector('#demoHelpClose').addEventListener('click', () => {
     panel.hidden = true;
   });
