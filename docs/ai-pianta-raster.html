@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Termodel AI — Crea un piano da una pianta raster</title>
+  <meta name="description" content="Istruzioni ufficiali Termodel per trasformare con l'AI una pianta raster in un piano vettoriale SVG-LFT importabile in Termodel.">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" type="image/png" href="images/favicon-32.png">
+  <style>
+    :root {
+      --blue: #2563eb;
+      --blue-soft: #eff6ff;
+      --border: #d7dee8;
+      --text: #243447;
+      --muted: #5f6f82;
+      --bg: #f5f7fa;
+      --card: #fff;
+      --ok: #0f766e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    header {
+      background: linear-gradient(135deg, #17365d, #2563eb);
+      color: #fff;
+      padding: 34px 20px;
+    }
+    header .wrap, main { max-width: 1050px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 4vw, 2.7rem); }
+    header p { margin: 0; max-width: 820px; color: #e9f1ff; }
+    main { padding: 24px 18px 48px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      margin: 0 0 20px;
+      box-shadow: 0 5px 18px rgba(31, 51, 73, .06);
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .btn {
+      display: inline-block;
+      border: 1px solid var(--blue);
+      border-radius: 9px;
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--blue);
+      text-decoration: none;
+      font-weight: 700;
+      cursor: pointer;
+      font: inherit;
+    }
+    .btn.secondary {
+      background: #fff;
+      color: var(--blue);
+    }
+    .workflow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .step {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      background: #fbfcfe;
+    }
+    .step strong { display: block; color: #17365d; margin-bottom: 5px; }
+    .rules {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px 18px;
+      padding-left: 0;
+      list-style: none;
+    }
+    .rules li {
+      border-left: 4px solid var(--blue);
+      padding: 7px 10px;
+      background: var(--blue-soft);
+    }
+    .source-note {
+      color: var(--muted);
+      font-size: .95rem;
+    }
+    .instruction-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #101826;
+      color: #e6edf6;
+      border-radius: 10px;
+      padding: 18px;
+      max-height: 70vh;
+      overflow: auto;
+      font: 13px/1.5 Consolas, "Courier New", monospace;
+    }
+    .status { color: var(--ok); font-weight: 700; }
+    footer {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 0 18px 32px;
+      color: var(--muted);
+      text-align: center;
+    }
+    @media (max-width: 600px) {
+      header { padding-top: 25px; }
+      main { padding-left: 12px; padding-right: 12px; }
+      .card { padding: 15px; }
+      .btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Termodel AI — Piano da pianta raster</h1>
+    <p>Pagina di riferimento per trasformare una pianta PNG/JPG/BMP/TIFF in geometria vettoriale Termodel tramite ChatGPT o un altro assistente AI compatibile.</p>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Come si usa</h2>
+    <p>Questa pagina espone la stessa istruzione usata dalla demo Termodel Web. Il testo completo è caricato direttamente dal file Markdown del progetto: esiste quindi una sola fonte da mantenere aggiornata.</p>
+    <div class="workflow">
+      <div class="step"><strong>1 — Allega la pianta</strong>La pianta raster resta la fonte geometrica primaria.</div>
+      <div class="step"><strong>2 — Interpreta</strong>L'AI identifica pareti, locali e aperture assegnando codici stabili.</div>
+      <div class="step"><strong>3 — Calibra</strong>Una misura reale porta la geometria nelle unità Termodel.</div>
+      <div class="step"><strong>4 — Correggi</strong>Le modifiche si impartiscono usando i codici E/W/R/P/F.</div>
+      <div class="step"><strong>5 — Controlla</strong>Si verificano chiusure, collegamenti e dubbi geometrici.</div>
+      <div class="step"><strong>6 — Completa</strong>Dopo l'approvazione della geometria si aggiungono i dati Termodel.</div>
+      <div class="step"><strong>7 — Esporta</strong>Il risultato viene restituito come SVG-LFT importabile in Termodel.</div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="termodel-ui-demo/">Apri Termodel Web Demo</a>
+      <a class="btn secondary" href="termodel-ui-demo/CreaPianoTermodelDaRaster.md">Apri il testo Markdown</a>
+      <a class="btn secondary" href="index.html">Torna a Termodel.it</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Convenzioni geometriche essenziali</h2>
+    <ul class="rules">
+      <li><strong>E001…</strong> pareti esterne, tracciate sul filo interno.</li>
+      <li><strong>W001…</strong> pareti interne/divisori, tracciati sull'asse.</li>
+      <li><strong>R001…</strong> locali chiusi, con riferimento realmente interno al vano.</li>
+      <li><strong>P001…</strong> porte opache e passaggi.</li>
+      <li><strong>F001…</strong> finestre e porte-finestre.</li>
+      <li><strong>1 unità SVG = 1 cm</strong>; la calibrazione conserva le proporzioni della pianta.</li>
+    </ul>
+    <p class="source-note">Arredi, sanitari, retini, testi e quote non fanno parte della geometria termica. Le pareti condivise non vanno duplicate.</p>
+  </section>
+
+  <section class="card">
+    <div class="instruction-head">
+      <div>
+        <h2 style="margin:0">Istruzione AI completa</h2>
+        <div id="loadStatus" class="source-note">Caricamento della versione corrente…</div>
+      </div>
+      <button id="copyBtn" class="btn" type="button" disabled>Copia istruzioni</button>
+    </div>
+    <pre id="instructionText">Caricamento…</pre>
+  </section>
+</main>
+
+<footer>
+  Termodel — documentazione AI per la creazione del piano da raster.
+</footer>
+
+<script>
+  const sourceUrl = 'termodel-ui-demo/CreaPianoTermodelDaRaster.md';
+  const pre = document.getElementById('instructionText');
+  const copyBtn = document.getElementById('copyBtn');
+  const status = document.getElementById('loadStatus');
+  let instruction = '';
+
+  async function loadInstruction() {
+    try {
+      const response = await fetch(sourceUrl, { cache: 'no-store' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      instruction = await response.text();
+      pre.textContent = instruction;
+      copyBtn.disabled = false;
+      status.textContent = 'Versione corrente caricata dal file ufficiale del progetto.';
+      status.classList.add('status');
+    } catch (error) {
+      pre.textContent = 'Impossibile caricare automaticamente l\'istruzione. Usa il pulsante “Apri il testo Markdown”.';
+      status.textContent = 'Caricamento non riuscito.';
+    }
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    if (!instruction) return;
+    try {
+      await navigator.clipboard.writeText(instruction);
+      const old = copyBtn.textContent;
+      copyBtn.textContent = 'Copiato!';
+      setTimeout(() => copyBtn.textContent = old, 1600);
+    } catch (error) {
+      const range = document.createRange();
+      range.selectNodeContents(pre);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  });
+
+  loadInstruction();
+</script>
+</body>
+</html>
