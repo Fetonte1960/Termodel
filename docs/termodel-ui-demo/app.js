@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { generaPiantaDaSvg } from './genera-pianta.js';
+import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 
 const MODEL_URL = './TermodelWebModel.json';
 
@@ -45,6 +46,7 @@ let currentModelLabel = 'PROGETTO ORIGINALE';
 let currentModelMode = 'project';
 let lastAiPreviewData = null;
 let lastCleanPlanSvg = '';
+let lastGeneratedPlan = null;
 
 const COMPONENTI = [
   ['Parete', true],
@@ -202,7 +204,7 @@ const DEMO_HELP = {
   },
   'Edita nel Cad': {
     title: 'Edita nel CAD — viewer Web',
-    body: '<p>Nella demo Web apre il confronto 2D: la <strong>pianta pulita</strong> prodotta da GeneraPianta/JSTS viene mostrata in grigio e il <strong>DisegnoInput.svg</strong> viene sovrapposto con linee colorate e più spesse. Il comando di esportazione architettonica è predisposto ma non ancora attivo.</p>'
+    body: '<p>Nella demo Web apre il confronto 2D: la <strong>pianta pulita</strong> prodotta da GeneraPianta/JSTS viene mostrata in grigio e il <strong>DisegnoInput.svg</strong> viene sovrapposto con linee colorate e più spesse. Il pulsante <strong>Esporta pianta CAD (.DXF)</strong> scarica la geometria ripulita in DXF AutoCAD 2013, in millimetri.</p>'
   },
   'Visualizza Plugin Cad': {
     title: 'Visualizza Plugin CAD',
@@ -1255,6 +1257,27 @@ function downloadCleanPlanSvg() {
 }
 
 
+function downloadArchitecturalDxf() {
+  if (!lastGeneratedPlan) return;
+
+  try {
+    const dxf = generaDxfDaPianta(lastGeneratedPlan);
+    const url = URL.createObjectURL(
+      new Blob([dxf], { type: 'application/dxf;charset=utf-8' })
+    );
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'PiantaArchitettonica-Termodel.dxf';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) {
+    window.alert('Esportazione DXF non riuscita: ' + error.message);
+  }
+}
+
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 function svgNode(name, attributes = {}) {
@@ -1437,6 +1460,8 @@ function processSvgText(text) {
   validatedSvg = '';
   lastAiPreviewData = null;
   lastCleanPlanSvg = '';
+  lastGeneratedPlan = null;
+  if (cadExportArchitectural) cadExportArchitectural.disabled = true;
   rasterExportSvg.disabled = true;
   if (rasterDownloadAiJson) rasterDownloadAiJson.disabled = true;
   if (rasterDownloadCleanSvg) rasterDownloadCleanSvg.disabled = true;
@@ -1453,6 +1478,7 @@ function processSvgText(text) {
 
     validatedSvg = svg;
     lastCleanPlanSvg = plan.svgPulito;
+    lastGeneratedPlan = plan;
     rasterSvgText.value = svg;
     showSvgPreview(plan.svgPulito);
     showAiPreviewModel(plan);
@@ -1478,6 +1504,10 @@ function processSvgText(text) {
     rasterExportSvg.disabled = false;
     if (rasterDownloadAiJson) rasterDownloadAiJson.disabled = false;
     if (rasterDownloadCleanSvg) rasterDownloadCleanSvg.disabled = false;
+    if (cadExportArchitectural) {
+      cadExportArchitectural.disabled = false;
+      cadExportArchitectural.title = `${DXF_EXPORT_INFO.version} · ${DXF_EXPORT_INFO.units}`;
+    }
 
     // Il ritorno da GPT porta direttamente alla pianta estrusa.
     closeRasterAiDialog();
@@ -1589,7 +1619,9 @@ if (cadShowInput)
   cadShowInput.addEventListener('change', applyCadLayerVisibility);
 if (cadReturnModel)
   cadReturnModel.addEventListener('click', activateModelPage);
-// v0.5: pulsante volutamente predisposto e disabilitato; nessuna esportazione ancora.
+if (cadExportArchitectural)
+  cadExportArchitectural.addEventListener('click', downloadArchitecturalDxf);
+// v0.6: esportazione DXF della pianta architettonica pulita attiva.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
