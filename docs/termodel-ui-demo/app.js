@@ -1046,82 +1046,38 @@ function showSvgPreview(svg) {
 }
 
 const AI_PREVIEW_WALL_HEIGHT_M = 2.70;
-const AI_PREVIEW_WALL_THICKNESS_M = 0.15;
+const AI_PREVIEW_EXTERNAL_WALL_THICKNESS_M = 0.40;
+const AI_PREVIEW_INTERNAL_WALL_THICKNESS_M = 0.15;
 const AI_PREVIEW_FLOOR_THICKNESS_M = 0.20;
 const AI_PREVIEW_CEILING_THICKNESS_M = 0.20;
-
-function createWallMeshPrimitive(line, index) {
-  const x1 = Number(line.x1) / 100;
-  const y1 = -Number(line.y1) / 100;
-  const x2 = Number(line.x2) / 100;
-  const y2 = -Number(line.y2) / 100;
-
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const length = Math.hypot(dx, dy);
-  if (length <= 1e-9)
-    throw new Error(`Linea SVG degenerata: ${line.id || index + 1}.`);
-
-  const half = AI_PREVIEW_WALL_THICKNESS_M / 2;
-  const nx = -dy / length * half;
-  const ny = dx / length * half;
-
-  const base = [
-    [x1 + nx, y1 + ny, 0],
-    [x2 + nx, y2 + ny, 0],
-    [x2 - nx, y2 - ny, 0],
-    [x1 - nx, y1 - ny, 0]
-  ];
-  const top = base.map(([x, y]) => [x, y, AI_PREVIEW_WALL_HEIGHT_M]);
-
-  return {
-    kind: 'mesh',
-    source: 'GeneraPiantaJs',
-    parte: 'parete-provvisoria',
-    numero: index + 1,
-    id: line.id || `AI-W${String(index + 1).padStart(3, '0')}`,
-    tipo: 'Parete',
-    descrizione: 'Parete provvisoria generata da SVG AI',
-    filterMetadata: true,
-    piano: 'Anteprima AI',
-    confine: '',
-    separatore: false,
-    stessaZona: false,
-    fittizia: false,
-    falda: false,
-    color: '#A86F43',
-    opacity: 0.92,
-    lineWidth: 1,
-    text: '',
-    vertices: [...base, ...top],
-    indices: [
-      0,1,2, 0,2,3,
-      4,6,5, 4,7,6,
-      0,4,5, 0,5,1,
-      1,5,6, 1,6,2,
-      2,6,7, 2,7,3,
-      3,7,4, 3,4,0
-    ]
-  };
-}
 
 function svgRingToThreePoints(ring) {
   return ring.map(([x, y]) => new THREE.Vector2(Number(x) / 100, -Number(y) / 100));
 }
 
-function createSlabMeshPrimitive(locale, index, tipo) {
-  const contour = svgRingToThreePoints(locale.shell);
-  const holes = (locale.holes || []).map(svgRingToThreePoints);
-  if (contour.length < 3)
-    throw new Error(`Locale ${locale.id}: contorno insufficiente per ${tipo.toLowerCase()}.`);
+function createPrismMeshPrimitive({
+  shell,
+  holes = [],
+  zBottom,
+  zTop,
+  id,
+  numero,
+  tipo,
+  descrizione,
+  parte,
+  color,
+  opacity = 1
+}) {
+  const contour = svgRingToThreePoints(shell || []);
+  const holeRings = (holes || []).map(svgRingToThreePoints);
 
-  const triangles = THREE.ShapeUtils.triangulateShape(contour, holes);
-  const rings = [contour, ...holes];
+  if (contour.length < 3)
+    throw new Error(`Contorno insufficiente per ${id || tipo}.`);
+
+  const triangles = THREE.ShapeUtils.triangulateShape(contour, holeRings);
+  const rings = [contour, ...holeRings];
   const points = rings.flat();
 
-  const isFloor = tipo === 'Pavimento';
-  const zBottom = isFloor ? -AI_PREVIEW_FLOOR_THICKNESS_M : AI_PREVIEW_WALL_HEIGHT_M;
-  const zTop = isFloor ? 0 : AI_PREVIEW_WALL_HEIGHT_M + AI_PREVIEW_CEILING_THICKNESS_M;
   const vertices = [
     ...points.map(p => [p.x, p.y, zBottom]),
     ...points.map(p => [p.x, p.y, zTop])
@@ -1130,7 +1086,6 @@ function createSlabMeshPrimitive(locale, index, tipo) {
   const indices = [];
 
   triangles.forEach(([a, b, d]) => {
-    // faccia inferiore + faccia superiore
     indices.push(d, b, a);
     indices.push(pointCount + a, pointCount + b, pointCount + d);
   });
@@ -1150,11 +1105,11 @@ function createSlabMeshPrimitive(locale, index, tipo) {
   return {
     kind: 'mesh',
     source: 'GeneraPiantaJs',
-    parte: isFloor ? 'pavimento-provvisorio' : 'soffitto-provvisorio',
-    numero: index + 1,
-    id: `${locale.id}-${isFloor ? 'PAV' : 'SOF'}`,
+    parte,
+    numero,
+    id,
     tipo,
-    descrizione: `${tipo} provvisorio — ${locale.id} ${locale.descrizione || ''}`.trim(),
+    descrizione,
     filterMetadata: true,
     piano: 'Anteprima AI',
     confine: '',
@@ -1162,8 +1117,8 @@ function createSlabMeshPrimitive(locale, index, tipo) {
     stessaZona: false,
     fittizia: false,
     falda: false,
-    color: isFloor ? '#B9A58D' : '#D7D7D7',
-    opacity: isFloor ? 0.96 : 0.62,
+    color,
+    opacity,
     lineWidth: 1,
     text: '',
     vertices,
@@ -1171,8 +1126,69 @@ function createSlabMeshPrimitive(locale, index, tipo) {
   };
 }
 
+function createExternalWallPrimitive(plan) {
+  if (!plan.edificio?.outerShell?.length || !plan.edificio?.innerShell?.length)
+    return null;
+
+  return createPrismMeshPrimitive({
+    shell: plan.edificio.outerShell,
+    holes: [plan.edificio.innerShell],
+    zBottom: 0,
+    zTop: AI_PREVIEW_WALL_HEIGHT_M,
+    id: 'PARETI-ESTERNE',
+    numero: 1,
+    tipo: 'Parete',
+    descrizione: 'Pareti esterne — spessore default 40 cm',
+    parte: 'parete-esterna-generapianta',
+    color: '#A86F43',
+    opacity: 0.92
+  });
+}
+
+function createInternalWallPrimitive(wall, index) {
+  return createPrismMeshPrimitive({
+    shell: wall.shell,
+    holes: [],
+    zBottom: 0,
+    zTop: AI_PREVIEW_WALL_HEIGHT_M,
+    id: wall.id || `W-AI-${String(index + 1).padStart(3, '0')}`,
+    numero: index + 2,
+    tipo: 'Parete',
+    descrizione: `Divisorio interno — spessore default ${AI_PREVIEW_INTERNAL_WALL_THICKNESS_M.toFixed(2)} m`,
+    parte: 'parete-interna-generapianta',
+    color: '#A86F43',
+    opacity: 0.92
+  });
+}
+
+function createSlabMeshPrimitive(locale, index, tipo) {
+  const isFloor = tipo === 'Pavimento';
+  const zBottom = isFloor ? -AI_PREVIEW_FLOOR_THICKNESS_M : AI_PREVIEW_WALL_HEIGHT_M;
+  const zTop = isFloor ? 0 : AI_PREVIEW_WALL_HEIGHT_M + AI_PREVIEW_CEILING_THICKNESS_M;
+
+  return createPrismMeshPrimitive({
+    shell: locale.shell,
+    holes: locale.holes || [],
+    zBottom,
+    zTop,
+    id: `${locale.id}-${isFloor ? 'PAV' : 'SOF'}`,
+    numero: index + 1,
+    tipo,
+    descrizione: `${tipo} provvisorio — ${locale.id} ${locale.descrizione || ''}`.trim(),
+    parte: isFloor ? 'pavimento-provvisorio' : 'soffitto-provvisorio',
+    color: isFloor ? '#B9A58D' : '#D7D7D7',
+    opacity: isFloor ? 0.96 : 0.62
+  });
+}
+
 function createAiPreviewModelFromPlan(plan) {
-  const walls = plan.linee.map(createWallMeshPrimitive);
+  const walls = [];
+  const externalWall = createExternalWallPrimitive(plan);
+  if (externalWall) walls.push(externalWall);
+  (plan.paretiInterne || []).forEach((wall, index) => {
+    walls.push(createInternalWallPrimitive(wall, index));
+  });
+
   const floors = plan.locali.map((locale, index) =>
     createSlabMeshPrimitive(locale, index, 'Pavimento'));
   const ceilings = plan.locali.map((locale, index) =>
@@ -1191,13 +1207,16 @@ function createAiPreviewModelFromPlan(plan) {
       units: 'm',
       sourceSvgUnits: 'cm',
       wallHeightMeters: AI_PREVIEW_WALL_HEIGHT_M,
-      wallThicknessMeters: AI_PREVIEW_WALL_THICKNESS_M,
+      externalWallThicknessMeters: AI_PREVIEW_EXTERNAL_WALL_THICKNESS_M,
+      internalWallThicknessMeters: AI_PREVIEW_INTERNAL_WALL_THICKNESS_M,
       floorThicknessMeters: AI_PREVIEW_FLOOR_THICKNESS_M,
       ceilingThicknessMeters: AI_PREVIEW_CEILING_THICKNESS_M,
-      note: 'Anteprima estrusa: pareti, pavimenti e soffitti hanno valori geometrici convenzionali. Nessun confine termico viene dedotto nel Web.'
+      note: 'Anteprima estrusa: pareti esterne 40 cm, divisori 15 cm, pavimenti e soffitti con valori geometrici convenzionali. Nessun confine termico viene dedotto nel Web.'
     },
     previewCounts: {
       walls: walls.length,
+      externalWallBodies: externalWall ? 1 : 0,
+      internalWalls: plan.paretiInterne?.length || 0,
       floors: floors.length,
       ceilings: ceilings.length,
       rooms: plan.locali.length
@@ -1337,25 +1356,32 @@ function renderCadComparison() {
     }));
   }
 
-  // Fondo: risultato di GeneraPianta/JSTS, volutamente neutro e grigio.
+  // Fondo: risultato architettonico di GeneraPianta/JSTS.
+  // I muri hanno massa grigia; il DisegnoInput resta un overlay colorato separato.
   const cleanLayer = svgNode('g', { id: 'cadCleanLayer' });
   cleanDoc.querySelectorAll('#locali-puliti path').forEach((source) => {
     cleanLayer.appendChild(svgNode('path', {
       d: source.getAttribute('d') || '',
-      fill: '#e6e6e6',
-      'fill-rule': 'evenodd',
-      stroke: '#b8b8b8',
-      'stroke-width': 1.2,
+      fill: '#fafafa',
+      stroke: 'none'
+    }));
+  });
+  cleanDoc.querySelectorAll('#pareti-architettoniche path').forEach((source) => {
+    cleanLayer.appendChild(svgNode('path', {
+      d: source.getAttribute('d') || '',
+      fill: '#cfcfcf',
+      'fill-rule': source.getAttribute('fill-rule') || 'nonzero',
+      stroke: '#858585',
+      'stroke-width': 1.0,
       'vector-effect': 'non-scaling-stroke'
     }));
   });
-  cleanDoc.querySelectorAll('#pareti-pulite line').forEach((source) => {
-    cleanLayer.appendChild(svgNode('line', {
-      x1: source.getAttribute('x1'), y1: source.getAttribute('y1'),
-      x2: source.getAttribute('x2'), y2: source.getAttribute('y2'),
-      stroke: '#858585',
-      'stroke-width': 1.8,
-      'stroke-linecap': 'square',
+  cleanDoc.querySelectorAll('#contorni-architettonici path').forEach((source) => {
+    cleanLayer.appendChild(svgNode('path', {
+      d: source.getAttribute('d') || '',
+      fill: 'none',
+      stroke: '#707070',
+      'stroke-width': 1.25,
       'vector-effect': 'non-scaling-stroke'
     }));
   });
@@ -1447,14 +1473,20 @@ function processSvgText(text) {
     showAiPreviewModel(plan);
 
     const counts = lastAiPreviewData.previewCounts;
+    const warningText = plan.warnings?.length
+      ? `\n⚠ ${plan.warnings.length} raccordi/associazioni hanno usato una protezione; dettagli in console.`
+      : '';
+    if (plan.warnings?.length) console.warn('GeneraPianta Web warnings:', plan.warnings);
+
     rasterValidation.textContent =
       `${extracted.transported ? '✓ Payload TERMODEL-SVG-TEXT-V1 decodificato\n' : ''}` +
-      `✓ GeneraPianta.js: ${plan.stats.linee} pareti lette\n` +
-      `✓ JSTS Polygonizer: ${plan.stats.locali} locali costruiti\n` +
+      `✓ GeneraPianta.js: ${plan.stats.linee} linee lette · ${plan.stats.locali} locali\n` +
+      `✓ Pareti esterne: 40 cm · divisori interni: 15 cm\n` +
+      `✓ Raccordi architettonici costruiti con offset + intersezione delle rette\n` +
       `✓ ${counts.floors} pavimenti · spessore default ${AI_PREVIEW_FLOOR_THICKNESS_M.toFixed(2)} m\n` +
       `✓ ${counts.ceilings} soffitti · spessore default ${AI_PREVIEW_CEILING_THICKNESS_M.toFixed(2)} m\n` +
       `✓ Pianta SVG pulita generata\n` +
-      `✓ Anteprima 3D caricata nel viewer`;
+      `✓ Anteprima 3D caricata nel viewer` + warningText;
 
     rasterValidation.classList.add('ok');
     rasterExportSvg.disabled = false;
@@ -1571,7 +1603,7 @@ if (cadShowInput)
   cadShowInput.addEventListener('change', applyCadLayerVisibility);
 if (cadReturnModel)
   cadReturnModel.addEventListener('click', activateModelPage);
-// v0.3: pulsante volutamente predisposto e disabilitato; nessuna esportazione ancora.
+// v0.4: pulsante volutamente predisposto e disabilitato; nessuna esportazione ancora.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
