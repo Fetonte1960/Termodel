@@ -454,7 +454,8 @@
           </div>
 
           <div class="raster-ai-actions">
-            <button id="rasterExportSvg" type="button" class="primary" disabled>Esporta / Copia SVG</button>
+            <button id="rasterExportSvg" type="button" class="primary" disabled>Esporta / Copia SVG Termodel</button>
+            <button id="rasterDownloadCleanSvg" type="button" disabled>Scarica pianta SVG pulita</button>
             <button id="rasterDownloadAiJson" type="button" disabled>Scarica JSON 3D AI</button>
           </div>
         </aside>
@@ -469,17 +470,17 @@
         </section>
 
         <section class="raster-ai-card raster-ai-preview">
-          <h3>SVG vettoriale creato dall'AI</h3>
+          <h3>Pianta SVG pulita generata nel Web</h3>
           <div class="raster-ai-preview-box">
-            <div id="svgPreviewPlaceholder" class="raster-ai-placeholder">Quando incolli o carichi uno SVG valido, lo vedrai qui graficamente.</div>
+            <div id="svgPreviewPlaceholder" class="raster-ai-placeholder">Dopo il ritorno da GPT, GeneraPianta.js costruirà qui la pianta pulita con JSTS.</div>
             <img id="svgPreviewImage" alt="Anteprima SVG creato dall'AI" hidden />
           </div>
-          <div class="raster-ai-file-name">Anteprima locale e sanificata per il browser.</div>
+          <div class="raster-ai-file-name">Pianta 2D derivata dal linework SVG tramite JSTS; è anche la base di pavimenti e soffitti.</div>
         </section>
       </div>
 
       <footer class="raster-ai-foot">
-        <div class="raster-ai-foot-note">Dopo la validazione, la demo genera subito un JSON 3D provvisorio dalle pareti SVG e lo carica nel viewer. Usa “Ritorna al progetto” per ripristinare il modello originale.</div>
+        <div class="raster-ai-foot-note">GPT consegna la geometria; GeneraPianta.js usa JSTS per i locali e genera pianta SVG pulita, pavimenti e soffitti estrusi. “Ritorna al progetto” ripristina il modello originale.</div>
         <button id="rasterAiCloseBottom" type="button">Chiudi</button>
       </footer>
     </section>
@@ -512,6 +513,9 @@
     </section>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
+          integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
+          crossorigin="anonymous"></script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
