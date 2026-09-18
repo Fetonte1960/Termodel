@@ -1080,7 +1080,7 @@ function processSvgText(text) {
     rasterSvgText.value = svg;
     showSvgPreview(svg);
     rasterValidation.textContent =
-      `${extracted.transported ? '✓ Payload TERMODEL-SVG-TEXT-V1 decodificato\\n' : ''}✓ XML/SVG valido\n✓ gruppi calpestabile e copertura presenti\n✓ ${result.lineCount} linee\n✓ ${result.locCount} blocchi LOC\n✓ ${result.finCount} blocchi FIN\n✓ 0 estremità non collegate`;
+      `${extracted.transported ? '✓ Payload TERMODEL-SVG-TEXT-V1 decodificato\n' : ''}✓ XML/SVG valido\n✓ gruppi calpestabile e copertura presenti\n✓ ${result.lineCount} linee\n✓ ${result.locCount} blocchi LOC\n✓ ${result.finCount} blocchi FIN\n✓ 0 estremità non collegate`;
     rasterValidation.classList.add('ok');
     rasterExportSvg.disabled = false;
     return true;
