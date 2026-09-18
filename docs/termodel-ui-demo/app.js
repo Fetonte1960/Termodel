@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { generaPiantaDaSvg } from './genera-pianta.js';
 
 const MODEL_URL = './TermodelWebModel.json';
 
@@ -37,6 +38,7 @@ let lastModelData = null;
 let currentModelLabel = 'PROGETTO ORIGINALE';
 let currentModelMode = 'project';
 let lastAiPreviewData = null;
+let lastCleanPlanSvg = '';
 
 const COMPONENTI = [
   ['Parete', true],
@@ -749,9 +751,11 @@ function renderModelData(data, options = {}) {
     if (currentModelMode === 'ai') {
       const h = data.previewAssumptions?.wallHeightMeters;
       const t = data.previewAssumptions?.wallThicknessMeters;
+      const counts = data.previewCounts;
       objectInfo.textContent =
         `${data.primitiveCount ?? data.primitives.length} primitive da SVG AI · anteprima provvisoria` +
-        (Number.isFinite(h) && Number.isFinite(t) ? ` · h ${h.toFixed(2)} m · sp. ${t.toFixed(2)} m` : '');
+        (counts ? ` · ${counts.walls} pareti · ${counts.floors} pavimenti · ${counts.ceilings} soffitti` : '') +
+        (Number.isFinite(h) && Number.isFinite(t) ? ` · h ${h.toFixed(2)} m · sp. pareti ${t.toFixed(2)} m` : '');
     } else {
       objectInfo.textContent = `${data.primitiveCount ?? data.primitives.length} primitive dal JSON Termodel`;
     }
@@ -877,6 +881,7 @@ const svgPreviewImage = document.getElementById('svgPreviewImage');
 const svgPreviewPlaceholder = document.getElementById('svgPreviewPlaceholder');
 const rasterExportSvg = document.getElementById('rasterExportSvg');
 const rasterDownloadAiJson = document.getElementById('rasterDownloadAiJson');
+const rasterDownloadCleanSvg = document.getElementById('rasterDownloadCleanSvg');
 const svgExportModal = document.getElementById('svgExportModal');
 const svgExportText = document.getElementById('svgExportText');
 const svgExportStatus = document.getElementById('svgExportStatus');
@@ -1010,74 +1015,6 @@ function readNumberAttribute(line, name) {
   return value;
 }
 
-function pointSegmentDistance(px, py, x1, y1, x2, y2) {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len2 = dx * dx + dy * dy;
-  if (len2 <= Number.EPSILON) return Math.hypot(px - x1, py - y1);
-  let t = ((px - x1) * dx + (py - y1) * dy) / len2;
-  t = Math.max(0, Math.min(1, t));
-  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
-}
-
-function validateTermodelSvg(svg) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svg, 'image/svg+xml');
-  const parseError = doc.querySelector('parsererror');
-  if (parseError) throw new Error('Lo SVG non è XML valido.');
-
-  const root = doc.documentElement;
-  if (!root || root.localName.toLowerCase() !== 'svg')
-    throw new Error('L\'elemento radice deve essere <svg>.');
-
-  const directChildren = Array.from(root.children);
-  const calpestabile = directChildren.find(el => el.localName === 'g' && el.id === 'calpestabile');
-  const copertura = directChildren.find(el => el.localName === 'g' && el.id === 'copertura');
-  if (!calpestabile || !copertura)
-    throw new Error('Servono i due gruppi diretti <g id="calpestabile"> e <g id="copertura">.');
-
-  const children = Array.from(calpestabile.children);
-  const forbidden = children.find(el => !['line', 'text'].includes(el.localName));
-  if (forbidden)
-    throw new Error(`Elemento <${forbidden.localName}> non ammesso in calpestabile: usa solo line e text diretti.`);
-
-  const lines = children
-    .filter(el => el.localName === 'line')
-    .map(el => ({
-      x1: readNumberAttribute(el, 'x1'),
-      y1: readNumberAttribute(el, 'y1'),
-      x2: readNumberAttribute(el, 'x2'),
-      y2: readNumberAttribute(el, 'y2')
-    }));
-
-  if (!lines.length) throw new Error('Il gruppo calpestabile non contiene pareti <line>.');
-
-  const texts = children.filter(el => el.localName === 'text');
-  const locCount = texts.filter(el => el.textContent.toUpperCase().includes('BLOCCO,LOC')).length;
-  const finCount = texts.filter(el => el.textContent.toUpperCase().includes('BLOCCO,FIN')).length;
-  if (!locCount) throw new Error('Manca almeno un blocco testuale BLOCCO,LOC.');
-
-  const tolerance = 0.5; // come il controllo C# desktop: 0,5 cm nelle unità SVG
-  for (let i = 0; i < lines.length; i++) {
-    const endpoints = [[lines[i].x1, lines[i].y1], [lines[i].x2, lines[i].y2]];
-    for (const [x, y] of endpoints) {
-      let connected = false;
-      for (let j = 0; j < lines.length; j++) {
-        if (i === j) continue;
-        const b = lines[j];
-        if (pointSegmentDistance(x, y, b.x1, b.y1, b.x2, b.y2) <= tolerance) {
-          connected = true;
-          break;
-        }
-      }
-      if (!connected)
-        throw new Error(`Estremità non collegata alle coordinate (${x.toFixed(3)}, ${y.toFixed(3)}).`);
-    }
-  }
-
-  return { lineCount: lines.length, locCount, finCount };
-}
-
 function sanitizeSvgForPreview(svg) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(svg, 'image/svg+xml');
@@ -1104,12 +1041,14 @@ function showSvgPreview(svg) {
 
 const AI_PREVIEW_WALL_HEIGHT_M = 2.70;
 const AI_PREVIEW_WALL_THICKNESS_M = 0.15;
+const AI_PREVIEW_FLOOR_THICKNESS_M = 0.20;
+const AI_PREVIEW_CEILING_THICKNESS_M = 0.20;
 
 function createWallMeshPrimitive(line, index) {
-  const x1 = readNumberAttribute(line, 'x1') / 100;
-  const y1 = -readNumberAttribute(line, 'y1') / 100;
-  const x2 = readNumberAttribute(line, 'x2') / 100;
-  const y2 = -readNumberAttribute(line, 'y2') / 100;
+  const x1 = Number(line.x1) / 100;
+  const y1 = -Number(line.y1) / 100;
+  const x2 = Number(line.x2) / 100;
+  const y2 = -Number(line.y2) / 100;
 
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -1131,7 +1070,7 @@ function createWallMeshPrimitive(line, index) {
 
   return {
     kind: 'mesh',
-    source: 'SvgAiPreview',
+    source: 'GeneraPiantaJs',
     parte: 'parete-provvisoria',
     numero: index + 1,
     id: line.id || `AI-W${String(index + 1).padStart(3, '0')}`,
@@ -1160,36 +1099,102 @@ function createWallMeshPrimitive(line, index) {
   };
 }
 
-function createAiPreviewModelFromSvg(svg) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svg, 'image/svg+xml');
-  const root = doc.documentElement;
-  const calpestabile = Array.from(root.children)
-    .find(el => el.localName === 'g' && el.id === 'calpestabile');
+function svgRingToThreePoints(ring) {
+  return ring.map(([x, y]) => new THREE.Vector2(Number(x) / 100, -Number(y) / 100));
+}
 
-  if (!calpestabile)
-    throw new Error('Impossibile generare il JSON 3D: gruppo calpestabile assente.');
+function createSlabMeshPrimitive(locale, index, tipo) {
+  const contour = svgRingToThreePoints(locale.shell);
+  const holes = (locale.holes || []).map(svgRingToThreePoints);
+  if (contour.length < 3)
+    throw new Error(`Locale ${locale.id}: contorno insufficiente per ${tipo.toLowerCase()}.`);
 
-  const wallLines = Array.from(calpestabile.children)
-    .filter(el => el.localName === 'line');
+  const triangles = THREE.ShapeUtils.triangulateShape(contour, holes);
+  const rings = [contour, ...holes];
+  const points = rings.flat();
 
-  if (!wallLines.length)
-    throw new Error('Impossibile generare il JSON 3D: nessuna parete SVG.');
+  const isFloor = tipo === 'Pavimento';
+  const zBottom = isFloor ? -AI_PREVIEW_FLOOR_THICKNESS_M : AI_PREVIEW_WALL_HEIGHT_M;
+  const zTop = isFloor ? 0 : AI_PREVIEW_WALL_HEIGHT_M + AI_PREVIEW_CEILING_THICKNESS_M;
+  const vertices = [
+    ...points.map(p => [p.x, p.y, zBottom]),
+    ...points.map(p => [p.x, p.y, zTop])
+  ];
+  const pointCount = points.length;
+  const indices = [];
 
-  const primitives = wallLines.map(createWallMeshPrimitive);
+  triangles.forEach(([a, b, d]) => {
+    // faccia inferiore + faccia superiore
+    indices.push(d, b, a);
+    indices.push(pointCount + a, pointCount + b, pointCount + d);
+  });
+
+  let offset = 0;
+  rings.forEach((ring) => {
+    for (let i = 0; i < ring.length; i++) {
+      const a = offset + i;
+      const b = offset + ((i + 1) % ring.length);
+      const at = pointCount + a;
+      const bt = pointCount + b;
+      indices.push(a, b, bt, a, bt, at);
+    }
+    offset += ring.length;
+  });
+
+  return {
+    kind: 'mesh',
+    source: 'GeneraPiantaJs',
+    parte: isFloor ? 'pavimento-provvisorio' : 'soffitto-provvisorio',
+    numero: index + 1,
+    id: `${locale.id}-${isFloor ? 'PAV' : 'SOF'}`,
+    tipo,
+    descrizione: `${tipo} provvisorio — ${locale.id} ${locale.descrizione || ''}`.trim(),
+    filterMetadata: true,
+    piano: 'Anteprima AI',
+    confine: isFloor ? 'Terreno' : 'Esterno',
+    separatore: false,
+    stessaZona: false,
+    fittizia: false,
+    falda: false,
+    color: isFloor ? '#B9A58D' : '#D7D7D7',
+    opacity: isFloor ? 0.96 : 0.62,
+    lineWidth: 1,
+    text: '',
+    vertices,
+    indices
+  };
+}
+
+function createAiPreviewModelFromPlan(plan) {
+  const walls = plan.linee.map(createWallMeshPrimitive);
+  const floors = plan.locali.map((locale, index) =>
+    createSlabMeshPrimitive(locale, index, 'Pavimento'));
+  const ceilings = plan.locali.map((locale, index) =>
+    createSlabMeshPrimitive(locale, index, 'Soffitto'));
+
+  const primitives = [...walls, ...floors, ...ceilings];
+
   return {
     format: 'TermodelWebModel',
     version: 3,
     coordinateSystem: 'Z-up',
     generatedAtUtc: new Date().toISOString(),
-    source: 'DisegnoInput.svg / AI preview',
+    source: 'DisegnoInput.svg → JSTS GeneraPianta.js',
     preview: true,
     previewAssumptions: {
       units: 'm',
       sourceSvgUnits: 'cm',
       wallHeightMeters: AI_PREVIEW_WALL_HEIGHT_M,
       wallThicknessMeters: AI_PREVIEW_WALL_THICKNESS_M,
-      note: 'Anteprima geometrica: altezza e spessore sono convenzionali e non costituiscono dati termici.'
+      floorThicknessMeters: AI_PREVIEW_FLOOR_THICKNESS_M,
+      ceilingThicknessMeters: AI_PREVIEW_CEILING_THICKNESS_M,
+      note: 'Anteprima estrusa: pareti, pavimenti e soffitti hanno valori geometrici convenzionali.'
+    },
+    previewCounts: {
+      walls: walls.length,
+      floors: floors.length,
+      ceilings: ceilings.length,
+      rooms: plan.locali.length
     },
     primitiveCount: primitives.length,
     primitives
@@ -1206,11 +1211,11 @@ function activateModelPage() {
   requestAnimationFrame(resize);
 }
 
-function showAiPreviewModel(svg) {
-  lastAiPreviewData = createAiPreviewModelFromSvg(svg);
+function showAiPreviewModel(plan) {
+  lastAiPreviewData = createAiPreviewModelFromPlan(plan);
   renderModelData(lastAiPreviewData, {
     mode: 'ai',
-    label: 'ANTEPRIMA AI — NON ANCORA IMPORTATA'
+    label: 'ANTEPRIMA AI — GENERAPIANTA.JS'
   });
   activateModelPage();
 }
@@ -1228,29 +1233,58 @@ function downloadAiPreviewJson() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function downloadCleanPlanSvg() {
+  if (!lastCleanPlanSvg) return;
+  const url = URL.createObjectURL(new Blob([lastCleanPlanSvg], { type: 'image/svg+xml' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'PiantaPulita-AI.svg';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function processSvgText(text) {
   validatedSvg = '';
   lastAiPreviewData = null;
+  lastCleanPlanSvg = '';
   rasterExportSvg.disabled = true;
   if (rasterDownloadAiJson) rasterDownloadAiJson.disabled = true;
+  if (rasterDownloadCleanSvg) rasterDownloadCleanSvg.disabled = true;
   svgExportText.value = '';
   rasterValidation.className = 'raster-ai-validation';
 
   try {
     const extracted = extractSvg(text);
     const svg = extracted.svg;
-    const result = validateTermodelSvg(svg);
+
+    // GPT ha già validato la geometria. Il Web esegue soltanto il lavoro
+    // necessario a GeneraPianta: noding + polygonizzazione con JSTS.
+    const plan = generaPiantaDaSvg(svg);
+
     validatedSvg = svg;
+    lastCleanPlanSvg = plan.svgPulito;
     rasterSvgText.value = svg;
-    showSvgPreview(svg);
-    showAiPreviewModel(svg);
+    showSvgPreview(plan.svgPulito);
+    showAiPreviewModel(plan);
+
+    const counts = lastAiPreviewData.previewCounts;
     rasterValidation.textContent =
-      `${extracted.transported ? '✓ Payload TERMODEL-SVG-TEXT-V1 decodificato\n' : ''}✓ XML/SVG valido\n✓ gruppi calpestabile e copertura presenti\n✓ ${result.lineCount} linee\n✓ ${result.locCount} blocchi LOC\n✓ ${result.finCount} blocchi FIN\n✓ 0 estremità non collegate\n✓ JSON 3D provvisorio generato: ${lastAiPreviewData.primitiveCount} pareti\n✓ Anteprima 3D caricata nel viewer`;
+      `${extracted.transported ? '✓ Payload TERMODEL-SVG-TEXT-V1 decodificato\n' : ''}` +
+      `✓ GeneraPianta.js: ${plan.stats.linee} pareti lette\n` +
+      `✓ JSTS Polygonizer: ${plan.stats.locali} locali costruiti\n` +
+      `✓ ${counts.floors} pavimenti · spessore default ${AI_PREVIEW_FLOOR_THICKNESS_M.toFixed(2)} m\n` +
+      `✓ ${counts.ceilings} soffitti · spessore default ${AI_PREVIEW_CEILING_THICKNESS_M.toFixed(2)} m\n` +
+      `✓ Pianta SVG pulita generata\n` +
+      `✓ Anteprima 3D caricata nel viewer`;
+
     rasterValidation.classList.add('ok');
     rasterExportSvg.disabled = false;
     if (rasterDownloadAiJson) rasterDownloadAiJson.disabled = false;
+    if (rasterDownloadCleanSvg) rasterDownloadCleanSvg.disabled = false;
 
-    // Il ritorno da GPT deve portare subito al controllo 3D.
+    // Il ritorno da GPT porta direttamente alla pianta estrusa.
     closeRasterAiDialog();
     return true;
   } catch (error) {
@@ -1328,6 +1362,8 @@ document.getElementById('rasterValidateSvg').addEventListener('click', () => {
 rasterExportSvg.addEventListener('click', openSvgExportDialog);
 if (rasterDownloadAiJson)
   rasterDownloadAiJson.addEventListener('click', downloadAiPreviewJson);
+if (rasterDownloadCleanSvg)
+  rasterDownloadCleanSvg.addEventListener('click', downloadCleanPlanSvg);
 svgExportCopy.addEventListener('click', copyValidatedSvg);
 svgExportDownload.addEventListener('click', downloadValidatedSvg);
 document.getElementById('svgExportClose').addEventListener('click', closeSvgExportDialog);
