@@ -840,7 +840,12 @@ const rasterSvgText = document.getElementById('rasterSvgText');
 const rasterValidation = document.getElementById('rasterValidation');
 const svgPreviewImage = document.getElementById('svgPreviewImage');
 const svgPreviewPlaceholder = document.getElementById('svgPreviewPlaceholder');
-const rasterDownloadSvg = document.getElementById('rasterDownloadSvg');
+const rasterExportSvg = document.getElementById('rasterExportSvg');
+const svgExportModal = document.getElementById('svgExportModal');
+const svgExportText = document.getElementById('svgExportText');
+const svgExportStatus = document.getElementById('svgExportStatus');
+const svgExportCopy = document.getElementById('svgExportCopy');
+const svgExportDownload = document.getElementById('svgExportDownload');
 
 let selectedRasterFile = null;
 let rasterObjectUrl = null;
@@ -854,8 +859,64 @@ function openRasterAiDialog() {
 }
 
 function closeRasterAiDialog() {
+  closeSvgExportDialog();
   rasterAiModal.classList.remove('visible');
   rasterAiModal.setAttribute('aria-hidden', 'true');
+}
+
+function openSvgExportDialog() {
+  if (!validatedSvg) return;
+  svgExportText.value = validatedSvg;
+  svgExportStatus.textContent = 'Pronto per la copia.';
+  svgExportModal.classList.add('visible');
+  svgExportModal.setAttribute('aria-hidden', 'false');
+  requestAnimationFrame(() => {
+    svgExportText.focus();
+    svgExportText.setSelectionRange(0, 0);
+  });
+}
+
+function closeSvgExportDialog() {
+  if (!svgExportModal) return;
+  svgExportModal.classList.remove('visible');
+  svgExportModal.setAttribute('aria-hidden', 'true');
+}
+
+function downloadValidatedSvg() {
+  if (!validatedSvg) return;
+  const url = URL.createObjectURL(new Blob([validatedSvg], { type: 'image/svg+xml' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'DisegnoInput.svg';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function copyValidatedSvg() {
+  if (!validatedSvg) return;
+  svgExportText.value = validatedSvg;
+
+  try {
+    if (!navigator.clipboard?.writeText)
+      throw new Error('Clipboard API non disponibile.');
+    await navigator.clipboard.writeText(validatedSvg);
+    svgExportStatus.textContent = '✓ SVG copiato negli appunti. Ora puoi incollarlo in Termodel.';
+    return;
+  } catch (_) {
+    svgExportText.focus();
+    svgExportText.select();
+    try {
+      if (document.execCommand('copy')) {
+        svgExportStatus.textContent = '✓ SVG copiato negli appunti.';
+        return;
+      }
+    } catch (_) {
+      // fallback manuale sotto
+    }
+    svgExportStatus.textContent = 'Copia automatica non consentita: testo selezionato, premi Ctrl+C.';
+  }
 }
 
 function extractSvg(text) {
@@ -970,7 +1031,8 @@ function showSvgPreview(svg) {
 
 function processSvgText(text) {
   validatedSvg = '';
-  rasterDownloadSvg.disabled = true;
+  rasterExportSvg.disabled = true;
+  svgExportText.value = '';
   rasterValidation.className = 'raster-ai-validation';
 
   try {
@@ -982,7 +1044,7 @@ function processSvgText(text) {
     rasterValidation.textContent =
       `✓ XML/SVG valido\n✓ gruppi calpestabile e copertura presenti\n✓ ${result.lineCount} linee\n✓ ${result.locCount} blocchi LOC\n✓ ${result.finCount} blocchi FIN\n✓ 0 estremità non collegate`;
     rasterValidation.classList.add('ok');
-    rasterDownloadSvg.disabled = false;
+    rasterExportSvg.disabled = false;
     return true;
   } catch (error) {
     rasterValidation.textContent = '✗ ' + error.message;
@@ -1056,16 +1118,13 @@ document.getElementById('rasterValidateSvg').addEventListener('click', () => {
   processSvgText(rasterSvgText.value);
 });
 
-rasterDownloadSvg.addEventListener('click', () => {
-  if (!validatedSvg) return;
-  const url = URL.createObjectURL(new Blob([validatedSvg], { type: 'image/svg+xml' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'DisegnoInput.svg';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+rasterExportSvg.addEventListener('click', openSvgExportDialog);
+svgExportCopy.addEventListener('click', copyValidatedSvg);
+svgExportDownload.addEventListener('click', downloadValidatedSvg);
+document.getElementById('svgExportClose').addEventListener('click', closeSvgExportDialog);
+document.getElementById('svgExportCloseBottom').addEventListener('click', closeSvgExportDialog);
+svgExportModal.addEventListener('click', (event) => {
+  if (event.target === svgExportModal) closeSvgExportDialog();
 });
 
 document.getElementById('rasterAiClose').addEventListener('click', closeRasterAiDialog);
@@ -1074,7 +1133,12 @@ rasterAiModal.addEventListener('click', (event) => {
   if (event.target === rasterAiModal) closeRasterAiDialog();
 });
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && rasterAiModal.classList.contains('visible'))
+  if (event.key !== 'Escape') return;
+  if (svgExportModal.classList.contains('visible')) {
+    closeSvgExportDialog();
+    return;
+  }
+  if (rasterAiModal.classList.contains('visible'))
     closeRasterAiDialog();
 });
 
