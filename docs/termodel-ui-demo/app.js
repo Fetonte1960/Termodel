@@ -179,7 +179,7 @@ const DEMO_HELP = {
   },
   'Crea piano da raster con AI': {
     title: 'Crea piano da raster con AI',
-    body: '<p>Avvia il flusso assistito per ricavare un piano Termodel da una planimetria raster. È una funzione recente; la pagina “Info Termodel GPT” non ne documenta ancora in dettaglio tutti i passaggi.</p>'
+    body: '<p>Comando attivo nella demo: selezioni una pianta, copi le istruzioni Termodel, apri il tuo ChatGPT e alleghi la stessa immagine. Quando GPT restituisce <code>DisegnoInput.svg</code>, puoi caricarlo o incollarlo qui, validarlo e visualizzarlo graficamente prima dell\'importazione.</p>'
   },
   'DisegnoInput': {
     title: 'DisegnoInput',
@@ -825,8 +825,265 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.menu').forEach(m => m.classList.remove('open'));
 });
 
+
+const RASTER_PROMPT_URL = './CreaPianoTermodelDaRaster.md';
+
+const rasterAiModal = document.getElementById('rasterAiModal');
+const rasterFileInput = document.getElementById('rasterFileInput');
+const rasterSvgFileInput = document.getElementById('rasterSvgFileInput');
+const rasterPreviewImage = document.getElementById('rasterPreviewImage');
+const rasterPreviewPlaceholder = document.getElementById('rasterPreviewPlaceholder');
+const rasterFileName = document.getElementById('rasterFileName');
+const rasterCopyPrompt = document.getElementById('rasterCopyPrompt');
+const rasterOpenChatGpt = document.getElementById('rasterOpenChatGpt');
+const rasterSvgText = document.getElementById('rasterSvgText');
+const rasterValidation = document.getElementById('rasterValidation');
+const svgPreviewImage = document.getElementById('svgPreviewImage');
+const svgPreviewPlaceholder = document.getElementById('svgPreviewPlaceholder');
+const rasterDownloadSvg = document.getElementById('rasterDownloadSvg');
+
+let selectedRasterFile = null;
+let rasterObjectUrl = null;
+let svgObjectUrl = null;
+let validatedSvg = '';
+
+function openRasterAiDialog() {
+  if (demoHelpPanel) demoHelpPanel.hidden = true;
+  rasterAiModal.classList.add('visible');
+  rasterAiModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeRasterAiDialog() {
+  rasterAiModal.classList.remove('visible');
+  rasterAiModal.setAttribute('aria-hidden', 'true');
+}
+
+function extractSvg(text) {
+  if (!text || !text.trim()) throw new Error('Non è presente alcun testo SVG.');
+  const start = text.toLowerCase().indexOf('<svg');
+  const end = text.toLowerCase().lastIndexOf('</svg>');
+  if (start < 0 || end < start)
+    throw new Error('Blocco <svg>...</svg> non trovato.');
+  return text.slice(start, end + '</svg>'.length).trim();
+}
+
+function readNumberAttribute(line, name) {
+  const raw = line.getAttribute(name);
+  if (raw === null) throw new Error(`Una linea non contiene l'attributo ${name}.`);
+  const value = Number(raw);
+  if (!Number.isFinite(value))
+    throw new Error(`Coordinata ${name}="${raw}" non valida: usa il punto come separatore decimale.`);
+  return value;
+}
+
+function pointSegmentDistance(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len2 = dx * dx + dy * dy;
+  if (len2 <= Number.EPSILON) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+function validateTermodelSvg(svg) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg, 'image/svg+xml');
+  const parseError = doc.querySelector('parsererror');
+  if (parseError) throw new Error('Lo SVG non è XML valido.');
+
+  const root = doc.documentElement;
+  if (!root || root.localName.toLowerCase() !== 'svg')
+    throw new Error('L\'elemento radice deve essere <svg>.');
+
+  const directChildren = Array.from(root.children);
+  const calpestabile = directChildren.find(el => el.localName === 'g' && el.id === 'calpestabile');
+  const copertura = directChildren.find(el => el.localName === 'g' && el.id === 'copertura');
+  if (!calpestabile || !copertura)
+    throw new Error('Servono i due gruppi diretti <g id="calpestabile"> e <g id="copertura">.');
+
+  const children = Array.from(calpestabile.children);
+  const forbidden = children.find(el => !['line', 'text'].includes(el.localName));
+  if (forbidden)
+    throw new Error(`Elemento <${forbidden.localName}> non ammesso in calpestabile: usa solo line e text diretti.`);
+
+  const lines = children
+    .filter(el => el.localName === 'line')
+    .map(el => ({
+      x1: readNumberAttribute(el, 'x1'),
+      y1: readNumberAttribute(el, 'y1'),
+      x2: readNumberAttribute(el, 'x2'),
+      y2: readNumberAttribute(el, 'y2')
+    }));
+
+  if (!lines.length) throw new Error('Il gruppo calpestabile non contiene pareti <line>.');
+
+  const texts = children.filter(el => el.localName === 'text');
+  const locCount = texts.filter(el => el.textContent.toUpperCase().includes('BLOCCO,LOC')).length;
+  const finCount = texts.filter(el => el.textContent.toUpperCase().includes('BLOCCO,FIN')).length;
+  if (!locCount) throw new Error('Manca almeno un blocco testuale BLOCCO,LOC.');
+
+  const tolerance = 0.5; // come il controllo C# desktop: 0,5 cm nelle unità SVG
+  for (let i = 0; i < lines.length; i++) {
+    const endpoints = [[lines[i].x1, lines[i].y1], [lines[i].x2, lines[i].y2]];
+    for (const [x, y] of endpoints) {
+      let connected = false;
+      for (let j = 0; j < lines.length; j++) {
+        if (i === j) continue;
+        const b = lines[j];
+        if (pointSegmentDistance(x, y, b.x1, b.y1, b.x2, b.y2) <= tolerance) {
+          connected = true;
+          break;
+        }
+      }
+      if (!connected)
+        throw new Error(`Estremità non collegata alle coordinate (${x.toFixed(3)}, ${y.toFixed(3)}).`);
+    }
+  }
+
+  return { lineCount: lines.length, locCount, finCount };
+}
+
+function sanitizeSvgForPreview(svg) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg, 'image/svg+xml');
+  doc.querySelectorAll('script, foreignObject, iframe, object, embed').forEach(el => el.remove());
+  doc.querySelectorAll('*').forEach(el => {
+    Array.from(el.attributes).forEach(attr => {
+      const name = attr.name.toLowerCase();
+      const value = attr.value.toLowerCase();
+      if (name.startsWith('on') || name === 'href' || name.endsWith(':href') || value.includes('javascript:'))
+        el.removeAttribute(attr.name);
+    });
+  });
+  return new XMLSerializer().serializeToString(doc);
+}
+
+function showSvgPreview(svg) {
+  if (svgObjectUrl) URL.revokeObjectURL(svgObjectUrl);
+  const safeSvg = sanitizeSvgForPreview(svg);
+  svgObjectUrl = URL.createObjectURL(new Blob([safeSvg], { type: 'image/svg+xml' }));
+  svgPreviewImage.src = svgObjectUrl;
+  svgPreviewImage.hidden = false;
+  svgPreviewPlaceholder.hidden = true;
+}
+
+function processSvgText(text) {
+  validatedSvg = '';
+  rasterDownloadSvg.disabled = true;
+  rasterValidation.className = 'raster-ai-validation';
+
+  try {
+    const svg = extractSvg(text);
+    const result = validateTermodelSvg(svg);
+    validatedSvg = svg;
+    rasterSvgText.value = svg;
+    showSvgPreview(svg);
+    rasterValidation.textContent =
+      `✓ XML/SVG valido\n✓ gruppi calpestabile e copertura presenti\n✓ ${result.lineCount} linee\n✓ ${result.locCount} blocchi LOC\n✓ ${result.finCount} blocchi FIN\n✓ 0 estremità non collegate`;
+    rasterValidation.classList.add('ok');
+    rasterDownloadSvg.disabled = false;
+    return true;
+  } catch (error) {
+    rasterValidation.textContent = '✗ ' + error.message;
+    rasterValidation.classList.add('error');
+    return false;
+  }
+}
+
+document.getElementById('rasterSelectButton').addEventListener('click', () => rasterFileInput.click());
+rasterFileInput.addEventListener('change', () => {
+  const file = rasterFileInput.files?.[0];
+  if (!file) return;
+
+  selectedRasterFile = file;
+  if (rasterObjectUrl) URL.revokeObjectURL(rasterObjectUrl);
+  rasterObjectUrl = URL.createObjectURL(file);
+  rasterPreviewImage.src = rasterObjectUrl;
+  rasterPreviewImage.hidden = false;
+  rasterPreviewPlaceholder.hidden = true;
+  rasterFileName.textContent = file.name;
+  rasterCopyPrompt.disabled = false;
+  rasterOpenChatGpt.disabled = false;
+});
+
+rasterCopyPrompt.addEventListener('click', async () => {
+  if (!selectedRasterFile) return;
+  try {
+    const response = await fetch(RASTER_PROMPT_URL, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const instructions = await response.text();
+    const session = `
+
+---
+IMMAGINE DI QUESTA SESSIONE: ${selectedRasterFile.name}
+L'utente allegherà alla chat il file raster; non tentare di aprire percorsi locali di Termodel.`;
+    await navigator.clipboard.writeText(instructions + session);
+    rasterValidation.className = 'raster-ai-validation ok';
+    rasterValidation.textContent = '✓ Istruzioni Termodel copiate. Ora apri ChatGPT e allega la stessa pianta.';
+  } catch (error) {
+    rasterValidation.className = 'raster-ai-validation error';
+    rasterValidation.textContent = '✗ Impossibile copiare le istruzioni: ' + error.message;
+  }
+});
+
+rasterOpenChatGpt.addEventListener('click', () => {
+  if (!selectedRasterFile) return;
+  window.open('https://chatgpt.com/', '_blank', 'noopener');
+});
+
+document.getElementById('rasterLoadSvg').addEventListener('click', () => rasterSvgFileInput.click());
+rasterSvgFileInput.addEventListener('change', async () => {
+  const file = rasterSvgFileInput.files?.[0];
+  if (!file) return;
+  const text = await file.text();
+  rasterSvgText.value = text;
+  processSvgText(text);
+});
+
+document.getElementById('rasterPasteSvg').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    rasterSvgText.value = text;
+    processSvgText(text);
+  } catch (error) {
+    rasterValidation.className = 'raster-ai-validation error';
+    rasterValidation.textContent = '✗ Il browser non ha consentito la lettura degli appunti. Incolla manualmente nel riquadro.';
+  }
+});
+
+document.getElementById('rasterValidateSvg').addEventListener('click', () => {
+  processSvgText(rasterSvgText.value);
+});
+
+rasterDownloadSvg.addEventListener('click', () => {
+  if (!validatedSvg) return;
+  const url = URL.createObjectURL(new Blob([validatedSvg], { type: 'image/svg+xml' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'DisegnoInput.svg';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+document.getElementById('rasterAiClose').addEventListener('click', closeRasterAiDialog);
+document.getElementById('rasterAiCloseBottom').addEventListener('click', closeRasterAiDialog);
+rasterAiModal.addEventListener('click', (event) => {
+  if (event.target === rasterAiModal) closeRasterAiDialog();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && rasterAiModal.classList.contains('visible'))
+    closeRasterAiDialog();
+});
+
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
+    if (button.dataset.action === 'Crea piano da raster con AI') {
+      openRasterAiDialog();
+      return;
+    }
     showDemoHelp(button.dataset.action);
   });
 });
