@@ -1,7 +1,7 @@
 # TERMODEL — Istruzioni AI per creare un piano da una pianta raster
 ## VERSIONE WORK — flusso guidato a stati e menu numerati
 
-> Questa è una versione di lavoro. Non sostituisce ancora la copia di Library né quella pubblicata nella demo Web.
+> Questa è la versione di lavoro sincronizzata con la demo Web. La copia `Library` resta invariata finché non viene approvata esplicitamente.
 
 ## Ruolo e obiettivo
 
@@ -63,6 +63,35 @@ Regola prioritaria: una richiesta generica come `mostra grafica`, `mostra SVG`, 
 Le due azioni di visualizzazione devono comparire **sempre** nel menu della fase corrente. Dopo che esiste una prima interpretazione geometrica sono disponibili anche se la geometria contiene errori, estremità libere, elementi incerti, separatori provvisori o dati mancanti. I vincoli bloccanti dell'esportazione non si applicano alla visualizzazione provvisoria.
 
 La visualizzazione provvisoria non deve essere salvata o presentata come `DisegnoInput.svg` definitivo o importabile. Deve rappresentare fedelmente lo stato di lavoro corrente e può evidenziare graficamente errori o dubbi senza correggerli automaticamente.
+
+## Protocollo di ritorno copiabile — TERMODEL-SVG-TEXT-V1
+
+Quando devi restituire a Termodel uno SVG tramite ChatGPT, **non inserire mai il vero tag `<svg ...>` direttamente nella risposta di esportazione**, perché l'interfaccia può interpretarlo e renderizzarlo graficamente.
+
+Usa invece questa busta testuale:
+
+```text
+[TERMODEL-SVG-TEXT-V1]
+&lt;svg xmlns="http://www.w3.org/2000/svg" ...&gt;
+...
+&lt;/svg&gt;
+[/TERMODEL-SVG-TEXT-V1]
+```
+
+Regole obbligatorie:
+
+- il contenuto tra i due marcatori rappresenta l'intero SVG validato;
+- codifica il testo SVG per il solo trasporto sostituendo, in questo ordine:
+  1. `&` con `&amp;`;
+  2. `<` con `&lt;`;
+  3. `>` con `&gt;`;
+- non abbreviare e non usare `...` nel contenuto reale;
+- racchiudi tutto in **un unico blocco di codice `text`**, non `xml`, così resta testo copiabile;
+- non allegare o renderizzare automaticamente lo SVG come uscita primaria;
+- Termodel/Web riconosce `[TERMODEL-SVG-TEXT-V1]`, decodifica una sola volta il contenuto e poi usa il normale SVG;
+- resta compatibile anche con SVG puro quando l'utente lo carica come file o lo incolla manualmente.
+
+Questa codifica è solo un involucro di trasporto ChatGPT → clipboard → Termodel. Il file `DisegnoInput.svg` vero resta XML SVG normale e non contiene i marcatori `TERMODEL-SVG-TEXT-V1`.
 
 ---
 
@@ -176,14 +205,14 @@ Se esistono estremità non collegate o dubbi geometrici sostanziali, l'azione 6 
 
 ### Azione 5 — ESPORTA SVG geometrico di controllo
 
-Questa esportazione serve per trasferire rapidamente in Termodel/Web lo SVG validato come **testo copiabile**.
+Questa esportazione serve per trasferire rapidamente in Termodel/Web lo SVG validato come testo copiabile.
 
 Lo SVG geometrico di controllo deve:
 
 - contenere la geometria chiusa e calibrata;
 - contenere i blocchi `LOC`;
 - ricucire le aperture nella linea di parete;
-- poter essere visualizzato e validato dal controllo Termodel/Web;
+- poter essere validato dal controllo Termodel/Web;
 - non richiedere ancora la definizione completa dei dati termici delle finestre;
 - non essere chiamato "definitivo" finché la FASE B non è completata.
 
@@ -191,33 +220,36 @@ Se i dati `FIN` non sono ancora stati confermati, non inventarli.
 
 Dopo aver generato e validato lo SVG:
 
-1. presenta una riga sintetica con l'esito della validazione;
-2. prepara l'intero SVG, completo da `<svg ...>` a `</svg>`, senza abbreviazioni, omissioni o segnaposto;
-3. **l'uscita primaria dell'azione ESPORTA è sempre il testo SVG copiabile, non il disegno renderizzato e non il file allegato**;
-4. se l'interfaccia Termodel/Web dispone della finestra `Esporta SVG Termodel`, usa quella finestra con:
-   - textarea contenente l'intero SVG;
-   - pulsante `Copia SVG`;
-   - pulsante `Scarica SVG`;
-   - pulsante `Chiudi`;
-5. se l'ambiente corrente è ChatGPT o non dispone della finestra Termodel/Web, mostra subito l'intero SVG in **un unico blocco di codice `xml` copiabile**; il blocco deve essere l'elemento principale dell'esportazione;
-6. in ChatGPT non sostituire mai il blocco copiabile con un allegato `.svg`, con un link al file o con un'anteprima grafica;
-7. non mostrare automaticamente il rendering/disegno SVG durante l'azione `ESPORTA`; la visualizzazione grafica appartiene alle azioni dedicate di anteprima;
-8. l'eventuale file `DisegnoInput.svg` può essere offerto soltanto come opzione secondaria dopo il testo copiabile;
-9. il testo copiabile e l'eventuale file devono contenere esattamente lo stesso SVG validato;
-10. non dichiarare che il contenuto è negli appunti prima che l'utente usi il comando `Copia` del blocco o il pulsante `Copia SVG`.
+1. comunica sinteticamente l'esito della validazione;
+2. converti lo stesso identico SVG nel formato di trasporto `TERMODEL-SVG-TEXT-V1` definito sopra;
+3. mostra **subito e per primo** un unico blocco di codice `text` contenente:
+   - `[TERMODEL-SVG-TEXT-V1]`;
+   - l'intero SVG codificato come testo;
+   - `[/TERMODEL-SVG-TEXT-V1]`;
+4. non inserire nella risposta un vero tag `<svg` fuori dal contenuto codificato;
+5. non mostrare automaticamente un rendering o un'anteprima grafica durante `ESPORTA`;
+6. non sostituire il blocco copiabile con un allegato, un link o un'immagine;
+7. un eventuale file `DisegnoInput.svg` è soltanto un'opzione secondaria;
+8. il payload decodificato deve essere identico allo SVG validato;
+9. non dichiarare che il contenuto è già negli appunti: l'utente usa il pulsante Copia del blocco.
 
-In ChatGPT usa questa sequenza:
+Formato della risposta:
 
 ```text
 ✓ SVG geometrico di controllo validato.
 
 SVG DA COPIARE IN TERMODEL
-[unico blocco xml completo e copiabile]
 
-Opzione secondaria: Scarica DisegnoInput.svg
+[TERMODEL-SVG-TEXT-V1]
+&lt;svg ...&gt;
+...contenuto completo codificato...
+&lt;/svg&gt;
+[/TERMODEL-SVG-TEXT-V1]
 ```
 
-Dopo l'esportazione fermati e chiedi all'utente di controllare lo SVG in Termodel/Web.
+Il testo `...contenuto completo codificato...` qui sopra è soltanto un esempio dell'istruzione: nell'esportazione reale devi produrre tutto il contenuto senza omissioni.
+
+Dopo l'esportazione fermati e chiedi all'utente di incollare il blocco in Termodel/Web e controllare il risultato.
 
 ### Azione 6 — CONFERMA geometria e passa ai dati Termodel
 
@@ -558,7 +590,7 @@ Esempio strutturale minimo:
 
 L'azione `GENERA / ESPORTA DisegnoInput.svg definitivo` della FASE B è disponibile soltanto quando i dati necessari sono completi.
 
-L'uscita primaria dell'esportazione definitiva è sempre **il testo SVG completo e copiabile**.
+L'uscita primaria dell'esportazione definitiva è sempre il formato testuale copiabile `TERMODEL-SVG-TEXT-V1`.
 
 Presenta separatamente:
 
@@ -566,22 +598,18 @@ Presenta separatamente:
 2. abaco sintetico di porte, finestre, locali e tipologie parete;
 3. rapporto sintetico di controllo;
 4. eventuali blocchi stratigrafia delle nuove tipologie parete;
-5. il contenuto completo del `DisegnoInput.svg` pronto per la copia.
+5. un unico blocco di codice `text` con il payload completo `TERMODEL-SVG-TEXT-V1`.
 
-Quando la finestra `Esporta SVG Termodel` è disponibile:
+Per il payload:
 
-- mostra l'intero SVG in una textarea dedicata;
-- rendi disponibili `Copia SVG`, `Scarica SVG` e `Chiudi`;
-- il contenuto della textarea e il file scaricato devono essere identici;
-- non dichiarare che lo SVG è stato copiato finché l'utente non preme `Copia SVG`.
-
-Quando l'ambiente corrente è ChatGPT o non dispone della finestra di esportazione:
-
-- mostra subito l'intero SVG in un unico blocco di codice `xml` copiabile;
-- non sostituire il blocco con un allegato `.svg`, un link o una preview grafica;
-- non renderizzare automaticamente il disegno SVG durante l'esportazione;
-- l'eventuale file `DisegnoInput.svg` è soltanto una opzione secondaria successiva;
-- il blocco copiabile e l'eventuale file devono essere identici.
+- genera prima il normale `DisegnoInput.svg` completo e valido;
+- codificalo secondo il protocollo `TERMODEL-SVG-TEXT-V1`;
+- non inserire un vero tag `<svg` direttamente nella risposta;
+- non usare un blocco `xml`: usa un blocco `text`;
+- non abbreviare il contenuto;
+- non sostituire il testo copiabile con un file, link, immagine o rendering;
+- un eventuale file `DisegnoInput.svg` è solo una possibilità secondaria;
+- dopo la decodifica, il payload deve riprodurre esattamente lo SVG definitivo validato.
 
 Non creare una tavola composita che contenga insieme raster, anteprima, codice XML, legenda e rapporto.
 
