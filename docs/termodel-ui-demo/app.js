@@ -506,12 +506,22 @@ document.getElementById('resetView').addEventListener('click', async () => {
   resetView();
 });
 
-document.getElementById('filtersCheck').addEventListener('change', (event) => {
-  const visible = event.target.checked;
+const filtersCheck = document.getElementById('filtersCheck');
+const viewCube = document.querySelector('.view-cube');
+
+function setFilterPanelVisibility(visible) {
   filterPanel.classList.toggle('visible', visible);
   viewer.style.right = visible ? '228px' : '0';
+  if (viewCube) viewCube.style.right = visible ? '248px' : '20px';
   requestAnimationFrame(resize);
+}
+
+filtersCheck.addEventListener('change', (event) => {
+  setFilterPanelVisibility(event.target.checked);
 });
+
+// Come nel desktop: all'avvio il check e il pannello Filtri Grafici sono visibili.
+setFilterPanelVisibility(filtersCheck.checked);
 
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
