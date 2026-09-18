@@ -150,6 +150,7 @@ function headerSection(extents) {
 
 function tablesSection() {
   const layers = [
+    ['0', 7],
     ['TMD_PERIMETRO', 8],
     ['TMD_LOCALI', 7],
     ['TMD_TESTI', 2]
@@ -179,6 +180,23 @@ function tablesSection() {
   layers.forEach(([name, color]) => {
     out += layerRecord(name, color);
   });
+  out += pair(0, 'ENDTAB');
+
+  out += pair(0, 'TABLE');
+  out += pair(2, 'STYLE');
+  out += pair(70, 1);
+  out += pair(0, 'STYLE');
+  out += pair(100, 'AcDbSymbolTableRecord');
+  out += pair(100, 'AcDbTextStyleTableRecord');
+  out += pair(2, 'STANDARD');
+  out += pair(70, 0);
+  out += pair(40, '0.0');
+  out += pair(41, '1.0');
+  out += pair(50, '0.0');
+  out += pair(71, 0);
+  out += pair(42, '2.5');
+  out += pair(3, 'txt');
+  out += pair(4, '');
   out += pair(0, 'ENDTAB');
 
   out += pair(0, 'ENDSEC');
