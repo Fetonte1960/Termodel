@@ -1367,12 +1367,13 @@ function renderCadComparison() {
     }));
   });
   cleanDoc.querySelectorAll('#pareti-architettoniche path').forEach((source) => {
+    const external = source.id === 'PARETI-ESTERNE';
     cleanLayer.appendChild(svgNode('path', {
       d: source.getAttribute('d') || '',
       fill: '#cfcfcf',
       'fill-rule': source.getAttribute('fill-rule') || 'nonzero',
-      stroke: '#858585',
-      'stroke-width': 1.0,
+      stroke: external ? '#858585' : 'none',
+      'stroke-width': external ? 1.0 : 0,
       'vector-effect': 'non-scaling-stroke'
     }));
   });
