@@ -177,7 +177,8 @@ function matchLocaliToPolygons(jsts, geometryFactory, locali, polygons) {
 }
 
 function largestPolygon(geometry) {
-  if (!geometry || geometry.isEmpty?.()) return null;
+  if (!geometry) return null;
+  if (typeof geometry.isEmpty === 'function' && geometry.isEmpty()) return null;
 
   if (geometry.getGeometryType?.() === 'Polygon')
     return geometry;
