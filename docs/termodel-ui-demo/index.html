@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.5 — Demo interattiva</title>
+  <title>Termodel Web v0.6 — Demo interattiva</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -385,7 +385,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.5</div>
+      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.6</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -421,7 +421,7 @@
           <label><input id="cadShowClean" type="checkbox" checked /> Pianta pulita</label>
           <label><input id="cadShowInput" type="checkbox" checked /> Disegno input</label>
           <span class="cad-spacer"></span>
-          <button id="cadExportArchitectural" type="button" disabled title="Funzione prevista per una versione successiva">Esporta pianta architettonica pulita</button>
+          <button id="cadExportArchitectural" type="button" disabled title="Disponibile dopo la generazione della pianta">Esporta pianta CAD (.DXF)</button>
           <button id="cadReturnModel" type="button">Ritorna al modello</button>
         </div>
         <div id="cadCanvas" class="cad-canvas">
@@ -498,7 +498,7 @@
 
           <div class="raster-ai-step">
             <h3>3. Riporta lo SVG creato e visualizza il 3D</h3>
-            <p>Incolla direttamente il blocco <code>TERMODEL-SVG-TEXT-V1</code> copiato da ChatGPT. Restano compatibili anche un normale <code>&lt;svg&gt;...&lt;/svg&gt;</code> o il file <code>DisegnoInput.svg</code>. Dopo il ritorno da GPT, GeneraPianta Web usa JSTS per costruire i locali e la pianta architettonica: i lati sul perimetro esterno restano sul filo interno, i divisori vengono spostati di 7,5 cm verso ogni locale e il perimetro edificio viene portato 40 cm verso l’esterno.</p>
+            <p>Incolla direttamente il blocco <code>TERMODEL-SVG-TEXT-V1</code> copiato da ChatGPT. Restano compatibili anche un normale <code>&lt;svg&gt;...&lt;/svg&gt;</code> o il file <code>DisegnoInput.svg</code>. Dopo il ritorno da GPT, GeneraPianta Web usa JSTS per costruire i locali e la pianta architettonica: i lati sul perimetro esterno restano sul filo interno, i divisori vengono spostati di 7,5 cm verso ogni locale e il perimetro edificio viene portato 40 cm verso l’esterno. La pianta pulita può essere esportata in DXF CAD.</p>
             <div class="raster-ai-actions">
               <button id="rasterLoadSvg" type="button">Apri SVG...</button>
               <input id="rasterSvgFileInput" type="file" accept=".svg,.txt,image/svg+xml,text/plain" hidden />
