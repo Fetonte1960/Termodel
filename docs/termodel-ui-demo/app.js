@@ -34,6 +34,9 @@ let floor = null;
 let homeView = null;
 let loading = false;
 let lastModelData = null;
+let currentModelLabel = 'PROGETTO ORIGINALE';
+let currentModelMode = 'project';
+let lastAiPreviewData = null;
 
 const COMPONENTI = [
   ['Parete', true],
@@ -179,7 +182,11 @@ const DEMO_HELP = {
   },
   'Crea piano da raster con AI': {
     title: 'Crea piano da raster con AI',
-    body: '<p>Comando attivo nella demo: selezioni una pianta, copi le istruzioni Termodel, apri il tuo ChatGPT e alleghi la stessa immagine. Quando GPT restituisce <code>DisegnoInput.svg</code>, puoi caricarlo o incollarlo qui, validarlo e visualizzarlo graficamente prima dell\'importazione.</p>'
+    body: '<p>Comando attivo nella demo: selezioni una pianta, copi le istruzioni Termodel, apri il tuo ChatGPT e alleghi la stessa immagine. Al ritorno puoi incollare il blocco <code>TERMODEL-SVG-TEXT-V1</code>: la demo lo decodifica, valida lo SVG, genera un <strong>TermodelWebModel JSON 3D provvisorio</strong> e lo visualizza nel viewer.</p>'
+  },
+  'Ritorna al progetto': {
+    title: 'Ritorna al progetto',
+    body: '<p>Abbandona soltanto la visualizzazione 3D provvisoria costruita dallo SVG AI e ricarica il <code>TermodelWebModel.json</code> originale del progetto. Lo SVG incollato e la pianta selezionata restano disponibili nella finestra AI.</p>'
   },
   'DisegnoInput': {
     title: 'DisegnoInput',
@@ -552,7 +559,7 @@ function applyFilters() {
 
   if (!loading && lastModelData) {
     const count = lastModelData.primitiveCount ?? lastModelData.primitives.length;
-    status.textContent = `Termodel Web Model · ${count} primitive · visibili ${visible}/${total}`;
+    status.textContent = `${currentModelLabel} · ${count} primitive · visibili ${visible}/${total}`;
   }
 }
 
@@ -707,6 +714,50 @@ function resetView() {
   controls.update();
 }
 
+function setReturnProjectState(enabled) {
+  const button = document.getElementById('returnProject');
+  if (button) button.disabled = !enabled;
+}
+
+function renderModelData(data, options = {}) {
+  if (data.format !== 'TermodelWebModel' || !Array.isArray(data.primitives))
+    throw new Error('Formato TermodelWebModel non valido');
+
+  currentModelMode = options.mode || 'project';
+  currentModelLabel = options.label || 'Termodel Web Model';
+  lastModelData = data;
+
+  disposeObject(modelGroup);
+  disposeObject(edgeGroup);
+  rebuildPianoFilters(data.primitives);
+  updateFilterNote(data);
+
+  data.primitives.forEach((primitive) => {
+    if (primitive.kind === 'mesh')
+      createMeshPrimitive(primitive);
+    else if (primitive.kind === 'lineSegments')
+      createLinePrimitive(primitive);
+  });
+
+  fitView();
+  edgeGroup.visible = true;
+  applyFilters();
+  setReturnProjectState(currentModelMode === 'ai');
+
+  const objectInfo = document.querySelector('#infoPage .classic-row:nth-child(3) strong');
+  if (objectInfo) {
+    if (currentModelMode === 'ai') {
+      const h = data.previewAssumptions?.wallHeightMeters;
+      const t = data.previewAssumptions?.wallThicknessMeters;
+      objectInfo.textContent =
+        `${data.primitiveCount ?? data.primitives.length} primitive da SVG AI · anteprima provvisoria` +
+        (Number.isFinite(h) && Number.isFinite(t) ? ` · h ${h.toFixed(2)} m · sp. ${t.toFixed(2)} m` : '');
+    } else {
+      objectInfo.textContent = `${data.primitiveCount ?? data.primitives.length} primitive dal JSON Termodel`;
+    }
+  }
+}
+
 async function loadModel() {
   if (loading) return;
   loading = true;
@@ -717,35 +768,10 @@ async function loadModel() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
-    if (data.format !== 'TermodelWebModel' || !Array.isArray(data.primitives))
-      throw new Error('Formato TermodelWebModel non valido');
-
-    lastModelData = data;
-    disposeObject(modelGroup);
-    disposeObject(edgeGroup);
-    rebuildPianoFilters(data.primitives);
-    updateFilterNote(data);
-
-    let meshCount = 0;
-    let lineCount = 0;
-
-    data.primitives.forEach((primitive) => {
-      if (primitive.kind === 'mesh') {
-        createMeshPrimitive(primitive);
-        meshCount += 1;
-      } else if (primitive.kind === 'lineSegments') {
-        createLinePrimitive(primitive);
-        lineCount += 1;
-      }
+    renderModelData(data, {
+      mode: 'project',
+      label: 'PROGETTO ORIGINALE'
     });
-
-    fitView();
-    edgeGroup.visible = true;
-    applyFilters();
-
-    const objectInfo = document.querySelector('#infoPage .classic-row:nth-child(3) strong');
-    if (objectInfo)
-      objectInfo.textContent = `${data.primitiveCount ?? data.primitives.length} primitive dal JSON Termodel`;
   } catch (error) {
     console.error(error);
     status.textContent = `Errore caricamento modello: ${error.message}`;
@@ -771,6 +797,15 @@ document.getElementById('resetView').addEventListener('click', async () => {
   await loadModel();
   resetView();
 });
+
+const returnProjectButton = document.getElementById('returnProject');
+if (returnProjectButton) {
+  returnProjectButton.addEventListener('click', async () => {
+    showDemoHelp('Ritorna al progetto');
+    await loadModel();
+    resetView();
+  });
+}
 
 const filtersCheck = document.getElementById('filtersCheck');
 const viewCube = document.querySelector('.view-cube');
@@ -841,6 +876,7 @@ const rasterValidation = document.getElementById('rasterValidation');
 const svgPreviewImage = document.getElementById('svgPreviewImage');
 const svgPreviewPlaceholder = document.getElementById('svgPreviewPlaceholder');
 const rasterExportSvg = document.getElementById('rasterExportSvg');
+const rasterDownloadAiJson = document.getElementById('rasterDownloadAiJson');
 const svgExportModal = document.getElementById('svgExportModal');
 const svgExportText = document.getElementById('svgExportText');
 const svgExportStatus = document.getElementById('svgExportStatus');
@@ -1066,9 +1102,137 @@ function showSvgPreview(svg) {
   svgPreviewPlaceholder.hidden = true;
 }
 
+const AI_PREVIEW_WALL_HEIGHT_M = 2.70;
+const AI_PREVIEW_WALL_THICKNESS_M = 0.15;
+
+function createWallMeshPrimitive(line, index) {
+  const x1 = readNumberAttribute(line, 'x1') / 100;
+  const y1 = -readNumberAttribute(line, 'y1') / 100;
+  const x2 = readNumberAttribute(line, 'x2') / 100;
+  const y2 = -readNumberAttribute(line, 'y2') / 100;
+
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.hypot(dx, dy);
+  if (length <= 1e-9)
+    throw new Error(`Linea SVG degenerata: ${line.id || index + 1}.`);
+
+  const half = AI_PREVIEW_WALL_THICKNESS_M / 2;
+  const nx = -dy / length * half;
+  const ny = dx / length * half;
+
+  const base = [
+    [x1 + nx, y1 + ny, 0],
+    [x2 + nx, y2 + ny, 0],
+    [x2 - nx, y2 - ny, 0],
+    [x1 - nx, y1 - ny, 0]
+  ];
+  const top = base.map(([x, y]) => [x, y, AI_PREVIEW_WALL_HEIGHT_M]);
+
+  return {
+    kind: 'mesh',
+    source: 'SvgAiPreview',
+    parte: 'parete-provvisoria',
+    numero: index + 1,
+    id: line.id || `AI-W${String(index + 1).padStart(3, '0')}`,
+    tipo: 'Parete',
+    descrizione: 'Parete provvisoria generata da SVG AI',
+    filterMetadata: true,
+    piano: 'Anteprima AI',
+    confine: '',
+    separatore: false,
+    stessaZona: false,
+    fittizia: false,
+    falda: false,
+    color: '#A86F43',
+    opacity: 0.92,
+    lineWidth: 1,
+    text: '',
+    vertices: [...base, ...top],
+    indices: [
+      0,1,2, 0,2,3,
+      4,6,5, 4,7,6,
+      0,4,5, 0,5,1,
+      1,5,6, 1,6,2,
+      2,6,7, 2,7,3,
+      3,7,4, 3,4,0
+    ]
+  };
+}
+
+function createAiPreviewModelFromSvg(svg) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg, 'image/svg+xml');
+  const root = doc.documentElement;
+  const calpestabile = Array.from(root.children)
+    .find(el => el.localName === 'g' && el.id === 'calpestabile');
+
+  if (!calpestabile)
+    throw new Error('Impossibile generare il JSON 3D: gruppo calpestabile assente.');
+
+  const wallLines = Array.from(calpestabile.children)
+    .filter(el => el.localName === 'line');
+
+  if (!wallLines.length)
+    throw new Error('Impossibile generare il JSON 3D: nessuna parete SVG.');
+
+  const primitives = wallLines.map(createWallMeshPrimitive);
+  return {
+    format: 'TermodelWebModel',
+    version: 3,
+    coordinateSystem: 'Z-up',
+    generatedAtUtc: new Date().toISOString(),
+    source: 'DisegnoInput.svg / AI preview',
+    preview: true,
+    previewAssumptions: {
+      units: 'm',
+      sourceSvgUnits: 'cm',
+      wallHeightMeters: AI_PREVIEW_WALL_HEIGHT_M,
+      wallThicknessMeters: AI_PREVIEW_WALL_THICKNESS_M,
+      note: 'Anteprima geometrica: altezza e spessore sono convenzionali e non costituiscono dati termici.'
+    },
+    primitiveCount: primitives.length,
+    primitives
+  };
+}
+
+function activateModelPage() {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+  const modelTab = document.querySelector('.tab[data-page="modelPage"]');
+  if (modelTab) modelTab.classList.add('active');
+  modelPage.classList.add('active');
+  requestAnimationFrame(resize);
+}
+
+function showAiPreviewModel(svg) {
+  lastAiPreviewData = createAiPreviewModelFromSvg(svg);
+  renderModelData(lastAiPreviewData, {
+    mode: 'ai',
+    label: 'ANTEPRIMA AI — NON ANCORA IMPORTATA'
+  });
+  activateModelPage();
+}
+
+function downloadAiPreviewJson() {
+  if (!lastAiPreviewData) return;
+  const json = JSON.stringify(lastAiPreviewData, null, 2);
+  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'TermodelWebModel-AI.json';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function processSvgText(text) {
   validatedSvg = '';
+  lastAiPreviewData = null;
   rasterExportSvg.disabled = true;
+  if (rasterDownloadAiJson) rasterDownloadAiJson.disabled = true;
   svgExportText.value = '';
   rasterValidation.className = 'raster-ai-validation';
 
@@ -1079,10 +1243,15 @@ function processSvgText(text) {
     validatedSvg = svg;
     rasterSvgText.value = svg;
     showSvgPreview(svg);
+    showAiPreviewModel(svg);
     rasterValidation.textContent =
-      `${extracted.transported ? '✓ Payload TERMODEL-SVG-TEXT-V1 decodificato\n' : ''}✓ XML/SVG valido\n✓ gruppi calpestabile e copertura presenti\n✓ ${result.lineCount} linee\n✓ ${result.locCount} blocchi LOC\n✓ ${result.finCount} blocchi FIN\n✓ 0 estremità non collegate`;
+      `${extracted.transported ? '✓ Payload TERMODEL-SVG-TEXT-V1 decodificato\n' : ''}✓ XML/SVG valido\n✓ gruppi calpestabile e copertura presenti\n✓ ${result.lineCount} linee\n✓ ${result.locCount} blocchi LOC\n✓ ${result.finCount} blocchi FIN\n✓ 0 estremità non collegate\n✓ JSON 3D provvisorio generato: ${lastAiPreviewData.primitiveCount} pareti\n✓ Anteprima 3D caricata nel viewer`;
     rasterValidation.classList.add('ok');
     rasterExportSvg.disabled = false;
+    if (rasterDownloadAiJson) rasterDownloadAiJson.disabled = false;
+
+    // Il ritorno da GPT deve portare subito al controllo 3D.
+    closeRasterAiDialog();
     return true;
   } catch (error) {
     rasterValidation.textContent = '✗ ' + error.message;
@@ -1157,6 +1326,8 @@ document.getElementById('rasterValidateSvg').addEventListener('click', () => {
 });
 
 rasterExportSvg.addEventListener('click', openSvgExportDialog);
+if (rasterDownloadAiJson)
+  rasterDownloadAiJson.addEventListener('click', downloadAiPreviewJson);
 svgExportCopy.addEventListener('click', copyValidatedSvg);
 svgExportDownload.addEventListener('click', downloadValidatedSvg);
 document.getElementById('svgExportClose').addEventListener('click', closeSvgExportDialog);
