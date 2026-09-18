@@ -1,4 +1,4 @@
-// GeneraPianta Web Lite v0.4
+// GeneraPianta Web Lite v0.5
 // Input: SVG Termodel già interpretato da GPT.
 // Topologia: JSTS (port JavaScript di JTS, famiglia di NetTopologySuite).
 // Scopo pubblico concordato: sola geometria 2D necessaria a pianta pulita,
@@ -262,12 +262,11 @@ function outwardNormal(jsts, geometryFactory, polygon, start, end) {
   const length = Math.hypot(dx, dy);
   if (length <= 1e-9) return null;
 
-  // Stesso normale destro usato dal C#: (dy, -dx).
+  // Stesso normale destro del C#: (dy, -dx), poi corretto
+  // geometricamente per non dipendere dall'orientamento dell'anello.
   let nx = dy / length;
   let ny = -dx / length;
 
-  // Non dipendiamo dall'orientamento dell'anello: proviamo un punto appena
-  // spostato; se cade dentro il locale, invertiamo il normale.
   const mx = (start[0] + end[0]) / 2;
   const my = (start[1] + end[1]) / 2;
   const probeDistance = Math.max(0.05, Math.min(length * 0.001, 0.50));
@@ -281,6 +280,11 @@ function outwardNormal(jsts, geometryFactory, polygon, start, end) {
   }
 
   return [nx, ny];
+}
+
+function inwardNormal(jsts, geometryFactory, polygon, start, end) {
+  const out = outwardNormal(jsts, geometryFactory, polygon, start, end);
+  return out ? [-out[0], -out[1]] : null;
 }
 
 function infiniteLineIntersection(a1, a2, b1, b2) {
@@ -300,74 +304,59 @@ function infiniteLineIntersection(a1, a2, b1, b2) {
   ];
 }
 
-function offsetDistanceForSource(source, warnings, contextId) {
-  if (!source) {
-    warnings.push(`${contextId}: lato non associato a E/W; usato offset divisorio 7.5 cm.`);
-    return INTERNAL_HALF_THICKNESS_CM;
-  }
-  if (source.wallClass === 'external') return EXTERNAL_WALL_THICKNESS_CM;
-  if (source.wallClass === 'internal') return INTERNAL_HALF_THICKNESS_CM;
+function edgeOnExterior(start, end, exteriorRing) {
+  const ex = end[0] - start[0];
+  const ey = end[1] - start[1];
+  const edgeLen = Math.hypot(ex, ey);
+  if (edgeLen <= 1e-9) return false;
 
-  warnings.push(`${contextId}: linea ${source.id} non classificata E/W; usato offset divisorio 7.5 cm.`);
-  return INTERNAL_HALF_THICKNESS_CM;
+  const midpoint = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2];
+
+  for (let i = 0; i < exteriorRing.length; i++) {
+    const a = exteriorRing[i];
+    const b = exteriorRing[(i + 1) % exteriorRing.length];
+    const bx = b[0] - a[0];
+    const by = b[1] - a[1];
+    const boundaryLen = Math.hypot(bx, by);
+    if (boundaryLen <= 1e-9) continue;
+
+    const normalizedCross = Math.abs(ex * by - ey * bx) / (edgeLen * boundaryLen);
+    if (normalizedCross > 1e-5) continue;
+
+    if (distancePointToSegment(midpoint, a, b) <= EDGE_MATCH_TOLERANCE)
+      return true;
+  }
+
+  return false;
 }
 
-function paralleloPoligono(jsts, geometryFactory, polygon, linee, warnings, contextId) {
-  const coords = ringCoordinates(polygon.getExteriorRing());
-  if (coords.length < 3)
-    throw new Error(`${contextId}: poligono insufficiente per il parallelo.`);
-
-  const shifted = [];
-
-  for (let i = 0; i < coords.length; i++) {
-    const start = coords[i];
-    const end = coords[(i + 1) % coords.length];
-    const length = segmentLength(start, end);
-    if (length <= 1e-9) {
-      warnings.push(`${contextId}: lato degenere ignorato.`);
-      continue;
-    }
-
-    const source = sourceLineForEdge(start, end, linee);
-    const distance = offsetDistanceForSource(source, warnings, contextId);
-    const normal = outwardNormal(jsts, geometryFactory, polygon, start, end);
-    if (!normal) continue;
-
-    const [nx, ny] = normal;
-    shifted.push({
-      start: [start[0] + nx * distance, start[1] + ny * distance],
-      end: [end[0] + nx * distance, end[1] + ny * distance],
-      source,
-      distance,
-      originalJoin: end
-    });
-  }
-
+function joinShiftedEdges(shifted, warnings, contextId) {
   if (shifted.length < 3)
     throw new Error(`${contextId}: impossibile costruire il parallelo.`);
 
-  // Equivalente di RaccordaLinee/CalcolaIntersezioneProiettata:
-  // intersechiamo le rette spostate consecutive. Aggiungiamo solo una
-  // protezione anti-miter patologico per angoli quasi paralleli.
   const joined = [];
   for (let i = 0; i < shifted.length; i++) {
     const current = shifted[i];
     const next = shifted[(i + 1) % shifted.length];
+
     let intersection = infiniteLineIntersection(
       current.start, current.end,
       next.start, next.end
     );
 
-    const originalJoin = current.originalJoin;
-    const maxExpected = Math.max(current.distance, next.distance, 0.01) * MITER_LIMIT_FACTOR;
+    const maxExpected =
+      Math.max(current.distance, next.distance, 0.01) * MITER_LIMIT_FACTOR;
 
     if (intersection) {
       const miterLength = Math.hypot(
-        intersection[0] - originalJoin[0],
-        intersection[1] - originalJoin[1]
+        intersection[0] - current.originalJoin[0],
+        intersection[1] - current.originalJoin[1]
       );
+
       if (!Number.isFinite(miterLength) || miterLength > maxExpected) {
-        warnings.push(`${contextId}: raccordo quasi parallelo limitato al vertice ${i + 1}.`);
+        warnings.push(
+          `${contextId}: raccordo quasi parallelo limitato al vertice ${i + 1}.`
+        );
         intersection = null;
       }
     }
@@ -385,48 +374,104 @@ function paralleloPoligono(jsts, geometryFactory, polygon, linee, warnings, cont
   return joined;
 }
 
-function internalWallFootprint(line) {
-  const start = [line.x1, line.y1];
-  const end = [line.x2, line.y2];
-  const dx = end[0] - start[0];
-  const dy = end[1] - start[1];
-  const length = Math.hypot(dx, dy);
-  if (length <= 1e-9) return null;
+function offsetPerimetroEsterno(
+  jsts, geometryFactory, buildingPolygon, warnings
+) {
+  const coords = ringCoordinates(buildingPolygon.getExteriorRing());
+  const shifted = [];
 
-  const ux = dx / length;
-  const uy = dy / length;
-  const nx = -uy * INTERNAL_HALF_THICKNESS_CM;
-  const ny = ux * INTERNAL_HALF_THICKNESS_CM;
+  for (let i = 0; i < coords.length; i++) {
+    const start = coords[i];
+    const end = coords[(i + 1) % coords.length];
+    if (segmentLength(start, end) <= 1e-9) continue;
 
-  // Cappello quadrato pari al mezzo spessore: nei nodi T/L i rettangoli
-  // si sovrappongono senza lasciare microfessure.
-  const ex = ux * INTERNAL_HALF_THICKNESS_CM;
-  const ey = uy * INTERNAL_HALF_THICKNESS_CM;
+    const normal = outwardNormal(
+      jsts, geometryFactory, buildingPolygon, start, end
+    );
+    if (!normal) continue;
 
-  return {
-    id: line.id,
-    thicknessCm: INTERNAL_WALL_THICKNESS_CM,
-    shell: [
-      [start[0] - ex + nx, start[1] - ey + ny],
-      [end[0] + ex + nx, end[1] + ey + ny],
-      [end[0] + ex - nx, end[1] + ey - ny],
-      [start[0] - ex - nx, start[1] - ey - ny]
-    ]
-  };
+    const [nx, ny] = normal;
+    shifted.push({
+      start: [
+        start[0] + nx * EXTERNAL_WALL_THICKNESS_CM,
+        start[1] + ny * EXTERNAL_WALL_THICKNESS_CM
+      ],
+      end: [
+        end[0] + nx * EXTERNAL_WALL_THICKNESS_CM,
+        end[1] + ny * EXTERNAL_WALL_THICKNESS_CM
+      ],
+      distance: EXTERNAL_WALL_THICKNESS_CM,
+      originalJoin: end
+    });
+  }
+
+  return joinShiftedEdges(shifted, warnings, 'Perimetro esterno edificio');
 }
 
-function annotateExternalNormals(jsts, geometryFactory, linee, buildingPolygon) {
-  linee.forEach((line) => {
-    if (line.wallClass !== 'external') return;
-    const normal = outwardNormal(
-      jsts,
-      geometryFactory,
-      buildingPolygon,
-      [line.x1, line.y1],
-      [line.x2, line.y2]
-    );
-    if (normal) line.outwardNormal = normal;
-  });
+function offsetLocaleNetto(
+  jsts,
+  geometryFactory,
+  localePolygon,
+  exteriorRing,
+  linee,
+  warnings,
+  contextId
+) {
+  const coords = ringCoordinates(localePolygon.getExteriorRing());
+  const shifted = [];
+  const edgeRoles = [];
+
+  for (let i = 0; i < coords.length; i++) {
+    const start = coords[i];
+    const end = coords[(i + 1) % coords.length];
+    if (segmentLength(start, end) <= 1e-9) continue;
+
+    const geometricRole = edgeOnExterior(start, end, exteriorRing)
+      ? 'external'
+      : 'internal';
+
+    const source = sourceLineForEdge(start, end, linee);
+    const sourceRole = source?.wallClass || 'unknown';
+
+    if (source && sourceRole !== 'other' && sourceRole !== geometricRole) {
+      warnings.push(
+        `${contextId}: ${source.id} classificata GPT ${sourceRole === 'external' ? 'E' : 'W'} ma geometricamente ${geometricRole === 'external' ? 'esterna' : 'interna'}.`
+      );
+    }
+
+    let distance = 0;
+    let normal = [0, 0];
+
+    // Regola GeneraPianta concordata:
+    // - lato esterno: è già il filo interno della parete esterna -> NON si sposta
+    // - lato interno: asse divisorio -> 1/2 spessore verso l'interno del locale
+    if (geometricRole === 'internal') {
+      distance = INTERNAL_HALF_THICKNESS_CM;
+      normal = inwardNormal(
+        jsts, geometryFactory, localePolygon, start, end
+      ) || [0, 0];
+    }
+
+    const [nx, ny] = normal;
+    shifted.push({
+      start: [start[0] + nx * distance, start[1] + ny * distance],
+      end: [end[0] + nx * distance, end[1] + ny * distance],
+      distance,
+      originalJoin: end
+    });
+
+    edgeRoles.push({
+      index: i,
+      geometricRole,
+      sourceId: source?.id || '',
+      sourceRole
+    });
+  }
+
+  return {
+    ring: joinShiftedEdges(shifted, warnings, contextId),
+    edgeRoles
+  };
 }
 
 function bboxFromRings(rings) {
@@ -470,29 +515,27 @@ function escapeXml(value) {
     .replaceAll("'", '&apos;');
 }
 
-function generaSvgPulito(locali, edificio, paretiInterne) {
+function generaSvgPulito(locali, edificio) {
   const rings = [
     edificio.outerShell,
-    edificio.innerShell,
-    ...locali.map(locale => locale.shell),
-    ...locali.map(locale => locale.architecturalShell),
-    ...paretiInterne.map(p => p.shell)
+    ...locali.map(locale => locale.architecturalShell)
   ];
   const box = bboxFromRings(rings);
 
+  // La massa muraria nasce esattamente dai perimetri concordati:
+  // contorno esterno parallelizzato verso fuori di 40 cm
+  // meno i perimetri netti dei singoli locali.
+  const wallMassPath = [
+    pathFromRing(edificio.outerShell),
+    ...locali.map(locale => pathFromRing(locale.architecturalShell))
+  ].filter(Boolean).join(' ');
+
   const roomPaths = locali.map(locale =>
-    `    <path id="${escapeXml(locale.id)}" d="${pathFromRing(locale.shell)}" fill="#fafafa" stroke="none" />`
-  ).join('\n');
-
-  const externalWallPath =
-    `${pathFromRing(edificio.outerShell)} ${pathFromRing(edificio.innerShell)}`;
-
-  const internalWalls = paretiInterne.map(wall =>
-    `    <path id="${escapeXml(wall.id)}-ARCH" d="${pathFromRing(wall.shell)}" fill="#d0d0d0" stroke="none" />`
+    `    <path id="${escapeXml(locale.id)}" d="${pathFromRing(locale.architecturalShell)}" fill="#fafafa" stroke="none" />`
   ).join('\n');
 
   const cleanContours = locali.map(locale =>
-    `    <path id="${escapeXml(locale.id)}-PAR" d="${pathFromRing(locale.architecturalShell)}" fill="none" stroke="#777" stroke-width="1.4" vector-effect="non-scaling-stroke" />`
+    `    <path id="${escapeXml(locale.id)}-NETTO" d="${pathFromRing(locale.architecturalShell)}" fill="none" stroke="#777" stroke-width="1.4" vector-effect="non-scaling-stroke" />`
   ).join('\n');
 
   const labels = locali.map(locale =>
@@ -501,12 +544,11 @@ function generaSvgPulito(locali, edificio, paretiInterne) {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.x} ${box.y} ${box.width} ${box.height}">
   <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="white" />
+  <g id="pareti-architettoniche">
+    <path id="MASSA-MURARIA" d="${wallMassPath}" fill="#cfcfcf" fill-rule="evenodd" stroke="#777" stroke-width="1.2" vector-effect="non-scaling-stroke" />
+  </g>
   <g id="locali-puliti">
 ${roomPaths}
-  </g>
-  <g id="pareti-architettoniche" fill="#d0d0d0">
-    <path id="PARETI-ESTERNE" d="${externalWallPath}" fill="#c8c8c8" fill-rule="evenodd" stroke="#777" stroke-width="1.4" vector-effect="non-scaling-stroke" />
-${internalWalls}
   </g>
   <g id="contorni-architettonici">
 ${cleanContours}
@@ -547,7 +589,6 @@ export function generaPiantaDaSvg(svgText) {
     ])
   );
 
-  // JSTS prende il posto del tratto NetTopologySuite usato per noding/polygonize.
   const multiLine = geometryFactory.createMultiLineString(lineStrings);
   const noded = jsts.operation.union.UnaryUnionOp.union(multiLine);
 
@@ -562,33 +603,36 @@ export function generaPiantaDaSvg(svgText) {
     jsts, geometryFactory, localiInput, polygons
   );
 
-  const buildingPolygon = perimetroEsterno(jsts, geometryFactory, polygons);
+  const buildingPolygon = perimetroEsterno(
+    jsts, geometryFactory, polygons
+  );
   if (!buildingPolygon)
     throw new Error('GeneraPianta Web non ha ricostruito il perimetro esterno.');
 
-  annotateExternalNormals(jsts, geometryFactory, linee, buildingPolygon);
-
   const warnings = [];
   const innerShell = ringCoordinates(buildingPolygon.getExteriorRing());
-  const outerShell = paralleloPoligono(
-    jsts, geometryFactory, buildingPolygon, linee, warnings, 'Perimetro edificio'
+  const outerShell = offsetPerimetroEsterno(
+    jsts, geometryFactory, buildingPolygon, warnings
   );
 
   const locali = matchedLocali.map((locale) => {
-    const architecturalShell = paralleloPoligono(
-      jsts, geometryFactory, locale._polygon, linee, warnings, locale.id
+    const netto = offsetLocaleNetto(
+      jsts,
+      geometryFactory,
+      locale._polygon,
+      innerShell,
+      linee,
+      warnings,
+      locale.id
     );
+
     const { _polygon, ...plain } = locale;
     return {
       ...plain,
-      architecturalShell
+      architecturalShell: netto.ring,
+      edgeRoles: netto.edgeRoles
     };
   });
-
-  const paretiInterne = linee
-    .filter(line => line.wallClass === 'internal')
-    .map(internalWallFootprint)
-    .filter(Boolean);
 
   const edificio = {
     innerShell,
@@ -596,26 +640,36 @@ export function generaPiantaDaSvg(svgText) {
     externalWallThicknessCm: EXTERNAL_WALL_THICKNESS_CM
   };
 
-  const svgPulito = generaSvgPulito(locali, edificio, paretiInterne);
+  const warningUnici = [...new Set(warnings)];
+  const edgeRoles = locali.flatMap(locale => locale.edgeRoles || []);
+  const geometricExternalEdges = edgeRoles.filter(e => e.geometricRole === 'external').length;
+  const geometricInternalEdges = edgeRoles.filter(e => e.geometricRole === 'internal').length;
+  const classificationMismatches = edgeRoles.filter(e =>
+    e.sourceRole !== 'unknown' &&
+    e.sourceRole !== 'other' &&
+    e.sourceRole !== e.geometricRole
+  ).length;
+
+  const svgPulito = generaSvgPulito(locali, edificio);
 
   return {
     linee,
     locali,
     edificio,
-    paretiInterne,
     svgPulito,
     defaults: {
       externalWallThicknessCm: EXTERNAL_WALL_THICKNESS_CM,
       internalWallThicknessCm: INTERNAL_WALL_THICKNESS_CM
     },
-    warnings,
+    warnings: warningUnici,
     stats: {
       linee: linee.length,
       loc: localiInput.length,
       poligoniJsts: polygons.length,
       locali: locali.length,
-      paretiEsterne: linee.filter(line => line.wallClass === 'external').length,
-      divisoriInterni: paretiInterne.length
+      geometricExternalEdges,
+      geometricInternalEdges,
+      classificationMismatches
     }
   };
 }
