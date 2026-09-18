@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const MODEL_URL = 'https://raw.githubusercontent.com/Fetonte1960/Termodel/main/SorgentiTermodel/Work/Web/TermodelWebModel.json';
+const MODEL_URL = './TermodelWebModel.json';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
