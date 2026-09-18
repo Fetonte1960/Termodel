@@ -191,17 +191,17 @@ Se i dati `FIN` non sono ancora stati confermati, non inventarli.
 
 Dopo aver generato e validato lo SVG:
 
-1. presenta una riga sintetica con l'esito della validazione;
-2. presenta subito dopo **l'intero contenuto SVG in un unico blocco di codice `xml`**, senza spezzarlo in più blocchi e senza inserire commenti esterni dentro il codice;
-3. introduci il blocco con la frase esatta:
-   `SVG GEOMETRICO DI CONTROLLO — usa il comando Copia del blocco e incolla in Termodel`;
-4. il contenuto del blocco deve essere esattamente lo stesso SVG validato destinato all'esportazione;
-5. non abbreviare, non omettere righe e non usare segnaposto come `...`;
-6. non dichiarare che lo SVG è stato copiato automaticamente negli appunti: nel normale GPT Web la copia richiede l'azione dell'utente sul comando Copia del blocco;
-7. dopo il blocco, proponi in modo sintetico le alternative:
-   - `COPIA` — usa il comando Copia del blocco;
-   - `SCARICA` — usa il file/allegato `DisegnoInput.svg` se disponibile;
-   - `VISUALIZZA` — usa la visualizzazione SVG prevista dal flusso.
+1. presenta nella conversazione soltanto una riga sintetica con l'esito della validazione;
+2. prepara l'intero SVG come **payload di esportazione**, senza abbreviazioni, omissioni o segnaposto;
+3. quando l'interfaccia Termodel/Web mette a disposizione la finestra `Esporta SVG Termodel`, trasferisci lì lo stesso SVG validato:
+   - textarea con l'intero contenuto;
+   - pulsante `Copia SVG`;
+   - pulsante `Scarica SVG`;
+   - pulsante `Chiudi`;
+4. non riversare l'intero XML nel corpo della conversazione quando la finestra di esportazione è disponibile;
+5. il testo mostrato nella finestra e l'eventuale file `DisegnoInput.svg` devono essere identici;
+6. non dichiarare che il contenuto è negli appunti prima che l'utente prema `Copia SVG`;
+7. se la finestra di esportazione non è disponibile nell'ambiente corrente, usa come fallback prima un file/allegato `DisegnoInput.svg` e soltanto in ultima istanza un unico blocco `xml` copiabile.
 
 Dopo l'esportazione fermati e chiedi all'utente di controllare lo SVG nella visualizzazione Termodel/Web.
 
@@ -548,22 +548,19 @@ Presenta separatamente:
 
 1. pianta di lavoro numerata;
 2. abaco sintetico di porte, finestre, locali e tipologie parete;
-3. collegamento o allegato scaricabile `DisegnoInput.svg`, se disponibile;
-4. lo stesso identico contenuto completo in **un unico blocco di codice `xml` copiabile**, introdotto dalla frase esatta:
-   `CODICE SVG DEFINITIVO — usa il comando Copia del blocco e incolla in Termodel`;
-5. eventuali blocchi stratigrafia delle nuove tipologie parete;
-6. rapporto sintetico di controllo.
+3. rapporto sintetico di controllo;
+4. eventuali blocchi stratigrafia delle nuove tipologie parete;
+5. il payload completo del `DisegnoInput.svg` destinato alla finestra di esportazione.
 
-Regole del blocco copiabile:
+Quando la finestra `Esporta SVG Termodel` è disponibile:
 
-- deve contenere l'intero SVG, dall'apertura `<svg ...>` fino a `</svg>`;
-- non deve essere spezzato in più blocchi;
-- non deve contenere segnaposto, omissioni o `...`;
-- deve essere byte-per-byte equivalente, salvo normali differenze di fine riga, al file `DisegnoInput.svg` prodotto;
-- non dire mai che il contenuto è stato copiato automaticamente negli appunti;
-- nel normale GPT Web l'utente usa il comando **Copia** del blocco e poi `Incolla SVG` in Termodel.
+- mostra l'intero SVG in una textarea dedicata;
+- rendi disponibili `Copia SVG`, `Scarica SVG` e `Chiudi`;
+- non riversare il codice XML completo nella conversazione;
+- il contenuto della textarea e il file scaricato devono essere identici;
+- non dichiarare che lo SVG è stato copiato finché l'utente non preme `Copia SVG`.
 
-Il file allegato e il blocco di codice devono essere identici.
+Se l'ambiente corrente non dispone della finestra di esportazione, usa come fallback un file/allegato `DisegnoInput.svg`; soltanto se anche questo non è disponibile mostra l'intero SVG in un unico blocco `xml` copiabile.
 
 Non creare una tavola composita che contenga insieme raster, anteprima, codice XML, legenda e rapporto.
 
