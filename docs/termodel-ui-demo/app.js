@@ -873,6 +873,7 @@ document.addEventListener('click', () => {
 });
 
 
+const TERMODEL_GENERAL_PROMPT_URL = './TermodelGenerale.md';
 const RASTER_PROMPT_URL = './CreaPianoTermodelDaRaster.md';
 
 const rasterAiModal = document.getElementById('rasterAiModal');
@@ -1538,9 +1539,15 @@ rasterFileInput.addEventListener('change', () => {
 rasterCopyPrompt.addEventListener('click', async () => {
   if (!selectedRasterFile) return;
   try {
-    const response = await fetch(RASTER_PROMPT_URL, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const instructions = await response.text();
+    const [generalResponse, rasterResponse] = await Promise.all([
+      fetch(TERMODEL_GENERAL_PROMPT_URL, { cache: 'no-store' }),
+      fetch(RASTER_PROMPT_URL, { cache: 'no-store' })
+    ]);
+    if (!generalResponse.ok) throw new Error(`Istruzioni generali: HTTP ${generalResponse.status}`);
+    if (!rasterResponse.ok) throw new Error(`Istruzioni raster: HTTP ${rasterResponse.status}`);
+    const generalInstructions = await generalResponse.text();
+    const rasterInstructions = await rasterResponse.text();
+    const instructions = generalInstructions + '\n\n---\n\n' + rasterInstructions;
     const session = `
 
 ---
