@@ -1151,7 +1151,7 @@ function createSlabMeshPrimitive(locale, index, tipo) {
     descrizione: `${tipo} provvisorio — ${locale.id} ${locale.descrizione || ''}`.trim(),
     filterMetadata: true,
     piano: 'Anteprima AI',
-    confine: isFloor ? 'Terreno' : 'Esterno',
+    confine: '',
     separatore: false,
     stessaZona: false,
     fittizia: false,
@@ -1188,7 +1188,7 @@ function createAiPreviewModelFromPlan(plan) {
       wallThicknessMeters: AI_PREVIEW_WALL_THICKNESS_M,
       floorThicknessMeters: AI_PREVIEW_FLOOR_THICKNESS_M,
       ceilingThicknessMeters: AI_PREVIEW_CEILING_THICKNESS_M,
-      note: 'Anteprima estrusa: pareti, pavimenti e soffitti hanno valori geometrici convenzionali.'
+      note: 'Anteprima estrusa: pareti, pavimenti e soffitti hanno valori geometrici convenzionali. Nessun confine termico viene dedotto nel Web.'
     },
     previewCounts: {
       walls: walls.length,
