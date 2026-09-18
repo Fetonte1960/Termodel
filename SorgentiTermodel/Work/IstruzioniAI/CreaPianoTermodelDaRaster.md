@@ -176,7 +176,7 @@ Se esistono estremità non collegate o dubbi geometrici sostanziali, l'azione 6 
 
 ### Azione 5 — ESPORTA SVG geometrico di controllo
 
-Questa esportazione serve per il controllo visivo esterno in Termodel/Web.
+Questa esportazione serve per trasferire rapidamente in Termodel/Web lo SVG validato come **testo copiabile**.
 
 Lo SVG geometrico di controllo deve:
 
@@ -191,19 +191,33 @@ Se i dati `FIN` non sono ancora stati confermati, non inventarli.
 
 Dopo aver generato e validato lo SVG:
 
-1. presenta nella conversazione soltanto una riga sintetica con l'esito della validazione;
-2. prepara l'intero SVG come **payload di esportazione**, senza abbreviazioni, omissioni o segnaposto;
-3. quando l'interfaccia Termodel/Web mette a disposizione la finestra `Esporta SVG Termodel`, trasferisci lì lo stesso SVG validato:
-   - textarea con l'intero contenuto;
+1. presenta una riga sintetica con l'esito della validazione;
+2. prepara l'intero SVG, completo da `<svg ...>` a `</svg>`, senza abbreviazioni, omissioni o segnaposto;
+3. **l'uscita primaria dell'azione ESPORTA è sempre il testo SVG copiabile, non il disegno renderizzato e non il file allegato**;
+4. se l'interfaccia Termodel/Web dispone della finestra `Esporta SVG Termodel`, usa quella finestra con:
+   - textarea contenente l'intero SVG;
    - pulsante `Copia SVG`;
    - pulsante `Scarica SVG`;
    - pulsante `Chiudi`;
-4. non riversare l'intero XML nel corpo della conversazione quando la finestra di esportazione è disponibile;
-5. il testo mostrato nella finestra e l'eventuale file `DisegnoInput.svg` devono essere identici;
-6. non dichiarare che il contenuto è negli appunti prima che l'utente prema `Copia SVG`;
-7. se la finestra di esportazione non è disponibile nell'ambiente corrente, usa come fallback prima un file/allegato `DisegnoInput.svg` e soltanto in ultima istanza un unico blocco `xml` copiabile.
+5. se l'ambiente corrente è ChatGPT o non dispone della finestra Termodel/Web, mostra subito l'intero SVG in **un unico blocco di codice `xml` copiabile**; il blocco deve essere l'elemento principale dell'esportazione;
+6. in ChatGPT non sostituire mai il blocco copiabile con un allegato `.svg`, con un link al file o con un'anteprima grafica;
+7. non mostrare automaticamente il rendering/disegno SVG durante l'azione `ESPORTA`; la visualizzazione grafica appartiene alle azioni dedicate di anteprima;
+8. l'eventuale file `DisegnoInput.svg` può essere offerto soltanto come opzione secondaria dopo il testo copiabile;
+9. il testo copiabile e l'eventuale file devono contenere esattamente lo stesso SVG validato;
+10. non dichiarare che il contenuto è negli appunti prima che l'utente usi il comando `Copia` del blocco o il pulsante `Copia SVG`.
 
-Dopo l'esportazione fermati e chiedi all'utente di controllare lo SVG nella visualizzazione Termodel/Web.
+In ChatGPT usa questa sequenza:
+
+```text
+✓ SVG geometrico di controllo validato.
+
+SVG DA COPIARE IN TERMODEL
+[unico blocco xml completo e copiabile]
+
+Opzione secondaria: Scarica DisegnoInput.svg
+```
+
+Dopo l'esportazione fermati e chiedi all'utente di controllare lo SVG in Termodel/Web.
 
 ### Azione 6 — CONFERMA geometria e passa ai dati Termodel
 
@@ -544,23 +558,30 @@ Esempio strutturale minimo:
 
 L'azione `GENERA / ESPORTA DisegnoInput.svg definitivo` della FASE B è disponibile soltanto quando i dati necessari sono completi.
 
+L'uscita primaria dell'esportazione definitiva è sempre **il testo SVG completo e copiabile**.
+
 Presenta separatamente:
 
 1. pianta di lavoro numerata;
 2. abaco sintetico di porte, finestre, locali e tipologie parete;
 3. rapporto sintetico di controllo;
 4. eventuali blocchi stratigrafia delle nuove tipologie parete;
-5. il payload completo del `DisegnoInput.svg` destinato alla finestra di esportazione.
+5. il contenuto completo del `DisegnoInput.svg` pronto per la copia.
 
 Quando la finestra `Esporta SVG Termodel` è disponibile:
 
 - mostra l'intero SVG in una textarea dedicata;
 - rendi disponibili `Copia SVG`, `Scarica SVG` e `Chiudi`;
-- non riversare il codice XML completo nella conversazione;
 - il contenuto della textarea e il file scaricato devono essere identici;
 - non dichiarare che lo SVG è stato copiato finché l'utente non preme `Copia SVG`.
 
-Se l'ambiente corrente non dispone della finestra di esportazione, usa come fallback un file/allegato `DisegnoInput.svg`; soltanto se anche questo non è disponibile mostra l'intero SVG in un unico blocco `xml` copiabile.
+Quando l'ambiente corrente è ChatGPT o non dispone della finestra di esportazione:
+
+- mostra subito l'intero SVG in un unico blocco di codice `xml` copiabile;
+- non sostituire il blocco con un allegato `.svg`, un link o una preview grafica;
+- non renderizzare automaticamente il disegno SVG durante l'esportazione;
+- l'eventuale file `DisegnoInput.svg` è soltanto una opzione secondaria successiva;
+- il blocco copiabile e l'eventuale file devono essere identici.
 
 Non creare una tavola composita che contenga insieme raster, anteprima, codice XML, legenda e rapporto.
 
