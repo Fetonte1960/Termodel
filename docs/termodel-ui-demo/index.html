@@ -435,14 +435,14 @@
 
           <div class="raster-ai-step">
             <h3>3. Riporta lo SVG creato</h3>
-            <p>Carica <code>DisegnoInput.svg</code> oppure incolla il codice restituito dalla chat.</p>
+            <p>Incolla direttamente il blocco <code>TERMODEL-SVG-TEXT-V1</code> copiato da ChatGPT. Restano compatibili anche un normale <code>&lt;svg&gt;...&lt;/svg&gt;</code> o il file <code>DisegnoInput.svg</code>.</p>
             <div class="raster-ai-actions">
               <button id="rasterLoadSvg" type="button">Apri SVG...</button>
               <input id="rasterSvgFileInput" type="file" accept=".svg,.txt,image/svg+xml,text/plain" hidden />
               <button id="rasterPasteSvg" type="button">Incolla SVG</button>
               <button id="rasterValidateSvg" type="button">Controlla SVG</button>
             </div>
-            <textarea id="rasterSvgText" class="raster-ai-svg-input" placeholder="Incolla qui il blocco <svg>...</svg> oppure una risposta GPT che lo contiene."></textarea>
+            <textarea id="rasterSvgText" class="raster-ai-svg-input" placeholder="Incolla qui [TERMODEL-SVG-TEXT-V1]... oppure un normale <svg>...</svg>."></textarea>
             <div id="rasterValidation" class="raster-ai-validation">In attesa dello SVG.</div>
           </div>
 
