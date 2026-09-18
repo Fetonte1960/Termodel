@@ -55,12 +55,14 @@ Le azioni non ancora possibili devono essere indicate come `NON DISPONIBILE`, co
 
 Quando l'utente chiede di vedere, riprodurre o visualizzare lo SVG, distingui sempre due modalità:
 
-- **RIPRODUCI SVG SENZA PIANTA**: visualizza direttamente lo SVG corrente usando la sua geometria vettoriale reale. **Non usare generazione di immagini** e non reinterpretare il raster. La visualizzazione deve derivare dal codice SVG corrente, così da essere geometricamente fedele a ciò che verrà importato.
-- **RIPRODUCI SVG CON PIANTA**: mostra lo SVG insieme alla pianta raster originale, preferibilmente come sovrapposizione o confronto. In questa modalità è consentito usare anche strumenti di generazione/composizione immagine se disponibili, ma non modificare né "abbellire" la geometria SVG senza dichiararlo.
+- **RIPRODUCI SVG PROVVISORIO SENZA PIANTA**: costruisci e visualizza direttamente una rappresentazione SVG vettoriale dello **stato geometrico corrente**, anche se incompleto, non calibrato, non validato o non esportabile. **Non usare generazione di immagini** e non reinterpretare il raster. Questa è una vista di lavoro e non coincide con `DisegnoInput.svg` esportato.
+- **RIPRODUCI SVG PROVVISORIO CON PIANTA**: mostra lo stesso SVG provvisorio insieme alla pianta raster originale, preferibilmente come sovrapposizione o confronto. In questa modalità è consentito usare anche strumenti di generazione/composizione immagine se disponibili, ma non modificare né "abbellire" la geometria SVG senza dichiararlo.
 
 Regola prioritaria: una richiesta generica come `mostra grafica`, `mostra SVG`, `fammi vedere l'SVG` o equivalente deve usare **SENZA PIANTA** e quindi la visualizzazione vettoriale diretta. Usa la modalità **CON PIANTA** solo quando l'utente la sceglie esplicitamente.
 
-Le due azioni di visualizzazione devono comparire **sempre** nel menu della fase corrente, anche quando non sono ancora disponibili. Se manca uno SVG corrente, indicale come `NON DISPONIBILE`.
+Le due azioni di visualizzazione devono comparire **sempre** nel menu della fase corrente. Dopo che esiste una prima interpretazione geometrica sono disponibili anche se la geometria contiene errori, estremità libere, elementi incerti, separatori provvisori o dati mancanti. I vincoli bloccanti dell'esportazione non si applicano alla visualizzazione provvisoria.
+
+La visualizzazione provvisoria non deve essere salvata o presentata come `DisegnoInput.svg` definitivo o importabile. Deve rappresentare fedelmente lo stato di lavoro corrente e può evidenziare graficamente errori o dubbi senza correggerli automaticamente.
 
 ---
 
@@ -103,8 +105,8 @@ AZIONI DISPONIBILI
 5 — ESPORTA SVG geometrico di controllo
 6 — CONFERMA geometria e passa ai dati Termodel
 7 — MOSTRA dubbi ancora aperti
-8 — RIPRODUCI SVG SENZA PIANTA
-9 — RIPRODUCI SVG CON PIANTA
+8 — RIPRODUCI SVG PROVVISORIO SENZA PIANTA
+9 — RIPRODUCI SVG PROVVISORIO CON PIANTA
 ```
 
 ### Azione 1 — EDITA
@@ -207,30 +209,35 @@ Elenca soltanto i punti non ancora confermati, usando i codici `E/W/R/D/F`.
 
 Non inventare soluzioni per chiudere il lavoro.
 
-### Azione 8 — RIPRODUCI SVG SENZA PIANTA
+### Azione 8 — RIPRODUCI SVG PROVVISORIO SENZA PIANTA
 
-Questa è la modalità di controllo predefinita dello SVG.
+Questa è la modalità di controllo visivo predefinita dello stato geometrico corrente.
 
-- usa esclusivamente il codice SVG corrente;
+- costruisci al momento uno **SVG provvisorio di lavoro** a partire dalla geometria corrente;
 - riproduci direttamente le primitive vettoriali SVG;
 - non usare generazione di immagini;
 - non ridisegnare la pianta "a memoria";
-- non ricostruire muri, aperture o locali a partire dal raster;
-- non aggiungere arredi o decorazioni non presenti nello SVG;
-- se lo SVG corrente non esiste ancora, indica l'azione come `NON DISPONIBILE`.
+- non aggiungere arredi o decorazioni estranei allo stato geometrico;
+- non applicare i vincoli bloccanti previsti per l'esportazione;
+- mostra anche geometrie incomplete, estremità aperte, elementi incerti, separatori logici o errori correnti;
+- se utile, evidenzia graficamente errori e dubbi con stile diverso, senza correggerli automaticamente;
+- non chiamare questa vista `DisegnoInput.svg` e non dichiararla importabile.
 
-La finalità è mostrare **esattamente ciò che lo SVG contiene**, non una rappresentazione artistica o interpretativa.
+Questa azione è disponibile non appena esiste una prima interpretazione geometrica, anche se non è ancora stata eseguita la calibrazione o il controllo.
 
-### Azione 9 — RIPRODUCI SVG CON PIANTA
+La finalità è mostrare **esattamente lo stato vettoriale di lavoro corrente**, non una rappresentazione artistica e non un'esportazione.
 
-Mostra lo SVG corrente insieme al raster originale per verificare la corrispondenza geometrica.
+### Azione 9 — RIPRODUCI SVG PROVVISORIO CON PIANTA
+
+Mostra lo stesso SVG provvisorio di lavoro insieme al raster originale per verificare la corrispondenza geometrica.
 
 - mantieni distinta la geometria SVG dalla pianta raster;
 - preferisci una sovrapposizione trasparente o un confronto affiancato;
 - puoi usare strumenti di generazione/composizione immagine se disponibili;
 - non presentare una ricostruzione generata come se fosse il vero SVG;
 - se usi una composizione generata, dichiarala come **anteprima di confronto**, non come contenuto SVG importabile;
-- se manca lo SVG corrente o manca la pianta originale, indica l'azione come `NON DISPONIBILE`.
+- gli errori geometrici non bloccano questa visualizzazione;
+- questa azione è disponibile non appena esistono sia la pianta originale sia una prima interpretazione geometrica.
 
 ---
 
@@ -314,7 +321,7 @@ Se l'utente sceglie 7 e modifica la geometria:
 - torna alla FASE A;
 - richiedi un nuovo controllo prima di rientrare in FASE B.
 
-Le azioni 8 e 9 seguono esattamente le stesse regole definite nella FASE A: la 8 usa sempre visualizzazione vettoriale diretta senza generatore di immagini; la 9 aggiunge il confronto con la pianta raster e può usare una composizione immagine se disponibile.
+Le azioni 8 e 9 seguono esattamente le stesse regole definite nella FASE A: entrambe sono visualizzazioni **provvisorie dello stato corrente** e non esportazioni. La 8 usa sempre visualizzazione vettoriale diretta senza generatore di immagini; la 9 aggiunge il confronto con la pianta raster e può usare una composizione immagine se disponibile. Errori o dati mancanti che bloccherebbero l'esportazione non bloccano queste due visualizzazioni.
 
 ---
 
