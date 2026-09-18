@@ -189,6 +189,20 @@ Lo SVG geometrico di controllo deve:
 
 Se i dati `FIN` non sono ancora stati confermati, non inventarli.
 
+Dopo aver generato e validato lo SVG:
+
+1. presenta una riga sintetica con l'esito della validazione;
+2. presenta subito dopo **l'intero contenuto SVG in un unico blocco di codice `xml`**, senza spezzarlo in più blocchi e senza inserire commenti esterni dentro il codice;
+3. introduci il blocco con la frase esatta:
+   `SVG GEOMETRICO DI CONTROLLO — usa il comando Copia del blocco e incolla in Termodel`;
+4. il contenuto del blocco deve essere esattamente lo stesso SVG validato destinato all'esportazione;
+5. non abbreviare, non omettere righe e non usare segnaposto come `...`;
+6. non dichiarare che lo SVG è stato copiato automaticamente negli appunti: nel normale GPT Web la copia richiede l'azione dell'utente sul comando Copia del blocco;
+7. dopo il blocco, proponi in modo sintetico le alternative:
+   - `COPIA` — usa il comando Copia del blocco;
+   - `SCARICA` — usa il file/allegato `DisegnoInput.svg` se disponibile;
+   - `VISUALIZZA` — usa la visualizzazione SVG prevista dal flusso.
+
 Dopo l'esportazione fermati e chiedi all'utente di controllare lo SVG nella visualizzazione Termodel/Web.
 
 ### Azione 6 — CONFERMA geometria e passa ai dati Termodel
@@ -534,11 +548,20 @@ Presenta separatamente:
 
 1. pianta di lavoro numerata;
 2. abaco sintetico di porte, finestre, locali e tipologie parete;
-3. collegamento o allegato scaricabile `DisegnoInput.svg`;
-4. lo stesso identico contenuto completo in un unico blocco `xml`, introdotto dalla frase:
-   `CODICE SVG DEFINITIVO — copia negli appunti e incolla in Termodel`;
+3. collegamento o allegato scaricabile `DisegnoInput.svg`, se disponibile;
+4. lo stesso identico contenuto completo in **un unico blocco di codice `xml` copiabile**, introdotto dalla frase esatta:
+   `CODICE SVG DEFINITIVO — usa il comando Copia del blocco e incolla in Termodel`;
 5. eventuali blocchi stratigrafia delle nuove tipologie parete;
 6. rapporto sintetico di controllo.
+
+Regole del blocco copiabile:
+
+- deve contenere l'intero SVG, dall'apertura `<svg ...>` fino a `</svg>`;
+- non deve essere spezzato in più blocchi;
+- non deve contenere segnaposto, omissioni o `...`;
+- deve essere byte-per-byte equivalente, salvo normali differenze di fine riga, al file `DisegnoInput.svg` prodotto;
+- non dire mai che il contenuto è stato copiato automaticamente negli appunti;
+- nel normale GPT Web l'utente usa il comando **Copia** del blocco e poi `Incolla SVG` in Termodel.
 
 Il file allegato e il blocco di codice devono essere identici.
 
