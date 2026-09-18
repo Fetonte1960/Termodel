@@ -6,6 +6,12 @@ const MODEL_URL = './TermodelWebModel.json';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
+const cadPage = document.getElementById('cadPage');
+const cadCanvas = document.getElementById('cadCanvas');
+const cadShowClean = document.getElementById('cadShowClean');
+const cadShowInput = document.getElementById('cadShowInput');
+const cadReturnModel = document.getElementById('cadReturnModel');
+const cadExportArchitectural = document.getElementById('cadExportArchitectural');
 const status = document.querySelector('.viewport-status');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd3d3d3);
@@ -195,8 +201,8 @@ const DEMO_HELP = {
     body: '<p>Seleziona il disegno di input associato al progetto. Il modello Termodel viene costruito interpretando i DXF e i layer configurati nei piani.</p>'
   },
   'Edita nel Cad': {
-    title: 'Edita nel CAD',
-    body: '<p>Apre il disegno corrente nel CAD per modificarlo. Dopo il salvataggio del DXF, <strong>Aggiorna Modello</strong> rilegge il disegno e ricostruisce il modello termico.</p>'
+    title: 'Edita nel CAD — viewer Web',
+    body: '<p>Nella demo Web apre il confronto 2D: la <strong>pianta pulita</strong> prodotta da GeneraPianta/JSTS viene mostrata in grigio e il <strong>DisegnoInput.svg</strong> viene sovrapposto con linee colorate e più spesse. Il comando di esportazione architettonica è predisposto ma non ancora attivo.</p>'
   },
   'Visualizza Plugin Cad': {
     title: 'Visualizza Plugin CAD',
@@ -1245,6 +1251,177 @@ function downloadCleanPlanSvg() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function svgNode(name, attributes = {}) {
+  const node = document.createElementNS(SVG_NS, name);
+  Object.entries(attributes).forEach(([key, value]) => {
+    if (value !== null && value !== undefined)
+      node.setAttribute(key, String(value));
+  });
+  return node;
+}
+
+function cadColorForId(id) {
+  if (/^E/i.test(id)) return '#1565c0';
+  if (/^W/i.test(id)) return '#d35400';
+  if (/^P/i.test(id)) return '#7b1fa2';
+  if (/^F/i.test(id)) return '#00897b';
+  return '#c62828';
+}
+
+function addCadLabel(group, id, x, y, color) {
+  if (!id || !Number.isFinite(x) || !Number.isFinite(y)) return;
+  const text = svgNode('text', {
+    x, y: y - 8,
+    fill: color,
+    stroke: '#ffffff',
+    'stroke-width': 3,
+    'paint-order': 'stroke',
+    'text-anchor': 'middle',
+    'font-family': 'Segoe UI, Arial, sans-serif',
+    'font-size': 15,
+    'font-weight': 700
+  });
+  text.textContent = id;
+  group.appendChild(text);
+}
+
+function applyCadLayerVisibility() {
+  if (!cadCanvas) return;
+  const clean = cadCanvas.querySelector('#cadCleanLayer');
+  const input = cadCanvas.querySelector('#cadInputLayer');
+  if (clean) clean.style.display = cadShowClean?.checked === false ? 'none' : '';
+  if (input) input.style.display = cadShowInput?.checked === false ? 'none' : '';
+}
+
+function renderCadComparison() {
+  if (!cadCanvas) return;
+
+  cadCanvas.innerHTML = '';
+  if (!validatedSvg || !lastCleanPlanSvg) {
+    const empty = document.createElement('div');
+    empty.className = 'cad-empty';
+    empty.textContent = 'Genera prima una pianta da raster con AI. Qui verranno sovrapposti la pianta ripulita e il DisegnoInput.svg.';
+    cadCanvas.appendChild(empty);
+    return;
+  }
+
+  const parser = new DOMParser();
+  const cleanDoc = parser.parseFromString(lastCleanPlanSvg, 'image/svg+xml');
+  const inputDoc = parser.parseFromString(validatedSvg, 'image/svg+xml');
+  const cleanRoot = cleanDoc.documentElement;
+  const inputRoot = inputDoc.documentElement;
+
+  const viewBox = cleanRoot.getAttribute('viewBox') || inputRoot.getAttribute('viewBox');
+  if (!viewBox) {
+    const empty = document.createElement('div');
+    empty.className = 'cad-empty';
+    empty.textContent = 'Impossibile visualizzare il confronto: manca il viewBox SVG.';
+    cadCanvas.appendChild(empty);
+    return;
+  }
+
+  const svg = svgNode('svg', {
+    viewBox,
+    preserveAspectRatio: 'xMidYMid meet',
+    role: 'img',
+    'aria-label': 'Confronto tra pianta pulita e DisegnoInput'
+  });
+
+  const vb = viewBox.trim().split(/[ ,]+/).map(Number);
+  if (vb.length === 4 && vb.every(Number.isFinite)) {
+    svg.appendChild(svgNode('rect', {
+      x: vb[0], y: vb[1], width: vb[2], height: vb[3], fill: '#f5f5f5'
+    }));
+  }
+
+  // Fondo: risultato di GeneraPianta/JSTS, volutamente neutro e grigio.
+  const cleanLayer = svgNode('g', { id: 'cadCleanLayer' });
+  cleanDoc.querySelectorAll('#locali-puliti path').forEach((source) => {
+    cleanLayer.appendChild(svgNode('path', {
+      d: source.getAttribute('d') || '',
+      fill: '#e6e6e6',
+      'fill-rule': 'evenodd',
+      stroke: '#b8b8b8',
+      'stroke-width': 1.2,
+      'vector-effect': 'non-scaling-stroke'
+    }));
+  });
+  cleanDoc.querySelectorAll('#pareti-pulite line').forEach((source) => {
+    cleanLayer.appendChild(svgNode('line', {
+      x1: source.getAttribute('x1'), y1: source.getAttribute('y1'),
+      x2: source.getAttribute('x2'), y2: source.getAttribute('y2'),
+      stroke: '#858585',
+      'stroke-width': 1.8,
+      'stroke-linecap': 'square',
+      'vector-effect': 'non-scaling-stroke'
+    }));
+  });
+  cleanDoc.querySelectorAll('#etichette-locali text').forEach((source) => {
+    const label = svgNode('text', {
+      x: source.getAttribute('x'), y: source.getAttribute('y'),
+      fill: '#777777',
+      'text-anchor': 'middle',
+      'font-family': 'Segoe UI, Arial, sans-serif',
+      'font-size': 14
+    });
+    label.textContent = source.textContent || '';
+    cleanLayer.appendChild(label);
+  });
+  svg.appendChild(cleanLayer);
+
+  // Overlay: DisegnoInput.svg, evidenziato per rendere immediato il confronto.
+  const inputLayer = svgNode('g', { id: 'cadInputLayer' });
+  const calpestabile = Array.from(inputRoot.children)
+    .find(el => el.localName === 'g' && el.id === 'calpestabile');
+
+  if (calpestabile) {
+    Array.from(calpestabile.children)
+      .filter(el => el.localName === 'line')
+      .forEach((line) => {
+        const id = line.id || '';
+        const color = cadColorForId(id);
+        const x1 = Number(line.getAttribute('x1'));
+        const y1 = Number(line.getAttribute('y1'));
+        const x2 = Number(line.getAttribute('x2'));
+        const y2 = Number(line.getAttribute('y2'));
+
+        inputLayer.appendChild(svgNode('line', {
+          x1, y1, x2, y2,
+          stroke: color,
+          'stroke-width': 3.4,
+          'stroke-linecap': 'round',
+          opacity: 0.90,
+          'vector-effect': 'non-scaling-stroke'
+        }));
+        addCadLabel(inputLayer, id, (x1 + x2) / 2, (y1 + y2) / 2, color);
+      });
+
+    Array.from(calpestabile.children)
+      .filter(el => el.localName === 'text' && /^[RPF]\d+/i.test(el.id || ''))
+      .forEach((labelSource) => {
+        const id = labelSource.id || '';
+        const x = Number(labelSource.getAttribute('x'));
+        const y = Number(labelSource.getAttribute('y'));
+        addCadLabel(inputLayer, id, x, y, cadColorForId(id));
+      });
+  }
+
+  svg.appendChild(inputLayer);
+  cadCanvas.appendChild(svg);
+  applyCadLayerVisibility();
+}
+
+function activateCadPage() {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  if (cadPage) cadPage.classList.add('active');
+  if (demoHelpPanel) demoHelpPanel.hidden = true;
+  renderCadComparison();
+}
+
 function processSvgText(text) {
   validatedSvg = '';
   lastAiPreviewData = null;
@@ -1387,10 +1564,23 @@ document.addEventListener('keydown', (event) => {
     closeRasterAiDialog();
 });
 
+
+if (cadShowClean)
+  cadShowClean.addEventListener('change', applyCadLayerVisibility);
+if (cadShowInput)
+  cadShowInput.addEventListener('change', applyCadLayerVisibility);
+if (cadReturnModel)
+  cadReturnModel.addEventListener('click', activateModelPage);
+// v0.3: pulsante volutamente predisposto e disabilitato; nessuna esportazione ancora.
+
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
     if (button.dataset.action === 'Crea piano da raster con AI') {
       openRasterAiDialog();
+      return;
+    }
+    if (button.dataset.action === 'Edita nel Cad') {
+      activateCadPage();
       return;
     }
     showDemoHelp(button.dataset.action);
