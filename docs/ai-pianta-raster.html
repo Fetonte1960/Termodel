@@ -141,7 +141,7 @@
 <main>
   <section class="card">
     <h2>Come si usa</h2>
-    <p>Questa pagina espone la stessa istruzione usata dalla demo Termodel Web. Il testo completo è caricato direttamente dal file Markdown del progetto: esiste quindi una sola fonte da mantenere aggiornata.</p>
+    <p>Questa pagina espone le due istruzioni usate dalla demo Termodel Web: una generale per il linguaggio Termodel-AI e una specifica per la creazione del piano da raster. I testi sono caricati direttamente dai rispettivi file Markdown.</p>
     <div class="workflow">
       <div class="step"><strong>1 — Allega la pianta</strong>La pianta raster resta la fonte geometrica primaria.</div>
       <div class="step"><strong>2 — Interpreta</strong>L'AI identifica pareti, locali e aperture assegnando codici stabili.</div>
@@ -153,7 +153,8 @@
     </div>
     <div class="actions">
       <a class="btn" href="termodel-ui-demo/">Apri Termodel Web Demo</a>
-      <a class="btn secondary" href="termodel-ui-demo/CreaPianoTermodelDaRaster.md">Apri il testo Markdown</a>
+      <a class="btn secondary" href="termodel-ui-demo/TermodelGenerale.md">Apri Termodel generale</a>
+      <a class="btn secondary" href="termodel-ui-demo/CreaPianoTermodelDaRaster.md">Apri istruzione raster</a>
       <a class="btn secondary" href="index.html">Torna a Termodel.it</a>
     </div>
   </section>
@@ -174,12 +175,26 @@
   <section class="card">
     <div class="instruction-head">
       <div>
-        <h2 style="margin:0">Istruzione AI completa</h2>
-        <div id="loadStatus" class="source-note">Caricamento della versione corrente…</div>
+        <h2 style="margin:0">1. Istruzioni AI generali Termodel</h2>
+        <div id="generalStatus" class="source-note">Caricamento…</div>
       </div>
-      <button id="copyBtn" class="btn" type="button" disabled>Copia istruzioni</button>
+      <button id="copyGeneralBtn" class="btn secondary" type="button" disabled>Copia generale</button>
     </div>
-    <pre id="instructionText">Caricamento…</pre>
+    <pre id="generalInstructionText">Caricamento…</pre>
+  </section>
+
+  <section class="card">
+    <div class="instruction-head">
+      <div>
+        <h2 style="margin:0">2. Istruzione specifica Pianta Raster</h2>
+        <div id="rasterStatus" class="source-note">Caricamento…</div>
+      </div>
+      <button id="copyRasterBtn" class="btn secondary" type="button" disabled>Copia raster</button>
+    </div>
+    <pre id="rasterInstructionText">Caricamento…</pre>
+    <div class="actions">
+      <button id="copyCombinedBtn" class="btn" type="button" disabled>Copia pacchetto completo</button>
+    </div>
   </section>
 </main>
 
@@ -188,44 +203,56 @@
 </footer>
 
 <script>
-  const sourceUrl = 'termodel-ui-demo/CreaPianoTermodelDaRaster.md';
-  const pre = document.getElementById('instructionText');
-  const copyBtn = document.getElementById('copyBtn');
-  const status = document.getElementById('loadStatus');
-  let instruction = '';
+  const generalUrl = 'termodel-ui-demo/TermodelGenerale.md';
+  const rasterUrl = 'termodel-ui-demo/CreaPianoTermodelDaRaster.md';
 
-  async function loadInstruction() {
-    try {
-      const response = await fetch(sourceUrl, { cache: 'no-store' });
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      instruction = await response.text();
-      pre.textContent = instruction;
-      copyBtn.disabled = false;
-      status.textContent = 'Versione corrente caricata dal file ufficiale del progetto.';
-      status.classList.add('status');
-    } catch (error) {
-      pre.textContent = 'Impossibile caricare automaticamente l\'istruzione. Usa il pulsante “Apri il testo Markdown”.';
-      status.textContent = 'Caricamento non riuscito.';
-    }
+  const generalPre = document.getElementById('generalInstructionText');
+  const rasterPre = document.getElementById('rasterInstructionText');
+  const generalStatus = document.getElementById('generalStatus');
+  const rasterStatus = document.getElementById('rasterStatus');
+  const copyGeneralBtn = document.getElementById('copyGeneralBtn');
+  const copyRasterBtn = document.getElementById('copyRasterBtn');
+  const copyCombinedBtn = document.getElementById('copyCombinedBtn');
+
+  let generalInstruction = '';
+  let rasterInstruction = '';
+
+  async function loadText(url, pre, status) {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const text = await response.text();
+    pre.textContent = text;
+    status.textContent = 'Versione corrente caricata dal file ufficiale.';
+    status.classList.add('status');
+    return text;
   }
 
-  copyBtn.addEventListener('click', async () => {
-    if (!instruction) return;
-    try {
-      await navigator.clipboard.writeText(instruction);
-      const old = copyBtn.textContent;
-      copyBtn.textContent = 'Copiato!';
-      setTimeout(() => copyBtn.textContent = old, 1600);
-    } catch (error) {
-      const range = document.createRange();
-      range.selectNodeContents(pre);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
+  async function copyText(text, button) {
+    await navigator.clipboard.writeText(text);
+    const old = button.textContent;
+    button.textContent = 'Copiato!';
+    setTimeout(() => button.textContent = old, 1600);
+  }
+
+  Promise.all([
+    loadText(generalUrl, generalPre, generalStatus),
+    loadText(rasterUrl, rasterPre, rasterStatus)
+  ]).then(([general, raster]) => {
+    generalInstruction = general;
+    rasterInstruction = raster;
+    copyGeneralBtn.disabled = false;
+    copyRasterBtn.disabled = false;
+    copyCombinedBtn.disabled = false;
+  }).catch(error => {
+    generalStatus.textContent = 'Errore di caricamento: ' + error.message;
+    rasterStatus.textContent = 'Errore di caricamento: ' + error.message;
   });
 
-  loadInstruction();
+  copyGeneralBtn.addEventListener('click', () => copyText(generalInstruction, copyGeneralBtn));
+  copyRasterBtn.addEventListener('click', () => copyText(rasterInstruction, copyRasterBtn));
+  copyCombinedBtn.addEventListener('click', () =>
+    copyText(generalInstruction + '\n\n---\n\n' + rasterInstruction, copyCombinedBtn)
+  );
 </script>
 </body>
 </html>
