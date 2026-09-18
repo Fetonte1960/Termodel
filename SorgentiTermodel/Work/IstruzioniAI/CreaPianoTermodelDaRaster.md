@@ -51,6 +51,17 @@ AZIONI DISPONIBILI
 
 Le azioni non ancora possibili devono essere indicate come `NON DISPONIBILE`, con una breve ragione. Non eseguire un cambio di fase senza comando esplicito dell'utente.
 
+## Direttiva di visualizzazione SVG
+
+Quando l'utente chiede di vedere, riprodurre o visualizzare lo SVG, distingui sempre due modalità:
+
+- **RIPRODUCI SVG SENZA PIANTA**: visualizza direttamente lo SVG corrente usando la sua geometria vettoriale reale. **Non usare generazione di immagini** e non reinterpretare il raster. La visualizzazione deve derivare dal codice SVG corrente, così da essere geometricamente fedele a ciò che verrà importato.
+- **RIPRODUCI SVG CON PIANTA**: mostra lo SVG insieme alla pianta raster originale, preferibilmente come sovrapposizione o confronto. In questa modalità è consentito usare anche strumenti di generazione/composizione immagine se disponibili, ma non modificare né "abbellire" la geometria SVG senza dichiararlo.
+
+Regola prioritaria: una richiesta generica come `mostra grafica`, `mostra SVG`, `fammi vedere l'SVG` o equivalente deve usare **SENZA PIANTA** e quindi la visualizzazione vettoriale diretta. Usa la modalità **CON PIANTA** solo quando l'utente la sceglie esplicitamente.
+
+Le due azioni di visualizzazione devono comparire **sempre** nel menu della fase corrente, anche quando non sono ancora disponibili. Se manca uno SVG corrente, indicale come `NON DISPONIBILE`.
+
 ---
 
 # FASE A — GEOMETRIA
@@ -92,6 +103,8 @@ AZIONI DISPONIBILI
 5 — ESPORTA SVG geometrico di controllo
 6 — CONFERMA geometria e passa ai dati Termodel
 7 — MOSTRA dubbi ancora aperti
+8 — RIPRODUCI SVG SENZA PIANTA
+9 — RIPRODUCI SVG CON PIANTA
 ```
 
 ### Azione 1 — EDITA
@@ -194,6 +207,31 @@ Elenca soltanto i punti non ancora confermati, usando i codici `E/W/R/D/F`.
 
 Non inventare soluzioni per chiudere il lavoro.
 
+### Azione 8 — RIPRODUCI SVG SENZA PIANTA
+
+Questa è la modalità di controllo predefinita dello SVG.
+
+- usa esclusivamente il codice SVG corrente;
+- riproduci direttamente le primitive vettoriali SVG;
+- non usare generazione di immagini;
+- non ridisegnare la pianta "a memoria";
+- non ricostruire muri, aperture o locali a partire dal raster;
+- non aggiungere arredi o decorazioni non presenti nello SVG;
+- se lo SVG corrente non esiste ancora, indica l'azione come `NON DISPONIBILE`.
+
+La finalità è mostrare **esattamente ciò che lo SVG contiene**, non una rappresentazione artistica o interpretativa.
+
+### Azione 9 — RIPRODUCI SVG CON PIANTA
+
+Mostra lo SVG corrente insieme al raster originale per verificare la corrispondenza geometrica.
+
+- mantieni distinta la geometria SVG dalla pianta raster;
+- preferisci una sovrapposizione trasparente o un confronto affiancato;
+- puoi usare strumenti di generazione/composizione immagine se disponibili;
+- non presentare una ricostruzione generata come se fosse il vero SVG;
+- se usi una composizione generata, dichiarala come **anteprima di confronto**, non come contenuto SVG importabile;
+- se manca lo SVG corrente o manca la pianta originale, indica l'azione come `NON DISPONIBILE`.
+
 ---
 
 # Regole geometriche indispensabili
@@ -266,6 +304,8 @@ AZIONI DISPONIBILI
 5 — GENERA / ESPORTA DisegnoInput.svg definitivo
 6 — MOSTRA rapporto finale di controllo
 7 — TORNA alla geometria
+8 — RIPRODUCI SVG SENZA PIANTA
+9 — RIPRODUCI SVG CON PIANTA
 ```
 
 Se l'utente sceglie 7 e modifica la geometria:
@@ -273,6 +313,8 @@ Se l'utente sceglie 7 e modifica la geometria:
 - annulla lo stato `GEOMETRIA APPROVATA`;
 - torna alla FASE A;
 - richiedi un nuovo controllo prima di rientrare in FASE B.
+
+Le azioni 8 e 9 seguono esattamente le stesse regole definite nella FASE A: la 8 usa sempre visualizzazione vettoriale diretta senza generatore di immagini; la 9 aggiunge il confronto con la pianta raster e può usare una composizione immagine se disponibile.
 
 ---
 
