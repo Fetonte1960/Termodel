@@ -1,0 +1,39 @@
+﻿<Window x:Class="Termodel.Leggidxf.CadGPT"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="CadGPT" Height="600" Width="900">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Colonna sinistra: Pulsanti e istruzioni -->
+        <StackPanel Orientation="Vertical" Grid.Column="0">
+            <TextBlock FontWeight="Bold" Text="Istruzioni per l'utente:" Margin="0,0,0,10"/>
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                1. Clicca su "Copia Contesto" per copiare lo standard SVG-LTS negli appunti.
+                {"\n"}2. Vai su ChatGPT e incolla il contesto.
+                {"\n"}3. Scrivi la descrizione dei locali (uno o più).
+                {"\n"}4. Copia lo SVG generato da ChatGPT.
+                {"\n"}5. Torna qui e incolla nella finestra di testo a destra.
+                {"\n"}6. Premi il pulsante Crea DXF.
+                {"\n"}7. Incolla eventuali errori in CHATGPT e ripeti il processo.
+            </TextBlock>
+
+            <!-- Modificato da Codex per realizzare: due istruzioni GPT distinte per descrizione testuale e pianta raster. -->
+            <Button Content="GPT: progetto a parole" Name="btnCopia" Margin="0,0,0,10" Click="CopiaContesto_Click"/>
+            <Button Content="GPT: leggi pianta raster" Name="btnCopiaRaster" Margin="0,0,0,10" Click="CopiaContestoRaster_Click"/>
+            <Button Content=" Crea DXF" Name="btnImporta" Margin="0,0,0,10" Click="ImportaSvg_Click"/>
+            <Button Content=" Chiudi" Name="btnChiudi" Margin="0,0,0,10" Click="Chiudi_Click"/>
+        </StackPanel>
+
+        <!-- Colonna destra: Area SVG (invisibile o visibile a scopo debug) -->
+        <TextBox Name="txtSVG" Grid.Column="1" Margin="10,0,0,0" VerticalScrollBarVisibility="Auto"
+                 AcceptsReturn="True" TextWrapping="Wrap" Visibility="Visible"
+                 FontFamily="Consolas" FontSize="12" />
+    </Grid>
+</Window>
+
+
+
