@@ -46,23 +46,40 @@ Repository:
 https://github.com/Fetonte1960/Termodel
 ```
 
-Termodel comprende attualmente tre aree che devono restare coordinate ma separate:
+### Obiettivo primario del progetto
+
+**Stiamo sviluppando la versione Web di Termodel.**
+
+Il programma Termodel desktop esistente è il riferimento funzionale e tecnico da cui ricavare comportamenti, regole, archivi e funzioni. Il lavoro corrente consiste nel trasferire progressivamente queste capacità in una architettura Web moderna, mantenendo separati frontend, servizi server e logica Core.
+
+Architettura di riferimento:
 
 ```text
-Termodel desktop
+Termodel desktop esistente
         │
+        ├── riferimento funzionale
         ├── definizione dati autorevole
-        ├── archivi desktop / XML
-        └── motore storico
+        ├── archivi / XML
+        └── funzioni e logica storica
              │
              ▼
-Termodel.Core / Termodel.WebService
+Termodel.Core
+logica riutilizzabile / funzioni del motore
              │
              ▼
-Termodel Web HTML/CSS/JavaScript
+Termodel.WebService
+server ASP.NET Core / API / contratti
+             │
+             ▼
+Termodel Web
+HTML / CSS / JavaScript browser
 ```
 
-Obiettivo progressivo: portare sul Web funzioni di Termodel senza trasformare il browser in una seconda implementazione indipendente del motore desktop.
+Il progetto non consiste semplicemente nel creare una demo Web: l'obiettivo è arrivare a una **vera versione Web di Termodel**, riutilizzando e portando sul lato Core/server le funzioni del Termodel esistente invece di duplicarle arbitrariamente nel browser.
+
+Principio fondamentale:
+
+> Il frontend presenta e interagisce con i dati; Core e server implementano progressivamente le funzioni autorevoli di Termodel.
 
 
 ---
@@ -158,7 +175,23 @@ La directory `SorgentiTermodel/Work/IstruzioniAI/` è la **sorgente di lavoro au
 
 ## 3. Responsabilità e confini
 
-### Chat/frontend Termodel Web
+La divisione operativa corrente è esplicita:
+
+```text
+QUESTA CHAT
+    ↓
+Frontend della versione Web di Termodel
+HTML / CSS / JavaScript / UI browser
+
+CODEX
+    ↓
+Termodel.WebService + Termodel.Core
++ porting/implementazione delle funzioni del Termodel esistente
+```
+
+Le due aree devono essere sviluppate in modo coordinato: quando il frontend richiede una funzione che appartiene al motore o al server, questa chat deve definire il requisito/contratto e passarlo a Codex, senza reimplementare la logica autorevole nel browser.
+
+### Questa chat — frontend Termodel Web
 
 Responsabile di:
 
@@ -184,10 +217,13 @@ Non deve modificare senza coordinamento:
 - definizione dati autorevole;
 - copie consultive della Library.
 
-### Chat Core/WebService
+### Codex — server, Core e funzioni Termodel
 
-Responsabile di:
+Codex è responsabile principalmente di:
 
+- Termodel.WebService;
+- Termodel.Core;
+- porting e implementazione delle funzioni provenienti dal Termodel desktop;
 - contratti frontend/backend;
 - schema autorevole lato server;
 - validazione;
@@ -198,9 +234,12 @@ Responsabile di:
 - concorrenza;
 - XML/JSON;
 - endpoint ASP.NET Core;
-- diagnostica server.
+- diagnostica server;
+- logica applicativa che non deve essere duplicata nel JavaScript del browser.
 
-Non deve modificare il frontend in parallelo senza avvisare l'utente.
+Codex può consultare il Termodel desktop come riferimento per riportare funzioni e comportamenti nel Core/server, ma deve mantenere separati i componenti ed evitare modifiche non coordinate al frontend.
+
+Questa chat e Codex devono lavorare in modo armonico: il frontend definisce ciò di cui ha bisogno dall'interfaccia/server; Codex realizza o espone le funzioni Core/server necessarie; il frontend le consuma attraverso contratti reali e verificati.
 
 ---
 
