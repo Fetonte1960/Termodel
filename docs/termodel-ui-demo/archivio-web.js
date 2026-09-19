@@ -4,7 +4,7 @@
 
 const PROJECT_START = '[TERMODEL-PROJECT-TEXT-V1]';
 const PROJECT_END = '[END-TERMODEL-PROJECT-TEXT-V1]';
-const DEFAULT_SCHEMA_URL = './definizionedati.json?v=0.26';
+const DEFAULT_SCHEMA_URL = './definizionedati.json?v=0.27';
 const EXPECTED_SCHEMA_SHA256 = '29E30DE64C7D45E4613F145AC485F573DB34F4328C6CE0BC7367EB92D83AAD0B';
 
 const ARCHIVE_ORDER = [
@@ -605,6 +605,7 @@ function createUi() {
     archiveState.dirty = true;
     setStatus('✓ Modifiche applicate al progetto Web in memoria.');
     renderArchive();
+    window.dispatchEvent(new CustomEvent('termodel:archives-updated'));
   });
 
   archiveState.ui = ui;
@@ -934,6 +935,7 @@ export function closeArchivioWeb() {
   commitFormToRecord();
   ui.modal.classList.remove('visible');
   ui.modal.setAttribute('aria-hidden', 'true');
+  window.dispatchEvent(new CustomEvent('termodel:archives-updated'));
 }
 
 export async function initArchivioWeb(options = {}) {
@@ -954,4 +956,9 @@ export function getArchivioWebState() {
     dirty: archiveState.dirty,
     archives: archiveState.project ? Object.keys(archiveState.project.archives) : []
   };
+}
+
+export function getArchivioWebRecords(name) {
+  commitFormToRecord();
+  return archiveRecords(name).map(record => ({ ...record }));
 }

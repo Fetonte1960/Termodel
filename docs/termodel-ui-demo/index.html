@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.26 — Edita nel Cad con inizializzazione automatica</title>
+  <title>Termodel Web v0.27 — CAD pareti collegato agli archivi</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -601,6 +601,21 @@
       gap: 5px;
       align-items: center;
     }
+    .cad-prop-with-arc {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 38px;
+      gap: 4px;
+      align-items: center;
+    }
+    .cad-prop-arc {
+      height: 26px;
+      min-width: 38px;
+      border: 1px solid #888;
+      background: linear-gradient(#fff,#dedede);
+      padding: 0 5px;
+      cursor: pointer;
+      font-size: 11px;
+    }
     .cad-prop-swatch {
       width: 28px;
       height: 22px;
@@ -676,7 +691,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.26</div>
+      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.27</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -730,10 +745,10 @@
           <div class="cad-empty">Genera prima una pianta da raster con AI. Qui potrai correggere direttamente le pareti E/W del DisegnoInput.svg.</div>
         </div>
 
-        <aside id="cadPropertiesPanel" class="cad-properties" aria-label="Proprietà entità CAD">
-          <div class="cad-properties-head">Proprietà entità</div>
+        <aside id="cadPropertiesPanel" class="cad-properties" aria-label="Dati CAD Termodel">
+          <div id="cadPropertiesHead" class="cad-properties-head">Dati CAD · Pareti</div>
           <div id="cadPropertiesEmpty" class="cad-properties-empty">
-            Seleziona una parete E/W per visualizzare le proprietà Termodel.
+            I dati correnti della parete verranno usati da ＋ Nuova linea.
           </div>
           <div id="cadPropertiesBody" class="cad-properties-body" hidden>
             <section class="cad-properties-section">
@@ -744,11 +759,14 @@
               </div>
               <div class="cad-prop-row">
                 <label for="cadPropPiano">Piano:</label>
-                <input id="cadPropPiano" type="text" placeholder="da progetto" />
+                <div class="cad-prop-with-arc">
+                  <select id="cadPropPiano"></select>
+                  <button id="cadOpenPianiArchive" class="cad-prop-arc" type="button" title="Apri archivio Piani">Arc</button>
+                </div>
               </div>
               <div class="cad-prop-row">
                 <label for="cadPropLayer">Layer:</label>
-                <input id="cadPropLayer" type="text" readonly value="calpestabile" />
+                <input id="cadPropLayer" type="text" readonly />
               </div>
             </section>
 
@@ -756,15 +774,10 @@
               <div class="cad-properties-section-title">Edificio · Pareti</div>
               <div class="cad-prop-row">
                 <label for="cadPropTipoParete">Tipo parete:</label>
-                <input id="cadPropTipoParete" type="text" placeholder="da archivio Pareti" />
-              </div>
-              <div class="cad-prop-row">
-                <label for="cadPropConfineParete">Confine parete:</label>
-                <input id="cadPropConfineParete" type="text" placeholder="da archivio Confini" />
-              </div>
-              <div class="cad-prop-row">
-                <label for="cadPropTipoLinea">Tipo linea:</label>
-                <input id="cadPropTipoLinea" type="text" readonly />
+                <div class="cad-prop-with-arc">
+                  <select id="cadPropTipoParete"></select>
+                  <button id="cadOpenParetiArchive" class="cad-prop-arc" type="button" title="Apri archivio Pareti">Arc</button>
+                </div>
               </div>
               <div class="cad-prop-row">
                 <label for="cadPropColore">Colore:</label>
@@ -772,6 +785,17 @@
                   <input id="cadPropColore" type="text" readonly />
                   <i id="cadPropColorSwatch" class="cad-prop-swatch" aria-hidden="true"></i>
                 </div>
+              </div>
+              <div class="cad-prop-row">
+                <label for="cadPropConfineParete">Confine parete:</label>
+                <div class="cad-prop-with-arc">
+                  <select id="cadPropConfineParete"></select>
+                  <button id="cadOpenConfiniArchive" class="cad-prop-arc" type="button" title="Apri archivio Confini">Arc</button>
+                </div>
+              </div>
+              <div class="cad-prop-row">
+                <label for="cadPropTipoLinea">Tipo linea:</label>
+                <input id="cadPropTipoLinea" type="text" readonly />
               </div>
             </section>
 
@@ -781,11 +805,11 @@
               <div class="cad-prop-row"><label>X2 / Y2:</label><input id="cadPropEnd" type="text" readonly /></div>
               <div class="cad-prop-row"><label>Lunghezza:</label><input id="cadPropLength" type="text" readonly /></div>
               <div class="cad-prop-actions">
-                <button id="cadPropConfirm" type="button">Conferma</button>
+                <button id="cadPropConfirm" type="button">Applica alla linea</button>
               </div>
               <div class="cad-properties-note">
-                Prima versione ricavata da <code>Grid_DatiCad</code> / <code>Grid_pareti</code> del desktop.
-                Gli elenchi degli archivi Pareti e Confini saranno collegati successivamente al Core/Server.
+                Conforme a <code>MainWindow.xaml → Grid_DatiCad / Grid_pareti</code>.
+                Tipo parete e confine provengono dagli archivi; colore e tipo linea sono correlati readonly come nel desktop.
               </div>
             </section>
           </div>
@@ -1004,6 +1028,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.26"></script>
+  <script type="module" src="./app.js?v=0.27"></script>
 </body>
 </html>

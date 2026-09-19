@@ -6,8 +6,9 @@ import {
   initArchivioWeb,
   isTermodelProjectText,
   loadTermodelProjectText,
-  openArchivioWeb
-} from './archivio-web.js?v=0.26';
+  openArchivioWeb,
+  getArchivioWebRecords
+} from './archivio-web.js?v=0.27';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -30,6 +31,7 @@ const cadRegenerate = document.getElementById('cadRegenerate');
 const cadNewLine = document.getElementById('cadNewLine');
 const cadNewLineType = document.getElementById('cadNewLineType');
 const cadEditStatus = document.getElementById('cadEditStatus');
+const cadPropertiesHead = document.getElementById('cadPropertiesHead');
 const cadPropertiesEmpty = document.getElementById('cadPropertiesEmpty');
 const cadPropertiesBody = document.getElementById('cadPropertiesBody');
 const cadPropEntity = document.getElementById('cadPropEntity');
@@ -44,6 +46,9 @@ const cadPropStart = document.getElementById('cadPropStart');
 const cadPropEnd = document.getElementById('cadPropEnd');
 const cadPropLength = document.getElementById('cadPropLength');
 const cadPropConfirm = document.getElementById('cadPropConfirm');
+const cadOpenPianiArchive = document.getElementById('cadOpenPianiArchive');
+const cadOpenParetiArchive = document.getElementById('cadOpenParetiArchive');
+const cadOpenConfiniArchive = document.getElementById('cadOpenConfiniArchive');
 const status = document.querySelector('.viewport-status');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd3d3d3);
@@ -93,6 +98,11 @@ let cadRedoStack = [];
 let cadDragState = null;
 let cadToolMode = 'select';
 let cadNewLineState = null;
+let cadToolbarState = {
+  piano: '',
+  tipoParete: '',
+  confineParete: ''
+};
 const CAD_SNAP_DISTANCE = 12;
 const CAD_JOIN_EPSILON = 0.05;
 
@@ -1736,6 +1746,254 @@ function cadColorForId(id) {
   return '#c62828';
 }
 
+const CAD_ACI_COLORS = {
+  1: { css: '#ff0000', aliases: ['red', '#f00', '#ff0000'] },
+  2: { css: '#ffff00', aliases: ['yellow', '#ff0', '#ffff00'] },
+  3: { css: '#00ff00', aliases: ['lime', 'green', '#0f0', '#00ff00', '#008000'] },
+  4: { css: '#00ffff', aliases: ['cyan', 'aqua', '#0ff', '#00ffff'] },
+  5: { css: '#0000ff', aliases: ['blue', '#00f', '#0000ff'] },
+  6: { css: '#ff00ff', aliases: ['magenta', 'fuchsia', '#f0f', '#ff00ff'] },
+  7: { css: '#000000', aliases: ['black', 'white', '#000', '#000000', '#fff', '#ffffff'] },
+  8: { css: '#808080', aliases: ['gray', 'grey', '#808080'] },
+  9: { css: '#404040', aliases: ['darkgray', 'darkgrey', '#404040', '#444', '#444444'] }
+};
+
+function cadArchiveRecords(name) {
+  try {
+    return getArchivioWebRecords(name) || [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function cadText(value) {
+  return String(value ?? '').trim();
+}
+
+function cadFindRecord(records, field, value) {
+  const wanted = cadText(value).toLowerCase();
+  if (!wanted) return null;
+  return records.find(record => cadText(record?.[field]).toLowerCase() === wanted) || null;
+}
+
+function cadArchiveColorIndex(value) {
+  const match = /^\s*(\d+)\s*(?:-|$)/.exec(cadText(value));
+  return match ? Number(match[1]) : 0;
+}
+
+function cadCssColorIndex(value) {
+  const normalized = cadText(value).toLowerCase().replace(/\s+/g, '');
+  if (!normalized) return 0;
+  for (const [index, data] of Object.entries(CAD_ACI_COLORS)) {
+    if (data.aliases.includes(normalized)) return Number(index);
+  }
+  return 0;
+}
+
+function cadCssForArchiveColor(value) {
+  const index = cadArchiveColorIndex(value);
+  return CAD_ACI_COLORS[index]?.css || '';
+}
+
+function cadLineRawStroke(line) {
+  if (!line) return '';
+  const direct = cadText(line.getAttribute('stroke'));
+  if (direct) return direct;
+  const style = cadText(line.getAttribute('style'));
+  const match = /(?:^|;)\s*stroke\s*:\s*([^;]+)/i.exec(style);
+  return cadText(match?.[1]);
+}
+
+function cadDashArrayForLineType(value) {
+  switch (cadText(value).toUpperCase()) {
+    case 'FITTIZIA': return '2 6';
+    case 'TRATTEGGIATA': return '10 6';
+    case 'TRATTOPUNTO': return '10 4 2 4';
+    case 'DIVIDI': return '14 4 2 4 2 4';
+    default: return '';
+  }
+}
+
+function cadDefaultToolbarState() {
+  const datiCad = cadArchiveRecords('DatiCad')[0] || {};
+  const piani = cadArchiveRecords('Piani');
+  const pareti = cadArchiveRecords('Pareti');
+  const confini = cadArchiveRecords('Confini');
+
+  const valid = value => {
+    const text = cadText(value);
+    return text && text !== '-Seleziona-' ? text : '';
+  };
+
+  const piano = valid(datiCad.Piano) || cadText(piani[0]?.Nome);
+  const tipoParete = valid(datiCad.TipoParete) || cadText(pareti[0]?.DescBreve);
+
+  let confineParete = valid(datiCad.ConfineParete);
+  if (!confineParete) {
+    confineParete = cadFindRecord(confini, 'Codice', 'Automatico')
+      ? 'Automatico'
+      : cadText(confini[0]?.Codice);
+  }
+
+  return { piano, tipoParete, confineParete };
+}
+
+function cadEnsureToolbarState() {
+  const defaults = cadDefaultToolbarState();
+  if (!cadText(cadToolbarState.piano)) cadToolbarState.piano = defaults.piano;
+  if (!cadText(cadToolbarState.tipoParete)) cadToolbarState.tipoParete = defaults.tipoParete;
+  if (!cadText(cadToolbarState.confineParete)) cadToolbarState.confineParete = defaults.confineParete;
+  return cadToolbarState;
+}
+
+function cadDerivedToolbarValues(state = cadToolbarState) {
+  const piano = cadFindRecord(cadArchiveRecords('Piani'), 'Nome', state.piano);
+  const parete = cadFindRecord(cadArchiveRecords('Pareti'), 'DescBreve', state.tipoParete);
+  const confine = cadFindRecord(cadArchiveRecords('Confini'), 'Codice', state.confineParete);
+
+  return {
+    layer: cadText(piano?.LayerCad),
+    colore: cadText(parete?.Colore),
+    tipoLinea: cadText(confine?.Tipolinea),
+    colorCss: cadCssForArchiveColor(parete?.Colore)
+  };
+}
+
+function cadFillSelect(select, values, preferred) {
+  if (!select) return '';
+  const clean = [];
+  values.forEach(value => {
+    const text = cadText(value);
+    if (text && !clean.includes(text)) clean.push(text);
+  });
+
+  const current = cadText(preferred);
+  select.replaceChildren();
+
+  clean.forEach(value => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+
+  if (current && !clean.includes(current)) {
+    const option = document.createElement('option');
+    option.value = current;
+    option.textContent = current + ' · non presente in archivio';
+    option.dataset.outOfArchive = 'true';
+    select.appendChild(option);
+  }
+
+  const value = current || clean[0] || '';
+  select.value = value;
+  return value;
+}
+
+function cadRefreshToolbarControls() {
+  cadEnsureToolbarState();
+
+  cadToolbarState.piano = cadFillSelect(
+    cadPropPiano,
+    cadArchiveRecords('Piani').map(r => r?.Nome),
+    cadToolbarState.piano
+  );
+  cadToolbarState.tipoParete = cadFillSelect(
+    cadPropTipoParete,
+    cadArchiveRecords('Pareti').map(r => r?.DescBreve),
+    cadToolbarState.tipoParete
+  );
+  cadToolbarState.confineParete = cadFillSelect(
+    cadPropConfineParete,
+    cadArchiveRecords('Confini').map(r => r?.Codice),
+    cadToolbarState.confineParete
+  );
+
+  const derived = cadDerivedToolbarValues();
+  if (cadPropLayer) cadPropLayer.value = derived.layer;
+  if (cadPropColore) cadPropColore.value = derived.colore;
+  if (cadPropTipoLinea) cadPropTipoLinea.value = derived.tipoLinea;
+  if (cadPropColorSwatch)
+    cadPropColorSwatch.style.background = derived.colorCss || '#ccc';
+
+  return derived;
+}
+
+function cadWallRecordFromLine(line) {
+  const pareti = cadArchiveRecords('Pareti');
+  const explicit = cadText(line?.getAttribute('data-termodel-tipo-parete'));
+  if (explicit) return cadFindRecord(pareti, 'DescBreve', explicit);
+
+  const semanticColor = cadText(line?.getAttribute('data-termodel-colore'));
+  let colorIndex = cadArchiveColorIndex(semanticColor);
+  if (!colorIndex) colorIndex = cadCssColorIndex(cadLineRawStroke(line));
+  if (!colorIndex) return null;
+
+  return pareti.find(record => cadArchiveColorIndex(record?.Colore) === colorIndex) || null;
+}
+
+function cadBoundaryRecordFromLine(line) {
+  const confini = cadArchiveRecords('Confini');
+  const explicit = cadText(line?.getAttribute('data-termodel-confine-parete'));
+  if (explicit) return cadFindRecord(confini, 'Codice', explicit);
+
+  const tipoLinea = cadText(line?.getAttribute('data-termodel-tipo-linea'));
+  if (!tipoLinea) return null;
+  return cadFindRecord(confini, 'Tipolinea', tipoLinea);
+}
+
+function cadStateFromLine(line) {
+  const defaults = cadDefaultToolbarState();
+  const wall = cadWallRecordFromLine(line);
+  const boundary = cadBoundaryRecordFromLine(line);
+  return {
+    piano: cadText(line?.getAttribute('data-termodel-piano')) || defaults.piano,
+    tipoParete: cadText(line?.getAttribute('data-termodel-tipo-parete')) ||
+      cadText(wall?.DescBreve) || defaults.tipoParete,
+    confineParete: cadText(line?.getAttribute('data-termodel-confine-parete')) ||
+      cadText(boundary?.Codice) || defaults.confineParete
+  };
+}
+
+function cadApplySemanticAttributes(line, state = cadToolbarState) {
+  if (!line) return;
+
+  cadSetOptionalAttribute(line, 'data-termodel-piano', state.piano);
+  cadSetOptionalAttribute(line, 'data-termodel-tipo-parete', state.tipoParete);
+  cadSetOptionalAttribute(line, 'data-termodel-confine-parete', state.confineParete);
+
+  const derived = cadDerivedToolbarValues(state);
+  cadSetOptionalAttribute(line, 'data-termodel-colore', derived.colore);
+  cadSetOptionalAttribute(line, 'data-termodel-tipo-linea', derived.tipoLinea);
+
+  if (derived.colorCss) line.setAttribute('stroke', derived.colorCss);
+  else line.removeAttribute('stroke');
+
+  const dash = cadDashArrayForLineType(derived.tipoLinea);
+  if (dash) line.setAttribute('stroke-dasharray', dash);
+  else line.removeAttribute('stroke-dasharray');
+}
+
+function cadLineDisplayStyle(line) {
+  const wall = cadWallRecordFromLine(line);
+  const boundary = cadBoundaryRecordFromLine(line);
+
+  const color =
+    cadCssForArchiveColor(wall?.Colore) ||
+    cadLineRawStroke(line) ||
+    cadColorForId(line?.id || '');
+
+  const tipoLinea =
+    cadText(line?.getAttribute('data-termodel-tipo-linea')) ||
+    cadText(boundary?.Tipolinea);
+
+  return {
+    color,
+    tipoLinea,
+    dash: cadDashArrayForLineType(tipoLinea)
+  };
+}
+
 function addCadLabel(group, id, x, y, color, dataId = '') {
   if (!id || !Number.isFinite(x) || !Number.isFinite(y)) return;
   const text = svgNode('text', {
@@ -1801,35 +2059,46 @@ function cadSetLinePoint(line, endpoint, x, y) {
 
 function cadUpdatePropertiesPanel() {
   const line = cadFindSourceLine(cadSelectedLineId);
-  const selected = !!line;
+  const hasDoc = !!cadWorkingDoc;
 
-  if (cadPropertiesEmpty) cadPropertiesEmpty.hidden = selected;
-  if (cadPropertiesBody) cadPropertiesBody.hidden = !selected;
-  if (!selected) return;
+  if (cadPropertiesEmpty) cadPropertiesEmpty.hidden = hasDoc;
+  if (cadPropertiesBody) cadPropertiesBody.hidden = !hasDoc;
+  if (!hasDoc) return;
 
-  const [x1, y1] = cadLinePoint(line, 1);
-  const [x2, y2] = cadLinePoint(line, 2);
-  const lengthCm = Math.hypot(x2 - x1, y2 - y1);
-  const type = (line.id || '').charAt(0).toUpperCase();
-  const color = cadColorForId(line.id || '');
+  if (line)
+    cadToolbarState = cadStateFromLine(line);
+  else
+    cadEnsureToolbarState();
 
-  if (cadPropEntity) cadPropEntity.value = line.id || '';
-  if (cadPropPiano)
-    cadPropPiano.value = line.getAttribute('data-termodel-piano') || '';
-  if (cadPropLayer) cadPropLayer.value = 'calpestabile';
-  if (cadPropTipoParete)
-    cadPropTipoParete.value = line.getAttribute('data-termodel-tipo-parete') || '';
-  if (cadPropConfineParete)
-    cadPropConfineParete.value = line.getAttribute('data-termodel-confine-parete') || '';
-  if (cadPropTipoLinea) cadPropTipoLinea.value = type;
-  if (cadPropColore) cadPropColore.value = color;
-  if (cadPropColorSwatch) cadPropColorSwatch.style.background = color;
-  if (cadPropStart)
-    cadPropStart.value = `${x1.toFixed(1)} / ${y1.toFixed(1)} cm`;
-  if (cadPropEnd)
-    cadPropEnd.value = `${x2.toFixed(1)} / ${y2.toFixed(1)} cm`;
-  if (cadPropLength)
-    cadPropLength.value = `${lengthCm.toFixed(1)} cm · ${(lengthCm / 100).toFixed(3)} m`;
+  const derived = cadRefreshToolbarControls();
+
+  if (cadPropertiesHead)
+    cadPropertiesHead.textContent = line ? `Dati CAD · Parete ${line.id}` : 'Dati CAD · Nuova parete';
+
+  if (cadPropEntity) cadPropEntity.value = line?.id || 'Nuova parete';
+
+  if (line) {
+    const [x1, y1] = cadLinePoint(line, 1);
+    const [x2, y2] = cadLinePoint(line, 2);
+    const lengthCm = Math.hypot(x2 - x1, y2 - y1);
+
+    if (cadPropStart)
+      cadPropStart.value = `${x1.toFixed(1)} / ${y1.toFixed(1)} cm`;
+    if (cadPropEnd)
+      cadPropEnd.value = `${x2.toFixed(1)} / ${y2.toFixed(1)} cm`;
+    if (cadPropLength)
+      cadPropLength.value = `${lengthCm.toFixed(1)} cm · ${(lengthCm / 100).toFixed(3)} m`;
+  } else {
+    if (cadPropStart) cadPropStart.value = '';
+    if (cadPropEnd) cadPropEnd.value = '';
+    if (cadPropLength) cadPropLength.value = '';
+  }
+
+  if (cadPropConfirm)
+    cadPropConfirm.disabled = !line;
+
+  if (cadPropColorSwatch)
+    cadPropColorSwatch.style.background = derived.colorCss || '#ccc';
 }
 
 function cadSetOptionalAttribute(element, name, value) {
@@ -1838,27 +2107,46 @@ function cadSetOptionalAttribute(element, name, value) {
   else element.removeAttribute(name);
 }
 
-function cadApplyProperties() {
+function cadCommitToolbarToSelectedLine() {
   const line = cadFindSourceLine(cadSelectedLineId);
-  if (!line) return;
+  if (!line) {
+    cadRefreshToolbarControls();
+    return;
+  }
 
   const before = cadSerializeWorkingSvg();
-
-  cadSetOptionalAttribute(line, 'data-termodel-piano', cadPropPiano?.value);
-  cadSetOptionalAttribute(line, 'data-termodel-tipo-parete', cadPropTipoParete?.value);
-  cadSetOptionalAttribute(line, 'data-termodel-confine-parete', cadPropConfineParete?.value);
-
+  cadApplySemanticAttributes(line, cadToolbarState);
   const after = cadSerializeWorkingSvg();
+
   if (after !== before) {
     cadUndoStack.push(before);
     cadRedoStack = [];
-    cadSetStatus(`${line.id} · proprietà aggiornate · modifica non rigenerata`, 'dirty');
+    renderCadComparison();
+    cadSetStatus(`${line.id} · proprietà archivio aggiornate · modifica non rigenerata`, 'dirty');
   } else {
+    cadUpdatePropertiesPanel();
     cadSetStatus(`${line.id} · proprietà invariate`);
   }
-
-  cadUpdatePropertiesPanel();
   cadUpdateControls();
+}
+
+function cadToolbarSelectionChanged() {
+  cadToolbarState = {
+    piano: cadText(cadPropPiano?.value),
+    tipoParete: cadText(cadPropTipoParete?.value),
+    confineParete: cadText(cadPropConfineParete?.value)
+  };
+
+  cadRefreshToolbarControls();
+
+  if (cadFindSourceLine(cadSelectedLineId))
+    cadCommitToolbarToSelectedLine();
+  else
+    cadSetStatus('Valori correnti aggiornati · saranno usati da ＋ Nuova linea');
+}
+
+function cadApplyProperties() {
+  cadToolbarSelectionChanged();
 }
 
 function cadSetStatus(message, kind = '') {
@@ -2039,8 +2327,10 @@ function cadToggleNewLine() {
   cadToolMode = 'line';
   cadNewLineState = null;
   cadSelectedLineId = '';
+  cadEnsureToolbarState();
   const svg = cadCanvas?.querySelector('svg');
   if (svg) cadSyncOverlay(svg);
+  cadUpdatePropertiesPanel();
   cadUpdateControls();
 }
 
@@ -2118,6 +2408,8 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
   line.setAttribute('y1', Number(y1).toFixed(3).replace(/\.000$/, ''));
   line.setAttribute('x2', Number(point[0]).toFixed(3).replace(/\.000$/, ''));
   line.setAttribute('y2', Number(point[1]).toFixed(3).replace(/\.000$/, ''));
+  cadEnsureToolbarState();
+  cadApplySemanticAttributes(line, cadToolbarState);
   group.appendChild(line);
 
   cadUndoStack.push(cadNewLineState.before);
@@ -2211,12 +2503,19 @@ function cadSyncOverlay(svg) {
     displayLine.setAttribute('y1', y1);
     displayLine.setAttribute('x2', x2);
     displayLine.setAttribute('y2', y2);
+
+    const style = cadLineDisplayStyle(source);
+    displayLine.setAttribute('stroke', style.color);
+    if (style.dash) displayLine.setAttribute('stroke-dasharray', style.dash);
+    else displayLine.removeAttribute('stroke-dasharray');
+
     displayLine.classList.toggle('selected', id === cadSelectedLineId);
 
     const label = svg.querySelector(`[data-cad-label="${CSS.escape(id)}"]`);
     if (label) {
       label.setAttribute('x', (x1 + x2) / 2);
       label.setAttribute('y', (y1 + y2) / 2 - 8);
+      label.setAttribute('fill', style.color);
     }
   });
 
@@ -2402,7 +2701,8 @@ function renderCadComparison() {
       .filter(el => el.localName === 'line')
       .forEach(line => {
         const id = line.id || '';
-        const color = cadColorForId(id);
+        const lineStyle = cadLineDisplayStyle(line);
+        const color = lineStyle.color;
         const x1 = Number(line.getAttribute('x1'));
         const y1 = Number(line.getAttribute('y1'));
         const x2 = Number(line.getAttribute('x2'));
@@ -2412,6 +2712,7 @@ function renderCadComparison() {
         const displayLine = svgNode('line', {
           x1, y1, x2, y2,
           stroke: color,
+          'stroke-dasharray': lineStyle.dash || null,
           'stroke-width': editable ? 3.4 : 2.8,
           'stroke-linecap': 'round',
           opacity: editable ? 0.92 : 0.72,
@@ -2598,7 +2899,9 @@ function activateCadPage() {
     }
   }
 
+  cadEnsureToolbarState();
   renderCadComparison();
+  cadUpdatePropertiesPanel();
 }
 
 function processSvgText(text) {
@@ -2783,6 +3086,17 @@ if (cadNewLine)
   cadNewLine.addEventListener('click', cadToggleNewLine);
 if (cadPropConfirm)
   cadPropConfirm.addEventListener('click', cadApplyProperties);
+[cadPropPiano, cadPropTipoParete, cadPropConfineParete].forEach(control => {
+  control?.addEventListener('change', cadToolbarSelectionChanged);
+});
+cadOpenPianiArchive?.addEventListener('click', () => openArchivioWeb('Piani'));
+cadOpenParetiArchive?.addEventListener('click', () => openArchivioWeb('Pareti'));
+cadOpenConfiniArchive?.addEventListener('click', () => openArchivioWeb('Confini'));
+window.addEventListener('termodel:archives-updated', () => {
+  cadRefreshToolbarControls();
+  if (cadPage?.classList.contains('active'))
+    renderCadComparison();
+});
 if (cadRegenerate)
   cadRegenerate.addEventListener('click', cadRegeneratePlan);
 if (cadReturnModel)
@@ -2820,8 +3134,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.26: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.26' })
+// v0.27: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.27' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
