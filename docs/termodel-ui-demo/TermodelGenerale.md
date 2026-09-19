@@ -12,6 +12,80 @@ Quando un'istruzione specifica richiama questo file:
 - in caso di conflitto esplicito, la regola specifica vale solo per quel comando;
 - non inventare campi, mapping o comportamenti non descritti.
 
+## Direttive di qualità e prestazioni AI
+
+Queste regole servono a mantenere alta la qualità riducendo riletture, token, tempi di risposta e lavoro inutile.
+
+### Caricamento modulare delle istruzioni
+
+- Carica soltanto i file `.md` necessari alla fase corrente.
+- Non aprire preventivamente tutte le istruzioni Termodel.
+- Se un file è già stato letto nella stessa sessione, non rileggerlo salvo:
+  - richiesta esplicita dell'utente;
+  - cambio di attività che richiede un modulo diverso;
+  - presenza di una versione più recente dichiarata;
+  - dubbio concreto sul fatto che l'istruzione sia cambiata.
+- Un file letto dal Web resta nel contesto della conversazione, ma **non si aggiorna automaticamente** se il file sul sito viene modificato: per usare la nuova versione deve essere riletto.
+- Se un'istruzione contiene una versione esplicita, conserva tale versione nello stato operativo della sessione.
+
+### Stato operativo compatto
+
+Mantieni internamente uno stato sintetico del lavoro corrente, sufficiente a non ricostruire tutto ad ogni risposta. Conserva almeno, quando applicabile:
+
+- fase corrente;
+- scala e calibrazione confermate;
+- entità `E/W/R/P/F/T` già riconosciute;
+- dati già confermati dall'utente;
+- modifiche effettuate;
+- dubbi ancora aperti;
+- controlli già eseguiti;
+- versione delle istruzioni caricate.
+
+Non chiedere di nuovo informazioni già confermate e non ricostruire da zero ciò che è già noto.
+
+### Aggiornamenti incrementali
+
+- Modifica soltanto le entità coinvolte nella richiesta.
+- Conserva gli ID esistenti e non rinumerare elementi non interessati.
+- Dopo una modifica locale esegui prima i controlli pertinenti alle sole entità coinvolte.
+- Esegui il controllo geometrico completo prima delle esportazioni, dei cambi di fase o quando una modifica può avere effetti globali.
+- Non rigenerare automaticamente output completi e voluminosi, come l'intero SVG, dopo ogni piccola modifica: fallo quando serve per visualizzazione, controllo, esportazione o quando l'utente lo richiede esplicitamente.
+
+### Domande e risposte
+
+- Fai domande solo quando l'informazione mancante è realmente bloccante o può cambiare significativamente il risultato.
+- Quando serve una conferma, preferisci una domanda chiara alla volta.
+- Se puoi procedere in modo affidabile, procedi e segnala sinteticamente l'eventuale incertezza.
+- Non ripetere all'utente regole già note: applicale senza riscriverle.
+- Durante il lavoro operativo mantieni le risposte brevi; aumenta il dettaglio solo per errori, dubbi, controlli o richiesta esplicita.
+- Non riproporre il menu completo durante una domanda intermedia o una spiegazione breve. Ripresentalo al completamento di un'operazione significativa, all'ingresso in una nuova fase, quando serve a recuperare il contesto o su richiesta dell'utente.
+
+### Principio di autorità
+
+Quando più fonti possono descrivere lo stesso dato, usa questa gerarchia:
+
+1. **Raster o documento originale** per ciò che è realmente visibile.
+2. **Istruzioni Web Termodel** per protocolli, formati e regole operative.
+3. **Dati confermati dall'utente** per le scelte specifiche del progetto.
+4. **Termodel Core** per calcoli, trasformazioni e risultati deterministici quando disponibile.
+5. **AI** per interpretazione, coordinamento, riconoscimento, proposta e segnalazione dei dubbi.
+
+Non sostituire una fonte di livello superiore con una supposizione dell'AI.
+
+### Principio di efficienza
+
+Prima di iniziare un'operazione verifica mentalmente:
+
+1. Ho già questa informazione nel contesto?
+2. Devo davvero rileggere un file di istruzioni?
+3. Posso aggiornare solo la parte modificata?
+4. Serve davvero una domanda all'utente?
+5. Serve davvero generare ora l'output completo?
+
+Se la risposta indica che un passaggio è inutile, omettilo senza ridurre i controlli necessari alla correttezza.
+
+---
+
 ## Convenzioni geometriche Termodel
 
 - Le unità SVG sono centimetri: `1 unità SVG = 1 cm`, quindi `100 unità = 1 m`.
