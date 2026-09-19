@@ -911,7 +911,7 @@ document.addEventListener('click', () => {
 
 const TERMODEL_GENERAL_PROMPT_URL = './TermodelGenerale.md';
 const RASTER_PROMPT_URL = './CreaPianoTermodelDaRaster.md';
-const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.html?v=0.18';
+const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.html?v=0.19';
 
 const instructAiButton = document.getElementById('instructAiButton');
 const importAiButton = document.getElementById('importAiButton');
@@ -2499,7 +2499,7 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.18: l'indice AI include un contratto minimo di esportazione e usa URL versionato per evitare cache stale.
+// v0.19: l'indice AI include anche la creazione di un progetto da descrizione testuale.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
