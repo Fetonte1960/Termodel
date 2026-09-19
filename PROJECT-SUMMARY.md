@@ -171,6 +171,34 @@ https://www.termodel.it/termodel-ui-demo/CreaPianoTermodelDaRaster.md
 La directory `SorgentiTermodel/Work/IstruzioniAI/` è la **sorgente di lavoro autorevole**; `docs/termodel-ui-demo/` è la **copia pubblicata**. Quando le istruzioni vengono modificate, evitare divergenze tra sorgente e copia pubblicata e verificare esplicitamente la propagazione.
 
 
+
+---
+
+## 2.2 Storico essenziale dello sviluppo Web
+
+### Fase 1 — Verifica delle capacità 3D nel browser
+
+Il primo passo concreto verso Termodel Web è stato verificare se un viewer 3D realizzato in JavaScript fosse sufficientemente potente per rappresentare progetti Termodel reali.
+
+La prova iniziale è partita da un caso semplice:
+
+```text
+progetto creato con Termodel desktop
+        ↓
+esportazione in file JSON
+        ↓
+viewer 3D JavaScript nel browser
+```
+
+Questa fase aveva uno scopo esplorativo: capire se il browser potesse sostituire in modo credibile la visualizzazione 3D desktop almeno per la parte di consultazione grafica.
+
+Il risultato è stato molto positivo: le capacità del viewer 3D JavaScript si sono rivelate notevoli e sufficienti a giustificare il proseguimento dello sviluppo della versione Web di Termodel.
+
+Da questa verifica è nata la decisione di non limitarsi a una semplice pagina informativa, ma di procedere progressivamente verso una vera applicazione Termodel Web.
+
+Il primo viewer lavorava quindi su progetti già realizzati nel programma desktop e trasferiti al browser tramite JSON.
+
+
 ---
 
 ## 3. Responsabilità e confini
