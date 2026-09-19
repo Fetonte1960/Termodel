@@ -7,7 +7,7 @@ import {
   isTermodelProjectText,
   loadTermodelProjectText,
   openArchivioWeb
-} from './archivio-web.js?v=0.25';
+} from './archivio-web.js?v=0.26';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -1192,10 +1192,9 @@ async function startBlankProjectFromCad() {
     setStructuredProjectState(true);
     setMainAiStatus(`✓ Progetto vuoto creato: ${project.projectName} · archivi e CAD attivi`);
 
-    await continueAfterProjectStart();
-
-    if (projectStartContext.target !== 'archive')
-      cadSetStatus('Progetto vuoto · usa ＋ Nuova linea per iniziare il disegno');
+    projectStartContext = { target: 'cad', archiveName: '' };
+    activateCadPage();
+    cadSetStatus('Progetto vuoto · usa ＋ Nuova linea per iniziare il disegno');
   } catch (error) {
     setStructuredProjectState(false);
     console.error('Creazione progetto vuoto non riuscita:', error);
@@ -2581,7 +2580,8 @@ function cadReturnToModel() {
 
 function activateCadPage() {
   if (!structuredProjectActive) {
-    openProjectStartDialog({ target: 'cad' });
+    projectStartContext = { target: 'cad', archiveName: '' };
+    void startBlankProjectFromCad();
     return;
   }
 
@@ -2820,8 +2820,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.25: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.25' })
+// v0.26: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.26' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
@@ -2845,7 +2845,10 @@ projectStartCloseBottom?.addEventListener('click', closeProjectStartDialog);
 projectStartModal?.addEventListener('click', event => {
   if (event.target === projectStartModal) closeProjectStartDialog();
 });
-projectStartBlank?.addEventListener('click', startBlankProjectFromCad);
+projectStartBlank?.addEventListener('click', () => {
+  projectStartContext = { target: 'cad', archiveName: '' };
+  void startBlankProjectFromCad();
+});
 projectStartInstructAi?.addEventListener('click', async event => {
   closeProjectStartDialog();
   await instructAiFromMainForm(event);
