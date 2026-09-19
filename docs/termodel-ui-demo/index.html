@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MyHome3D v0.11 — powered by Termodel</title>
+  <title>Termodel Web v0.12 — Demo interattiva</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -47,72 +47,6 @@
     .classic-group h3 { margin: -23px 0 12px 4px; display: inline-block; padding: 0 5px; background: #e5e5e5; font-size: 12px; font-weight: 400; }
     .classic-row { display: grid; grid-template-columns: 180px 1fr; padding: 4px 0; }
 
-    .myhome-home {
-      position: fixed;
-      inset: 0;
-      z-index: 3000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background:
-        radial-gradient(circle at 50% 30%, rgba(255,255,255,.95), rgba(230,235,239,.96) 52%, rgba(207,216,223,.98));
-    }
-    .myhome-home[hidden] { display: none; }
-    .myhome-home-inner {
-      width: min(620px, 92vw);
-      text-align: center;
-      padding: 34px 24px;
-    }
-    .myhome-home h1 {
-      margin: 0 0 6px;
-      font-size: clamp(34px, 7vw, 58px);
-      font-weight: 700;
-      letter-spacing: -1.5px;
-      color: #243746;
-    }
-    .myhome-home-subtitle {
-      margin: 0 0 30px;
-      color: #5c6872;
-      font-size: 14px;
-    }
-    .myhome-home-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-    .myhome-home-actions button {
-      min-height: 78px;
-      border: 1px solid #6b7f90;
-      background: linear-gradient(#ffffff,#e3ebf1);
-      color: #17242e;
-      font-size: 19px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,.09);
-    }
-    .myhome-home-actions button:hover {
-      background: linear-gradient(#ffffff,#d8e7f1);
-      border-color: #476b86;
-    }
-    .myhome-home-actions button:active { transform: translateY(1px); }
-    .myhome-home-status {
-      min-height: 22px;
-      margin-top: 16px;
-      color: #4f5d67;
-      font-size: 12px;
-    }
-    .myhome-home-status.ok { color: #2f6d37; font-weight: 600; }
-    .myhome-home-status.error { color: #a11b1b; font-weight: 600; }
-    .myhome-home-version {
-      margin-top: 20px;
-      color: #89939b;
-      font-size: 10px;
-    }
-    @media (max-width: 560px) {
-      .myhome-home-actions { grid-template-columns: 1fr; }
-      .myhome-home-actions button { min-height: 66px; }
-    }
-
     .bottom-bar {
       display: flex; align-items: center; gap: 5px; padding: 3px 5px;
       background: #e5e5e5; border-top: 1px solid #aaa; overflow-x: auto; white-space: nowrap;
@@ -150,7 +84,7 @@
     .view-cube .ring { position:absolute; left:4px; right:4px; bottom:0; height:14px; border:7px solid rgba(90,90,90,.35); border-radius:50%; }
 
 
-    .bottom-bar button[data-action="Crea piano da raster con AI"] {
+    .bottom-bar .ai-main-button {
       font-weight: 700;
       background: linear-gradient(#fff7c8,#efd56a);
       border-color: #9b7d1d;
@@ -612,23 +546,10 @@
   </script>
 </head>
 <body>
-  <section id="myHomeScreen" class="myhome-home" aria-label="Home MyHome3D">
-    <div class="myhome-home-inner">
-      <h1>MyHome3D</h1>
-      <p class="myhome-home-subtitle">AI → BIM-CAD → modello 3D</p>
-      <div class="myhome-home-actions">
-        <button id="myHomeInstructAi" type="button">Istruisci AI</button>
-        <button id="myHomeImportAi" type="button">Importa da AI</button>
-      </div>
-      <div id="myHomeStatus" class="myhome-home-status" aria-live="polite"></div>
-      <div class="myhome-home-version">v0.11 · powered by Termodel</div>
-    </div>
-  </section>
-
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">MyHome3D — Termodel BIM-CAD Web v0.11</div>
+      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.12</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -775,7 +696,8 @@
 
     <div class="bottom-bar">
       <button type="button" data-action="Gestione Piani">Gestione Piani</button>
-      <button type="button" data-action="Crea piano da raster con AI">Nuovo progetto AI</button>
+      <button type="button" id="instructAiButton" class="ai-main-button" title="Copia negli appunti le istruzioni minime per collegare l'AI a Termodel">Istruisci AI</button>
+      <button type="button" id="importAiButton" class="ai-main-button" title="Importa direttamente dagli appunti il progetto restituito dall'AI">Importa da AI</button>
       <button type="button" id="returnProject" disabled>Ritorna al progetto</button>
       <select aria-label="Disegno input"><option>DisegnoInput</option></select>
       <button type="button" data-action="Edita nel Cad">Edita nel Cad</button>
