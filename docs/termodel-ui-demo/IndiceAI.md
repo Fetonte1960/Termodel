@@ -1,6 +1,6 @@
 # TERMODEL — Indice istruzioni AI
 
-> VERSIONE INDICE AI: 0.19
+> VERSIONE INDICE AI: 0.21
 
 Questa è l'istruzione iniziale di Termodel.
 
@@ -40,7 +40,7 @@ Usa questa modalità quando l'utente vuole:
 Carica:
 
 ```text
-https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.19
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.21
 ```
 
 Dopo il caricamento, rispondi alla richiesta dell'utente senza avviare automaticamente un progetto.
@@ -56,7 +56,7 @@ Usa questa modalità quando l'utente vuole lavorare su un progetto Termodel già
 Per adesso carica:
 
 ```text
-https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.19
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.21
 ```
 
 Questa voce potrà in seguito essere estesa con un file specifico:
@@ -80,8 +80,8 @@ Usa questa modalità quando l'utente vuole trasformare una pianta PNG, JPG, BMP 
 Carica, in questo ordine:
 
 ```text
-https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.19
-https://www.termodel.it/termodel-ui-demo/CreaPianoTermodelDaRaster.html?v=0.19
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.21
+https://www.termodel.it/termodel-ui-demo/CreaPianoTermodelDaRaster.html?v=0.21
 ```
 
 Le istruzioni generali hanno valore comune a Termodel.
@@ -109,20 +109,112 @@ Esempi:
 - "aggiungi una parete interna e una porta";
 - "crea tre locali affiancati dentro un rettangolo 12 x 6 m".
 
-### Istruzioni da caricare
+### IMPORTANTE — questa modalità è autosufficiente
 
-Carica, in questo ordine:
+Per la modalità 4 **non aprire e non attendere pagine secondarie**.
 
-```text
-https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.19
-https://www.termodel.it/termodel-ui-demo/CreaProgettoDaDescrizione.html?v=0.19
+Non tentare di caricare `TermodelGenerale.html` o `CreaProgettoDaDescrizione.html`.
+
+Le regole necessarie per creare ed esportare un progetto da descrizione testuale sono già contenute in questo indice.
+
+Se altre pagine Termodel non risultano raggiungibili, **non mostrare avvisi tecnici all'utente e non bloccare il flusso**: continua usando le regole qui sotto.
+
+### Regole operative modalità 4
+
+- La descrizione testuale confermata dall'utente è la sorgente del progetto.
+- Non chiedere un raster se la geometria può essere definita dal testo.
+- Usa `1 unità SVG = 1 cm`.
+- Pareti esterne: `E001...`, geometria sul filo interno.
+- Pareti interne: `W001...`, geometria sull'asse.
+- Locali: `R001...`.
+- Porte/passaggi: `P001...`.
+- Finestre/porte-finestre: `F001...`.
+- Chiedi chiarimenti solo per ambiguità realmente bloccanti.
+- Per geometrie semplici scegli un sistema di coordinate coerente senza chiedere conferma.
+- Non inventare materiali, stratigrafie o proprietà tecniche non necessarie alla sola geometria.
+- Conserva gli ID già assegnati durante le modifiche successive.
+- Se l'utente chiede di esportare e la geometria è definita, genera direttamente il progetto completo.
+
+### Struttura minima SVG
+
+Lo SVG deve essere XML completo e ben formato.
+
+La radice deve contenere come figli diretti:
+
+- `<g id="calpestabile">`
+- `<g id="copertura">`
+
+Se la copertura non è descritta, il gruppo `copertura` deve comunque esistere e può essere vuoto.
+
+Dentro `calpestabile` usa solo elementi diretti `line` e `text`.
+
+Non usare sottogruppi, `path`, `polyline` o `rect` dentro `calpestabile`.
+
+Ogni parete deve avere coordinate numeriche esplicite.
+
+### Locale minimo
+
+Per ogni locale inserisci un blocco `LOC` diretto di `calpestabile`.
+
+Esempio:
+
+```xml
+<text id="R001" x="200" y="200" font-size="1">
+  <tspan x="200" dy="0">BLOCCO,LOC</tspan>
+  <tspan x="200" dy="1.2em">DESCR.,Locale R001</tspan>
+  <tspan x="200" dy="1.2em">ZONA,Zona climatizzata</tspan>
+  <tspan x="200" dy="1.2em">CPAV,Automatico</tspan>
+  <tspan x="200" dy="1.2em">CSOF,Automatico</tspan>
+  <tspan x="200" dy="1.2em">CCOPERTURA,Solaio piano</tspan>
+  <tspan x="200" dy="1.2em">TPAV,Pavimento su terreno</tspan>
+  <tspan x="200" dy="1.2em">TSOF,Solaio Esterno in laterocemento</tspan>
+  <tspan x="200" dy="1.2em">ALTEZZALORDA,Da piano</tspan>
+  <tspan x="200" dy="1.2em">ALTEZZANETTA,Da piano</tspan>
+  <tspan x="200" dy="1.2em">QUOTAPAVIMENTO,Da piano</tspan>
+</text>
 ```
 
-La descrizione testuale confermata dall'utente è la sorgente del progetto.
+### Esempio: locale 4 x 4 m alto 3 m
 
-Non chiedere un raster se la geometria può essere definita in modo sufficiente dal testo.
+Se l'utente chiede un locale/cubo 4 x 4 m alto 3 m, interpreta normalmente:
 
-Se la richiesta è semplice e geometricamente chiara, costruisci il progetto e rendi disponibile l'esportazione senza introdurre domande non necessarie.
+- pianta interna 400 x 400 cm;
+- quattro pareti esterne `E001-E004`;
+- un locale `R001`;
+- nessuna parete interna;
+- nessuna apertura salvo indicazione diversa;
+- altezza netta 300 cm;
+- copertura piana solo se dichiarata o confermata.
+
+Se l'utente dice **esporta**, non fare altre domande non necessarie.
+
+### Esportazione verso Termodel Web
+
+L'uscita primaria deve essere un unico blocco di codice `text`:
+
+```text
+[TERMODEL-SVG-TEXT-V1]
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"&gt;
+...
+&lt;/svg&gt;
+[/TERMODEL-SVG-TEXT-V1]
+```
+
+Prima del trasporto:
+
+1. genera l'intero SVG normale;
+2. sostituisci `&` con `&amp;`;
+3. sostituisci `<` con `&lt;`;
+4. sostituisci `>` con `&gt;`.
+
+Non abbreviare con `...`.
+
+Non mostrare il vero tag `<svg>` come uscita primaria.
+
+Non sostituire il payload con una descrizione del progetto.
+
+Se il progetto è geometricamente definito e l'utente chiede **esporta**, restituisci direttamente il payload `TERMODEL-SVG-TEXT-V1`.
+
 
 ---
 
