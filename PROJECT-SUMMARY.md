@@ -532,13 +532,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.25
+Termodel Web v0.26
 ```
 
-Commit frontend di riferimento per la v0.25:
+Commit frontend di riferimento per la v0.26:
 
 ```text
-b781c18152c8fa20efa16a959ec578edfb4ad277  Add guided project start and blank CAD flow
+0ca85805a8d28ca8c31d6eca664e9f501f0e5309  Initialize project directly from Edita nel Cad
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -551,7 +551,7 @@ finché la v0.25 non viene osservata direttamente su `https://www.termodel.it/te
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
-La v0.25 aggiunge il primo **avvio guidato del progetto personale**:
+La v0.25 ha aggiunto il primo **avvio guidato del progetto personale**:
 
 - i pulsanti Archivio e `Edita nel Cad` non sono più disabilitati nella demo;
 - senza progetto strutturato aprono la finestra `Crea il tuo progetto Termodel`;
@@ -562,6 +562,27 @@ La v0.25 aggiunge il primo **avvio guidato del progetto personale**:
 - il CAD da zero parte con una tavola vuota e abilita `＋ Nuova linea`;
 - se l'ingresso proveniva da un archivio, dopo la creazione del progetto vuoto viene aperto l'archivio richiesto;
 - il browser non inventa archivi o valori tecnici: la base dati continua a provenire dal WebService.
+
+La v0.26 rende diretto il comando **Edita nel Cad**:
+
+```text
+Edita nel Cad
+    ↓
+se progetto già strutturato
+    → apre CAD 2D
+
+se progetto non inizializzato
+    ↓
+POST /api/projects/new
+    ↓
+progetto strutturato vuoto
+    ↓
+geometry/project.svg vuoto
+    ↓
+apertura immediata CAD 2D
+```
+
+Il pulsante resta sempre attivo. Non deve aprire una scelta intermedia quando viene premuto direttamente.
 
 La v0.24 completa il primo collegamento automatico del flusso AI → progetto strutturato:
 
@@ -1287,11 +1308,11 @@ risultato restituito a Termodel Web
 
 Il frontend non deve simulare come realmente disponibili funzioni server che il Core non espone ancora.
 
-### Verifica dello stato reale alla v0.25
+### Verifica dello stato reale alla v0.26
 
 Confronto fra flusso desiderato e programma attuale:
 
-| Passaggio | Stato v0.25 | Nota |
+| Passaggio | Stato v0.26 | Nota |
 | --- | --- | --- |
 | Apertura con modello demo 3D | **REALIZZATO** | `loadModel()` carica automaticamente `TermodelWebModel.json` |
 | Esplorazione del modello demo | **REALIZZATO** | viewer e menu dimostrativi disponibili |
@@ -1302,7 +1323,7 @@ Confronto fra flusso desiderato e programma attuale:
 | Editing archivi | **REALIZZATO IN FORMA LOCALE** | form/griglie/CRUD in memoria; persistenza unificata ancora da completare |
 | `Edita nel CAD` su progetto strutturato | **REALIZZATO** | modifica pareti E/W, snap, undo/redo, nuova linea, rigenerazione |
 | CAD come partenza di un progetto da zero | **REALIZZATO IN v0.25** | crea un progetto vuoto via WebService, prepara uno SVG vuoto e apre il CAD con `Nuova linea` disponibile |
-| `Edita nel CAD` come hub con scelta “da zero / AI” | **REALIZZATO IN v0.25** | senza progetto apre la finestra guidata con i tre percorsi base |
+| `Edita nel CAD` senza progetto | **REALIZZATO IN v0.26** | inizializza direttamente un progetto vuoto via WebService e apre il CAD 2D, senza finestra intermedia |
 | Simboli FIN/PON/LOC editabili e collegati agli archivi | **DA SVILUPPARE** | definito il flusso nella sezione 12.3 |
 | Calcoli server reali | **NON ANCORA REALIZZATI** | pagina Calcoli è esplicitamente dimostrativa |
 | Aggiornamento modello 3D completo dal server | **NON ANCORA REALIZZATO** | il WebService documentato espone oggi solo gli endpoint base; `Aggiorna modello` non è ancora presente |
@@ -1493,7 +1514,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.25.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.26.**
 
 Stato operativo corrente:
 
@@ -1503,8 +1524,9 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.25 presente su `main`; ultima versione pubblica verificata manualmente: v0.24;
-- v0.25 aggiunge avvio guidato da Archivi/CAD/File→Nuovo e creazione di progetto vuoto editabile nel CAD.
+- v0.26 presente su `main`;
+- v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
+- v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -1514,7 +1536,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. verificare manualmente la v0.25 pubblicata: Archivi → guida, Edita nel CAD → guida, Disegna da zero → progetto vuoto → CAD;  
+> 1. verificare manualmente la v0.26 pubblicata: `Edita nel Cad` senza progetto → inizializzazione automatica → apertura CAD 2D;  
 > 2. implementare nel CAD il parser/editor dei simboli `FIN/PON/LOC` e il collegamento alle tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`;  
 > 3. unificare progressivamente stato CAD e stato archivi nel contenitore progetto.
 
