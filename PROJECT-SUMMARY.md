@@ -535,6 +535,12 @@ Versione corrente verificata:
 Termodel Web v0.23
 ```
 
+Commit frontend di riferimento per la v0.23:
+
+```text
+6b4b34e3c495121921f641ccd33edb71bfc8b345  Gate Web editing on structured projects
+```
+
 La v0.23 introduce nel frontend lo stato esplicito di **progetto strutturato**:
 
 - il JSON grafico 3D desktop resta in modalità viewer-only;
