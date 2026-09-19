@@ -7,11 +7,12 @@ import {
   isTermodelProjectText,
   loadTermodelProjectText,
   openArchivioWeb
-} from './archivio-web.js?v=0.22';
+} from './archivio-web.js?v=0.24';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
 const WEB_SERVICE_CAPABILITIES_URL = `${WEB_SERVICE_BASE_URL}/api/model/capabilities`;
+const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -814,6 +815,100 @@ async function refreshWebServiceCapabilities() {
   }
 }
 
+function extractProjectTextFromServerResponse(rawText) {
+  const raw = String(rawText ?? '').trim();
+  if (isTermodelProjectText(raw)) return raw;
+
+  let json;
+  try {
+    json = JSON.parse(raw);
+  } catch (_) {
+    throw new Error('La risposta del WebService non contiene TERMODEL-PROJECT-TEXT-V1.');
+  }
+
+  const queue = [json];
+  const visited = new Set();
+
+  while (queue.length) {
+    const value = queue.shift();
+
+    if (typeof value === 'string' && isTermodelProjectText(value))
+      return value;
+
+    if (!value || typeof value !== 'object' || visited.has(value))
+      continue;
+
+    visited.add(value);
+
+    if (Array.isArray(value))
+      queue.push(...value);
+    else
+      queue.push(...Object.values(value));
+  }
+
+  throw new Error('La risposta JSON del WebService non contiene TERMODEL-PROJECT-TEXT-V1.');
+}
+
+function replaceProjectTextSection(projectText, sectionName, sectionText) {
+  const begin = `---BEGIN:${sectionName}---`;
+  const end = `---END:${sectionName}---`;
+  const beginIndex = projectText.indexOf(begin);
+
+  if (beginIndex < 0)
+    throw new Error(`Il progetto server non contiene la sezione ${sectionName}.`);
+
+  const bodyStart = beginIndex + begin.length;
+  const endIndex = projectText.indexOf(end, bodyStart);
+
+  if (endIndex < 0)
+    throw new Error(`La sezione ${sectionName} del progetto server non è chiusa.`);
+
+  return (
+    projectText.slice(0, bodyStart) +
+    '\n' + String(sectionText ?? '').trim() + '\n' +
+    projectText.slice(endIndex)
+  );
+}
+
+async function createStructuredProjectFromSvg(svgText) {
+  if (!webServiceCanCreateProject())
+    await refreshWebServiceCapabilities();
+
+  if (!webServiceCanCreateProject())
+    throw new Error('NuovoProgetto non è disponibile nel WebService.');
+
+  const response = await fetch(WEB_SERVICE_NEW_PROJECT_URL, {
+    method: 'POST',
+    headers: {
+      'Accept': 'text/plain, application/json',
+      'Content-Type': 'application/json'
+    },
+    // Richiesta minima di progetto vuoto: nessun campo backend inventato.
+    body: '{}'
+  });
+
+  const rawResponse = await response.text();
+
+  if (!response.ok) {
+    const detail = rawResponse.trim().slice(0, 600);
+    throw new Error(
+      `NuovoProgetto HTTP ${response.status}` +
+      (detail ? `: ${detail}` : '')
+    );
+  }
+
+  const emptyProjectText = extractProjectTextFromServerResponse(rawResponse);
+  const structuredProjectText = replaceProjectTextSection(
+    emptyProjectText,
+    'geometry/project.svg',
+    svgText
+  );
+
+  const project = await loadTermodelProjectText(structuredProjectText);
+  setStructuredProjectState(true);
+  return project;
+}
+
 function renderModelData(data, options = {}) {
   if (data.format !== 'TermodelWebModel' || !Array.isArray(data.primitives))
     throw new Error('Formato TermodelWebModel non valido');
@@ -1071,13 +1166,32 @@ async function importAiFromMainForm(event) {
       return;
     }
   } else {
+    const hadStructuredProject = structuredProjectActive;
     imported = processSvgText(text);
+
     if (imported) {
-      setStructuredProjectState(false);
-      const serverState = webServiceCanCreateProject()
-        ? 'WebService pronto per creare il progetto strutturato'
-        : 'WebService non disponibile o NuovoProgetto non dichiarato';
-      setMainAiStatus(`✓ Pianta SVG importata dall'AI · ${serverState}`);
+      if (hadStructuredProject) {
+        setStructuredProjectState(true);
+        setMainAiStatus('✓ Pianta SVG aggiornata nel progetto strutturato esistente · editing attivo');
+      } else if (webServiceCanCreateProject()) {
+        setMainAiStatus('Pianta SVG importata · creazione progetto Termodel strutturato...');
+
+        try {
+          const project = await createStructuredProjectFromSvg(validatedSvg);
+          setMainAiStatus(`✓ Progetto strutturato creato: ${project.projectName} · archivi e CAD attivi`);
+        } catch (error) {
+          setStructuredProjectState(false);
+          console.error('Creazione progetto strutturato non riuscita:', error);
+          setMainAiStatus(`⚠ Pianta importata ma progetto strutturato non creato: ${error.message}`);
+          window.alert(
+            'Pianta AI importata, ma il WebService non ha creato il progetto strutturato.\n\n' +
+            error.message
+          );
+        }
+      } else {
+        setStructuredProjectState(false);
+        setMainAiStatus('✓ Pianta SVG importata dall\'AI · WebService non disponibile o NuovoProgetto non dichiarato');
+      }
     }
   }
 
@@ -2608,8 +2722,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.22: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.22' })
+// v0.24: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.24' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
