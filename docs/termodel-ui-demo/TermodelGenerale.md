@@ -205,8 +205,8 @@ Per ogni apertura `P...` o `F...`:
   - sopraluce;
 - proponi come prima stima la larghezza ricavata dalla pianta calibrata;
 - se la lettura non è affidabile, chiedi conferma;
-- per `TIPO` usa esattamente una voce dell'elenco `TIPI FINESTRA DISPONIBILI` eventualmente aggiunto in fondo alle istruzioni;
-- se nessuna voce è adatta, segnalalo e non inventare nomi.
+- se l'output è destinato direttamente al lettore desktop, per `TIPO` usa esattamente una voce dell'elenco `TIPI FINESTRA DISPONIBILI` eventualmente aggiunto in fondo alle istruzioni;
+- se la destinazione è **Termodel Web**, applica invece il flusso di associazione differita descritto sotto: non inventare una voce d'archivio solo per compilare `TIPO`.
 
 Dopo una modifica aggiorna l'abaco, ma non avanzare automaticamente alla finestra successiva se l'utente non lo richiede.
 
@@ -228,6 +228,60 @@ Usa tutti i campi:
 ```
 
 Le misure `LARGHEZZA`, `ALTEZZA`, `SOTTOFINESTRA` e `SOPRALUCE` sono espresse in centimetri.
+
+## Termodel Web — descrizione semantica e associazione differita agli archivi
+
+Nel flusso **Termodel Web** l'AI non deve forzare subito una finestra o un ponte termico dentro una tipologia d'archivio se l'associazione non è ancora certa.
+
+Per ogni istanza `FIN` o `PON`:
+
+1. raccogli tutti i dati realmente disponibili dalla descrizione dell'utente, dal raster o dal contesto;
+2. costruisci, se possibile, una **descrizione semantica libera e sintetica** che contenga i dati che l'utente ha voluto fornire;
+3. consolida questa descrizione direttamente nel simbolo SVG mediante l'attributo standard:
+   `data-termodel-descrizione="..."`;
+4. mantieni separata la descrizione libera dal collegamento formale all'archivio;
+5. se esiste già una corrispondenza certa e confermata, valorizza `TIPO` con l'esatto `DescBreve` dell'archivio;
+6. se la corrispondenza non è ancora definita, usa nel flusso Web `TIPO,Da associare` e **non inventare nomi di archivio**;
+7. il CAD Web userà descrizione semantica + campi standard del simbolo per proporre o completare l'associazione alla voce corretta dell'archivio;
+8. dopo l'associazione, `TIPO` diventa il collegamento formale all'archivio, mentre `data-termodel-descrizione` resta nel simbolo come informazione semantica e tracciabilità.
+
+La descrizione semantica **non è un campo del database** e non crea automaticamente nuove righe negli archivi.
+
+Esempio finestra non ancora associata:
+
+```xml
+<text id="F001" x="400" y="100" font-size="1"
+      data-termodel-descrizione="Finestra PVC due ante 120x140 cm, sottofinestra 90 cm">
+  <tspan x="400" dy="0">BLOCCO,FIN</tspan>
+  <tspan x="400" dy="1.2em">PORTA,Struttura trasparente</tspan>
+  <tspan x="400" dy="1.2em">TIPO,Da associare</tspan>
+  <tspan x="400" dy="1.2em">LARGHEZZA,120</tspan>
+  <tspan x="400" dy="1.2em">ALTEZZA,140</tspan>
+  <tspan x="400" dy="1.2em">NUMEROANTE,2</tspan>
+  <tspan x="400" dy="1.2em">SOTTOFINESTRA,90</tspan>
+  <tspan x="400" dy="1.2em">SOPRALUCE,0</tspan>
+</text>
+```
+
+## Blocco ponte termico PON
+
+Per un ponte termico usa i campi già previsti dal Termodel desktop:
+
+```xml
+<text id="PON001" x="400" y="100" font-size="1"
+      data-termodel-descrizione="Ponte termico pilastro-parete esterna, verticale, altezza parete">
+  <tspan x="400" dy="0">BLOCCO,PON</tspan>
+  <tspan x="400" dy="1.2em">TIPO,Da associare</tspan>
+  <tspan x="400" dy="1.2em">ORIENTAMENTO,Verticale</tspan>
+  <tspan x="400" dy="1.2em">LUNGHEZZA,Altezza parete</tspan>
+</text>
+```
+
+`TIPO` si collega formalmente a `Ponti.DescBreve`. `ORIENTAMENTO` usa `Orizzontale` o `Verticale`. `LUNGHEZZA` può usare `Lunghezza parete`, `Altezza parete` oppure un valore esplicito coerente con i dati Termodel.
+
+Anche per `PON`, nel flusso Web la descrizione semantica può precedere l'associazione formale all'archivio.
+
+I locali `LOC` seguono una logica diversa: non esiste un archivio Locali. I dati del locale restano nel simbolo `LOC` e i singoli campi possono riferirsi agli archivi `Zone`, `Pareti` e `Confini`.
 
 ---
 

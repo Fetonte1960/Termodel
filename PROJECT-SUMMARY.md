@@ -1061,6 +1061,91 @@ La disponibilità dell'editing non deve dipendere dal solo fatto che una geometr
 
 ---
 
+## 12.3 Flusso simboli CAD — descrizione semantica e associazione agli archivi
+
+Decisione del 2026-09-19 per **Termodel Web**:
+
+Finestre e ponti termici provenienti dall'AI non devono essere costretti subito dentro una tipologia d'archivio se l'associazione non è ancora certa.
+
+Gli archivi `Finestre` e `Ponti` rappresentano **tipologie**, mentre i singoli simboli `FIN` e `PON` rappresentano le **istanze disegnate**.
+
+Flusso:
+
+```text
+utente / raster / AI
+        ↓
+descrizione generica dell'istanza
++ tutti i dati disponibili
+        ↓
+simbolo FIN / PON nello SVG
+        ↓
+data-termodel-descrizione="..."
+        ↓
+CAD Web
+        ↓
+confronto con archivio Finestre / Ponti
+        ↓
+associazione alla tipologia corretta
+        ↓
+TIPO = DescBreve dell'archivio
+```
+
+Regole:
+
+- la descrizione semantica è consolidata nel simbolo SVG tramite `data-termodel-descrizione`;
+- la descrizione contiene, se disponibili, tutti i dati che l'utente vuole fornire e gli elementi affidabili ricavati dall'AI;
+- `data-termodel-descrizione` è un metadato del simbolo Web, **non un campo del database**;
+- il collegamento formale all'archivio resta il campo `TIPO`;
+- per `FIN`: `TIPO → Finestre.DescBreve`;
+- per `PON`: `TIPO → Ponti.DescBreve`;
+- se l'associazione è già certa, l'AI può compilare direttamente `TIPO`;
+- se non è certa, nel flusso Web si usa `TIPO,Da associare` senza inventare nomi di archivio;
+- il CAD Web deve usare descrizione semantica + campi standard del simbolo per proporre/completare il mapping;
+- dopo il mapping la descrizione resta nel simbolo come informazione semantica e tracciabilità;
+- questa regola non implica la creazione automatica di nuove righe negli archivi.
+
+Campi standard istanza finestra `FIN`:
+
+```text
+PORTA
+TIPO
+LARGHEZZA
+ALTEZZA
+NUMEROANTE
+SOTTOFINESTRA
+SOPRALUCE
+```
+
+Campi standard istanza ponte `PON`:
+
+```text
+TIPO
+ORIENTAMENTO
+LUNGHEZZA
+```
+
+I locali `LOC` non hanno un archivio proprio. I dati dell'istanza restano direttamente nel simbolo LOC; i suoi campi possono riferirsi agli archivi `Zone`, `Pareti` e `Confini`.
+
+Implicazione per il prossimo sviluppo CAD:
+
+1. parser dei simboli `FIN/PON/LOC` nel `geometry/project.svg`;
+2. visualizzazione e selezione dei simboli nel CAD;
+3. lettura di `data-termodel-descrizione`;
+4. accesso agli stessi archivi usati da ArchivioWeb;
+5. proposta/assegnazione di `TIPO` a partire dalla descrizione e dai campi disponibili;
+6. editing dei campi dell'istanza senza duplicare i record d'archivio.
+
+Le istruzioni AI autorevoli sono state aggiornate in:
+
+```text
+SorgentiTermodel/Work/IstruzioniAI/TermodelGenerale.md
+SorgentiTermodel/Work/IstruzioniAI/CreaPianoTermodelDaRaster.md
+```
+
+e le relative copie pubblicate in `docs/termodel-ui-demo/` devono restare allineate.
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo ed essere trasmesso anche tramite normale copia-incolla in una chat.
@@ -1245,8 +1330,10 @@ Stato operativo corrente:
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
 - v0.24 presente su `main`; ultima esposizione pubblica verificata: v0.23.
 
+Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
+
 Il prossimo lavoro frontend, salvo nuove istruzioni dell'utente, è:
 
-> verificare end-to-end la v0.24 contro il WebService reale; se la POST viene accettata, confermare archivi/CAD attivi. Se viene rifiutata, usare la diagnostica per formalizzare il DTO senza inventare campi. Successivamente estrarre `ArchiveProvider` e `LocalArchiveProvider`.
+> implementare nel CAD Web il parser/editor dei simboli `FIN/PON/LOC` e il collegamento tra le istanze grafiche e le tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente del simbolo e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`.
 
 Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.

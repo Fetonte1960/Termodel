@@ -394,6 +394,9 @@ Per compilare porte/finestre, blocchi FIN, locali LOC, tipologie parete, stratig
 Nel flusso raster:
 - la larghezza iniziale delle aperture può essere stimata dalla pianta calibrata;
 - se la lettura non è affidabile, chiedi conferma;
+- quando la destinazione è **Termodel Web**, per finestre/porte `FIN` e ponti `PON` applica la regola generale di **descrizione semantica + associazione differita all'archivio**;
+- in Termodel Web la mancanza di una corrispondenza certa con `Finestre.DescBreve` o `Ponti.DescBreve` non obbliga l'AI a inventare il tipo: conserva `data-termodel-descrizione` e usa `TIPO,Da associare` finché il CAD Web non completa il mapping;
+- per un output destinato direttamente al lettore desktop resta invece necessario un `TIPO` valido rispetto all'archivio;
 - tornando alla geometria, annulla lo stato `GEOMETRIA APPROVATA` e ripeti il controllo prima dell'esportazione definitiva.
 
 # Avvio della sessione
