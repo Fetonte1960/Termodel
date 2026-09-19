@@ -322,6 +322,42 @@ C) componenti comuni ad entrambe le identità
 
 Finché la fase sperimentale non sarà conclusa, evitare di assumere che MyHome3D sia soltanto un nome alternativo di Termodel Web o che Termodel Web debba necessariamente adottare l'interfaccia consumer.
 
+### Fase 5 — File progetto unico per la comunicazione con l'AI
+
+Per agevolare la comunicazione tra Termodel Web, Termodel desktop, WebService e AI è stato definito un **formato progetto unico e autocontenuto**.
+
+L'obiettivo principale è permettere che un intero progetto Termodel possa essere trasferito all'AI anche con una modalità estremamente semplice:
+
+```text
+Termodel / Termodel Web
+        ↓
+genera un unico testo progetto
+        ↓
+COPIA
+        ↓
+incolla nella chat AI
+        ↓
+AI legge / genera / modifica il progetto
+        ↓
+restituisce il progetto completo
+        ↓
+Termodel / Termodel Web lo reimporta
+```
+
+Questa scelta nasce direttamente dalla centralità dell'AI nel progetto: il formato di scambio non deve richiedere accesso diretto ai file interni del programma né manipolazione degli archivi nativi da parte dell'AI.
+
+Il file/testo unico deve quindi raccogliere in una sola rappresentazione portabile tutto ciò che serve per comprendere e ricostruire il progetto, inclusi progressivamente geometria, manifest e archivi.
+
+Il copia-incolla è considerato un canale di comunicazione valido e strategico perché:
+
+- funziona con una normale chat AI;
+- non richiede integrazioni proprietarie per iniziare;
+- rende facile provare e collaudare il protocollo;
+- mantiene il progetto autocontenuto;
+- permette all'AI di restituire un risultato completo e nuovamente importabile.
+
+Il protocollo corrente di questa idea è `TERMODEL-PROJECT-TEXT-V1`.
+
 
 ---
 
@@ -748,6 +784,10 @@ Quando servirà il provider server:
 ---
 
 ## 13. Protocollo progetto
+
+Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo ed essere trasmesso anche tramite normale copia-incolla in una chat.
+
+Non è quindi soltanto un formato tecnico interno, ma un elemento centrale dell'architettura AI di Termodel Web.
 
 Il protocollo completo sperimentale corrente è:
 
