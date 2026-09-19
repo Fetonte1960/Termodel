@@ -13,6 +13,12 @@ const cadShowClean = document.getElementById('cadShowClean');
 const cadShowInput = document.getElementById('cadShowInput');
 const cadReturnModel = document.getElementById('cadReturnModel');
 const cadExportArchitectural = document.getElementById('cadExportArchitectural');
+const cadSnap = document.getElementById('cadSnap');
+const cadUndo = document.getElementById('cadUndo');
+const cadRedo = document.getElementById('cadRedo');
+const cadDelete = document.getElementById('cadDelete');
+const cadRegenerate = document.getElementById('cadRegenerate');
+const cadEditStatus = document.getElementById('cadEditStatus');
 const status = document.querySelector('.viewport-status');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd3d3d3);
@@ -47,6 +53,17 @@ let currentModelMode = 'project';
 let lastAiPreviewData = null;
 let lastCleanPlanSvg = '';
 let lastGeneratedPlan = null;
+
+// Edita nel CAD v0.7: il browser modifica solo lo SVG semantico E/W.
+// La geometria architettonica continua ad essere rigenerata dal motore GeneraPianta.
+let cadWorkingDoc = null;
+let cadCommittedSvg = '';
+let cadSelectedLineId = '';
+let cadUndoStack = [];
+let cadRedoStack = [];
+let cadDragState = null;
+const CAD_SNAP_DISTANCE = 12;
+const CAD_JOIN_EPSILON = 0.05;
 
 const COMPONENTI = [
   ['Parete', true],
@@ -1298,7 +1315,7 @@ function cadColorForId(id) {
   return '#c62828';
 }
 
-function addCadLabel(group, id, x, y, color) {
+function addCadLabel(group, id, x, y, color, dataId = '') {
   if (!id || !Number.isFinite(x) || !Number.isFinite(y)) return;
   const text = svgNode('text', {
     x, y: y - 8,
@@ -1309,10 +1326,319 @@ function addCadLabel(group, id, x, y, color) {
     'text-anchor': 'middle',
     'font-family': 'Segoe UI, Arial, sans-serif',
     'font-size': 15,
-    'font-weight': 700
+    'font-weight': 700,
+    'pointer-events': 'none',
+    'data-cad-label': dataId || null
   });
   text.textContent = id;
   group.appendChild(text);
+}
+
+function cadParseSvg(svgText) {
+  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+  if (doc.querySelector('parsererror'))
+    throw new Error('Lo SVG di lavoro del CAD non è XML valido.');
+  return doc;
+}
+
+function cadSerializeWorkingSvg() {
+  if (!cadWorkingDoc) return '';
+  return new XMLSerializer().serializeToString(cadWorkingDoc.documentElement);
+}
+
+function cadCalpestabile(doc = cadWorkingDoc) {
+  if (!doc) return null;
+  return Array.from(doc.documentElement.children)
+    .find(el => el.localName === 'g' && el.id === 'calpestabile') || null;
+}
+
+function cadEditableSourceLines() {
+  const group = cadCalpestabile();
+  if (!group) return [];
+  return Array.from(group.children)
+    .filter(el => el.localName === 'line' && /^[EW]/i.test(el.id || ''));
+}
+
+function cadFindSourceLine(id) {
+  if (!id) return null;
+  return cadEditableSourceLines().find(line => line.id === id) || null;
+}
+
+function cadLinePoint(line, endpoint) {
+  const suffix = endpoint === 1 ? '1' : '2';
+  return [
+    Number(line.getAttribute(`x${suffix}`)),
+    Number(line.getAttribute(`y${suffix}`))
+  ];
+}
+
+function cadSetLinePoint(line, endpoint, x, y) {
+  const suffix = endpoint === 1 ? '1' : '2';
+  line.setAttribute(`x${suffix}`, Number(x).toFixed(3).replace(/\.000$/, ''));
+  line.setAttribute(`y${suffix}`, Number(y).toFixed(3).replace(/\.000$/, ''));
+}
+
+function cadSetStatus(message, kind = '') {
+  if (!cadEditStatus) return;
+  cadEditStatus.textContent = message;
+  cadEditStatus.classList.remove('dirty', 'error');
+  if (kind) cadEditStatus.classList.add(kind);
+}
+
+function cadIsDirty() {
+  if (!cadWorkingDoc) return false;
+  return cadSerializeWorkingSvg() !== cadCommittedSvg;
+}
+
+function cadUpdateControls() {
+  const hasDoc = !!cadWorkingDoc;
+  const selected = !!cadFindSourceLine(cadSelectedLineId);
+  const dirty = cadIsDirty();
+
+  if (cadUndo) cadUndo.disabled = !cadUndoStack.length;
+  if (cadRedo) cadRedo.disabled = !cadRedoStack.length;
+  if (cadDelete) cadDelete.disabled = !selected;
+  if (cadRegenerate) cadRegenerate.disabled = !hasDoc || !dirty;
+  if (cadExportArchitectural)
+    cadExportArchitectural.disabled = !lastGeneratedPlan || dirty;
+
+  if (!hasDoc) {
+    cadSetStatus('Genera prima una pianta');
+  } else if (dirty) {
+    cadSetStatus(
+      cadSelectedLineId
+        ? `${cadSelectedLineId} · modifica non rigenerata`
+        : 'Modifica non rigenerata',
+      'dirty'
+    );
+  } else if (selected) {
+    const line = cadFindSourceLine(cadSelectedLineId);
+    const [x1, y1] = cadLinePoint(line, 1);
+    const [x2, y2] = cadLinePoint(line, 2);
+    cadSetStatus(
+      `${cadSelectedLineId} · (${x1.toFixed(1)}, ${y1.toFixed(1)}) → (${x2.toFixed(1)}, ${y2.toFixed(1)})`
+    );
+  } else {
+    cadSetStatus('Seleziona una parete E/W');
+  }
+}
+
+function cadSetWorkingSvg(svgText) {
+  cadWorkingDoc = cadParseSvg(svgText);
+  cadCommittedSvg = cadSerializeWorkingSvg();
+  cadSelectedLineId = '';
+  cadUndoStack = [];
+  cadRedoStack = [];
+  cadDragState = null;
+  cadUpdateControls();
+}
+
+function cadPointDistance(a, b) {
+  return Math.hypot(a[0] - b[0], a[1] - b[1]);
+}
+
+function cadNearestPointOnSegment(point, a, b) {
+  const vx = b[0] - a[0];
+  const vy = b[1] - a[1];
+  const len2 = vx * vx + vy * vy;
+  if (len2 <= 1e-12) return a.slice();
+  let t = ((point[0] - a[0]) * vx + (point[1] - a[1]) * vy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return [a[0] + t * vx, a[1] + t * vy];
+}
+
+function cadSnapPoint(point, movingLineId) {
+  if (cadSnap?.checked === false) return { point, snapped: false };
+
+  let best = point;
+  let bestDistance = CAD_SNAP_DISTANCE + 1;
+
+  cadEditableSourceLines().forEach(line => {
+    if (line.id === movingLineId) return;
+    const a = cadLinePoint(line, 1);
+    const b = cadLinePoint(line, 2);
+
+    for (const candidate of [a, b]) {
+      const distance = cadPointDistance(point, candidate);
+      if (distance < bestDistance) {
+        best = candidate.slice();
+        bestDistance = distance;
+      }
+    }
+
+    const projected = cadNearestPointOnSegment(point, a, b);
+    const segmentDistance = cadPointDistance(point, projected);
+    if (segmentDistance < bestDistance) {
+      best = projected;
+      bestDistance = segmentDistance;
+    }
+  });
+
+  return {
+    point: bestDistance <= CAD_SNAP_DISTANCE ? best : point,
+    snapped: bestDistance <= CAD_SNAP_DISTANCE
+  };
+}
+
+function cadConnectedEndpointRefs(point) {
+  const refs = [];
+  cadEditableSourceLines().forEach(line => {
+    [1, 2].forEach(endpoint => {
+      const current = cadLinePoint(line, endpoint);
+      if (cadPointDistance(current, point) <= CAD_JOIN_EPSILON) {
+        refs.push({
+          line,
+          endpoint,
+          x: current[0],
+          y: current[1]
+        });
+      }
+    });
+  });
+  return refs;
+}
+
+function cadClientPoint(svg, event) {
+  const point = svg.createSVGPoint();
+  point.x = event.clientX;
+  point.y = event.clientY;
+  const matrix = svg.getScreenCTM();
+  if (!matrix) return [0, 0];
+  const local = point.matrixTransform(matrix.inverse());
+  return [local.x, local.y];
+}
+
+function cadSelectLine(id, svg = cadCanvas?.querySelector('svg')) {
+  cadSelectedLineId = cadFindSourceLine(id) ? id : '';
+  if (svg) cadSyncOverlay(svg);
+  cadUpdateControls();
+}
+
+function cadRenderSelectionHandles(svg) {
+  svg.querySelector('#cadHandlesLayer')?.remove();
+  const line = cadFindSourceLine(cadSelectedLineId);
+  if (!line) return;
+
+  const handles = svgNode('g', { id: 'cadHandlesLayer' });
+  [1, 2].forEach(endpoint => {
+    const [x, y] = cadLinePoint(line, endpoint);
+    const handle = svgNode('circle', {
+      cx: x,
+      cy: y,
+      r: 8,
+      class: 'cad-handle',
+      'data-cad-handle': endpoint
+    });
+
+    handle.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const selected = cadFindSourceLine(cadSelectedLineId);
+      if (!selected) return;
+
+      const anchor = cadLinePoint(selected, endpoint);
+      cadDragState = {
+        mode: 'endpoint',
+        pointerId: event.pointerId,
+        lineId: selected.id,
+        endpoint,
+        before: cadSerializeWorkingSvg(),
+        refs: cadConnectedEndpointRefs(anchor),
+        moved: false
+      };
+      if (svg.setPointerCapture) {
+        try { svg.setPointerCapture(event.pointerId); } catch (_) {}
+      }
+    });
+    handles.appendChild(handle);
+  });
+
+  svg.appendChild(handles);
+}
+
+function cadSyncOverlay(svg) {
+  if (!svg || !cadWorkingDoc) return;
+
+  svg.querySelectorAll('[data-cad-id]').forEach(displayLine => {
+    const id = displayLine.getAttribute('data-cad-id');
+    const source = cadFindSourceLine(id);
+    if (!source) {
+      displayLine.remove();
+      return;
+    }
+
+    const [x1, y1] = cadLinePoint(source, 1);
+    const [x2, y2] = cadLinePoint(source, 2);
+    displayLine.setAttribute('x1', x1);
+    displayLine.setAttribute('y1', y1);
+    displayLine.setAttribute('x2', x2);
+    displayLine.setAttribute('y2', y2);
+    displayLine.classList.toggle('selected', id === cadSelectedLineId);
+
+    const label = svg.querySelector(`[data-cad-label="${CSS.escape(id)}"]`);
+    if (label) {
+      label.setAttribute('x', (x1 + x2) / 2);
+      label.setAttribute('y', (y1 + y2) / 2 - 8);
+    }
+  });
+
+  cadRenderSelectionHandles(svg);
+  cadUpdateControls();
+}
+
+function cadInstallPointerEditing(svg) {
+  svg.addEventListener('pointermove', event => {
+    if (!cadDragState || cadDragState.pointerId !== event.pointerId) return;
+
+    const point = cadClientPoint(svg, event);
+
+    if (cadDragState.mode === 'endpoint') {
+      const snapped = cadSnapPoint(point, cadDragState.lineId);
+      cadDragState.refs.forEach(ref => {
+        cadSetLinePoint(ref.line, ref.endpoint, snapped.point[0], snapped.point[1]);
+      });
+      cadDragState.moved = true;
+      cadSyncOverlay(svg);
+      cadSetStatus(
+        `${cadDragState.lineId} · estremo ${cadDragState.endpoint}${snapped.snapped ? ' · SNAP' : ''}`,
+        'dirty'
+      );
+    } else if (cadDragState.mode === 'line') {
+      const dx = point[0] - cadDragState.startPointer[0];
+      const dy = point[1] - cadDragState.startPointer[1];
+
+      cadDragState.refs.forEach(ref => {
+        cadSetLinePoint(ref.line, ref.endpoint, ref.x + dx, ref.y + dy);
+      });
+      cadDragState.moved = true;
+      cadSyncOverlay(svg);
+      cadSetStatus(`${cadDragState.lineId} · spostamento parete`, 'dirty');
+    }
+  });
+
+  const finishDrag = event => {
+    if (!cadDragState || cadDragState.pointerId !== event.pointerId) return;
+
+    if (cadDragState.moved) {
+      cadUndoStack.push(cadDragState.before);
+      cadRedoStack = [];
+    }
+
+    cadDragState = null;
+    if (svg.releasePointerCapture) {
+      try { svg.releasePointerCapture(event.pointerId); } catch (_) {}
+    }
+    cadUpdateControls();
+  };
+
+  svg.addEventListener('pointerup', finishDrag);
+  svg.addEventListener('pointercancel', finishDrag);
+
+  svg.addEventListener('pointerdown', event => {
+    if (event.target === svg || event.target.getAttribute('data-cad-background') === '1') {
+      cadSelectLine('', svg);
+    }
+  });
 }
 
 function applyCadLayerVisibility() {
@@ -1321,31 +1647,34 @@ function applyCadLayerVisibility() {
   const input = cadCanvas.querySelector('#cadInputLayer');
   if (clean) clean.style.display = cadShowClean?.checked === false ? 'none' : '';
   if (input) input.style.display = cadShowInput?.checked === false ? 'none' : '';
+
+  const handles = cadCanvas.querySelector('#cadHandlesLayer');
+  if (handles) handles.style.display = cadShowInput?.checked === false ? 'none' : '';
 }
 
 function renderCadComparison() {
   if (!cadCanvas) return;
 
   cadCanvas.innerHTML = '';
-  if (!validatedSvg || !lastCleanPlanSvg) {
+  if (!cadWorkingDoc || !lastCleanPlanSvg) {
     const empty = document.createElement('div');
     empty.className = 'cad-empty';
-    empty.textContent = 'Genera prima una pianta da raster con AI. Qui verranno sovrapposti la pianta ripulita e il DisegnoInput.svg.';
+    empty.textContent = 'Genera prima una pianta da raster con AI. Qui potrai correggere direttamente le pareti E/W del DisegnoInput.svg.';
     cadCanvas.appendChild(empty);
+    cadUpdateControls();
     return;
   }
 
   const parser = new DOMParser();
   const cleanDoc = parser.parseFromString(lastCleanPlanSvg, 'image/svg+xml');
-  const inputDoc = parser.parseFromString(validatedSvg, 'image/svg+xml');
+  const inputRoot = cadWorkingDoc.documentElement;
   const cleanRoot = cleanDoc.documentElement;
-  const inputRoot = inputDoc.documentElement;
 
   const viewBox = cleanRoot.getAttribute('viewBox') || inputRoot.getAttribute('viewBox');
   if (!viewBox) {
     const empty = document.createElement('div');
     empty.className = 'cad-empty';
-    empty.textContent = 'Impossibile visualizzare il confronto: manca il viewBox SVG.';
+    empty.textContent = 'Impossibile visualizzare il CAD: manca il viewBox SVG.';
     cadCanvas.appendChild(empty);
     return;
   }
@@ -1354,38 +1683,38 @@ function renderCadComparison() {
     viewBox,
     preserveAspectRatio: 'xMidYMid meet',
     role: 'img',
-    'aria-label': 'Confronto tra pianta pulita e DisegnoInput'
+    'aria-label': 'Editor CAD della pianta Termodel'
   });
 
   const vb = viewBox.trim().split(/[ ,]+/).map(Number);
   if (vb.length === 4 && vb.every(Number.isFinite)) {
     svg.appendChild(svgNode('rect', {
-      x: vb[0], y: vb[1], width: vb[2], height: vb[3], fill: '#f5f5f5'
+      x: vb[0], y: vb[1], width: vb[2], height: vb[3],
+      fill: '#f5f5f5',
+      'data-cad-background': 1
     }));
   }
 
-  // Fondo: risultato architettonico di GeneraPianta/JSTS.
-  // I muri hanno massa grigia; il DisegnoInput resta un overlay colorato separato.
-  const cleanLayer = svgNode('g', { id: 'cadCleanLayer' });
-  cleanDoc.querySelectorAll('#locali-puliti path').forEach((source) => {
+  // Fondo: ultima pianta architettonica rigenerata.
+  const cleanLayer = svgNode('g', { id: 'cadCleanLayer', 'pointer-events': 'none' });
+  cleanDoc.querySelectorAll('#locali-puliti path').forEach(source => {
     cleanLayer.appendChild(svgNode('path', {
       d: source.getAttribute('d') || '',
       fill: '#fafafa',
       stroke: 'none'
     }));
   });
-  cleanDoc.querySelectorAll('#pareti-architettoniche path').forEach((source) => {
-    const external = source.id === 'PARETI-ESTERNE';
+  cleanDoc.querySelectorAll('#pareti-architettoniche path').forEach(source => {
     cleanLayer.appendChild(svgNode('path', {
       d: source.getAttribute('d') || '',
       fill: '#cfcfcf',
       'fill-rule': source.getAttribute('fill-rule') || 'nonzero',
-      stroke: external ? '#858585' : 'none',
-      'stroke-width': external ? 1.0 : 0,
+      stroke: '#858585',
+      'stroke-width': 0.9,
       'vector-effect': 'non-scaling-stroke'
     }));
   });
-  cleanDoc.querySelectorAll('#contorni-architettonici path').forEach((source) => {
+  cleanDoc.querySelectorAll('#contorni-architettonici path').forEach(source => {
     cleanLayer.appendChild(svgNode('path', {
       d: source.getAttribute('d') || '',
       fill: 'none',
@@ -1394,7 +1723,7 @@ function renderCadComparison() {
       'vector-effect': 'non-scaling-stroke'
     }));
   });
-  cleanDoc.querySelectorAll('#etichette-locali text').forEach((source) => {
+  cleanDoc.querySelectorAll('#etichette-locali text').forEach(source => {
     const label = svgNode('text', {
       x: source.getAttribute('x'), y: source.getAttribute('y'),
       fill: '#777777',
@@ -1407,36 +1736,87 @@ function renderCadComparison() {
   });
   svg.appendChild(cleanLayer);
 
-  // Overlay: DisegnoInput.svg, evidenziato per rendere immediato il confronto.
+  // Overlay semantico editabile. In v0.7 sono editabili soltanto E/W.
   const inputLayer = svgNode('g', { id: 'cadInputLayer' });
-  const calpestabile = Array.from(inputRoot.children)
-    .find(el => el.localName === 'g' && el.id === 'calpestabile');
+  const calpestabile = cadCalpestabile();
 
   if (calpestabile) {
     Array.from(calpestabile.children)
       .filter(el => el.localName === 'line')
-      .forEach((line) => {
+      .forEach(line => {
         const id = line.id || '';
         const color = cadColorForId(id);
         const x1 = Number(line.getAttribute('x1'));
         const y1 = Number(line.getAttribute('y1'));
         const x2 = Number(line.getAttribute('x2'));
         const y2 = Number(line.getAttribute('y2'));
+        const editable = /^[EW]/i.test(id);
 
-        inputLayer.appendChild(svgNode('line', {
+        const displayLine = svgNode('line', {
           x1, y1, x2, y2,
           stroke: color,
-          'stroke-width': 3.4,
+          'stroke-width': editable ? 3.4 : 2.8,
           'stroke-linecap': 'round',
-          opacity: 0.90,
-          'vector-effect': 'non-scaling-stroke'
-        }));
-        addCadLabel(inputLayer, id, (x1 + x2) / 2, (y1 + y2) / 2, color);
+          opacity: editable ? 0.92 : 0.72,
+          'vector-effect': 'non-scaling-stroke',
+          class: editable ? 'cad-edit-line' : '',
+          'data-cad-id': editable ? id : null
+        });
+
+        if (editable) {
+          displayLine.addEventListener('pointerdown', event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            cadSelectedLineId = id;
+            cadSyncOverlay(svg);
+
+            const source = cadFindSourceLine(id);
+            if (!source) return;
+
+            const start = cadLinePoint(source, 1);
+            const end = cadLinePoint(source, 2);
+            const refs = [
+              ...cadConnectedEndpointRefs(start),
+              ...cadConnectedEndpointRefs(end)
+            ];
+
+            // Evita di aggiornare due volte lo stesso endpoint.
+            const unique = [];
+            const seen = new Set();
+            refs.forEach(ref => {
+              const key = `${ref.line.id}:${ref.endpoint}`;
+              if (seen.has(key)) return;
+              seen.add(key);
+              unique.push(ref);
+            });
+
+            cadDragState = {
+              mode: 'line',
+              pointerId: event.pointerId,
+              lineId: id,
+              before: cadSerializeWorkingSvg(),
+              startPointer: cadClientPoint(svg, event),
+              refs: unique,
+              moved: false
+            };
+
+            if (svg.setPointerCapture) {
+              try { svg.setPointerCapture(event.pointerId); } catch (_) {}
+            }
+          });
+        }
+
+        inputLayer.appendChild(displayLine);
+        addCadLabel(
+          inputLayer, id, (x1 + x2) / 2, (y1 + y2) / 2, color,
+          editable ? id : ''
+        );
       });
 
     Array.from(calpestabile.children)
-      .filter(el => el.localName === 'text' && /^[RPF]\d+/i.test(el.id || ''))
-      .forEach((labelSource) => {
+      .filter(el => el.localName === 'text' && /^[RPF]/i.test(el.id || ''))
+      .forEach(labelSource => {
         const id = labelSource.id || '';
         const x = Number(labelSource.getAttribute('x'));
         const y = Number(labelSource.getAttribute('y'));
@@ -1446,7 +1826,79 @@ function renderCadComparison() {
 
   svg.appendChild(inputLayer);
   cadCanvas.appendChild(svg);
+
+  cadInstallPointerEditing(svg);
+  cadSyncOverlay(svg);
   applyCadLayerVisibility();
+}
+
+function cadDeleteSelected() {
+  const line = cadFindSourceLine(cadSelectedLineId);
+  if (!line) return;
+
+  const before = cadSerializeWorkingSvg();
+  line.remove();
+  cadUndoStack.push(before);
+  cadRedoStack = [];
+  cadSelectedLineId = '';
+  renderCadComparison();
+  cadSetStatus('Parete eliminata · premi Rigenera pianta', 'dirty');
+}
+
+function cadUndoEdit() {
+  if (!cadUndoStack.length || !cadWorkingDoc) return;
+  cadRedoStack.push(cadSerializeWorkingSvg());
+  cadWorkingDoc = cadParseSvg(cadUndoStack.pop());
+  if (!cadFindSourceLine(cadSelectedLineId)) cadSelectedLineId = '';
+  renderCadComparison();
+}
+
+function cadRedoEdit() {
+  if (!cadRedoStack.length || !cadWorkingDoc) return;
+  cadUndoStack.push(cadSerializeWorkingSvg());
+  cadWorkingDoc = cadParseSvg(cadRedoStack.pop());
+  if (!cadFindSourceLine(cadSelectedLineId)) cadSelectedLineId = '';
+  renderCadComparison();
+}
+
+function cadRegeneratePlan() {
+  if (!cadWorkingDoc || !cadIsDirty()) return;
+
+  try {
+    const svgText = cadSerializeWorkingSvg();
+    const plan = generaPiantaDaSvg(svgText);
+
+    validatedSvg = svgText;
+    lastCleanPlanSvg = plan.svgPulito;
+    lastGeneratedPlan = plan;
+    cadCommittedSvg = svgText;
+    rasterSvgText.value = svgText;
+    showSvgPreview(plan.svgPulito);
+
+    // Aggiorna anche il 3D senza abbandonare la pagina CAD.
+    lastAiPreviewData = createAiPreviewModelFromPlan(plan);
+    renderModelData(lastAiPreviewData, {
+      mode: 'ai',
+      label: 'ANTEPRIMA AI — GENERAPIANTA.JS'
+    });
+
+    rasterExportSvg.disabled = false;
+    if (rasterDownloadAiJson) rasterDownloadAiJson.disabled = false;
+    if (rasterDownloadCleanSvg) rasterDownloadCleanSvg.disabled = false;
+
+    if (cadExportArchitectural) {
+      cadExportArchitectural.disabled = false;
+      cadExportArchitectural.title =
+        `${DXF_EXPORT_INFO.version} · ${DXF_EXPORT_INFO.units}`;
+    }
+
+    renderCadComparison();
+    cadSetStatus(
+      `✓ Pianta rigenerata · ${plan.stats.locali} locali`
+    );
+  } catch (error) {
+    cadSetStatus('✗ ' + error.message, 'error');
+  }
 }
 
 function activateCadPage() {
@@ -1454,6 +1906,15 @@ function activateCadPage() {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   if (cadPage) cadPage.classList.add('active');
   if (demoHelpPanel) demoHelpPanel.hidden = true;
+
+  if (!cadWorkingDoc && validatedSvg) {
+    try {
+      cadSetWorkingSvg(validatedSvg);
+    } catch (error) {
+      cadSetStatus('✗ ' + error.message, 'error');
+    }
+  }
+
   renderCadComparison();
 }
 
@@ -1480,6 +1941,7 @@ function processSvgText(text) {
     validatedSvg = svg;
     lastCleanPlanSvg = plan.svgPulito;
     lastGeneratedPlan = plan;
+    cadSetWorkingSvg(svg);
     rasterSvgText.value = svg;
     showSvgPreview(plan.svgPulito);
     showAiPreviewModel(plan);
@@ -1624,11 +2086,44 @@ if (cadShowClean)
   cadShowClean.addEventListener('change', applyCadLayerVisibility);
 if (cadShowInput)
   cadShowInput.addEventListener('change', applyCadLayerVisibility);
+if (cadUndo)
+  cadUndo.addEventListener('click', cadUndoEdit);
+if (cadRedo)
+  cadRedo.addEventListener('click', cadRedoEdit);
+if (cadDelete)
+  cadDelete.addEventListener('click', cadDeleteSelected);
+if (cadRegenerate)
+  cadRegenerate.addEventListener('click', cadRegeneratePlan);
 if (cadReturnModel)
   cadReturnModel.addEventListener('click', activateModelPage);
 if (cadExportArchitectural)
   cadExportArchitectural.addEventListener('click', downloadArchitecturalDxf);
-// v0.6: esportazione DXF della pianta architettonica pulita attiva.
+
+// Scorciatoie operative del mini-CAD.
+document.addEventListener('keydown', event => {
+  if (!cadPage?.classList.contains('active')) return;
+  const tag = event.target?.tagName?.toLowerCase();
+  if (tag === 'input' || tag === 'textarea') return;
+
+  if ((event.key === 'Delete' || event.key === 'Backspace') && cadSelectedLineId) {
+    event.preventDefault();
+    cadDeleteSelected();
+    return;
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+    event.preventDefault();
+    if (event.shiftKey) cadRedoEdit();
+    else cadUndoEdit();
+    return;
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
+    event.preventDefault();
+    cadRedoEdit();
+  }
+});
+// v0.7: Edita nel CAD modifica realmente E/W con drag, snap, undo/redo e rigenerazione.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
