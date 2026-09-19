@@ -924,7 +924,11 @@ function setMainAiStatus(message) {
   if (status) status.textContent = message;
 }
 
-async function instructAiFromMainForm() {
+async function instructAiFromMainForm(event) {
+  event?.preventDefault();
+  event?.stopPropagation();
+  if (demoHelpPanel) demoHelpPanel.hidden = true;
+
   try {
     if (!navigator.clipboard?.writeText)
       throw new Error('Clipboard non disponibile');
@@ -935,7 +939,11 @@ async function instructAiFromMainForm() {
   }
 }
 
-async function importAiFromMainForm() {
+async function importAiFromMainForm(event) {
+  event?.preventDefault();
+  event?.stopPropagation();
+  if (demoHelpPanel) demoHelpPanel.hidden = true;
+
   let text = '';
   try {
     if (!navigator.clipboard?.readText)
@@ -957,6 +965,8 @@ async function importAiFromMainForm() {
     return;
   }
 
+  activateModelPage();
+  requestAnimationFrame(resize);
   setMainAiStatus('✓ Progetto importato dall\'AI');
 }
 
@@ -2461,7 +2471,7 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.12: Istruisci AI e Importa da AI operano direttamente dalla main form Termodel, senza pagina o form intermedi.
+// v0.13: i comandi AI della main form chiudono esplicitamente l'help demo; Importa da AI attiva il modello dopo l'importazione.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
