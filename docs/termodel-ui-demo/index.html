@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.13 — Demo interattiva</title>
+  <title>Termodel Web v0.14 — Demo interattiva</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -88,6 +88,85 @@
       font-weight: 700;
       background: linear-gradient(#fff7c8,#efd56a);
       border-color: #9b7d1d;
+    }
+
+    .ai-instruct-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0,0,0,.46);
+    }
+    .ai-instruct-modal.visible { display: flex; }
+    .ai-instruct-window {
+      width: min(620px, 94vw);
+      background: #f4f5f7;
+      border: 1px solid #666;
+      box-shadow: 0 14px 40px rgba(0,0,0,.35);
+    }
+    .ai-instruct-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 14px;
+      background: #26384a;
+      color: #fff;
+    }
+    .ai-instruct-head h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+    .ai-instruct-close {
+      width: 30px;
+      height: 28px;
+      border: 1px solid #8d9aa5;
+      background: #f5f5f5;
+      color: #111;
+      font-size: 20px;
+      line-height: 20px;
+      cursor: pointer;
+    }
+    .ai-instruct-body {
+      padding: 16px 18px 12px;
+      background: #fff;
+      line-height: 1.45;
+      color: #2f3942;
+    }
+    .ai-instruct-body p {
+      margin: 0 0 12px;
+    }
+    .ai-instruct-body ol {
+      margin: 8px 0 4px 22px;
+      padding: 0;
+    }
+    .ai-instruct-body li {
+      margin: 6px 0;
+    }
+    .ai-instruct-ok {
+      padding: 9px 10px;
+      border: 1px solid #79a27e;
+      background: #eef8ef;
+      color: #315f36;
+      font-weight: 700;
+    }
+    .ai-instruct-foot {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 9px 12px;
+      border-top: 1px solid #aaa;
+      background: #e8e8e8;
+    }
+    .ai-instruct-foot button {
+      border: 1px solid #888;
+      background: linear-gradient(#fff,#e5e5e5);
+      padding: 7px 16px;
+      cursor: pointer;
+      font-weight: 700;
     }
 
     .raster-ai-modal {
@@ -549,7 +628,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.13</div>
+      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.14</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -705,6 +784,36 @@
       <button type="button" id="resetView">Aggiorna Modello</button>
       <label class="check-wrap"><input type="checkbox" id="filtersCheck" checked /> Mostra Filtri Grafici</label>
     </div>
+  </div>
+
+
+  <div id="aiInstructModal" class="ai-instruct-modal" aria-hidden="true">
+    <section class="ai-instruct-window" role="dialog" aria-modal="true" aria-labelledby="aiInstructTitle">
+      <header class="ai-instruct-head">
+        <h2 id="aiInstructTitle">AI istruita per lavorare con Termodel</h2>
+        <button id="aiInstructClose" class="ai-instruct-close" type="button" aria-label="Chiudi">×</button>
+      </header>
+      <div class="ai-instruct-body">
+        <div class="ai-instruct-ok">✓ L'istruzione di collegamento è stata copiata negli appunti.</div>
+        <p style="margin-top:12px;">
+          Negli appunti non abbiamo copiato tutte le regole Termodel: abbiamo copiato una breve istruzione che indica all'AI dove trovare sul Web le istruzioni aggiornate.
+        </p>
+        <p><strong>Come utilizzarla:</strong></p>
+        <ol>
+          <li>Apri la tua AI preferita.</li>
+          <li>Incolla negli appunti con <strong>Ctrl+V</strong> e invia il messaggio.</li>
+          <li>L'AI leggerà le istruzioni Termodel pubblicate sul Web e ti guiderà nel lavoro.</li>
+          <li>Quando l'AI restituisce il progetto, copia negli appunti l'intero progetto restituito.</li>
+          <li>Torna in Termodel Web e premi <strong>Importa da AI</strong>.</li>
+        </ol>
+        <p style="margin-top:12px; color:#66727c;">
+          L'istruzione copiata non viene mostrata qui: in questo modo resta semplice per l'utente e può essere aggiornata sul sito senza modificare il programma.
+        </p>
+      </div>
+      <footer class="ai-instruct-foot">
+        <button id="aiInstructCloseBottom" type="button">Ho capito</button>
+      </footer>
+    </section>
   </div>
 
 
