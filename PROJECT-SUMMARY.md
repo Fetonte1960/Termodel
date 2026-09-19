@@ -960,6 +960,40 @@ pianta AI + progetto vuoto server
 
 Se invece una struttura progetto completa è già presente, Termodel Web non deve crearne inutilmente un'altra: deve utilizzare quella esistente come base per l'importazione/modifica.
 
+### Attivazione della modalità editabile
+
+Una volta che la pianta proveniente dall'AI è stata associata a una **struttura progetto completa**, Termodel Web può attivare le funzioni di editing.
+
+A questo punto diventano disponibili entrambe le modalità di modifica:
+
+```text
+PROGETTO STRUTTURATO
+        │
+        ├── EDITING TESTUALE / DATI
+        │      ↓
+        │   menu archivi
+        │   griglie e form
+        │   modifica dei dati Termodel
+        │
+        └── EDITING GRAFICO
+               ↓
+            "Edita nel CAD"
+            CAD/BIM 2D JavaScript
+            modifica geometrica della pianta
+```
+
+Quindi il passaggio chiave è:
+
+```text
+semplice pianta AI
+    → strutturazione tramite progetto server
+    → progetto Termodel editabile
+    → archivi attivi
+    → CAD/BIM 2D attivo
+```
+
+La disponibilità dell'editing non deve dipendere dal solo fatto che una geometria sia visibile: deve dipendere dalla presenza di una **base progetto strutturata e coerente**.
+
 ---
 
 ## 13. Protocollo progetto
