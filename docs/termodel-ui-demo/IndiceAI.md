@@ -1,6 +1,6 @@
 # TERMODEL — Indice istruzioni AI
 
-> VERSIONE INDICE AI: 0.18
+> VERSIONE INDICE AI: 0.19
 
 Questa è l'istruzione iniziale di Termodel.
 
@@ -16,6 +16,7 @@ TERMODEL — COSA VUOI FARE?
 1 — Informazioni su Termodel
 2 — Lavorare su un progetto Termodel
 3 — Creare un piano da una pianta raster
+4 — Creare un progetto da una descrizione testuale
 ```
 
 Attendi la scelta dell'utente.
@@ -39,7 +40,7 @@ Usa questa modalità quando l'utente vuole:
 Carica:
 
 ```text
-https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.18
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.19
 ```
 
 Dopo il caricamento, rispondi alla richiesta dell'utente senza avviare automaticamente un progetto.
@@ -55,7 +56,7 @@ Usa questa modalità quando l'utente vuole lavorare su un progetto Termodel già
 Per adesso carica:
 
 ```text
-https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.18
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.19
 ```
 
 Questa voce potrà in seguito essere estesa con un file specifico:
@@ -79,8 +80,8 @@ Usa questa modalità quando l'utente vuole trasformare una pianta PNG, JPG, BMP 
 Carica, in questo ordine:
 
 ```text
-https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.18
-https://www.termodel.it/termodel-ui-demo/CreaPianoTermodelDaRaster.html?v=0.18
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.19
+https://www.termodel.it/termodel-ui-demo/CreaPianoTermodelDaRaster.html?v=0.19
 ```
 
 Le istruzioni generali hanno valore comune a Termodel.
@@ -94,6 +95,34 @@ Le istruzioni raster aggiungono le regole specifiche per:
 - correzione geometrica;
 - controllo;
 - generazione del piano Termodel.
+
+---
+
+## 4 — Creare un progetto da una descrizione testuale
+
+Usa questa modalità quando l'utente vuole creare un nuovo progetto Termodel descrivendolo in linguaggio naturale, senza partire da una pianta raster.
+
+Esempi:
+
+- "crea un locale 4 x 4 m alto 3 m";
+- "crea un appartamento 8 x 10 m con soggiorno, cucina e due camere";
+- "aggiungi una parete interna e una porta";
+- "crea tre locali affiancati dentro un rettangolo 12 x 6 m".
+
+### Istruzioni da caricare
+
+Carica, in questo ordine:
+
+```text
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html?v=0.19
+https://www.termodel.it/termodel-ui-demo/CreaProgettoDaDescrizione.html?v=0.19
+```
+
+La descrizione testuale confermata dall'utente è la sorgente del progetto.
+
+Non chiedere un raster se la geometria può essere definita in modo sufficiente dal testo.
+
+Se la richiesta è semplice e geometricamente chiara, costruisci il progetto e rendi disponibile l'esportazione senza introdurre domande non necessarie.
 
 ---
 
