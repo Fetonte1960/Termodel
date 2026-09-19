@@ -529,26 +529,37 @@ https://www.termodel.it/termodel-ui-demo/
 
 Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel Web pubblicato.
 
-Versione corrente verificata:
+Versione corrente su `main`:
+
+```text
+Termodel Web v0.24
+```
+
+Commit frontend di riferimento per la v0.24:
+
+```text
+ba39c74c4916192d99885e027f0e9c1a50027fb2  Create structured project after AI import
+```
+
+Ultima versione pubblica verificata manualmente dall'utente:
 
 ```text
 Termodel Web v0.23
 ```
 
-Commit frontend di riferimento per la v0.23:
+finché la v0.24 non viene osservata direttamente su `https://www.termodel.it/termodel-ui-demo/`.
 
-```text
-6b4b34e3c495121921f641ccd33edb71bfc8b345  Gate Web editing on structured projects
-```
-
-La v0.23 introduce nel frontend lo stato esplicito di **progetto strutturato**:
+La v0.24 completa il primo collegamento automatico del flusso AI → progetto strutturato:
 
 - il JSON grafico 3D desktop resta in modalità viewer-only;
-- archivi e comando `Edita nel Cad` sono disabilitati finché non è caricato un progetto completo;
-- l'importazione di `TERMODEL-PROJECT-TEXT-V1` abilita editing archivi e CAD;
-- una semplice pianta SVG proveniente dall'AI resta una bozza non editabile finché non viene associata a una base progetto completa;
-- il frontend verifica la disponibilità del WebService locale tramite `GET http://localhost:5080/api/model/capabilities`;
-- la chiamata `POST /api/projects/new` non è ancora collegata perché il body/DTO esatto non è pubblicato nei riferimenti autorevoli disponibili nel repository.
+- archivi e comando `Edita nel Cad` restano disabilitati finché non esiste un progetto completo;
+- l'importazione di `TERMODEL-PROJECT-TEXT-V1` abilita direttamente editing archivi e CAD;
+- una semplice pianta SVG AI, se non esiste ancora un progetto strutturato e il WebService dichiara `newProjectAvailable=true`, provoca automaticamente `POST http://localhost:5080/api/projects/new`;
+- la risposta viene cercata in forma testuale o JSON e deve contenere `TERMODEL-PROJECT-TEXT-V1`;
+- la sezione `geometry/project.svg` del progetto restituito viene sostituita con la pianta AI;
+- il progetto risultante viene caricato con `loadTermodelProjectText(...)` e solo allora archivi e CAD vengono abilitati;
+- se esiste già un progetto strutturato, una nuova pianta AI non crea un secondo progetto e mantiene attivo quello esistente;
+- poiché il DTO esatto della POST non è ancora documentato nel repository, la v0.24 invia la richiesta minima JSON `{}` senza inventare campi. Un eventuale rifiuto HTTP viene mostrato come diagnostica e non abilita falsamente l'editing.
 
 File centrali:
 
@@ -693,27 +704,36 @@ per evitare regole UI hardcoded come l'elenco degli archivi nei quali aggiunta/c
 
 ## 7. Prossimo intervento frontend concordato
 
-**Priorità corrente: chiudere il flusso AI → progetto strutturato.**
+**Il primo flusso AI → progetto strutturato è ora implementato in v0.24.**
 
-La v0.23 distingue già viewer-only e progetto strutturato. Il prossimo collegamento deve essere:
+Flusso corrente:
 
 ```text
 pianta SVG AI
+      ↓
+verifica WebService / newProjectAvailable
       ↓
 POST /api/projects/new
       ↓
 TERMODEL-PROJECT-TEXT-V1 vuoto/inizializzato
       ↓
-integrazione geometry/project.svg
+sostituzione geometry/project.svg
       ↓
 loadTermodelProjectText(...)
       ↓
 archivi + CAD abilitati
 ```
 
-Prima di implementare la POST serve il contratto autorevole esatto della richiesta/risposta (DTO/body e gestione CORS). Non inventare campi.
+Da verificare nel browser reale:
 
-Dopo questo collegamento resta valido il refactoring di ArchivioWeb:
+1. propagazione pubblica della v0.24;
+2. accettazione della richiesta minima `{}` da parte del WebService;
+3. risposta contenente effettivamente `TERMODEL-PROJECT-TEXT-V1`;
+4. attivazione archivi/CAD dopo l'importazione AI.
+
+Se il server rifiuta `{}`, non inventare campi: usare la diagnostica HTTP per ottenere/documentare il DTO reale lato Core/WebService.
+
+Dopo questa verifica resta valido il refactoring di ArchivioWeb:
 
 **Non ricominciare ArchivioWeb da zero.**
 
@@ -1213,18 +1233,20 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo è ora v0.23.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.24.**
 
 Stato operativo corrente:
 
 - JSON grafico desktop → viewer 3D, editing disabilitato;
 - progetto completo `TERMODEL-PROJECT-TEXT-V1` → archivi e CAD abilitati;
-- semplice SVG AI → anteprima 3D, ma editing disabilitato finché manca la strutturazione;
+- semplice SVG AI senza progetto → richiesta automatica di progetto vuoto al WebService, innesto della geometria, quindi attivazione archivi/CAD;
+- semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
-- `POST /api/projects/new` ancora da collegare appena è disponibile il DTO/body autorevole.
+- `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
+- v0.24 presente su `main`; ultima esposizione pubblica verificata: v0.23.
 
 Il prossimo lavoro frontend, salvo nuove istruzioni dell'utente, è:
 
-> collegare l'importazione della semplice pianta AI a `POST /api/projects/new`, integrare la geometria nel progetto restituito e solo allora attivare archivi/CAD. Successivamente estrarre `ArchiveProvider` e `LocalArchiveProvider`.
+> verificare end-to-end la v0.24 contro il WebService reale; se la POST viene accettata, confermare archivi/CAD attivi. Se viene rifiutata, usare la diagnostica per formalizzare il DTO senza inventare campi. Successivamente estrarre `ArchiveProvider` e `LocalArchiveProvider`.
 
 Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.
