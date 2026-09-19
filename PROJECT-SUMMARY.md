@@ -64,6 +64,96 @@ Termodel Web HTML/CSS/JavaScript
 
 Obiettivo progressivo: portare sul Web funzioni di Termodel senza trasformare il browser in una seconda implementazione indipendente del motore desktop.
 
+
+---
+
+## 2.1 Istruzioni AI di Termodel — fonte e reperimento
+
+Le istruzioni operative destinate all'AI **non devono essere duplicate dentro questo PROJECT-SUMMARY**. Il PS deve indicare dove si trovano e come reperirle.
+
+### Fonte autorevole di lavoro
+
+La sorgente madre delle istruzioni AI è:
+
+```text
+SorgentiTermodel/Work/IstruzioniAI/
+```
+
+Al 2026-09-19 contiene:
+
+```text
+IndiceAI.md
+TermodelGenerale.md
+CreaPianoTermodelDaRaster.md
+```
+
+Il punto di ingresso obbligatorio è:
+
+```text
+SorgentiTermodel/Work/IstruzioniAI/IndiceAI.md
+```
+
+Una chat o un agente AI che deve usare le istruzioni Termodel non deve cercare file casualmente nel repository e non deve caricare tutto indiscriminatamente.
+
+Procedura corretta:
+
+```text
+IndiceAI.md
+    ↓
+capire cosa vuole fare l'utente
+    ↓
+caricare TermodelGenerale.md
+    ↓
+caricare soltanto le eventuali istruzioni specifiche indicate dall'indice
+```
+
+Stato corrente dell'indice:
+
+```text
+1 — Informazioni su Termodel
+    → TermodelGenerale.md
+
+2 — Lavorare su un progetto Termodel
+    → TermodelGenerale.md
+    → ProgettoTermodel.md è previsto come possibile file futuro ma non è attualmente disponibile
+
+3 — Creare un piano da una pianta raster
+    → TermodelGenerale.md
+    → CreaPianoTermodelDaRaster.md
+```
+
+Regole:
+
+- `TermodelGenerale.md` contiene le regole comuni;
+- le istruzioni specifiche si aggiungono dopo quelle generali;
+- non inventare nomi di file non presenti nell'indice;
+- se l'indice cita un file futuro non ancora disponibile, non fingere che esista;
+- se cambia il tipo di attività durante una conversazione, caricare soltanto l'istruzione specifica necessaria.
+
+### Copia pubblicata per AI esterne e Termodel Web
+
+La copia destinata alla pubblicazione Web si trova in:
+
+```text
+docs/termodel-ui-demo/
+```
+
+Il punto di ingresso pubblico corrente è:
+
+```text
+https://www.termodel.it/termodel-ui-demo/IndiceAI.html?v=0.21
+```
+
+Da lì l'AI può reperire, secondo la scelta effettuata, i file pubblicati come:
+
+```text
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.md
+https://www.termodel.it/termodel-ui-demo/CreaPianoTermodelDaRaster.md
+```
+
+La directory `SorgentiTermodel/Work/IstruzioniAI/` è la **sorgente di lavoro autorevole**; `docs/termodel-ui-demo/` è la **copia pubblicata**. Quando le istruzioni vengono modificate, evitare divergenze tra sorgente e copia pubblicata e verificare esplicitamente la propagazione.
+
+
 ---
 
 ## 3. Responsabilità e confini
