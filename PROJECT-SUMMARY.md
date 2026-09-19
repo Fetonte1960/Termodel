@@ -1128,6 +1128,58 @@ Per modifiche GitHub eseguite direttamente da una chat:
 
 ---
 
+## 15.1 Direttiva obbligatoria di versionamento Termodel Web
+
+Ogni modifica funzionale del frontend Termodel Web che viene considerata una nuova revisione deve aggiornare la versione in modo **coerente e completo**.
+
+La versione non deve comparire in punti diversi con numeri differenti.
+
+Quando si incrementa la versione Web verificare e aggiornare almeno:
+
+```text
+docs/termodel-ui-demo/index.html
+    ├── <title> della pagina
+    ├── intestazione visibile della finestra Termodel Web
+    └── query di cache-busting degli script/moduli, es. app.js?v=0.xx
+
+PROJECT-SUMMARY.md
+    └── versione corrente e commit frontend di riferimento
+```
+
+Se altri file pubblicati usano esplicitamente il numero di versione per cache-busting o identificazione della release, devono essere allineati nello stesso intervento.
+
+Prima del commit:
+
+1. cercare nel frontend tutte le occorrenze della versione precedente;
+2. distinguere le occorrenze storiche/documentali, che possono restare, da quelle operative o visibili, che devono essere aggiornate;
+3. verificare che il numero mostrato nell'interfaccia coincida con quello dichiarato nel PS.
+
+Dopo il commit distinguere sempre:
+
+```text
+VERSIONE SU MAIN
+    = versione presente nel repository
+
+VERSIONE PUBBLICA VERIFICATA
+    = versione effettivamente visibile su
+      https://www.termodel.it/termodel-ui-demo/
+```
+
+**Non dichiarare una versione come "esposta/pubblicata" finché non è stata verificata sull'indirizzo pubblico.**
+
+Se GitHub Pages o la cache stanno ancora mostrando una versione precedente, riportare esplicitamente entrambe le situazioni, ad esempio:
+
+```text
+main: v0.24
+pubblico verificato: v0.23
+```
+
+Dopo la propagazione verificare nuovamente la pagina pubblica, preferibilmente anche con hard refresh/cache-busting.
+
+Non saltare numeri di versione senza una decisione esplicita e non aumentare la versione per modifiche esclusivamente documentali che non cambiano il frontend eseguibile.
+
+---
+
 ## 16. Come aggiornare questo documento
 
 Aggiornare solo ciò che serve. Non trasformarlo in un diario completo.
