@@ -566,7 +566,8 @@ Esempi applicativi:
 
 - schermata principale Web → confrontare con `MainWindow.xaml`;
 - gestione archivi → `FormArchivio.xaml` e `Form dettaglio.xaml`;
-- CAD Web / proprietà CAD → `CadGPT.xaml`;
+- CAD Web / toolbar laterale proprietà → `MainWindow.xaml`, in particolare `Grid_DatiCad` / `Grid_pareti`;
+- `leggidxf/CadGPT.xaml` → finestra storica di scambio SVG/GPT, non riferimento della toolbar CAD operativa;
 - creazione piano da raster → `AI/CreaPianoDaRaster.xaml`;
 - viewer/modello BIM → `utilities/DrawBim.xaml`;
 - filtri grafici → `utilities/FiltriGrafici.xaml`.
@@ -603,13 +604,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.26
+Termodel Web v0.27
 ```
 
-Commit frontend di riferimento per la v0.26:
+Commit frontend di riferimento per la v0.27:
 
 ```text
-0ca85805a8d28ca8c31d6eca664e9f501f0e5309  Initialize project directly from Edita nel Cad
+ca4571b1412670569b6cf2a96213a48a6659eacf  Link CAD wall editing to project archives
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -654,6 +655,36 @@ apertura immediata CAD 2D
 ```
 
 Il pulsante resta sempre attivo. Non deve aprire una scelta intermedia quando viene premuto direttamente.
+
+La v0.27 collega la toolbar laterale delle pareti agli archivi del progetto, seguendo `MainWindow.xaml → Grid_DatiCad / Grid_pareti`.
+
+Flusso:
+
+```text
+Piano
+  → Piani.Nome
+  → Layer readonly da Piani.LayerCad
+
+Tipo parete
+  → Pareti.DescBreve
+  → Colore readonly da Pareti.Colore
+
+Confine parete
+  → Confini.Codice
+  → Tipo linea readonly da Confini.Tipolinea
+```
+
+Per **Nuova linea** i valori correnti della toolbar vengono consolidati nella linea SVG tramite metadati Termodel e il colore visualizzato deriva dall'archivio Pareti.
+
+Per **editazione linea esistente**:
+
+- se sono presenti i metadati Termodel, vengono caricati nella toolbar;
+- se il tipo parete non è ancora esplicito, il CAD prova a riconoscerlo dal colore della linea come fa il desktop con il colore DXF;
+- modificando Tipo parete / Confine / Piano, la linea viene aggiornata e la resa grafica si riallinea a colore e tipo linea correlati;
+- i pulsanti `Arc` aprono gli archivi Piani, Pareti e Confini;
+- modifiche agli archivi notificano il CAD, che ricarica combo e resa grafica.
+
+Il bridge `ArchivioWeb → CAD` è attualmente di lettura dei record in memoria; la persistenza unificata del contenitore progetto resta da completare.
 
 La v0.24 completa il primo collegamento automatico del flusso AI → progetto strutturato:
 
@@ -1379,11 +1410,11 @@ risultato restituito a Termodel Web
 
 Il frontend non deve simulare come realmente disponibili funzioni server che il Core non espone ancora.
 
-### Verifica dello stato reale alla v0.26
+### Verifica dello stato reale alla v0.27
 
 Confronto fra flusso desiderato e programma attuale:
 
-| Passaggio | Stato v0.26 | Nota |
+| Passaggio | Stato v0.27 | Nota |
 | --- | --- | --- |
 | Apertura con modello demo 3D | **REALIZZATO** | `loadModel()` carica automaticamente `TermodelWebModel.json` |
 | Esplorazione del modello demo | **REALIZZATO** | viewer e menu dimostrativi disponibili |
@@ -1392,7 +1423,7 @@ Confronto fra flusso desiderato e programma attuale:
 | `Importa da AI` | **REALIZZATO** | import SVG/progetto completo |
 | AI → progetto vuoto server → progetto strutturato | **REALIZZATO E VERIFICATO** | v0.24, archivi attivati correttamente dopo l'importazione |
 | Editing archivi | **REALIZZATO IN FORMA LOCALE** | form/griglie/CRUD in memoria; persistenza unificata ancora da completare |
-| `Edita nel CAD` su progetto strutturato | **REALIZZATO** | modifica pareti E/W, snap, undo/redo, nuova linea, rigenerazione |
+| `Edita nel CAD` su progetto strutturato | **REALIZZATO E ESTESO IN v0.27** | modifica pareti E/W, snap, undo/redo, nuova linea; toolbar laterale collegata a Piani/Pareti/Confini con colore e tipo linea correlati |
 | CAD come partenza di un progetto da zero | **REALIZZATO IN v0.25** | crea un progetto vuoto via WebService, prepara uno SVG vuoto e apre il CAD con `Nuova linea` disponibile |
 | `Edita nel CAD` senza progetto | **REALIZZATO IN v0.26** | inizializza direttamente un progetto vuoto via WebService e apre il CAD 2D, senza finestra intermedia |
 | Simboli FIN/PON/LOC editabili e collegati agli archivi | **DA SVILUPPARE** | definito il flusso nella sezione 12.3 |
@@ -1585,7 +1616,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.26.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.27.**
 
 Stato operativo corrente:
 
@@ -1595,9 +1626,10 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.26 presente su `main`;
+- v0.27 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
-- v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D.
+- v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
+- v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -1607,8 +1639,8 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. verificare manualmente la v0.26 pubblicata: `Edita nel Cad` senza progetto → inizializzazione automatica → apertura CAD 2D;  
-> 2. prima di estendere il CAD, confrontare la view Web con `SorgentiTermodel/Library/leggidxf/CadGPT.xaml` e mantenere toolbar/pannello proprietà conformi alla view desktop; quindi implementare il parser/editor dei simboli `FIN/PON/LOC` e il collegamento alle tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`;  
+> 1. verificare manualmente la v0.27 pubblicata: `Edita nel Cad` → toolbar laterale popolata dagli archivi → Nuova linea con colore/tipo linea corretti → selezione/modifica linea esistente coerente con gli archivi;  
+> 2. mantenere il CAD Web conforme a `SorgentiTermodel/Library/MainWindow.xaml` (`Grid_DatiCad` / `Grid_pareti`) e proseguire con il parser/editor dei simboli `FIN/PON/LOC` e il collegamento alle tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`;  
 > 3. unificare progressivamente stato CAD e stato archivi nel contenitore progetto.
 
 Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.
