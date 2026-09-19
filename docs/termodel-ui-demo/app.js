@@ -1612,7 +1612,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
     };
     cadRenderNewLinePreview(svg, point, snapped.snapped);
     cadSetStatus(
-      \`Nuova \${(cadNewLineType?.value || 'W').toUpperCase()} · punto iniziale\${snapped.snapped ? ' · SNAP' : ''} · clicca il finale\`
+      `Nuova ${(cadNewLineType?.value || 'W').toUpperCase()} · punto iniziale${snapped.snapped ? ' · SNAP' : ''} · clicca il finale`
     );
     return;
   }
@@ -1649,7 +1649,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
 
   renderCadComparison();
   cadSetStatus(
-    \`✓ \${id} creata\${snapped.snapped ? ' · finale SNAP' : ''} · premi Rigenera pianta\`,
+    `✓ ${id} creata${snapped.snapped ? ' · finale SNAP' : ''} · premi Rigenera pianta`,
     'dirty'
   );
 }
