@@ -1,0 +1,58 @@
+﻿<Window x:Class="Termodel.definizionedati.FormArchivio"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Gestione Archivio" Height="600" Width="1080">
+    <DockPanel>
+
+        <!-- 🔻 Fascia bottoni in basso -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+            <TextBlock 
+       x:Name="LabelXmlInfo" 
+       Text="Archivio proveniente da XML"
+       FontSize="16"
+       FontWeight="Bold"
+       Margin="0 10 20 0"
+       VerticalAlignment="Center"/>
+            <Button x:Name="BtnCaricaDaXml" Content="Carica da XML" Width="100" Margin="5" Click="XML_Click"/>
+            <Button x:Name="BtnCreaStratigrafia" Content="Crea stratigrafia" Width="130" Margin="5"
+                    Visibility="Collapsed" Click="CreaStratigrafia_Click"/>
+            <!-- Modificato da Codex per realizzare: accesso al ModelSpace Finestre accanto all'importazione XML. -->
+            <Button x:Name="BtnCreaFinestra" Content="Crea finestra" Width="115" Margin="5"
+                    Visibility="Collapsed" Click="CreaFinestra_Click"/>
+
+            <Button x:Name="BtnAggiungi" Content="Aggiungi riga" Width="100" Margin="5" Click="Aggiungi_Click"/>
+            <Button x:Name="BtnAggiungiPrima" Content="Aggiungi riga prima" Width="120" Margin="5" Click="InserisciRigaPrima_Click"/>
+            <Button x:Name="BtnCancella" Content="Cancella riga" Width="100" Margin="5" Click="Cancella_Click"/>
+
+            <Button x:Name="BtnSalva" Content="Salva" Width="100" Margin="5" Click="Salva_Click"/>
+            <Button x:Name="BtnChiudi" Content="Chiudi" Width="100" Margin="5" Click="Chiudi_Click"/>
+        </StackPanel>
+
+
+        <!-- 🔲 Area principale divisa -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <!-- Archivio -->
+                <ColumnDefinition Width="5"/>
+                <!-- separatore -->
+                <ColumnDefinition Width="4*"/>
+                <!-- Dettaglio -->
+            </Grid.ColumnDefinitions>
+
+            <!-- 📋 Griglia archivio -->
+            <DataGrid x:Name="ArchivioGrid"
+                      Grid.Column="0"
+                      AutoGenerateColumns="True"
+                      IsReadOnly="True"
+                      SelectionChanged="ArchivioGrid_SelectionChanged"
+                      Margin="5"/>
+
+            <!-- 🧾 Dettaglio riga -->
+            <ScrollViewer Grid.Column="2" Margin="5">
+                <Grid x:Name="AutoFormGrid"/>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</Window>
+
