@@ -1526,7 +1526,135 @@ function cadNextLineId(prefix) {
 
   cadEditableSourceLines().forEach(line => {
     used.add(line.id);
-    const match = new RegExp('^' + p + '(\\d+)
+    const match = new RegExp('^' + p + '(\\d+)$', 'i').exec(line.id || '');
+    if (match) max = Math.max(max, Number(match[1]) || 0);
+  });
+
+  let n = max + 1;
+  let id = p + String(n).padStart(3, '0');
+  while (used.has(id)) {
+    n++;
+    id = p + String(n).padStart(3, '0');
+  }
+  return id;
+}
+
+function cadCancelNewLine(svg = cadCanvas?.querySelector('svg')) {
+  cadToolMode = 'select';
+  cadNewLineState = null;
+  if (svg) {
+    svg.querySelector('#cadNewLinePreviewLayer')?.remove();
+    cadSyncOverlay(svg);
+  }
+  cadUpdateControls();
+}
+
+function cadToggleNewLine() {
+  if (!cadWorkingDoc) return;
+
+  if (cadToolMode === 'line') {
+    cadCancelNewLine();
+    return;
+  }
+
+  cadToolMode = 'line';
+  cadNewLineState = null;
+  cadSelectedLineId = '';
+  const svg = cadCanvas?.querySelector('svg');
+  if (svg) cadSyncOverlay(svg);
+  cadUpdateControls();
+}
+
+function cadRenderNewLinePreview(svg, currentPoint = null, snapped = false) {
+  svg.querySelector('#cadNewLinePreviewLayer')?.remove();
+  if (cadToolMode !== 'line' || !cadNewLineState) return;
+
+  const layer = svgNode('g', {
+    id: 'cadNewLinePreviewLayer',
+    'pointer-events': 'none'
+  });
+  const [x1, y1] = cadNewLineState.start;
+
+  layer.appendChild(svgNode('circle', {
+    cx: x1, cy: y1, r: 7,
+    class: 'cad-newline-start'
+  }));
+
+  if (currentPoint) {
+    layer.appendChild(svgNode('line', {
+      x1, y1,
+      x2: currentPoint[0],
+      y2: currentPoint[1],
+      class: 'cad-newline-preview'
+    }));
+
+    if (snapped) {
+      layer.appendChild(svgNode('circle', {
+        cx: currentPoint[0],
+        cy: currentPoint[1],
+        r: 10,
+        class: 'cad-snap-marker'
+      }));
+    }
+  }
+
+  svg.appendChild(layer);
+}
+
+function cadStartOrFinishNewLine(svg, rawPoint) {
+  const snapped = cadSnapPoint(rawPoint, '');
+  const point = snapped.point;
+
+  if (!cadNewLineState) {
+    cadNewLineState = {
+      start: point.slice(),
+      before: cadSerializeWorkingSvg()
+    };
+    cadRenderNewLinePreview(svg, point, snapped.snapped);
+    cadSetStatus(
+      \`Nuova \${(cadNewLineType?.value || 'W').toUpperCase()} · punto iniziale\${snapped.snapped ? ' · SNAP' : ''} · clicca il finale\`
+    );
+    return;
+  }
+
+  if (cadPointDistance(cadNewLineState.start, point) < 0.5) {
+    cadSetStatus('La nuova linea deve avere una lunghezza maggiore di zero.', 'error');
+    return;
+  }
+
+  const group = cadCalpestabile();
+  if (!group) {
+    cadSetStatus('Gruppo calpestabile non trovato nello SVG.', 'error');
+    cadCancelNewLine(svg);
+    return;
+  }
+
+  const type = (cadNewLineType?.value || 'W').toUpperCase() === 'E' ? 'E' : 'W';
+  const id = cadNextLineId(type);
+  const [x1, y1] = cadNewLineState.start;
+
+  const line = cadWorkingDoc.createElementNS(SVG_NS, 'line');
+  line.setAttribute('id', id);
+  line.setAttribute('x1', Number(x1).toFixed(3).replace(/\.000$/, ''));
+  line.setAttribute('y1', Number(y1).toFixed(3).replace(/\.000$/, ''));
+  line.setAttribute('x2', Number(point[0]).toFixed(3).replace(/\.000$/, ''));
+  line.setAttribute('y2', Number(point[1]).toFixed(3).replace(/\.000$/, ''));
+  group.appendChild(line);
+
+  cadUndoStack.push(cadNewLineState.before);
+  cadRedoStack = [];
+  cadSelectedLineId = id;
+  cadToolMode = 'select';
+  cadNewLineState = null;
+
+  renderCadComparison();
+  cadSetStatus(
+    \`✓ \${id} creata\${snapped.snapped ? ' · finale SNAP' : ''} · premi Rigenera pianta\`,
+    'dirty'
+  );
+}
+
+function cadClientPoint(svg, event) {
   const point = svg.createSVGPoint();
   point.x = event.clientX;
   point.y = event.clientY;
