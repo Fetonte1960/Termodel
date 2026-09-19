@@ -220,6 +220,28 @@ interfaccia Termodel esplorabile nel browser
 
 Questa fase ha trasformato il viewer isolato in un primo prototipo di applicazione Web completa e ha fornito la base su cui sono poi state aggiunte le funzioni operative.
 
+### Fase 3 — Progettazione dell'architettura completa Web
+
+Con l'evoluzione della demo, Termodel Web è apparso progressivamente sempre più realizzabile come applicazione completa.
+
+A quel punto il progetto ha superato la fase puramente esplorativa e si è iniziato a progettare l'insieme come un sistema composto da due parti coordinate:
+
+```text
+FRONTEND WEB
+HTML / CSS / JavaScript
+interfaccia, viewer, interazione utente
+        │
+        │ API / contratti
+        ▼
+SERVER
+Termodel.WebService + Termodel.Core
+funzioni autorevoli, dati, calcoli, persistenza
+```
+
+Da questa fase nasce l'architettura attuale: il browser non deve diventare una copia indipendente del programma desktop, ma deve occuparsi principalmente di presentazione e interazione; il server e il Core devono invece accogliere progressivamente le funzioni provenienti dal Termodel desktop.
+
+Questa decisione ha segnato il passaggio da una demo navigabile a un vero progetto software Web strutturato.
+
 
 ---
 
