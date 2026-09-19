@@ -37,7 +37,7 @@ Usa questa modalità quando l'utente vuole:
 Carica:
 
 ```text
-https://www.termodel.it/termodel-ui-demo/TermodelGenerale.md
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html
 ```
 
 Dopo il caricamento, rispondi alla richiesta dell'utente senza avviare automaticamente un progetto.
@@ -53,7 +53,7 @@ Usa questa modalità quando l'utente vuole lavorare su un progetto Termodel già
 Per adesso carica:
 
 ```text
-https://www.termodel.it/termodel-ui-demo/TermodelGenerale.md
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html
 ```
 
 Questa voce potrà in seguito essere estesa con un file specifico:
@@ -77,8 +77,8 @@ Usa questa modalità quando l'utente vuole trasformare una pianta PNG, JPG, BMP 
 Carica, in questo ordine:
 
 ```text
-https://www.termodel.it/termodel-ui-demo/TermodelGenerale.md
-https://www.termodel.it/termodel-ui-demo/CreaPianoTermodelDaRaster.md
+https://www.termodel.it/termodel-ui-demo/TermodelGenerale.html
+https://www.termodel.it/termodel-ui-demo/CreaPianoTermodelDaRaster.html
 ```
 
 Le istruzioni generali hanno valore comune a Termodel.
