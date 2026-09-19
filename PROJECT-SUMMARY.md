@@ -8,8 +8,10 @@
 
 Ultimo aggiornamento: **2026-09-19**  
 Branch di riferimento: **main**  
-Ultimo commit verificato al momento della creazione di questo documento:  
-`eadb72430a1f585bf542f50403cbb494c869dcc4` — `Connect complete project import and ArchivioWeb v0.22`
+Ultimo commit di codice verificato al momento della creazione di questo documento:  
+`eadb72430a1f585bf542f50403cbb494c869dcc4` — `Connect complete project import and ArchivioWeb v0.22`  
+Commit che ha creato questo summary:  
+`39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
 ---
 
