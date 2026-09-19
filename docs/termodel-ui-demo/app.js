@@ -2,6 +2,12 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { generaPiantaDaSvg } from './genera-pianta.js';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
+import {
+  initArchivioWeb,
+  isTermodelProjectText,
+  loadTermodelProjectText,
+  openArchivioWeb
+} from './archivio-web.js?v=0.22';
 
 const MODEL_URL = './TermodelWebModel.json';
 
@@ -899,13 +905,30 @@ document.querySelectorAll('.menu > button').forEach(button => {
 document.querySelectorAll('.dropdown button').forEach(button => {
   button.addEventListener('click', (event) => {
     event.stopPropagation();
-    showDemoHelp(helpKeyFromElement(button));
+    if (!button.dataset.archive)
+      showDemoHelp(helpKeyFromElement(button));
     button.closest('.menu')?.classList.remove('open');
   });
 });
 
 document.addEventListener('click', () => {
   document.querySelectorAll('.menu').forEach(m => m.classList.remove('open'));
+});
+
+document.querySelectorAll('[data-archive]').forEach(button => {
+  button.addEventListener('click', async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (demoHelpPanel) demoHelpPanel.hidden = true;
+
+    try {
+      await openArchivioWeb(button.dataset.archive || 'Piani');
+    } catch (error) {
+      window.alert('Archivio Termodel non disponibile: ' + error.message);
+    }
+
+    button.closest('.menu')?.classList.remove('open');
+  });
 });
 
 
@@ -975,7 +998,34 @@ async function importAiFromMainForm(event) {
     return;
   }
 
-  const imported = processSvgText(text);
+  let imported = false;
+
+  if (isTermodelProjectText(text)) {
+    try {
+      const project = await loadTermodelProjectText(text);
+      imported = true;
+
+      // Il file progetto completo è già sufficiente per compilare ArchivioWeb.
+      // Se contiene anche geometry/project.svg proviamo ad aggiornare il viewer,
+      // senza invalidare l'importazione degli archivi se la geometria richiede
+      // ancora funzioni server non disponibili nel prototipo JS.
+      if (project.geometrySvg) {
+        const geometryImported = processSvgText(project.geometrySvg);
+        if (!geometryImported)
+          console.warn('Progetto completo importato; geometry/project.svg non elaborato dal viewer Web corrente.');
+      }
+
+      setMainAiStatus(`✓ Progetto completo importato: ${project.projectName}`);
+    } catch (error) {
+      window.alert('Progetto Termodel non importato: ' + error.message);
+      return;
+    }
+  } else {
+    imported = processSvgText(text);
+    if (imported)
+      setMainAiStatus('✓ Progetto SVG importato dall\'AI');
+  }
+
   if (!imported) {
     window.alert("Nella clipboard non c'è un progetto MyHome3D.");
     return;
@@ -983,7 +1033,6 @@ async function importAiFromMainForm(event) {
 
   activateModelPage();
   requestAnimationFrame(resize);
-  setMainAiStatus('✓ Progetto importato dall\'AI');
 }
 
 if (instructAiButton)
@@ -2499,7 +2548,9 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.21: la modalità 4 è autosufficiente nell'indice e non dipende da pagine secondarie.
+// v0.22: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.22' })
+  .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
