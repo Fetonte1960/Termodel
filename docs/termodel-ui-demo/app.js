@@ -915,6 +915,9 @@ const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI
 
 const instructAiButton = document.getElementById('instructAiButton');
 const importAiButton = document.getElementById('importAiButton');
+const aiInstructModal = document.getElementById('aiInstructModal');
+const aiInstructClose = document.getElementById('aiInstructClose');
+const aiInstructCloseBottom = document.getElementById('aiInstructCloseBottom');
 
 const TERMODEL_AI_BOOTSTRAP = `Lavora con Termodel Web.
 Leggi e segui le istruzioni aggiornate qui:
@@ -922,6 +925,18 @@ ${TERMODEL_AI_INDEX_URL}`;
 
 function setMainAiStatus(message) {
   if (status) status.textContent = message;
+}
+
+function openAiInstructDialog() {
+  if (!aiInstructModal) return;
+  aiInstructModal.classList.add('visible');
+  aiInstructModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeAiInstructDialog() {
+  if (!aiInstructModal) return;
+  aiInstructModal.classList.remove('visible');
+  aiInstructModal.setAttribute('aria-hidden', 'true');
 }
 
 async function instructAiFromMainForm(event) {
@@ -934,6 +949,7 @@ async function instructAiFromMainForm(event) {
       throw new Error('Clipboard non disponibile');
     await navigator.clipboard.writeText(TERMODEL_AI_BOOTSTRAP);
     setMainAiStatus('✓ Istruzioni AI copiate negli appunti');
+    openAiInstructDialog();
   } catch (_) {
     window.alert('Impossibile copiare le istruzioni AI negli appunti.');
   }
@@ -974,6 +990,14 @@ if (instructAiButton)
   instructAiButton.addEventListener('click', instructAiFromMainForm);
 if (importAiButton)
   importAiButton.addEventListener('click', importAiFromMainForm);
+if (aiInstructClose)
+  aiInstructClose.addEventListener('click', closeAiInstructDialog);
+if (aiInstructCloseBottom)
+  aiInstructCloseBottom.addEventListener('click', closeAiInstructDialog);
+if (aiInstructModal)
+  aiInstructModal.addEventListener('click', (event) => {
+    if (event.target === aiInstructModal) closeAiInstructDialog();
+  });
 
 const rasterAiModal = document.getElementById('rasterAiModal');
 const rasterFileInput = document.getElementById('rasterFileInput');
@@ -2411,6 +2435,10 @@ rasterAiModal.addEventListener('click', (event) => {
 });
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
+  if (aiInstructModal?.classList.contains('visible')) {
+    closeAiInstructDialog();
+    return;
+  }
   if (svgExportModal.classList.contains('visible')) {
     closeSvgExportDialog();
     return;
@@ -2471,7 +2499,7 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.13: i comandi AI della main form chiudono esplicitamente l'help demo; Importa da AI attiva il modello dopo l'importazione.
+// v0.14: Istruisci AI copia il bootstrap e apre una form che spiega il flusso senza mostrare l'istruzione.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
