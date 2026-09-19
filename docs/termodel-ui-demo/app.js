@@ -21,6 +21,20 @@ const cadRegenerate = document.getElementById('cadRegenerate');
 const cadNewLine = document.getElementById('cadNewLine');
 const cadNewLineType = document.getElementById('cadNewLineType');
 const cadEditStatus = document.getElementById('cadEditStatus');
+const cadPropertiesEmpty = document.getElementById('cadPropertiesEmpty');
+const cadPropertiesBody = document.getElementById('cadPropertiesBody');
+const cadPropEntity = document.getElementById('cadPropEntity');
+const cadPropPiano = document.getElementById('cadPropPiano');
+const cadPropLayer = document.getElementById('cadPropLayer');
+const cadPropTipoParete = document.getElementById('cadPropTipoParete');
+const cadPropConfineParete = document.getElementById('cadPropConfineParete');
+const cadPropTipoLinea = document.getElementById('cadPropTipoLinea');
+const cadPropColore = document.getElementById('cadPropColore');
+const cadPropColorSwatch = document.getElementById('cadPropColorSwatch');
+const cadPropStart = document.getElementById('cadPropStart');
+const cadPropEnd = document.getElementById('cadPropEnd');
+const cadPropLength = document.getElementById('cadPropLength');
+const cadPropConfirm = document.getElementById('cadPropConfirm');
 const status = document.querySelector('.viewport-status');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd3d3d3);
@@ -56,9 +70,9 @@ let lastAiPreviewData = null;
 let lastCleanPlanSvg = '';
 let lastGeneratedPlan = null;
 
-// Edita nel CAD v0.8: il browser modifica lo SVG semantico E/W
-// e può costruire nuove pareti con snap. La geometria architettonica
-// continua ad essere rigenerata dal motore GeneraPianta.
+// Edita nel CAD v0.10: editor SVG semantico E/W con costruzione, snap
+// e pannello proprietà ispirato a Grid_DatiCad/Grid_pareti del desktop.
+// La geometria architettonica continua ad essere rigenerata dal motore GeneraPianta.
 let cadWorkingDoc = null;
 let cadCommittedSvg = '';
 let cadSelectedLineId = '';
@@ -1383,6 +1397,68 @@ function cadSetLinePoint(line, endpoint, x, y) {
   line.setAttribute(`y${suffix}`, Number(y).toFixed(3).replace(/\.000$/, ''));
 }
 
+function cadUpdatePropertiesPanel() {
+  const line = cadFindSourceLine(cadSelectedLineId);
+  const selected = !!line;
+
+  if (cadPropertiesEmpty) cadPropertiesEmpty.hidden = selected;
+  if (cadPropertiesBody) cadPropertiesBody.hidden = !selected;
+  if (!selected) return;
+
+  const [x1, y1] = cadLinePoint(line, 1);
+  const [x2, y2] = cadLinePoint(line, 2);
+  const lengthCm = Math.hypot(x2 - x1, y2 - y1);
+  const type = (line.id || '').charAt(0).toUpperCase();
+  const color = cadColorForId(line.id || '');
+
+  if (cadPropEntity) cadPropEntity.value = line.id || '';
+  if (cadPropPiano)
+    cadPropPiano.value = line.getAttribute('data-termodel-piano') || '';
+  if (cadPropLayer) cadPropLayer.value = 'calpestabile';
+  if (cadPropTipoParete)
+    cadPropTipoParete.value = line.getAttribute('data-termodel-tipo-parete') || '';
+  if (cadPropConfineParete)
+    cadPropConfineParete.value = line.getAttribute('data-termodel-confine-parete') || '';
+  if (cadPropTipoLinea) cadPropTipoLinea.value = type;
+  if (cadPropColore) cadPropColore.value = color;
+  if (cadPropColorSwatch) cadPropColorSwatch.style.background = color;
+  if (cadPropStart)
+    cadPropStart.value = `${x1.toFixed(1)} / ${y1.toFixed(1)} cm`;
+  if (cadPropEnd)
+    cadPropEnd.value = `${x2.toFixed(1)} / ${y2.toFixed(1)} cm`;
+  if (cadPropLength)
+    cadPropLength.value = `${lengthCm.toFixed(1)} cm · ${(lengthCm / 100).toFixed(3)} m`;
+}
+
+function cadSetOptionalAttribute(element, name, value) {
+  const normalized = String(value ?? '').trim();
+  if (normalized) element.setAttribute(name, normalized);
+  else element.removeAttribute(name);
+}
+
+function cadApplyProperties() {
+  const line = cadFindSourceLine(cadSelectedLineId);
+  if (!line) return;
+
+  const before = cadSerializeWorkingSvg();
+
+  cadSetOptionalAttribute(line, 'data-termodel-piano', cadPropPiano?.value);
+  cadSetOptionalAttribute(line, 'data-termodel-tipo-parete', cadPropTipoParete?.value);
+  cadSetOptionalAttribute(line, 'data-termodel-confine-parete', cadPropConfineParete?.value);
+
+  const after = cadSerializeWorkingSvg();
+  if (after !== before) {
+    cadUndoStack.push(before);
+    cadRedoStack = [];
+    cadSetStatus(`${line.id} · proprietà aggiornate · modifica non rigenerata`, 'dirty');
+  } else {
+    cadSetStatus(`${line.id} · proprietà invariate`);
+  }
+
+  cadUpdatePropertiesPanel();
+  cadUpdateControls();
+}
+
 function cadSetStatus(message, kind = '') {
   if (!cadEditStatus) return;
   cadEditStatus.textContent = message;
@@ -1451,6 +1527,7 @@ function cadSetWorkingSvg(svgText) {
   cadDragState = null;
   cadToolMode = 'select';
   cadNewLineState = null;
+  cadUpdatePropertiesPanel();
   cadUpdateControls();
 }
 
@@ -1667,6 +1744,7 @@ function cadClientPoint(svg, event) {
 function cadSelectLine(id, svg = cadCanvas?.querySelector('svg')) {
   cadSelectedLineId = cadFindSourceLine(id) ? id : '';
   if (svg) cadSyncOverlay(svg);
+  cadUpdatePropertiesPanel();
   cadUpdateControls();
 }
 
@@ -1741,6 +1819,7 @@ function cadSyncOverlay(svg) {
   });
 
   cadRenderSelectionHandles(svg);
+  cadUpdatePropertiesPanel();
   cadUpdateControls();
 }
 
@@ -2290,6 +2369,8 @@ if (cadDelete)
   cadDelete.addEventListener('click', cadDeleteSelected);
 if (cadNewLine)
   cadNewLine.addEventListener('click', cadToggleNewLine);
+if (cadPropConfirm)
+  cadPropConfirm.addEventListener('click', cadApplyProperties);
 if (cadRegenerate)
   cadRegenerate.addEventListener('click', cadRegeneratePlan);
 if (cadReturnModel)
@@ -2307,7 +2388,7 @@ document.addEventListener('keydown', event => {
     cadCancelNewLine();
     return;
   }
-  if (tag === 'input' || tag === 'textarea') return;
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
   if ((event.key === 'Delete' || event.key === 'Backspace') && cadSelectedLineId) {
     event.preventDefault();
@@ -2327,7 +2408,7 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.9: Ritorna al modello rigenera automaticamente il 3D se l'input CAD è stato modificato.
+// v0.10: aggiunto pannello proprietà della parete selezionata, derivato dal XAML desktop.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
