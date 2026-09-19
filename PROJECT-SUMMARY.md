@@ -81,6 +81,39 @@ Principio fondamentale:
 
 > Il frontend presenta e interagisce con i dati; Core e server implementano progressivamente le funzioni autorevoli di Termodel.
 
+### Ragione d'essere di Termodel Web: interazione con l'AI
+
+Il principale punto di forza e la ragione d'essere di **Termodel Web** non è soltanto portare Termodel nel browser.
+
+Il valore distintivo del progetto è l'integrazione profonda con l'AI e, soprattutto, la capacità dell'AI di **comprendere, generare e manipolare progetti Termodel reali**.
+
+Il flusso strategico è quindi:
+
+```text
+utente
+  ↓ linguaggio naturale / immagini / richieste
+AI
+  ↓ interpreta e modifica la rappresentazione del progetto
+Termodel Web
+  ↓ visualizza e permette il controllo/interazione
+Termodel.Core / WebService
+  ↓ valida, elabora e persiste
+progetto Termodel reale
+```
+
+L'AI non deve essere considerata un semplice help o chatbot laterale.
+
+Deve diventare un vero strumento operativo capace, attraverso protocolli e dati strutturati, di:
+
+- creare nuovi progetti Termodel;
+- leggere e comprendere progetti esistenti;
+- modificare geometrie e dati tecnici;
+- aggiungere o correggere elementi;
+- guidare l'utente attraverso operazioni complesse;
+- restituire un progetto completo e nuovamente utilizzabile da Termodel.
+
+Questo principio deve orientare le decisioni architetturali future: viewer 3D, frontend, formato progetto, WebService e Core devono essere progettati anche per rendere naturale e affidabile l'interazione AI ↔ progetto Termodel.
+
 
 ---
 
