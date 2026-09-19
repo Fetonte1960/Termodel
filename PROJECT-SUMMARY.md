@@ -358,6 +358,30 @@ Il copia-incolla è considerato un canale di comunicazione valido e strategico p
 
 Il protocollo corrente di questa idea è `TERMODEL-PROJECT-TEXT-V1`.
 
+### Fase 6 — Prototipo CAD 2D JavaScript e convergenza CAD/BIM
+
+È stato poi abbozzato anche un **CAD 2D in JavaScript** per consentire modifiche dirette del progetto nel browser.
+
+L'esperimento si è rivelato particolarmente interessante perché non si limita a riprodurre un CAD tradizionale: l'idea emersa è quella di un ambiente ibrido **CAD + BIM**, nel quale la geometria 2D e gli oggetti del progetto Termodel restano collegati ai relativi dati e significati tecnici.
+
+Schema concettuale:
+
+```text
+progetto Termodel
+        │
+        ├── vista / editing CAD 2D nel browser
+        │
+        ├── dati e oggetti BIM/Termodel
+        │
+        └── viewer 3D
+```
+
+Questo prototipo è apparso come il possibile **anello mancante** dell'architettura Web: non soltanto visualizzare il progetto in 3D o modificarlo tramite AI, ma offrire anche un editing manuale diretto nel browser.
+
+L'obiettivo sperimentale è arrivare a un'alternativa di editing che riduca la dipendenza da AutoCAD per le normali modifiche del progetto Termodel, mantenendo però una logica più ricca di un semplice disegno CAD grazie alla conoscenza degli oggetti e dei dati del modello.
+
+Il CAD/BIM 2D JavaScript è ancora in fase sperimentale e non va considerato un sostituto completo di AutoCAD già realizzato. Va però trattato come una direzione strategica importante del frontend Termodel Web.
+
 
 ---
 
