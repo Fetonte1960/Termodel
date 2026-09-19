@@ -914,6 +914,54 @@ Le funzioni di consultazione archivi e di editing appartengono invece alla modal
 
 ---
 
+## 12.2 Flusso Web — importazione di una pianta proveniente dall'AI
+
+Quando l'utente importa in Termodel Web una **pianta generata o modificata dall'AI**, Termodel Web deve verificare se esiste già una struttura progetto completa e utilizzabile come base dati.
+
+Se tale struttura **non è stata ancora creata**, Termodel Web avvia la strutturazione del progetto chiedendo al server un **progetto vuoto** tramite il contratto già esistente:
+
+```text
+POST /api/projects/new
+```
+
+Flusso concettuale:
+
+```text
+AI
+  ↓
+pianta importata
+  ↓
+Termodel Web
+  ↓
+verifica presenza progetto strutturato
+  ↓
+se manca
+  ↓
+richiede progetto vuoto al WebService
+  ↓
+usa il progetto vuoto come base dati editabile
+  ↓
+integra la pianta importata nella struttura progetto
+```
+
+Il progetto vuoto restituito dal server diventa quindi la **base strutturata ed editabile** su cui Termodel Web può lavorare con archivi, dati e successive funzioni di editing.
+
+Questo passaggio è importante perché una semplice pianta proveniente dall'AI non deve essere trattata come se fosse già, da sola, un progetto Termodel completo.
+
+Principio operativo:
+
+```text
+pianta AI
+    ≠ progetto Termodel completo
+
+pianta AI + progetto vuoto server
+    → progetto strutturabile/editabile in Termodel Web
+```
+
+Se invece una struttura progetto completa è già presente, Termodel Web non deve crearne inutilmente un'altra: deve utilizzare quella esistente come base per l'importazione/modifica.
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo ed essere trasmesso anche tramite normale copia-incolla in una chat.
