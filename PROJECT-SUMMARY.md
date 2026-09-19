@@ -382,6 +382,64 @@ L'obiettivo sperimentale è arrivare a un'alternativa di editing che riduca la d
 
 Il CAD/BIM 2D JavaScript è ancora in fase sperimentale e non va considerato un sostituto completo di AutoCAD già realizzato. Va però trattato come una direzione strategica importante del frontend Termodel Web.
 
+### Fase 7 — Editing degli archivi basato sul comportamento di Termodel desktop
+
+Dopo i risultati positivi ottenuti con viewer 3D, demo Web e CAD/BIM 2D, è iniziata l'attivazione della parte di **editing degli archivi Termodel** nel browser.
+
+Anche in questa fase il progetto **non parte da zero**.
+
+Il comportamento del frontend Web deve ispirarsi al Termodel desktop esistente, del quale sono stati condivisi nel repository, sotto `SorgentiTermodel/Library/`, sorgenti e materiali di riferimento da consultare **in sola lettura**.
+
+Nel Termodel desktop la gestione degli archivi si basa già su un insieme consolidato di utilities che comprendono:
+
+- gestione degli archivi/database XML;
+- inizializzazione dei record;
+- lettura e scrittura dei dati;
+- generazione automatica di griglie e form;
+- combo statiche e dinamiche;
+- campi readonly;
+- correlazioni tra archivi;
+- formattazione e metadati dei campi.
+
+Una parte fondamentale di questo meccanismo è la generazione automatica delle form a partire dal documento di definizione del database:
+
+```text
+definizionedati.json
+```
+
+Il principio da conservare anche sul Web è quindi:
+
+```text
+definizionedati.json
+        ↓
+metadati degli archivi e dei campi
+        ↓
+motore generico di gestione archivi
+        ↓
+griglia + form + combo + inizializzazione + CRUD
+```
+
+Non devono essere create manualmente una form JavaScript diversa per ogni archivio se il comportamento può essere derivato dai metadati, come già avviene nel Termodel desktop.
+
+I sorgenti presenti in `SorgentiTermodel/Library/` sono **riferimenti comportamentali e tecnici in sola lettura**: servono per capire come Termodel lavora oggi e per riprodurne sul Web la logica corretta senza modificare il codice desktop durante il normale sviluppo frontend.
+
+Riferimenti principali già condivisi:
+
+```text
+SorgentiTermodel/Library/ARCHIVI-WEB-RIFERIMENTO.md
+SorgentiTermodel/Library/utilities/Utidb.cs
+SorgentiTermodel/Library/definizionedati/AutoForm.cs
+SorgentiTermodel/Library/definizionedati/FormArchivio.xaml
+SorgentiTermodel/Library/definizionedati/FormArchivio.xaml.cs
+SorgentiTermodel/Library/definizionedati/Form dettaglio.xaml
+SorgentiTermodel/Library/definizionedati/Form dettaglio.xaml.cs
+SorgentiTermodel/Library/examples/dbtempfiles/
+```
+
+`definizionedati.json` è un documento fondamentale e deve essere trattato come **definizione autorevole/di riferimento, non come file da adattare arbitrariamente alle esigenze del frontend**.
+
+L'obiettivo di questa fase è trasferire nel Web il modello generico già collaudato nel desktop, non reinventare la gestione degli archivi.
+
 
 ---
 
@@ -671,6 +729,10 @@ Stato rilevato nella v0.22:
 
 ## 9. Definizione dati — regola inderogabile
 
+`definizionedati.json` è uno dei documenti fondamentali dell'architettura Termodel: descrive struttura, metadati e comportamento dei campi usati dalla gestione automatica degli archivi e delle form.
+
+Nel frontend deve essere **letto e interpretato**, non alterato per semplificare la programmazione JavaScript.
+
 La fonte autorevole originale è dichiarata come:
 
 ```text
@@ -749,6 +811,8 @@ Non inventare valori termotecnici mancanti.
 ---
 
 ## 11. Riferimenti desktop obbligatori per ArchivioWeb
+
+I materiali presenti in `SorgentiTermodel/Library/` condividono parti significative del Termodel desktop per consentire al lavoro Web di capire e riprodurre il comportamento esistente. Per il frontend sono **materiali di sola lettura** e non un'area da modificare.
 
 Prima di cambiare il comportamento degli archivi leggere:
 
