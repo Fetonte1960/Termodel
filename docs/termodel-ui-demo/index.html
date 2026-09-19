@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.19 — Demo interattiva</title>
+  <title>Termodel Web v0.20 — Demo interattiva</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -153,6 +153,19 @@
       color: #315f36;
       font-weight: 700;
     }
+    .ai-instruct-warning {
+      margin-top: 12px;
+      padding: 10px 11px;
+      border: 1px solid #d1a62a;
+      background: #fff5c7;
+      color: #5d4a00;
+      line-height: 1.4;
+    }
+    .ai-instruct-warning strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+
     .ai-instruct-foot {
       display: flex;
       align-items: center;
@@ -628,7 +641,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.19</div>
+      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.20</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -806,6 +819,10 @@
           <li>Quando l'AI restituisce il progetto, copia negli appunti l'intero progetto restituito.</li>
           <li>Torna in Termodel Web e premi <strong>Importa da AI</strong>.</li>
         </ol>
+        <div class="ai-instruct-warning" role="note" aria-label="Avvertenza sulle prestazioni AI">
+          <strong>⚠ Attenzione</strong>
+          Le prestazioni, la qualità dei risultati e i tempi di risposta possono cambiare anche in modo importante in funzione del modello AI utilizzato.
+        </div>
         <p style="margin-top:12px; color:#66727c;">
           L'istruzione copiata non viene mostrata qui: in questo modo resta semplice per l'utente e può essere aggiornata sul sito senza modificare il programma.
         </p>
@@ -926,6 +943,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.19"></script>
+  <script type="module" src="./app.js?v=0.20"></script>
 </body>
 </html>
