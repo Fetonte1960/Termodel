@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.8 — Demo interattiva</title>
+  <title>Termodel Web v0.9 — Demo interattiva</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -450,7 +450,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.8</div>
+      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.9</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -498,7 +498,7 @@
           <span id="cadEditStatus" class="cad-status">Seleziona una parete E/W</span>
           <span class="cad-spacer"></span>
           <button id="cadExportArchitectural" type="button" disabled title="Disponibile dopo la generazione della pianta">Esporta pianta CAD (.DXF)</button>
-          <button id="cadReturnModel" type="button">Ritorna al modello</button>
+          <button id="cadReturnModel" type="button" title="Se il DisegnoInput è stato modificato, rigenera automaticamente il modello prima di tornare">Ritorna al modello</button>
         </div>
         <div id="cadCanvas" class="cad-canvas">
           <div class="cad-empty">Genera prima una pianta da raster con AI. Qui potrai correggere direttamente le pareti E/W del DisegnoInput.svg.</div>
