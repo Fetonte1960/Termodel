@@ -911,7 +911,7 @@ document.addEventListener('click', () => {
 
 const TERMODEL_GENERAL_PROMPT_URL = './TermodelGenerale.md';
 const RASTER_PROMPT_URL = './CreaPianoTermodelDaRaster.md';
-const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.md';
+const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.html';
 
 const instructAiButton = document.getElementById('instructAiButton');
 const importAiButton = document.getElementById('importAiButton');
@@ -920,7 +920,7 @@ const aiInstructClose = document.getElementById('aiInstructClose');
 const aiInstructCloseBottom = document.getElementById('aiInstructCloseBottom');
 
 const TERMODEL_AI_BOOTSTRAP = `Lavora con Termodel Web.
-Leggi e segui le istruzioni aggiornate qui:
+Apri e segui le istruzioni aggiornate pubblicate qui:
 ${TERMODEL_AI_INDEX_URL}`;
 
 function setMainAiStatus(message) {
@@ -2499,7 +2499,7 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.14: Istruisci AI copia il bootstrap e apre una form che spiega il flusso senza mostrare l'istruzione.
+// v0.17: il bootstrap AI usa pagine HTML pubbliche, più affidabili da aprire per le AI esterne.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
