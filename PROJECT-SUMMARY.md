@@ -242,6 +242,53 @@ Da questa fase nasce l'architettura attuale: il browser non deve diventare una c
 
 Questa decisione ha segnato il passaggio da una demo navigabile a un vero progetto software Web strutturato.
 
+### Fase 4 — Nascita di MyHome3D e doppia identità sperimentale
+
+Il progetto è apparso troppo interessante per essere limitato al solo pubblico tecnico legato ad APE, progettazione energetica e uso professionale di Termodel.
+
+Da qui è nata una seconda idea di presentazione, chiamata **MyHome3D**, pensata per un pubblico molto più ampio e non necessariamente tecnico.
+
+Le due identità attualmente convivono:
+
+```text
+TERMODEL WEB
+│
+├── identità tecnica/professionale
+│   ├── continuità con Termodel desktop
+│   ├── APE e progettazione energetica
+│   ├── archivi tecnici
+│   ├── funzioni specialistiche
+│   └── utenti professionali
+│
+└── identità MyHome3D
+    ├── presentazione più semplice e accessibile
+    ├── utilizzo rivolto anche a non tecnici
+    ├── valorizzazione del viewer 3D
+    ├── esplorazione della propria abitazione/progetto
+    └── possibile accesso alle stesse capacità di base con una UX diversa
+```
+
+Questa situazione è intenzionalmente ancora **sperimentale**.
+
+Nel progetto esiste quindi una sorta di "schizofrenia" progettuale, nel senso di una **doppia identità ancora non risolta**:
+
+- da una parte Termodel Web come evoluzione professionale del software Termodel;
+- dall'altra MyHome3D come possibile interfaccia/prodotto rivolto al grande pubblico.
+
+Non bisogna forzare prematuramente una fusione o scegliere una sola identità.
+
+Per adesso le due direzioni possono condividere motore, viewer, dati e infrastruttura, mentre presentazione, workflow e livello di complessità dell'interfaccia possono divergere.
+
+Ogni nuova decisione di frontend deve quindi verificare esplicitamente se riguarda:
+
+```text
+A) Termodel Web professionale
+B) MyHome3D consumer
+C) componenti comuni ad entrambe le identità
+```
+
+Finché la fase sperimentale non sarà conclusa, evitare di assumere che MyHome3D sia soltanto un nome alternativo di Termodel Web o che Termodel Web debba necessariamente adottare l'interfaccia consumer.
+
 
 ---
 
