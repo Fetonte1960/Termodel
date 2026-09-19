@@ -911,6 +911,72 @@ document.addEventListener('click', () => {
 
 const TERMODEL_GENERAL_PROMPT_URL = './TermodelGenerale.md';
 const RASTER_PROMPT_URL = './CreaPianoTermodelDaRaster.md';
+const MYHOME3D_AI_URL = 'https://www.termodel.it/termodel-ui-demo/MyHome3D_AI.md';
+
+const myHomeScreen = document.getElementById('myHomeScreen');
+const myHomeInstructAi = document.getElementById('myHomeInstructAi');
+const myHomeImportAi = document.getElementById('myHomeImportAi');
+const myHomeStatus = document.getElementById('myHomeStatus');
+
+const MYHOME3D_AI_BOOTSTRAP = `Lavora con MyHome3D.
+Leggi e segui le istruzioni aggiornate pubblicate qui:
+${MYHOME3D_AI_URL}
+Usa quel documento e i riferimenti che contiene come guida operativa.`;
+
+function setMyHomeStatus(message = '', kind = '') {
+  if (!myHomeStatus) return;
+  myHomeStatus.textContent = message;
+  myHomeStatus.classList.remove('ok', 'error');
+  if (kind) myHomeStatus.classList.add(kind);
+}
+
+function showMyHomeScreen() {
+  if (!myHomeScreen) return;
+  myHomeScreen.hidden = false;
+  setMyHomeStatus('');
+}
+
+async function copyMyHomeInstructions() {
+  try {
+    if (!navigator.clipboard?.writeText)
+      throw new Error('Clipboard non disponibile');
+    await navigator.clipboard.writeText(MYHOME3D_AI_BOOTSTRAP);
+    setMyHomeStatus('✓ Istruzioni AI copiate negli appunti.', 'ok');
+  } catch (_) {
+    setMyHomeStatus('Impossibile copiare le istruzioni negli appunti.', 'error');
+  }
+}
+
+async function importMyHomeFromClipboard() {
+  let text = '';
+  try {
+    if (!navigator.clipboard?.readText)
+      throw new Error('Clipboard non disponibile');
+    text = await navigator.clipboard.readText();
+  } catch (_) {
+    setMyHomeStatus('Nella clipboard non c\'è un progetto MyHome3D.', 'error');
+    return;
+  }
+
+  if (!text.trim()) {
+    setMyHomeStatus('Nella clipboard non c\'è un progetto MyHome3D.', 'error');
+    return;
+  }
+
+  const imported = processSvgText(text);
+  if (!imported) {
+    setMyHomeStatus('Nella clipboard non c\'è un progetto MyHome3D valido.', 'error');
+    return;
+  }
+
+  setMyHomeStatus('✓ Progetto MyHome3D importato.', 'ok');
+  if (myHomeScreen) myHomeScreen.hidden = true;
+}
+
+if (myHomeInstructAi)
+  myHomeInstructAi.addEventListener('click', copyMyHomeInstructions);
+if (myHomeImportAi)
+  myHomeImportAi.addEventListener('click', importMyHomeFromClipboard);
 
 const rasterAiModal = document.getElementById('rasterAiModal');
 const rasterFileInput = document.getElementById('rasterFileInput');
@@ -2408,12 +2474,12 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.10: aggiunto pannello proprietà della parete selezionata, derivato dal XAML desktop.
+// v0.11: home MyHome3D ridotta a Istruisci AI + Importa da AI via clipboard.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
     if (button.dataset.action === 'Crea piano da raster con AI') {
-      openRasterAiDialog();
+      showMyHomeScreen();
       return;
     }
     if (button.dataset.action === 'Edita nel Cad') {
