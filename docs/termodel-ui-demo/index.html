@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.7 — Demo interattiva</title>
+  <title>Termodel Web v0.8 — Demo interattiva</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -331,6 +331,13 @@
       align-content: center;
     }
     .cad-toolbar label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .cad-toolbar select {
+      height: 28px;
+      border: 1px solid #888;
+      background: #fff;
+      color: #111;
+      padding: 2px 5px;
+    }
     .cad-toolbar button {
       height: 28px; border: 1px solid #888; border-radius: 0;
       background: linear-gradient(#fff,#dedede); padding: 2px 9px; color: #111;
@@ -340,6 +347,11 @@
     .cad-toolbar .cad-primary {
       background: linear-gradient(#eef9ff,#cfe8f6);
       border-color: #5c8db2;
+      font-weight: 700;
+    }
+    .cad-toolbar button.active {
+      background: linear-gradient(#fff4c9,#f2d984);
+      border-color: #9f7b19;
       font-weight: 700;
     }
     .cad-toolbar .cad-status {
@@ -373,6 +385,21 @@
     .cad-snap-marker {
       fill: none;
       stroke: #2e7d32;
+      stroke-width: 2;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+    .cad-newline-preview {
+      fill: none;
+      stroke: #c62828;
+      stroke-width: 2.6;
+      stroke-dasharray: 8 5;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+    .cad-newline-start {
+      fill: #fff;
+      stroke: #c62828;
       stroke-width: 2;
       vector-effect: non-scaling-stroke;
       pointer-events: none;
@@ -423,7 +450,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.7</div>
+      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.8</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -459,6 +486,11 @@
           <label><input id="cadShowClean" type="checkbox" checked /> Pianta pulita</label>
           <label><input id="cadShowInput" type="checkbox" checked /> Disegno input</label>
           <label><input id="cadSnap" type="checkbox" checked /> Snap</label>
+          <select id="cadNewLineType" title="Tipo della nuova parete">
+            <option value="W" selected>W interna</option>
+            <option value="E">E esterna</option>
+          </select>
+          <button id="cadNewLine" type="button" title="Clicca il punto iniziale e poi il punto finale">＋ Nuova linea</button>
           <button id="cadUndo" type="button" disabled title="Annulla ultima modifica">↶ Undo</button>
           <button id="cadRedo" type="button" disabled title="Ripristina modifica annullata">↷ Redo</button>
           <button id="cadDelete" type="button" disabled title="Elimina la parete selezionata">Elimina</button>
