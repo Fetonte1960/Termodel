@@ -10,6 +10,8 @@ import {
 } from './archivio-web.js?v=0.22';
 
 const MODEL_URL = './TermodelWebModel.json';
+const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
+const WEB_SERVICE_CAPABILITIES_URL = `${WEB_SERVICE_BASE_URL}/api/model/capabilities`;
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -72,6 +74,9 @@ let loading = false;
 let lastModelData = null;
 let currentModelLabel = 'PROGETTO ORIGINALE';
 let currentModelMode = 'project';
+let structuredProjectActive = false;
+let webServiceAvailable = false;
+let webServiceCapabilities = null;
 let lastAiPreviewData = null;
 let lastCleanPlanSvg = '';
 let lastGeneratedPlan = null;
@@ -771,6 +776,44 @@ function setReturnProjectState(enabled) {
   if (button) button.disabled = !enabled;
 }
 
+function setStructuredProjectState(enabled) {
+  structuredProjectActive = Boolean(enabled);
+  const disabled = !structuredProjectActive;
+  const unavailableTitle = 'Disponibile solo con un progetto Termodel strutturato.';
+
+  document.querySelectorAll('[data-archive]').forEach(button => {
+    button.disabled = disabled;
+    button.title = disabled ? unavailableTitle : '';
+  });
+
+  const cadButton = document.querySelector('[data-action="Edita nel Cad"]');
+  if (cadButton) {
+    cadButton.disabled = disabled;
+    cadButton.title = disabled ? unavailableTitle : '';
+  }
+}
+
+function webServiceCanCreateProject() {
+  return webServiceAvailable && webServiceCapabilities?.newProjectAvailable === true;
+}
+
+async function refreshWebServiceCapabilities() {
+  try {
+    const response = await fetch(WEB_SERVICE_CAPABILITIES_URL, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    webServiceCapabilities = await response.json();
+    webServiceAvailable = true;
+    console.info('Termodel WebService disponibile:', webServiceCapabilities);
+    return webServiceCapabilities;
+  } catch (error) {
+    webServiceCapabilities = null;
+    webServiceAvailable = false;
+    console.warn('Termodel WebService non disponibile:', error.message);
+    return null;
+  }
+}
+
 function renderModelData(data, options = {}) {
   if (data.format !== 'TermodelWebModel' || !Array.isArray(data.primitives))
     throw new Error('Formato TermodelWebModel non valido');
@@ -826,6 +869,7 @@ async function loadModel() {
       mode: 'project',
       label: 'PROGETTO ORIGINALE'
     });
+    setStructuredProjectState(false);
   } catch (error) {
     console.error(error);
     status.textContent = `Errore caricamento modello: ${error.message}`;
@@ -921,6 +965,11 @@ document.querySelectorAll('[data-archive]').forEach(button => {
     event.stopPropagation();
     if (demoHelpPanel) demoHelpPanel.hidden = true;
 
+    if (!structuredProjectActive) {
+      window.alert('Gli archivi sono disponibili solo dopo aver caricato o creato un progetto Termodel strutturato.');
+      return;
+    }
+
     try {
       await openArchivioWeb(button.dataset.archive || 'Piani');
     } catch (error) {
@@ -1015,15 +1064,21 @@ async function importAiFromMainForm(event) {
           console.warn('Progetto completo importato; geometry/project.svg non elaborato dal viewer Web corrente.');
       }
 
-      setMainAiStatus(`✓ Progetto completo importato: ${project.projectName}`);
+      setStructuredProjectState(true);
+      setMainAiStatus(`✓ Progetto completo importato: ${project.projectName} · editing attivo`);
     } catch (error) {
       window.alert('Progetto Termodel non importato: ' + error.message);
       return;
     }
   } else {
     imported = processSvgText(text);
-    if (imported)
-      setMainAiStatus('✓ Progetto SVG importato dall\'AI');
+    if (imported) {
+      setStructuredProjectState(false);
+      const serverState = webServiceCanCreateProject()
+        ? 'WebService pronto per creare il progetto strutturato'
+        : 'WebService non disponibile o NuovoProgetto non dichiarato';
+      setMainAiStatus(`✓ Pianta SVG importata dall'AI · ${serverState}`);
+    }
   }
 
   if (!imported) {
@@ -2313,6 +2368,11 @@ function cadReturnToModel() {
 }
 
 function activateCadPage() {
+  if (!structuredProjectActive) {
+    window.alert('Edita nel CAD è disponibile solo con un progetto Termodel strutturato.');
+    return;
+  }
+
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   if (cadPage) cadPage.classList.add('active');
@@ -2567,6 +2627,9 @@ if (drawingSelect) {
   drawingSelect.addEventListener('click', () => showDemoHelp('DisegnoInput'));
   drawingSelect.addEventListener('change', () => showDemoHelp('DisegnoInput'));
 }
+
+setStructuredProjectState(false);
+refreshWebServiceCapabilities();
 
 showDemoHelp('Benvenuto');
 

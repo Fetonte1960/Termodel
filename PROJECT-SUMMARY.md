@@ -532,8 +532,17 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente verificata:
 
 ```text
-Termodel Web v0.22
+Termodel Web v0.23
 ```
+
+La v0.23 introduce nel frontend lo stato esplicito di **progetto strutturato**:
+
+- il JSON grafico 3D desktop resta in modalità viewer-only;
+- archivi e comando `Edita nel Cad` sono disabilitati finché non è caricato un progetto completo;
+- l'importazione di `TERMODEL-PROJECT-TEXT-V1` abilita editing archivi e CAD;
+- una semplice pianta SVG proveniente dall'AI resta una bozza non editabile finché non viene associata a una base progetto completa;
+- il frontend verifica la disponibilità del WebService locale tramite `GET http://localhost:5080/api/model/capabilities`;
+- la chiamata `POST /api/projects/new` non è ancora collegata perché il body/DTO esatto non è pubblicato nei riferimenti autorevoli disponibili nel repository.
 
 File centrali:
 
@@ -677,6 +686,28 @@ per evitare regole UI hardcoded come l'elenco degli archivi nei quali aggiunta/c
 ---
 
 ## 7. Prossimo intervento frontend concordato
+
+**Priorità corrente: chiudere il flusso AI → progetto strutturato.**
+
+La v0.23 distingue già viewer-only e progetto strutturato. Il prossimo collegamento deve essere:
+
+```text
+pianta SVG AI
+      ↓
+POST /api/projects/new
+      ↓
+TERMODEL-PROJECT-TEXT-V1 vuoto/inizializzato
+      ↓
+integrazione geometry/project.svg
+      ↓
+loadTermodelProjectText(...)
+      ↓
+archivi + CAD abilitati
+```
+
+Prima di implementare la POST serve il contratto autorevole esatto della richiesta/risposta (DTO/body e gestione CORS). Non inventare campi.
+
+Dopo questo collegamento resta valido il refactoring di ArchivioWeb:
 
 **Non ricominciare ArchivioWeb da zero.**
 
@@ -1124,10 +1155,18 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo è ora v0.23.**
+
+Stato operativo corrente:
+
+- JSON grafico desktop → viewer 3D, editing disabilitato;
+- progetto completo `TERMODEL-PROJECT-TEXT-V1` → archivi e CAD abilitati;
+- semplice SVG AI → anteprima 3D, ma editing disabilitato finché manca la strutturazione;
+- controllo `GET /api/model/capabilities` collegato al WebService locale;
+- `POST /api/projects/new` ancora da collegare appena è disponibile il DTO/body autorevole.
 
 Il prossimo lavoro frontend, salvo nuove istruzioni dell'utente, è:
 
-> estrarre dalla v0.22 un livello `ArchiveProvider` e un `LocalArchiveProvider`, separando parsing del file progetto, accesso ai dati e rendering, preservando il funzionamento corrente.
+> collegare l'importazione della semplice pianta AI a `POST /api/projects/new`, integrare la geometria nel progetto restituito e solo allora attivare archivi/CAD. Successivamente estrarre `ArchiveProvider` e `LocalArchiveProvider`.
 
 Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.
