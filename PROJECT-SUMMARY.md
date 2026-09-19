@@ -513,6 +513,77 @@ Questa chat e Codex devono lavorare in modo armonico: il frontend definisce ciò
 
 ---
 
+## 3.1 Direttiva obbligatoria — conformità delle view Web agli XAML desktop
+
+Tutte le **view di Termodel Web** che corrispondono a funzioni già presenti nel Termodel desktop devono essere progettate e verificate prendendo come riferimento autorevole i relativi file **XAML presenti in `SorgentiTermodel/Library/`**.
+
+Principio:
+
+```text
+VIEW XAML TERMODEL DESKTOP
+        ↓
+riferimento funzionale e visuale autorevole
+        ↓
+VIEW TERMODEL WEB
+HTML / CSS / JavaScript
+```
+
+La view Web non deve essere inventata autonomamente quando esiste già una view desktop equivalente.
+
+La conformità riguarda almeno:
+
+- struttura generale della schermata;
+- suddivisione in pannelli/sezioni;
+- campi mostrati;
+- ordine logico dei campi;
+- etichette e significato dei controlli;
+- controlli editabili / readonly;
+- combo e relative sorgenti dati;
+- pulsanti e azioni disponibili;
+- modalità di selezione e modifica;
+- dipendenze/correlazioni tra campi;
+- comportamento operativo percepito dall'utente.
+
+È ammesso adattare il **layout tecnico** alle caratteristiche del browser e alle dimensioni disponibili, ma senza cambiare arbitrariamente la logica della view desktop.
+
+Regola pratica:
+
+> prima di creare o modificare una view Termodel Web, individuare e leggere la view XAML desktop corrispondente e, quando necessario, il relativo `.xaml.cs`.
+
+XAML di riferimento attualmente presenti nella Library:
+
+```text
+SorgentiTermodel/Library/MainWindow.xaml
+SorgentiTermodel/Library/AI/CreaPianoDaRaster.xaml
+SorgentiTermodel/Library/definizionedati/FormArchivio.xaml
+SorgentiTermodel/Library/definizionedati/Form dettaglio.xaml
+SorgentiTermodel/Library/leggidxf/CadGPT.xaml
+SorgentiTermodel/Library/utilities/DrawBim.xaml
+SorgentiTermodel/Library/utilities/FiltriGrafici.xaml
+```
+
+Esempi applicativi:
+
+- schermata principale Web → confrontare con `MainWindow.xaml`;
+- gestione archivi → `FormArchivio.xaml` e `Form dettaglio.xaml`;
+- CAD Web / proprietà CAD → `CadGPT.xaml`;
+- creazione piano da raster → `AI/CreaPianoDaRaster.xaml`;
+- viewer/modello BIM → `utilities/DrawBim.xaml`;
+- filtri grafici → `utilities/FiltriGrafici.xaml`.
+
+I file XAML e i relativi code-behind nella Library sono **riferimenti in sola lettura** per il frontend Web, salvo interventi desktop esplicitamente coordinati.
+
+Se una funzione Web non ha una view XAML corrispondente:
+
+1. verificare che non esista una view equivalente con altro nome;
+2. usare il comportamento desktop più vicino come riferimento;
+3. documentare nel PS o nel file specialistico la nuova view e il motivo della differenza;
+4. non introdurre un nuovo paradigma UI incompatibile con Termodel senza decisione esplicita.
+
+Questa direttiva si applica anche alle view già realizzate: durante i prossimi interventi devono essere progressivamente controllate e riallineate agli XAML corrispondenti.
+
+---
+
 ## 4. Stato corrente del frontend Web
 
 Frontend principale:
@@ -1537,7 +1608,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.26 pubblicata: `Edita nel Cad` senza progetto → inizializzazione automatica → apertura CAD 2D;  
-> 2. implementare nel CAD il parser/editor dei simboli `FIN/PON/LOC` e il collegamento alle tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`;  
+> 2. prima di estendere il CAD, confrontare la view Web con `SorgentiTermodel/Library/leggidxf/CadGPT.xaml` e mantenere toolbar/pannello proprietà conformi alla view desktop; quindi implementare il parser/editor dei simboli `FIN/PON/LOC` e il collegamento alle tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`;  
 > 3. unificare progressivamente stato CAD e stato archivi nel contenitore progetto.
 
 Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.
