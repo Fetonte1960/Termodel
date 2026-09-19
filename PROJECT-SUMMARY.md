@@ -198,6 +198,28 @@ Da questa verifica è nata la decisione di non limitarsi a una semplice pagina i
 
 Il primo viewer lavorava quindi su progetti già realizzati nel programma desktop e trasferiti al browser tramite JSON.
 
+### Fase 2 — Demo esplorabile di Termodel desktop
+
+Visto il successo della prova 3D, il passo successivo è stato costruire una **demo esplorabile di Termodel desktop** direttamente nel browser.
+
+L'idea era riprodurre progressivamente l'esperienza del programma desktop, mantenendo al centro dell'interfaccia il viewer 3D già collaudato e affiancandogli una struttura di menu e comandi ispirata a Termodel.
+
+La demo è stata organizzata attorno a un **progetto di esempio**, in modo da poter esplorare concretamente l'interfaccia e verificare come le funzioni desktop potessero essere trasferite sul Web.
+
+Schema concettuale della fase:
+
+```text
+interfaccia Termodel esplorabile nel browser
+        │
+        ├── menu e comandi ispirati al desktop
+        │
+        ├── viewer 3D al centro
+        │
+        └── progetto di esempio già caricato
+```
+
+Questa fase ha trasformato il viewer isolato in un primo prototipo di applicazione Web completa e ha fornito la base su cui sono poi state aggiunte le funzioni operative.
+
 
 ---
 
