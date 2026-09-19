@@ -532,22 +532,36 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.24
+Termodel Web v0.25
 ```
 
-Commit frontend di riferimento per la v0.24:
+Commit frontend di riferimento per la v0.25:
 
 ```text
-ba39c74c4916192d99885e027f0e9c1a50027fb2  Create structured project after AI import
+b781c18152c8fa20efa16a959ec578edfb4ad277  Add guided project start and blank CAD flow
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
 
 ```text
-Termodel Web v0.23
+Termodel Web v0.24
 ```
 
-finché la v0.24 non viene osservata direttamente su `https://www.termodel.it/termodel-ui-demo/`.
+finché la v0.25 non viene osservata direttamente su `https://www.termodel.it/termodel-ui-demo/`.
+
+La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
+
+La v0.25 aggiunge il primo **avvio guidato del progetto personale**:
+
+- i pulsanti Archivio e `Edita nel Cad` non sono più disabilitati nella demo;
+- senza progetto strutturato aprono la finestra `Crea il tuo progetto Termodel`;
+- la finestra offre `Disegna da zero`, `Istruisci AI`, `Importa da AI`;
+- `File → Nuovo` apre la stessa finestra;
+- `Disegna da zero` usa `POST /api/projects/new` per inizializzare progetto e archivi;
+- il frontend sostituisce `geometry/project.svg` con uno SVG vuoto valido e apre il CAD Web;
+- il CAD da zero parte con una tavola vuota e abilita `＋ Nuova linea`;
+- se l'ingresso proveniva da un archivio, dopo la creazione del progetto vuoto viene aperto l'archivio richiesto;
+- il browser non inventa archivi o valori tecnici: la base dati continua a provenire dal WebService.
 
 La v0.24 completa il primo collegamento automatico del flusso AI → progetto strutturato:
 
@@ -1273,22 +1287,22 @@ risultato restituito a Termodel Web
 
 Il frontend non deve simulare come realmente disponibili funzioni server che il Core non espone ancora.
 
-### Verifica dello stato reale alla v0.24
+### Verifica dello stato reale alla v0.25
 
 Confronto fra flusso desiderato e programma attuale:
 
-| Passaggio | Stato v0.24 | Nota |
+| Passaggio | Stato v0.25 | Nota |
 | --- | --- | --- |
 | Apertura con modello demo 3D | **REALIZZATO** | `loadModel()` carica automaticamente `TermodelWebModel.json` |
 | Esplorazione del modello demo | **REALIZZATO** | viewer e menu dimostrativi disponibili |
-| Accesso archivi senza progetto → guida alla creazione | **PARZIALE** | esiste la logica di blocco/avviso, ma i pulsanti `data-archive` vengono disabilitati e quindi l'utente non riceve ancora un vero percorso guidato |
+| Accesso archivi senza progetto → guida alla creazione | **REALIZZATO** | apre la finestra guidata con `Disegna da zero / Istruisci AI / Importa da AI` |
 | `Istruisci AI` | **REALIZZATO** | copia il prompt di collegamento e mostra la procedura |
 | `Importa da AI` | **REALIZZATO** | import SVG/progetto completo |
 | AI → progetto vuoto server → progetto strutturato | **REALIZZATO E VERIFICATO** | v0.24, archivi attivati correttamente dopo l'importazione |
 | Editing archivi | **REALIZZATO IN FORMA LOCALE** | form/griglie/CRUD in memoria; persistenza unificata ancora da completare |
 | `Edita nel CAD` su progetto strutturato | **REALIZZATO** | modifica pareti E/W, snap, undo/redo, nuova linea, rigenerazione |
-| CAD come partenza di un progetto da zero | **NON ANCORA REALIZZATO** | oggi il CAD richiede un progetto strutturato/SVG esistente; `Nuova linea` non crea da sola il primo documento |
-| `Edita nel CAD` come hub con scelta “da zero / AI” | **NON ANCORA REALIZZATO** | attualmente il comando è disabilitato senza progetto strutturato |
+| CAD come partenza di un progetto da zero | **REALIZZATO IN v0.25** | crea un progetto vuoto via WebService, prepara uno SVG vuoto e apre il CAD con `Nuova linea` disponibile |
+| `Edita nel CAD` come hub con scelta “da zero / AI” | **REALIZZATO IN v0.25** | senza progetto apre la finestra guidata con i tre percorsi base |
 | Simboli FIN/PON/LOC editabili e collegati agli archivi | **DA SVILUPPARE** | definito il flusso nella sezione 12.3 |
 | Calcoli server reali | **NON ANCORA REALIZZATI** | pagina Calcoli è esplicitamente dimostrativa |
 | Aggiornamento modello 3D completo dal server | **NON ANCORA REALIZZATO** | il WebService documentato espone oggi solo gli endpoint base; `Aggiorna modello` non è ancora presente |
@@ -1298,16 +1312,12 @@ Confronto fra flusso desiderato e programma attuale:
 
 Il prossimo frontend non deve aggiungere funzioni isolate senza considerare questo percorso.
 
-Priorità UX:
+Priorità UX dopo la v0.25:
 
-1. rendere gli archivi demo **cliccabili come invito**, invece di lasciarli semplicemente disabilitati;
-2. trasformare **Edita nel CAD** in un punto di ingresso che consenta:
-   - progetto/disegno da zero;
-   - percorso AI;
-3. creare automaticamente il progetto vuoto server anche per il percorso CAD da zero;
-4. completare FIN/PON/LOC e collegamento disegno ↔ archivi;
-5. introdurre uno stato di **progetto coerente/pronto**;
-6. soltanto allora collegare progressivamente le funzioni avanzate Core/WebService.
+1. completare FIN/PON/LOC e collegamento disegno ↔ archivi;
+2. consolidare lo stato unico del progetto tra CAD e ArchivioWeb;
+3. introdurre uno stato di **progetto coerente/pronto**;
+4. soltanto allora collegare progressivamente le funzioni avanzate Core/WebService.
 
 ---
 
@@ -1483,7 +1493,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.24.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.25.**
 
 Stato operativo corrente:
 
@@ -1493,16 +1503,19 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.24 presente su `main`; il flusso pubblico v0.24 AI → progetto strutturato → archivi è stato verificato manualmente con successo dall'utente.
+- v0.25 presente su `main`; ultima versione pubblica verificata manualmente: v0.24;
+- v0.25 aggiunge avvio guidato da Archivi/CAD/File→Nuovo e creazione di progetto vuoto editabile nel CAD.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
 Il prossimo lavoro frontend deve rispettare il flusso utente della sezione 12.4.
 
+Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
+
 Priorità immediate:
 
-> 1. trasformare il blocco Archivi senza progetto in un invito guidato alla creazione del progetto personale;  
-> 2. rendere `Edita nel CAD` un ingresso utilizzabile anche per progetto da zero / percorso AI;  
-> 3. implementare nel CAD il parser/editor dei simboli `FIN/PON/LOC` e il collegamento alle tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`.
+> 1. verificare manualmente la v0.25 pubblicata: Archivi → guida, Edita nel CAD → guida, Disegna da zero → progetto vuoto → CAD;  
+> 2. implementare nel CAD il parser/editor dei simboli `FIN/PON/LOC` e il collegamento alle tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`;  
+> 3. unificare progressivamente stato CAD e stato archivi nel contenitore progetto.
 
 Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.
