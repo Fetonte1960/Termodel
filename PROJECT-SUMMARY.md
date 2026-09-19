@@ -871,6 +871,49 @@ Quando servirà il provider server:
 
 ---
 
+## 12.1 Flusso Web — modalità progetto proveniente da JSON grafico 3D desktop
+
+Una delle modalità di ingresso in Termodel Web parte da un **JSON grafico 3D generato da Termodel desktop**.
+
+Flusso:
+
+```text
+Termodel desktop
+        ↓
+genera JSON grafico 3D
+        ↓
+Termodel Web
+        ↓
+viewer 3D
+```
+
+Questa modalità è da considerare **visualizzazione grafica** del progetto.
+
+Con il solo JSON grafico 3D:
+
+- il viewer 3D può essere utilizzato;
+- **non si attiva la visualizzazione degli archivi Termodel**;
+- **non si attiva l'editing degli archivi**;
+- **non si attiva l'editing CAD/BIM 2D**.
+
+Il motivo è architetturale: il JSON grafico contiene la rappresentazione necessaria al viewer, ma non costituisce il progetto Termodel completo con tutte le informazioni strutturate necessarie per archivi ed editing.
+
+Quindi non bisogna dedurre dal semplice caricamento del JSON 3D che il progetto sia completamente editabile.
+
+Questa distinzione deve restare esplicita nel frontend:
+
+```text
+JSON grafico 3D
+    → VISUALIZZA 3D
+    → NO archivi
+    → NO editing archivi
+    → NO CAD/BIM 2D
+```
+
+Le funzioni di consultazione archivi e di editing appartengono invece alla modalità in cui Termodel Web dispone di una rappresentazione progetto più completa, come il contenitore `TERMODEL-PROJECT-TEXT-V1` o futuri contratti server equivalenti.
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo ed essere trasmesso anche tramite normale copia-incolla in una chat.
