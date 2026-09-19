@@ -911,72 +911,59 @@ document.addEventListener('click', () => {
 
 const TERMODEL_GENERAL_PROMPT_URL = './TermodelGenerale.md';
 const RASTER_PROMPT_URL = './CreaPianoTermodelDaRaster.md';
-const MYHOME3D_AI_URL = 'https://www.termodel.it/termodel-ui-demo/MyHome3D_AI.md';
+const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.md';
 
-const myHomeScreen = document.getElementById('myHomeScreen');
-const myHomeInstructAi = document.getElementById('myHomeInstructAi');
-const myHomeImportAi = document.getElementById('myHomeImportAi');
-const myHomeStatus = document.getElementById('myHomeStatus');
+const instructAiButton = document.getElementById('instructAiButton');
+const importAiButton = document.getElementById('importAiButton');
 
-const MYHOME3D_AI_BOOTSTRAP = `Lavora con MyHome3D.
-Leggi e segui le istruzioni aggiornate pubblicate qui:
-${MYHOME3D_AI_URL}
-Usa quel documento e i riferimenti che contiene come guida operativa.`;
+const TERMODEL_AI_BOOTSTRAP = `Lavora con Termodel Web.
+Leggi e segui le istruzioni aggiornate qui:
+${TERMODEL_AI_INDEX_URL}`;
 
-function setMyHomeStatus(message = '', kind = '') {
-  if (!myHomeStatus) return;
-  myHomeStatus.textContent = message;
-  myHomeStatus.classList.remove('ok', 'error');
-  if (kind) myHomeStatus.classList.add(kind);
+function setMainAiStatus(message) {
+  if (status) status.textContent = message;
 }
 
-function showMyHomeScreen() {
-  if (!myHomeScreen) return;
-  myHomeScreen.hidden = false;
-  setMyHomeStatus('');
-}
-
-async function copyMyHomeInstructions() {
+async function instructAiFromMainForm() {
   try {
     if (!navigator.clipboard?.writeText)
       throw new Error('Clipboard non disponibile');
-    await navigator.clipboard.writeText(MYHOME3D_AI_BOOTSTRAP);
-    setMyHomeStatus('✓ Istruzioni AI copiate negli appunti.', 'ok');
+    await navigator.clipboard.writeText(TERMODEL_AI_BOOTSTRAP);
+    setMainAiStatus('✓ Istruzioni AI copiate negli appunti');
   } catch (_) {
-    setMyHomeStatus('Impossibile copiare le istruzioni negli appunti.', 'error');
+    window.alert('Impossibile copiare le istruzioni AI negli appunti.');
   }
 }
 
-async function importMyHomeFromClipboard() {
+async function importAiFromMainForm() {
   let text = '';
   try {
     if (!navigator.clipboard?.readText)
       throw new Error('Clipboard non disponibile');
     text = await navigator.clipboard.readText();
   } catch (_) {
-    setMyHomeStatus('Nella clipboard non c\'è un progetto MyHome3D.', 'error');
+    window.alert("Nella clipboard non c'è un progetto MyHome3D.");
     return;
   }
 
   if (!text.trim()) {
-    setMyHomeStatus('Nella clipboard non c\'è un progetto MyHome3D.', 'error');
+    window.alert("Nella clipboard non c'è un progetto MyHome3D.");
     return;
   }
 
   const imported = processSvgText(text);
   if (!imported) {
-    setMyHomeStatus('Nella clipboard non c\'è un progetto MyHome3D valido.', 'error');
+    window.alert("Nella clipboard non c'è un progetto MyHome3D.");
     return;
   }
 
-  setMyHomeStatus('✓ Progetto MyHome3D importato.', 'ok');
-  if (myHomeScreen) myHomeScreen.hidden = true;
+  setMainAiStatus('✓ Progetto importato dall\'AI');
 }
 
-if (myHomeInstructAi)
-  myHomeInstructAi.addEventListener('click', copyMyHomeInstructions);
-if (myHomeImportAi)
-  myHomeImportAi.addEventListener('click', importMyHomeFromClipboard);
+if (instructAiButton)
+  instructAiButton.addEventListener('click', instructAiFromMainForm);
+if (importAiButton)
+  importAiButton.addEventListener('click', importAiFromMainForm);
 
 const rasterAiModal = document.getElementById('rasterAiModal');
 const rasterFileInput = document.getElementById('rasterFileInput');
@@ -2474,14 +2461,10 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.11: home MyHome3D ridotta a Istruisci AI + Importa da AI via clipboard.
+// v0.12: Istruisci AI e Importa da AI operano direttamente dalla main form Termodel, senza pagina o form intermedi.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
-    if (button.dataset.action === 'Crea piano da raster con AI') {
-      showMyHomeScreen();
-      return;
-    }
     if (button.dataset.action === 'Edita nel Cad') {
       activateCadPage();
       return;
