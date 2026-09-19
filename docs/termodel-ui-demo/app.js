@@ -2039,7 +2039,8 @@ function cadRedoEdit() {
 }
 
 function cadRegeneratePlan() {
-  if (!cadWorkingDoc || !cadIsDirty()) return;
+  if (!cadWorkingDoc) return false;
+  if (!cadIsDirty()) return true;
 
   try {
     const svgText = cadSerializeWorkingSvg();
@@ -2073,9 +2074,27 @@ function cadRegeneratePlan() {
     cadSetStatus(
       `✓ Pianta rigenerata · ${plan.stats.locali} locali`
     );
+    return true;
   } catch (error) {
     cadSetStatus('✗ ' + error.message, 'error');
+    return false;
   }
+}
+
+function cadReturnToModel() {
+  // Una linea iniziata ma non conclusa non fa ancora parte dello SVG:
+  // la annulliamo prima del ritorno.
+  if (cadToolMode === 'line')
+    cadCancelNewLine();
+
+  // Se il DisegnoInput è stato modificato, il modello deve sempre
+  // corrispondere all'input corrente prima di lasciare il CAD.
+  if (cadWorkingDoc && cadIsDirty()) {
+    const regenerated = cadRegeneratePlan();
+    if (!regenerated) return;
+  }
+
+  activateModelPage();
 }
 
 function activateCadPage() {
@@ -2274,7 +2293,7 @@ if (cadNewLine)
 if (cadRegenerate)
   cadRegenerate.addEventListener('click', cadRegeneratePlan);
 if (cadReturnModel)
-  cadReturnModel.addEventListener('click', activateModelPage);
+  cadReturnModel.addEventListener('click', cadReturnToModel);
 if (cadExportArchitectural)
   cadExportArchitectural.addEventListener('click', downloadArchitecturalDxf);
 
@@ -2308,7 +2327,7 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.8: aggiunta costruzione di nuove linee E/W a due punti con snap.
+// v0.9: Ritorna al modello rigenera automaticamente il 3D se l'input CAD è stato modificato.
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
