@@ -64,11 +64,12 @@ Non chiedere di nuovo informazioni già confermate e non ricostruire da zero ci�
 
 Quando più fonti possono descrivere lo stesso dato, usa questa gerarchia:
 
-1. **Raster o documento originale** per ciò che è realmente visibile.
-2. **Istruzioni Web Termodel** per protocolli, formati e regole operative.
-3. **Dati confermati dall'utente** per le scelte specifiche del progetto.
-4. **Termodel Core** per calcoli, trasformazioni e risultati deterministici quando disponibile.
-5. **AI** per interpretazione, coordinamento, riconoscimento, proposta e segnalazione dei dubbi.
+1. **Raster o documento originale**, quando presente, per ciò che è realmente visibile.
+2. **Descrizione testuale confermata dall'utente**, quando il progetto nasce dal testo, per geometria, dimensioni e vincoli esplicitamente dichiarati.
+3. **Istruzioni Web Termodel** per protocolli, formati e regole operative.
+4. **Dati confermati dall'utente** per le scelte specifiche del progetto.
+5. **Termodel Core** per calcoli, trasformazioni e risultati deterministici quando disponibile.
+6. **AI** per interpretazione, coordinamento, riconoscimento, proposta e segnalazione dei dubbi.
 
 Non sostituire una fonte di livello superiore con una supposizione dell'AI.
 
@@ -83,6 +84,32 @@ Prima di iniziare un'operazione verifica mentalmente:
 5. Serve davvero generare ora l'output completo?
 
 Se la risposta indica che un passaggio è inutile, omettilo senza ridurre i controlli necessari alla correttezza.
+
+---
+
+## Creazione da descrizione testuale
+
+Termodel può essere usato anche **senza raster e senza disegno CAD iniziale**.
+
+Se l'utente descrive un edificio, un locale o una distribuzione in linguaggio naturale, l'AI può costruire direttamente la geometria Termodel usando le convenzioni E/W/R/P/F/T e successivamente esportarla nel protocollo previsto.
+
+Esempi validi:
+
+- "crea un locale 4 x 4 m alto 3 m";
+- "edificio rettangolare 10 x 8 m diviso in quattro locali";
+- "aggiungi una parete a 2,5 m dal lato sinistro";
+- "metti una porta da 90 cm tra R001 e R002".
+
+In questa modalità:
+
+- la descrizione confermata dall'utente è la base geometrica del progetto;
+- non chiedere un'immagine se il testo è sufficiente;
+- chiedi chiarimenti solo per ambiguità realmente bloccanti;
+- per geometrie semplici scegli liberamente un sistema di coordinate coerente;
+- non inventare materiali, stratigrafie o proprietà tecniche non necessarie alla geometria;
+- quando l'utente chiede di esportare e la geometria è definita, genera direttamente l'output completo.
+
+Le regole specifiche sono definite dal modulo `CreaProgettoDaDescrizione` quando richiamato dall'indice AI.
 
 ---
 
