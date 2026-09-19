@@ -7,7 +7,7 @@ import {
   isTermodelProjectText,
   loadTermodelProjectText,
   openArchivioWeb
-} from './archivio-web.js?v=0.24';
+} from './archivio-web.js?v=0.25';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -779,18 +779,20 @@ function setReturnProjectState(enabled) {
 
 function setStructuredProjectState(enabled) {
   structuredProjectActive = Boolean(enabled);
-  const disabled = !structuredProjectActive;
-  const unavailableTitle = 'Disponibile solo con un progetto Termodel strutturato.';
+  const needsProject = !structuredProjectActive;
+  const inviteTitle = 'Crea o importa il tuo progetto Termodel per usare questa funzione.';
 
   document.querySelectorAll('[data-archive]').forEach(button => {
-    button.disabled = disabled;
-    button.title = disabled ? unavailableTitle : '';
+    button.disabled = false;
+    button.title = needsProject ? inviteTitle : '';
+    button.setAttribute('aria-disabled', needsProject ? 'true' : 'false');
   });
 
   const cadButton = document.querySelector('[data-action="Edita nel Cad"]');
   if (cadButton) {
-    cadButton.disabled = disabled;
-    cadButton.title = disabled ? unavailableTitle : '';
+    cadButton.disabled = false;
+    cadButton.title = needsProject ? inviteTitle : '';
+    cadButton.setAttribute('aria-disabled', needsProject ? 'true' : 'false');
   }
 }
 
@@ -1061,7 +1063,10 @@ document.querySelectorAll('[data-archive]').forEach(button => {
     if (demoHelpPanel) demoHelpPanel.hidden = true;
 
     if (!structuredProjectActive) {
-      window.alert('Gli archivi sono disponibili solo dopo aver caricato o creato un progetto Termodel strutturato.');
+      openProjectStartDialog({
+        target: 'archive',
+        archiveName: button.dataset.archive || 'Piani'
+      });
       return;
     }
 
@@ -1086,6 +1091,16 @@ const aiInstructModal = document.getElementById('aiInstructModal');
 const aiInstructClose = document.getElementById('aiInstructClose');
 const aiInstructCloseBottom = document.getElementById('aiInstructCloseBottom');
 
+const projectStartModal = document.getElementById('projectStartModal');
+const projectStartMessage = document.getElementById('projectStartMessage');
+const projectStartClose = document.getElementById('projectStartClose');
+const projectStartCloseBottom = document.getElementById('projectStartCloseBottom');
+const projectStartBlank = document.getElementById('projectStartBlank');
+const projectStartInstructAi = document.getElementById('projectStartInstructAi');
+const projectStartImportAi = document.getElementById('projectStartImportAi');
+const newProjectButton = document.getElementById('newProjectButton');
+let projectStartContext = { target: 'cad', archiveName: '' };
+
 const TERMODEL_AI_BOOTSTRAP = `Lavora con Termodel Web.
 Apri e segui le istruzioni aggiornate pubblicate qui:
 ${TERMODEL_AI_INDEX_URL}`;
@@ -1104,6 +1119,89 @@ function closeAiInstructDialog() {
   if (!aiInstructModal) return;
   aiInstructModal.classList.remove('visible');
   aiInstructModal.setAttribute('aria-hidden', 'true');
+}
+
+function openProjectStartDialog(context = {}) {
+  projectStartContext = {
+    target: context.target || 'cad',
+    archiveName: context.archiveName || ''
+  };
+
+  if (projectStartMessage) {
+    projectStartMessage.textContent =
+      projectStartContext.target === 'archive'
+        ? `Il modello iniziale è una demo. Per aprire l'archivio "${projectStartContext.archiveName}" crea o importa prima il tuo progetto Termodel.`
+        : 'Il modello iniziale è una demo. Scegli come vuoi iniziare il tuo progetto Termodel.';
+  }
+
+  if (!projectStartModal) return;
+  projectStartModal.classList.add('visible');
+  projectStartModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeProjectStartDialog() {
+  if (!projectStartModal) return;
+  projectStartModal.classList.remove('visible');
+  projectStartModal.setAttribute('aria-hidden', 'true');
+}
+
+function createBlankProjectSvg() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <g id="calpestabile"></g>
+  <g id="copertura"></g>
+</svg>`;
+}
+
+function createBlankCleanSvg() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <g id="locali-puliti"></g>
+  <g id="pareti-architettoniche"></g>
+  <g id="contorni-architettonici"></g>
+  <g id="etichette-locali"></g>
+</svg>`;
+}
+
+async function continueAfterProjectStart() {
+  const context = projectStartContext;
+  if (context.target === 'archive' && context.archiveName) {
+    try {
+      await openArchivioWeb(context.archiveName);
+    } catch (error) {
+      window.alert('Archivio Termodel non disponibile: ' + error.message);
+    }
+    return;
+  }
+
+  activateCadPage();
+}
+
+async function startBlankProjectFromCad() {
+  closeProjectStartDialog();
+  setMainAiStatus('Creazione progetto Termodel vuoto...');
+
+  try {
+    const svg = createBlankProjectSvg();
+    const project = await createStructuredProjectFromSvg(svg);
+
+    validatedSvg = svg;
+    lastCleanPlanSvg = createBlankCleanSvg();
+    lastGeneratedPlan = null;
+    lastAiPreviewData = null;
+    cadSetWorkingSvg(svg);
+
+    setStructuredProjectState(true);
+    setMainAiStatus(`✓ Progetto vuoto creato: ${project.projectName} · archivi e CAD attivi`);
+
+    await continueAfterProjectStart();
+
+    if (projectStartContext.target !== 'archive')
+      cadSetStatus('Progetto vuoto · usa ＋ Nuova linea per iniziare il disegno');
+  } catch (error) {
+    setStructuredProjectState(false);
+    console.error('Creazione progetto vuoto non riuscita:', error);
+    setMainAiStatus(`⚠ Progetto vuoto non creato: ${error.message}`);
+    window.alert('Impossibile creare il progetto Termodel vuoto.\n\n' + error.message);
+  }
 }
 
 async function instructAiFromMainForm(event) {
@@ -2483,7 +2581,7 @@ function cadReturnToModel() {
 
 function activateCadPage() {
   if (!structuredProjectActive) {
-    window.alert('Edita nel CAD è disponibile solo con un progetto Termodel strutturato.');
+    openProjectStartDialog({ target: 'cad' });
     return;
   }
 
@@ -2722,8 +2820,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.24: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.24' })
+// v0.25: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.25' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
@@ -2741,6 +2839,31 @@ if (drawingSelect) {
   drawingSelect.addEventListener('click', () => showDemoHelp('DisegnoInput'));
   drawingSelect.addEventListener('change', () => showDemoHelp('DisegnoInput'));
 }
+
+projectStartClose?.addEventListener('click', closeProjectStartDialog);
+projectStartCloseBottom?.addEventListener('click', closeProjectStartDialog);
+projectStartModal?.addEventListener('click', event => {
+  if (event.target === projectStartModal) closeProjectStartDialog();
+});
+projectStartBlank?.addEventListener('click', startBlankProjectFromCad);
+projectStartInstructAi?.addEventListener('click', async event => {
+  closeProjectStartDialog();
+  await instructAiFromMainForm(event);
+});
+projectStartImportAi?.addEventListener('click', async event => {
+  const context = projectStartContext;
+  closeProjectStartDialog();
+  await importAiFromMainForm(event);
+  if (structuredProjectActive) {
+    projectStartContext = context;
+    await continueAfterProjectStart();
+  }
+});
+newProjectButton?.addEventListener('click', event => {
+  event.preventDefault();
+  event.stopPropagation();
+  openProjectStartDialog({ target: 'cad' });
+});
 
 setStructuredProjectState(false);
 refreshWebServiceCapabilities();

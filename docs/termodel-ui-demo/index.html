@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.24 — creazione automatica progetto strutturato</title>
+  <title>Termodel Web v0.25 — avvio guidato progetto e CAD da zero</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -174,6 +174,41 @@
       border-top: 1px solid #aaa;
       background: #e8e8e8;
     }
+    .project-start-copy {
+      margin:0 0 12px;
+      color:#34495e;
+      line-height:1.45;
+    }
+    .project-start-actions {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+      margin-top:16px;
+    }
+    .project-start-actions button {
+      min-height:68px;
+      padding:10px 12px;
+      border:1px solid #8b99a8;
+      background:linear-gradient(#ffffff,#e8edf2);
+      cursor:pointer;
+      font-weight:700;
+    }
+    .project-start-actions button.primary {
+      border-color:#46799e;
+      background:linear-gradient(#eef9ff,#cfe8f6);
+    }
+    .project-start-note {
+      margin-top:14px;
+      padding:9px 11px;
+      border:1px solid #c5ccd3;
+      background:#f8fafc;
+      color:#5a6570;
+      font-size:13px;
+    }
+    @media (max-width:760px) {
+      .project-start-actions { grid-template-columns:1fr; }
+    }
+
     .ai-instruct-foot button {
       border: 1px solid #888;
       background: linear-gradient(#fff,#e5e5e5);
@@ -641,12 +676,12 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.24</div>
+      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.25</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
       <div class="menu"><button type="button">File</button><div class="dropdown">
-        <button type="button">Nuovo</button><button type="button">Apri...</button><button type="button">Carica progetto ZIP</button><div class="sep"></div>
+        <button type="button" id="newProjectButton">Nuovo</button><button type="button">Apri...</button><button type="button">Carica progetto ZIP</button><div class="sep"></div>
         <button type="button">Salva</button><button type="button">Salva progetto ZIP</button><button type="button">Salva con nome</button><div class="sep"></div>
         <button type="button">Importa XML nazionale</button><button type="button">Esporta XML nazionale</button><button type="button">Esporta BIM (ifc)</button>
       </div></div>
@@ -834,6 +869,32 @@
   </div>
 
 
+  <div id="projectStartModal" class="ai-instruct-modal" aria-hidden="true">
+    <section class="ai-instruct-window" role="dialog" aria-modal="true" aria-labelledby="projectStartTitle">
+      <header class="ai-instruct-head">
+        <h2 id="projectStartTitle">Crea il tuo progetto Termodel</h2>
+        <button id="projectStartClose" class="ai-instruct-close" type="button" aria-label="Chiudi">×</button>
+      </header>
+      <div class="ai-instruct-body">
+        <p id="projectStartMessage" class="project-start-copy">
+          Il modello iniziale è una demo. Per modificare archivi e disegno crea il tuo progetto.
+        </p>
+        <div class="project-start-actions">
+          <button id="projectStartBlank" class="primary" type="button">Disegna da zero<br><small>Apri un progetto vuoto nel CAD Web</small></button>
+          <button id="projectStartInstructAi" type="button">Istruisci AI<br><small>Prepara la tua AI per Termodel</small></button>
+          <button id="projectStartImportAi" type="button">Importa da AI<br><small>Usa il progetto o la pianta negli appunti</small></button>
+        </div>
+        <div class="project-start-note">
+          Il progetto vuoto e gli archivi vengono inizializzati dal Termodel WebService; il browser non inventa dati tecnici.
+        </div>
+      </div>
+      <footer class="ai-instruct-foot">
+        <button id="projectStartCloseBottom" type="button">Annulla</button>
+      </footer>
+    </section>
+  </div>
+
+
   <div id="rasterAiModal" class="raster-ai-modal" aria-hidden="true">
     <section class="raster-ai-window" role="dialog" aria-modal="true" aria-labelledby="rasterAiTitle">
       <header class="raster-ai-head">
@@ -943,6 +1004,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.24"></script>
+  <script type="module" src="./app.js?v=0.25"></script>
 </body>
 </html>
