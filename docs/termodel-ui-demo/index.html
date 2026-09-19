@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.6 — Demo interattiva</title>
+  <title>Termodel Web v0.7 — Demo interattiva</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -325,9 +325,10 @@
 
     .cad-page { background: #ececec; color: #222; }
     .cad-toolbar {
-      position: absolute; left: 0; right: 0; top: 0; height: 42px; z-index: 6;
-      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      position: absolute; left: 0; right: 0; top: 0; height: 68px; z-index: 6;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
       padding: 6px 9px; background: #e5e5e5; border-bottom: 1px solid #aaa;
+      align-content: center;
     }
     .cad-toolbar label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
     .cad-toolbar button {
@@ -336,12 +337,46 @@
     }
     .cad-toolbar button:disabled { opacity: .5; cursor: default; }
     .cad-toolbar .cad-spacer { flex: 1 1 auto; }
+    .cad-toolbar .cad-primary {
+      background: linear-gradient(#eef9ff,#cfe8f6);
+      border-color: #5c8db2;
+      font-weight: 700;
+    }
+    .cad-toolbar .cad-status {
+      min-width: 165px;
+      font-size: 11px;
+      color: #45515c;
+      white-space: nowrap;
+    }
+    .cad-toolbar .cad-status.dirty { color: #9a5a00; font-weight: 700; }
+    .cad-toolbar .cad-status.error { color: #a11616; font-weight: 700; }
     .cad-canvas {
-      position: absolute; left: 0; right: 0; top: 42px; bottom: 0;
+      position: absolute; left: 0; right: 0; top: 68px; bottom: 0;
       overflow: hidden; background: #f6f6f6;
       display: flex; align-items: center; justify-content: center;
     }
-    .cad-canvas svg { width: 100%; height: 100%; display: block; }
+    .cad-canvas svg { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; }
+    .cad-edit-line { cursor: pointer; }
+    .cad-edit-line.selected {
+      stroke-width: 5.4 !important;
+      opacity: 1 !important;
+    }
+    .cad-handle {
+      fill: #ffffff;
+      stroke: #111111;
+      stroke-width: 2;
+      vector-effect: non-scaling-stroke;
+      cursor: grab;
+      touch-action: none;
+    }
+    .cad-handle:active { cursor: grabbing; }
+    .cad-snap-marker {
+      fill: none;
+      stroke: #2e7d32;
+      stroke-width: 2;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
     .cad-empty {
       max-width: 560px; padding: 22px; text-align: center; color: #666;
       border: 1px solid #bbb; background: #fff;
@@ -360,6 +395,9 @@
     .cad-swatch.window { background: #00897b; }
 
     @media (max-width: 900px) {
+      .cad-toolbar { height: 104px; }
+      .cad-canvas { top: 104px; }
+      .cad-toolbar .cad-spacer { display: none; }
       .raster-ai-body {
         grid-template-columns: 1fr;
         overflow: auto;
@@ -385,7 +423,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.6</div>
+      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.7</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -420,12 +458,18 @@
         <div class="cad-toolbar">
           <label><input id="cadShowClean" type="checkbox" checked /> Pianta pulita</label>
           <label><input id="cadShowInput" type="checkbox" checked /> Disegno input</label>
+          <label><input id="cadSnap" type="checkbox" checked /> Snap</label>
+          <button id="cadUndo" type="button" disabled title="Annulla ultima modifica">↶ Undo</button>
+          <button id="cadRedo" type="button" disabled title="Ripristina modifica annullata">↷ Redo</button>
+          <button id="cadDelete" type="button" disabled title="Elimina la parete selezionata">Elimina</button>
+          <button id="cadRegenerate" class="cad-primary" type="button" disabled>Rigenera pianta</button>
+          <span id="cadEditStatus" class="cad-status">Seleziona una parete E/W</span>
           <span class="cad-spacer"></span>
           <button id="cadExportArchitectural" type="button" disabled title="Disponibile dopo la generazione della pianta">Esporta pianta CAD (.DXF)</button>
           <button id="cadReturnModel" type="button">Ritorna al modello</button>
         </div>
         <div id="cadCanvas" class="cad-canvas">
-          <div class="cad-empty">Genera prima una pianta da raster con AI. Qui verranno sovrapposti la pianta ripulita e il DisegnoInput.svg.</div>
+          <div class="cad-empty">Genera prima una pianta da raster con AI. Qui potrai correggere direttamente le pareti E/W del DisegnoInput.svg.</div>
         </div>
         <div class="cad-legend" aria-label="Legenda">
           <span><i class="cad-swatch"></i> Pianta pulita · E ferme · W ±7,5 cm · esterno +40 cm</span>
