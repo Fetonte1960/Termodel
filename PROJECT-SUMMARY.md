@@ -1146,6 +1146,171 @@ e le relative copie pubblicate in `docs/termodel-ui-demo/` devono restare alline
 
 ---
 
+## 12.4 Flusso utente tipico di Termodel Web
+
+Questo è il **percorso utente di riferimento** che deve guidare la UX e le prossime implementazioni del frontend.
+
+### 1. Ingresso — modello dimostrativo proposto di default
+
+Quando l'utente apre Termodel Web deve vedere subito un **modello Termodel reale di esempio** già caricato nel viewer 3D.
+
+Scopo:
+
+- mostrare immediatamente cosa può fare Termodel;
+- permettere di esplorare viewer, menu e struttura dell'applicazione;
+- non costringere l'utente a creare un progetto prima di capire il prodotto.
+
+Il modello proposto di default è quindi una **demo esplorabile**, non ancora il progetto personale dell'utente.
+
+### 2. Esplorazione degli archivi — invito a creare il proprio progetto
+
+Se l'utente, mentre sta ancora guardando il modello demo, prova ad accedere agli archivi tecnici, Termodel Web deve spiegare che gli archivi appartengono a un **progetto Termodel strutturato personale**.
+
+Non deve essere un vicolo cieco.
+
+Il messaggio deve accompagnare l'utente verso i percorsi base disponibili:
+
+```text
+Vuoi lavorare su un tuo progetto?
+
+A — Disegna/modifica nel CAD Web
+B — Istruisci AI
+C — Importa da AI
+```
+
+La demo deve quindi servire come ingresso e scoperta, mentre l'accesso ai dati editabili porta naturalmente alla creazione del progetto personale.
+
+### 3. Edita nel CAD — punto di ingresso operativo
+
+Il comando **Edita nel CAD** deve diventare uno dei principali punti di ingresso alla creazione/modifica del progetto.
+
+Da qui l'utente deve poter scegliere almeno due percorsi:
+
+```text
+EDITA NEL CAD
+    │
+    ├── DISEGNO DA ZERO
+    │      ↓
+    │   progetto vuoto server
+    │      ↓
+    │   CAD/BIM 2D Web
+    │
+    └── AI
+           ├── Istruisci AI
+           └── Importa da AI
+                  ↓
+              progetto strutturato
+                  ↓
+              CAD/BIM 2D Web
+```
+
+Il CAD non deve essere soltanto un editor di correzione successivo all'AI: deve poter diventare anche il punto di partenza manuale per un progetto nuovo.
+
+### 4. Percorso AI
+
+Nel percorso AI:
+
+```text
+Istruisci AI
+      ↓
+utente lavora con l'AI
+      ↓
+AI genera/modifica la pianta
+      ↓
+Importa da AI
+      ↓
+se manca un progetto strutturato
+      ↓
+POST /api/projects/new
+      ↓
+progetto Termodel strutturato
+      ↓
+archivi + CAD attivi
+```
+
+Questo flusso è già stato verificato con successo nella v0.24.
+
+### 5. Editing base del progetto
+
+Una volta esistente il progetto strutturato, l'utente lavora sulle due viste complementari:
+
+```text
+PROGETTO TERMODEL
+      │
+      ├── editing dati
+      │      ↓
+      │   archivi / form / griglie
+      │
+      └── editing grafico
+             ↓
+          CAD/BIM 2D
+```
+
+Archivi e disegno devono convergere sullo stesso stato progetto.
+
+Finestre, ponti termici e locali devono progressivamente essere gestiti come simboli CAD collegati ai dati del progetto secondo la sezione 12.3.
+
+### 6. Modello coerente — accesso alle funzioni avanzate server
+
+Quando geometria, simboli e dati del progetto sono coerenti, Termodel Web deve poter interrogare **Termodel.Core / Termodel.WebService** per le funzioni avanzate che non devono essere duplicate nel browser.
+
+Direzione prevista:
+
+```text
+progetto Web coerente
+        ↓
+Termodel.WebService / Core
+        │
+        ├── calcoli Termodel
+        ├── generazione / aggiornamento modello 3D completo
+        ├── elaborazioni BIM
+        ├── IFC
+        ├── XML nazionale
+        └── altre funzioni tecniche portate dal desktop
+        ↓
+risultato restituito a Termodel Web
+```
+
+Il frontend non deve simulare come realmente disponibili funzioni server che il Core non espone ancora.
+
+### Verifica dello stato reale alla v0.24
+
+Confronto fra flusso desiderato e programma attuale:
+
+| Passaggio | Stato v0.24 | Nota |
+| --- | --- | --- |
+| Apertura con modello demo 3D | **REALIZZATO** | `loadModel()` carica automaticamente `TermodelWebModel.json` |
+| Esplorazione del modello demo | **REALIZZATO** | viewer e menu dimostrativi disponibili |
+| Accesso archivi senza progetto → guida alla creazione | **PARZIALE** | esiste la logica di blocco/avviso, ma i pulsanti `data-archive` vengono disabilitati e quindi l'utente non riceve ancora un vero percorso guidato |
+| `Istruisci AI` | **REALIZZATO** | copia il prompt di collegamento e mostra la procedura |
+| `Importa da AI` | **REALIZZATO** | import SVG/progetto completo |
+| AI → progetto vuoto server → progetto strutturato | **REALIZZATO E VERIFICATO** | v0.24, archivi attivati correttamente dopo l'importazione |
+| Editing archivi | **REALIZZATO IN FORMA LOCALE** | form/griglie/CRUD in memoria; persistenza unificata ancora da completare |
+| `Edita nel CAD` su progetto strutturato | **REALIZZATO** | modifica pareti E/W, snap, undo/redo, nuova linea, rigenerazione |
+| CAD come partenza di un progetto da zero | **NON ANCORA REALIZZATO** | oggi il CAD richiede un progetto strutturato/SVG esistente; `Nuova linea` non crea da sola il primo documento |
+| `Edita nel CAD` come hub con scelta “da zero / AI” | **NON ANCORA REALIZZATO** | attualmente il comando è disabilitato senza progetto strutturato |
+| Simboli FIN/PON/LOC editabili e collegati agli archivi | **DA SVILUPPARE** | definito il flusso nella sezione 12.3 |
+| Calcoli server reali | **NON ANCORA REALIZZATI** | pagina Calcoli è esplicitamente dimostrativa |
+| Aggiornamento modello 3D completo dal server | **NON ANCORA REALIZZATO** | il WebService documentato espone oggi solo gli endpoint base; `Aggiorna modello` non è ancora presente |
+| BIM/IFC via server | **SOLO DIREZIONE PREVISTA / UI DIMOSTRATIVA** | esistono voci di menu e output pianificati, non un flusso server completo verificato |
+
+### Conseguenza per la UX
+
+Il prossimo frontend non deve aggiungere funzioni isolate senza considerare questo percorso.
+
+Priorità UX:
+
+1. rendere gli archivi demo **cliccabili come invito**, invece di lasciarli semplicemente disabilitati;
+2. trasformare **Edita nel CAD** in un punto di ingresso che consenta:
+   - progetto/disegno da zero;
+   - percorso AI;
+3. creare automaticamente il progetto vuoto server anche per il percorso CAD da zero;
+4. completare FIN/PON/LOC e collegamento disegno ↔ archivi;
+5. introdurre uno stato di **progetto coerente/pronto**;
+6. soltanto allora collegare progressivamente le funzioni avanzate Core/WebService.
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo ed essere trasmesso anche tramite normale copia-incolla in una chat.
@@ -1328,12 +1493,16 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.24 presente su `main`; ultima esposizione pubblica verificata: v0.23.
+- v0.24 presente su `main`; il flusso pubblico v0.24 AI → progetto strutturato → archivi è stato verificato manualmente con successo dall'utente.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
-Il prossimo lavoro frontend, salvo nuove istruzioni dell'utente, è:
+Il prossimo lavoro frontend deve rispettare il flusso utente della sezione 12.4.
 
-> implementare nel CAD Web il parser/editor dei simboli `FIN/PON/LOC` e il collegamento tra le istanze grafiche e le tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente del simbolo e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`.
+Priorità immediate:
+
+> 1. trasformare il blocco Archivi senza progetto in un invito guidato alla creazione del progetto personale;  
+> 2. rendere `Edita nel CAD` un ingresso utilizzabile anche per progetto da zero / percorso AI;  
+> 3. implementare nel CAD il parser/editor dei simboli `FIN/PON/LOC` e il collegamento alle tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`.
 
 Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.
