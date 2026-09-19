@@ -521,6 +521,14 @@ Frontend principale:
 docs/termodel-ui-demo/
 ```
 
+Indirizzo pubblico di esposizione del frontend:
+
+```text
+https://www.termodel.it/termodel-ui-demo/
+```
+
+Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel Web pubblicato.
+
 Versione corrente verificata:
 
 ```text
