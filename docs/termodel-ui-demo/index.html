@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.9 — Demo interattiva</title>
+  <title>Termodel Web v0.10 — Demo interattiva</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -363,7 +363,7 @@
     .cad-toolbar .cad-status.dirty { color: #9a5a00; font-weight: 700; }
     .cad-toolbar .cad-status.error { color: #a11616; font-weight: 700; }
     .cad-canvas {
-      position: absolute; left: 0; right: 0; top: 68px; bottom: 0;
+      position: absolute; left: 0; right: 310px; top: 68px; bottom: 0;
       overflow: hidden; background: #f6f6f6;
       display: flex; align-items: center; justify-content: center;
     }
@@ -404,6 +404,104 @@
       vector-effect: non-scaling-stroke;
       pointer-events: none;
     }
+    .cad-properties {
+      position: absolute;
+      top: 68px;
+      right: 0;
+      bottom: 0;
+      width: 310px;
+      z-index: 5;
+      overflow: auto;
+      background: #e9e9e9;
+      border-left: 1px solid #9a9a9a;
+      color: #222;
+    }
+    .cad-properties-head {
+      padding: 8px 10px;
+      background: #d8d8d8;
+      border-bottom: 1px solid #aaa;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .cad-properties-empty {
+      margin: 12px;
+      padding: 12px;
+      background: #f7f7f7;
+      border: 1px solid #bbb;
+      color: #666;
+      line-height: 1.4;
+    }
+    .cad-properties-body { padding: 8px 9px 12px; }
+    .cad-properties-section {
+      margin: 0 0 10px;
+      border: 1px solid #aaa;
+      background: #f3f3f3;
+    }
+    .cad-properties-section-title {
+      padding: 5px 7px;
+      background: #dedede;
+      border-bottom: 1px solid #aaa;
+      font-weight: 700;
+    }
+    .cad-prop-row {
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr);
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+    }
+    .cad-prop-row label {
+      color: #333;
+      white-space: nowrap;
+    }
+    .cad-prop-row input,
+    .cad-prop-row select {
+      width: 100%;
+      min-width: 0;
+      height: 26px;
+      border: 1px solid #999;
+      background: #fff;
+      padding: 2px 5px;
+      font: inherit;
+    }
+    .cad-prop-row input[readonly] {
+      background: #ededed;
+      color: #555;
+    }
+    .cad-prop-color {
+      display: grid;
+      grid-template-columns: 1fr 28px;
+      gap: 5px;
+      align-items: center;
+    }
+    .cad-prop-swatch {
+      width: 28px;
+      height: 22px;
+      border: 1px solid #777;
+      background: #ccc;
+    }
+    .cad-prop-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      padding: 7px 6px 6px;
+      border-top: 1px solid #ccc;
+    }
+    .cad-prop-actions button {
+      height: 27px;
+      border: 1px solid #888;
+      background: linear-gradient(#fff,#dedede);
+      padding: 2px 10px;
+    }
+    .cad-properties-note {
+      margin: 0 6px 7px;
+      padding: 6px;
+      border: 1px solid #d0c27c;
+      background: #fff8cf;
+      color: #62551a;
+      line-height: 1.35;
+      font-size: 11px;
+    }
     .cad-empty {
       max-width: 560px; padding: 22px; text-align: center; color: #666;
       border: 1px solid #bbb; background: #fff;
@@ -423,7 +521,8 @@
 
     @media (max-width: 900px) {
       .cad-toolbar { height: 104px; }
-      .cad-canvas { top: 104px; }
+      .cad-canvas { top: 104px; right: 280px; }
+      .cad-properties { top: 104px; width: 280px; }
       .cad-toolbar .cad-spacer { display: none; }
       .raster-ai-body {
         grid-template-columns: 1fr;
@@ -450,7 +549,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.9</div>
+      <div class="title-text">Termodel 3.2 — Demo interattiva Web — GeneraPianta Web Lite v0.10</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -503,6 +602,67 @@
         <div id="cadCanvas" class="cad-canvas">
           <div class="cad-empty">Genera prima una pianta da raster con AI. Qui potrai correggere direttamente le pareti E/W del DisegnoInput.svg.</div>
         </div>
+
+        <aside id="cadPropertiesPanel" class="cad-properties" aria-label="Proprietà entità CAD">
+          <div class="cad-properties-head">Proprietà entità</div>
+          <div id="cadPropertiesEmpty" class="cad-properties-empty">
+            Seleziona una parete E/W per visualizzare le proprietà Termodel.
+          </div>
+          <div id="cadPropertiesBody" class="cad-properties-body" hidden>
+            <section class="cad-properties-section">
+              <div class="cad-properties-section-title">Dati CAD</div>
+              <div class="cad-prop-row">
+                <label for="cadPropEntity">Entità:</label>
+                <input id="cadPropEntity" type="text" readonly />
+              </div>
+              <div class="cad-prop-row">
+                <label for="cadPropPiano">Piano:</label>
+                <input id="cadPropPiano" type="text" placeholder="da progetto" />
+              </div>
+              <div class="cad-prop-row">
+                <label for="cadPropLayer">Layer:</label>
+                <input id="cadPropLayer" type="text" readonly value="calpestabile" />
+              </div>
+            </section>
+
+            <section class="cad-properties-section">
+              <div class="cad-properties-section-title">Edificio · Pareti</div>
+              <div class="cad-prop-row">
+                <label for="cadPropTipoParete">Tipo parete:</label>
+                <input id="cadPropTipoParete" type="text" placeholder="da archivio Pareti" />
+              </div>
+              <div class="cad-prop-row">
+                <label for="cadPropConfineParete">Confine parete:</label>
+                <input id="cadPropConfineParete" type="text" placeholder="da archivio Confini" />
+              </div>
+              <div class="cad-prop-row">
+                <label for="cadPropTipoLinea">Tipo linea:</label>
+                <input id="cadPropTipoLinea" type="text" readonly />
+              </div>
+              <div class="cad-prop-row">
+                <label for="cadPropColore">Colore:</label>
+                <div class="cad-prop-color">
+                  <input id="cadPropColore" type="text" readonly />
+                  <i id="cadPropColorSwatch" class="cad-prop-swatch" aria-hidden="true"></i>
+                </div>
+              </div>
+            </section>
+
+            <section class="cad-properties-section">
+              <div class="cad-properties-section-title">Geometria CAD</div>
+              <div class="cad-prop-row"><label>X1 / Y1:</label><input id="cadPropStart" type="text" readonly /></div>
+              <div class="cad-prop-row"><label>X2 / Y2:</label><input id="cadPropEnd" type="text" readonly /></div>
+              <div class="cad-prop-row"><label>Lunghezza:</label><input id="cadPropLength" type="text" readonly /></div>
+              <div class="cad-prop-actions">
+                <button id="cadPropConfirm" type="button">Conferma</button>
+              </div>
+              <div class="cad-properties-note">
+                Prima versione ricavata da <code>Grid_DatiCad</code> / <code>Grid_pareti</code> del desktop.
+                Gli elenchi degli archivi Pareti e Confini saranno collegati successivamente al Core/Server.
+              </div>
+            </section>
+          </div>
+        </aside>
         <div class="cad-legend" aria-label="Legenda">
           <span><i class="cad-swatch"></i> Pianta pulita · E ferme · W ±7,5 cm · esterno +40 cm</span>
           <span><i class="cad-swatch external"></i> E esterne</span>
