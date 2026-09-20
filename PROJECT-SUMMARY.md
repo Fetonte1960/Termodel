@@ -604,13 +604,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.32
+Termodel Web v0.33
 ```
 
-Commit frontend di riferimento per la v0.32:
+Commit frontend di riferimento per la v0.33:
 
 ```text
-50eec1ee3e291c11f31aa17d3b01a8d8921f6361  Increase North symbol clearance
+5eded8708180be7b500f012d14778c2655f43c49  Enable CAD symbol insertion on current layer
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -619,7 +619,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.30 è stata osservata direttamente su `https://www.termodel.it/termodel-ui-demo/` il 2026-09-20 con simbolo Nord visibile nel CAD e controllo laterale operativo. La v0.32 è su `main`; la rifinitura di distanza del Nord non va considerata pubblicamente verificata finché non compare sul sito.
+La v0.30 è stata osservata direttamente su `https://www.termodel.it/termodel-ui-demo/` il 2026-09-20 con simbolo Nord visibile nel CAD e controllo laterale operativo. La v0.33 è su `main`; le revisioni successive non vanno considerate pubblicamente verificate finché non compaiono sul sito.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2062,9 +2062,66 @@ La prossima evoluzione del CAD 2D deve introdurre un **parser/editor generico de
 
 Questa logica deve essere condivisa e non implementata con codice separato e incompatibile per ogni singolo simbolo.
 
+### Implementazione v0.33 — inserimento simboli
+
+La v0.33 attiva nella toolbar CAD i primi comandi di inserimento:
+
+```text
+＋ Allinea
+＋ Porta/Finestra
+＋ Ponte
+＋ Locale
+```
+
+Il comando `Porta/Finestra` segue la filosofia desktop: entrambi sono istanze del blocco `FIN`; il campo `PORTA` nei DatiCad distingue la struttura trasparente dall'eventuale porta/superficie opaca.
+
+Flusso operativo:
+
+```text
+Piano corrente
+    ↓
+Piani.Nome
+    ↓
+Piani.LayerCad
+    ↓
+selezione comando simbolo
+    ↓
+clic nel CAD
+    ↓
+simbolo inserito nello SVG
+    ↓
+data-termodel-piano = Piano corrente
+data-termodel-layer = LayerCad corrente
+```
+
+Regole implementate:
+
+- il layer non viene chiesto all'utente: viene derivato da `Piani.LayerCad` del piano corrente;
+- anche le nuove pareti E/W ricevono ora `data-termodel-layer` derivato;
+- le entità legacy normalizzate dal CAD ricevono, quando disponibile, il layer coerente con il proprio `data-termodel-piano`;
+- `Allinea` crea un simbolo `BLOCCO,ALLINEA` senza attributi tecnici;
+- `Porta/Finestra` crea un `BLOCCO,FIN` usando i valori correnti di `DatiCad`;
+- le dimensioni FIN provenienti da DatiCad desktop in metri vengono consolidate nello SVG in centimetri, coerentemente con il contratto AI corrente;
+- `Ponte` crea un `BLOCCO,PON` con i valori correnti di `DatiCad`;
+- `Locale` crea un `BLOCCO,LOC` con i valori correnti di `DatiCad`;
+- FIN e PON vengono inseriti soltanto vicino a una parete e proiettati sulla parete del piano corrente;
+- Allinea e LOC vengono inseriti nel punto scelto;
+- l'inserimento partecipa a undo/redo;
+- il rendering CAD riconosce ora i simboli dal contenuto `BLOCCO,<tipo>`, non dal solo prefisso dell'ID.
+
+Restano da sviluppare nella sezione 12.7:
+
+- selezione diretta dei simboli nel canvas;
+- trascinamento/spostamento;
+- snap durante lo spostamento di FIN/PON;
+- vincolo LOC dentro il locale;
+- pannello laterale contestuale per FIN/PON/LOC;
+- modifica e consolidamento degli attributi dopo la selezione;
+- eliminazione del simbolo selezionato.
+
 ### Stato
 
-**SPECIFICA REGISTRATA — IMPLEMENTAZIONE DA SVILUPPARE.**
+**PARZIALMENTE IMPLEMENTATO IN v0.33 — INSERIMENTO ATTIVO; EDITING CONTESTUALE DA COMPLETARE.**
 
 ---
 
@@ -2240,7 +2297,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.32.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.33.**
 
 Stato operativo corrente:
 
@@ -2250,7 +2307,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.32 presente su `main`;
+- v0.33 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2259,6 +2316,7 @@ Stato operativo corrente:
 - v0.30 introduce il simbolo Nord di progetto: persistente nello SVG, unico tra i piani, modificabile dal CAD e visualizzato automaticamente nel 3D con freccia o `N ?`;
 - v0.31 rifinisce la presentazione del Nord: simbolo in pianta più discreto e distanziato, `?` laterale nascosto quando definito, freccia della bussola corretta verso l'esterno;
 - v0.32 aumenta ulteriormente il margine del simbolo Nord rispetto alla geometria, spostandolo verso il bordo esterno alto-destra.
+- v0.33 attiva i pulsanti di inserimento simboli CAD `Allinea / Porta-Finestra / Ponte / Locale`, usando automaticamente Piano corrente e `Piani.LayerCad`, con FIN/PON agganciati alla parete.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2270,7 +2328,7 @@ Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
 > 2. verificare manualmente la v0.32: simbolo Nord in pianta sufficientemente distanziato dalla geometria → `?` laterale assente quando l'orientamento è definito → freccia della bussola rivolta verso l'esterno;  
-> 3. implementare la sezione 12.7: parser/editor generico dei simboli SVG, selezione e trascinamento, pannello laterale contestuale, FIN/PON/LOC multipiano collegati agli archivi e simbolo di allineamento spostabile senza attributi;  
+> 3. verificare manualmente la v0.33: inserimento Allinea / Porta-Finestra / Ponte / Locale sul piano corrente, LayerCad corretto e snap FIN/PON sulla parete; quindi completare la sezione 12.7 con selezione, trascinamento e pannello laterale contestuale dei simboli;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
