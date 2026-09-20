@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`a398b94138604e1601c22a68c641aff4d5bd503d` — `Add repeat last CAD command v0.52`  
+`c9372b4f655f3278a5df90dcf97be33e467d7363` — `Split Snap into Near and Endpoint v0.53`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -642,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.52
+Termodel Web v0.53
 ```
 
-Commit frontend di riferimento per la v0.52:
+Commit frontend di riferimento per la v0.53:
 
 ```text
-a398b94138604e1601c22a68c641aff4d5bd503d  Add repeat last CAD command v0.52
+c9372b4f655f3278a5df90dcf97be33e467d7363  Split Snap into Near and Endpoint v0.53
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -657,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.52 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.53 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2988,6 +2988,54 @@ Add repeat last CAD command v0.52
 
 ---
 
+## 12.20 Snap Vicino / Estremo alternativi — v0.53
+
+La v0.53 separa lo Snap CAD in due modalità mutuamente esclusive:
+
+```text
+Vicino   ← default
+Estremo
+```
+
+Nel menu `Snap` i due controlli sono radio button con lo stesso gruppo, quindi una sola modalità può essere attiva.
+
+Comportamento:
+
+- `Vicino`: aggancia al punto geometricamente più vicino lungo il tratto di parete entro la distanza di Snap;
+- `Estremo`: considera esclusivamente i due estremi delle pareti;
+- `Orto` resta un controllo indipendente e continua a essere attivo di default;
+- il vecchio checkbox generale `Attiva Snap` viene sostituito dalle due modalità alternative;
+- lo Snap continua a restituire l'ID della parete bersaglio, quindi la conclusione automatica della multilinea introdotta in v0.51 funziona con entrambe le modalità.
+
+Il feedback testuale distingue chiaramente:
+
+```text
+SNAP VICINO
+SNAP ESTREMO
+```
+
+La distinzione viene mostrata durante il primo punto, i punti successivi, la modifica degli estremi e la chiusura automatica per aggancio ad altra parete.
+
+File modificati:
+
+```text
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/app.js
+```
+
+Commit:
+
+```text
+c9372b4f655f3278a5df90dcf97be33e467d7363
+Split Snap into Near and Endpoint v0.53
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.53 — DA VERIFICARE MANUALMENTE NEL BROWSER.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -3160,7 +3208,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.52.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.53.**
 
 Stato operativo corrente:
 
@@ -3170,7 +3218,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.52 presente su `main`;
+- v0.53 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -3199,6 +3247,7 @@ Stato operativo corrente:
 - v0.50 imposta `Orto` attivo di default all'apertura del CAD, mantenendo la possibilità di disattivarlo manualmente.
 - v0.51 termina automaticamente la multilinea quando il punto finale del nuovo segmento fa Snap su una parete diversa dall'ultima parete della sequenza; lo Snap ora espone anche l'ID della parete bersaglio.
 - v0.52 aggiunge nel menu del tasto destro, quando il CAD è neutro, `Ripeti ultimo comando`; memorizza Nuova parete e i quattro comandi simbolo e li riattiva con lo stato corrente.
+- v0.53 divide lo Snap in `Vicino` e `Estremo` come modalità radio alternative, con `Vicino` default; Orto resta indipendente e attivo di default, mentre lo stop multilinea su parete bersaglio continua a funzionare in entrambe le modalità.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -3209,9 +3258,9 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.52: a CAD appena aperto usare tasto destro e verificare `Ripeti ultimo comando` disabilitato; eseguire `Nuova parete`, interromperla e usare tasto destro → Ripeti deve riattivare Parete; ripetere almeno con Porta/Finestra e Locale. Verificare inoltre che durante una sequenza pareti il menu resti `Chiudi / Chiudi ortogonale / Interrompi sequenza` e che la v0.51 continui a terminare la multilinea su Snap ad altra parete;  
+> 2. verificare manualmente la v0.53: aprire il menu `Snap` e verificare `Vicino` selezionato di default e `Estremo` alternativo; in `Vicino` provare l'aggancio a metà parete, in `Estremo` verificare che lo stesso punto intermedio non agganci e che siano agganciabili solo i capi. Controllare i messaggi `SNAP VICINO / SNAP ESTREMO`, Orto e lo stop multilinea su altra parete;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `a398b94138604e1601c22a68c641aff4d5bd503d`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `c9372b4f655f3278a5df90dcf97be33e467d7363`.
