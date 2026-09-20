@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.40 — sfondi CAD per piano</title>
+  <title>Termodel Web v0.41 — calibrazione sfondo CAD</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -837,7 +837,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.40</div>
+      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.41</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -872,6 +872,7 @@
         <div class="cad-toolbar">
           <button id="cadAddBackground" type="button" title="Importa uno sfondo raster o SVG per il piano corrente">＋ Aggiungi sfondo</button>
           <input id="cadBackgroundFile" type="file" accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden />
+          <label><input id="cadShowBackground" type="checkbox" checked /> Sfondo</label>
           <label><input id="cadShowInput" type="checkbox" checked /> Disegno input</label>
           <label><input id="cadSnap" type="checkbox" checked /> Snap</label>
           <span class="cad-toolbar-plane" title="Piano corrente e archivio Piani">
@@ -989,10 +990,25 @@
                 Il Piano corrente filtra la vista; le nuove entità ereditano automaticamente il piano. Layer, colore e tipo linea restano correlati readonly come nel desktop.
               </div>
             </section>
+
+            <section id="cadBackgroundCalibrationSection" class="cad-properties-section" hidden>
+              <div class="cad-properties-section-title">Calibrazione sfondo</div>
+              <div id="cadCalibrationReference" class="cad-properties-note"></div>
+              <div class="cad-prop-row">
+                <label for="cadCalibrationRealMeters">Misura reale (m):</label>
+                <input id="cadCalibrationRealMeters" type="number" min="0.001" step="0.001" inputmode="decimal" />
+              </div>
+              <div class="cad-prop-actions">
+                <button id="cadCalibrateBackground" type="button">Calibra</button>
+              </div>
+              <div id="cadCalibrationNote" class="cad-properties-note">
+                Seleziona una parete orizzontale o verticale come riferimento.
+              </div>
+            </section>
           </div>
         </aside>
         <div class="cad-legend" aria-label="Legenda">
-          <span><i class="cad-swatch"></i> Pianta pulita · E ferme · W ±7,5 cm · esterno +40 cm</span>
+          <span><i class="cad-swatch"></i> Sfondo importato · riferimento grafico del piano corrente</span>
           <span><i class="cad-swatch external"></i> E esterne</span>
           <span><i class="cad-swatch internal"></i> W interne</span>
           <span><i class="cad-swatch opening"></i> P porte</span>
@@ -1205,6 +1221,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.40"></script>
+  <script type="module" src="./app.js?v=0.41"></script>
 </body>
 </html>

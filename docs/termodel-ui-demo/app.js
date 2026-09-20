@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.40';
+} from './archivio-web.js?v=0.41';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -22,6 +22,7 @@ const cadPage = document.getElementById('cadPage');
 const cadCanvas = document.getElementById('cadCanvas');
 const cadAddBackground = document.getElementById('cadAddBackground');
 const cadBackgroundFile = document.getElementById('cadBackgroundFile');
+const cadShowBackground = document.getElementById('cadShowBackground');
 const cadShowInput = document.getElementById('cadShowInput');
 const cadReturnModel = document.getElementById('cadReturnModel');
 const cadExportArchitectural = document.getElementById('cadExportArchitectural');
@@ -52,6 +53,11 @@ const cadPropLength = document.getElementById('cadPropLength');
 const cadPropConfirm = document.getElementById('cadPropConfirm');
 const cadWallPropertiesSection = document.getElementById('cadWallPropertiesSection');
 const cadWallGeometrySection = document.getElementById('cadWallGeometrySection');
+const cadBackgroundCalibrationSection = document.getElementById('cadBackgroundCalibrationSection');
+const cadCalibrationReference = document.getElementById('cadCalibrationReference');
+const cadCalibrationRealMeters = document.getElementById('cadCalibrationRealMeters');
+const cadCalibrateBackground = document.getElementById('cadCalibrateBackground');
+const cadCalibrationNote = document.getElementById('cadCalibrationNote');
 const cadSymbolPropertiesSection = document.getElementById('cadSymbolPropertiesSection');
 const cadSymbolSectionTitle = document.getElementById('cadSymbolSectionTitle');
 const cadSymbolPosition = document.getElementById('cadSymbolPosition');
@@ -121,6 +127,7 @@ let cadDragState = null;
 let cadViewportBase = null;
 let cadViewport = null;
 let cadPanState = null;
+let cadCalibrationLineId = '';
 let cadToolMode = 'select';
 let cadNewLineState = null;
 let cadSymbolInsertType = '';
@@ -133,6 +140,7 @@ let cadCleanPlanByPlane = new Map();
 let cadGeneratedPlanByPlane = new Map();
 const CAD_SNAP_DISTANCE = 12;
 const CAD_JOIN_EPSILON = 0.05;
+const CAD_CALIBRATION_ORTHO_EPSILON = 0.05;
 
 const COMPONENTI = [
   ['Parete', true],
@@ -3239,6 +3247,245 @@ function cadSetLinePoint(line, endpoint, x, y) {
   line.setAttribute(`y${suffix}`, Number(y).toFixed(3).replace(/\.000$/, ''));
 }
 
+function cadLineCalibrationAxis(line) {
+  if (!line) return '';
+  const [x1, y1] = cadLinePoint(line, 1);
+  const [x2, y2] = cadLinePoint(line, 2);
+  if (![x1, y1, x2, y2].every(Number.isFinite)) return '';
+
+  if (Math.abs(y2 - y1) <= CAD_CALIBRATION_ORTHO_EPSILON && Math.abs(x2 - x1) > CAD_CALIBRATION_ORTHO_EPSILON)
+    return 'horizontal';
+  if (Math.abs(x2 - x1) <= CAD_CALIBRATION_ORTHO_EPSILON && Math.abs(y2 - y1) > CAD_CALIBRATION_ORTHO_EPSILON)
+    return 'vertical';
+  return '';
+}
+
+function cadLineLengthCm(line) {
+  if (!line) return 0;
+  const [x1, y1] = cadLinePoint(line, 1);
+  const [x2, y2] = cadLinePoint(line, 2);
+  return Math.hypot(x2 - x1, y2 - y1);
+}
+
+function cadScaleCoordinate(value, pivot, factor) {
+  const number = Number(value);
+  return Number.isFinite(number) ? pivot + (number - pivot) * factor : number;
+}
+
+function cadSetSvgNumber(element, attribute, value) {
+  if (!element || !Number.isFinite(value)) return;
+  element.setAttribute(attribute, Number(value).toFixed(3).replace(/\.000$/, ''));
+}
+
+function cadScaleCurrentPlaneGeometry(factor, pivot) {
+  const plane = cadCurrentPlane();
+  if (!plane || !Number.isFinite(factor) || factor <= 0 || !Array.isArray(pivot)) return;
+
+  cadPlaneScopedEntities().forEach(element => {
+    if (cadEntityPlane(element) !== plane) return;
+
+    if (element.localName === 'line') {
+      [1, 2].forEach(endpoint => {
+        const [x, y] = cadLinePoint(element, endpoint);
+        cadSetLinePoint(
+          element,
+          endpoint,
+          cadScaleCoordinate(x, pivot[0], factor),
+          cadScaleCoordinate(y, pivot[1], factor)
+        );
+      });
+      return;
+    }
+
+    // I simboli mantengono gli attributi tecnici ma seguono geometricamente
+    // la nuova scala del piano.
+    if (element.localName === 'text') {
+      const x = Number(element.getAttribute('x'));
+      const y = Number(element.getAttribute('y'));
+      const nextX = cadScaleCoordinate(x, pivot[0], factor);
+      const nextY = cadScaleCoordinate(y, pivot[1], factor);
+      cadSetSvgNumber(element, 'x', nextX);
+      cadSetSvgNumber(element, 'y', nextY);
+
+      Array.from(element.children).forEach(child => {
+        if (child.localName !== 'tspan') return;
+        if (child.hasAttribute('x'))
+          cadSetSvgNumber(child, 'x', cadScaleCoordinate(Number(child.getAttribute('x')), pivot[0], factor));
+        if (child.hasAttribute('y'))
+          cadSetSvgNumber(child, 'y', cadScaleCoordinate(Number(child.getAttribute('y')), pivot[1], factor));
+      });
+    }
+  });
+
+  const background = cadPlaneBackground(cadWorkingDoc, plane);
+  if (background) {
+    const x = Number(background.getAttribute('x'));
+    const y = Number(background.getAttribute('y'));
+    const width = Number(background.getAttribute('width'));
+    const height = Number(background.getAttribute('height'));
+
+    cadSetSvgNumber(background, 'x', cadScaleCoordinate(x, pivot[0], factor));
+    cadSetSvgNumber(background, 'y', cadScaleCoordinate(y, pivot[1], factor));
+    if (Number.isFinite(width)) cadSetSvgNumber(background, 'width', width * factor);
+    if (Number.isFinite(height)) cadSetSvgNumber(background, 'height', height * factor);
+  }
+}
+
+function cadGeometryViewBox(doc = cadWorkingDoc, planeName = '') {
+  if (!doc) return null;
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+
+  const addPoint = (x, y) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+  };
+
+  cadPlaneScopedEntities(doc).forEach(element => {
+    if (planeName && cadEntityPlane(element) !== planeName) return;
+
+    if (element.localName === 'line') {
+      addPoint(Number(element.getAttribute('x1')), Number(element.getAttribute('y1')));
+      addPoint(Number(element.getAttribute('x2')), Number(element.getAttribute('y2')));
+    } else if (element.localName === 'text') {
+      addPoint(Number(element.getAttribute('x')), Number(element.getAttribute('y')));
+    }
+  });
+
+  const backgroundGroup = cadBackgroundContainer(doc, false);
+  Array.from(backgroundGroup?.children || []).forEach(image => {
+    if (image.localName !== 'image') return;
+    if (planeName && cadText(image.getAttribute('data-termodel-piano')) !== planeName) return;
+    const x = Number(image.getAttribute('x'));
+    const y = Number(image.getAttribute('y'));
+    const width = Number(image.getAttribute('width'));
+    const height = Number(image.getAttribute('height'));
+    addPoint(x, y);
+    addPoint(x + width, y + height);
+  });
+
+  if (![minX, minY, maxX, maxY].every(Number.isFinite)) return null;
+
+  let width = maxX - minX;
+  let height = maxY - minY;
+  const fallback = cadParseViewBox(doc.documentElement.getAttribute('viewBox'));
+  if (width < 1) width = Math.max(100, fallback?.[2] || 100);
+  if (height < 1) height = Math.max(100, fallback?.[3] || 100);
+
+  const margin = Math.max(10, Math.max(width, height) * 0.06);
+  return [minX - margin, minY - margin, width + margin * 2, height + margin * 2];
+}
+
+function cadUpdateCalibrationPanel(line, northOpen = false) {
+  if (!cadBackgroundCalibrationSection) return;
+
+  const axis = line ? cadLineCalibrationAxis(line) : '';
+  const show = Boolean(line && axis && !northOpen && !cadSelectedSymbolId);
+  cadBackgroundCalibrationSection.hidden = !show;
+
+  if (!show) {
+    cadCalibrationLineId = '';
+    return;
+  }
+
+  const lengthM = cadLineLengthCm(line) / 100;
+  const changedReference = cadCalibrationLineId !== line.id;
+  cadCalibrationLineId = line.id;
+
+  if (cadCalibrationReference) {
+    cadCalibrationReference.textContent =
+      line.id + ' · ' +
+      (axis === 'horizontal' ? 'orizzontale' : 'verticale') +
+      ' · misura attuale ' + lengthM.toFixed(3) + ' m';
+  }
+
+  if (changedReference && cadCalibrationRealMeters)
+    cadCalibrationRealMeters.value = Number(lengthM.toFixed(3)).toString();
+
+  const hasBackground = Boolean(cadPlaneBackground(cadWorkingDoc, cadCurrentPlane()));
+  if (cadCalibrateBackground) cadCalibrateBackground.disabled = !hasBackground;
+
+  if (cadCalibrationNote) {
+    cadCalibrationNote.textContent = hasBackground
+      ? 'Calibra usa questa parete come riferimento e ridimensiona sfondo, linee e posizioni dei simboli del piano corrente.'
+      : 'Aggiungi prima uno sfondo al piano corrente. Le pareti inclinate non sono ammesse come riferimento.';
+  }
+}
+
+function cadApplyBackgroundCalibration() {
+  const line = cadFindSourceLine(cadSelectedLineId);
+  const axis = cadLineCalibrationAxis(line);
+  if (!line || !axis) {
+    cadSetStatus('Calibrazione rifiutata: seleziona una parete orizzontale o verticale.', 'error');
+    return;
+  }
+
+  if (!cadPlaneBackground(cadWorkingDoc, cadCurrentPlane())) {
+    cadSetStatus('Calibrazione impossibile: il piano corrente non ha uno sfondo.', 'error');
+    return;
+  }
+
+  const realMeters = Number(String(cadCalibrationRealMeters?.value || '').replace(',', '.'));
+  if (!Number.isFinite(realMeters) || realMeters <= 0) {
+    cadSetStatus('Inserisci una misura reale valida in metri.', 'error');
+    cadCalibrationRealMeters?.focus();
+    return;
+  }
+
+  const currentCm = cadLineLengthCm(line);
+  const targetCm = realMeters * 100;
+  if (!Number.isFinite(currentCm) || currentCm <= CAD_CALIBRATION_ORTHO_EPSILON) {
+    cadSetStatus('Calibrazione impossibile: lunghezza della parete non valida.', 'error');
+    return;
+  }
+
+  const factor = targetCm / currentCm;
+  if (!Number.isFinite(factor) || factor <= 0 || factor < 0.0001 || factor > 10000) {
+    cadSetStatus('Fattore di calibrazione fuori intervallo.', 'error');
+    return;
+  }
+
+  if (Math.abs(factor - 1) < 1e-9) {
+    cadSetStatus('La parete è già calibrata alla misura indicata.');
+    return;
+  }
+
+  const before = cadSerializeWorkingSvg();
+  const pivot = cadLinePoint(line, 1);
+  const plane = cadCurrentPlane();
+
+  cadScaleCurrentPlaneGeometry(factor, pivot);
+
+  const projectViewBox = cadGeometryViewBox(cadWorkingDoc, '');
+  if (projectViewBox) {
+    cadWorkingDoc.documentElement.setAttribute('viewBox', cadFormatViewBox(projectViewBox));
+    ensureNorthSymbolInSvg(cadWorkingDoc, northOrientationDeg);
+  }
+
+  const planeViewBox = cadGeometryViewBox(cadWorkingDoc, plane);
+  cadViewportBase = projectViewBox?.slice() || null;
+  cadViewport = planeViewBox?.slice() || projectViewBox?.slice() || null;
+
+  cadUndoStack.push(before);
+  cadRedoStack = [];
+  renderCadComparison();
+  cadUpdatePropertiesPanel();
+  cadUpdateControls();
+
+  cadSetStatus(
+    '✓ Calibrazione ' + plane +
+    ' · ' + line.id +
+    ' = ' + realMeters.toFixed(3) + ' m' +
+    ' · fattore ' + factor.toFixed(6),
+    'dirty'
+  );
+}
+
 function cadUpdatePropertiesPanel() {
   const line = cadFindSourceLine(cadSelectedLineId);
   const symbol = cadFindSourceSymbol(cadSelectedSymbolId);
@@ -3263,6 +3510,7 @@ function cadUpdatePropertiesPanel() {
   if (cadWallPropertiesSection) cadWallPropertiesSection.hidden = Boolean(symbol) || northOpen;
   if (cadWallGeometrySection) cadWallGeometrySection.hidden = Boolean(symbol) || northOpen;
   if (cadSymbolPropertiesSection) cadSymbolPropertiesSection.hidden = !symbol || northOpen;
+  cadUpdateCalibrationPanel(line, northOpen);
 
   if (cadPropertiesHead) {
     if (northOpen)
@@ -3407,6 +3655,8 @@ function cadUpdateControls() {
   const busy = drawingLine || insertingSymbol;
 
   if (cadAddBackground) cadAddBackground.disabled = !hasDoc || busy;
+  if (cadShowBackground)
+    cadShowBackground.disabled = !hasDoc || !cadPlaneBackground(cadWorkingDoc, cadCurrentPlane());
   if (cadUndo) cadUndo.disabled = !cadUndoStack.length || busy;
   if (cadRedo) cadRedo.disabled = !cadRedoStack.length || busy;
   if (cadDelete) cadDelete.disabled = !selected || busy;
@@ -3482,6 +3732,7 @@ function cadSetWorkingSvg(svgText) {
   cadViewportBase = null;
   cadViewport = null;
   cadPanState = null;
+  cadCalibrationLineId = '';
   cadCanvas?.classList.remove('pan-mode');
   cadToolMode = 'select';
   cadNewLineState = null;
@@ -4045,7 +4296,10 @@ function cadInstallPointerEditing(svg) {
 
 function applyCadLayerVisibility() {
   if (!cadCanvas) return;
+  const background = cadCanvas.querySelector('#cadImportedBackgroundLayer');
   const input = cadCanvas.querySelector('#cadInputLayer');
+
+  if (background) background.style.display = cadShowBackground?.checked === false ? 'none' : '';
   if (input) input.style.display = cadShowInput?.checked === false ? 'none' : '';
 
   const handles = cadCanvas.querySelector('#cadHandlesLayer');
@@ -4540,8 +4794,15 @@ cadBackgroundFile?.addEventListener('change', async () => {
     cadSetStatus('Errore importazione sfondo: ' + (error?.message || error), 'error');
   }
 });
+if (cadShowBackground)
+  cadShowBackground.addEventListener('change', applyCadLayerVisibility);
 if (cadShowInput)
   cadShowInput.addEventListener('change', applyCadLayerVisibility);
+cadCalibrateBackground?.addEventListener('click', cadApplyBackgroundCalibration);
+cadCalibrationRealMeters?.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !cadCalibrateBackground?.disabled)
+    cadApplyBackgroundCalibration();
+});
 if (cadUndo)
   cadUndo.addEventListener('click', cadUndoEdit);
 if (cadRedo)
@@ -4627,8 +4888,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.40: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.40' })
+// v0.41: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.41' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
