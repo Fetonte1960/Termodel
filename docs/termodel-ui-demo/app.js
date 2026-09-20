@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.52';
+} from './archivio-web.js?v=0.53';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,8 +18,8 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.52';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.52';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.53';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.53';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -36,7 +36,8 @@ const cadShowBackground = document.getElementById('cadShowBackground');
 const cadShowInput = document.getElementById('cadShowInput');
 const cadReturnModel = document.getElementById('cadReturnModel');
 const cadExportArchitectural = document.getElementById('cadExportArchitectural');
-const cadSnap = document.getElementById('cadSnap');
+const cadSnapNear = document.getElementById('cadSnapNear');
+const cadSnapEndpoint = document.getElementById('cadSnapEndpoint');
 const cadOrtho = document.getElementById('cadOrtho');
 const cadUndo = document.getElementById('cadUndo');
 const cadRedo = document.getElementById('cadRedo');
@@ -3807,10 +3808,17 @@ function cadNearestPointOnSegment(point, a, b) {
   return [a[0] + t * vx, a[1] + t * vy];
 }
 
-function cadSnapPoint(point, movingLineId) {
-  if (cadSnap?.checked === false)
-    return { point, snapped: false, targetLineId: '' };
+function cadSnapMode() {
+  return cadSnapEndpoint?.checked ? 'endpoint' : 'near';
+}
 
+function cadSnapLabel(result) {
+  if (!result?.snapped) return '';
+  return result.snapMode === 'endpoint' ? 'SNAP ESTREMO' : 'SNAP VICINO';
+}
+
+function cadSnapPoint(point, movingLineId) {
+  const mode = cadSnapMode();
   let best = point;
   let bestDistance = CAD_SNAP_DISTANCE + 1;
   let bestLineId = '';
@@ -3820,15 +3828,19 @@ function cadSnapPoint(point, movingLineId) {
     const a = cadLinePoint(line, 1);
     const b = cadLinePoint(line, 2);
 
-    for (const candidate of [a, b]) {
-      const distance = cadPointDistance(point, candidate);
-      if (distance < bestDistance) {
-        best = candidate.slice();
-        bestDistance = distance;
-        bestLineId = line.id || '';
+    if (mode === 'endpoint') {
+      for (const candidate of [a, b]) {
+        const distance = cadPointDistance(point, candidate);
+        if (distance < bestDistance) {
+          best = candidate.slice();
+          bestDistance = distance;
+          bestLineId = line.id || '';
+        }
       }
+      return;
     }
 
+    // Snap Vicino: proiezione sul punto geometricamente più vicino del tratto.
     const projected = cadNearestPointOnSegment(point, a, b);
     const segmentDistance = cadPointDistance(point, projected);
     if (segmentDistance < bestDistance) {
@@ -3842,7 +3854,8 @@ function cadSnapPoint(point, movingLineId) {
   return {
     point: snapped ? best : point,
     snapped,
-    targetLineId: snapped ? bestLineId : ''
+    targetLineId: snapped ? bestLineId : '',
+    snapMode: mode
   };
 }
 
@@ -3876,12 +3889,13 @@ function cadNewLineTargetPoint(rawPoint) {
         point: snapped.point,
         snapped: true,
         ortho: true,
-        targetLineId: snapped.targetLineId || ''
+        targetLineId: snapped.targetLineId || '',
+        snapMode: snapped.snapMode || cadSnapMode()
       };
     }
   }
 
-  return { point: constrained, snapped: false, ortho: true, targetLineId: '' };
+  return { point: constrained, snapped: false, ortho: true, targetLineId: '', snapMode: cadSnapMode() };
 }
 
 function cadConnectedEndpointRefs(point) {
@@ -4083,7 +4097,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
     };
     cadRenderNewLinePreview(svg, point, snapped.snapped);
     cadSetStatus(
-      `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · punto iniziale${snapped.snapped ? ' · SNAP' : ''}${cadOrtho?.checked ? ' · ORTO' : ''} · clicca il punto successivo`
+      `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · punto iniziale${snapped.snapped ? ' · ' + cadSnapLabel(snapped) : ''}${cadOrtho?.checked ? ' · ORTO' : ''} · clicca il punto successivo`
     );
     return;
   }
@@ -4139,7 +4153,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
     cadUpdatePropertiesPanel();
     cadUpdateControls();
     cadSetStatus(
-      `✓ ${id} creata${snapped.ortho ? ' · ORTO' : ''} · SNAP su ${snapTargetLineId} · sequenza terminata`,
+      `✓ ${id} creata${snapped.ortho ? ' · ORTO' : ''} · ${cadSnapLabel(snapped)} su ${snapTargetLineId} · sequenza terminata`,
       'dirty'
     );
     return;
@@ -4162,7 +4176,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
   const nextSvg = cadCanvas?.querySelector('svg');
   if (nextSvg) cadRenderNewLinePreview(nextSvg, point, false);
   cadSetStatus(
-    `✓ ${id} creata${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · SNAP' : ''} · continua dal punto finale · tasto destro per interrompere`,
+    `✓ ${id} creata${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · ' + cadSnapLabel(snapped) : ''} · continua dal punto finale · tasto destro per interrompere`,
     'dirty'
   );
 }
@@ -4584,7 +4598,7 @@ function cadInstallPointerEditing(svg) {
       if (!cadNewLineState) {
         const snapped = cadRenderNewLineFirstPointPreview(svg, rawPoint);
         cadSetStatus(
-          `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · clicca il punto iniziale${snapped.snapped ? ' · SNAP' : ''}`
+          `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · clicca il punto iniziale${snapped.snapped ? ' · ' + cadSnapLabel(snapped) : ''}`
         );
         return;
       }
@@ -4592,7 +4606,7 @@ function cadInstallPointerEditing(svg) {
       const snapped = cadNewLineTargetPoint(rawPoint);
       cadRenderNewLinePreview(svg, snapped.point, snapped.snapped);
       cadSetStatus(
-        `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · clicca il punto successivo${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · SNAP' : ''}`
+        `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · clicca il punto successivo${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · ' + cadSnapLabel(snapped) : ''}`
       );
       return;
     }
@@ -4609,7 +4623,7 @@ function cadInstallPointerEditing(svg) {
       cadDragState.moved = true;
       cadSyncOverlay(svg);
       cadSetStatus(
-        `${cadDragState.lineId} · estremo ${cadDragState.endpoint}${snapped.snapped ? ' · SNAP' : ''}`,
+        `${cadDragState.lineId} · estremo ${cadDragState.endpoint}${snapped.snapped ? ' · ' + cadSnapLabel(snapped) : ''}`,
         'dirty'
       );
     } else if (cadDragState.mode === 'line') {
@@ -5260,8 +5274,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.52: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.52' })
+// v0.53: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.53' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
