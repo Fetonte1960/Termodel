@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.45';
+} from './archivio-web.js?v=0.46';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,8 +18,8 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.45';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.45';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.46';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.46';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -3716,7 +3716,10 @@ function cadUpdateControls() {
       ? '× ' + cadSymbolInsertLabel(type)
       : '＋ ' + cadSymbolInsertLabel(type);
   });
-  if (cadCanvas) cadCanvas.classList.toggle('symbol-insert-mode', insertingSymbol);
+  if (cadCanvas) {
+    cadCanvas.classList.toggle('symbol-insert-mode', insertingSymbol);
+    cadCanvas.classList.toggle('wall-insert-mode', drawingLine);
+  }
   if (cadNewLineType) cadNewLineType.disabled = !hasDoc || busy;
   if (cadExportArchitectural) cadExportArchitectural.disabled = !lastGeneratedPlan || dirty || busy;
 
@@ -5004,8 +5007,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.45: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.45' })
+// v0.46: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.46' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
