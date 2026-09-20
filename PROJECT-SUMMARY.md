@@ -6,7 +6,7 @@
 >
 > Questo documento serve a evitare la perdita di contesto quando una chat diventa troppo lunga. Deve essere mantenuto breve, operativo e aggiornato dopo ogni intervento che cambia architettura, stato, file importanti, contratti o prossimi passi.
 
-Ultimo aggiornamento: **2026-09-19**  
+Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato al momento della creazione di questo documento:  
 `eadb72430a1f585bf542f50403cbb494c869dcc4` — `Connect complete project import and ArchivioWeb v0.22`  
@@ -1444,9 +1444,187 @@ Priorità UX dopo la v0.25:
 
 ---
 
+## 12.5 File unico e CAD 2D multipiano
+
+Decisione architetturale del 2026-09-20.
+
+Il **file progetto unico** rappresenta l'intero progetto Termodel e può contenere **più piani fisici**.
+
+Il CAD 2D Web deve riflettere la stessa filosofia: non deve essere pensato come un editor separato di un singolo disegno isolato, ma come una vista/editazione filtrata del progetto multipiano.
+
+Principio:
+
+```text
+TERMODEL-PROJECT-TEXT-V1
+        ↓
+progetto unico
+        ↓
+archivio Piani
+        │
+        ├── Piano 1
+        ├── Piano 2
+        ├── Piano 3
+        └── Copertura
+        ↓
+CAD 2D
+        ↓
+visualizza / modifica il PIANO CORRENTE
+```
+
+### Significato di Piano e Layer
+
+Nel Termodel desktop il campo `LayerCad` dell'archivio `Piani` deriva dalla filosofia di editing nativo AutoCAD/DXF.
+
+Il desktop usa infatti:
+
+```text
+Piani.Nome
+        ↓
+Piani.LayerCad
+        ↓
+LeggiFileDxf(..., layerCad, ...)
+        ↓
+filtro delle linee e dei blocchi sul layer fisico del piano
+```
+
+Questa relazione è verificata nei sorgenti desktop:
+
+- `GeneraModello.cs` passa `LayerCad` a `LeggiFileDxf`;
+- `LeggiDxf.cs` seleziona linee e blocchi appartenenti al layer richiesto.
+
+Nel Web la stessa semantica deve essere conservata.
+
+`Piano` è la scelta logica corrente dell'utente e deriva da:
+
+```text
+Piani.Nome
+```
+
+Il campo `Layer` della toolbar CAD resta **readonly** e deriva da:
+
+```text
+Piani.Nome
+    ↓
+Piani.LayerCad
+```
+
+Il layer non deve diventare un secondo selettore indipendente del piano: è la rappresentazione CAD nativa associata al piano fisico.
+
+### Regola del piano corrente
+
+Il CAD Web deve mantenere uno stato esplicito di **piano corrente**.
+
+Quando l'utente seleziona un piano:
+
+1. la toolbar imposta `Piano = Piani.Nome`;
+2. `Layer` mostra il relativo `Piani.LayerCad`;
+3. il canvas filtra e rende editabili le entità appartenenti a quel piano;
+4. le entità degli altri piani restano nel progetto unico ma non appartengono alla vista corrente;
+5. l'utente può cambiare piano senza caricare un altro progetto.
+
+Flusso:
+
+```text
+selettore Piano
+      ↓
+Piano corrente
+      ↓
+filtro CAD 2D
+      ↓
+solo entità del piano corrente
+      ↓
+modifica
+      ↓
+il file progetto unico conserva tutti i piani
+```
+
+### Nuove entità
+
+Ogni nuova entità creata nel CAD deve ereditare automaticamente il **piano corrente**.
+
+Per le entità SVG Web il riferimento semantico corrente è:
+
+```text
+data-termodel-piano="<Piani.Nome>"
+```
+
+Il valore non deve essere scelto separatamente durante il disegno: deriva dal piano attivo nella toolbar.
+
+La correlazione con il layer è:
+
+```text
+data-termodel-piano
+        ↓
+Piani.Nome
+        ↓
+Piani.LayerCad
+```
+
+Questa regola deve valere progressivamente per tutte le entità CAD:
+
+- pareti `E/W`;
+- finestre/porte `FIN`;
+- ponti termici `PON`;
+- locali `LOC`;
+- altre future entità grafiche Termodel.
+
+### Editazione di entità esistenti
+
+Quando viene selezionata una entità già presente:
+
+- il CAD deve riconoscere il piano a cui appartiene;
+- la toolbar deve mostrare quel piano e il relativo LayerCad;
+- una entità appartenente a un altro piano non deve essere normalmente editabile nella vista del piano corrente;
+- il cambio di piano deve avvenire tramite il selettore del piano corrente, non spostando casualmente entità tra layer.
+
+L'eventuale trasferimento esplicito di una entità da un piano a un altro deve essere trattato come una modifica semantica del suo `data-termodel-piano`, non come semplice cambio grafico di colore/layer.
+
+### Stato reale della v0.27
+
+La v0.27 contiene già alcuni elementi coerenti con questa architettura:
+
+- la toolbar `Piano` legge `Piani.Nome`;
+- `Layer` è readonly e deriva da `Piani.LayerCad`;
+- le nuove linee ricevono `data-termodel-piano`;
+- le linee esistenti possono riportare il proprio `data-termodel-piano` nella toolbar.
+
+Manca però ancora la parte multipiano vera e propria:
+
+- `cadEditableSourceLines()` legge oggi tutte le linee E/W del gruppo `calpestabile`;
+- il canvas non filtra ancora le entità per piano corrente;
+- non esiste ancora un comando completo di passaggio piano che aggiorni la vista;
+- FIN/PON/LOC non sono ancora gestiti come entità multipiano editabili;
+- il formato geometrico corrente deve essere reso coerente con il fatto che il contenitore progetto rappresenta più piani.
+
+### Prossimo comportamento da implementare
+
+```text
+apertura CAD
+    ↓
+leggi Piani
+    ↓
+scegli / ripristina piano corrente
+    ↓
+mostra solo entità di quel piano
+    ↓
+Nuova linea / FIN / PON / LOC
+    ↓
+assegna automaticamente data-termodel-piano
+    ↓
+cambio Piano
+    ↓
+canvas rifiltrato
+    ↓
+stesso file progetto unico
+```
+
+Questo principio multipiano ha precedenza sulle implementazioni CAD che assumono implicitamente un solo piano.
+
+---
+
 ## 13. Protocollo progetto
 
-Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo ed essere trasmesso anche tramite normale copia-incolla in una chat.
+Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
 
 Non è quindi soltanto un formato tecnico interno, ma un elemento centrale dell'architettura AI di Termodel Web.
 
@@ -1640,7 +1818,8 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.27 pubblicata: `Edita nel Cad` → toolbar laterale popolata dagli archivi → Nuova linea con colore/tipo linea corretti → selezione/modifica linea esistente coerente con gli archivi;  
-> 2. mantenere il CAD Web conforme a `SorgentiTermodel/Library/MainWindow.xaml` (`Grid_DatiCad` / `Grid_pareti`) e proseguire con il parser/editor dei simboli `FIN/PON/LOC` e il collegamento alle tipologie degli archivi. Per `FIN/PON` usare `data-termodel-descrizione` come descrizione semantica persistente e `TIPO` come collegamento formale a `Finestre.DescBreve` / `Ponti.DescBreve`;  
-> 3. unificare progressivamente stato CAD e stato archivi nel contenitore progetto.
+> 2. rendere il CAD realmente **multipiano** secondo la sezione 12.5: stato Piano corrente, filtro del canvas per `data-termodel-piano`, nuove entità assegnate automaticamente al piano corrente e passaggio tra piani senza cambiare progetto;  
+> 3. mantenere il CAD Web conforme a `SorgentiTermodel/Library/MainWindow.xaml` (`Grid_DatiCad` / `Grid_pareti`) e proseguire con il parser/editor dei simboli `FIN/PON/LOC`, anch'essi multipiano, e il collegamento alle tipologie degli archivi;  
+> 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto.
 
 Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.
