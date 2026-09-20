@@ -642,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.39
+Termodel Web v0.40
 ```
 
-Commit frontend di riferimento per la v0.39:
+Commit frontend di riferimento per la v0.40:
 
 ```text
-898cfda3b20e216eb23e26a596e7e0ff9eec9bb9  Add wheel zoom and middle-button pan to CAD
+4c0d09562b1cd465ae37af941eb65a13b4cdc0b9  Add per-plane raster and vector CAD backgrounds
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -657,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.39 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.40 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2281,6 +2281,138 @@ I campi mostrati sono quelli del pannello XAML necessari a rappresentare gli att
 
 ---
 
+## 12.8 Sfondo CAD per piano — raster o vettoriale
+
+Decisione architetturale del 2026-09-20.
+
+Ogni piano del progetto può avere **un proprio disegno di sfondo** utilizzato come riferimento visivo durante l'editing CAD 2D.
+
+Lo sfondo:
+
+- non è un elemento edilizio;
+- non appartiene agli archivi Pareti/Finestre/Ponti/Locali;
+- è un accessorio grafico del piano;
+- viene mostrato sotto le entità CAD semantiche;
+- non deve essere interpretato come geometria Termodel da GeneraPianta.
+
+### Implementazione v0.40
+
+La toolbar CAD introduce:
+
+```text
+＋ Aggiungi sfondo
+```
+
+Formati inizialmente supportati:
+
+```text
+SVG vettoriale
+PNG
+JPEG
+WebP
+GIF
+BMP
+```
+
+Flusso:
+
+```text
+Piano corrente
+    ↓
+Aggiungi sfondo
+    ↓
+scelta file raster / SVG
+    ↓
+incorporazione nello SVG progetto
+    ↓
+associazione data-termodel-piano
+    ↓
+visualizzazione sotto il Disegno input
+```
+
+### Contratto SVG frontend
+
+Gli sfondi sono raccolti in un gruppo radice:
+
+```xml
+<g id="termodel-backgrounds"
+   data-termodel-accessorio="SFONDI">
+   ...
+</g>
+```
+
+Ogni piano può contenere al massimo uno sfondo corrente, rappresentato come elemento `image` con almeno:
+
+```text
+data-termodel-sfondo="1"
+data-termodel-piano="<Piani.Nome>"
+data-termodel-layer="<Piani.LayerCad>"
+data-termodel-sfondo-tipo="raster | vector"
+data-termodel-nome-file="..."
+```
+
+Il contenuto del file viene incorporato tramite data URL nell'attributo `href`.
+
+Per uno SVG importato questo mantiene la natura vettoriale durante la visualizzazione/zoom anche se viene trattato come immagine di riferimento non editabile.
+
+### Multipiano
+
+- lo sfondo mostrato è soltanto quello del piano corrente;
+- cambiando piano cambia automaticamente lo sfondo;
+- l'importazione di un nuovo sfondo sullo stesso piano sostituisce il precedente;
+- il filtro multipiano usato per `generaPiantaDaSvg()` mantiene soltanto lo sfondo del piano corrente;
+- lo sfondo non viene trasferito implicitamente tra piani.
+
+### Pianta pulita
+
+La precedente modalità CAD che mostrava come sfondo la **Pianta pulita** generata da `GeneraPianta/JSTS` è **sospesa dalla visualizzazione CAD a partire dalla v0.40**.
+
+Importante:
+
+- `plan.svgPulito` continua a essere generato e mantenuto dove serve al motore;
+- non viene eliminata la funzione;
+- semplicemente non viene più usata come layer di fondo del CAD;
+- la funzione potrà essere riattivata in futuro se necessaria.
+
+### Posizionamento iniziale
+
+Nella v0.40 lo sfondo importato viene adattato al `viewBox` corrente della pianta con:
+
+```text
+preserveAspectRatio = xMidYMid meet
+```
+
+Questa è una prima implementazione.
+
+Sono esplicitamente rinviati:
+
+- traslazione manuale dello sfondo;
+- scala/calibrazione;
+- rotazione;
+- opacità regolabile;
+- aggancio a punti di riferimento;
+- eventuale gestione separata degli asset raster nel contenitore progetto.
+
+### Persistenza e dimensione progetto
+
+Nella v0.40 il file viene incorporato direttamente nello SVG tramite data URL.
+
+Questo rende lo sfondo autosufficiente e persistente, ma un raster di grandi dimensioni può aumentare molto la dimensione di `geometry/project.svg` e quindi del contenitore progetto destinato anche all'AI.
+
+Questa scelta è accettata **solo come prima implementazione frontend**.
+
+Non viene introdotto per ora un nuovo contratto backend o una sezione asset del progetto senza una decisione architetturale specifica.
+
+### Undo / redo
+
+L'aggiunta o sostituzione dello sfondo partecipa allo stesso stack undo/redo del CAD.
+
+### Stato
+
+**IMPLEMENTATO IN v0.40 — DA VERIFICARE MANUALMENTE.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -2453,7 +2585,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.39.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.40.**
 
 Stato operativo corrente:
 
@@ -2463,7 +2595,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.39 presente su `main`;
+- v0.40 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2479,6 +2611,7 @@ Stato operativo corrente:
 - v0.37 rende il pannello Nord contestuale: chiuso di default, apertura cliccando il simbolo Nord nel CAD, chiusura con × o cambio di contesto, liberando spazio nella colonna proprietà.
 - v0.38 elimina il box generale `Dati CAD` dal pannello laterale; mantiene `Piano corrente` e `Arc Piani` spostandoli nella toolbar comandi. `Entità` è rappresentata dall'intestazione contestuale; `Layer` resta derivato internamente da `Piani.LayerCad`. Questa disposizione è una deroga esplicita alla direttiva XAML, limitata al layout CAD Web.
 - v0.39 aggiunge navigazione CAD senza pulsanti UI: rotella mouse = zoom centrato sul cursore; tasto centrale + trascinamento = pan. Il tasto centrale ha priorità sugli strumenti di inserimento/selezione, lo stato viewport sopravvive ai ridisegni del canvas e viene azzerato quando si carica un nuovo SVG di lavoro.
+- v0.40 aggiunge uno sfondo raster/SVG specifico per ogni piano tramite `Aggiungi sfondo`; lo sfondo viene incorporato nello SVG progetto, filtrato per `data-termodel-piano` e visualizzato sotto il Disegno input. La precedente visualizzazione `Pianta pulita` è sospesa nel CAD ma resta disponibile al motore.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2489,7 +2622,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.39: rotella → zoom centrato sul cursore; tasto centrale + trascinamento → pan senza attivare entità o inserimenti; verificare che zoom/pan restino dopo selezioni/modifiche e si azzerino caricando un nuovo disegno; controllare anche il layout compatto v0.38 e il pannello Nord contestuale v0.37;  
+> 2. verificare manualmente la v0.40: su due piani differenti importare uno sfondo raster e uno SVG → cambio Piano deve cambiare sfondo → Disegno input sempre sopra lo sfondo → nuovo import sullo stesso piano sostituisce il precedente → undo/redo; verificare anche zoom/pan v0.39;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
