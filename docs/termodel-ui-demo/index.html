@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.57 — progetto vuoto locale</title>
+  <title>Termodel Web v0.58 — progetto unico bidirezionale</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -917,13 +917,13 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.57</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.58</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
       <div class="menu"><button type="button">File</button><div class="dropdown">
-        <button type="button" id="newProjectButton">Nuovo</button><button type="button">Apri...</button><button type="button">Carica progetto ZIP</button><div class="sep"></div>
-        <button type="button">Salva</button><button type="button">Salva progetto ZIP</button><button type="button">Salva con nome</button><div class="sep"></div>
+        <button type="button" id="newProjectButton">Nuovo</button><button type="button" id="openProjectButton">Apri...</button><input id="openProjectFileInput" type="file" accept=".txt,.termodel,text/plain" hidden /><button type="button">Carica progetto ZIP</button><div class="sep"></div>
+        <button type="button" id="saveProjectButton">Salva</button><button type="button">Salva progetto ZIP</button><button type="button" id="saveProjectAsButton">Salva con nome</button><div class="sep"></div>
         <button type="button">Importa XML nazionale</button><button type="button">Esporta XML nazionale</button><button type="button">Esporta BIM (ifc)</button>
       </div></div>
       <div class="menu"><button type="button">Modifica</button><div class="dropdown">
@@ -1211,7 +1211,7 @@
           <button id="projectStartImportAi" type="button">Importa da AI<br><small>Usa il progetto o la pianta negli appunti</small></button>
         </div>
         <div class="project-start-note">
-          Il progetto vuoto e gli archivi vengono inizializzati dal Termodel WebService; il browser non inventa dati tecnici.
+          Il progetto vuoto e gli archivi vengono inizializzati dal template Termodel locale; il browser non inventa dati tecnici.
         </div>
       </div>
       <footer class="ai-instruct-foot">
@@ -1330,6 +1330,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.57"></script>
+  <script type="module" src="./app.js?v=0.58"></script>
 </body>
 </html>

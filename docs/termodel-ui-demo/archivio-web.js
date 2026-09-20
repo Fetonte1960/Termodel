@@ -760,7 +760,7 @@ function buildInput(field, meta, value) {
     archiveState.dirty = true;
     renderGrid();
     refreshCorrelatedFields();
-    setStatus('Modifiche non ancora persistite sul server.');
+    setStatus('Modifiche non ancora salvate nel progetto unico.');
   });
 
   return input;
@@ -963,6 +963,13 @@ export function getArchivioWebRecords(name) {
   return archiveRecords(name).map(record => ({ ...record }));
 }
 
+export function markArchivioWebSaved() {
+  commitFormToRecord();
+  archiveState.dirty = false;
+  if (archiveState.ui?.modal?.classList.contains('visible')) {
+    setStatus('✓ Archivio consolidato nel progetto unico.');
+  }
+}
 
 export function getArchivioWebSchema(name) {
   const schema = archiveState.schema?.[name];

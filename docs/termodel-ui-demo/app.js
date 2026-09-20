@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.57';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.58';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -8,16 +8,26 @@ import {
   loadTermodelProjectText,
   openArchivioWeb,
   getArchivioWebRecords,
-  getArchivioWebSchema
-} from './archivio-web.js?v=0.57';
+  getArchivioWebSchema,
+  getArchivioWebState,
+  markArchivioWebSaved
+} from './archivio-web.js?v=0.58';
+import {
+  isTermodelProjectText as isCompleteTermodelProjectText,
+  buildTermodelProjectText
+} from './termodel-project-text.js?v=0.58';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.57';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.58';
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.57';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.57';
+const openProjectButton = document.getElementById('openProjectButton');
+const openProjectFileInput = document.getElementById('openProjectFileInput');
+const saveProjectButton = document.getElementById('saveProjectButton');
+const saveProjectAsButton = document.getElementById('saveProjectAsButton');
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.58';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.58';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -119,6 +129,8 @@ let currentModelLabel = 'PROGETTO ORIGINALE';
 let currentModelMode = 'project';
 let structuredProjectActive = false;
 let emptyProjectTextPromise = null;
+let currentProjectText = '';
+let currentProjectFileName = '';
 let lastAiPreviewData = null;
 let lastCleanPlanSvg = '';
 let lastGeneratedPlan = null;
@@ -948,6 +960,9 @@ function setStructuredProjectState(enabled) {
     cadButton.title = needsProject ? inviteTitle : '';
     cadButton.setAttribute('aria-disabled', needsProject ? 'true' : 'false');
   }
+
+  if (saveProjectButton) saveProjectButton.disabled = needsProject;
+  if (saveProjectAsButton) saveProjectAsButton.disabled = needsProject;
 }
 
 async function loadEmptyProjectText() {
@@ -955,7 +970,7 @@ async function loadEmptyProjectText() {
     emptyProjectTextPromise = import(EMPTY_PROJECT_MODULE_URL)
       .then((module) => {
         const text = String(module.TERMODEL_EMPTY_PROJECT_TEXT || '');
-        if (!isTermodelProjectText(text))
+        if (!isCompleteTermodelProjectText(text))
           throw new Error('Il template JavaScript del progetto vuoto non è TERMODEL-PROJECT-TEXT-V1.');
         return text;
       })
@@ -968,40 +983,119 @@ async function loadEmptyProjectText() {
   return emptyProjectTextPromise;
 }
 
-function replaceProjectTextSection(projectText, sectionName, sectionText) {
-  const begin = `---BEGIN:${sectionName}---`;
-  const end = `---END:${sectionName}---`;
-  const beginIndex = projectText.indexOf(begin);
-
-  if (beginIndex < 0)
-    throw new Error(`Il template progetto non contiene la sezione ${sectionName}.`);
-
-  const bodyStart = beginIndex + begin.length;
-  const endIndex = projectText.indexOf(end, bodyStart);
-
-  if (endIndex < 0)
-    throw new Error(`La sezione ${sectionName} del template progetto non è chiusa.`);
-
-  return (
-    projectText.slice(0, bodyStart) +
-    '\n' + String(sectionText ?? '').trim() + '\n' +
-    projectText.slice(endIndex)
-  );
-}
-
 async function createStructuredProjectFromSvg(svgText) {
-  // v0.57: il progetto base è una risorsa JavaScript statica del frontend.
-  // Nessuna chiamata a Termodel.WebService è necessaria per Nuovo/Importa SVG.
+  // v0.58: progetto base locale + conversione bidirezionale centralizzata.
   const emptyProjectText = await loadEmptyProjectText();
   const projectSvgText = ensureNorthSymbolInSvgText(svgText);
-  const structuredProjectText = replaceProjectTextSection(
+  const structuredProjectText = await buildTermodelProjectText(
     emptyProjectText,
-    'geometry/project.svg',
-    projectSvgText
+    { geometrySvg: projectSvgText }
   );
 
   const project = await loadTermodelProjectText(structuredProjectText);
+  currentProjectText = structuredProjectText;
+  currentProjectFileName = '';
   setStructuredProjectState(true);
+  return project;
+}
+
+function projectFileNameFromName(projectName) {
+  const safe = String(projectName || 'Progetto Termodel')
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, '_')
+    .replace(/\s+/g, ' ');
+  return (safe || 'Progetto Termodel') + '.termodel.txt';
+}
+
+async function loadProjectTextIntoFrontend(text, options = {}) {
+  if (!isCompleteTermodelProjectText(text))
+    throw new Error('Il file selezionato non è un progetto TERMODEL-PROJECT-TEXT-V1.');
+
+  const project = await loadTermodelProjectText(text);
+  currentProjectText = String(text);
+  currentProjectFileName = options.fileName || currentProjectFileName || projectFileNameFromName(project.projectName);
+
+  if (project.geometrySvg) {
+    const previewLoaded = options.buildPreview === false
+      ? false
+      : processSvgText(project.geometrySvg);
+
+    if (!previewLoaded) {
+      cadSetWorkingSvg(project.geometrySvg);
+      validatedSvg = cadSerializeWorkingSvg();
+      if (rasterSvgText) rasterSvgText.value = validatedSvg;
+    }
+  }
+
+  setStructuredProjectState(true);
+  return project;
+}
+
+async function buildCurrentProjectText() {
+  if (!structuredProjectActive || !currentProjectText)
+    throw new Error('Nessun progetto strutturato aperto.');
+
+  const state = getArchivioWebState();
+  const archives = {};
+  for (const name of state.archives)
+    archives[name] = getArchivioWebRecords(name);
+
+  const geometrySvg = cadWorkingDoc
+    ? cadSerializeWorkingSvg()
+    : (validatedSvg || undefined);
+
+  const result = await buildTermodelProjectText(currentProjectText, {
+    geometrySvg,
+    archives
+  });
+
+  currentProjectText = result;
+  if (geometrySvg) {
+    validatedSvg = geometrySvg;
+    if (rasterSvgText) rasterSvgText.value = geometrySvg;
+  }
+  return result;
+}
+
+function downloadProjectText(text, fileName) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName || 'Progetto Termodel.termodel.txt';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function saveCurrentProject(saveAs = false) {
+  const text = await buildCurrentProjectText();
+  const state = getArchivioWebState();
+  let fileName = currentProjectFileName || projectFileNameFromName(state.projectName);
+
+  if (saveAs) {
+    const requested = window.prompt('Nome file progetto:', fileName);
+    if (requested === null) return;
+    fileName = String(requested).trim() || fileName;
+    if (!/\.txt$/i.test(fileName)) fileName += '.termodel.txt';
+  }
+
+  currentProjectFileName = fileName;
+  downloadProjectText(text, fileName);
+  markArchivioWebSaved();
+  setMainAiStatus('✓ Progetto unico salvato: ' + fileName);
+}
+
+async function openProjectFile(file) {
+  const text = await file.text();
+  const project = await loadProjectTextIntoFrontend(text, {
+    fileName: file.name,
+    buildPreview: true
+  });
+
+  setMainAiStatus('✓ Progetto aperto: ' + project.projectName + ' · archivi e CAD attivi');
+  activateModelPage();
+  requestAnimationFrame(resize);
   return project;
 }
 
@@ -1303,6 +1397,7 @@ async function startBlankProjectFromCad() {
   try {
     const svg = createBlankProjectSvg();
     const project = await createStructuredProjectFromSvg(svg);
+    currentProjectFileName = projectFileNameFromName(project.projectName);
 
     validatedSvg = svg;
     lastCleanPlanSvg = createBlankCleanSvg();
@@ -1366,20 +1461,12 @@ async function importAiFromMainForm(event) {
 
   if (isTermodelProjectText(text)) {
     try {
-      const project = await loadTermodelProjectText(text);
+      const project = await loadProjectTextIntoFrontend(text, {
+        fileName: '',
+        buildPreview: true
+      });
       imported = true;
 
-      // Il file progetto completo è già sufficiente per compilare ArchivioWeb.
-      // Se contiene anche geometry/project.svg proviamo ad aggiornare il viewer,
-      // senza invalidare l'importazione degli archivi se la geometria richiede
-      // ancora funzioni server non disponibili nel prototipo JS.
-      if (project.geometrySvg) {
-        const geometryImported = processSvgText(project.geometrySvg);
-        if (!geometryImported)
-          console.warn('Progetto completo importato; geometry/project.svg non elaborato dal viewer Web corrente.');
-      }
-
-      setStructuredProjectState(true);
       setMainAiStatus(`✓ Progetto completo importato: ${project.projectName} · editing attivo`);
     } catch (error) {
       window.alert('Progetto Termodel non importato: ' + error.message);
@@ -5582,8 +5669,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.57: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.57' })
+// v0.58: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.58' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
@@ -5624,6 +5711,47 @@ projectStartImportAi?.addEventListener('click', async event => {
     await continueAfterProjectStart();
   }
 });
+openProjectButton?.addEventListener('click', event => {
+  event.preventDefault();
+  event.stopPropagation();
+  openProjectFileInput?.click();
+});
+
+openProjectFileInput?.addEventListener('change', async () => {
+  const file = openProjectFileInput.files?.[0];
+  openProjectFileInput.value = '';
+  if (!file) return;
+
+  try {
+    await openProjectFile(file);
+  } catch (error) {
+    console.error('Apertura progetto non riuscita:', error);
+    window.alert('Impossibile aprire il progetto Termodel.\n\n' + error.message);
+  }
+});
+
+saveProjectButton?.addEventListener('click', async event => {
+  event.preventDefault();
+  event.stopPropagation();
+  try {
+    await saveCurrentProject(false);
+  } catch (error) {
+    console.error('Salvataggio progetto non riuscito:', error);
+    window.alert('Impossibile salvare il progetto Termodel.\n\n' + error.message);
+  }
+});
+
+saveProjectAsButton?.addEventListener('click', async event => {
+  event.preventDefault();
+  event.stopPropagation();
+  try {
+    await saveCurrentProject(true);
+  } catch (error) {
+    console.error('Salvataggio progetto non riuscito:', error);
+    window.alert('Impossibile salvare il progetto Termodel.\n\n' + error.message);
+  }
+});
+
 newProjectButton?.addEventListener('click', event => {
   event.preventDefault();
   event.stopPropagation();
