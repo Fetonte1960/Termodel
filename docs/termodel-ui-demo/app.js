@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.53';
+} from './archivio-web.js?v=0.54';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,8 +18,8 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.53';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.53';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.54';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.54';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -2791,6 +2791,7 @@ function cadSymbolInsertLabel(type) {
 }
 
 function cadCancelSymbolInsert() {
+  cadHideContextMenu();
   if (cadToolMode === 'symbol') {
     cadToolMode = 'select';
     cadSymbolInsertType = '';
@@ -2908,15 +2909,29 @@ function cadInsertSymbolAtPoint(rawPoint) {
   group.appendChild(symbol);
   cadUndoStack.push(before);
   cadRedoStack = [];
-  cadToolMode = 'select';
-  cadSymbolInsertType = '';
+
+  const continueWindows = cadSymbolInsertType === 'FIN';
+  if (!continueWindows) {
+    cadToolMode = 'select';
+    cadSymbolInsertType = '';
+  }
+
   cadSelectedLineId = '';
   cadSelectedSymbolId = id;
-  if (cadCanvas) cadCanvas.classList.remove('symbol-insert-mode');
+  if (cadCanvas && !continueWindows) cadCanvas.classList.remove('symbol-insert-mode');
+
   renderCadComparison();
   cadUpdatePropertiesPanel();
   cadUpdateControls();
-  cadSetStatus('✓ ' + id + ' ' + cadSymbolBlockType(symbol) + ' inserito · Piano ' + plane + ' · Layer ' + layer + (wallSnapped ? ' · SNAP parete' : ''), 'dirty');
+
+  cadSetStatus(
+    '✓ ' + id + ' ' + cadSymbolBlockType(symbol) +
+    ' inserito · Piano ' + plane +
+    ' · Layer ' + layer +
+    (wallSnapped ? ' · SNAP parete' : '') +
+    (continueWindows ? ' · continua inserimento · Esc o tasto destro per interrompere' : ''),
+    'dirty'
+  );
 }
 function cadFindSourceLine(id) {
   if (!id) return null;
@@ -3719,7 +3734,7 @@ function cadUpdateControls() {
     button.disabled = !hasDoc;
     button.classList.toggle('active', active);
     button.textContent = active
-      ? '× ' + cadSymbolInsertLabel(type)
+      ? (type === 'FIN' ? '× Interrompi sequenza' : '× ' + cadSymbolInsertLabel(type))
       : '＋ ' + cadSymbolInsertLabel(type);
   });
   if (cadCanvas) {
@@ -3739,7 +3754,8 @@ function cadUpdateControls() {
       'Piano ' + cadCurrentPlane() +
       ' · Layer ' + cadCurrentLayer() +
       ' · ' + cadSymbolInsertLabel(cadSymbolInsertType) +
-      (needsWall ? ' · clicca vicino a una parete' : ' · clicca il punto di inserimento')
+      (needsWall ? ' · clicca vicino a una parete' : ' · clicca il punto di inserimento') +
+      (cadSymbolInsertType === 'FIN' ? ' · Esc o tasto destro per interrompere' : '')
     );
   } else if (dirty) {
     cadSetStatus(
@@ -3975,6 +3991,15 @@ function cadShowLineContextMenu(event) {
   if (cadCloseOrthogonalSequence) cadCloseOrthogonalSequence.hidden = !canClose;
   if (cadStopSequence) cadStopSequence.hidden = false;
   cadPositionContextMenu(event, canClose ? 108 : 36);
+}
+
+function cadShowWindowSequenceContextMenu(event) {
+  if (!cadContextMenu || cadToolMode !== 'symbol' || cadSymbolInsertType !== 'FIN') return;
+  if (cadRepeatLastCommand) cadRepeatLastCommand.hidden = true;
+  if (cadCloseSequence) cadCloseSequence.hidden = true;
+  if (cadCloseOrthogonalSequence) cadCloseOrthogonalSequence.hidden = true;
+  if (cadStopSequence) cadStopSequence.hidden = false;
+  cadPositionContextMenu(event, 36);
 }
 
 function cadCancelNewLine(svg = cadCanvas?.querySelector('svg')) {
@@ -4560,6 +4585,13 @@ function cadInstallPointerEditing(svg) {
       event.preventDefault();
       event.stopPropagation();
       cadShowLineContextMenu(event);
+      return;
+    }
+
+    if (cadToolMode === 'symbol' && cadSymbolInsertType === 'FIN') {
+      event.preventDefault();
+      event.stopPropagation();
+      cadShowWindowSequenceContextMenu(event);
       return;
     }
 
@@ -5191,7 +5223,12 @@ cadCloseSequence?.addEventListener('click', () => cadCloseWallSequence(false));
 cadCloseOrthogonalSequence?.addEventListener('click', () => cadCloseWallSequence(true));
 cadStopSequence?.addEventListener('click', () => {
   cadHideContextMenu();
-  cadCancelNewLine();
+  if (cadToolMode === 'line') {
+    cadCancelNewLine();
+    return;
+  }
+  if (cadToolMode === 'symbol' && cadSymbolInsertType === 'FIN')
+    cadCancelSymbolInsert();
 });
 document.addEventListener('pointerdown', event => {
   if (!cadContextMenu || cadContextMenu.hidden) return;
@@ -5274,8 +5311,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.53: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.53' })
+// v0.54: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.54' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
