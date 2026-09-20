@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.39';
+} from './archivio-web.js?v=0.40';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -20,7 +20,8 @@ const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
 const cadPage = document.getElementById('cadPage');
 const cadCanvas = document.getElementById('cadCanvas');
-const cadShowClean = document.getElementById('cadShowClean');
+const cadAddBackground = document.getElementById('cadAddBackground');
+const cadBackgroundFile = document.getElementById('cadBackgroundFile');
 const cadShowInput = document.getElementById('cadShowInput');
 const cadReturnModel = document.getElementById('cadReturnModel');
 const cadExportArchitectural = document.getElementById('cadExportArchitectural');
@@ -2478,6 +2479,100 @@ function cadCalpestabile(doc = cadWorkingDoc) {
     .find(el => el.localName === 'g' && el.id === 'calpestabile') || null;
 }
 
+function cadBackgroundContainer(doc = cadWorkingDoc, create = false) {
+  if (!doc) return null;
+  const root = doc.documentElement;
+  let group = Array.from(root.children)
+    .find(el => el.localName === 'g' && el.id === 'termodel-backgrounds') || null;
+
+  if (!group && create) {
+    group = doc.createElementNS(SVG_NS, 'g');
+    group.setAttribute('id', 'termodel-backgrounds');
+    group.setAttribute('data-termodel-accessorio', 'SFONDI');
+    root.insertBefore(group, root.firstChild);
+  }
+  return group;
+}
+
+function cadPlaneBackground(doc = cadWorkingDoc, planeName = cadCurrentPlane()) {
+  const group = cadBackgroundContainer(doc, false);
+  if (!group || !planeName) return null;
+  return Array.from(group.children).find(element =>
+    element.localName === 'image' &&
+    cadText(element.getAttribute('data-termodel-piano')) === planeName
+  ) || null;
+}
+
+function cadReadFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => resolve(String(reader.result || '')));
+    reader.addEventListener('error', () => reject(reader.error || new Error('Impossibile leggere il file.')));
+    reader.readAsDataURL(file);
+  });
+}
+
+function cadBackgroundKind(file) {
+  return file?.type === 'image/svg+xml' || /\.svg$/i.test(file?.name || '')
+    ? 'vector'
+    : 'raster';
+}
+
+async function cadImportBackgroundFile(file) {
+  if (!cadWorkingDoc || !file) return;
+
+  const isSvg = file.type === 'image/svg+xml' || /\.svg$/i.test(file.name || '');
+  const isRaster = /^image\//i.test(file.type || '') && !isSvg;
+  if (!isSvg && !isRaster) {
+    cadSetStatus('Formato sfondo non supportato. Usa SVG o un file immagine.', 'error');
+    return;
+  }
+
+  const root = cadWorkingDoc.documentElement;
+  const viewBox = cadParseViewBox(root.getAttribute('viewBox'));
+  const plane = cadCurrentPlane();
+  if (!viewBox || !plane) {
+    cadSetStatus('Impossibile aggiungere lo sfondo: viewBox o piano corrente non disponibile.', 'error');
+    return;
+  }
+
+  const dataUrl = await cadReadFileAsDataUrl(file);
+  if (!dataUrl) {
+    cadSetStatus('Impossibile incorporare il file di sfondo.', 'error');
+    return;
+  }
+
+  const before = cadSerializeWorkingSvg();
+  const group = cadBackgroundContainer(cadWorkingDoc, true);
+  cadPlaneBackground(cadWorkingDoc, plane)?.remove();
+
+  const image = cadWorkingDoc.createElementNS(SVG_NS, 'image');
+  image.setAttribute('data-termodel-sfondo', '1');
+  image.setAttribute('data-termodel-piano', plane);
+  image.setAttribute('data-termodel-layer', cadCurrentLayer());
+  image.setAttribute('data-termodel-sfondo-tipo', cadBackgroundKind(file));
+  image.setAttribute('data-termodel-nome-file', file.name || '');
+  image.setAttribute('x', String(viewBox[0]));
+  image.setAttribute('y', String(viewBox[1]));
+  image.setAttribute('width', String(viewBox[2]));
+  image.setAttribute('height', String(viewBox[3]));
+  image.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  image.setAttribute('opacity', '0.72');
+  image.setAttribute('href', dataUrl);
+  group.appendChild(image);
+
+  cadUndoStack.push(before);
+  cadRedoStack = [];
+  renderCadComparison();
+  cadUpdateControls();
+  cadSetStatus(
+    '✓ Sfondo ' + (isSvg ? 'vettoriale' : 'raster') +
+    ' aggiunto · Piano ' + plane +
+    ' · ' + (file.name || 'file'),
+    'dirty'
+  );
+}
+
 function cadCurrentPlane() {
   cadEnsureToolbarState();
   return cadText(cadToolbarState.piano);
@@ -2539,6 +2634,14 @@ function cadSerializeCurrentPlaneSvg() {
 
   if (group && current) {
     Array.from(group.children).forEach(element => {
+      const plane = cadText(element.getAttribute('data-termodel-piano'));
+      if (plane && plane !== current) element.remove();
+    });
+  }
+
+  const backgroundGroup = cadBackgroundContainer(clone, false);
+  if (backgroundGroup && current) {
+    Array.from(backgroundGroup.children).forEach(element => {
       const plane = cadText(element.getAttribute('data-termodel-piano'));
       if (plane && plane !== current) element.remove();
     });
@@ -3303,6 +3406,7 @@ function cadUpdateControls() {
   const insertingSymbol = cadToolMode === 'symbol';
   const busy = drawingLine || insertingSymbol;
 
+  if (cadAddBackground) cadAddBackground.disabled = !hasDoc || busy;
   if (cadUndo) cadUndo.disabled = !cadUndoStack.length || busy;
   if (cadRedo) cadRedo.disabled = !cadRedoStack.length || busy;
   if (cadDelete) cadDelete.disabled = !selected || busy;
@@ -3941,9 +4045,7 @@ function cadInstallPointerEditing(svg) {
 
 function applyCadLayerVisibility() {
   if (!cadCanvas) return;
-  const clean = cadCanvas.querySelector('#cadCleanLayer');
   const input = cadCanvas.querySelector('#cadInputLayer');
-  if (clean) clean.style.display = cadShowClean?.checked === false ? 'none' : '';
   if (input) input.style.display = cadShowInput?.checked === false ? 'none' : '';
 
   const handles = cadCanvas.querySelector('#cadHandlesLayer');
@@ -3963,14 +4065,11 @@ function renderCadComparison() {
     return;
   }
 
-  const parser = new DOMParser();
-  const cleanDoc = lastCleanPlanSvg
-    ? parser.parseFromString(lastCleanPlanSvg, 'image/svg+xml')
-    : null;
   const inputRoot = cadWorkingDoc.documentElement;
-  const cleanRoot = cleanDoc?.documentElement || null;
 
-  const viewBox = cleanRoot?.getAttribute('viewBox') || inputRoot.getAttribute('viewBox');
+  // v0.40: la "Pianta pulita" resta disponibile al motore ma non viene
+  // renderizzata nel CAD. Il fondo visibile è l'eventuale disegno importato.
+  const viewBox = inputRoot.getAttribute('viewBox');
   if (!viewBox) {
     const empty = document.createElement('div');
     empty.className = 'cad-empty';
@@ -3998,48 +4097,24 @@ function renderCadComparison() {
     }));
   }
 
-  // Fondo: pianta architettonica rigenerata del piano corrente, se disponibile.
-  const cleanLayer = svgNode('g', { id: 'cadCleanLayer', 'pointer-events': 'none' });
-  if (cleanDoc) {
-    cleanDoc.querySelectorAll('#locali-puliti path').forEach(source => {
-      cleanLayer.appendChild(svgNode('path', {
-        d: source.getAttribute('d') || '',
-        fill: '#fafafa',
-        stroke: 'none'
-      }));
-    });
-    cleanDoc.querySelectorAll('#pareti-architettoniche path').forEach(source => {
-      cleanLayer.appendChild(svgNode('path', {
-        d: source.getAttribute('d') || '',
-        fill: '#cfcfcf',
-        'fill-rule': source.getAttribute('fill-rule') || 'nonzero',
-        stroke: '#858585',
-        'stroke-width': 0.9,
-        'vector-effect': 'non-scaling-stroke'
-      }));
-    });
-    cleanDoc.querySelectorAll('#contorni-architettonici path').forEach(source => {
-      cleanLayer.appendChild(svgNode('path', {
-        d: source.getAttribute('d') || '',
-        fill: 'none',
-        stroke: '#707070',
-        'stroke-width': 1.25,
-        'vector-effect': 'non-scaling-stroke'
-      }));
-    });
-    cleanDoc.querySelectorAll('#etichette-locali text').forEach(source => {
-      const label = svgNode('text', {
-        x: source.getAttribute('x'), y: source.getAttribute('y'),
-        fill: '#777777',
-        'text-anchor': 'middle',
-        'font-family': 'Segoe UI, Arial, sans-serif',
-        'font-size': 14
-      });
-      label.textContent = source.textContent || '';
-      cleanLayer.appendChild(label);
-    });
+  // Sfondo importato del piano corrente: raster o SVG vettoriale incorporato.
+  const backgroundLayer = svgNode('g', {
+    id: 'cadImportedBackgroundLayer',
+    'pointer-events': 'none'
+  });
+  const sourceBackground = cadPlaneBackground(cadWorkingDoc, cadCurrentPlane());
+  if (sourceBackground) {
+    backgroundLayer.appendChild(svgNode('image', {
+      x: sourceBackground.getAttribute('x'),
+      y: sourceBackground.getAttribute('y'),
+      width: sourceBackground.getAttribute('width'),
+      height: sourceBackground.getAttribute('height'),
+      preserveAspectRatio: sourceBackground.getAttribute('preserveAspectRatio') || 'xMidYMid meet',
+      opacity: sourceBackground.getAttribute('opacity') || '0.72',
+      href: sourceBackground.getAttribute('href') || ''
+    }));
   }
-  svg.appendChild(cleanLayer);
+  svg.appendChild(backgroundLayer);
 
   // Overlay semantico editabile. In v0.7 sono editabili soltanto E/W.
   const inputLayer = svgNode('g', { id: 'cadInputLayer' });
@@ -4450,8 +4525,21 @@ document.addEventListener('keydown', (event) => {
 });
 
 
-if (cadShowClean)
-  cadShowClean.addEventListener('change', applyCadLayerVisibility);
+cadAddBackground?.addEventListener('click', () => {
+  if (!cadWorkingDoc || !cadBackgroundFile) return;
+  cadBackgroundFile.click();
+});
+cadBackgroundFile?.addEventListener('change', async () => {
+  const file = cadBackgroundFile.files?.[0];
+  cadBackgroundFile.value = '';
+  if (!file) return;
+  try {
+    await cadImportBackgroundFile(file);
+  } catch (error) {
+    console.error(error);
+    cadSetStatus('Errore importazione sfondo: ' + (error?.message || error), 'error');
+  }
+});
 if (cadShowInput)
   cadShowInput.addEventListener('change', applyCadLayerVisibility);
 if (cadUndo)
@@ -4539,8 +4627,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.39: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.39' })
+// v0.40: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.40' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {

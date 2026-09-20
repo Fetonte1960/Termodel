@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.39 — zoom e pan CAD</title>
+  <title>Termodel Web v0.40 — sfondi CAD per piano</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -837,7 +837,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.39</div>
+      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.40</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -870,7 +870,8 @@
       </section>
       <section id="cadPage" class="page cad-page" aria-label="Viewer CAD Web">
         <div class="cad-toolbar">
-          <label><input id="cadShowClean" type="checkbox" checked /> Pianta pulita</label>
+          <button id="cadAddBackground" type="button" title="Importa uno sfondo raster o SVG per il piano corrente">＋ Aggiungi sfondo</button>
+          <input id="cadBackgroundFile" type="file" accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden />
           <label><input id="cadShowInput" type="checkbox" checked /> Disegno input</label>
           <label><input id="cadSnap" type="checkbox" checked /> Snap</label>
           <span class="cad-toolbar-plane" title="Piano corrente e archivio Piani">
@@ -1204,6 +1205,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.39"></script>
+  <script type="module" src="./app.js?v=0.40"></script>
 </body>
 </html>
