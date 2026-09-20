@@ -604,13 +604,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.34
+Termodel Web v0.35
 ```
 
-Commit frontend di riferimento per la v0.34:
+Commit frontend di riferimento per la v0.35:
 
 ```text
-8befbac140661b5806a18f58349e182834908f18  Make CAD symbol insertion visibly activate
+3f83edca56c5b1171c2296d348d806a91564a801  Activate symbol properties after insertion
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -619,7 +619,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.30 è stata osservata direttamente su `https://www.termodel.it/termodel-ui-demo/` il 2026-09-20 con simbolo Nord visibile nel CAD e controllo laterale operativo. La v0.33 è stata osservata dall'utente con i pulsanti simbolo presenti, ma il comando Porta/Finestra non dava un feedback percepibile alla pressione. La v0.34 è su `main` e deve essere verificata pubblicamente.
+La v0.34 è stata verificata manualmente dall'utente il 2026-09-20: i comandi di inserimento simboli si attivano correttamente e Porta/Finestra inserisce il simbolo. La v0.35 è su `main` e deve essere verificata pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2132,9 +2132,45 @@ La v0.34 rende l'attivazione del comando indipendente dall'aggiornamento del pan
 - eventuali problemi nel refresh del pannello laterale non interrompono più l'attivazione del comando;
 - `Esc` o una seconda pressione sul pulsante annullano la modalità inserimento.
 
+### Implementazione v0.35 — selezione e pannello proprietà simbolo
+
+La v0.35 collega l'inserimento dei simboli al pannello laterale contestuale.
+
+Dopo l'inserimento:
+
+```text
+simbolo creato
+    ↓
+diventa automaticamente selezionato
+    ↓
+pannello laterale cambia contesto
+    ↓
+mostra proprietà del simbolo
+```
+
+Comportamento:
+
+- il simbolo appena inserito diventa l'entità selezionata;
+- le sezioni specifiche delle pareti vengono nascoste;
+- FIN/PON/LOC mostrano nel pannello le coppie `CHIAVE,VALORE` presenti nei propri `tspan`;
+- Allinea mostra il pannello minimale e non inventa attributi tecnici;
+- gli attributi del simbolo possono essere modificati e applicati direttamente allo SVG;
+- un simbolo già presente può essere ricliccato nel canvas per riaprire lo stesso pannello;
+- la selezione di una parete deseleziona il simbolo e viceversa;
+- il pannello mostra anche posizione, Piano corrente e LayerCad del contesto;
+- la modifica degli attributi partecipa a undo/redo attraverso lo stesso SVG di lavoro.
+
+Restano da completare:
+
+- trascinamento/spostamento dei simboli;
+- snap durante lo spostamento FIN/PON;
+- vincolo LOC dentro il locale;
+- eliminazione simbolo selezionato;
+- sostituzione progressiva dei campi testuali generici con controlli archivio-aware dove previsto.
+
 ### Stato
 
-**PARZIALMENTE IMPLEMENTATO IN v0.34 — INSERIMENTO ATTIVO CON FEEDBACK VISIBILE; EDITING CONTESTUALE DA COMPLETARE.**
+**PARZIALMENTE IMPLEMENTATO IN v0.35 — INSERIMENTO + SELEZIONE + PANNELLO ATTRIBUTI ATTIVI; SPOSTAMENTO DA COMPLETARE.**
 
 ---
 
@@ -2310,7 +2346,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.34.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.35.**
 
 Stato operativo corrente:
 
@@ -2320,7 +2356,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.34 presente su `main`;
+- v0.35 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2331,6 +2367,7 @@ Stato operativo corrente:
 - v0.32 aumenta ulteriormente il margine del simbolo Nord rispetto alla geometria, spostandolo verso il bordo esterno alto-destra.
 - v0.33 attiva i pulsanti di inserimento simboli CAD `Allinea / Porta-Finestra / Ponte / Locale`, usando automaticamente Piano corrente e `Piani.LayerCad`, con FIN/PON agganciati alla parete.
 - v0.34 rende visibile e robusta l'attivazione dei comandi simbolo: pulsante in stato attivo, cursore crosshair e messaggio operativo immediato; il refresh del pannello laterale non può più annullare il feedback del comando.
+- v0.35 seleziona automaticamente il simbolo appena inserito e attiva il pannello laterale contestuale; FIN/PON/LOC espongono e modificano gli attributi presenti nei tspan SVG, Allinea resta minimale.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2342,7 +2379,7 @@ Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
 > 2. verificare manualmente la v0.32: simbolo Nord in pianta sufficientemente distanziato dalla geometria → `?` laterale assente quando l'orientamento è definito → freccia della bussola rivolta verso l'esterno;  
-> 3. verificare manualmente la v0.34: pressione di Porta/Finestra → pulsante `× Porta/Finestra` + cursore a mirino + messaggio `clicca vicino a una parete` → clic parete → FIN inserito con Piano/LayerCad correnti; ripetere per Allinea/Ponte/Locale; quindi completare la sezione 12.7 con selezione, trascinamento e pannello laterale contestuale dei simboli;  
+> 3. verificare manualmente la v0.35: inserimento FIN/PON/LOC → simbolo automaticamente selezionato → pannello laterale contestuale con attributi SVG → modifica/Applica; verificare anche il clic successivo sul simbolo già presente; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
