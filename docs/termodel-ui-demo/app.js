@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.46';
+} from './archivio-web.js?v=0.47';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,14 +18,15 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.46';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.46';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.47';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.47';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
 const cadPage = document.getElementById('cadPage');
 const cadCanvas = document.getElementById('cadCanvas');
 const cadContextMenu = document.getElementById('cadContextMenu');
+const cadCloseSequence = document.getElementById('cadCloseSequence');
 const cadStopSequence = document.getElementById('cadStopSequence');
 const cadAddBackground = document.getElementById('cadAddBackground');
 const cadBackgroundFile = document.getElementById('cadBackgroundFile');
@@ -3910,10 +3911,19 @@ function cadHideContextMenu() {
   if (cadContextMenu) cadContextMenu.hidden = true;
 }
 
+function cadCanCloseWallSequence() {
+  return cadToolMode === 'line' &&
+    !!cadNewLineState?.sequenceStart &&
+    !!cadNewLineState?.firstLineId &&
+    Number(cadNewLineState?.segmentCount || 0) >= 3;
+}
+
 function cadShowLineContextMenu(event) {
   if (!cadContextMenu || cadToolMode !== 'line') return;
+  const canClose = cadCanCloseWallSequence();
+  if (cadCloseSequence) cadCloseSequence.hidden = !canClose;
   const width = 180;
-  const height = 36;
+  const height = canClose ? 72 : 36;
   cadContextMenu.style.left = Math.max(0, Math.min(event.clientX, window.innerWidth - width - 4)) + 'px';
   cadContextMenu.style.top = Math.max(0, Math.min(event.clientY, window.innerHeight - height - 4)) + 'px';
   cadContextMenu.hidden = false;
@@ -3993,7 +4003,10 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
   if (!cadNewLineState) {
     cadNewLineState = {
       start: point.slice(),
-      before: cadSerializeWorkingSvg()
+      before: cadSerializeWorkingSvg(),
+      sequenceStart: point.slice(),
+      firstLineId: '',
+      segmentCount: 0
     };
     cadRenderNewLinePreview(svg, point, snapped.snapped);
     cadSetStatus(
@@ -4032,12 +4045,20 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
   cadRedoStack = [];
   cadSelectedLineId = id;
 
+  const sequenceStart = cadNewLineState.sequenceStart?.slice() || [x1, y1];
+  const firstLineId = cadNewLineState.firstLineId || id;
+  const segmentCount = Number(cadNewLineState.segmentCount || 0) + 1;
+
   // Modalità multilinea: il punto finale appena confermato diventa
   // automaticamente il punto iniziale del segmento successivo.
+  // Manteniamo anche origine, prima parete e numero segmenti della sequenza.
   cadToolMode = 'line';
   cadNewLineState = {
     start: point.slice(),
-    before: cadSerializeWorkingSvg()
+    before: cadSerializeWorkingSvg(),
+    sequenceStart,
+    firstLineId,
+    segmentCount
   };
 
   renderCadComparison();
@@ -4045,6 +4066,61 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
   if (nextSvg) cadRenderNewLinePreview(nextSvg, point, false);
   cadSetStatus(
     `✓ ${id} creata${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · SNAP' : ''} · continua dal punto finale · tasto destro per interrompere`,
+    'dirty'
+  );
+}
+
+function cadCloseWallSequence() {
+  if (!cadCanCloseWallSequence() || !cadWorkingDoc) return;
+
+  const group = cadCalpestabile();
+  const firstLine = cadFindSourceLine(cadNewLineState.firstLineId);
+  const start = cadNewLineState.start?.slice();
+  const sequenceStart = cadNewLineState.sequenceStart?.slice();
+
+  if (!group || !firstLine || !start || !sequenceStart) {
+    cadSetStatus('Impossibile chiudere la sequenza pareti.', 'error');
+    return;
+  }
+
+  cadHideContextMenu();
+
+  // Se l'ultimo punto coincide già con l'origine non generiamo una parete nulla:
+  // terminiamo semplicemente la sequenza.
+  if (cadPointDistance(start, sequenceStart) < 0.5) {
+    cadToolMode = 'select';
+    cadNewLineState = null;
+    renderCadComparison();
+    cadUpdateControls();
+    cadSetStatus('Sequenza pareti già chiusa.', 'dirty');
+    return;
+  }
+
+  const before = cadSerializeWorkingSvg();
+  const type = /^E/i.test(firstLine.id || '') ? 'E' : 'W';
+  const id = cadNextLineId(type);
+  const line = cadWorkingDoc.createElementNS(SVG_NS, 'line');
+  line.setAttribute('id', id);
+  line.setAttribute('x1', Number(start[0]).toFixed(3).replace(/\.000$/, ''));
+  line.setAttribute('y1', Number(start[1]).toFixed(3).replace(/\.000$/, ''));
+  line.setAttribute('x2', Number(sequenceStart[0]).toFixed(3).replace(/\.000$/, ''));
+  line.setAttribute('y2', Number(sequenceStart[1]).toFixed(3).replace(/\.000$/, ''));
+
+  // La parete di chiusura eredita i dati semantici dalla prima parete
+  // memorizzata della sequenza.
+  cadApplySemanticAttributes(line, cadStateFromLine(firstLine));
+  group.appendChild(line);
+
+  cadUndoStack.push(before);
+  cadRedoStack = [];
+  cadSelectedLineId = id;
+  cadToolMode = 'select';
+  cadNewLineState = null;
+
+  renderCadComparison();
+  cadUpdateControls();
+  cadSetStatus(
+    `✓ Sequenza chiusa con ${id} · ultimo punto collegato all'inizio`,
     'dirty'
   );
 }
@@ -4922,6 +4998,7 @@ if (cadDelete)
   cadDelete.addEventListener('click', cadDeleteSelected);
 if (cadNewLine)
   cadNewLine.addEventListener('click', cadToggleNewLine);
+cadCloseSequence?.addEventListener('click', cadCloseWallSequence);
 cadStopSequence?.addEventListener('click', () => {
   cadHideContextMenu();
   cadCancelNewLine();
@@ -5007,8 +5084,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.46: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.46' })
+// v0.47: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.47' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
