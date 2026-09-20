@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.48';
+} from './archivio-web.js?v=0.49';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,8 +18,8 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.48';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.48';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.49';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.49';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -3962,6 +3962,29 @@ function cadToggleNewLine() {
   cadUpdateControls();
 }
 
+function cadRenderNewLineFirstPointPreview(svg, rawPoint) {
+  svg.querySelector('#cadNewLinePreviewLayer')?.remove();
+  if (cadToolMode !== 'line' || cadNewLineState) return { point: rawPoint, snapped: false };
+
+  const snapped = cadSnapPoint(rawPoint, '');
+  if (!snapped.snapped) return snapped;
+
+  const layer = svgNode('g', {
+    id: 'cadNewLinePreviewLayer',
+    'pointer-events': 'none'
+  });
+
+  layer.appendChild(svgNode('circle', {
+    cx: snapped.point[0],
+    cy: snapped.point[1],
+    r: 10,
+    class: 'cad-snap-marker'
+  }));
+
+  svg.appendChild(layer);
+  return snapped;
+}
+
 function cadRenderNewLinePreview(svg, currentPoint = null, snapped = false) {
   svg.querySelector('#cadNewLinePreviewLayer')?.remove();
   if (cadToolMode !== 'line' || !cadNewLineState) return;
@@ -4477,8 +4500,18 @@ function cadInstallPointerEditing(svg) {
   svg.addEventListener('pointermove', event => {
     if (cadMovePan(svg, event)) return;
 
-    if (cadToolMode === 'line' && cadNewLineState) {
-      const snapped = cadNewLineTargetPoint(cadClientPoint(svg, event));
+    if (cadToolMode === 'line') {
+      const rawPoint = cadClientPoint(svg, event);
+
+      if (!cadNewLineState) {
+        const snapped = cadRenderNewLineFirstPointPreview(svg, rawPoint);
+        cadSetStatus(
+          `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · clicca il punto iniziale${snapped.snapped ? ' · SNAP' : ''}`
+        );
+        return;
+      }
+
+      const snapped = cadNewLineTargetPoint(rawPoint);
       cadRenderNewLinePreview(svg, snapped.point, snapped.snapped);
       cadSetStatus(
         `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · clicca il punto successivo${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · SNAP' : ''}`
@@ -5148,8 +5181,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.48: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.48' })
+// v0.49: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.49' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
