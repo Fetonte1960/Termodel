@@ -546,6 +546,44 @@ La conformità riguarda almeno:
 
 È ammesso adattare il **layout tecnico** alle caratteristiche del browser e alle dimensioni disponibili, ma senza cambiare arbitrariamente la logica della view desktop.
 
+### Deroga esplicita CAD Web — Piano corrente nella toolbar comandi
+
+Decisione approvata il 2026-09-20.
+
+Per il **CAD 2D Web** è autorizzata una deroga mirata alla collocazione prevista da `MainWindow.xaml / Grid_DatiCad`, motivata dal recupero di spazio verticale nel pannello laterale.
+
+Il box laterale generale:
+
+```text
+Dati CAD
+├── Entità
+├── Piano corrente + Arc
+└── Layer
+```
+
+non deve essere riprodotto nel Web.
+
+Nel CAD Web:
+
+- il campo fisso `Entità` viene eliminato: l'entità selezionata resta identificata dall'intestazione contestuale del pannello e dallo stato CAD;
+- il campo fisso `Layer` viene eliminato dalla view: il layer continua a essere derivato automaticamente da `Piani.LayerCad` e resta parte della logica interna/persistenza;
+- **Piano corrente** resta obbligatorio e mantiene integralmente la semantica `Piani.Nome`;
+- il combo **Piano corrente** e il relativo pulsante **Arc → Piani** vengono spostati dalla toolbar laterale al **pannello comandi superiore del CAD**;
+- il cambio piano continua a filtrare il canvas e a determinare il `LayerCad` corrente come prima.
+
+Questa è una **deroga di layout esplicitamente approvata**, non una deroga ai contratti dati o al comportamento desktop.
+
+Restano quindi autorevoli e conformi allo XAML:
+
+- significato di `Piano`;
+- sorgente dati `Piani.Nome`;
+- relazione `Piano → Piani.LayerCad`;
+- funzione del pulsante `Arc`;
+- regole multipiano;
+- campi/Combo/readonly/correlazioni specifiche di pareti, FIN, PON, LOC e archivi.
+
+La deroga non autorizza future rimozioni o spostamenti di controlli XAML senza una nuova decisione esplicita.
+
 Regola pratica:
 
 > prima di creare o modificare una view Termodel Web, individuare e leggere la view XAML desktop corrispondente e, quando necessario, il relativo `.xaml.cs`.
@@ -604,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.37
+Termodel Web v0.38
 ```
 
-Commit frontend di riferimento per la v0.37:
+Commit frontend di riferimento per la v0.38:
 
 ```text
-886f0b10055881d43b92f861505f1be5a63bbf98  Make North properties contextual
+2182b739fa66878776ce9ca01841173c10c7863e  Move CAD plane selector to command toolbar
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -619,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.36 ha riallineato i pannelli simbolo ai riferimenti XAML/DatiCad; la v0.37 è su `main` e deve essere verificata pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.38 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2415,7 +2453,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.37.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.38.**
 
 Stato operativo corrente:
 
@@ -2425,7 +2463,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.37 presente su `main`;
+- v0.38 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2439,6 +2477,7 @@ Stato operativo corrente:
 - v0.35 seleziona automaticamente il simbolo appena inserito e attiva il pannello laterale contestuale; FIN/PON/LOC espongono e modificano gli attributi presenti nei tspan SVG, Allinea resta minimale.
 - v0.36 sostituisce il pannello generico con controlli conformi a `MainWindow.xaml` e `DatiCad`: combo metadata-driven, valori dagli archivi, pulsanti Arc verso gli archivi correlati e gestione delle fonti ponte/altezza/quota come in `ScriptCad.cs`.
 - v0.37 rende il pannello Nord contestuale: chiuso di default, apertura cliccando il simbolo Nord nel CAD, chiusura con × o cambio di contesto, liberando spazio nella colonna proprietà.
+- v0.38 elimina il box generale `Dati CAD` dal pannello laterale; mantiene `Piano corrente` e `Arc Piani` spostandoli nella toolbar comandi. `Entità` è rappresentata dall'intestazione contestuale; `Layer` resta derivato internamente da `Piani.LayerCad`. Questa disposizione è una deroga esplicita alla direttiva XAML, limitata al layout CAD Web.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2449,7 +2488,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.37: pannello Nord chiuso di default → clic sul simbolo Nord → apertura `Dati CAD · Nord` → modifica orientamento → chiusura con × → selezione parete/simbolo richiude automaticamente il Nord;  
+> 2. verificare manualmente la v0.38: box generale `Dati CAD` assente dal laterale → combo `Piano` + `Arc` presenti nella toolbar superiore → cambio piano continua a filtrare il CAD e a usare il relativo `LayerCad`; verificare anche il pannello Nord contestuale della v0.37;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
