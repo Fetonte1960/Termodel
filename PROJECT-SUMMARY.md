@@ -642,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.40
+Termodel Web v0.41
 ```
 
-Commit frontend di riferimento per la v0.40:
+Commit frontend di riferimento per la v0.41:
 
 ```text
-4c0d09562b1cd465ae37af941eb65a13b4cdc0b9  Add per-plane raster and vector CAD backgrounds
+d784cc3fd4c7d7732b000314beac8077ee3f106d  Add background visibility and wall calibration
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -657,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.40 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.41 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2407,9 +2407,75 @@ Non viene introdotto per ora un nuovo contratto backend o una sezione asset del 
 
 L'aggiunta o sostituzione dello sfondo partecipa allo stesso stack undo/redo del CAD.
 
+### Implementazione v0.41 — visibilità e calibrazione geometrica
+
+La v0.41 aggiunge due funzioni:
+
+1. checkbox `Sfondo` nella toolbar CAD per mostrare/nascondere lo sfondo importato del piano corrente;
+2. calibrazione geometrica dello sfondo e del disegno del piano corrente usando una parete ortogonale come riferimento.
+
+Non è stato trovato nei sorgenti desktop consultati (`MainWindow.xaml`, `MainWindow.xaml.cs`, `leggidxf/ScriptCad.cs`) un comando di calibrazione equivalente. La calibrazione è quindi una **nuova funzione specifica del CAD Web**, senza modifica dello schema dati o dei sorgenti desktop.
+
+#### Attivazione
+
+Quando viene selezionata una parete E/W:
+
+- se è orizzontale → compare il box laterale `Calibrazione sfondo`;
+- se è verticale → compare il box laterale `Calibrazione sfondo`;
+- se è inclinata → il box non viene attivato;
+- se il piano corrente non ha uno sfondo → il box può mostrare il riferimento ma `Calibra` resta disabilitato.
+
+La tolleranza ortogonale frontend iniziale è:
+
+```text
+CAD_CALIBRATION_ORTHO_EPSILON = 0.05 cm
+```
+
+#### Flusso
+
+```text
+seleziona parete orizzontale/verticale
+        ↓
+leggi lunghezza SVG corrente
+        ↓
+inserisci Misura reale (m)
+        ↓
+Calibra
+        ↓
+targetCm = misura_m × 100
+        ↓
+fattore = targetCm / lunghezzaCorrenteCm
+        ↓
+ridimensiona geometria del piano corrente
++ sfondo del piano corrente
+```
+
+Il **primo estremo della parete selezionata** viene usato come punto fisso/pivot della trasformazione.
+
+#### Cosa viene scalato
+
+Sul solo piano corrente vengono scalati:
+
+- tutti gli elementi SVG `line` del disegno;
+- le posizioni grafiche dei simboli testuali Termodel, per mantenerli allineati alla geometria;
+- posizione, larghezza e altezza dello sfondo importato.
+
+Non vengono moltiplicati gli attributi tecnici dei simboli FIN/PON/LOC: la calibrazione modifica la geometria/posizione, non la tipologia di archivio o i dati tecnici di istanza.
+
+Gli altri piani non vengono geometricamente scalati.
+
+Dopo la calibrazione:
+
+- il `viewBox` di progetto viene ricalcolato sull'estensione complessiva;
+- il viewport CAD viene centrato sul piano corrente;
+- il simbolo Nord viene rigenerato sul nuovo `viewBox` mantenendo invariato il proprio orientamento;
+- la parete di riferimento resta selezionata;
+- l'operazione partecipa a undo/redo;
+- il progetto resta dirty fino a `Rigenera pianta`.
+
 ### Stato
 
-**IMPLEMENTATO IN v0.40 — DA VERIFICARE MANUALMENTE.**
+**IMPLEMENTATO IN v0.40/v0.41 — DA VERIFICARE MANUALMENTE.**
 
 ---
 
@@ -2585,7 +2651,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.40.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.41.**
 
 Stato operativo corrente:
 
@@ -2595,7 +2661,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.40 presente su `main`;
+- v0.41 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2612,6 +2678,7 @@ Stato operativo corrente:
 - v0.38 elimina il box generale `Dati CAD` dal pannello laterale; mantiene `Piano corrente` e `Arc Piani` spostandoli nella toolbar comandi. `Entità` è rappresentata dall'intestazione contestuale; `Layer` resta derivato internamente da `Piani.LayerCad`. Questa disposizione è una deroga esplicita alla direttiva XAML, limitata al layout CAD Web.
 - v0.39 aggiunge navigazione CAD senza pulsanti UI: rotella mouse = zoom centrato sul cursore; tasto centrale + trascinamento = pan. Il tasto centrale ha priorità sugli strumenti di inserimento/selezione, lo stato viewport sopravvive ai ridisegni del canvas e viene azzerato quando si carica un nuovo SVG di lavoro.
 - v0.40 aggiunge uno sfondo raster/SVG specifico per ogni piano tramite `Aggiungi sfondo`; lo sfondo viene incorporato nello SVG progetto, filtrato per `data-termodel-piano` e visualizzato sotto il Disegno input. La precedente visualizzazione `Pianta pulita` è sospesa nel CAD ma resta disponibile al motore.
+- v0.41 ripristina il check `Sfondo` e introduce la calibrazione per-piano: selezione di parete orizzontale/verticale → misura reale in metri → fattore di scala applicato a sfondo, linee e posizioni dei simboli del piano corrente; pareti inclinate escluse; viewBox/Nord ricalcolati; undo/redo attivo.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2622,7 +2689,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.40: su due piani differenti importare uno sfondo raster e uno SVG → cambio Piano deve cambiare sfondo → Disegno input sempre sopra lo sfondo → nuovo import sullo stesso piano sostituisce il precedente → undo/redo; verificare anche zoom/pan v0.39;  
+> 2. verificare manualmente la v0.41: importare uno sfondo → check Sfondo ON/OFF → selezionare parete orizzontale/verticale → box Calibrazione sfondo → impostare una misura reale nota → Calibra → verificare che parete, tutte le linee, posizioni simboli e sfondo del solo piano corrente mantengano l'allineamento e assumano la nuova scala; verificare che una parete inclinata non attivi il box e che undo/redo ripristini la geometria;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
