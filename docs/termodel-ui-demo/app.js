@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.51';
+} from './archivio-web.js?v=0.52';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,14 +18,15 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.51';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.51';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.52';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.52';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
 const cadPage = document.getElementById('cadPage');
 const cadCanvas = document.getElementById('cadCanvas');
 const cadContextMenu = document.getElementById('cadContextMenu');
+const cadRepeatLastCommand = document.getElementById('cadRepeatLastCommand');
 const cadCloseSequence = document.getElementById('cadCloseSequence');
 const cadCloseOrthogonalSequence = document.getElementById('cadCloseOrthogonalSequence');
 const cadStopSequence = document.getElementById('cadStopSequence');
@@ -141,6 +142,7 @@ let cadCalibrationLineId = '';
 let cadToolMode = 'select';
 let cadNewLineState = null;
 let cadSymbolInsertType = '';
+let cadLastRepeatableCommand = '';
 let cadToolbarState = {
   piano: '',
   tipoParete: '',
@@ -2811,6 +2813,7 @@ function cadToggleSymbolInsert(type) {
   if (cadToolMode === 'line') cadCancelNewLine();
 
   cadCloseNorthPanel(false);
+  cadLastRepeatableCommand = 'symbol:' + normalized;
   cadToolMode = 'symbol';
   cadSymbolInsertType = normalized;
   cadSelectedLineId = '';
@@ -3930,16 +3933,34 @@ function cadCanCloseWallSequence() {
     Number(cadNewLineState?.segmentCount || 0) >= 3;
 }
 
-function cadShowLineContextMenu(event) {
-  if (!cadContextMenu || cadToolMode !== 'line') return;
-  const canClose = cadCanCloseWallSequence();
-  if (cadCloseSequence) cadCloseSequence.hidden = !canClose;
-  if (cadCloseOrthogonalSequence) cadCloseOrthogonalSequence.hidden = !canClose;
+function cadPositionContextMenu(event, height) {
+  if (!cadContextMenu) return;
   const width = 180;
-  const height = canClose ? 108 : 36;
   cadContextMenu.style.left = Math.max(0, Math.min(event.clientX, window.innerWidth - width - 4)) + 'px';
   cadContextMenu.style.top = Math.max(0, Math.min(event.clientY, window.innerHeight - height - 4)) + 'px';
   cadContextMenu.hidden = false;
+}
+
+function cadShowIdleContextMenu(event) {
+  if (!cadContextMenu || cadToolMode !== 'select') return;
+  if (cadRepeatLastCommand) {
+    cadRepeatLastCommand.hidden = false;
+    cadRepeatLastCommand.disabled = !cadLastRepeatableCommand;
+  }
+  if (cadCloseSequence) cadCloseSequence.hidden = true;
+  if (cadCloseOrthogonalSequence) cadCloseOrthogonalSequence.hidden = true;
+  if (cadStopSequence) cadStopSequence.hidden = true;
+  cadPositionContextMenu(event, 36);
+}
+
+function cadShowLineContextMenu(event) {
+  if (!cadContextMenu || cadToolMode !== 'line') return;
+  const canClose = cadCanCloseWallSequence();
+  if (cadRepeatLastCommand) cadRepeatLastCommand.hidden = true;
+  if (cadCloseSequence) cadCloseSequence.hidden = !canClose;
+  if (cadCloseOrthogonalSequence) cadCloseOrthogonalSequence.hidden = !canClose;
+  if (cadStopSequence) cadStopSequence.hidden = false;
+  cadPositionContextMenu(event, canClose ? 108 : 36);
 }
 
 function cadCancelNewLine(svg = cadCanvas?.querySelector('svg')) {
@@ -3961,6 +3982,7 @@ function cadToggleNewLine() {
     return;
   }
 
+  cadLastRepeatableCommand = 'line';
   cadCloseNorthPanel(false);
   cadSymbolInsertType = '';
   cadToolMode = 'line';
@@ -3971,6 +3993,20 @@ function cadToggleNewLine() {
   if (svg) cadSyncOverlay(svg);
   cadUpdatePropertiesPanel();
   cadUpdateControls();
+}
+
+function cadRepeatLastCadCommand() {
+  if (cadToolMode !== 'select' || !cadLastRepeatableCommand) return;
+
+  cadHideContextMenu();
+
+  if (cadLastRepeatableCommand === 'line') {
+    cadToggleNewLine();
+    return;
+  }
+
+  const match = /^symbol:(ALLINEA|FIN|PON|LOC)$/.exec(cadLastRepeatableCommand);
+  if (match) cadToggleSymbolInsert(match[1]);
 }
 
 function cadRenderNewLineFirstPointPreview(svg, rawPoint) {
@@ -4502,16 +4538,25 @@ function cadInstallPointerEditing(svg) {
     if (event.button === 1) cadStartPan(svg, event);
   }, true);
 
-  // In modalità parete il tasto destro apre un menu CAD minimale
-  // per interrompere esplicitamente la sequenza multilinea.
+  // Il tasto destro usa un menu CAD contestuale:
+  // - in modalità parete: chiusura/interruzione sequenza;
+  // - in stato neutro: ripetizione dell'ultimo comando ripetibile.
   svg.addEventListener('contextmenu', event => {
-    if (cadToolMode !== 'line') {
-      cadHideContextMenu();
+    if (cadToolMode === 'line') {
+      event.preventDefault();
+      event.stopPropagation();
+      cadShowLineContextMenu(event);
       return;
     }
-    event.preventDefault();
-    event.stopPropagation();
-    cadShowLineContextMenu(event);
+
+    if (cadToolMode === 'select') {
+      event.preventDefault();
+      event.stopPropagation();
+      cadShowIdleContextMenu(event);
+      return;
+    }
+
+    cadHideContextMenu();
   });
 
   // Le modalità di inserimento intercettano il click sinistro prima delle singole entità.
@@ -5127,6 +5172,7 @@ if (cadDelete)
   cadDelete.addEventListener('click', cadDeleteSelected);
 if (cadNewLine)
   cadNewLine.addEventListener('click', cadToggleNewLine);
+cadRepeatLastCommand?.addEventListener('click', cadRepeatLastCadCommand);
 cadCloseSequence?.addEventListener('click', () => cadCloseWallSequence(false));
 cadCloseOrthogonalSequence?.addEventListener('click', () => cadCloseWallSequence(true));
 cadStopSequence?.addEventListener('click', () => {
@@ -5214,8 +5260,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.51: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.51' })
+// v0.52: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.52' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
