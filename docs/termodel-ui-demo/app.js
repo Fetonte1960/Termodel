@@ -8,7 +8,7 @@ import {
   loadTermodelProjectText,
   openArchivioWeb,
   getArchivioWebRecords
-} from './archivio-web.js?v=0.30';
+} from './archivio-web.js?v=0.31';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -1912,9 +1912,11 @@ function ensureNorthSymbolInSvg(doc, angle = readNorthOrientationFromSvg(doc)) {
   while (group.firstChild) group.removeChild(group.firstChild);
 
   const [minX, minY, width, height] = northSvgViewBox(doc);
-  const radius = Math.min(Math.max(Math.min(width, height) * 0.045, 28), 70);
-  const x = minX + width - radius * 1.45;
-  const y = minY + radius * 1.45;
+  // Simbolo volutamente più discreto e con maggiore rispetto dal bordo:
+  // deve orientare la pianta senza coprire la geometria edilizia.
+  const radius = Math.min(Math.max(Math.min(width, height) * 0.032, 22), 48);
+  const x = minX + width - radius * 1.70;
+  const y = minY + radius * 1.70;
   group.setAttribute('transform', `translate(${x} ${y})`);
 
   group.appendChild(northSvgElement(doc, 'circle', {
@@ -1990,9 +1992,13 @@ function cadUpdateNorthControls() {
   }
   if (cadNorthNeedle) {
     cadNorthNeedle.hidden = !defined;
+    cadNorthNeedle.style.display = defined ? 'block' : 'none';
     cadNorthNeedle.style.transform = `rotate(${value}deg)`;
   }
-  if (cadNorthUnknown) cadNorthUnknown.hidden = defined;
+  if (cadNorthUnknown) {
+    cadNorthUnknown.hidden = defined;
+    cadNorthUnknown.style.display = defined ? 'none' : 'flex';
+  }
 }
 
 function cadSyncNorthFromWorkingDoc() {
@@ -2031,9 +2037,11 @@ function cadRenderNorthOverlay(svg, viewBoxValues) {
   const [minX, minY, width, height] = viewBoxValues;
   if (![minX, minY, width, height].every(Number.isFinite)) return;
 
-  const radius = Math.min(Math.max(Math.min(width, height) * 0.045, 28), 70);
-  const x = minX + width - radius * 1.45;
-  const y = minY + radius * 1.45;
+  // Simbolo volutamente più discreto e con maggiore rispetto dal bordo:
+  // deve orientare la pianta senza coprire la geometria edilizia.
+  const radius = Math.min(Math.max(Math.min(width, height) * 0.032, 22), 48);
+  const x = minX + width - radius * 1.70;
+  const y = minY + radius * 1.70;
 
   const group = svgNode('g', {
     id: 'cadNorthOverlay',
@@ -3630,8 +3638,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.30: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.30' })
+// v0.31: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.31' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
