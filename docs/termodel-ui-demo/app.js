@@ -8,7 +8,7 @@ import {
   loadTermodelProjectText,
   openArchivioWeb,
   getArchivioWebRecords
-} from './archivio-web.js?v=0.28';
+} from './archivio-web.js?v=0.29';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -1287,7 +1287,18 @@ async function importAiFromMainForm(event) {
 
         try {
           const project = await createStructuredProjectFromSvg(validatedSvg);
-          setMainAiStatus(`✓ Progetto strutturato creato: ${project.projectName} · archivi e CAD attivi`);
+
+          // Il primo processSvgText() avviene prima della creazione del progetto:
+          // in quel momento l'archivio Piani può non essere ancora disponibile.
+          // Ora che il progetto strutturato e Piani sono caricati, rileggiamo lo
+          // stesso SVG nel CAD per assegnare le entità legacy al piano corrente.
+          cadSetWorkingSvg(validatedSvg);
+          validatedSvg = cadSerializeWorkingSvg();
+          rasterSvgText.value = validatedSvg;
+
+          setMainAiStatus(
+            `✓ Progetto strutturato creato: ${project.projectName} · geometria assegnata al piano ${cadCurrentPlane()} · archivi e CAD attivi`
+          );
         } catch (error) {
           setStructuredProjectState(false);
           console.error('Creazione progetto strutturato non riuscita:', error);
@@ -3252,8 +3263,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.28: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.28' })
+// v0.29: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.29' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
