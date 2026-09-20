@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`a296e635b9d99d4e3b788ae4c79bf313ad01eda1` — `Restore first-point wall snap feedback v0.49`  
+`3a8ec7eae6e4b0821a180b72084edb046d52e735` — `Enable Ortho by default v0.50`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -642,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.49
+Termodel Web v0.50
 ```
 
-Commit frontend di riferimento per la v0.49:
+Commit frontend di riferimento per la v0.50:
 
 ```text
-a296e635b9d99d4e3b788ae4c79bf313ad01eda1  Restore first-point wall snap feedback v0.49
+3a8ec7eae6e4b0821a180b72084edb046d52e735  Enable Ortho by default v0.50
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -657,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.49 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.50 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2849,6 +2849,41 @@ Restore first-point wall snap feedback v0.49
 
 ---
 
+## 12.17 Orto attivo di default — v0.50
+
+La v0.50 modifica soltanto lo stato iniziale del controllo `Orto` nel menu `Snap` del CAD 2D.
+
+All'apertura:
+
+```text
+Snap = ON
+Orto = ON
+```
+
+L'utente può comunque disattivare `Orto` manualmente in qualsiasi momento.
+
+Non cambia la logica di Snap, multilinea, Chiudi o Chiudi ortogonale.
+
+File modificati:
+
+```text
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/app.js
+```
+
+Commit:
+
+```text
+3a8ec7eae6e4b0821a180b72084edb046d52e735
+Enable Ortho by default v0.50
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.50 — DA VERIFICARE MANUALMENTE NEL BROWSER.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -3021,7 +3056,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.49.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.50.**
 
 Stato operativo corrente:
 
@@ -3031,7 +3066,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.49 presente su `main`;
+- v0.50 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -3057,6 +3092,7 @@ Stato operativo corrente:
 - v0.47 memorizza origine/prima parete/conteggio della sequenza; da 3 pareti confermate il tasto destro offre `Chiudi`, che collega l'ultimo punto all'origine con una nuova parete basata sui dati della prima parete e termina la sequenza.
 - v0.48 aggiunge `Chiudi ortogonale`: corregge il vertice finale condiviso con l'ultima parete per allinearlo in X o Y al punto iniziale, scegliendo lo spostamento minore valido, quindi crea una chiusura perfettamente orizzontale/verticale; correzione + chiusura sono un solo Undo.
 - v0.49 ripristina il feedback visivo dello Snap sul primo punto della nuova parete: marcatore verde e stato `SNAP` compaiono già prima del primo clic, che usa lo stesso punto agganciato.
+- v0.50 imposta `Orto` attivo di default all'apertura del CAD, mantenendo la possibilità di disattivarlo manualmente.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -3067,9 +3103,9 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.49: attivare Snap + `Nuova parete`, muovere il cursore vicino a estremi e tratti di pareti esistenti e verificare che il marcatore verde e la dicitura `SNAP` compaiano prima del primo clic; cliccare e verificare che il primo punto coincida con l'aggancio mostrato. Nella stessa prova verificare che punti successivi, `Chiudi` e `Chiudi ortogonale` restino invariati;  
+> 2. verificare manualmente la v0.50: aprire il CAD e verificare che nel menu `Snap` risultino già selezionati sia `Attiva Snap` sia `Orto`; disattivare e riattivare `Orto` per confermare che resti un normale controllo utente. Nella stessa prova verificare il feedback Snap del primo punto e le chiusure della sequenza;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `a296e635b9d99d4e3b788ae4c79bf313ad01eda1`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `3a8ec7eae6e4b0821a180b72084edb046d52e735`.
