@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`c66f04b24626bded1780735a4d8066124982fb17` — `Make window insertion continuous v0.54`  
+`aebc9898833291b03ff20a380807c27e0aeb14cd` — `Add two-point window drawing v0.55`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -642,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.54
+Termodel Web v0.55
 ```
 
-Commit frontend di riferimento per la v0.54:
+Commit frontend di riferimento per la v0.55:
 
 ```text
-c66f04b24626bded1780735a4d8066124982fb17  Make window insertion continuous v0.54
+aebc9898833291b03ff20a380807c27e0aeb14cd  Add two-point window drawing v0.55
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -657,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.54 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.55 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -3088,6 +3088,62 @@ Make window insertion continuous v0.54
 
 ---
 
+## 12.22 Finestra a due punti — v0.55
+
+La v0.55 aggiunge un nuovo comando separato:
+
+```text
+Finestra 2 punti
+```
+
+Il comando storico `Porta/Finestra` a un punto della v0.54 resta invariato e continua a essere disponibile.
+
+Flusso del nuovo comando:
+
+1. primo clic vicino a una parete → il punto viene proiettato sulla parete e viene memorizzato l'ID della parete;
+2. movimento del mouse → viene mostrata una linea provvisoria dal primo punto al secondo;
+3. secondo clic → deve essere vicino alla **stessa parete** del primo punto;
+4. la posizione del simbolo FIN è il **punto medio** dei due estremi;
+5. la distanza tra i due estremi, nelle unità SVG già usate dal CAD, viene salvata nel normale attributo FIN `LARGHEZZA`;
+6. gli altri dati FIN (`PORTA`, `TIPO`, `ALTEZZA`, `NUMEROANTE`, `SOTTOFINESTRA`, `SOPRALUCE`) continuano a provenire dai DatiCad correnti.
+
+Non vengono introdotti nuovi campi o nuovi contratti.
+
+Il comando è continuo come il comando finestra a un punto:
+
+- dopo ogni FIN a due punti torna in attesa del primo punto della finestra successiva;
+- ogni finestra è un'entità autonoma con il proprio Undo;
+- `Esc`, pulsante attivo o tasto destro → `Interrompi sequenza` terminano il comando.
+
+Il menu `Disegna` contiene quindi entrambe le alternative:
+
+```text
+Porta/Finestra
+Finestra 2 punti
+```
+
+`Ripeti ultimo comando` riconosce anche `Finestra 2 punti`.
+
+File modificati:
+
+```text
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/app.js
+```
+
+Commit:
+
+```text
+aebc9898833291b03ff20a380807c27e0aeb14cd
+Add two-point window drawing v0.55
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.55 — DA VERIFICARE MANUALMENTE NEL BROWSER.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -3260,7 +3316,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.54.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.55.**
 
 Stato operativo corrente:
 
@@ -3270,7 +3326,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.54 presente su `main`;
+- v0.55 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -3301,6 +3357,7 @@ Stato operativo corrente:
 - v0.52 aggiunge nel menu del tasto destro, quando il CAD è neutro, `Ripeti ultimo comando`; memorizza Nuova parete e i quattro comandi simbolo e li riattiva con lo stato corrente.
 - v0.53 divide lo Snap in `Vicino` e `Estremo` come modalità radio alternative, con `Vicino` default; Orto resta indipendente e attivo di default, mentre lo stop multilinea su parete bersaglio continua a funzionare in entrambe le modalità.
 - v0.54 rende `Porta/Finestra` un comando continuo: ogni FIN inserito lascia il comando attivo per il successivo; Esc, pulsante attivo o tasto destro → `Interrompi sequenza` terminano la sequenza. Allinea/Ponte/Locale restano singoli.
+- v0.55 aggiunge `Finestra 2 punti` senza sostituire il FIN a un punto: due estremi sulla stessa parete definiscono una linea provvisoria, il punto medio diventa la posizione del FIN e la distanza diventa `LARGHEZZA`; anche questo comando resta continuo fino a Esc/interruzione.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -3311,9 +3368,9 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.54: attivare `Porta/Finestra`, inserire almeno 3 FIN consecutivi su pareti diverse e verificare che il comando resti attivo dopo ogni inserimento; provare Esc e tasto destro → `Interrompi sequenza`; verificare inoltre che Ponte, Locale e Allinea restino a singolo inserimento e che il menu parete non sia cambiato;  
+> 2. verificare manualmente la v0.55: verificare prima che `Porta/Finestra` a un punto sia invariato; poi attivare `Finestra 2 punti`, scegliere due punti sulla stessa parete e controllare linea provvisoria, posizione FIN al punto medio e `LARGHEZZA` uguale alla distanza misurata. Provare un secondo punto lontano/altra parete (deve essere rifiutato), inserire più finestre consecutive e terminare con Esc/tasto destro;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `c66f04b24626bded1780735a4d8066124982fb17`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `aebc9898833291b03ff20a380807c27e0aeb14cd`.
