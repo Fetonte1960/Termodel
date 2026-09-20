@@ -604,13 +604,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.31
+Termodel Web v0.32
 ```
 
-Commit frontend di riferimento per la v0.31:
+Commit frontend di riferimento per la v0.32:
 
 ```text
-ef75d056ae10963e3320276b6ba1a27a4c2a6b73  Refine North symbol presentation
+50eec1ee3e291c11f31aa17d3b01a8d8921f6361  Increase North symbol clearance
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -619,7 +619,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.30 è stata osservata direttamente su `https://www.termodel.it/termodel-ui-demo/` il 2026-09-20 con simbolo Nord visibile nel CAD e controllo laterale operativo. La v0.31 è su `main` ma non va considerata pubblicamente verificata finché non compare sul sito.
+La v0.30 è stata osservata direttamente su `https://www.termodel.it/termodel-ui-demo/` il 2026-09-20 con simbolo Nord visibile nel CAD e controllo laterale operativo. La v0.32 è su `main`; la rifinitura di distanza del Nord non va considerata pubblicamente verificata finché non compare sul sito.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -1850,9 +1850,13 @@ La v0.31 migliora esclusivamente la resa grafica del Nord senza cambiare il cont
 - la punta della freccia della bussola laterale è orientata verso l'esterno;
 - nessuna modifica alla persistenza `data-termodel-orientamento`.
 
+### Rifinitura v0.32
+
+La v0.32 aumenta ulteriormente il margine di rispetto del simbolo Nord in pianta: il simbolo viene spostato più verso il bordo esterno alto-destra, mantenendo invariati dimensione, contratto SVG e orientamento.
+
 ### Stato
 
-**IMPLEMENTATO IN v0.30 E RIFINITO IN v0.31**.
+**IMPLEMENTATO IN v0.30 E RIFINITO IN v0.31/v0.32**.
 
 ---
 
@@ -2028,7 +2032,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.31.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.32.**
 
 Stato operativo corrente:
 
@@ -2038,14 +2042,15 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.31 presente su `main`;
+- v0.32 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
 - v0.28 rende il CAD 2D multipiano per le pareti E/W: piano corrente, filtro canvas, nuove entità assegnate al piano corrente, ID globali e GeneraPianta limitato al piano visibile mantenendo completo lo SVG di progetto;
 - v0.29 corregge il canvas vuoto dopo importazione AI monopiano legacy: dopo la creazione del progetto strutturato il CAD ricarica lo SVG, assegna le entità al piano corrente e consolida `data-termodel-piano`;
 - v0.30 introduce il simbolo Nord di progetto: persistente nello SVG, unico tra i piani, modificabile dal CAD e visualizzato automaticamente nel 3D con freccia o `N ?`;
-- v0.31 rifinisce la presentazione del Nord: simbolo in pianta più discreto e distanziato, `?` laterale nascosto quando definito, freccia della bussola corretta verso l'esterno.
+- v0.31 rifinisce la presentazione del Nord: simbolo in pianta più discreto e distanziato, `?` laterale nascosto quando definito, freccia della bussola corretta verso l'esterno;
+- v0.32 aumenta ulteriormente il margine del simbolo Nord rispetto alla geometria, spostandolo verso il bordo esterno alto-destra.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2056,7 +2061,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.31: simbolo Nord in pianta con adeguato margine di rispetto → `?` laterale assente quando l'orientamento è definito → freccia della bussola rivolta verso l'esterno; quindi estendere la stessa semantica multipiano ai simboli `FIN/PON/LOC`, insieme al parser/editor e al collegamento agli archivi;  
+> 2. verificare manualmente la v0.32: simbolo Nord in pianta sufficientemente distanziato dalla geometria → `?` laterale assente quando l'orientamento è definito → freccia della bussola rivolta verso l'esterno; quindi estendere la stessa semantica multipiano ai simboli `FIN/PON/LOC`, insieme al parser/editor e al collegamento agli archivi;  
 > 3. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 4. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
