@@ -1697,6 +1697,96 @@ Questo principio multipiano ha precedenza sulle implementazioni CAD che assumono
 
 ---
 
+## 12.6 Simbolo accessorio Nord — orientamento della pianta e del modello 3D
+
+Decisione architetturale del 2026-09-20.
+
+Il simbolo **Nord** è un simbolo accessorio permanente del progetto Termodel e rappresenta l'orientamento della pianta rispetto al Nord geografico positivo.
+
+Non è un elemento edilizio e non appartiene agli archivi Pareti/Finestre/Ponti/Locali.
+
+### Scopo
+
+Il Nord serve come riferimento stabile per:
+
+- orientamento dell'edificio;
+- lettura corretta delle esposizioni;
+- collegamento con il percorso del sole;
+- future funzioni solari, energetiche e di ombreggiamento;
+- coerenza tra CAD 2D e modello 3D.
+
+### Persistenza
+
+Il simbolo deve essere registrato in almeno uno SVG del progetto e deve sopravvivere a:
+
+- salvataggio;
+- ricarica;
+- import/export;
+- editing CAD;
+- passaggio tra viste;
+- rigenerazione del modello.
+
+La rappresentazione SVG concreta deve essere definita in una implementazione successiva senza inventare contratti incompatibili con il progetto esistente.
+
+### Presenza obbligatoria nel modello 3D
+
+Il viewer/modello 3D deve mostrare il simbolo Nord **d'ufficio**, anche quando il progetto non contiene ancora una definizione esplicita.
+
+Regola:
+
+```text
+orientamento Nord definito
+        ↓
+simbolo Nord nel 3D
+ruotato nella direzione corretta
+
+orientamento Nord NON definito
+        ↓
+simbolo Nord comunque presente nel 3D
+        +
+indicatore "?"
+        ↓
+orientamento sconosciuto / da confermare
+```
+
+Il sistema **non deve inventare un orientamento convenzionale** quando il dato manca.
+
+Il simbolo con `?` significa esplicitamente:
+
+> Nord presente come riferimento grafico, ma orientamento reale non ancora definito o confermato.
+
+Quando l'utente definisce l'orientamento:
+
+- il `?` scompare;
+- il simbolo assume la direzione corretta;
+- CAD 2D e modello 3D devono utilizzare lo stesso valore di orientamento.
+
+### Editing
+
+Prima implementazione accettabile:
+
+- campo numerico/testuale dell'angolo di orientamento;
+- aggiornamento immediato del simbolo.
+
+Evoluzione UX preferibile:
+
+- controllo grafico più intuitivo, ad esempio rotazione diretta/ghiera/bussola;
+- mantenendo comunque disponibile il valore numerico preciso.
+
+### Relazione con il CAD multipiano
+
+Il Nord è un riferimento di **progetto/edificio**, non una normale entità appartenente a un singolo piano.
+
+Pertanto il suo orientamento deve restare coerente quando l'utente cambia piano nel CAD 2D.
+
+Il simbolo può essere rappresentato graficamente nella vista del piano corrente, ma il valore di orientamento non deve cambiare passando da un piano all'altro salvo decisione futura esplicita di supportare orientamenti indipendenti, che oggi non è prevista.
+
+### Stato
+
+Decisione registrata nel PS; implementazione non ancora realizzata.
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -1895,7 +1985,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. estendere la stessa semantica multipiano ai simboli `FIN/PON/LOC`, insieme al parser/editor e al collegamento agli archivi;  
+> 2. estendere la stessa semantica multipiano ai simboli `FIN/PON/LOC`, insieme al parser/editor e al collegamento agli archivi; introdurre inoltre il simbolo accessorio Nord secondo la sezione 12.6, con presenza automatica nel 3D e `?` quando l'orientamento non è definito;  
 > 3. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 4. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
