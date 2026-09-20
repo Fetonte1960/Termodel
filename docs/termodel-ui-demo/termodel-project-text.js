@@ -1,9 +1,13 @@
-// Termodel Web v0.58 — conversione bidirezionale TERMODEL-PROJECT-TEXT-V1.
+// Termodel Web v0.59 — conversione bidirezionale TERMODEL-PROJECT-TEXT-V1.
 // Il progetto unico resta il contenitore; questo modulo aggiorna soltanto le
 // sezioni modificate dal frontend e conserva tutte le altre sezioni.
+// Gli sfondi locali sono consolidati in assets/backgrounds/* e vengono
+// reidratati nel CAD soltanto all'apertura del progetto.
 
 export const TERMODEL_PROJECT_START = '[TERMODEL-PROJECT-TEXT-V1]';
 export const TERMODEL_PROJECT_END = '[END-TERMODEL-PROJECT-TEXT-V1]';
+export const TERMODEL_BACKGROUND_INDEX_SECTION = 'assets/backgrounds/index.json';
+export const TERMODEL_BACKGROUND_SECTION_PREFIX = 'assets/backgrounds/';
 
 const ARCHIVE_ARRAY_KEYS = [
   'records', 'Records',
@@ -81,6 +85,158 @@ export function replaceTermodelProjectSection(source, sectionName, sectionText) 
   return normalized.slice(0, bodyStart) +
     '\n' + String(sectionText == null ? '' : sectionText).trim() + '\n' +
     normalized.slice(endIndex);
+}
+
+export function setTermodelProjectSection(source, sectionName, sectionText) {
+  const normalized = normalizeSource(source);
+  const parsed = parseTermodelProjectText(normalized);
+  if (parsed.sections.has(sectionName))
+    return replaceTermodelProjectSection(normalized, sectionName, sectionText);
+
+  const endIndex = normalized.lastIndexOf(TERMODEL_PROJECT_END);
+  if (endIndex < 0)
+    throw new Error('Chiusura TERMODEL-PROJECT-TEXT-V1 non trovata.');
+
+  const prefix = normalized.slice(0, endIndex).replace(/\s+$/, '');
+  const suffix = normalized.slice(endIndex);
+  return (
+    prefix +
+    '\n\n---BEGIN:' + sectionName + '---\n' +
+    String(sectionText == null ? '' : sectionText).trim() +
+    '\n---END:' + sectionName + '---\n\n' +
+    suffix
+  );
+}
+
+export function removeTermodelProjectSection(source, sectionName) {
+  const normalized = normalizeSource(source);
+  const begin = '---BEGIN:' + sectionName + '---';
+  const end = '---END:' + sectionName + '---';
+  const beginIndex = normalized.indexOf(begin);
+  if (beginIndex < 0) return normalized;
+
+  const endIndex = normalized.indexOf(end, beginIndex + begin.length);
+  if (endIndex < 0)
+    throw new Error('La sezione ' + sectionName + ' del progetto non è chiusa.');
+
+  let before = normalized.slice(0, beginIndex).replace(/[ \t]*\n?$/, '');
+  let after = normalized.slice(endIndex + end.length).replace(/^\s*/, '');
+  return before + '\n\n' + after;
+}
+
+function safeBackgroundId(value, fallback) {
+  const clean = String(value || '')
+    .trim()
+    .replace(/[^A-Za-z0-9_-]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return clean || fallback;
+}
+
+function dataUrlMimeType(dataUrl) {
+  const match = String(dataUrl || '').match(/^data:([^;,]+)[;,]/i);
+  return match ? match[1].toLowerCase() : 'application/octet-stream';
+}
+
+export function consolidateTermodelBackgrounds(geometrySvg) {
+  const source = String(geometrySvg || '');
+  if (!source.trim())
+    return { geometrySvg: source, backgrounds: [] };
+
+  if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined')
+    throw new Error('DOM XML non disponibile: impossibile consolidare gli sfondi.');
+
+  const doc = new DOMParser().parseFromString(source, 'image/svg+xml');
+  if (doc.querySelector('parsererror'))
+    throw new Error('geometry/project.svg non è XML valido.');
+
+  const images = Array.from(doc.querySelectorAll('image[data-termodel-sfondo="1"]'));
+  const backgrounds = [];
+  const usedIds = new Set();
+
+  images.forEach((image, index) => {
+    const fallback = 'BG' + String(index + 1).padStart(3, '0');
+    let id = safeBackgroundId(image.getAttribute('data-termodel-background-id'), fallback);
+    if (usedIds.has(id)) {
+      let suffix = 2;
+      const base = id;
+      while (usedIds.has(base + '_' + suffix)) suffix++;
+      id = base + '_' + suffix;
+    }
+    usedIds.add(id);
+    image.setAttribute('data-termodel-background-id', id);
+
+    const href =
+      image.getAttribute('href') ||
+      image.getAttributeNS('http://www.w3.org/1999/xlink', 'href') ||
+      '';
+
+    if (!/^data:/i.test(href))
+      return;
+
+    const section = TERMODEL_BACKGROUND_SECTION_PREFIX + id + '.data';
+    backgrounds.push({
+      id,
+      plane: image.getAttribute('data-termodel-piano') || '',
+      layer: image.getAttribute('data-termodel-layer') || '',
+      fileName: image.getAttribute('data-termodel-nome-file') || '',
+      kind: image.getAttribute('data-termodel-sfondo-tipo') || '',
+      mimeType: dataUrlMimeType(href),
+      section,
+      dataUrl: href
+    });
+
+    image.removeAttribute('href');
+    image.removeAttributeNS('http://www.w3.org/1999/xlink', 'href');
+  });
+
+  return {
+    geometrySvg: new XMLSerializer().serializeToString(doc.documentElement),
+    backgrounds
+  };
+}
+
+export function hydrateTermodelBackgrounds(projectText, geometrySvg) {
+  const source = String(geometrySvg || '');
+  if (!source.trim()) return source;
+
+  const parsed = parseTermodelProjectText(projectText);
+  const rawIndex = parsed.sections.get(TERMODEL_BACKGROUND_INDEX_SECTION);
+  if (!rawIndex) return source;
+
+  let index;
+  try {
+    index = JSON.parse(rawIndex);
+  } catch (error) {
+    throw new Error('Indice sfondi non valido: ' + error.message);
+  }
+
+  const records = Array.isArray(index?.backgrounds) ? index.backgrounds : [];
+  if (!records.length) return source;
+
+  if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined')
+    throw new Error('DOM XML non disponibile: impossibile ripristinare gli sfondi.');
+
+  const doc = new DOMParser().parseFromString(source, 'image/svg+xml');
+  if (doc.querySelector('parsererror'))
+    throw new Error('geometry/project.svg non è XML valido.');
+
+  const images = Array.from(doc.querySelectorAll('image[data-termodel-sfondo="1"]'));
+
+  records.forEach((record) => {
+    const id = String(record?.id || '');
+    const section = String(record?.section || '');
+    if (!id || !section) return;
+
+    const image = images.find(item =>
+      item.getAttribute('data-termodel-background-id') === id
+    );
+    const dataUrl = parsed.sections.get(section);
+    if (!image || !dataUrl || !/^data:/i.test(dataUrl)) return;
+
+    image.setAttribute('href', dataUrl);
+  });
+
+  return new XMLSerializer().serializeToString(doc.documentElement);
 }
 
 function parseArchiveJsonShape(sectionText) {
@@ -311,6 +467,57 @@ function numberOrOriginal(value, original) {
   return Number.isFinite(numeric) ? numeric : original;
 }
 
+function contentTypeForSection(name, existing = '') {
+  if (existing) return existing;
+  if (name === TERMODEL_BACKGROUND_INDEX_SECTION) return 'application/json';
+  if (name.startsWith(TERMODEL_BACKGROUND_SECTION_PREFIX)) return 'text/plain';
+  if (/\.json$/i.test(name)) return 'application/json';
+  if (/\.xml$/i.test(name)) return 'application/xml';
+  if (/\.svg$/i.test(name)) return 'image/svg+xml';
+  if (/\.dxf$/i.test(name)) return 'application/dxf';
+  return 'text/plain';
+}
+
+function syncBackgroundSections(source, backgrounds) {
+  let result = normalizeSource(source);
+  const parsed = parseTermodelProjectText(result);
+
+  for (const name of parsed.sectionOrder) {
+    if (name.startsWith(TERMODEL_BACKGROUND_SECTION_PREFIX))
+      result = removeTermodelProjectSection(result, name);
+  }
+
+  if (!Array.isArray(backgrounds) || !backgrounds.length)
+    return result;
+
+  const index = {
+    format: 'TERMODEL-BACKGROUNDS-V1',
+    backgrounds: backgrounds.map(item => ({
+      id: item.id,
+      plane: item.plane || '',
+      layer: item.layer || '',
+      fileName: item.fileName || '',
+      kind: item.kind || '',
+      mimeType: item.mimeType || 'application/octet-stream',
+      section: item.section
+    }))
+  };
+
+  result = setTermodelProjectSection(
+    result,
+    TERMODEL_BACKGROUND_INDEX_SECTION,
+    JSON.stringify(index, null, 2)
+  );
+
+  for (const item of backgrounds) {
+    if (!item?.section || !/^data:/i.test(String(item.dataUrl || '')))
+      continue;
+    result = setTermodelProjectSection(result, item.section, item.dataUrl);
+  }
+
+  return result;
+}
+
 function updateManifestFloors(manifest, pianiRecords) {
   if (!Array.isArray(pianiRecords) || !pianiRecords.length) return;
 
@@ -353,14 +560,23 @@ async function refreshManifest(source, pianiRecords) {
   manifest.generatedAtUtc = new Date().toISOString();
   updateManifestFloors(manifest, pianiRecords);
 
-  if (Array.isArray(manifest.sections)) {
-    await Promise.all(manifest.sections.map(async (entry) => {
-      if (!entry || typeof entry.name !== 'string') return;
-      const sectionText = parsed.sections.get(entry.name);
-      if (sectionText === undefined) return;
-      entry.sha256 = await sha256Lower(sectionText);
-    }));
-  }
+  const oldEntries = new Map(
+    (Array.isArray(manifest.sections) ? manifest.sections : [])
+      .filter(entry => entry && typeof entry.name === 'string')
+      .map(entry => [entry.name, entry])
+  );
+
+  const sectionNames = parsed.sectionOrder.filter(name => name !== 'manifest.json');
+  manifest.sections = await Promise.all(sectionNames.map(async (name) => {
+    const old = oldEntries.get(name) || {};
+    const sectionText = parsed.sections.get(name) || '';
+    return {
+      ...old,
+      name,
+      contentType: contentTypeForSection(name, old.contentType || ''),
+      sha256: await sha256Lower(sectionText)
+    };
+  }));
 
   return replaceTermodelProjectSection(source, 'manifest.json', JSON.stringify(manifest, null, 2));
 }
@@ -390,6 +606,9 @@ export async function buildTermodelProjectText(source, options = {}) {
       result = replaceTermodelProjectSection(result, xmlName, xmlText);
     }
   }
+
+  if (options.backgrounds !== undefined)
+    result = syncBackgroundSections(result, options.backgrounds);
 
   result = await refreshManifest(result, archives.Piani);
   return result;

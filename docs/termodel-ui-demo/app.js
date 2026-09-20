@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.58';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.59';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -11,14 +11,16 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.58';
+} from './archivio-web.js?v=0.59';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
-  buildTermodelProjectText
-} from './termodel-project-text.js?v=0.58';
+  buildTermodelProjectText,
+  consolidateTermodelBackgrounds,
+  hydrateTermodelBackgrounds
+} from './termodel-project-text.js?v=0.59';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.58';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.59';
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
@@ -26,8 +28,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.58';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.58';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.59';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.59';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -984,12 +986,16 @@ async function loadEmptyProjectText() {
 }
 
 async function createStructuredProjectFromSvg(svgText) {
-  // v0.58: progetto base locale + conversione bidirezionale centralizzata.
+  // v0.59: progetto base locale + sfondi consolidati come asset del progetto.
   const emptyProjectText = await loadEmptyProjectText();
   const projectSvgText = ensureNorthSymbolInSvgText(svgText);
+  const consolidated = consolidateTermodelBackgrounds(projectSvgText);
   const structuredProjectText = await buildTermodelProjectText(
     emptyProjectText,
-    { geometrySvg: projectSvgText }
+    {
+      geometrySvg: consolidated.geometrySvg,
+      backgrounds: consolidated.backgrounds
+    }
   );
 
   const project = await loadTermodelProjectText(structuredProjectText);
@@ -1016,12 +1022,13 @@ async function loadProjectTextIntoFrontend(text, options = {}) {
   currentProjectFileName = options.fileName || currentProjectFileName || projectFileNameFromName(project.projectName);
 
   if (project.geometrySvg) {
+    const hydratedGeometrySvg = hydrateTermodelBackgrounds(text, project.geometrySvg);
     const previewLoaded = options.buildPreview === false
       ? false
-      : processSvgText(project.geometrySvg);
+      : processSvgText(hydratedGeometrySvg);
 
     if (!previewLoaded) {
-      cadSetWorkingSvg(project.geometrySvg);
+      cadSetWorkingSvg(hydratedGeometrySvg);
       validatedSvg = cadSerializeWorkingSvg();
       if (rasterSvgText) rasterSvgText.value = validatedSvg;
     }
@@ -1040,19 +1047,26 @@ async function buildCurrentProjectText() {
   for (const name of state.archives)
     archives[name] = getArchivioWebRecords(name);
 
-  const geometrySvg = cadWorkingDoc
+  const localGeometrySvg = cadWorkingDoc
     ? cadSerializeWorkingSvg()
     : (validatedSvg || undefined);
 
+  const consolidated = localGeometrySvg
+    ? consolidateTermodelBackgrounds(localGeometrySvg)
+    : null;
+
   const result = await buildTermodelProjectText(currentProjectText, {
-    geometrySvg,
-    archives
+    geometrySvg: consolidated ? consolidated.geometrySvg : undefined,
+    archives,
+    backgrounds: consolidated ? consolidated.backgrounds : undefined
   });
 
   currentProjectText = result;
-  if (geometrySvg) {
-    validatedSvg = geometrySvg;
-    if (rasterSvgText) rasterSvgText.value = geometrySvg;
+  if (localGeometrySvg) {
+    // Il CAD continua a lavorare con lo sfondo reidratato/Data URL.
+    // Solo il file progetto persistito usa il riferimento all'asset separato.
+    validatedSvg = localGeometrySvg;
+    if (rasterSvgText) rasterSvgText.value = localGeometrySvg;
   }
   return result;
 }
@@ -5669,8 +5683,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.58: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.58' })
+// v0.59: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.59' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
