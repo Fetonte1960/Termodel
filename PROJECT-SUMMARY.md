@@ -604,13 +604,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.35
+Termodel Web v0.36
 ```
 
-Commit frontend di riferimento per la v0.35:
+Commit frontend di riferimento per la v0.36:
 
 ```text
-3f83edca56c5b1171c2296d348d806a91564a801  Activate symbol properties after insertion
+dddbfcd510cf8909931be851a34b67695220e623  Align symbol properties with desktop XAML
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -619,7 +619,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.34 è stata verificata manualmente dall'utente il 2026-09-20: i comandi di inserimento simboli si attivano correttamente e Porta/Finestra inserisce il simbolo. La v0.35 è su `main` e deve essere verificata pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La prova ha però evidenziato che il pannello v0.35 era troppo generico rispetto a MainWindow.xaml. La v0.36 è su `main` e deve essere verificata pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2168,9 +2168,62 @@ Restano da completare:
 - eliminazione simbolo selezionato;
 - sostituzione progressiva dei campi testuali generici con controlli archivio-aware dove previsto.
 
+### Implementazione v0.36 — pannelli simbolo conformi a MainWindow.xaml / DatiCad
+
+La v0.36 sostituisce il pannello testuale generico della v0.35 con controlli coerenti con i sorgenti desktop consultati in sola lettura:
+
+```text
+MainWindow.xaml
+        +
+definizionedati.json / DatiCad
+        +
+ScriptCad.cs
+        ↓
+pannello simbolo Web
+```
+
+Regole implementate:
+
+- se il campo DatiCad possiede `Combo`, il Web usa una select come il ComboBox desktop;
+- le combo `auto_combo` leggono i valori dall'archivio del progetto indicato in `definizionedati.json`;
+- i valori extra definiti dopo `auto_combo,Archivio,Campo` vengono conservati;
+- i campi numerici usano `NumeroDecimali` per lo step;
+- i campi `ReadOnly` restano readonly/disabilitati;
+- i pulsanti `Arc` sono presenti sui campi che MainWindow.xaml collega a un archivio;
+- `Arc` apre l'ArchivioWeb corrispondente senza inventare nuovi contratti;
+- il pannello viene rigenerato quando gli archivi cambiano.
+
+Collegamenti Arc verificati dai riferimenti desktop:
+
+```text
+FIN
+Porta o sup. opaca → Pareti.DescBreve → Arc Pareti
+Tipo finestra      → Finestre.DescBreve → Arc Finestre
+
+PON
+Tipo ponte         → Ponti.DescBreve → Arc Ponti
+
+LOC
+Zona               → Zone.Descrizione → Arc Zone
+Tipo Soffitto      → Pareti.DescBreve → Arc Pareti
+Confine Soffitto   → Confini.Codice → Arc Confini
+Tipo Pavimento     → Pareti.DescBreve → Arc Pareti
+Confine Pavimento  → Confini.Codice → Arc Confini
+```
+
+La v0.36 riproduce anche i campi sorgente usati dal desktop:
+
+- PON: `FonteLunghezzaPonte` determina se `LUNGHEZZA` è valore imposto oppure `Lunghezza parete / Altezza parete`;
+- LOC: `FonteAltezza` determina se `ALTEZZALORDA/ALTEZZANETTA` sono `Da piano` oppure valori imposti;
+- LOC: `FonteQuotaPavimento` determina se `QUOTAPAVIMENTO` è `Da piano` oppure valore imposto.
+
+Per FIN le misure continuano a essere mostrate nel pannello in metri come in XAML ma persistite nello SVG in centimetri come richiesto dal contratto AI corrente.
+
+I campi mostrati sono quelli del pannello XAML necessari a rappresentare gli attributi realmente consolidati nei blocchi SVG; non vengono aggiunti al simbolo campi database non presenti nel contratto.
+
 ### Stato
 
-**PARZIALMENTE IMPLEMENTATO IN v0.35 — INSERIMENTO + SELEZIONE + PANNELLO ATTRIBUTI ATTIVI; SPOSTAMENTO DA COMPLETARE.**
+**PARZIALMENTE IMPLEMENTATO IN v0.36 — INSERIMENTO + SELEZIONE + PANNELLI XAML/ARCHIVI ATTIVI; SPOSTAMENTO DA COMPLETARE.**
 
 ---
 
@@ -2346,7 +2399,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.35.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.36.**
 
 Stato operativo corrente:
 
@@ -2356,7 +2409,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.35 presente su `main`;
+- v0.36 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2368,6 +2421,7 @@ Stato operativo corrente:
 - v0.33 attiva i pulsanti di inserimento simboli CAD `Allinea / Porta-Finestra / Ponte / Locale`, usando automaticamente Piano corrente e `Piani.LayerCad`, con FIN/PON agganciati alla parete.
 - v0.34 rende visibile e robusta l'attivazione dei comandi simbolo: pulsante in stato attivo, cursore crosshair e messaggio operativo immediato; il refresh del pannello laterale non può più annullare il feedback del comando.
 - v0.35 seleziona automaticamente il simbolo appena inserito e attiva il pannello laterale contestuale; FIN/PON/LOC espongono e modificano gli attributi presenti nei tspan SVG, Allinea resta minimale.
+- v0.36 sostituisce il pannello generico con controlli conformi a `MainWindow.xaml` e `DatiCad`: combo metadata-driven, valori dagli archivi, pulsanti Arc verso gli archivi correlati e gestione delle fonti ponte/altezza/quota come in `ScriptCad.cs`.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2379,7 +2433,7 @@ Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
 > 2. verificare manualmente la v0.32: simbolo Nord in pianta sufficientemente distanziato dalla geometria → `?` laterale assente quando l'orientamento è definito → freccia della bussola rivolta verso l'esterno;  
-> 3. verificare manualmente la v0.35: inserimento FIN/PON/LOC → simbolo automaticamente selezionato → pannello laterale contestuale con attributi SVG → modifica/Applica; verificare anche il clic successivo sul simbolo già presente; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
+> 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
