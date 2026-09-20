@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`00014782bb48433518e4930f34c7402225af9ffe` — `Add wall drawing cursor v0.46`  
+`35942a324167ceb6474e098c11282b39ce9bf424` — `Add wall sequence close command v0.47`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -642,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.46
+Termodel Web v0.47
 ```
 
-Commit frontend di riferimento per la v0.46:
+Commit frontend di riferimento per la v0.47:
 
 ```text
-00014782bb48433518e4930f34c7402225af9ffe  Add wall drawing cursor v0.46
+35942a324167ceb6474e098c11282b39ce9bf424  Add wall sequence close command v0.47
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -657,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.46 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.47 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2717,6 +2717,55 @@ Add wall drawing cursor v0.46
 
 ---
 
+## 12.14 Chiusura automatica sequenza pareti — v0.47
+
+La v0.47 estende il comando multilinea delle pareti memorizzando per ogni sequenza attiva:
+
+- punto iniziale assoluto della sequenza;
+- ID della prima parete creata;
+- numero di pareti già confermate;
+- ultimo punto confermato, già rappresentato dal punto iniziale del tratto successivo.
+
+Dal momento in cui sono state confermate almeno **3 pareti**, il menu contestuale del tasto destro mostra:
+
+```text
+Chiudi
+Interrompi sequenza
+```
+
+`Chiudi`:
+
+1. prende l'ultimo punto confermato;
+2. lo collega direttamente al punto iniziale della sequenza;
+3. crea una nuova parete E/W autonoma con ID globale;
+4. eredita tipo parete, confine, colore/tipo linea e piano dalla **prima parete memorizzata** della sequenza;
+5. non applica Orto o Snap al tratto finale, perché la priorità è chiudere geometricamente esattamente sul vertice iniziale;
+6. termina automaticamente la sequenza.
+
+Se l'ultimo punto coincide già con il punto iniziale, non viene creata una parete a lunghezza nulla: la sequenza viene semplicemente terminata.
+
+La parete generata da `Chiudi` entra nell'Undo come modifica autonoma.
+
+File modificati:
+
+```text
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/app.js
+```
+
+Commit:
+
+```text
+35942a324167ceb6474e098c11282b39ce9bf424
+Add wall sequence close command v0.47
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.47 — DA VERIFICARE MANUALMENTE NEL BROWSER.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -2889,7 +2938,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.46.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.47.**
 
 Stato operativo corrente:
 
@@ -2899,7 +2948,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.46 presente su `main`;
+- v0.47 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2922,6 +2971,7 @@ Stato operativo corrente:
 - v0.44 rende il comando parete una modalità multilinea continua: ogni punto finale diventa l'inizio del segmento successivo; Orto/Snap restano attivi su ogni tratto; tasto destro apre il menu `Interrompi sequenza`, con Esc come scorciatoia.
 - v0.45 compatta la toolbar CAD nei menu `Sfondo / Disegna / Snap`, lasciando `Piano + Arc` espliciti; rinomina nell'interfaccia il comando `Nuova linea` in `Nuova parete` senza modificare la rappresentazione geometrica interna.
 - v0.46 aggiunge il cursore crosshair durante il comando `Nuova parete`, già prima del primo punto e per tutta la sequenza; il pan mantiene priorità con cursore grabbing.
+- v0.47 memorizza origine/prima parete/conteggio della sequenza; da 3 pareti confermate il tasto destro offre `Chiudi`, che collega l'ultimo punto all'origine con una nuova parete basata sui dati della prima parete e termina la sequenza.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2932,9 +2982,9 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.46: attivare `Nuova parete` e verificare che il crosshair compaia subito prima del primo punto, resti durante la sequenza e sparisca dopo `Interrompi sequenza`/Esc; verificare anche che il pan con tasto centrale mostri grabbing. Nella stessa prova mantenere la verifica v0.45/v0.44/v0.43/v0.42/v0.41 su menu, sequenza pareti, layout CAD, Orto e calibrazione sfondo;  
+> 2. verificare manualmente la v0.47: avviare `Nuova parete`, creare 2 segmenti e verificare che il menu destro non mostri `Chiudi`; creare il terzo segmento e verificare che compaia `Chiudi`; premerlo e controllare che venga creata una parete dall'ultimo vertice al primo, che la sequenza termini e che Undo rimuova prima il tratto di chiusura. Nella stessa prova mantenere la verifica v0.46/v0.45/v0.44/v0.43/v0.42/v0.41;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `00014782bb48433518e4930f34c7402225af9ffe`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `35942a324167ceb6474e098c11282b39ce9bf424`.
