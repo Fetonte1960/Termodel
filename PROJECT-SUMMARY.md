@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`da7c4f70cdc3aa3b5e9c6e541b3725b9f9c44711` — `Use local empty project template v0.57`  
+`15c6f284a7970beb1d82865995e49f55e3f38054` — `Add bidirectional project round-trip v0.58`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,13 +679,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.57
+Termodel Web v0.58
 ```
 
-Commit frontend di riferimento per la v0.57:
+Commit frontend di riferimento per la v0.58:
 
 ```text
-da7c4f70cdc3aa3b5e9c6e541b3725b9f9c44711  Use local empty project template v0.57
+15c6f284a7970beb1d82865995e49f55e3f38054  Add bidirectional project round-trip v0.58
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -694,7 +694,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.57 sono su `main`; la v0.57 deve essere verificata pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.58 sono su `main`; v0.57 e v0.58 devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -3302,6 +3302,113 @@ Use local empty project template v0.57
 
 ---
 
+## 12.25 Conversione bidirezionale progetto unico / frontend — v0.58
+
+La v0.58 introduce il primo **round-trip completo** del progetto unico nel frontend.
+
+Nuovo modulo:
+
+```text
+docs/termodel-ui-demo/termodel-project-text.js
+```
+
+Le due direzioni concettuali sono:
+
+```text
+TERMODEL-PROJECT-TEXT-V1
+        ↓
+loadProjectTextIntoFrontend(...)
+        ↓
+stato frontend
+CAD + ArchivioWeb
+
+stato frontend
+CAD + ArchivioWeb
+        ↓
+buildCurrentProjectText(...)
+        ↓
+TERMODEL-PROJECT-TEXT-V1 aggiornato
+```
+
+Il convertitore conserva il progetto unico come contenitore e aggiorna soltanto le parti modificate dal frontend.
+
+Per il salvataggio corrente:
+
+- `geometry/project.svg` viene sostituito con lo SVG multipiano corrente del CAD;
+- tutti gli archivi presenti in ArchivioWeb vengono riscritti nelle sezioni `archives/json/*.json`;
+- le corrispondenti sezioni `archives/xml/*.xml` vengono rigenerate mantenendo ordine e tipi del progetto/XML di origine;
+- per i campi già presenti, il tipo XML reale del progetto ha precedenza sulle deduzioni da `definizionedati.json`;
+- le sezioni non gestite/modificate dal frontend, ad esempio DXF e input termici, restano nel contenitore;
+- `manifest.json` aggiorna `generatedAtUtc`, dati noti dei piani e SHA-256 delle sezioni;
+- il file risultante resta un normale `TERMODEL-PROJECT-TEXT-V1`.
+
+Test strutturale eseguito sul vero `ProgettoVuoto.termodel.txt`:
+
+```text
+sezioni prima = 26
+sezioni dopo  = 26
+
+Piani.AltezzaNetta:
+JSON  -> numero 3.2
+XML   -> d4p1:double 3.2
+manifest floors[0].netHeightMeters -> 3.2
+
+hash manifest -> 64 caratteri
+END marker    -> presente
+```
+
+La sintassi è stata verificata per:
+
+```text
+app.js
+archivio-web.js
+termodel-project-text.js
+```
+
+### File → Apri / Salva
+
+I comandi già presenti nel menu `File` sono ora collegati al progetto unico:
+
+- `Apri...` → seleziona un file testuale `TERMODEL-PROJECT-TEXT-V1` e lo converte nello stato frontend;
+- `Salva` → converte lo stato frontend corrente nel progetto unico e scarica il file;
+- `Salva con nome` → stessa conversione, con scelta del nome del file.
+
+Il salvataggio è completamente locale e non usa il WebService.
+
+### Precondizione obbligatoria per il futuro WebService
+
+Prima di qualsiasi futura richiesta autorevole al server, il frontend deve costruire il progetto unico aggiornato tramite la stessa conversione usata da `Salva`.
+
+Flusso obbligatorio:
+
+```text
+utente modifica CAD / archivi
+        ↓
+buildCurrentProjectText()
+        ↓
+TERMODEL-PROJECT-TEXT-V1 aggiornato e coerente
+        ├── Salva locale
+        ├── invio AI
+        └── futura richiesta WebService
+```
+
+Non introdurre API server operative che ricevano copie parziali o stato frontend sparso quando la funzione richiede il progetto corrente completo.
+
+**Salva e futuro invio server devono partire dalla stessa serializzazione del progetto unico.**
+
+Commit frontend:
+
+```text
+15c6f284a7970beb1d82865995e49f55e3f38054
+Add bidirectional project round-trip v0.58
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.58 — TEST STRUTTURALE SUPERATO; DA VERIFICARE MANUALMENTE NEL BROWSER CON APRI → MODIFICA CAD/ARCHIVIO → SALVA → RIAPRI.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -3333,6 +3440,8 @@ Il protocollo completo sperimentale corrente è:
 ```
 
 Il frontend v0.22 sa già importare le sezioni JSON degli archivi dal file completo.
+
+Dalla v0.58 il frontend dispone anche della conversione inversa: lo stato corrente di CAD + ArchivioWeb può essere ricomposto nel medesimo `TERMODEL-PROJECT-TEXT-V1`, mantenendo sincronizzate geometria, archivi JSON/XML e manifest. Il progetto unico è quindi il **formato di ingresso e di uscita** del frontend, non soltanto un formato di importazione.
 
 Il protocollo precedente:
 
@@ -3474,7 +3583,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.57.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.58.**
 
 Stato operativo corrente:
 
@@ -3484,7 +3593,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.57 presente su `main`;
+- v0.58 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -3518,9 +3627,10 @@ Stato operativo corrente:
 - v0.55 aggiunge `Finestra 2 punti` senza sostituire il FIN a un punto: due estremi sulla stessa parete definiscono una linea provvisoria, il punto medio diventa la posizione del FIN e la distanza diventa `LARGHEZZA`; anche questo comando resta continuo fino a Esc/interruzione.
 - v0.56 mostra i FIN nel 3D provvisorio come parallelepipedi orientati sulla parete, dimensionati da `LARGHEZZA / ALTEZZA / SOTTOFINESTRA` e leggermente più profondi della parete; la prova reale ha evidenziato un difetto di allineamento/profondità sulle E ancora da correggere.
 - v0.57 usa un progetto vuoto locale consolidato in JavaScript per `Nuovo` e per strutturare un semplice SVG AI, eliminando la necessità di tenere acceso il WebService durante i test frontend.
+- v0.58 implementa il round-trip bidirezionale `progetto unico ↔ frontend`: `Apri`, `Salva` e `Salva con nome` usano `TERMODEL-PROJECT-TEXT-V1`; geometria e archivi JSON/XML vengono ricomposti e il manifest aggiorna le impronte. Questa serializzazione è obbligatoria prima di future richieste al WebService.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
-Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Il caricatore `TERMODEL-PROJECT-TEXT-V1` e l'attivazione di archivi/CAD restano gli stessi.
+Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
 
 Il prossimo lavoro frontend deve rispettare il flusso utente della sezione 12.4.
 
@@ -3528,10 +3638,10 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. verificare manualmente la v0.57 **con WebService spento**: `File → Nuovo` / `Edita nel Cad` deve creare il progetto strutturato, caricare Piani/archivi e aprire il CAD; quindi `Importa da AI` con un semplice SVG deve innestare la geometria nello stesso template locale senza errori di rete;  
-> 2. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
-> 3. verificare manualmente la v0.29 ripetendo il caso legacy SVG monopiano privo di `data-termodel-piano` usando ora il bootstrap locale v0.57, e provare anche un progetto con almeno due record in `Piani`;  
-> 4. completare trascinamento simboli, snap in spostamento e vincolo LOC, quindi unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
+> 1. verificare manualmente la v0.58 **con WebService spento**: `Nuovo` → disegnare almeno una parete/FIN → modificare un valore archivio → `Salva` → `Apri...` il file appena scaricato e verificare che geometria, Piani e archivio modificato siano identici; ripetere con `Salva con nome`;  
+> 2. dopo il collaudo del round-trip, considerare `buildCurrentProjectText()` la precondizione obbligatoria di qualsiasi futura chiamata WebService che lavori sul progetto: il server dovrà ricevere il `TERMODEL-PROJECT-TEXT-V1` aggiornato, non stato parziale;  
+> 3. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
+> 4. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
 > 5. portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano, includendo correttamente le aperture/finestre FIN; l'attuale generazione 3D frontend resta provvisoria e non è il riferimento funzionale definitivo.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `da7c4f70cdc3aa3b5e9c6e541b3725b9f9c44711`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `15c6f284a7970beb1d82865995e49f55e3f38054`.
