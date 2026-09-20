@@ -8,7 +8,7 @@ import {
   loadTermodelProjectText,
   openArchivioWeb,
   getArchivioWebRecords
-} from './archivio-web.js?v=0.32';
+} from './archivio-web.js?v=0.33';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -29,6 +29,10 @@ const cadRedo = document.getElementById('cadRedo');
 const cadDelete = document.getElementById('cadDelete');
 const cadRegenerate = document.getElementById('cadRegenerate');
 const cadNewLine = document.getElementById('cadNewLine');
+const cadInsertAlign = document.getElementById('cadInsertAlign');
+const cadInsertOpening = document.getElementById('cadInsertOpening');
+const cadInsertBridge = document.getElementById('cadInsertBridge');
+const cadInsertRoom = document.getElementById('cadInsertRoom');
 const cadNewLineType = document.getElementById('cadNewLineType');
 const cadEditStatus = document.getElementById('cadEditStatus');
 const cadPropertiesHead = document.getElementById('cadPropertiesHead');
@@ -106,6 +110,7 @@ let cadRedoStack = [];
 let cadDragState = null;
 let cadToolMode = 'select';
 let cadNewLineState = null;
+let cadSymbolInsertType = '';
 let cadToolbarState = {
   piano: '',
   tipoParete: '',
@@ -2231,6 +2236,25 @@ function cadDerivedToolbarValues(state = cadToolbarState) {
   };
 }
 
+function cadLayerForPlane(planeName) {
+  const piano = cadFindRecord(cadArchiveRecords('Piani'), 'Nome', planeName);
+  return cadText(piano?.LayerCad);
+}
+
+function cadCurrentLayer() {
+  return cadLayerForPlane(cadCurrentPlane());
+}
+
+function cadDatiCadRecord() {
+  return cadArchiveRecords('DatiCad')[0] || {};
+}
+
+function cadMetersToSvgCm(value) {
+  const raw = cadText(value).replace(',', '.');
+  const number = Number(raw);
+  if (!Number.isFinite(number)) return raw || '0';
+  return String(Math.round(number * 10000) / 100);
+}
 function cadFillSelect(select, values, preferred) {
   if (!select) return '';
   const clean = [];
@@ -2331,6 +2355,7 @@ function cadApplySemanticAttributes(line, state = cadToolbarState) {
   if (!line) return;
 
   cadSetOptionalAttribute(line, 'data-termodel-piano', state.piano);
+  cadSetOptionalAttribute(line, 'data-termodel-layer', cadLayerForPlane(state.piano));
   cadSetOptionalAttribute(line, 'data-termodel-tipo-parete', state.tipoParete);
   cadSetOptionalAttribute(line, 'data-termodel-confine-parete', state.confineParete);
 
@@ -2430,9 +2455,17 @@ function cadNormalizePlaneAssignments() {
 
   let count = 0;
   cadPlaneScopedEntities().forEach(element => {
-    if (cadEntityPlane(element)) return;
-    element.setAttribute('data-termodel-piano', current);
-    count++;
+    let plane = cadEntityPlane(element);
+    if (!plane) {
+      plane = current;
+      element.setAttribute('data-termodel-piano', plane);
+      count++;
+    }
+    const layer = cadLayerForPlane(plane);
+    if (layer && cadText(element.getAttribute('data-termodel-layer')) !== layer) {
+      element.setAttribute('data-termodel-layer', layer);
+      count++;
+    }
   });
   return count;
 }
@@ -2470,6 +2503,169 @@ function cadRestorePlanePreview() {
   lastGeneratedPlan = cadGeneratedPlanByPlane.get(current) || null;
 }
 
+function cadSymbolBlockType(element) {
+  if (!element || element.localName !== 'text') return '';
+  const first = Array.from(element.children).find(child => child.localName === 'tspan');
+  const line = cadText(first?.textContent);
+  const match = /^BLOCCO\s*,\s*([^,]+)$/i.exec(line);
+  return match ? match[1].trim().toUpperCase() : '';
+}
+
+function cadSymbolAttribute(element, name) {
+  const wanted = String(name || '').trim().toUpperCase();
+  for (const child of Array.from(element?.children || [])) {
+    if (child.localName !== 'tspan') continue;
+    const line = cadText(child.textContent);
+    const comma = line.indexOf(',');
+    if (comma < 0) continue;
+    const key = line.slice(0, comma).trim().toUpperCase();
+    if (key === wanted) return line.slice(comma + 1).trim();
+  }
+  return '';
+}
+
+function cadSymbolColor(element) {
+  const type = cadSymbolBlockType(element);
+  if (type === 'FIN') return cadSymbolAttribute(element, 'PORTA') === 'Struttura trasparente' ? '#00897b' : '#7b1fa2';
+  if (type === 'PON') return '#7b1fa2';
+  if (type === 'LOC') return '#c62828';
+  if (type === 'ALLINEA') return '#455a64';
+  return '#6d4c41';
+}
+
+function cadNextSymbolId(prefix) {
+  const p = String(prefix || 'S').toUpperCase();
+  let max = 0;
+  const used = new Set(Array.from(cadWorkingDoc?.querySelectorAll?.('[id]') || []).map(element => element.id).filter(Boolean));
+  const re = new RegExp('^' + p + '(\\d+)$', 'i');
+  used.forEach(id => {
+    const match = re.exec(id);
+    if (match) max = Math.max(max, Number(match[1]) || 0);
+  });
+  let n = max + 1;
+  let id = p + String(n).padStart(3, '0');
+  while (used.has(id)) { n++; id = p + String(n).padStart(3, '0'); }
+  return id;
+}
+
+function cadCreateSymbolText(id, x, y, rows) {
+  const text = cadWorkingDoc.createElementNS(SVG_NS, 'text');
+  text.setAttribute('id', id);
+  text.setAttribute('x', Number(x).toFixed(3).replace(/\.000$/, ''));
+  text.setAttribute('y', Number(y).toFixed(3).replace(/\.000$/, ''));
+  text.setAttribute('font-size', '1');
+  cadSetOptionalAttribute(text, 'data-termodel-piano', cadCurrentPlane());
+  cadSetOptionalAttribute(text, 'data-termodel-layer', cadCurrentLayer());
+  rows.forEach((row, index) => {
+    const tspan = cadWorkingDoc.createElementNS(SVG_NS, 'tspan');
+    tspan.setAttribute('x', text.getAttribute('x'));
+    tspan.setAttribute('dy', index === 0 ? '0' : '1.2em');
+    tspan.textContent = row;
+    text.appendChild(tspan);
+  });
+  return text;
+}
+
+function cadNearestWallPoint(point, maxDistance = CAD_SNAP_DISTANCE * 3) {
+  let best = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  cadEditableSourceLines().forEach(line => {
+    const projected = cadNearestPointOnSegment(point, cadLinePoint(line, 1), cadLinePoint(line, 2));
+    const distance = cadPointDistance(point, projected);
+    if (distance < bestDistance) { best = projected; bestDistance = distance; }
+  });
+  return { point: best || point, snapped: Boolean(best) && bestDistance <= maxDistance, distance: bestDistance };
+}
+
+function cadSymbolInsertLabel(type) {
+  if (type === 'ALLINEA') return 'Allinea';
+  if (type === 'FIN') return 'Porta/Finestra';
+  if (type === 'PON') return 'Ponte';
+  if (type === 'LOC') return 'Locale';
+  return 'Simbolo';
+}
+
+function cadCancelSymbolInsert() {
+  if (cadToolMode === 'symbol') { cadToolMode = 'select'; cadSymbolInsertType = ''; }
+  cadUpdateControls();
+}
+
+function cadToggleSymbolInsert(type) {
+  if (!cadWorkingDoc) return;
+  const normalized = String(type || '').toUpperCase();
+  if (cadToolMode === 'symbol' && cadSymbolInsertType === normalized) { cadCancelSymbolInsert(); return; }
+  if (cadToolMode === 'line') cadCancelNewLine();
+  cadToolMode = 'symbol';
+  cadSymbolInsertType = normalized;
+  cadSelectedLineId = '';
+  cadNewLineState = null;
+  cadUpdatePropertiesPanel();
+  cadUpdateControls();
+}
+
+function cadInsertSymbolAtPoint(rawPoint) {
+  if (!cadWorkingDoc || cadToolMode !== 'symbol' || !cadSymbolInsertType) return;
+  const group = cadCalpestabile();
+  if (!group) { cadSetStatus('Gruppo calpestabile non trovato nello SVG.', 'error'); return; }
+  const plane = cadCurrentPlane();
+  const layer = cadCurrentLayer();
+  if (!plane || !layer) { cadSetStatus('Piano/LayerCad corrente non disponibile: impossibile inserire il simbolo.', 'error'); return; }
+  let point = rawPoint.slice();
+  let wallSnapped = false;
+  if (cadSymbolInsertType === 'FIN' || cadSymbolInsertType === 'PON') {
+    const snap = cadNearestWallPoint(rawPoint);
+    if (!snap.snapped) { cadSetStatus(cadSymbolInsertLabel(cadSymbolInsertType) + ': clicca vicino a una parete del piano corrente.', 'error'); return; }
+    point = snap.point;
+    wallSnapped = true;
+  }
+  const before = cadSerializeWorkingSvg();
+  const dati = cadDatiCadRecord();
+  let id = '';
+  let rows = [];
+  if (cadSymbolInsertType === 'ALLINEA') {
+    id = cadNextSymbolId('A');
+    rows = ['BLOCCO,ALLINEA'];
+  } else if (cadSymbolInsertType === 'FIN') {
+    id = cadNextSymbolId('F');
+    rows = [
+      'BLOCCO,FIN',
+      'PORTA,' + (cadText(dati.Porta) || 'Struttura trasparente'),
+      'TIPO,' + (cadText(dati.TipoFinestra) || 'Da associare'),
+      'LARGHEZZA,' + cadMetersToSvgCm(dati.LarghezzaFinestra),
+      'ALTEZZA,' + cadMetersToSvgCm(dati.AltezzaFinestra),
+      'NUMEROANTE,' + (cadText(dati.AnteFinestra) || '0'),
+      'SOTTOFINESTRA,' + cadMetersToSvgCm(dati.SottoFinestra),
+      'SOPRALUCE,' + cadMetersToSvgCm(dati.SopraLuce)
+    ];
+  } else if (cadSymbolInsertType === 'PON') {
+    id = cadNextSymbolId('PON');
+    rows = ['BLOCCO,PON', 'TIPO,' + (cadText(dati.TipoPonte) || 'Da associare'), 'ORIENTAMENTO,' + cadText(dati.OrientamentoPonte), 'LUNGHEZZA,' + cadText(dati.LungPonte)];
+  } else if (cadSymbolInsertType === 'LOC') {
+    id = cadNextSymbolId('R');
+    rows = [
+      'BLOCCO,LOC',
+      'DESCR.,' + (cadText(dati.DescrizioneLocale) || ('Locale ' + id)),
+      'ZONA,' + cadText(dati.Zona),
+      'CPAV,' + (cadText(dati.ConfinePavimento) || 'Automatico'),
+      'CSOF,' + (cadText(dati.ConfineSoffitto) || 'Automatico'),
+      'CCOPERTURA,' + (cadText(dati.ColoreCopertura) || 'Solaio piano'),
+      'TPAV,' + cadText(dati.TipoPavimento),
+      'TSOF,' + cadText(dati.TipoSoffitto),
+      'ALTEZZALORDA,' + (cadText(dati.AltezzaLorda) || 'Da piano'),
+      'ALTEZZANETTA,' + (cadText(dati.AltezzaNetta) || 'Da piano'),
+      'QUOTAPAVIMENTO,' + (cadText(dati.QuotaPavimento) || 'Da piano')
+    ];
+  }
+  if (!id || !rows.length) return;
+  const symbol = cadCreateSymbolText(id, point[0], point[1], rows);
+  group.appendChild(symbol);
+  cadUndoStack.push(before);
+  cadRedoStack = [];
+  cadToolMode = 'select';
+  cadSymbolInsertType = '';
+  renderCadComparison();
+  cadSetStatus('✓ ' + id + ' ' + cadSymbolBlockType(symbol) + ' inserito · Piano ' + plane + ' · Layer ' + layer + (wallSnapped ? ' · SNAP parete' : ''), 'dirty');
+}
 function cadFindSourceLine(id) {
   if (!id) return null;
   return cadEditableSourceLines().find(line => line.id === id) || null;
@@ -2586,6 +2782,8 @@ function cadCurrentPlaneChanged() {
 
   if (cadToolMode === 'line')
     cadCancelNewLine();
+  if (cadToolMode === 'symbol')
+    cadCancelSymbolInsert();
 
   cadToolbarState.piano = requested;
   cadSelectedLineId = '';
@@ -2620,49 +2818,46 @@ function cadUpdateControls() {
   const hasDoc = !!cadWorkingDoc;
   const selected = !!cadFindSourceLine(cadSelectedLineId);
   const dirty = cadIsDirty();
-  const drawing = cadToolMode === 'line';
+  const drawingLine = cadToolMode === 'line';
+  const insertingSymbol = cadToolMode === 'symbol';
+  const busy = drawingLine || insertingSymbol;
 
-  if (cadUndo) cadUndo.disabled = !cadUndoStack.length || drawing;
-  if (cadRedo) cadRedo.disabled = !cadRedoStack.length || drawing;
-  if (cadDelete) cadDelete.disabled = !selected || drawing;
-  if (cadRegenerate) cadRegenerate.disabled = !hasDoc || !dirty || drawing;
+  if (cadUndo) cadUndo.disabled = !cadUndoStack.length || busy;
+  if (cadRedo) cadRedo.disabled = !cadRedoStack.length || busy;
+  if (cadDelete) cadDelete.disabled = !selected || busy;
+  if (cadRegenerate) cadRegenerate.disabled = !hasDoc || !dirty || busy;
   if (cadNewLine) {
     cadNewLine.disabled = !hasDoc;
-    cadNewLine.classList.toggle('active', drawing);
-    cadNewLine.textContent = drawing ? '× Annulla linea' : '＋ Nuova linea';
+    cadNewLine.classList.toggle('active', drawingLine);
+    cadNewLine.textContent = drawingLine ? '× Annulla linea' : '＋ Nuova linea';
   }
-  if (cadNewLineType) cadNewLineType.disabled = !hasDoc || drawing;
-  if (cadExportArchitectural)
-    cadExportArchitectural.disabled = !lastGeneratedPlan || dirty || drawing;
+  [[cadInsertAlign,'ALLINEA'],[cadInsertOpening,'FIN'],[cadInsertBridge,'PON'],[cadInsertRoom,'LOC']].forEach(pair => {
+    const button = pair[0];
+    const type = pair[1];
+    if (!button) return;
+    button.disabled = !hasDoc;
+    button.classList.toggle('active', insertingSymbol && cadSymbolInsertType === type);
+  });
+  if (cadNewLineType) cadNewLineType.disabled = !hasDoc || busy;
+  if (cadExportArchitectural) cadExportArchitectural.disabled = !lastGeneratedPlan || dirty || busy;
 
-  if (!hasDoc) {
-    cadSetStatus('Genera prima una pianta');
-  } else if (drawing) {
+  if (!hasDoc) cadSetStatus('Genera prima una pianta');
+  else if (drawingLine) {
     const tipo = (cadNewLineType?.value || 'W').toUpperCase();
-    cadSetStatus(
-      cadNewLineState
-        ? `Piano ${cadCurrentPlane()} · Nuova ${tipo} · clicca il punto finale`
-        : `Piano ${cadCurrentPlane()} · Nuova ${tipo} · clicca il punto iniziale`
-    );
+    cadSetStatus(cadNewLineState ? ('Piano ' + cadCurrentPlane() + ' · Nuova ' + tipo + ' · clicca il punto finale') : ('Piano ' + cadCurrentPlane() + ' · Nuova ' + tipo + ' · clicca il punto iniziale'));
+  } else if (insertingSymbol) {
+    cadSetStatus('Piano ' + cadCurrentPlane() + ' · Layer ' + cadCurrentLayer() + ' · inserisci ' + cadSymbolInsertLabel(cadSymbolInsertType) + ' con un clic');
   } else if (dirty) {
-    cadSetStatus(
-      cadSelectedLineId
-        ? `${cadSelectedLineId} · modifica non rigenerata`
-        : 'Modifica non rigenerata',
-      'dirty'
-    );
+    cadSetStatus(cadSelectedLineId ? (cadSelectedLineId + ' · modifica non rigenerata') : 'Modifica non rigenerata', 'dirty');
   } else if (selected) {
     const line = cadFindSourceLine(cadSelectedLineId);
-    const [x1, y1] = cadLinePoint(line, 1);
-    const [x2, y2] = cadLinePoint(line, 2);
-    cadSetStatus(
-      `${cadSelectedLineId} · (${x1.toFixed(1)}, ${y1.toFixed(1)}) → (${x2.toFixed(1)}, ${y2.toFixed(1)})`
-    );
+    const p1 = cadLinePoint(line, 1);
+    const p2 = cadLinePoint(line, 2);
+    cadSetStatus(cadSelectedLineId + ' · (' + p1[0].toFixed(1) + ', ' + p1[1].toFixed(1) + ') → (' + p2[0].toFixed(1) + ', ' + p2[1].toFixed(1) + ')');
   } else {
-    cadSetStatus(`Piano ${cadCurrentPlane()} · seleziona una parete E/W o usa ＋ Nuova linea`);
+    cadSetStatus('Piano ' + cadCurrentPlane() + ' · Layer ' + cadCurrentLayer() + ' · seleziona una parete o inserisci una nuova entità');
   }
 }
-
 function cadSetWorkingSvg(svgText) {
   cadWorkingDoc = cadParseSvg(svgText);
   cadToolbarState = cadDefaultToolbarState();
@@ -2682,6 +2877,7 @@ function cadSetWorkingSvg(svgText) {
   cadDragState = null;
   cadToolMode = 'select';
   cadNewLineState = null;
+  cadSymbolInsertType = '';
 
   if (normalized)
     console.info(`CAD multipiano: assegnate ${normalized} entità legacy al piano "${current}".`);
@@ -2793,6 +2989,7 @@ function cadToggleNewLine() {
     return;
   }
 
+  cadSymbolInsertType = '';
   cadToolMode = 'line';
   cadNewLineState = null;
   cadSelectedLineId = '';
@@ -2994,8 +3191,14 @@ function cadSyncOverlay(svg) {
 }
 
 function cadInstallPointerEditing(svg) {
-  // In modalità Nuova linea intercettiamo il click prima delle singole entità.
+  // Le modalità di inserimento intercettano il click prima delle singole entità.
   svg.addEventListener('pointerdown', event => {
+    if (cadToolMode === 'symbol') {
+      event.preventDefault();
+      event.stopPropagation();
+      cadInsertSymbolAtPoint(cadClientPoint(svg, event));
+      return;
+    }
     if (cadToolMode !== 'line') return;
     event.preventDefault();
     event.stopPropagation();
@@ -3059,7 +3262,7 @@ function cadInstallPointerEditing(svg) {
   svg.addEventListener('pointercancel', finishDrag);
 
   svg.addEventListener('pointerdown', event => {
-    if (cadToolMode === 'line') return;
+    if (cadToolMode === 'line' || cadToolMode === 'symbol') return;
     if (event.target === svg || event.target.getAttribute('data-cad-background') === '1') {
       cadSelectLine('', svg);
     }
@@ -3247,16 +3450,17 @@ function renderCadComparison() {
       });
 
     Array.from(calpestabile.children)
-      .filter(el =>
-        el.localName === 'text' &&
-        /^[RPF]/i.test(el.id || '') &&
-        cadEntityBelongsToCurrentPlane(el)
-      )
+      .filter(el => el.localName === 'text' && cadSymbolBlockType(el) && cadEntityBelongsToCurrentPlane(el))
       .forEach(labelSource => {
         const id = labelSource.id || '';
         const x = Number(labelSource.getAttribute('x'));
         const y = Number(labelSource.getAttribute('y'));
-        addCadLabel(inputLayer, id, x, y, cadColorForId(id));
+        const color = cadSymbolColor(labelSource);
+        inputLayer.appendChild(svgNode('circle', {
+          cx: x, cy: y, r: 5.5, fill: '#ffffff', stroke: color, 'stroke-width': 2,
+          'vector-effect': 'non-scaling-stroke', 'pointer-events': 'none'
+        }));
+        addCadLabel(inputLayer, id, x, y, color);
       });
   }
 
@@ -3570,6 +3774,10 @@ if (cadDelete)
   cadDelete.addEventListener('click', cadDeleteSelected);
 if (cadNewLine)
   cadNewLine.addEventListener('click', cadToggleNewLine);
+cadInsertAlign?.addEventListener('click', () => cadToggleSymbolInsert('ALLINEA'));
+cadInsertOpening?.addEventListener('click', () => cadToggleSymbolInsert('FIN'));
+cadInsertBridge?.addEventListener('click', () => cadToggleSymbolInsert('PON'));
+cadInsertRoom?.addEventListener('click', () => cadToggleSymbolInsert('LOC'));
 if (cadPropConfirm)
   cadPropConfirm.addEventListener('click', cadApplyProperties);
 cadNorthDefined?.addEventListener('change', () => {
@@ -3613,9 +3821,10 @@ document.addEventListener('keydown', event => {
   if (!cadPage?.classList.contains('active')) return;
   const tag = event.target?.tagName?.toLowerCase();
 
-  if (event.key === 'Escape' && cadToolMode === 'line') {
+  if (event.key === 'Escape' && (cadToolMode === 'line' || cadToolMode === 'symbol')) {
     event.preventDefault();
-    cadCancelNewLine();
+    if (cadToolMode === 'line') cadCancelNewLine();
+    else cadCancelSymbolInsert();
     return;
   }
   if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
@@ -3638,8 +3847,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.32: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.32' })
+// v0.33: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.33' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {

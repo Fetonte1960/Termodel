@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.32 — maggiore rispetto simbolo Nord</title>
+  <title>Termodel Web v0.33 — inserimento simboli CAD</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -782,7 +782,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.32</div>
+      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.33</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -823,6 +823,10 @@
             <option value="E">E esterna</option>
           </select>
           <button id="cadNewLine" type="button" title="Clicca il punto iniziale e poi il punto finale">＋ Nuova linea</button>
+          <button id="cadInsertAlign" type="button" title="Inserisci Allinea sul piano/layer corrente">＋ Allinea</button>
+          <button id="cadInsertOpening" type="button" title="Inserisci FIN: porta o finestra secondo i DatiCad correnti">＋ Porta/Finestra</button>
+          <button id="cadInsertBridge" type="button" title="Inserisci un ponte termico PON sulla parete">＋ Ponte</button>
+          <button id="cadInsertRoom" type="button" title="Inserisci un simbolo locale LOC">＋ Locale</button>
           <button id="cadUndo" type="button" disabled title="Annulla ultima modifica">↶ Undo</button>
           <button id="cadRedo" type="button" disabled title="Ripristina modifica annullata">↷ Redo</button>
           <button id="cadDelete" type="button" disabled title="Elimina la parete selezionata">Elimina</button>
@@ -1141,6 +1145,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.32"></script>
+  <script type="module" src="./app.js?v=0.33"></script>
 </body>
 </html>
