@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`15c6f284a7970beb1d82865995e49f55e3f38054` — `Add bidirectional project round-trip v0.58`  
+`9b828a4ac412273b6e6f9d9be0e9dc356d73b024` — `Consolidate background assets in project files v0.59`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,13 +679,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.58
+Termodel Web v0.59
 ```
 
-Commit frontend di riferimento per la v0.58:
+Commit frontend di riferimento per la v0.59:
 
 ```text
-15c6f284a7970beb1d82865995e49f55e3f38054  Add bidirectional project round-trip v0.58
+9b828a4ac412273b6e6f9d9be0e9dc356d73b024  Consolidate background assets in project files v0.59
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -694,7 +694,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.58 sono su `main`; v0.57 e v0.58 devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.59 sono su `main`; v0.57-v0.59 devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -759,7 +759,7 @@ Per **editazione linea esistente**:
 - i pulsanti `Arc` aprono gli archivi Piani, Pareti e Confini;
 - modifiche agli archivi notificano il CAD, che ricarica combo e resa grafica.
 
-Il bridge `ArchivioWeb → CAD` è attualmente di lettura dei record in memoria; la persistenza unificata del contenitore progetto resta da completare.
+Storico v0.27: il bridge `ArchivioWeb → CAD` era inizialmente solo di lettura dei record in memoria. Dalla v0.58 la persistenza nel contenitore progetto unico è implementata tramite `buildCurrentProjectText()`.
 
 La v0.28 rende operativo il primo **CAD 2D multipiano** sul file progetto unico:
 
@@ -3434,6 +3434,140 @@ Add bidirectional project round-trip v0.58
 
 ---
 
+## 12.26 Sfondi consolidati nel progetto unico — v0.59
+
+La v0.59 completa il primo ciclo locale `File → Salva / Apri` anche per gli sfondi del CAD.
+
+Principio:
+
+> Nel CAD lo sfondo resta un normale `<image href="data:...">` per semplicità operativa; nel file progetto salvato il contenuto dell'immagine viene separato da `geometry/project.svg` e memorizzato come asset del progetto.
+
+Formato locale introdotto:
+
+```text
+geometry/project.svg
+    → posizione, scala, piano, layer
+    → data-termodel-background-id="BG001"
+    → nessun Data URL incorporato
+
+assets/backgrounds/index.json
+    → indice degli sfondi
+
+assets/backgrounds/BG001.data
+    → Data URL completo dell'immagine
+```
+
+L'indice usa il formato:
+
+```text
+TERMODEL-BACKGROUNDS-V1
+```
+
+e conserva per ogni asset:
+
+- ID;
+- piano;
+- layer;
+- nome file originale;
+- tipo raster/vettoriale;
+- MIME type;
+- nome della sezione dati.
+
+### Salva
+
+`buildCurrentProjectText()` passa lo SVG corrente a `consolidateTermodelBackgrounds(...)`.
+
+La funzione:
+
+1. trova gli `image[data-termodel-sfondo="1"]`;
+2. assegna/preserva un ID `BGxxx`;
+3. estrae il Data URL dall'`href`;
+4. rimuove l'`href` dal solo SVG destinato al file progetto;
+5. crea `assets/backgrounds/index.json` e una sezione dati per ogni sfondo;
+6. aggiorna `manifest.sections` e SHA-256 anche per le nuove sezioni.
+
+Il CAD in memoria non viene privato dell'immagine: continua a lavorare con il Data URL reidratato.
+
+Se uno sfondo viene eliminato/sostituito, al successivo salvataggio le vecchie sezioni `assets/backgrounds/*` vengono rimosse e il manifest viene riallineato.
+
+### Apri
+
+`loadProjectTextIntoFrontend(...)` usa `hydrateTermodelBackgrounds(...)` prima di consegnare `geometry/project.svg` al CAD/viewer.
+
+La funzione:
+
+1. legge `assets/backgrounds/index.json`;
+2. trova l'immagine SVG tramite `data-termodel-background-id`;
+3. legge il Data URL dalla relativa sezione asset;
+4. ripristina temporaneamente l'`href`;
+5. consegna al CAD uno SVG completo e visivamente equivalente a quello precedente al salvataggio.
+
+### Compatibilità
+
+I vecchi progetti v0.40-v0.58 che contengono ancora il Data URL direttamente nello SVG restano apribili.
+
+Alla prima operazione `Salva` in v0.59 vengono automaticamente migrati alla nuova struttura asset.
+
+### Menu File
+
+Sul modello demo iniziale:
+
+```text
+Salva            DISABILITATO
+Salva con nome   DISABILITATO
+```
+
+I due comandi vengono abilitati soltanto quando esiste un progetto strutturato dell'utente.
+
+`Apri...` resta disponibile dalla schermata iniziale.
+
+### Test automatici eseguiti
+
+Test di struttura sul vero `ProgettoVuoto.termodel.txt` con uno sfondo sintetico:
+
+```text
+sezioni iniziali           26
+con 1 sfondo               28
+  + assets/backgrounds/index.json
+  + assets/backgrounds/BG001.data
+
+manifest index             presente + SHA-256
+manifest asset             presente + SHA-256
+
+rimozione sfondo:
+sezioni finali             26
+index rimosso              sì
+asset rimosso              sì
+entry manifest rimosse     sì
+```
+
+Sintassi JavaScript verificata per `app.js` e `termodel-project-text.js`.
+
+### Vincolo server confermato
+
+Gli asset `assets/backgrounds/*` sono esclusivamente locali/frontend.
+
+**Non devono essere trasmessi a Termodel.Core / Termodel.WebService.**
+
+Il futuro payload server dovrà essere derivato dal progetto unico aggiornato eliminando:
+
+- le sezioni `assets/backgrounds/*`;
+- i riferimenti puramente locali agli sfondi;
+- qualunque Data URL/Base64 residuo di sfondo.
+
+Commit frontend:
+
+```text
+9b828a4ac412273b6e6f9d9be0e9dc356d73b024
+Consolidate background assets in project files v0.59
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.59 — TEST STRUTTURALE SUPERATO; DA VERIFICARE MANUALMENTE NEL BROWSER CON AGGIUNGI SFONDO → SALVA → APRI.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -3608,7 +3742,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.58.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.59.**
 
 Stato operativo corrente:
 
@@ -3618,7 +3752,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.58 presente su `main`;
+- v0.59 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -3654,6 +3788,7 @@ Stato operativo corrente:
 - v0.57 usa un progetto vuoto locale consolidato in JavaScript per `Nuovo` e per strutturare un semplice SVG AI, eliminando la necessità di tenere acceso il WebService durante i test frontend.
 - v0.58 implementa il round-trip bidirezionale `progetto unico ↔ frontend`: `Apri`, `Salva` e `Salva con nome` usano `TERMODEL-PROJECT-TEXT-V1`; geometria e archivi JSON/XML vengono ricomposti e il manifest aggiorna le impronte. Questa serializzazione è la base prima di future richieste al WebService.
 - decisione architetturale: gli sfondi sono risorse locali/frontend e **non devono essere trasmessi a Termodel.Core / Termodel.WebService**; il futuro payload server deve derivare dal progetto unico aggiornato filtrando completamente raster/SVG, Data URL/Base64 e relativi asset di sfondo.
+- v0.59 consolida gli sfondi nel progetto locale come `assets/backgrounds/index.json` + `assets/backgrounds/BGxxx.data`: `geometry/project.svg` resta leggero e contiene solo il riferimento; `Apri` reidrata il Data URL nel CAD. I vecchi sfondi incorporati vengono migrati automaticamente al primo Salva.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -3664,7 +3799,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. verificare manualmente la v0.58 **con WebService spento**: `Nuovo` → disegnare almeno una parete/FIN → modificare un valore archivio → `Salva` → `Apri...` il file appena scaricato e verificare che geometria, Piani e archivio modificato siano identici; ripetere con `Salva con nome`;  
+> 1. verificare manualmente la v0.59 **con WebService spento**: sul modello demo confermare `Salva` e `Salva con nome` disabilitati; poi `Nuovo` → aggiungere uno sfondo raster o SVG → disegnare almeno una parete/FIN → modificare un valore archivio → `Salva` → `Apri...` il file appena scaricato e verificare sfondo, geometria, calibrazione/posizione, Piani e archivio modificato; ripetere con `Salva con nome`;  
 > 2. dopo il collaudo del round-trip, usare `buildCurrentProjectText()` come base obbligatoria di qualsiasi futura chiamata WebService; prima dell'invio produrre però un payload server filtrato, **senza sfondi raster/SVG, Data URL/Base64 o relativi asset**;  
 > 3. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
 > 4. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
@@ -3678,10 +3813,10 @@ Se questa conversazione termina, una nuova chat deve poter riprendere senza rico
 
 ```text
 branch: main
-frontend: Termodel Web v0.58
+frontend: Termodel Web v0.59
 ultimo commit funzionale frontend:
-15c6f284a7970beb1d82865995e49f55e3f38054
-Add bidirectional project round-trip v0.58
+9b828a4ac412273b6e6f9d9be0e9dc356d73b024
+Consolidate background assets in project files v0.59
 ```
 
 **File da leggere per il lavoro immediato sul progetto unico:**
@@ -3718,28 +3853,42 @@ buildTermodelProjectText(source, options)
     aggiorna geometry/project.svg
     aggiorna archives/json/*.json
     aggiorna archives/xml/*.xml
+    sincronizza assets/backgrounds/*
     aggiorna manifest + SHA-256
+
+consolidateTermodelBackgrounds(svg)
+    Data URL CAD → asset progetto + riferimento BGxxx
+
+hydrateTermodelBackgrounds(projectText, svg)
+    asset progetto → Data URL temporaneo nel CAD
 ```
 
 **Nota importante sulla struttura del codice:** l'import degli archivi è ancora implementato da `loadTermodelProjectText(...)` in `archivio-web.js`; `app.js` orchestra la conversione verso lo stato CAD; `termodel-project-text.js` centralizza parsing/sostituzione delle sezioni e soprattutto la ricostruzione del progetto unico. Non riscrivere ArchivioWeb da zero.
 
-**Test già eseguiti sulla v0.58:**
+**Test già eseguiti sulla v0.58-v0.59:**
 
 - sintassi JavaScript valida per `app.js`, `archivio-web.js` e `termodel-project-text.js`;
 - round-trip strutturale sul vero `ProgettoVuoto.termodel.txt`: 26 sezioni prima e dopo;
 - modifica di prova `Piani.AltezzaNetta 3 → 3.2` mantenuta coerente in JSON, XML e `manifest.floors`;
-- struttura hash del manifest verificata a 64 caratteri.
+- struttura hash del manifest verificata a 64 caratteri;
+- v0.59: aggiunta di uno sfondo sintetico porta le sezioni 26 → 28, con indice + asset presenti nel manifest; rimuovendo lo sfondo il progetto torna a 26 sezioni e le entry vengono eliminate.
 
 **Limite del test automatico:** l'ambiente usato per il controllo non esponeva Web Crypto; il percorso è stato esercitato con un digest simulato per controllare la ricomposizione. Nel browser reale `buildTermodelProjectText()` usa `crypto.subtle.digest('SHA-256', ...)`. È quindi obbligatorio il test manuale reale di Salva.
 
 **Test manuale prioritario, WebService spento:**
 
 ```text
+modello demo
+→ Salva / Salva con nome devono essere disabilitati
+
 Nuovo
+→ Aggiungi sfondo raster o SVG
+→ eventualmente calibra
 → disegnare almeno una parete e un FIN
 → modificare almeno un valore in un archivio
 → Salva
 → Apri... il file appena scaricato
+→ verificare che lo sfondo ricompaia identico
 → verificare geometria, Piani e valore archivio
 → ripetere con Salva con nome
 ```
@@ -3758,4 +3907,4 @@ Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttament
 
 **Altri lavori aperti CAD:** trascinamento simboli, snap durante lo spostamento e vincolo LOC.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `15c6f284a7970beb1d82865995e49f55e3f38054`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `9b828a4ac412273b6e6f9d9be0e9dc356d73b024`.
