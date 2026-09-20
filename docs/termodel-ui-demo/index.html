@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.27 — CAD pareti collegato agli archivi</title>
+  <title>Termodel Web v0.28 — CAD 2D multipiano</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -691,7 +691,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.27</div>
+      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.28</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -758,7 +758,7 @@
                 <input id="cadPropEntity" type="text" readonly />
               </div>
               <div class="cad-prop-row">
-                <label for="cadPropPiano">Piano:</label>
+                <label for="cadPropPiano">Piano corrente:</label>
                 <div class="cad-prop-with-arc">
                   <select id="cadPropPiano"></select>
                   <button id="cadOpenPianiArchive" class="cad-prop-arc" type="button" title="Apri archivio Piani">Arc</button>
@@ -809,7 +809,7 @@
               </div>
               <div class="cad-properties-note">
                 Conforme a <code>MainWindow.xaml → Grid_DatiCad / Grid_pareti</code>.
-                Tipo parete e confine provengono dagli archivi; colore e tipo linea sono correlati readonly come nel desktop.
+                Il Piano corrente filtra la vista; le nuove entità ereditano automaticamente il piano. Layer, colore e tipo linea restano correlati readonly come nel desktop.
               </div>
             </section>
           </div>
@@ -1028,6 +1028,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.27"></script>
+  <script type="module" src="./app.js?v=0.28"></script>
 </body>
 </html>
