@@ -8,7 +8,7 @@ import {
   loadTermodelProjectText,
   openArchivioWeb,
   getArchivioWebRecords
-} from './archivio-web.js?v=0.31';
+} from './archivio-web.js?v=0.32';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -1915,8 +1915,8 @@ function ensureNorthSymbolInSvg(doc, angle = readNorthOrientationFromSvg(doc)) {
   // Simbolo volutamente più discreto e con maggiore rispetto dal bordo:
   // deve orientare la pianta senza coprire la geometria edilizia.
   const radius = Math.min(Math.max(Math.min(width, height) * 0.032, 22), 48);
-  const x = minX + width - radius * 1.70;
-  const y = minY + radius * 1.70;
+  const x = minX + width - radius * 1.15;
+  const y = minY + radius * 1.15;
   group.setAttribute('transform', `translate(${x} ${y})`);
 
   group.appendChild(northSvgElement(doc, 'circle', {
@@ -2040,8 +2040,8 @@ function cadRenderNorthOverlay(svg, viewBoxValues) {
   // Simbolo volutamente più discreto e con maggiore rispetto dal bordo:
   // deve orientare la pianta senza coprire la geometria edilizia.
   const radius = Math.min(Math.max(Math.min(width, height) * 0.032, 22), 48);
-  const x = minX + width - radius * 1.70;
-  const y = minY + radius * 1.70;
+  const x = minX + width - radius * 1.15;
+  const y = minY + radius * 1.15;
 
   const group = svgNode('g', {
     id: 'cadNorthOverlay',
@@ -3638,8 +3638,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.31: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.31' })
+// v0.32: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.32' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
