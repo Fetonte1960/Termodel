@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.50';
+} from './archivio-web.js?v=0.51';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,8 +18,8 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.50';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.50';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.51';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.51';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -3805,10 +3805,12 @@ function cadNearestPointOnSegment(point, a, b) {
 }
 
 function cadSnapPoint(point, movingLineId) {
-  if (cadSnap?.checked === false) return { point, snapped: false };
+  if (cadSnap?.checked === false)
+    return { point, snapped: false, targetLineId: '' };
 
   let best = point;
   let bestDistance = CAD_SNAP_DISTANCE + 1;
+  let bestLineId = '';
 
   cadEditableSourceLines().forEach(line => {
     if (line.id === movingLineId) return;
@@ -3820,6 +3822,7 @@ function cadSnapPoint(point, movingLineId) {
       if (distance < bestDistance) {
         best = candidate.slice();
         bestDistance = distance;
+        bestLineId = line.id || '';
       }
     }
 
@@ -3828,12 +3831,15 @@ function cadSnapPoint(point, movingLineId) {
     if (segmentDistance < bestDistance) {
       best = projected;
       bestDistance = segmentDistance;
+      bestLineId = line.id || '';
     }
   });
 
+  const snapped = bestDistance <= CAD_SNAP_DISTANCE;
   return {
-    point: bestDistance <= CAD_SNAP_DISTANCE ? best : point,
-    snapped: bestDistance <= CAD_SNAP_DISTANCE
+    point: snapped ? best : point,
+    snapped,
+    targetLineId: snapped ? bestLineId : ''
   };
 }
 
@@ -3863,11 +3869,16 @@ function cadNewLineTargetPoint(rawPoint) {
   if (snapped.snapped) {
     const snappedOrtho = cadOrthoPoint(snapped.point, start);
     if (cadPointDistance(snapped.point, snappedOrtho) <= CAD_JOIN_EPSILON) {
-      return { point: snapped.point, snapped: true, ortho: true };
+      return {
+        point: snapped.point,
+        snapped: true,
+        ortho: true,
+        targetLineId: snapped.targetLineId || ''
+      };
     }
   }
 
-  return { point: constrained, snapped: false, ortho: true };
+  return { point: constrained, snapped: false, ortho: true, targetLineId: '' };
 }
 
 function cadConnectedEndpointRefs(point) {
@@ -4053,6 +4064,13 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
     return;
   }
 
+  const previousLastLineId = cadNewLineState.lastLineId || '';
+  const snapTargetLineId = snapped.targetLineId || '';
+  const stopSequenceOnWallSnap =
+    snapped.snapped &&
+    !!snapTargetLineId &&
+    snapTargetLineId !== previousLastLineId;
+
   const type = (cadNewLineType?.value || 'W').toUpperCase() === 'E' ? 'E' : 'W';
   const id = cadNextLineId(type);
   const [x1, y1] = cadNewLineState.start;
@@ -4075,6 +4093,21 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
   const firstLineId = cadNewLineState.firstLineId || id;
   const lastLineId = id;
   const segmentCount = Number(cadNewLineState.segmentCount || 0) + 1;
+
+  // Se il nuovo segmento termina con Snap su una parete diversa
+  // dall'ultima parete della sequenza, la connessione conclude la multilinea.
+  if (stopSequenceOnWallSnap) {
+    cadToolMode = 'select';
+    cadNewLineState = null;
+    renderCadComparison();
+    cadUpdatePropertiesPanel();
+    cadUpdateControls();
+    cadSetStatus(
+      `✓ ${id} creata${snapped.ortho ? ' · ORTO' : ''} · SNAP su ${snapTargetLineId} · sequenza terminata`,
+      'dirty'
+    );
+    return;
+  }
 
   // Modalità multilinea: il punto finale appena confermato diventa
   // automaticamente il punto iniziale del segmento successivo.
@@ -5181,8 +5214,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.50: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.50' })
+// v0.51: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.51' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
