@@ -8,8 +8,8 @@
 
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
-Ultimo commit di codice verificato al momento della creazione di questo documento:  
-`eadb72430a1f585bf542f50403cbb494c869dcc4` — `Connect complete project import and ArchivioWeb v0.22`  
+Ultimo commit di codice verificato:  
+`8a22f57fa50a1100d20bddba258c9495fd816da7` — `Add orthogonal CAD drawing mode v0.42`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -642,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.41
+Termodel Web v0.42
 ```
 
-Commit frontend di riferimento per la v0.41:
+Commit frontend di riferimento per la v0.42:
 
 ```text
-d784cc3fd4c7d7732b000314beac8077ee3f106d  Add background visibility and wall calibration
+8a22f57fa50a1100d20bddba258c9495fd816da7  Add orthogonal CAD drawing mode v0.42
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -657,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.41 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.42 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2479,6 +2479,53 @@ Dopo la calibrazione:
 
 ---
 
+## 12.9 Modalità Orto CAD — v0.42
+
+La v0.42 aggiunge nella toolbar CAD il check:
+
+```text
+Orto
+```
+
+posizionato accanto a `Snap`.
+
+Scopo immediato: consentire di disegnare rapidamente pareti perfettamente orizzontali o verticali, utile anche per creare un riferimento affidabile per la calibrazione sfondo della v0.41.
+
+Comportamento corrente:
+
+- `Orto` agisce sulla creazione delle **nuove linee E/W**;
+- il primo punto viene scelto normalmente e può usare `Snap`;
+- dopo il primo punto, l'estremo mobile viene vincolato automaticamente:
+  - orizzontale se prevale lo spostamento X;
+  - verticale se prevale lo spostamento Y;
+- la preview rossa mostra già la linea ortogonale;
+- il secondo clic consolida nello SVG una linea con coordinate esattamente orizzontali o verticali;
+- `Snap` e `Orto` possono restare entrambi attivi;
+- uno Snap viene accettato soltanto se il punto agganciato rispetta l'asse ortogonale corrente; in caso contrario prevale `Orto`;
+- lo stato CAD mostra `ORTO` durante la costruzione e dopo la creazione della linea.
+
+La v0.42 **non raddrizza automaticamente linee esistenti** e non applica ancora il vincolo Orto al trascinamento degli estremi di una parete già disegnata.
+
+File modificati:
+
+```text
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/app.js
+```
+
+Commit:
+
+```text
+8a22f57fa50a1100d20bddba258c9495fd816da7
+Add orthogonal CAD drawing mode v0.42
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.42 — DA VERIFICARE MANUALMENTE INSIEME ALLA CALIBRAZIONE v0.41.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -2651,7 +2698,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.41.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.42.**
 
 Stato operativo corrente:
 
@@ -2661,7 +2708,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.41 presente su `main`;
+- v0.42 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2679,6 +2726,7 @@ Stato operativo corrente:
 - v0.39 aggiunge navigazione CAD senza pulsanti UI: rotella mouse = zoom centrato sul cursore; tasto centrale + trascinamento = pan. Il tasto centrale ha priorità sugli strumenti di inserimento/selezione, lo stato viewport sopravvive ai ridisegni del canvas e viene azzerato quando si carica un nuovo SVG di lavoro.
 - v0.40 aggiunge uno sfondo raster/SVG specifico per ogni piano tramite `Aggiungi sfondo`; lo sfondo viene incorporato nello SVG progetto, filtrato per `data-termodel-piano` e visualizzato sotto il Disegno input. La precedente visualizzazione `Pianta pulita` è sospesa nel CAD ma resta disponibile al motore.
 - v0.41 ripristina il check `Sfondo` e introduce la calibrazione per-piano: selezione di parete orizzontale/verticale → misura reale in metri → fattore di scala applicato a sfondo, linee e posizioni dei simboli del piano corrente; pareti inclinate escluse; viewBox/Nord ricalcolati; undo/redo attivo.
+- v0.42 aggiunge il check `Orto` accanto a `Snap`: durante la creazione di nuove linee E/W il secondo punto viene vincolato automaticamente all'orizzontale o alla verticale; preview e coordinate SVG rispettano il vincolo, mentre Snap viene accettato solo se non rompe l'ortogonalità.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2689,7 +2737,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.41: importare uno sfondo → check Sfondo ON/OFF → selezionare parete orizzontale/verticale → box Calibrazione sfondo → impostare una misura reale nota → Calibra → verificare che parete, tutte le linee, posizioni simboli e sfondo del solo piano corrente mantengano l'allineamento e assumano la nuova scala; verificare che una parete inclinata non attivi il box e che undo/redo ripristini la geometria;  
+> 2. verificare manualmente la v0.42 insieme alla calibrazione v0.41: attivare `Orto` → disegnare una linea orizzontale e una verticale con Snap ON/OFF → verificare preview e coordinate ortogonali → importare uno sfondo → check Sfondo ON/OFF → selezionare una delle pareti ortogonali → box Calibrazione sfondo → impostare una misura reale nota → Calibra → verificare che parete, tutte le linee, posizioni simboli e sfondo del solo piano corrente mantengano l'allineamento e assumano la nuova scala; verificare che una parete inclinata non attivi il box e che undo/redo ripristini la geometria;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
