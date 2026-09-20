@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.54';
+} from './archivio-web.js?v=0.55';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,8 +18,8 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.54';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.54';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.55';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.55';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -46,6 +46,7 @@ const cadRegenerate = document.getElementById('cadRegenerate');
 const cadNewLine = document.getElementById('cadNewLine');
 const cadInsertAlign = document.getElementById('cadInsertAlign');
 const cadInsertOpening = document.getElementById('cadInsertOpening');
+const cadInsertOpeningTwoPoint = document.getElementById('cadInsertOpeningTwoPoint');
 const cadInsertBridge = document.getElementById('cadInsertBridge');
 const cadInsertRoom = document.getElementById('cadInsertRoom');
 const cadNewLineType = document.getElementById('cadNewLineType');
@@ -143,6 +144,7 @@ let cadCalibrationLineId = '';
 let cadToolMode = 'select';
 let cadNewLineState = null;
 let cadSymbolInsertType = '';
+let cadWindowTwoPointState = null;
 let cadLastRepeatableCommand = '';
 let cadToolbarState = {
   piano: '',
@@ -2774,12 +2776,38 @@ function cadCreateSymbolText(id, x, y, rows) {
 function cadNearestWallPoint(point, maxDistance = CAD_SNAP_DISTANCE * 3) {
   let best = null;
   let bestDistance = Number.POSITIVE_INFINITY;
+  let bestLineId = '';
   cadEditableSourceLines().forEach(line => {
     const projected = cadNearestPointOnSegment(point, cadLinePoint(line, 1), cadLinePoint(line, 2));
     const distance = cadPointDistance(point, projected);
-    if (distance < bestDistance) { best = projected; bestDistance = distance; }
+    if (distance < bestDistance) {
+      best = projected;
+      bestDistance = distance;
+      bestLineId = line.id || '';
+    }
   });
-  return { point: best || point, snapped: Boolean(best) && bestDistance <= maxDistance, distance: bestDistance };
+  const snapped = Boolean(best) && bestDistance <= maxDistance;
+  return {
+    point: best || point,
+    snapped,
+    distance: bestDistance,
+    targetLineId: snapped ? bestLineId : ''
+  };
+}
+
+function cadNearestPointOnWall(point, lineId, maxDistance = CAD_SNAP_DISTANCE * 3) {
+  const line = cadFindSourceLine(lineId);
+  if (!line)
+    return { point, snapped: false, distance: Number.POSITIVE_INFINITY, targetLineId: '' };
+
+  const projected = cadNearestPointOnSegment(point, cadLinePoint(line, 1), cadLinePoint(line, 2));
+  const distance = cadPointDistance(point, projected);
+  return {
+    point: projected,
+    snapped: distance <= maxDistance,
+    distance,
+    targetLineId: line.id || ''
+  };
 }
 
 function cadSymbolInsertLabel(type) {
@@ -2813,6 +2841,7 @@ function cadToggleSymbolInsert(type) {
   }
 
   if (cadToolMode === 'line') cadCancelNewLine();
+  if (cadToolMode === 'window2') cadCancelWindowTwoPoint();
 
   cadCloseNorthPanel(false);
   cadLastRepeatableCommand = 'symbol:' + normalized;
@@ -2838,6 +2867,176 @@ function cadToggleSymbolInsert(type) {
   } catch (error) {
     console.warn('Pannello CAD non aggiornato durante inserimento simbolo:', error);
   }
+}
+
+function cadCancelWindowTwoPoint(svg = cadCanvas?.querySelector('svg')) {
+  cadHideContextMenu();
+  cadWindowTwoPointState = null;
+  if (cadToolMode === 'window2') cadToolMode = 'select';
+  if (svg) svg.querySelector('#cadWindowTwoPointPreviewLayer')?.remove();
+  cadUpdateControls();
+}
+
+function cadToggleWindowTwoPoint() {
+  if (!cadWorkingDoc) {
+    cadSetStatus('Disegno CAD non disponibile.', 'error');
+    return;
+  }
+
+  if (cadToolMode === 'window2') {
+    cadCancelWindowTwoPoint();
+    return;
+  }
+
+  if (cadToolMode === 'line') cadCancelNewLine();
+  if (cadToolMode === 'symbol') cadCancelSymbolInsert();
+
+  cadCloseNorthPanel(false);
+  cadLastRepeatableCommand = 'window2';
+  cadToolMode = 'window2';
+  cadWindowTwoPointState = null;
+  cadSymbolInsertType = '';
+  cadSelectedLineId = '';
+  cadSelectedSymbolId = '';
+  cadNewLineState = null;
+
+  cadUpdateControls();
+  cadUpdatePropertiesPanel();
+}
+
+function cadRenderWindowTwoPointPreview(svg, currentPoint = null, snapped = false) {
+  svg.querySelector('#cadWindowTwoPointPreviewLayer')?.remove();
+  if (cadToolMode !== 'window2') return;
+
+  const layer = svgNode('g', {
+    id: 'cadWindowTwoPointPreviewLayer',
+    'pointer-events': 'none'
+  });
+
+  if (!cadWindowTwoPointState) {
+    if (currentPoint && snapped) {
+      layer.appendChild(svgNode('circle', {
+        cx: currentPoint[0],
+        cy: currentPoint[1],
+        r: 10,
+        class: 'cad-snap-marker'
+      }));
+    }
+    svg.appendChild(layer);
+    return;
+  }
+
+  const start = cadWindowTwoPointState.start;
+  layer.appendChild(svgNode('circle', {
+    cx: start[0],
+    cy: start[1],
+    r: 7,
+    class: 'cad-newline-start'
+  }));
+
+  if (currentPoint) {
+    layer.appendChild(svgNode('line', {
+      x1: start[0],
+      y1: start[1],
+      x2: currentPoint[0],
+      y2: currentPoint[1],
+      class: 'cad-newline-preview'
+    }));
+
+    if (snapped) {
+      layer.appendChild(svgNode('circle', {
+        cx: currentPoint[0],
+        cy: currentPoint[1],
+        r: 10,
+        class: 'cad-snap-marker'
+      }));
+    }
+  }
+
+  svg.appendChild(layer);
+}
+
+function cadStartOrFinishWindowTwoPoint(svg, rawPoint) {
+  if (!cadWorkingDoc || cadToolMode !== 'window2') return;
+
+  if (!cadWindowTwoPointState) {
+    const first = cadNearestWallPoint(rawPoint);
+    if (!first.snapped || !first.targetLineId) {
+      cadSetStatus('Finestra 2 punti: clicca il primo punto vicino a una parete.', 'error');
+      return;
+    }
+
+    cadWindowTwoPointState = {
+      start: first.point.slice(),
+      wallLineId: first.targetLineId
+    };
+    cadRenderWindowTwoPointPreview(svg, first.point, true);
+    cadSetStatus(
+      'Finestra 2 punti · primo punto su ' + first.targetLineId +
+      ' · clicca il secondo punto sulla stessa parete'
+    );
+    return;
+  }
+
+  const second = cadNearestPointOnWall(rawPoint, cadWindowTwoPointState.wallLineId);
+  if (!second.snapped) {
+    cadSetStatus('Finestra 2 punti: il secondo punto deve essere sulla stessa parete.', 'error');
+    return;
+  }
+
+  const start = cadWindowTwoPointState.start;
+  const end = second.point;
+  const widthSvgCm = cadPointDistance(start, end);
+  if (widthSvgCm < 0.5) {
+    cadSetStatus('Finestra 2 punti: la larghezza deve essere maggiore di zero.', 'error');
+    return;
+  }
+
+  const group = cadCalpestabile();
+  const plane = cadCurrentPlane();
+  const layer = cadCurrentLayer();
+  if (!group || !plane || !layer) {
+    cadSetStatus('Piano/LayerCad corrente non disponibile: impossibile inserire la finestra.', 'error');
+    return;
+  }
+
+  const before = cadSerializeWorkingSvg();
+  const dati = cadDatiCadRecord();
+  const id = cadNextSymbolId('F');
+  const midpoint = [
+    (start[0] + end[0]) / 2,
+    (start[1] + end[1]) / 2
+  ];
+  const rows = [
+    'BLOCCO,FIN',
+    'PORTA,' + (cadText(dati.Porta) || 'Struttura trasparente'),
+    'TIPO,' + (cadText(dati.TipoFinestra) || 'Da associare'),
+    'LARGHEZZA,' + cadTrimNumber(widthSvgCm, 2),
+    'ALTEZZA,' + cadMetersToSvgCm(dati.AltezzaFinestra),
+    'NUMEROANTE,' + (cadText(dati.AnteFinestra) || '0'),
+    'SOTTOFINESTRA,' + cadMetersToSvgCm(dati.SottoFinestra),
+    'SOPRALUCE,' + cadMetersToSvgCm(dati.SopraLuce)
+  ];
+
+  const symbol = cadCreateSymbolText(id, midpoint[0], midpoint[1], rows);
+  group.appendChild(symbol);
+  cadUndoStack.push(before);
+  cadRedoStack = [];
+  cadSelectedLineId = '';
+  cadSelectedSymbolId = id;
+
+  // Il comando resta attivo per disegnare la finestra successiva.
+  cadWindowTwoPointState = null;
+
+  renderCadComparison();
+  cadUpdatePropertiesPanel();
+  cadUpdateControls();
+  cadSetStatus(
+    '✓ ' + id +
+    ' FIN 2 punti inserita · larghezza ' + cadTrimNumber(widthSvgCm / 100, 2) +
+    ' m · centro sul punto medio · continua inserimento · Esc o tasto destro per interrompere',
+    'dirty'
+  );
 }
 
 function cadInsertSymbolAtPoint(rawPoint) {
@@ -3673,6 +3872,8 @@ function cadCurrentPlaneChanged() {
     cadCancelNewLine();
   if (cadToolMode === 'symbol')
     cadCancelSymbolInsert();
+  if (cadToolMode === 'window2')
+    cadCancelWindowTwoPoint();
 
   cadCloseNorthPanel(false);
   cadToolbarState.piano = requested;
@@ -3712,7 +3913,8 @@ function cadUpdateControls() {
   const dirty = cadIsDirty();
   const drawingLine = cadToolMode === 'line';
   const insertingSymbol = cadToolMode === 'symbol';
-  const busy = drawingLine || insertingSymbol;
+  const drawingWindowTwoPoint = cadToolMode === 'window2';
+  const busy = drawingLine || insertingSymbol || drawingWindowTwoPoint;
 
   if (cadAddBackground) cadAddBackground.disabled = !hasDoc || busy;
   if (cadShowBackground)
@@ -3737,8 +3939,15 @@ function cadUpdateControls() {
       ? (type === 'FIN' ? '× Interrompi sequenza' : '× ' + cadSymbolInsertLabel(type))
       : '＋ ' + cadSymbolInsertLabel(type);
   });
+  if (cadInsertOpeningTwoPoint) {
+    cadInsertOpeningTwoPoint.disabled = !hasDoc;
+    cadInsertOpeningTwoPoint.classList.toggle('active', drawingWindowTwoPoint);
+    cadInsertOpeningTwoPoint.textContent = drawingWindowTwoPoint
+      ? '× Interrompi sequenza'
+      : '＋ Finestra 2 punti';
+  }
   if (cadCanvas) {
-    cadCanvas.classList.toggle('symbol-insert-mode', insertingSymbol);
+    cadCanvas.classList.toggle('symbol-insert-mode', insertingSymbol || drawingWindowTwoPoint);
     cadCanvas.classList.toggle('wall-insert-mode', drawingLine);
   }
   if (cadNewLineType) cadNewLineType.disabled = !hasDoc || busy;
@@ -3748,6 +3957,12 @@ function cadUpdateControls() {
   else if (drawingLine) {
     const tipo = (cadNewLineType?.value || 'W').toUpperCase();
     cadSetStatus(cadNewLineState ? ('Piano ' + cadCurrentPlane() + ' · Parete ' + tipo + ' · clicca il punto successivo · tasto destro per interrompere') : ('Piano ' + cadCurrentPlane() + ' · Parete ' + tipo + ' · clicca il punto iniziale'));
+  } else if (drawingWindowTwoPoint) {
+    cadSetStatus(
+      cadWindowTwoPointState
+        ? ('Finestra 2 punti · clicca il secondo punto sulla stessa parete ' + cadWindowTwoPointState.wallLineId + ' · Esc o tasto destro per interrompere')
+        : ('Finestra 2 punti · clicca il primo punto vicino a una parete · Esc o tasto destro per interrompere')
+    );
   } else if (insertingSymbol) {
     const needsWall = cadSymbolInsertType === 'FIN' || cadSymbolInsertType === 'PON';
     cadSetStatus(
@@ -3994,7 +4209,10 @@ function cadShowLineContextMenu(event) {
 }
 
 function cadShowWindowSequenceContextMenu(event) {
-  if (!cadContextMenu || cadToolMode !== 'symbol' || cadSymbolInsertType !== 'FIN') return;
+  const activeWindowSequence =
+    (cadToolMode === 'symbol' && cadSymbolInsertType === 'FIN') ||
+    cadToolMode === 'window2';
+  if (!cadContextMenu || !activeWindowSequence) return;
   if (cadRepeatLastCommand) cadRepeatLastCommand.hidden = true;
   if (cadCloseSequence) cadCloseSequence.hidden = true;
   if (cadCloseOrthogonalSequence) cadCloseOrthogonalSequence.hidden = true;
@@ -4015,6 +4233,8 @@ function cadCancelNewLine(svg = cadCanvas?.querySelector('svg')) {
 
 function cadToggleNewLine() {
   if (!cadWorkingDoc) return;
+
+  if (cadToolMode === 'window2') cadCancelWindowTwoPoint();
 
   if (cadToolMode === 'line') {
     cadCancelNewLine();
@@ -4041,6 +4261,11 @@ function cadRepeatLastCadCommand() {
 
   if (cadLastRepeatableCommand === 'line') {
     cadToggleNewLine();
+    return;
+  }
+
+  if (cadLastRepeatableCommand === 'window2') {
+    cadToggleWindowTwoPoint();
     return;
   }
 
@@ -4588,7 +4813,10 @@ function cadInstallPointerEditing(svg) {
       return;
     }
 
-    if (cadToolMode === 'symbol' && cadSymbolInsertType === 'FIN') {
+    if (
+      (cadToolMode === 'symbol' && cadSymbolInsertType === 'FIN') ||
+      cadToolMode === 'window2'
+    ) {
       event.preventDefault();
       event.stopPropagation();
       cadShowWindowSequenceContextMenu(event);
@@ -4609,6 +4837,12 @@ function cadInstallPointerEditing(svg) {
   svg.addEventListener('pointerdown', event => {
     if (event.button !== 0) return;
     cadHideContextMenu();
+    if (cadToolMode === 'window2') {
+      event.preventDefault();
+      event.stopPropagation();
+      cadStartOrFinishWindowTwoPoint(svg, cadClientPoint(svg, event));
+      return;
+    }
     if (cadToolMode === 'symbol') {
       event.preventDefault();
       event.stopPropagation();
@@ -4623,6 +4857,30 @@ function cadInstallPointerEditing(svg) {
 
   svg.addEventListener('pointermove', event => {
     if (cadMovePan(svg, event)) return;
+
+    if (cadToolMode === 'window2') {
+      const rawPoint = cadClientPoint(svg, event);
+
+      if (!cadWindowTwoPointState) {
+        const first = cadNearestWallPoint(rawPoint);
+        cadRenderWindowTwoPointPreview(svg, first.point, first.snapped);
+        cadSetStatus(
+          'Finestra 2 punti · clicca il primo punto vicino a una parete' +
+          (first.snapped && first.targetLineId ? ' · SNAP ' + first.targetLineId : '')
+        );
+        return;
+      }
+
+      const second = cadNearestPointOnWall(rawPoint, cadWindowTwoPointState.wallLineId);
+      cadRenderWindowTwoPointPreview(svg, second.point, second.snapped);
+      const width = cadPointDistance(cadWindowTwoPointState.start, second.point);
+      cadSetStatus(
+        'Finestra 2 punti · secondo punto sulla stessa parete ' +
+        cadWindowTwoPointState.wallLineId +
+        (second.snapped ? ' · larghezza ' + cadTrimNumber(width / 100, 2) + ' m' : ' · avvicinati alla parete')
+      );
+      return;
+    }
 
     if (cadToolMode === 'line') {
       const rawPoint = cadClientPoint(svg, event);
@@ -5227,8 +5485,12 @@ cadStopSequence?.addEventListener('click', () => {
     cadCancelNewLine();
     return;
   }
-  if (cadToolMode === 'symbol' && cadSymbolInsertType === 'FIN')
+  if (cadToolMode === 'symbol' && cadSymbolInsertType === 'FIN') {
     cadCancelSymbolInsert();
+    return;
+  }
+  if (cadToolMode === 'window2')
+    cadCancelWindowTwoPoint();
 });
 document.addEventListener('pointerdown', event => {
   if (!cadContextMenu || cadContextMenu.hidden) return;
@@ -5236,6 +5498,7 @@ document.addEventListener('pointerdown', event => {
 });
 cadInsertAlign?.addEventListener('click', () => cadToggleSymbolInsert('ALLINEA'));
 cadInsertOpening?.addEventListener('click', () => cadToggleSymbolInsert('FIN'));
+cadInsertOpeningTwoPoint?.addEventListener('click', cadToggleWindowTwoPoint);
 cadInsertBridge?.addEventListener('click', () => cadToggleSymbolInsert('PON'));
 cadInsertRoom?.addEventListener('click', () => cadToggleSymbolInsert('LOC'));
 if (cadPropConfirm)
@@ -5285,9 +5548,10 @@ document.addEventListener('keydown', event => {
   if (!cadPage?.classList.contains('active')) return;
   const tag = event.target?.tagName?.toLowerCase();
 
-  if (event.key === 'Escape' && (cadToolMode === 'line' || cadToolMode === 'symbol')) {
+  if (event.key === 'Escape' && (cadToolMode === 'line' || cadToolMode === 'symbol' || cadToolMode === 'window2')) {
     event.preventDefault();
     if (cadToolMode === 'line') cadCancelNewLine();
+    else if (cadToolMode === 'window2') cadCancelWindowTwoPoint();
     else cadCancelSymbolInsert();
     return;
   }
@@ -5311,8 +5575,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.54: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.54' })
+// v0.55: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.55' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
