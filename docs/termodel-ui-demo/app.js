@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.38';
+} from './archivio-web.js?v=0.39';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -117,6 +117,9 @@ let cadSelectedSymbolId = '';
 let cadUndoStack = [];
 let cadRedoStack = [];
 let cadDragState = null;
+let cadViewportBase = null;
+let cadViewport = null;
+let cadPanState = null;
 let cadToolMode = 'select';
 let cadNewLineState = null;
 let cadSymbolInsertType = '';
@@ -3372,6 +3375,10 @@ function cadSetWorkingSvg(svgText) {
   cadUndoStack = [];
   cadRedoStack = [];
   cadDragState = null;
+  cadViewportBase = null;
+  cadViewport = null;
+  cadPanState = null;
+  cadCanvas?.classList.remove('pan-mode');
   cadToolMode = 'select';
   cadNewLineState = null;
   cadSymbolInsertType = '';
@@ -3590,6 +3597,126 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
   );
 }
 
+function cadParseViewBox(value) {
+  const values = String(value || '').trim().split(/[ ,]+/).map(Number);
+  return values.length === 4 && values.every(Number.isFinite) ? values : null;
+}
+
+function cadViewBoxEqual(a, b, epsilon = 1e-6) {
+  return Array.isArray(a) && Array.isArray(b) && a.length === 4 && b.length === 4 &&
+    a.every((value, index) => Math.abs(value - b[index]) <= epsilon);
+}
+
+function cadFormatViewBox(values) {
+  return values.map(value => Number(value.toFixed(6))).join(' ');
+}
+
+function cadEnsureViewport(sourceViewBox) {
+  const source = Array.isArray(sourceViewBox) ? sourceViewBox.slice() : null;
+  if (!source || source.length !== 4) return null;
+
+  if (!cadViewportBase || !cadViewport || !cadViewBoxEqual(cadViewportBase, source)) {
+    cadViewportBase = source.slice();
+    cadViewport = source.slice();
+  }
+
+  return cadViewport.slice();
+}
+
+function cadApplyViewport(svg, values) {
+  if (!svg || !Array.isArray(values) || values.length !== 4) return;
+  cadViewport = values.slice();
+  svg.setAttribute('viewBox', cadFormatViewBox(cadViewport));
+}
+
+function cadZoomAtPointer(svg, event) {
+  if (!svg) return;
+  event.preventDefault();
+
+  const current = cadViewport?.slice() || cadParseViewBox(svg.getAttribute('viewBox'));
+  const base = cadViewportBase?.slice() || current?.slice();
+  if (!current || !base || current[2] <= 0 || current[3] <= 0 || base[2] <= 0) return;
+
+  const world = cadClientPoint(svg, event);
+  const currentRatio = current[2] / base[2];
+  const requestedFactor = Math.max(0.5, Math.min(2, Math.exp(event.deltaY * 0.0015)));
+  const targetRatio = Math.max(0.02, Math.min(50, currentRatio * requestedFactor));
+  const factor = targetRatio / currentRatio;
+
+  if (Math.abs(factor - 1) < 1e-9) return;
+
+  const nextWidth = current[2] * factor;
+  const nextHeight = current[3] * factor;
+  const relX = (world[0] - current[0]) / current[2];
+  const relY = (world[1] - current[1]) / current[3];
+
+  cadApplyViewport(svg, [
+    world[0] - relX * nextWidth,
+    world[1] - relY * nextHeight,
+    nextWidth,
+    nextHeight
+  ]);
+}
+
+function cadStartPan(svg, event) {
+  if (!svg || event.button !== 1 || cadDragState) return false;
+
+  const current = cadViewport?.slice() || cadParseViewBox(svg.getAttribute('viewBox'));
+  if (!current) return false;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  cadPanState = {
+    pointerId: event.pointerId,
+    lastClientX: event.clientX,
+    lastClientY: event.clientY
+  };
+
+  cadCanvas?.classList.add('pan-mode');
+  if (svg.setPointerCapture) {
+    try { svg.setPointerCapture(event.pointerId); } catch (_) {}
+  }
+  return true;
+}
+
+function cadMovePan(svg, event) {
+  if (!cadPanState || cadPanState.pointerId !== event.pointerId) return false;
+
+  event.preventDefault();
+
+  const matrix = svg.getScreenCTM();
+  if (!matrix) return true;
+  const inverse = matrix.inverse();
+
+  const dxClient = event.clientX - cadPanState.lastClientX;
+  const dyClient = event.clientY - cadPanState.lastClientY;
+  const dxWorld = inverse.a * dxClient + inverse.c * dyClient;
+  const dyWorld = inverse.b * dxClient + inverse.d * dyClient;
+
+  const current = cadViewport?.slice() || cadParseViewBox(svg.getAttribute('viewBox'));
+  if (current) {
+    current[0] -= dxWorld;
+    current[1] -= dyWorld;
+    cadApplyViewport(svg, current);
+  }
+
+  cadPanState.lastClientX = event.clientX;
+  cadPanState.lastClientY = event.clientY;
+  return true;
+}
+
+function cadFinishPan(svg, event) {
+  if (!cadPanState || cadPanState.pointerId !== event.pointerId) return false;
+
+  cadPanState = null;
+  cadCanvas?.classList.remove('pan-mode');
+  if (svg?.releasePointerCapture) {
+    try { svg.releasePointerCapture(event.pointerId); } catch (_) {}
+  }
+  return true;
+}
+
 function cadClientPoint(svg, event) {
   const point = svg.createSVGPoint();
   point.x = event.clientX;
@@ -3640,6 +3767,7 @@ function cadRenderSelectionHandles(svg) {
     });
 
     handle.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
       if (cadToolMode === 'line') return;
       event.preventDefault();
       event.stopPropagation();
@@ -3710,8 +3838,26 @@ function cadSyncOverlay(svg) {
 }
 
 function cadInstallPointerEditing(svg) {
-  // Le modalità di inserimento intercettano il click prima delle singole entità.
+  // Navigazione CAD senza pulsanti UI:
+  // rotella = zoom sul cursore, tasto centrale + drag = pan.
+  svg.addEventListener('wheel', event => cadZoomAtPointer(svg, event), { passive: false });
+
+  // Impedisce l'autoscroll del browser sul clic della rotella.
+  svg.addEventListener('mousedown', event => {
+    if (event.button === 1) event.preventDefault();
+  });
+  svg.addEventListener('auxclick', event => {
+    if (event.button === 1) event.preventDefault();
+  });
+
+  // Il pan con tasto centrale ha priorità su selezione/inserimento/drag.
   svg.addEventListener('pointerdown', event => {
+    if (event.button === 1) cadStartPan(svg, event);
+  }, true);
+
+  // Le modalità di inserimento intercettano il click sinistro prima delle singole entità.
+  svg.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
     if (cadToolMode === 'symbol') {
       event.preventDefault();
       event.stopPropagation();
@@ -3725,6 +3871,8 @@ function cadInstallPointerEditing(svg) {
   }, true);
 
   svg.addEventListener('pointermove', event => {
+    if (cadMovePan(svg, event)) return;
+
     if (cadToolMode === 'line' && cadNewLineState) {
       const snapped = cadSnapPoint(cadClientPoint(svg, event), '');
       cadRenderNewLinePreview(svg, snapped.point, snapped.snapped);
@@ -3763,6 +3911,7 @@ function cadInstallPointerEditing(svg) {
   });
 
   const finishDrag = event => {
+    if (cadFinishPan(svg, event)) return;
     if (!cadDragState || cadDragState.pointerId !== event.pointerId) return;
 
     if (cadDragState.moved) {
@@ -3781,6 +3930,7 @@ function cadInstallPointerEditing(svg) {
   svg.addEventListener('pointercancel', finishDrag);
 
   svg.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
     if (cadToolMode === 'line' || cadToolMode === 'symbol') return;
     if (event.target === svg || event.target.getAttribute('data-cad-background') === '1') {
       cadSelectedSymbolId = '';
@@ -3829,14 +3979,17 @@ function renderCadComparison() {
     return;
   }
 
+  const sourceViewBox = cadParseViewBox(viewBox);
+  const displayViewBox = cadEnsureViewport(sourceViewBox) || sourceViewBox;
+
   const svg = svgNode('svg', {
-    viewBox,
+    viewBox: displayViewBox ? cadFormatViewBox(displayViewBox) : viewBox,
     preserveAspectRatio: 'xMidYMid meet',
     role: 'img',
     'aria-label': 'Editor CAD della pianta Termodel'
   });
 
-  const vb = viewBox.trim().split(/[ ,]+/).map(Number);
+  const vb = sourceViewBox || viewBox.trim().split(/[ ,]+/).map(Number);
   if (vb.length === 4 && vb.every(Number.isFinite)) {
     svg.appendChild(svgNode('rect', {
       x: vb[0], y: vb[1], width: vb[2], height: vb[3],
@@ -3919,6 +4072,7 @@ function renderCadComparison() {
 
         if (editable) {
           displayLine.addEventListener('pointerdown', event => {
+            if (event.button !== 0) return;
             if (cadToolMode === 'line') return;
             event.preventDefault();
             event.stopPropagation();
@@ -3985,6 +4139,7 @@ function renderCadComparison() {
         });
         marker.classList.toggle('selected', id === cadSelectedSymbolId);
         marker.addEventListener('pointerdown', event => {
+          if (event.button !== 0) return;
           if (cadToolMode !== 'select') return;
           event.preventDefault();
           event.stopPropagation();
@@ -4384,8 +4539,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.38: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.38' })
+// v0.39: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.39' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
