@@ -8,7 +8,7 @@ import {
   loadTermodelProjectText,
   openArchivioWeb,
   getArchivioWebRecords
-} from './archivio-web.js?v=0.33';
+} from './archivio-web.js?v=0.34';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -2586,21 +2586,50 @@ function cadSymbolInsertLabel(type) {
 }
 
 function cadCancelSymbolInsert() {
-  if (cadToolMode === 'symbol') { cadToolMode = 'select'; cadSymbolInsertType = ''; }
+  if (cadToolMode === 'symbol') {
+    cadToolMode = 'select';
+    cadSymbolInsertType = '';
+  }
+  if (cadCanvas) cadCanvas.classList.remove('symbol-insert-mode');
   cadUpdateControls();
 }
 
 function cadToggleSymbolInsert(type) {
-  if (!cadWorkingDoc) return;
+  if (!cadWorkingDoc) {
+    cadSetStatus('Disegno CAD non disponibile.', 'error');
+    return;
+  }
+
   const normalized = String(type || '').toUpperCase();
-  if (cadToolMode === 'symbol' && cadSymbolInsertType === normalized) { cadCancelSymbolInsert(); return; }
+  if (cadToolMode === 'symbol' && cadSymbolInsertType === normalized) {
+    cadCancelSymbolInsert();
+    return;
+  }
+
   if (cadToolMode === 'line') cadCancelNewLine();
+
   cadToolMode = 'symbol';
   cadSymbolInsertType = normalized;
   cadSelectedLineId = '';
   cadNewLineState = null;
-  cadUpdatePropertiesPanel();
+
+  // Feedback immediato: l'attivazione del comando non deve dipendere
+  // dall'aggiornamento del pannello laterale.
   cadUpdateControls();
+
+  const needsWall = normalized === 'FIN' || normalized === 'PON';
+  cadSetStatus(
+    'Piano ' + cadCurrentPlane() +
+    ' · Layer ' + cadCurrentLayer() +
+    ' · ' + cadSymbolInsertLabel(normalized) +
+    (needsWall ? ' · clicca vicino a una parete' : ' · clicca il punto di inserimento')
+  );
+
+  try {
+    cadUpdatePropertiesPanel();
+  } catch (error) {
+    console.warn('Pannello CAD non aggiornato durante inserimento simbolo:', error);
+  }
 }
 
 function cadInsertSymbolAtPoint(rawPoint) {
@@ -2663,7 +2692,9 @@ function cadInsertSymbolAtPoint(rawPoint) {
   cadRedoStack = [];
   cadToolMode = 'select';
   cadSymbolInsertType = '';
+  if (cadCanvas) cadCanvas.classList.remove('symbol-insert-mode');
   renderCadComparison();
+  cadUpdateControls();
   cadSetStatus('✓ ' + id + ' ' + cadSymbolBlockType(symbol) + ' inserito · Piano ' + plane + ' · Layer ' + layer + (wallSnapped ? ' · SNAP parete' : ''), 'dirty');
 }
 function cadFindSourceLine(id) {
@@ -2835,9 +2866,14 @@ function cadUpdateControls() {
     const button = pair[0];
     const type = pair[1];
     if (!button) return;
+    const active = insertingSymbol && cadSymbolInsertType === type;
     button.disabled = !hasDoc;
-    button.classList.toggle('active', insertingSymbol && cadSymbolInsertType === type);
+    button.classList.toggle('active', active);
+    button.textContent = active
+      ? '× ' + cadSymbolInsertLabel(type)
+      : '＋ ' + cadSymbolInsertLabel(type);
   });
+  if (cadCanvas) cadCanvas.classList.toggle('symbol-insert-mode', insertingSymbol);
   if (cadNewLineType) cadNewLineType.disabled = !hasDoc || busy;
   if (cadExportArchitectural) cadExportArchitectural.disabled = !lastGeneratedPlan || dirty || busy;
 
@@ -2846,7 +2882,13 @@ function cadUpdateControls() {
     const tipo = (cadNewLineType?.value || 'W').toUpperCase();
     cadSetStatus(cadNewLineState ? ('Piano ' + cadCurrentPlane() + ' · Nuova ' + tipo + ' · clicca il punto finale') : ('Piano ' + cadCurrentPlane() + ' · Nuova ' + tipo + ' · clicca il punto iniziale'));
   } else if (insertingSymbol) {
-    cadSetStatus('Piano ' + cadCurrentPlane() + ' · Layer ' + cadCurrentLayer() + ' · inserisci ' + cadSymbolInsertLabel(cadSymbolInsertType) + ' con un clic');
+    const needsWall = cadSymbolInsertType === 'FIN' || cadSymbolInsertType === 'PON';
+    cadSetStatus(
+      'Piano ' + cadCurrentPlane() +
+      ' · Layer ' + cadCurrentLayer() +
+      ' · ' + cadSymbolInsertLabel(cadSymbolInsertType) +
+      (needsWall ? ' · clicca vicino a una parete' : ' · clicca il punto di inserimento')
+    );
   } else if (dirty) {
     cadSetStatus(cadSelectedLineId ? (cadSelectedLineId + ' · modifica non rigenerata') : 'Modifica non rigenerata', 'dirty');
   } else if (selected) {
@@ -3847,8 +3889,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.33: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.33' })
+// v0.34: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.34' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
