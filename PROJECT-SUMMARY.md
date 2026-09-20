@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`8a22f57fa50a1100d20bddba258c9495fd816da7` — `Add orthogonal CAD drawing mode v0.42`  
+`8096a7bac2c606d3df2c71454814584b34c57e8e` — `Simplify CAD 2D layout v0.43`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -642,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.42
+Termodel Web v0.43
 ```
 
-Commit frontend di riferimento per la v0.42:
+Commit frontend di riferimento per la v0.43:
 
 ```text
-8a22f57fa50a1100d20bddba258c9495fd816da7  Add orthogonal CAD drawing mode v0.42
+8096a7bac2c606d3df2c71454814584b34c57e8e  Simplify CAD 2D layout v0.43
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -657,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.42 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.43 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2526,6 +2526,41 @@ Add orthogonal CAD drawing mode v0.42
 
 ---
 
+## 12.10 Layout dedicato CAD 2D — v0.43
+
+La v0.43 semplifica l'interfaccia generale quando è attiva la pagina CAD 2D, senza eliminare i controlli dal resto di Termodel Web.
+
+In modalità CAD:
+
+- la caption diventa esattamente `Termodel Cad 2d Versione 0.43`;
+- la barra menu generale viene nascosta;
+- le tab generali vengono nascoste;
+- la barra inferiore del modello/3D viene nascosta;
+- restano visibili la toolbar CAD, il canvas e il pannello proprietà;
+- il pulsante di uscita dalla toolbar CAD è rinominato `Torna al modello 3d`.
+
+La modifica è solo di layout frontend. Menu, tab e barra inferiore non vengono rimossi dall'applicazione: entrando nel CAD viene applicata la classe `cad-layout-mode`; tornando al modello 3D la classe viene rimossa e il layout generale viene ripristinato.
+
+File modificati:
+
+```text
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/app.js
+```
+
+Commit:
+
+```text
+8096a7bac2c606d3df2c71454814584b34c57e8e
+Simplify CAD 2D layout v0.43
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.43 — DA VERIFICARE MANUALMENTE NEL BROWSER.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -2698,7 +2733,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.42.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.43.**
 
 Stato operativo corrente:
 
@@ -2708,7 +2743,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.42 presente su `main`;
+- v0.43 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2727,6 +2762,7 @@ Stato operativo corrente:
 - v0.40 aggiunge uno sfondo raster/SVG specifico per ogni piano tramite `Aggiungi sfondo`; lo sfondo viene incorporato nello SVG progetto, filtrato per `data-termodel-piano` e visualizzato sotto il Disegno input. La precedente visualizzazione `Pianta pulita` è sospesa nel CAD ma resta disponibile al motore.
 - v0.41 ripristina il check `Sfondo` e introduce la calibrazione per-piano: selezione di parete orizzontale/verticale → misura reale in metri → fattore di scala applicato a sfondo, linee e posizioni dei simboli del piano corrente; pareti inclinate escluse; viewBox/Nord ricalcolati; undo/redo attivo.
 - v0.42 aggiunge il check `Orto` accanto a `Snap`: durante la creazione di nuove linee E/W il secondo punto viene vincolato automaticamente all'orizzontale o alla verticale; preview e coordinate SVG rispettano il vincolo, mentre Snap viene accettato solo se non rompe l'ortogonalità.
+- v0.43 introduce il layout dedicato CAD 2D: caption `Termodel Cad 2d Versione 0.43`, menu/tab/barra inferiore nascosti solo durante il CAD, pulsante `Torna al modello 3d`; tornando al modello viene ripristinato il layout generale.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2737,9 +2773,9 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.42 insieme alla calibrazione v0.41: attivare `Orto` → disegnare una linea orizzontale e una verticale con Snap ON/OFF → verificare preview e coordinate ortogonali → importare uno sfondo → check Sfondo ON/OFF → selezionare una delle pareti ortogonali → box Calibrazione sfondo → impostare una misura reale nota → Calibra → verificare che parete, tutte le linee, posizioni simboli e sfondo del solo piano corrente mantengano l'allineamento e assumano la nuova scala; verificare che una parete inclinata non attivi il box e che undo/redo ripristini la geometria;  
+> 2. verificare manualmente la v0.43 nel browser: entrando in `Edita nel Cad` devono restare solo caption CAD, toolbar, canvas e pannello proprietà; menu, tab e barra inferiore devono sparire; il pulsante `Torna al modello 3d` deve ripristinare il layout generale. Nella stessa prova verificare v0.42 + v0.41: Orto con Snap ON/OFF, poi calibrazione sfondo su parete ortogonale e undo/redo;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
-Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `8096a7bac2c606d3df2c71454814584b34c57e8e`.
