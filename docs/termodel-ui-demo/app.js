@@ -8,7 +8,7 @@ import {
   loadTermodelProjectText,
   openArchivioWeb,
   getArchivioWebRecords
-} from './archivio-web.js?v=0.34';
+} from './archivio-web.js?v=0.35';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -50,6 +50,12 @@ const cadPropStart = document.getElementById('cadPropStart');
 const cadPropEnd = document.getElementById('cadPropEnd');
 const cadPropLength = document.getElementById('cadPropLength');
 const cadPropConfirm = document.getElementById('cadPropConfirm');
+const cadWallPropertiesSection = document.getElementById('cadWallPropertiesSection');
+const cadWallGeometrySection = document.getElementById('cadWallGeometrySection');
+const cadSymbolPropertiesSection = document.getElementById('cadSymbolPropertiesSection');
+const cadSymbolPosition = document.getElementById('cadSymbolPosition');
+const cadSymbolFields = document.getElementById('cadSymbolFields');
+const cadSymbolApply = document.getElementById('cadSymbolApply');
 const cadOpenPianiArchive = document.getElementById('cadOpenPianiArchive');
 const cadOpenParetiArchive = document.getElementById('cadOpenParetiArchive');
 const cadOpenConfiniArchive = document.getElementById('cadOpenConfiniArchive');
@@ -105,6 +111,7 @@ let northOrientationDeg = null;
 let cadWorkingDoc = null;
 let cadCommittedSvg = '';
 let cadSelectedLineId = '';
+let cadSelectedSymbolId = '';
 let cadUndoStack = [];
 let cadRedoStack = [];
 let cadDragState = null;
@@ -2692,14 +2699,101 @@ function cadInsertSymbolAtPoint(rawPoint) {
   cadRedoStack = [];
   cadToolMode = 'select';
   cadSymbolInsertType = '';
+  cadSelectedLineId = '';
+  cadSelectedSymbolId = id;
   if (cadCanvas) cadCanvas.classList.remove('symbol-insert-mode');
   renderCadComparison();
+  cadUpdatePropertiesPanel();
   cadUpdateControls();
   cadSetStatus('✓ ' + id + ' ' + cadSymbolBlockType(symbol) + ' inserito · Piano ' + plane + ' · Layer ' + layer + (wallSnapped ? ' · SNAP parete' : ''), 'dirty');
 }
 function cadFindSourceLine(id) {
   if (!id) return null;
   return cadEditableSourceLines().find(line => line.id === id) || null;
+}
+
+function cadFindSourceSymbol(id) {
+  if (!id) return null;
+  return cadPlaneScopedEntities().find(element =>
+    element.localName === 'text' &&
+    element.id === id &&
+    cadSymbolBlockType(element) &&
+    cadEntityBelongsToCurrentPlane(element)
+  ) || null;
+}
+
+function cadSymbolEditableRows(symbol) {
+  return Array.from(symbol?.children || [])
+    .map((child, index) => {
+      if (child.localName !== 'tspan' || index === 0) return null;
+      const line = cadText(child.textContent);
+      const comma = line.indexOf(',');
+      if (comma < 0) return null;
+      return {
+        index,
+        key: line.slice(0, comma).trim(),
+        value: line.slice(comma + 1).trim()
+      };
+    })
+    .filter(Boolean);
+}
+
+function cadRenderSelectedSymbolFields(symbol) {
+  if (!cadSymbolFields) return;
+  cadSymbolFields.innerHTML = '';
+
+  const rows = cadSymbolEditableRows(symbol);
+  if (!rows.length) {
+    const note = document.createElement('div');
+    note.className = 'cad-properties-note';
+    note.textContent = 'Questo simbolo non contiene attributi tecnici.';
+    cadSymbolFields.appendChild(note);
+    return;
+  }
+
+  rows.forEach(row => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'cad-prop-row';
+
+    const label = document.createElement('label');
+    label.textContent = row.key + ':';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = row.value;
+    input.dataset.cadSymbolTspanIndex = String(row.index);
+    input.dataset.cadSymbolKey = row.key;
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(input);
+    cadSymbolFields.appendChild(wrapper);
+  });
+}
+
+function cadApplySelectedSymbolProperties() {
+  const symbol = cadFindSourceSymbol(cadSelectedSymbolId);
+  if (!symbol || !cadSymbolFields) return;
+
+  const before = cadSerializeWorkingSvg();
+  cadSymbolFields.querySelectorAll('input[data-cad-symbol-tspan-index]').forEach(input => {
+    const index = Number(input.dataset.cadSymbolTspanIndex);
+    const key = cadText(input.dataset.cadSymbolKey);
+    const tspan = symbol.children[index];
+    if (!tspan || !key) return;
+    tspan.textContent = key + ',' + input.value;
+  });
+
+  const after = cadSerializeWorkingSvg();
+  if (after !== before) {
+    cadUndoStack.push(before);
+    cadRedoStack = [];
+    renderCadComparison();
+    cadSetStatus(cadSelectedSymbolId + ' · attributi aggiornati', 'dirty');
+  } else {
+    cadUpdatePropertiesPanel();
+    cadSetStatus(cadSelectedSymbolId + ' · attributi invariati');
+  }
+  cadUpdateControls();
 }
 
 function cadLinePoint(line, endpoint) {
@@ -2718,6 +2812,7 @@ function cadSetLinePoint(line, endpoint, x, y) {
 
 function cadUpdatePropertiesPanel() {
   const line = cadFindSourceLine(cadSelectedLineId);
+  const symbol = cadFindSourceSymbol(cadSelectedSymbolId);
   const hasDoc = !!cadWorkingDoc;
 
   if (cadPropertiesEmpty) cadPropertiesEmpty.hidden = hasDoc;
@@ -2733,13 +2828,35 @@ function cadUpdatePropertiesPanel() {
   }
 
   const derived = cadRefreshToolbarControls();
+  const symbolType = symbol ? cadSymbolBlockType(symbol) : '';
 
-  if (cadPropertiesHead)
-    cadPropertiesHead.textContent = line ? `Dati CAD · Parete ${line.id}` : 'Dati CAD · Nuova parete';
+  if (cadWallPropertiesSection) cadWallPropertiesSection.hidden = Boolean(symbol);
+  if (cadWallGeometrySection) cadWallGeometrySection.hidden = Boolean(symbol);
+  if (cadSymbolPropertiesSection) cadSymbolPropertiesSection.hidden = !symbol;
 
-  if (cadPropEntity) cadPropEntity.value = line?.id || 'Nuova parete';
+  if (cadPropertiesHead) {
+    if (symbol)
+      cadPropertiesHead.textContent = 'Dati CAD · ' + cadSymbolInsertLabel(symbolType) + ' ' + symbol.id;
+    else
+      cadPropertiesHead.textContent = line ? `Dati CAD · Parete ${line.id}` : 'Dati CAD · Nuova parete';
+  }
 
-  if (line) {
+  if (cadPropEntity)
+    cadPropEntity.value = symbol?.id || line?.id || 'Nuova parete';
+
+  if (symbol) {
+    const x = Number(symbol.getAttribute('x'));
+    const y = Number(symbol.getAttribute('y'));
+    if (cadSymbolPosition)
+      cadSymbolPosition.value = Number.isFinite(x) && Number.isFinite(y)
+        ? `${x.toFixed(1)} / ${y.toFixed(1)} cm`
+        : '';
+    cadRenderSelectedSymbolFields(symbol);
+
+    if (cadPropStart) cadPropStart.value = '';
+    if (cadPropEnd) cadPropEnd.value = '';
+    if (cadPropLength) cadPropLength.value = '';
+  } else if (line) {
     const [x1, y1] = cadLinePoint(line, 1);
     const [x2, y2] = cadLinePoint(line, 2);
     const lengthCm = Math.hypot(x2 - x1, y2 - y1);
@@ -2754,10 +2871,14 @@ function cadUpdatePropertiesPanel() {
     if (cadPropStart) cadPropStart.value = '';
     if (cadPropEnd) cadPropEnd.value = '';
     if (cadPropLength) cadPropLength.value = '';
+    if (cadSymbolPosition) cadSymbolPosition.value = '';
+    if (cadSymbolFields) cadSymbolFields.innerHTML = '';
   }
 
   if (cadPropConfirm)
     cadPropConfirm.disabled = !line;
+  if (cadSymbolApply)
+    cadSymbolApply.disabled = !symbol || !cadSymbolEditableRows(symbol).length;
 
   if (cadPropColorSwatch)
     cadPropColorSwatch.style.background = derived.colorCss || '#ccc';
@@ -2818,6 +2939,7 @@ function cadCurrentPlaneChanged() {
 
   cadToolbarState.piano = requested;
   cadSelectedLineId = '';
+  cadSelectedSymbolId = '';
   cadDragState = null;
   cadRestorePlanePreview();
   cadRefreshToolbarControls();
@@ -2848,6 +2970,7 @@ function cadIsDirty() {
 function cadUpdateControls() {
   const hasDoc = !!cadWorkingDoc;
   const selected = !!cadFindSourceLine(cadSelectedLineId);
+  const selectedSymbol = cadFindSourceSymbol(cadSelectedSymbolId);
   const dirty = cadIsDirty();
   const drawingLine = cadToolMode === 'line';
   const insertingSymbol = cadToolMode === 'symbol';
@@ -2890,7 +3013,14 @@ function cadUpdateControls() {
       (needsWall ? ' · clicca vicino a una parete' : ' · clicca il punto di inserimento')
     );
   } else if (dirty) {
-    cadSetStatus(cadSelectedLineId ? (cadSelectedLineId + ' · modifica non rigenerata') : 'Modifica non rigenerata', 'dirty');
+    cadSetStatus(
+      cadSelectedSymbolId
+        ? (cadSelectedSymbolId + ' · simbolo selezionato · modifica non rigenerata')
+        : (cadSelectedLineId ? (cadSelectedLineId + ' · modifica non rigenerata') : 'Modifica non rigenerata'),
+      'dirty'
+    );
+  } else if (selectedSymbol) {
+    cadSetStatus(cadSelectedSymbolId + ' · ' + cadSymbolInsertLabel(cadSymbolBlockType(selectedSymbol)) + ' selezionato');
   } else if (selected) {
     const line = cadFindSourceLine(cadSelectedLineId);
     const p1 = cadLinePoint(line, 1);
@@ -2914,6 +3044,7 @@ function cadSetWorkingSvg(svgText) {
 
   cadCommittedSvg = cadSerializeWorkingSvg();
   cadSelectedLineId = '';
+  cadSelectedSymbolId = '';
   cadUndoStack = [];
   cadRedoStack = [];
   cadDragState = null;
@@ -3145,6 +3276,15 @@ function cadClientPoint(svg, event) {
 
 function cadSelectLine(id, svg = cadCanvas?.querySelector('svg')) {
   cadSelectedLineId = cadFindSourceLine(id) ? id : '';
+  if (cadSelectedLineId) cadSelectedSymbolId = '';
+  if (svg) cadSyncOverlay(svg);
+  cadUpdatePropertiesPanel();
+  cadUpdateControls();
+}
+
+function cadSelectSymbol(id, svg = cadCanvas?.querySelector('svg')) {
+  cadSelectedSymbolId = cadFindSourceSymbol(id) ? id : '';
+  if (cadSelectedSymbolId) cadSelectedLineId = '';
   if (svg) cadSyncOverlay(svg);
   cadUpdatePropertiesPanel();
   cadUpdateControls();
@@ -3227,6 +3367,11 @@ function cadSyncOverlay(svg) {
     }
   });
 
+  svg.querySelectorAll('[data-cad-symbol-id]').forEach(displaySymbol => {
+    const id = displaySymbol.getAttribute('data-cad-symbol-id');
+    displaySymbol.classList.toggle('selected', id === cadSelectedSymbolId);
+  });
+
   cadRenderSelectionHandles(svg);
   cadUpdatePropertiesPanel();
   cadUpdateControls();
@@ -3306,6 +3451,7 @@ function cadInstallPointerEditing(svg) {
   svg.addEventListener('pointerdown', event => {
     if (cadToolMode === 'line' || cadToolMode === 'symbol') return;
     if (event.target === svg || event.target.getAttribute('data-cad-background') === '1') {
+      cadSelectedSymbolId = '';
       cadSelectLine('', svg);
     }
   });
@@ -3445,6 +3591,7 @@ function renderCadComparison() {
             event.preventDefault();
             event.stopPropagation();
 
+            cadSelectedSymbolId = '';
             cadSelectedLineId = id;
             cadSyncOverlay(svg);
 
@@ -3498,10 +3645,20 @@ function renderCadComparison() {
         const x = Number(labelSource.getAttribute('x'));
         const y = Number(labelSource.getAttribute('y'));
         const color = cadSymbolColor(labelSource);
-        inputLayer.appendChild(svgNode('circle', {
-          cx: x, cy: y, r: 5.5, fill: '#ffffff', stroke: color, 'stroke-width': 2,
-          'vector-effect': 'non-scaling-stroke', 'pointer-events': 'none'
-        }));
+        const marker = svgNode('circle', {
+          cx: x, cy: y, r: 7, fill: '#ffffff', stroke: color, 'stroke-width': 2,
+          'vector-effect': 'non-scaling-stroke',
+          class: 'cad-edit-symbol',
+          'data-cad-symbol-id': id
+        });
+        marker.classList.toggle('selected', id === cadSelectedSymbolId);
+        marker.addEventListener('pointerdown', event => {
+          if (cadToolMode !== 'select') return;
+          event.preventDefault();
+          event.stopPropagation();
+          cadSelectSymbol(id, svg);
+        });
+        inputLayer.appendChild(marker);
         addCadLabel(inputLayer, id, x, y, color);
       });
   }
@@ -3534,6 +3691,7 @@ function cadUndoEdit() {
   cadWorkingDoc = cadParseSvg(cadUndoStack.pop());
   cadSyncNorthFromWorkingDoc();
   if (!cadFindSourceLine(cadSelectedLineId)) cadSelectedLineId = '';
+  if (!cadFindSourceSymbol(cadSelectedSymbolId)) cadSelectedSymbolId = '';
   renderCadComparison();
 }
 
@@ -3543,6 +3701,7 @@ function cadRedoEdit() {
   cadWorkingDoc = cadParseSvg(cadRedoStack.pop());
   cadSyncNorthFromWorkingDoc();
   if (!cadFindSourceLine(cadSelectedLineId)) cadSelectedLineId = '';
+  if (!cadFindSourceSymbol(cadSelectedSymbolId)) cadSelectedSymbolId = '';
   renderCadComparison();
 }
 
@@ -3822,6 +3981,7 @@ cadInsertBridge?.addEventListener('click', () => cadToggleSymbolInsert('PON'));
 cadInsertRoom?.addEventListener('click', () => cadToggleSymbolInsert('LOC'));
 if (cadPropConfirm)
   cadPropConfirm.addEventListener('click', cadApplyProperties);
+cadSymbolApply?.addEventListener('click', cadApplySelectedSymbolProperties);
 cadNorthDefined?.addEventListener('change', () => {
   cadSetNorthOrientation(cadNorthDefined.checked ? (cadNorthAngle?.value || 0) : null);
 });
@@ -3889,8 +4049,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.34: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.34' })
+// v0.35: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.35' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {

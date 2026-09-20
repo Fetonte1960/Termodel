@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.34 — feedback inserimento simboli CAD</title>
+  <title>Termodel Web v0.35 — proprietà simboli CAD</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -501,6 +501,13 @@
       stroke-width: 5.4 !important;
       opacity: 1 !important;
     }
+    .cad-edit-symbol {
+      cursor: pointer;
+    }
+    .cad-edit-symbol.selected {
+      stroke-width: 4 !important;
+      fill: #fff4c9 !important;
+    }
     .cad-handle {
       fill: #ffffff;
       stroke: #111111;
@@ -783,7 +790,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.34</div>
+      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.35</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -888,7 +895,22 @@
               </div>
             </section>
 
-            <section class="cad-properties-section">
+            <section id="cadSymbolPropertiesSection" class="cad-properties-section" hidden>
+              <div class="cad-properties-section-title">Attributi simbolo</div>
+              <div class="cad-prop-row">
+                <label>Posizione:</label>
+                <input id="cadSymbolPosition" type="text" readonly />
+              </div>
+              <div id="cadSymbolFields"></div>
+              <div class="cad-prop-actions">
+                <button id="cadSymbolApply" type="button">Applica al simbolo</button>
+              </div>
+              <div class="cad-properties-note">
+                Gli attributi visualizzati provengono direttamente dai <code>tspan</code> del simbolo SVG.
+              </div>
+            </section>
+
+            <section id="cadWallPropertiesSection" class="cad-properties-section">
               <div class="cad-properties-section-title">Edificio · Pareti</div>
               <div class="cad-prop-row">
                 <label for="cadPropTipoParete">Tipo parete:</label>
@@ -917,7 +939,7 @@
               </div>
             </section>
 
-            <section class="cad-properties-section">
+            <section id="cadWallGeometrySection" class="cad-properties-section">
               <div class="cad-properties-section-title">Geometria CAD</div>
               <div class="cad-prop-row"><label>X1 / Y1:</label><input id="cadPropStart" type="text" readonly /></div>
               <div class="cad-prop-row"><label>X2 / Y2:</label><input id="cadPropEnd" type="text" readonly /></div>
@@ -1146,6 +1168,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.34"></script>
+  <script type="module" src="./app.js?v=0.35"></script>
 </body>
 </html>
