@@ -4,7 +4,7 @@
 
 const PROJECT_START = '[TERMODEL-PROJECT-TEXT-V1]';
 const PROJECT_END = '[END-TERMODEL-PROJECT-TEXT-V1]';
-const DEFAULT_SCHEMA_URL = './definizionedati.json?v=0.35';
+const DEFAULT_SCHEMA_URL = './definizionedati.json?v=0.36';
 const EXPECTED_SCHEMA_SHA256 = '29E30DE64C7D45E4613F145AC485F573DB34F4328C6CE0BC7367EB92D83AAD0B';
 
 const ARCHIVE_ORDER = [
@@ -961,4 +961,10 @@ export function getArchivioWebState() {
 export function getArchivioWebRecords(name) {
   commitFormToRecord();
   return archiveRecords(name).map(record => ({ ...record }));
+}
+
+
+export function getArchivioWebSchema(name) {
+  const schema = archiveState.schema?.[name];
+  return schema ? deepClone(schema) : {};
 }

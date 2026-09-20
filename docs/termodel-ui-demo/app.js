@@ -7,8 +7,9 @@ import {
   isTermodelProjectText,
   loadTermodelProjectText,
   openArchivioWeb,
-  getArchivioWebRecords
-} from './archivio-web.js?v=0.35';
+  getArchivioWebRecords,
+  getArchivioWebSchema
+} from './archivio-web.js?v=0.36';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -53,6 +54,7 @@ const cadPropConfirm = document.getElementById('cadPropConfirm');
 const cadWallPropertiesSection = document.getElementById('cadWallPropertiesSection');
 const cadWallGeometrySection = document.getElementById('cadWallGeometrySection');
 const cadSymbolPropertiesSection = document.getElementById('cadSymbolPropertiesSection');
+const cadSymbolSectionTitle = document.getElementById('cadSymbolSectionTitle');
 const cadSymbolPosition = document.getElementById('cadSymbolPosition');
 const cadSymbolFields = document.getElementById('cadSymbolFields');
 const cadSymbolApply = document.getElementById('cadSymbolApply');
@@ -2675,9 +2677,20 @@ function cadInsertSymbolAtPoint(rawPoint) {
     ];
   } else if (cadSymbolInsertType === 'PON') {
     id = cadNextSymbolId('PON');
-    rows = ['BLOCCO,PON', 'TIPO,' + (cadText(dati.TipoPonte) || 'Da associare'), 'ORIENTAMENTO,' + cadText(dati.OrientamentoPonte), 'LUNGHEZZA,' + cadText(dati.LungPonte)];
+    const orientamento = cadText(dati.OrientamentoPonte) || 'Orizzontale';
+    const lunghezza = cadText(dati.FonteLunghezzaPonte) === 'Valore imposto'
+      ? cadText(dati.LungPonte)
+      : (orientamento === 'Orizzontale' ? 'Lunghezza parete' : 'Altezza parete');
+    rows = [
+      'BLOCCO,PON',
+      'TIPO,' + (cadText(dati.TipoPonte) || 'Da associare'),
+      'ORIENTAMENTO,' + orientamento,
+      'LUNGHEZZA,' + lunghezza
+    ];
   } else if (cadSymbolInsertType === 'LOC') {
     id = cadNextSymbolId('R');
+    const altezzaDaPiano = cadText(dati.FonteAltezza) === 'Da piano';
+    const quotaDaPiano = cadText(dati.FonteQuotaPavimento) === 'Da piano';
     rows = [
       'BLOCCO,LOC',
       'DESCR.,' + (cadText(dati.DescrizioneLocale) || ('Locale ' + id)),
@@ -2687,9 +2700,9 @@ function cadInsertSymbolAtPoint(rawPoint) {
       'CCOPERTURA,' + (cadText(dati.ColoreCopertura) || 'Solaio piano'),
       'TPAV,' + cadText(dati.TipoPavimento),
       'TSOF,' + cadText(dati.TipoSoffitto),
-      'ALTEZZALORDA,' + (cadText(dati.AltezzaLorda) || 'Da piano'),
-      'ALTEZZANETTA,' + (cadText(dati.AltezzaNetta) || 'Da piano'),
-      'QUOTAPAVIMENTO,' + (cadText(dati.QuotaPavimento) || 'Da piano')
+      'ALTEZZALORDA,' + (altezzaDaPiano ? 'Da piano' : cadText(dati.AltezzaLorda)),
+      'ALTEZZANETTA,' + (altezzaDaPiano ? 'Da piano' : cadText(dati.AltezzaNetta)),
+      'QUOTAPAVIMENTO,' + (quotaDaPiano ? 'Da piano' : cadText(dati.QuotaPavimento))
     ];
   }
   if (!id || !rows.length) return;
@@ -2722,28 +2735,201 @@ function cadFindSourceSymbol(id) {
   ) || null;
 }
 
-function cadSymbolEditableRows(symbol) {
-  return Array.from(symbol?.children || [])
-    .map((child, index) => {
-      if (child.localName !== 'tspan' || index === 0) return null;
-      const line = cadText(child.textContent);
-      const comma = line.indexOf(',');
-      if (comma < 0) return null;
-      return {
-        index,
-        key: line.slice(0, comma).trim(),
-        value: line.slice(comma + 1).trim()
-      };
-    })
-    .filter(Boolean);
+const CAD_SYMBOL_PANEL_CONFIG = {
+  FIN: [
+    { key: 'PORTA', field: 'Porta', label: 'Porta o sup. opaca', arc: true },
+    { key: 'TIPO', field: 'TipoFinestra', label: 'Tipo finestra', arc: true },
+    { key: 'LARGHEZZA', field: 'LarghezzaFinestra', label: 'Larghezza (m)', svgCm: true },
+    { key: 'ALTEZZA', field: 'AltezzaFinestra', label: 'Altezza (m)', svgCm: true },
+    { key: 'NUMEROANTE', field: 'AnteFinestra', label: 'Numero Ante' },
+    { key: 'SOTTOFINESTRA', field: 'SottoFinestra', label: 'Sottofinestra (m)', svgCm: true },
+    { key: 'SOPRALUCE', field: 'SopraLuce', label: 'Sopraluce (m)', svgCm: true }
+  ],
+  PON: [
+    { key: 'TIPO', field: 'TipoPonte', label: 'Tipo ponte', arc: true },
+    { key: 'ORIENTAMENTO', field: 'OrientamentoPonte', label: 'Orientamento ponte' },
+    { key: '__FONTE_LUNGHEZZA', field: 'FonteLunghezzaPonte', label: 'Fonte lunghezza ponte', virtual: true },
+    { key: 'LUNGHEZZA', field: 'LungPonte', label: 'Lunghezza ponte (m)' }
+  ],
+  LOC: [
+    { key: 'DESCR.', field: 'DescrizioneLocale', label: 'Descrizione Locale' },
+    { key: 'ZONA', field: 'Zona', label: 'Zona', arc: true },
+    { key: '__FONTE_ALTEZZA', field: 'FonteAltezza', label: 'Fonte altezza', virtual: true },
+    { key: 'ALTEZZALORDA', field: 'AltezzaLorda', label: 'Altezza lorda (m)' },
+    { key: 'ALTEZZANETTA', field: 'AltezzaNetta', label: 'Altezza netta (m)' },
+    { key: '__FONTE_QUOTA', field: 'FonteQuotaPavimento', label: 'Fonte quota pavimento', virtual: true },
+    { key: 'QUOTAPAVIMENTO', field: 'QuotaPavimento', label: 'Quota pavimento (m)' },
+    { key: 'TSOF', field: 'TipoSoffitto', label: 'Tipo Soffitto', arc: true },
+    { key: 'CSOF', field: 'ConfineSoffitto', label: 'Confine Soffitto', arc: true },
+    { key: 'CCOPERTURA', field: 'ColoreCopertura', label: 'Colore copertura' },
+    { key: 'TPAV', field: 'TipoPavimento', label: 'Tipo Pavimento', arc: true },
+    { key: 'CPAV', field: 'ConfinePavimento', label: 'Confine Pavimento', arc: true }
+  ],
+  ALLINEA: []
+};
+
+function cadSymbolPanelConfig(type) {
+  return CAD_SYMBOL_PANEL_CONFIG[type] || [];
+}
+
+function cadDatiCadMeta(field) {
+  return getArchivioWebSchema('DatiCad')?.[field] || {};
+}
+
+function cadUniqueValues(values) {
+  const result = [];
+  values.forEach(value => {
+    const normalized = cadText(value);
+    if (normalized && !result.includes(normalized)) result.push(normalized);
+  });
+  return result;
+}
+
+function cadComboInfo(field, currentValue = '') {
+  const meta = cadDatiCadMeta(field);
+  const combo = Array.isArray(meta.Combo) ? meta.Combo : [];
+  if (!combo.length) return { values: [], archive: '' };
+
+  if (combo[0] === 'auto_combo') {
+    const archive = cadText(combo[1]);
+    const archiveField = cadText(combo[2]);
+    const extras = combo.slice(3);
+    const values = cadArchiveRecords(archive).map(record => record?.[archiveField]);
+    return {
+      values: cadUniqueValues([currentValue, ...values, ...extras]),
+      archive
+    };
+  }
+
+  return {
+    values: cadUniqueValues([currentValue, ...combo]),
+    archive: ''
+  };
+}
+
+function cadTrimNumber(value, decimals = 2) {
+  const number = Number(String(value ?? '').replace(',', '.'));
+  if (!Number.isFinite(number)) return cadText(value);
+  return Number(number.toFixed(decimals)).toString();
+}
+
+function cadSymbolPanelValue(symbol, type, config) {
+  if (type === 'PON' && config.key === '__FONTE_LUNGHEZZA') {
+    const value = cadSymbolAttribute(symbol, 'LUNGHEZZA');
+    return value === 'Lunghezza parete' || value === 'Altezza parete'
+      ? 'Altezza parete o lunghezza parete'
+      : 'Valore imposto';
+  }
+
+  if (type === 'LOC' && config.key === '__FONTE_ALTEZZA') {
+    return cadSymbolAttribute(symbol, 'ALTEZZALORDA') === 'Da piano' &&
+      cadSymbolAttribute(symbol, 'ALTEZZANETTA') === 'Da piano'
+      ? 'Da piano'
+      : 'Valore imposto';
+  }
+
+  if (type === 'LOC' && config.key === '__FONTE_QUOTA') {
+    return cadSymbolAttribute(symbol, 'QUOTAPAVIMENTO') === 'Da piano'
+      ? 'Da piano'
+      : 'Valore imposto';
+  }
+
+  const raw = cadSymbolAttribute(symbol, config.key);
+  if (config.svgCm) {
+    const number = Number(String(raw).replace(',', '.'));
+    return Number.isFinite(number) ? cadTrimNumber(number / 100, 2) : raw;
+  }
+
+  if (
+    type === 'PON' &&
+    config.key === 'LUNGHEZZA' &&
+    (raw === 'Lunghezza parete' || raw === 'Altezza parete')
+  ) return '';
+
+  if (
+    type === 'LOC' &&
+    ['ALTEZZALORDA','ALTEZZANETTA','QUOTAPAVIMENTO'].includes(config.key) &&
+    raw === 'Da piano'
+  ) return '';
+
+  return raw;
+}
+
+function cadCreateSymbolPanelControl(symbol, type, config) {
+  const meta = cadDatiCadMeta(config.field);
+  const currentValue = cadSymbolPanelValue(symbol, type, config);
+  const comboInfo = cadComboInfo(config.field, currentValue);
+  const hasCombo = comboInfo.values.length > 0;
+  const control = document.createElement(hasCombo ? 'select' : 'input');
+
+  control.dataset.cadSymbolConfigKey = config.key;
+  control.dataset.cadDatiCadField = config.field;
+
+  if (hasCombo) {
+    comboInfo.values.forEach(value => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      control.appendChild(option);
+    });
+    control.value = currentValue;
+  } else {
+    control.type = (meta.NumeroCifre !== undefined || meta.NumeroDecimali !== undefined)
+      ? 'number'
+      : 'text';
+    if (control.type === 'number') {
+      const decimals = Number(meta.NumeroDecimali ?? 0);
+      control.step = decimals > 0 ? String(1 / Math.pow(10, decimals)) : '1';
+    }
+    control.value = currentValue;
+  }
+
+  control.readOnly = Boolean(meta.ReadOnly);
+  control.disabled = Boolean(meta.ReadOnly);
+  return { control, comboInfo };
+}
+
+function cadUpdateSymbolPanelDependencies(type) {
+  if (!cadSymbolFields) return;
+  const get = key => cadSymbolFields.querySelector('[data-cad-symbol-config-key="' + key + '"]');
+
+  if (type === 'PON') {
+    const source = get('__FONTE_LUNGHEZZA');
+    const length = get('LUNGHEZZA');
+    if (length) length.disabled = source?.value !== 'Valore imposto';
+  }
+
+  if (type === 'LOC') {
+    const sourceHeight = get('__FONTE_ALTEZZA');
+    const sourceQuota = get('__FONTE_QUOTA');
+    ['ALTEZZALORDA','ALTEZZANETTA'].forEach(key => {
+      const control = get(key);
+      if (control) control.disabled = sourceHeight?.value === 'Da piano';
+    });
+    const quota = get('QUOTAPAVIMENTO');
+    if (quota) quota.disabled = sourceQuota?.value === 'Da piano';
+  }
 }
 
 function cadRenderSelectedSymbolFields(symbol) {
   if (!cadSymbolFields) return;
   cadSymbolFields.innerHTML = '';
 
-  const rows = cadSymbolEditableRows(symbol);
-  if (!rows.length) {
+  const type = cadSymbolBlockType(symbol);
+  const configs = cadSymbolPanelConfig(type);
+
+  if (cadSymbolSectionTitle) {
+    const title = type === 'FIN'
+      ? 'Finestre / Porte'
+      : type === 'PON'
+        ? 'Ponti termici'
+        : type === 'LOC'
+          ? 'Locali'
+          : 'Simbolo di allineamento';
+    cadSymbolSectionTitle.textContent = title;
+  }
+
+  if (!configs.length) {
     const note = document.createElement('div');
     note.className = 'cad-properties-note';
     note.textContent = 'Questo simbolo non contiene attributi tecnici.';
@@ -2751,44 +2937,142 @@ function cadRenderSelectedSymbolFields(symbol) {
     return;
   }
 
-  rows.forEach(row => {
+  configs.forEach(config => {
     const wrapper = document.createElement('div');
     wrapper.className = 'cad-prop-row';
 
     const label = document.createElement('label');
-    label.textContent = row.key + ':';
+    label.textContent = config.label + ':';
 
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = row.value;
-    input.dataset.cadSymbolTspanIndex = String(row.index);
-    input.dataset.cadSymbolKey = row.key;
+    const { control, comboInfo } = cadCreateSymbolPanelControl(symbol, type, config);
+    const meta = cadDatiCadMeta(config.field);
 
-    wrapper.appendChild(label);
-    wrapper.appendChild(input);
+    if (config.arc && comboInfo.archive) {
+      const controlWrap = document.createElement('div');
+      controlWrap.className = 'cad-prop-with-arc';
+
+      const arc = document.createElement('button');
+      arc.type = 'button';
+      arc.className = 'cad-prop-arc';
+      arc.textContent = 'Arc';
+      arc.title = 'Apri archivio ' + comboInfo.archive;
+      arc.addEventListener('click', () => openArchivioWeb(comboInfo.archive));
+
+      controlWrap.appendChild(control);
+      controlWrap.appendChild(arc);
+      wrapper.appendChild(label);
+      wrapper.appendChild(controlWrap);
+    } else {
+      wrapper.appendChild(label);
+      wrapper.appendChild(control);
+    }
+
+    if (config.virtual)
+      control.addEventListener('change', () => cadUpdateSymbolPanelDependencies(type));
+
+    if (meta.ReadOnly)
+      control.title = 'Campo correlato readonly secondo definizionedati.json';
+
     cadSymbolFields.appendChild(wrapper);
   });
+
+  cadUpdateSymbolPanelDependencies(type);
+}
+
+function cadSetSymbolAttribute(symbol, key, value) {
+  const wanted = String(key || '').trim().toUpperCase();
+  let target = null;
+  for (const child of Array.from(symbol?.children || [])) {
+    if (child.localName !== 'tspan') continue;
+    const line = cadText(child.textContent);
+    const comma = line.indexOf(',');
+    if (comma < 0) continue;
+    if (line.slice(0, comma).trim().toUpperCase() === wanted) {
+      target = child;
+      break;
+    }
+  }
+
+  if (!target) {
+    target = cadWorkingDoc.createElementNS(SVG_NS, 'tspan');
+    target.setAttribute('x', symbol.getAttribute('x') || '0');
+    target.setAttribute('dy', '1.2em');
+    symbol.appendChild(target);
+  }
+  target.textContent = key + ',' + cadText(value);
+}
+
+function cadSymbolPanelControlValue(key) {
+  return cadText(
+    cadSymbolFields?.querySelector('[data-cad-symbol-config-key="' + key + '"]')?.value
+  );
 }
 
 function cadApplySelectedSymbolProperties() {
   const symbol = cadFindSourceSymbol(cadSelectedSymbolId);
   if (!symbol || !cadSymbolFields) return;
 
+  const type = cadSymbolBlockType(symbol);
   const before = cadSerializeWorkingSvg();
-  cadSymbolFields.querySelectorAll('input[data-cad-symbol-tspan-index]').forEach(input => {
-    const index = Number(input.dataset.cadSymbolTspanIndex);
-    const key = cadText(input.dataset.cadSymbolKey);
-    const tspan = symbol.children[index];
-    if (!tspan || !key) return;
-    tspan.textContent = key + ',' + input.value;
-  });
+
+  if (type === 'FIN') {
+    cadSetSymbolAttribute(symbol, 'PORTA', cadSymbolPanelControlValue('PORTA'));
+    cadSetSymbolAttribute(symbol, 'TIPO', cadSymbolPanelControlValue('TIPO'));
+    ['LARGHEZZA','ALTEZZA','SOTTOFINESTRA','SOPRALUCE'].forEach(key => {
+      cadSetSymbolAttribute(symbol, key, cadMetersToSvgCm(cadSymbolPanelControlValue(key)));
+    });
+    cadSetSymbolAttribute(symbol, 'NUMEROANTE', cadSymbolPanelControlValue('NUMEROANTE'));
+  }
+
+  if (type === 'PON') {
+    const orientamento = cadSymbolPanelControlValue('ORIENTAMENTO');
+    const fonte = cadSymbolPanelControlValue('__FONTE_LUNGHEZZA');
+    cadSetSymbolAttribute(symbol, 'TIPO', cadSymbolPanelControlValue('TIPO'));
+    cadSetSymbolAttribute(symbol, 'ORIENTAMENTO', orientamento);
+    cadSetSymbolAttribute(
+      symbol,
+      'LUNGHEZZA',
+      fonte === 'Valore imposto'
+        ? cadSymbolPanelControlValue('LUNGHEZZA')
+        : (orientamento === 'Orizzontale' ? 'Lunghezza parete' : 'Altezza parete')
+    );
+  }
+
+  if (type === 'LOC') {
+    const fonteAltezza = cadSymbolPanelControlValue('__FONTE_ALTEZZA');
+    const fonteQuota = cadSymbolPanelControlValue('__FONTE_QUOTA');
+
+    cadSetSymbolAttribute(symbol, 'DESCR.', cadSymbolPanelControlValue('DESCR.'));
+    cadSetSymbolAttribute(symbol, 'ZONA', cadSymbolPanelControlValue('ZONA'));
+    cadSetSymbolAttribute(symbol, 'TSOF', cadSymbolPanelControlValue('TSOF'));
+    cadSetSymbolAttribute(symbol, 'CSOF', cadSymbolPanelControlValue('CSOF'));
+    cadSetSymbolAttribute(symbol, 'CCOPERTURA', cadSymbolPanelControlValue('CCOPERTURA'));
+    cadSetSymbolAttribute(symbol, 'TPAV', cadSymbolPanelControlValue('TPAV'));
+    cadSetSymbolAttribute(symbol, 'CPAV', cadSymbolPanelControlValue('CPAV'));
+
+    cadSetSymbolAttribute(
+      symbol,
+      'ALTEZZALORDA',
+      fonteAltezza === 'Da piano' ? 'Da piano' : cadSymbolPanelControlValue('ALTEZZALORDA')
+    );
+    cadSetSymbolAttribute(
+      symbol,
+      'ALTEZZANETTA',
+      fonteAltezza === 'Da piano' ? 'Da piano' : cadSymbolPanelControlValue('ALTEZZANETTA')
+    );
+    cadSetSymbolAttribute(
+      symbol,
+      'QUOTAPAVIMENTO',
+      fonteQuota === 'Da piano' ? 'Da piano' : cadSymbolPanelControlValue('QUOTAPAVIMENTO')
+    );
+  }
 
   const after = cadSerializeWorkingSvg();
   if (after !== before) {
     cadUndoStack.push(before);
     cadRedoStack = [];
     renderCadComparison();
-    cadSetStatus(cadSelectedSymbolId + ' · attributi aggiornati', 'dirty');
+    cadSetStatus(cadSelectedSymbolId + ' · attributi XAML aggiornati', 'dirty');
   } else {
     cadUpdatePropertiesPanel();
     cadSetStatus(cadSelectedSymbolId + ' · attributi invariati');
@@ -2878,7 +3162,7 @@ function cadUpdatePropertiesPanel() {
   if (cadPropConfirm)
     cadPropConfirm.disabled = !line;
   if (cadSymbolApply)
-    cadSymbolApply.disabled = !symbol || !cadSymbolEditableRows(symbol).length;
+    cadSymbolApply.disabled = !symbol || !cadSymbolPanelConfig(symbolType).length;
 
   if (cadPropColorSwatch)
     cadPropColorSwatch.style.background = derived.colorCss || '#ccc';
@@ -4008,8 +4292,10 @@ window.addEventListener('termodel:archives-updated', () => {
     cadRestorePlanePreview();
   }
   cadRefreshToolbarControls();
-  if (cadPage?.classList.contains('active'))
+  if (cadPage?.classList.contains('active')) {
     renderCadComparison();
+    cadUpdatePropertiesPanel();
+  }
 });
 if (cadRegenerate)
   cadRegenerate.addEventListener('click', cadRegeneratePlan);
@@ -4049,8 +4335,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.35: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.35' })
+// v0.36: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.36' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
