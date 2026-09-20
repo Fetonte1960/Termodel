@@ -604,22 +604,22 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.28
+Termodel Web v0.29
 ```
 
-Commit frontend di riferimento per la v0.28:
+Commit frontend di riferimento per la v0.29:
 
 ```text
-255aadff3b9fe341320368f3267c1e187fb86ce0  Rebuild clean multipane CAD implementation
+f8203d6f0950e7e977475fff6dad34acd873a7be  Normalize AI geometry after project initialization
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
 
 ```text
-Termodel Web v0.24
+Termodel Web v0.28
 ```
 
-finché la v0.28 non viene osservata direttamente su `https://www.termodel.it/termodel-ui-demo/`.
+La v0.28 è stata osservata direttamente su `https://www.termodel.it/termodel-ui-demo/` il 2026-09-20. La v0.29 è su `main` ma non va considerata pubblicamente verificata finché non compare sul sito.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -710,6 +710,50 @@ CAD 2D = filtro del piano corrente
 ```
 
 La generazione del **modello 3D completo multipiano** non è ancora implementata in questa revisione: il GeneraPianta/preview browser continua a lavorare sul piano corrente; il modello completo resterà una funzione da portare progressivamente nel Core/WebService.
+
+La v0.29 corregge un difetto di inizializzazione emerso nella prova reale **Importa da AI → semplice TERMODEL-SVG-TEXT-V1 → nuovo progetto strutturato**.
+
+Caso osservato:
+
+```text
+SVG AI monopiano senza data-termodel-piano
+        ↓
+processSvgText() inizializza il CAD prima che Piani sia disponibile
+        ↓
+nessun piano assegnato alle entità
+        ↓
+POST /api/projects/new
+        ↓
+Piani.Nome = Unico
+        ↓
+filtro multipiano nasconde tutte le entità
+        ↓
+canvas CAD vuoto
+```
+
+Correzione v0.29:
+
+```text
+processSvgText()
+        ↓
+creazione progetto strutturato
+        ↓
+loadTermodelProjectText()
+        ↓
+Piani disponibile
+        ↓
+cadSetWorkingSvg(validatedSvg) eseguito di nuovo
+        ↓
+cadNormalizePlaneAssignments()
+        ↓
+entità legacy → data-termodel-piano="<piano corrente>"
+        ↓
+validatedSvg aggiornato con lo SVG normalizzato
+        ↓
+CAD visibile sul piano corrente
+```
+
+Il formato AI legacy non viene quindi reso più rigido: per un progetto monopiano può continuare a non specificare `data-termodel-piano`; Termodel Web consolida automaticamente il piano dopo l'inizializzazione del progetto strutturato.
 
 La v0.24 completa il primo collegamento automatico del flusso AI → progetto strutturato:
 
@@ -1435,11 +1479,11 @@ risultato restituito a Termodel Web
 
 Il frontend non deve simulare come realmente disponibili funzioni server che il Core non espone ancora.
 
-### Verifica dello stato reale alla v0.27
+### Verifica dello stato reale alla v0.29
 
 Confronto fra flusso desiderato e programma attuale:
 
-| Passaggio | Stato v0.27 | Nota |
+| Passaggio | Stato v0.29 | Nota |
 | --- | --- | --- |
 | Apertura con modello demo 3D | **REALIZZATO** | `loadModel()` carica automaticamente `TermodelWebModel.json` |
 | Esplorazione del modello demo | **REALIZZATO** | viewer e menu dimostrativi disponibili |
@@ -1604,9 +1648,9 @@ Quando viene selezionata una entità già presente:
 
 L'eventuale trasferimento esplicito di una entità da un piano a un altro deve essere trattato come una modifica semantica del suo `data-termodel-piano`, non come semplice cambio grafico di colore/layer.
 
-### Stato reale della v0.28
+### Stato reale della v0.29
 
-La v0.28 realizza il primo comportamento multipiano effettivo:
+La v0.28 realizza il primo comportamento multipiano effettivo; la v0.29 corregge l'ordine di inizializzazione dell'import AI legacy così che le entità senza piano vengano consolidate dopo il caricamento dell'archivio Piani:
 
 - la toolbar `Piano corrente` legge `Piani.Nome`;
 - `Layer` è readonly e deriva da `Piani.LayerCad`;
@@ -1825,7 +1869,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.28.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.29.**
 
 Stato operativo corrente:
 
@@ -1835,11 +1879,12 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.28 presente su `main`;
+- v0.29 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
-- v0.28 rende il CAD 2D multipiano per le pareti E/W: piano corrente, filtro canvas, nuove entità assegnate al piano corrente, ID globali e GeneraPianta limitato al piano visibile mantenendo completo lo SVG di progetto.
+- v0.28 rende il CAD 2D multipiano per le pareti E/W: piano corrente, filtro canvas, nuove entità assegnate al piano corrente, ID globali e GeneraPianta limitato al piano visibile mantenendo completo lo SVG di progetto;
+- v0.29 corregge il canvas vuoto dopo importazione AI monopiano legacy: dopo la creazione del progetto strutturato il CAD ricarica lo SVG, assegna le entità al piano corrente e consolida `data-termodel-piano`.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -1849,7 +1894,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. verificare manualmente la v0.28 pubblicata con un progetto contenente almeno due record in `Piani`: cambio Piano → canvas rifiltrato → nuova E/W sul piano corrente → ritorno al primo piano senza perdita delle entità;  
+> 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
 > 2. estendere la stessa semantica multipiano ai simboli `FIN/PON/LOC`, insieme al parser/editor e al collegamento agli archivi;  
 > 3. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 4. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
