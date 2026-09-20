@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`8dd5e048474c4f09618f113f9a2d8b37c039ee5e` — `Add multiline wall drawing v0.44`  
+`86ad934edd65174db04a9f52237b7a7903dcac8b` — `Reorganize CAD toolbar menus v0.45`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -642,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.44
+Termodel Web v0.45
 ```
 
-Commit frontend di riferimento per la v0.44:
+Commit frontend di riferimento per la v0.45:
 
 ```text
-8dd5e048474c4f09618f113f9a2d8b37c039ee5e  Add multiline wall drawing v0.44
+86ad934edd65174db04a9f52237b7a7903dcac8b  Reorganize CAD toolbar menus v0.45
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -657,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.44 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.45 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2615,6 +2615,75 @@ Add multiline wall drawing v0.44
 
 ---
 
+## 12.12 Menu toolbar CAD e terminologia Parete — v0.45
+
+La v0.45 riorganizza la toolbar superiore del CAD 2D in tre menu compatti:
+
+```text
+Sfondo
+Disegna
+Snap
+```
+
+Contenuto:
+
+- `Sfondo`:
+  - `Aggiungi sfondo`;
+  - `Mostra sfondo`;
+  - `Mostra disegno input`.
+- `Disegna`:
+  - scelta tipo parete `W interna / E esterna`;
+  - `Nuova parete`;
+  - `Allinea`;
+  - `Porta/Finestra`;
+  - `Ponte`;
+  - `Locale`.
+- `Snap`:
+  - `Attiva Snap`;
+  - `Orto`.
+
+Il selettore `Piano` e il relativo pulsante `Arc` restano espliciti e sempre visibili nella toolbar, come richiesto.
+
+Restano espliciti anche i comandi operativi generali:
+
+```text
+Undo
+Redo
+Elimina
+Rigenera pianta
+Esporta pianta CAD
+Torna al modello 3d
+```
+
+I menu sono mutuamente esclusivi: aprirne uno chiude gli altri; un clic esterno li chiude. I pulsanti contenuti nei menu chiudono il menu dopo l'attivazione.
+
+Terminologia UI:
+
+- il comando utente `Nuova linea` è stato rinominato `Nuova parete`;
+- messaggi e suggerimenti operativi relativi alla costruzione usano `Parete`;
+- i nomi tecnici interni JavaScript/SVG basati su `line` non vengono rinominati, perché rappresentano l'implementazione geometrica e non il linguaggio dell'interfaccia;
+- `Tipo linea` resta invariato perché è una proprietà tecnica di stile, non il comando di costruzione della parete.
+
+File modificati:
+
+```text
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/app.js
+```
+
+Commit:
+
+```text
+86ad934edd65174db04a9f52237b7a7903dcac8b
+Reorganize CAD toolbar menus v0.45
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.45 — DA VERIFICARE MANUALMENTE NEL BROWSER.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -2787,7 +2856,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.44.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.45.**
 
 Stato operativo corrente:
 
@@ -2797,7 +2866,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.44 presente su `main`;
+- v0.45 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2817,7 +2886,8 @@ Stato operativo corrente:
 - v0.41 ripristina il check `Sfondo` e introduce la calibrazione per-piano: selezione di parete orizzontale/verticale → misura reale in metri → fattore di scala applicato a sfondo, linee e posizioni dei simboli del piano corrente; pareti inclinate escluse; viewBox/Nord ricalcolati; undo/redo attivo.
 - v0.42 aggiunge il check `Orto` accanto a `Snap`: durante la creazione di nuove linee E/W il secondo punto viene vincolato automaticamente all'orizzontale o alla verticale; preview e coordinate SVG rispettano il vincolo, mentre Snap viene accettato solo se non rompe l'ortogonalità.
 - v0.43 introduce il layout dedicato CAD 2D: caption `Termodel Cad 2d Versione 0.43`, menu/tab/barra inferiore nascosti solo durante il CAD, pulsante `Torna al modello 3d`; tornando al modello viene ripristinato il layout generale.
-- v0.44 rende `Nuova linea` una modalità multilinea continua: ogni punto finale diventa l'inizio del segmento successivo; Orto/Snap restano attivi su ogni tratto; tasto destro apre il menu `Interrompi sequenza`, con Esc come scorciatoia.
+- v0.44 rende il comando parete una modalità multilinea continua: ogni punto finale diventa l'inizio del segmento successivo; Orto/Snap restano attivi su ogni tratto; tasto destro apre il menu `Interrompi sequenza`, con Esc come scorciatoia.
+- v0.45 compatta la toolbar CAD nei menu `Sfondo / Disegna / Snap`, lasciando `Piano + Arc` espliciti; rinomina nell'interfaccia il comando `Nuova linea` in `Nuova parete` senza modificare la rappresentazione geometrica interna.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2828,9 +2898,9 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.44: attivare `Nuova linea` → creare almeno 3 segmenti consecutivi → verificare che ogni finale diventi l'inizio del successivo e che Orto/Snap continuino a funzionare → tasto destro → `Interrompi sequenza` → verificare che i segmenti restino e che Undo li rimuova uno alla volta. Nella stessa prova mantenere la verifica v0.43/v0.42/v0.41 su layout CAD, Orto e calibrazione sfondo;  
+> 2. verificare manualmente la v0.45: controllare i menu `Sfondo / Disegna / Snap`, verificare che `Piano + Arc` restino sempre visibili, che `Nuova parete` avvii la sequenza multilinea e che i menu si chiudano correttamente. Nella stessa prova verificare v0.44/v0.43/v0.42/v0.41: sequenza pareti, layout CAD, Orto e calibrazione sfondo;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `8dd5e048474c4f09618f113f9a2d8b37c039ee5e`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `86ad934edd65174db04a9f52237b7a7903dcac8b`.
