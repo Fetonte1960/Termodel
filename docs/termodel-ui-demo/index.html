@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.37 — pannello Nord contestuale</title>
+  <title>Termodel Web v0.38 — piano CAD nella toolbar</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -458,6 +458,29 @@
       align-content: center;
     }
     .cad-toolbar label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .cad-toolbar-plane {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      white-space:nowrap;
+      padding:0 4px;
+      border-left:1px solid #b7b7b7;
+      border-right:1px solid #b7b7b7;
+    }
+    .cad-toolbar-plane .cad-toolbar-plane-label {
+      font-size:11px;
+      font-weight:700;
+      color:#39434d;
+    }
+    .cad-toolbar-plane select {
+      min-width:92px;
+      max-width:145px;
+    }
+    .cad-toolbar-plane .cad-toolbar-arc {
+      min-width:34px;
+      padding-left:6px;
+      padding-right:6px;
+    }
     .cad-toolbar select {
       height: 28px;
       border: 1px solid #888;
@@ -813,7 +836,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.37</div>
+      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.38</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -849,6 +872,11 @@
           <label><input id="cadShowClean" type="checkbox" checked /> Pianta pulita</label>
           <label><input id="cadShowInput" type="checkbox" checked /> Disegno input</label>
           <label><input id="cadSnap" type="checkbox" checked /> Snap</label>
+          <span class="cad-toolbar-plane" title="Piano corrente e archivio Piani">
+            <span class="cad-toolbar-plane-label">Piano</span>
+            <select id="cadPropPiano" aria-label="Piano corrente"></select>
+            <button id="cadOpenPianiArchive" class="cad-toolbar-arc" type="button" title="Apri archivio Piani">Arc</button>
+          </span>
           <select id="cadNewLineType" title="Tipo della nuova parete">
             <option value="W" selected>W interna</option>
             <option value="E">E esterna</option>
@@ -877,25 +905,6 @@
             I dati correnti della parete verranno usati da ＋ Nuova linea.
           </div>
           <div id="cadPropertiesBody" class="cad-properties-body" hidden>
-            <section class="cad-properties-section">
-              <div class="cad-properties-section-title">Dati CAD</div>
-              <div class="cad-prop-row">
-                <label for="cadPropEntity">Entità:</label>
-                <input id="cadPropEntity" type="text" readonly />
-              </div>
-              <div class="cad-prop-row">
-                <label for="cadPropPiano">Piano corrente:</label>
-                <div class="cad-prop-with-arc">
-                  <select id="cadPropPiano"></select>
-                  <button id="cadOpenPianiArchive" class="cad-prop-arc" type="button" title="Apri archivio Piani">Arc</button>
-                </div>
-              </div>
-              <div class="cad-prop-row">
-                <label for="cadPropLayer">Layer:</label>
-                <input id="cadPropLayer" type="text" readonly />
-              </div>
-            </section>
-
             <section id="cadNorthPropertiesSection" class="cad-properties-section" hidden>
               <div class="cad-north-section-head">
                 <div class="cad-properties-section-title">Orientamento edificio · Nord</div>
@@ -1194,6 +1203,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.37"></script>
+  <script type="module" src="./app.js?v=0.38"></script>
 </body>
 </html>

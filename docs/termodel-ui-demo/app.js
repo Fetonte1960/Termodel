@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.37';
+} from './archivio-web.js?v=0.38';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -39,9 +39,7 @@ const cadEditStatus = document.getElementById('cadEditStatus');
 const cadPropertiesHead = document.getElementById('cadPropertiesHead');
 const cadPropertiesEmpty = document.getElementById('cadPropertiesEmpty');
 const cadPropertiesBody = document.getElementById('cadPropertiesBody');
-const cadPropEntity = document.getElementById('cadPropEntity');
 const cadPropPiano = document.getElementById('cadPropPiano');
-const cadPropLayer = document.getElementById('cadPropLayer');
 const cadPropTipoParete = document.getElementById('cadPropTipoParete');
 const cadPropConfineParete = document.getElementById('cadPropConfineParete');
 const cadPropTipoLinea = document.getElementById('cadPropTipoLinea');
@@ -2356,7 +2354,6 @@ function cadRefreshToolbarControls() {
   );
 
   const derived = cadDerivedToolbarValues();
-  if (cadPropLayer) cadPropLayer.value = derived.layer;
   if (cadPropColore) cadPropColore.value = derived.colore;
   if (cadPropTipoLinea) cadPropTipoLinea.value = derived.tipoLinea;
   if (cadPropColorSwatch)
@@ -3169,9 +3166,6 @@ function cadUpdatePropertiesPanel() {
     else
       cadPropertiesHead.textContent = line ? `Dati CAD · Parete ${line.id}` : 'Dati CAD · Nuova parete';
   }
-
-  if (cadPropEntity)
-    cadPropEntity.value = northOpen ? 'Nord progetto' : (symbol?.id || line?.id || 'Nuova parete');
 
   if (symbol) {
     const x = Number(symbol.getAttribute('x'));
@@ -4390,8 +4384,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.37: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.37' })
+// v0.38: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.38' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
