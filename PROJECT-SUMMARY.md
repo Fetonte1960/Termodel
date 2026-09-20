@@ -1860,6 +1860,214 @@ La v0.32 aumenta ulteriormente il margine di rispetto del simbolo Nord in pianta
 
 ---
 
+## 12.7 Simboli CAD spostabili con attributi — eredità dei blocchi AutoCAD
+
+Decisione architetturale del 2026-09-20.
+
+Una parte fondamentale del CAD Termodel deriva dalla logica storica dei **blocchi AutoCAD con attributi**.
+
+Nel Web questa filosofia non deve essere ridotta a semplici etichette grafiche: i simboli devono diventare **entità strutturali dello SVG**, selezionabili, spostabili e, quando previsto, dotate di attributi editabili.
+
+Principio:
+
+```text
+blocco AutoCAD
+    ↓
+simbolo semantico SVG
+    ↓
+posizione grafica
++ eventuali attributi Termodel
+    ↓
+selezione nel CAD 2D
+    ↓
+pannello laterale
+    ↓
+spostamento / modifica attributi
+    ↓
+persistenza nello SVG di progetto
+```
+
+### Categorie di simboli
+
+#### 1. Simbolo di allineamento
+
+Il simbolo di allineamento è un simbolo grafico **senza attributi tecnici propri**.
+
+Deve comunque essere:
+
+- parte permanente dello SVG;
+- selezionabile;
+- spostabile nel CAD 2D;
+- associato al piano a cui appartiene, quando il suo significato è legato a uno specifico piano;
+- persistente dopo salvataggio, import/export e riapertura.
+
+La sua editazione riguarda principalmente la **posizione**, non un insieme di campi tecnici.
+
+#### 2. Porte e finestre
+
+Porte e finestre sono simboli spostabili con attributi.
+
+Nel protocollo SVG corrente rientrano nella famiglia `BLOCCO,FIN`, con distinzione semantica tramite gli attributi già previsti, compreso `PORTA`.
+
+Devono poter essere:
+
+- selezionate;
+- spostate lungo la parete/nel punto corretto;
+- mantenute agganciate geometricamente alla parete;
+- modificate tramite il pannello laterale;
+- collegate all'archivio Finestre attraverso `TIPO → Finestre.DescBreve`;
+- corredate dalla descrizione semantica persistente `data-termodel-descrizione` quando disponibile.
+
+Gli attributi di istanza, ad esempio larghezza, altezza, numero ante, sottofinestra e sopraluce, appartengono al simbolo e non devono essere confusi con la tipologia di archivio.
+
+#### 3. Ponti termici
+
+I ponti termici `BLOCCO,PON` sono simboli spostabili con attributi.
+
+Devono poter essere:
+
+- selezionati;
+- spostati mantenendo il corretto rapporto geometrico con la parete;
+- modificati dal pannello laterale;
+- collegati all'archivio Ponti attraverso `TIPO → Ponti.DescBreve`;
+- corredati da `data-termodel-descrizione` quando disponibile.
+
+Attributi correnti già definiti:
+
+```text
+TIPO
+ORIENTAMENTO
+LUNGHEZZA
+```
+
+#### 4. Locali
+
+I locali `BLOCCO,LOC` sono simboli spostabili con attributi.
+
+Non esiste un archivio `Locali`: i dati del locale restano direttamente sul simbolo.
+
+Il simbolo LOC deve:
+
+- essere selezionabile;
+- essere spostabile;
+- restare geometricamente **dentro il poligono del locale**;
+- mostrare/modificare i propri attributi nel pannello laterale;
+- continuare a riferire gli archivi Zone/Pareti/Confini dove previsto.
+
+Lo spostamento manuale non deve permettere di lasciare il simbolo LOC fuori dal locale a cui appartiene senza segnalazione/correzione.
+
+### Selezione e pannello laterale
+
+La toolbar/pannello laterale del CAD deve diventare contestuale all'entità selezionata.
+
+Schema:
+
+```text
+nessuna entità selezionata
+    ↓
+dati correnti per nuova entità
+
+parete E/W selezionata
+    ↓
+pannello proprietà parete
+
+FIN selezionato
+    ↓
+pannello porta/finestra
+
+PON selezionato
+    ↓
+pannello ponte termico
+
+LOC selezionato
+    ↓
+pannello locale
+
+simbolo allineamento selezionato
+    ↓
+pannello minimale / posizione
+```
+
+La view Web deve restare conforme alle view XAML desktop disponibili; quando manca una view dedicata, usare il comportamento desktop equivalente senza inventare nuovi contratti dati.
+
+### Spostamento
+
+I simboli accessori devono poter essere trascinati nel CAD 2D.
+
+Lo spostamento deve modificare la **posizione dell'istanza SVG**, non la tipologia di archivio associata.
+
+Regole geometriche:
+
+- FIN → resta/snap sulla parete;
+- PON → resta/snap sulla parete;
+- LOC → resta all'interno del locale;
+- allineamento → posizione libera secondo il significato del simbolo;
+- Nord → resta un simbolo di progetto separato e segue le regole della sezione 12.6, non questa logica di istanza di piano.
+
+### Attributi e persistenza SVG
+
+Gli attributi modificabili devono restare parte della rappresentazione SVG del progetto.
+
+Il CAD Web non deve mantenere proprietà dei simboli soltanto in variabili JavaScript temporanee.
+
+Principio:
+
+```text
+simbolo SVG
+    ├── posizione
+    ├── piano
+    ├── tipo semantico
+    └── attributi Termodel
+         ↓
+fonte persistente per editing CAD
+```
+
+Per i simboli derivati dai blocchi AutoCAD, lo SVG è quindi contemporaneamente:
+
+- rappresentazione grafica;
+- contenitore delle proprietà di istanza;
+- collegamento alle tipologie degli archivi;
+- formato leggibile/modificabile dall'AI.
+
+Non devono essere inventati campi database per memorizzare proprietà che appartengono naturalmente all'istanza grafica.
+
+### Multipiano
+
+FIN, PON, LOC e gli altri simboli di piano devono ereditare automaticamente:
+
+```text
+data-termodel-piano="<Piani.Nome>"
+```
+
+del piano corrente quando vengono creati.
+
+Il cambio del piano corrente deve:
+
+- filtrare i simboli visibili/editabili come già avviene per le pareti;
+- lasciare intatti i simboli degli altri piani nel file progetto unico;
+- non trasferire implicitamente un simbolo da un piano a un altro.
+
+### Obiettivo di implementazione
+
+La prossima evoluzione del CAD 2D deve introdurre un **parser/editor generico dei simboli SVG** capace di:
+
+1. riconoscere il simbolo dal contenuto `BLOCCO,<tipo>`, non soltanto dal prefisso dell'ID;
+2. selezionarlo nel canvas;
+3. caricare posizione e attributi nel pannello laterale;
+4. consentire lo spostamento con le regole geometriche specifiche;
+5. modificare gli attributi;
+6. aggiornare lo SVG di progetto;
+7. mantenere il collegamento con gli archivi;
+8. supportare undo/redo e rigenerazione come per le pareti.
+
+Questa logica deve essere condivisa e non implementata con codice separato e incompatibile per ogni singolo simbolo.
+
+### Stato
+
+**SPECIFICA REGISTRATA — IMPLEMENTAZIONE DA SVILUPPARE.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -2061,8 +2269,9 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.32: simbolo Nord in pianta sufficientemente distanziato dalla geometria → `?` laterale assente quando l'orientamento è definito → freccia della bussola rivolta verso l'esterno; quindi estendere la stessa semantica multipiano ai simboli `FIN/PON/LOC`, insieme al parser/editor e al collegamento agli archivi;  
-> 3. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
-> 4. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
+> 2. verificare manualmente la v0.32: simbolo Nord in pianta sufficientemente distanziato dalla geometria → `?` laterale assente quando l'orientamento è definito → freccia della bussola rivolta verso l'esterno;  
+> 3. implementare la sezione 12.7: parser/editor generico dei simboli SVG, selezione e trascinamento, pannello laterale contestuale, FIN/PON/LOC multipiano collegati agli archivi e simbolo di allineamento spostabile senza attributi;  
+> 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
+> 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
 Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.
