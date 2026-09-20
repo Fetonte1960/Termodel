@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`bad04231587386ff9e592ab15c0deb7e647974b2` — `Show FIN blocks in provisional 3D v0.56`  
+`da7c4f70cdc3aa3b5e9c6e541b3725b9f9c44711` — `Use local empty project template v0.57`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,13 +679,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.56
+Termodel Web v0.57
 ```
 
-Commit frontend di riferimento per la v0.56:
+Commit frontend di riferimento per la v0.57:
 
 ```text
-bad04231587386ff9e592ab15c0deb7e647974b2  Show FIN blocks in provisional 3D v0.56
+da7c4f70cdc3aa3b5e9c6e541b3725b9f9c44711  Use local empty project template v0.57
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -694,7 +694,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.56 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.57 sono su `main`; la v0.57 deve essere verificata pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -1203,6 +1203,8 @@ POST /api/projects/new
 
 `POST /api/projects/new` crea il contenitore progetto completo con SVG multipiano e archivi XML/JSON.
 
+Dalla **v0.57** il frontend non usa più `GET /api/model/capabilities` né `POST /api/projects/new` per inizializzare un progetto durante i test browser: `Nuovo` e l'importazione di un semplice SVG usano il template statico locale derivato dal progetto base reale. Gli endpoint restano disponibili lato WebService per usi server e integrazione futura.
+
 **Non esistono ancora API CRUD ufficiali per gli archivi.**
 
 Il frontend non deve inventare endpoint come se fossero disponibili.
@@ -1262,20 +1264,40 @@ Le funzioni di consultazione archivi e di editing appartengono invece alla modal
 
 ## 12.2 Flusso Web — importazione di una pianta proveniente dall'AI
 
-Quando l'utente importa in Termodel Web una **pianta generata o modificata dall'AI**, Termodel Web deve verificare se esiste già una struttura progetto completa e utilizzabile come base dati.
+Quando l'utente importa in Termodel Web una **pianta generata o modificata dall'AI**, Termodel Web verifica se esiste già una struttura progetto completa e utilizzabile come base dati.
 
-Se tale struttura **non è stata ancora creata**, Termodel Web avvia la strutturazione del progetto chiedendo al server un **progetto vuoto** tramite il contratto già esistente:
+Dalla v0.57, se tale struttura **non esiste ancora**, il browser non richiede più un progetto vuoto al WebService.
+
+Fonte del progetto base:
 
 ```text
-POST /api/projects/new
+SorgentiTermodel/Library/projects/ProgettoVuoto/
+    ProgettoVuoto.termodel.txt
 ```
 
-Flusso concettuale:
+La risorsa è stata introdotta dal commit:
+
+```text
+f58a9725d0129da9809be64013e6c15ce1dd5b06
+Add static empty Termodel project
+```
+
+Il file è un progetto completo reale nel formato `TERMODEL-PROJECT-TEXT-V1`, generato dal contratto effettivo del WebService e dal template `ProgettoBase`.
+
+Per l'uso browser la v0.57 ne mantiene una copia JavaScript generata:
+
+```text
+docs/termodel-ui-demo/progetto-vuoto.js
+```
+
+Il modulo è caricato dinamicamente solo quando serve e contiene esattamente il testo della risorsa sorgente.
+
+Flusso corrente:
 
 ```text
 AI
   ↓
-pianta importata
+pianta SVG importata
   ↓
 Termodel Web
   ↓
@@ -1283,62 +1305,29 @@ verifica presenza progetto strutturato
   ↓
 se manca
   ↓
-richiede progetto vuoto al WebService
+carica progetto-vuoto.js
   ↓
-usa il progetto vuoto come base dati editabile
+TERMODEL-PROJECT-TEXT-V1 base
   ↓
-integra la pianta importata nella struttura progetto
+sostituisce geometry/project.svg con la pianta importata
+  ↓
+loadTermodelProjectText(...)
+  ↓
+archivi + CAD abilitati
 ```
 
-Il progetto vuoto restituito dal server diventa quindi la **base strutturata ed editabile** su cui Termodel Web può lavorare con archivi, dati e successive funzioni di editing.
+Lo stesso template locale viene usato da `File → Nuovo` / `Edita nel Cad` quando deve essere creato un progetto vuoto.
 
-Questo passaggio è importante perché una semplice pianta proveniente dall'AI non deve essere trattata come se fosse già, da sola, un progetto Termodel completo.
+Conseguenze operative:
 
-Principio operativo:
+- il WebService può restare spento durante i test del frontend;
+- nessuna `POST /api/projects/new` viene eseguita dal frontend per questa funzione;
+- nessun probe `GET /api/model/capabilities` viene eseguito all'avvio solo per decidere se Nuovo è disponibile;
+- il browser non inventa archivi o campi: usa una copia verificata del progetto base reale;
+- se cambia intenzionalmente il progetto base o la definizione dati autorizzata, bisogna rigenerare prima `ProgettoVuoto.termodel.txt` e poi la copia `progetto-vuoto.js`;
+- il template JavaScript è un artefatto frontend di bootstrap/test, non un nuovo contratto backend.
 
-```text
-pianta AI
-    ≠ progetto Termodel completo
-
-pianta AI + progetto vuoto server
-    → progetto strutturabile/editabile in Termodel Web
-```
-
-Se invece una struttura progetto completa è già presente, Termodel Web non deve crearne inutilmente un'altra: deve utilizzare quella esistente come base per l'importazione/modifica.
-
-### Attivazione della modalità editabile
-
-Una volta che la pianta proveniente dall'AI è stata associata a una **struttura progetto completa**, Termodel Web può attivare le funzioni di editing.
-
-A questo punto diventano disponibili entrambe le modalità di modifica:
-
-```text
-PROGETTO STRUTTURATO
-        │
-        ├── EDITING TESTUALE / DATI
-        │      ↓
-        │   menu archivi
-        │   griglie e form
-        │   modifica dei dati Termodel
-        │
-        └── EDITING GRAFICO
-               ↓
-            "Edita nel CAD"
-            CAD/BIM 2D JavaScript
-            modifica geometrica della pianta
-```
-
-Quindi il passaggio chiave è:
-
-```text
-semplice pianta AI
-    → strutturazione tramite progetto server
-    → progetto Termodel editabile
-    → archivi attivi
-    → CAD/BIM 2D attivo
-```
-
-La disponibilità dell'editing non deve dipendere dal solo fatto che una geometria sia visibile: deve dipendere dalla presenza di una **base progetto strutturata e coerente**.
+Se esiste già un progetto strutturato, una nuova pianta AI continua a riusare quello esistente senza creare un secondo progetto.
 
 ---
 
@@ -3237,7 +3226,79 @@ Show FIN blocks in provisional 3D v0.56
 
 ### Stato
 
-**IMPLEMENTATO IN v0.56 — DA VERIFICARE MANUALMENTE NEL BROWSER.**
+**VERIFICATO PARZIALMENTE IN v0.56 — i FIN sono visibili nel 3D; sulle pareti esterne è emerso un difetto di allineamento/profondità: alcuni risultano visibili soprattutto dall'interno. Correzione ancora da eseguire.**
+
+---
+
+## 12.24 Progetto vuoto locale senza WebService — v0.57
+
+La v0.57 elimina la dipendenza dal WebService per l'inizializzazione del progetto durante lo sviluppo e i test del frontend.
+
+Risorsa sorgente reale:
+
+```text
+SorgentiTermodel/Library/projects/ProgettoVuoto/ProgettoVuoto.termodel.txt
+```
+
+Commit che ha introdotto la risorsa:
+
+```text
+f58a9725d0129da9809be64013e6c15ce1dd5b06
+Add static empty Termodel project
+```
+
+Copia browser consolidata in JavaScript:
+
+```text
+docs/termodel-ui-demo/progetto-vuoto.js
+```
+
+La copia è generata dal file sorgente e nella verifica v0.57 il testo esportato dal modulo coincide esattamente con la sorgente: **857.520 caratteri**.
+
+Il caricamento usa `import()` dinamico, quindi il modulo di circa 0,9 MB non viene scaricato all'apertura normale dell'applicazione ma soltanto quando serve creare una base progetto.
+
+`createStructuredProjectFromSvg(...)` ora:
+
+```text
+carica progetto-vuoto.js
+      ↓
+valida TERMODEL-PROJECT-TEXT-V1
+      ↓
+sostituisce geometry/project.svg
+      ↓
+loadTermodelProjectText(...)
+      ↓
+progetto strutturato + archivi + CAD
+```
+
+Sono stati rimossi dal frontend per questo flusso:
+
+```text
+POST /api/projects/new
+GET  /api/model/capabilities
+probe automatico del WebService all'avvio
+```
+
+Il WebService resta parte dell'architettura definitiva e conserva i suoi endpoint reali; questa modifica riguarda soltanto il bootstrap locale del progetto nel frontend.
+
+File frontend modificati/aggiunti:
+
+```text
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/app.js
+docs/termodel-ui-demo/progetto-vuoto.js
+```
+
+Commit frontend:
+
+```text
+da7c4f70cdc3aa3b5e9c6e541b3725b9f9c44711
+Use local empty project template v0.57
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.57 — sintassi verificata; copia JS del progetto vuoto verificata identica alla sorgente; DA VERIFICARE MANUALMENTE NEL BROWSER CON WEBSERVICE SPENTO.**
 
 ---
 
@@ -3413,17 +3474,17 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.56.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.57.**
 
 Stato operativo corrente:
 
 - JSON grafico desktop → viewer 3D, editing disabilitato;
 - progetto completo `TERMODEL-PROJECT-TEXT-V1` → archivi e CAD abilitati;
-- semplice SVG AI senza progetto → richiesta automatica di progetto vuoto al WebService, innesto della geometria, quindi attivazione archivi/CAD;
+- semplice SVG AI senza progetto → usa il progetto base locale `progetto-vuoto.js`, innesta la geometria e attiva archivi/CAD senza WebService;
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
-- controllo `GET /api/model/capabilities` collegato al WebService locale;
-- `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.56 presente su `main`;
+- `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
+- il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
+- v0.57 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -3455,10 +3516,11 @@ Stato operativo corrente:
 - v0.53 divide lo Snap in `Vicino` e `Estremo` come modalità radio alternative, con `Vicino` default; Orto resta indipendente e attivo di default, mentre lo stop multilinea su parete bersaglio continua a funzionare in entrambe le modalità.
 - v0.54 rende `Porta/Finestra` un comando continuo: ogni FIN inserito lascia il comando attivo per il successivo; Esc, pulsante attivo o tasto destro → `Interrompi sequenza` terminano la sequenza. Allinea/Ponte/Locale restano singoli.
 - v0.55 aggiunge `Finestra 2 punti` senza sostituire il FIN a un punto: due estremi sulla stessa parete definiscono una linea provvisoria, il punto medio diventa la posizione del FIN e la distanza diventa `LARGHEZZA`; anche questo comando resta continuo fino a Esc/interruzione.
-- v0.56 mostra i FIN nel 3D provvisorio come parallelepipedi orientati sulla parete, dimensionati da `LARGHEZZA / ALTEZZA / SOTTOFINESTRA` e leggermente più profondi della parete; non vengono creati veri fori nella massa muraria.
+- v0.56 mostra i FIN nel 3D provvisorio come parallelepipedi orientati sulla parete, dimensionati da `LARGHEZZA / ALTEZZA / SOTTOFINESTRA` e leggermente più profondi della parete; la prova reale ha evidenziato un difetto di allineamento/profondità sulle E ancora da correggere.
+- v0.57 usa un progetto vuoto locale consolidato in JavaScript per `Nuovo` e per strutturare un semplice SVG AI, eliminando la necessità di tenere acceso il WebService durante i test frontend.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
-Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
+Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Il caricatore `TERMODEL-PROJECT-TEXT-V1` e l'attivazione di archivi/CAD restano gli stessi.
 
 Il prossimo lavoro frontend deve rispettare il flusso utente della sezione 12.4.
 
@@ -3466,10 +3528,10 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.56: inserire almeno un FIN a un punto e uno con `Finestra 2 punti`, rigenerare/ritornare al modello 3D e verificare che compaiano parallelepipedi di colore distinto, orientati come le rispettive pareti, con larghezza/altezza/quota coerenti. Verificare una E e una W e controllare che il FIN sporga leggermente da entrambi i lati senza modificare la massa muraria;  
-> 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
-> 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
+> 1. verificare manualmente la v0.57 **con WebService spento**: `File → Nuovo` / `Edita nel Cad` deve creare il progetto strutturato, caricare Piani/archivi e aprire il CAD; quindi `Importa da AI` con un semplice SVG deve innestare la geometria nello stesso template locale senza errori di rete;  
+> 2. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
+> 3. verificare manualmente la v0.29 ripetendo il caso legacy SVG monopiano privo di `data-termodel-piano` usando ora il bootstrap locale v0.57, e provare anche un progetto con almeno due record in `Piani`;  
+> 4. completare trascinamento simboli, snap in spostamento e vincolo LOC, quindi unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano, includendo correttamente le aperture/finestre FIN; l'attuale generazione 3D frontend resta provvisoria e non è il riferimento funzionale definitivo.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `bad04231587386ff9e592ab15c0deb7e647974b2`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `da7c4f70cdc3aa3b5e9c6e541b3725b9f9c44711`.
