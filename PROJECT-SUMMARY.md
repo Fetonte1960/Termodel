@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`aebc9898833291b03ff20a380807c27e0aeb14cd` — `Add two-point window drawing v0.55`  
+`bad04231587386ff9e592ab15c0deb7e647974b2` — `Show FIN blocks in provisional 3D v0.56`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -452,9 +452,10 @@ La generazione del modello 3D attualmente presente nel frontend Web deve essere 
 Stato noto della generazione 3D provvisoria:
 
 - non implementa tutte le entità e tutte le regole del modello Termodel;
-- in particolare, **non gestisce attualmente le finestre / simboli FIN come aperture del modello 3D**;
-- il fatto che un FIN sia correttamente presente nel CAD/progetto non implica quindi che debba già comparire nel 3D provvisorio del browser;
-- questa limitazione non deve portare a inventare nel frontend una seconda logica autorevole di costruzione del modello.
+- dalla v0.56 i simboli **FIN sono rappresentati visivamente** nel 3D provvisorio come parallelepipedi autonomi;
+- questa rappresentazione **non crea un vero foro nella massa muraria** e non sostituisce la futura logica server;
+- il parallelepipedo usa posizione, `LARGHEZZA`, `ALTEZZA` e `SOTTOFINESTRA` del FIN, viene orientato come la parete associata e ha uno spessore leggermente maggiore della parete per risultare visibile sui due lati;
+- questa semplificazione non deve portare a trasformare il frontend in una seconda logica autorevole di costruzione del modello.
 
 Direzione definitiva:
 
@@ -678,13 +679,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.55
+Termodel Web v0.56
 ```
 
-Commit frontend di riferimento per la v0.55:
+Commit frontend di riferimento per la v0.56:
 
 ```text
-aebc9898833291b03ff20a380807c27e0aeb14cd  Add two-point window drawing v0.55
+bad04231587386ff9e592ab15c0deb7e647974b2  Show FIN blocks in provisional 3D v0.56
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -693,7 +694,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.55 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.56 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -3180,6 +3181,66 @@ Add two-point window drawing v0.55
 
 ---
 
+## 12.23 FIN visibili nel 3D provvisorio — v0.56
+
+La v0.56 aggiunge una rappresentazione volutamente semplice delle finestre/porte `FIN` nel modello 3D provvisorio del browser.
+
+Non viene eseguita alcuna sottrazione booleana della massa muraria.
+
+Ogni FIN viene rappresentato come un parallelepipedo autonomo:
+
+- centro derivato dalla posizione `x/y` del simbolo FIN;
+- orientamento ricavato dalla parete E/W più vicina;
+- `LARGHEZZA` e `ALTEZZA` lette direttamente dalle proprietà FIN;
+- quota inferiore ricavata da `SOTTOFINESTRA`;
+- colore distinto dalla massa muraria;
+- spessore pari allo spessore della parete + **4 cm totali**, cioè circa 2 cm visibili per faccia.
+
+Per le pareti interne W il parallelepipedo è centrato sull'asse della parete.
+
+Per le pareti esterne E, che nel GeneraPianta provvisorio rappresentano il filo interno, il centro del parallelepipedo viene spostato di metà spessore nella direzione esterna, così il FIN attraversa visivamente tutta la parete e sporge solo leggermente da entrambe le facce.
+
+`genera-pianta.js` v0.6 legge ora i simboli FIN dallo SVG, li associa alla parete più vicina e restituisce al preview:
+
+```text
+finestre[]
+  id
+  x / y
+  larghezzaCm
+  altezzaCm
+  sottofinestraCm
+  wallLineId
+  wallClass
+  wallThicknessCm
+  wallDirection
+  wallNormal
+```
+
+Questi dati sono esclusivamente di supporto all'anteprima browser e non costituiscono un nuovo contratto backend.
+
+La generazione 3D definitiva resta responsabilità di **Termodel.Core / Termodel.WebService** e dovrà creare aperture reali secondo la logica autorevole del desktop.
+
+File modificati:
+
+```text
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/app.js
+docs/termodel-ui-demo/genera-pianta.js
+```
+
+Commit:
+
+```text
+bad04231587386ff9e592ab15c0deb7e647974b2
+Show FIN blocks in provisional 3D v0.56
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.56 — DA VERIFICARE MANUALMENTE NEL BROWSER.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -3352,7 +3413,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.55.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.56.**
 
 Stato operativo corrente:
 
@@ -3362,7 +3423,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.55 presente su `main`;
+- v0.56 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -3394,7 +3455,8 @@ Stato operativo corrente:
 - v0.53 divide lo Snap in `Vicino` e `Estremo` come modalità radio alternative, con `Vicino` default; Orto resta indipendente e attivo di default, mentre lo stop multilinea su parete bersaglio continua a funzionare in entrambe le modalità.
 - v0.54 rende `Porta/Finestra` un comando continuo: ogni FIN inserito lascia il comando attivo per il successivo; Esc, pulsante attivo o tasto destro → `Interrompi sequenza` terminano la sequenza. Allinea/Ponte/Locale restano singoli.
 - v0.55 aggiunge `Finestra 2 punti` senza sostituire il FIN a un punto: due estremi sulla stessa parete definiscono una linea provvisoria, il punto medio diventa la posizione del FIN e la distanza diventa `LARGHEZZA`; anche questo comando resta continuo fino a Esc/interruzione.
-- la generazione 3D corrente nel frontend è **provvisoria** e non gestisce le finestre FIN; la generazione 3D completa e autorevole sarà responsabilità di Termodel.Core / Termodel.WebService.
+- v0.56 mostra i FIN nel 3D provvisorio come parallelepipedi orientati sulla parete, dimensionati da `LARGHEZZA / ALTEZZA / SOTTOFINESTRA` e leggermente più profondi della parete; non vengono creati veri fori nella massa muraria.
+- la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -3405,9 +3467,9 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.55: verificare prima che `Porta/Finestra` a un punto sia invariato; poi attivare `Finestra 2 punti`, scegliere due punti sulla stessa parete e controllare linea provvisoria, posizione FIN al punto medio e `LARGHEZZA` uguale alla distanza misurata. Provare un secondo punto lontano/altra parete (deve essere rifiutato), inserire più finestre consecutive e terminare con Esc/tasto destro;  
+> 2. verificare manualmente la v0.56: inserire almeno un FIN a un punto e uno con `Finestra 2 punti`, rigenerare/ritornare al modello 3D e verificare che compaiano parallelepipedi di colore distinto, orientati come le rispettive pareti, con larghezza/altezza/quota coerenti. Verificare una E e una W e controllare che il FIN sporga leggermente da entrambi i lati senza modificare la massa muraria;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano, includendo correttamente le aperture/finestre FIN; l'attuale generazione 3D frontend resta provvisoria e non è il riferimento funzionale definitivo.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `aebc9898833291b03ff20a380807c27e0aeb14cd`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `bad04231587386ff9e592ab15c0deb7e647974b2`.
