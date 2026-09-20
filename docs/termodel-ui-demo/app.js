@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.47';
+} from './archivio-web.js?v=0.48';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,8 +18,8 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.47';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.47';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.48';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.48';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -27,6 +27,7 @@ const cadPage = document.getElementById('cadPage');
 const cadCanvas = document.getElementById('cadCanvas');
 const cadContextMenu = document.getElementById('cadContextMenu');
 const cadCloseSequence = document.getElementById('cadCloseSequence');
+const cadCloseOrthogonalSequence = document.getElementById('cadCloseOrthogonalSequence');
 const cadStopSequence = document.getElementById('cadStopSequence');
 const cadAddBackground = document.getElementById('cadAddBackground');
 const cadBackgroundFile = document.getElementById('cadBackgroundFile');
@@ -3922,8 +3923,9 @@ function cadShowLineContextMenu(event) {
   if (!cadContextMenu || cadToolMode !== 'line') return;
   const canClose = cadCanCloseWallSequence();
   if (cadCloseSequence) cadCloseSequence.hidden = !canClose;
+  if (cadCloseOrthogonalSequence) cadCloseOrthogonalSequence.hidden = !canClose;
   const width = 180;
-  const height = canClose ? 72 : 36;
+  const height = canClose ? 108 : 36;
   cadContextMenu.style.left = Math.max(0, Math.min(event.clientX, window.innerWidth - width - 4)) + 'px';
   cadContextMenu.style.top = Math.max(0, Math.min(event.clientY, window.innerHeight - height - 4)) + 'px';
   cadContextMenu.hidden = false;
@@ -4006,6 +4008,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
       before: cadSerializeWorkingSvg(),
       sequenceStart: point.slice(),
       firstLineId: '',
+      lastLineId: '',
       segmentCount: 0
     };
     cadRenderNewLinePreview(svg, point, snapped.snapped);
@@ -4047,6 +4050,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
 
   const sequenceStart = cadNewLineState.sequenceStart?.slice() || [x1, y1];
   const firstLineId = cadNewLineState.firstLineId || id;
+  const lastLineId = id;
   const segmentCount = Number(cadNewLineState.segmentCount || 0) + 1;
 
   // Modalità multilinea: il punto finale appena confermato diventa
@@ -4058,6 +4062,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
     before: cadSerializeWorkingSvg(),
     sequenceStart,
     firstLineId,
+    lastLineId,
     segmentCount
   };
 
@@ -4070,15 +4075,43 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
   );
 }
 
-function cadCloseWallSequence() {
+function cadOrthogonalCloseCandidate(lastLine, start, sequenceStart) {
+  if (!lastLine || !start || !sequenceStart) return null;
+
+  const previousStart = cadLinePoint(lastLine, 1);
+  const candidates = [
+    {
+      point: [sequenceStart[0], start[1]],
+      axis: 'verticale',
+      shift: Math.abs(start[0] - sequenceStart[0])
+    },
+    {
+      point: [start[0], sequenceStart[1]],
+      axis: 'orizzontale',
+      shift: Math.abs(start[1] - sequenceStart[1])
+    }
+  ];
+
+  return candidates
+    .filter(candidate =>
+      cadPointDistance(previousStart, candidate.point) >= 0.5 &&
+      cadPointDistance(candidate.point, sequenceStart) >= 0.5
+    )
+    .sort((a, b) => a.shift - b.shift)[0] || null;
+}
+
+function cadCloseWallSequence(orthogonal = false) {
   if (!cadCanCloseWallSequence() || !cadWorkingDoc) return;
 
   const group = cadCalpestabile();
   const firstLine = cadFindSourceLine(cadNewLineState.firstLineId);
-  const start = cadNewLineState.start?.slice();
+  const lastLine = orthogonal
+    ? cadFindSourceLine(cadNewLineState.lastLineId || cadSelectedLineId)
+    : null;
+  let start = cadNewLineState.start?.slice();
   const sequenceStart = cadNewLineState.sequenceStart?.slice();
 
-  if (!group || !firstLine || !start || !sequenceStart) {
+  if (!group || !firstLine || !start || !sequenceStart || (orthogonal && !lastLine)) {
     cadSetStatus('Impossibile chiudere la sequenza pareti.', 'error');
     return;
   }
@@ -4097,6 +4130,34 @@ function cadCloseWallSequence() {
   }
 
   const before = cadSerializeWorkingSvg();
+  let orthogonalAxis = '';
+
+  if (orthogonal) {
+    const candidate = cadOrthogonalCloseCandidate(lastLine, start, sequenceStart);
+    if (!candidate) {
+      cadSetStatus('Chiusura ortogonale impossibile senza annullare una parete.', 'error');
+      return;
+    }
+
+    // Il vertice finale è condiviso: spostiamo insieme l'arrivo della
+    // parete precedente e la partenza della parete di chiusura.
+    const lastEnd = cadLinePoint(lastLine, 2);
+    const lastStart = cadLinePoint(lastLine, 1);
+    let endpoint = 0;
+    if (cadPointDistance(lastEnd, start) <= CAD_JOIN_EPSILON) endpoint = 2;
+    else if (cadPointDistance(lastStart, start) <= CAD_JOIN_EPSILON) endpoint = 1;
+
+    if (!endpoint) {
+      cadSetStatus('Chiusura ortogonale impossibile: ultimo vertice non riconosciuto.', 'error');
+      return;
+    }
+
+    cadSetLinePoint(lastLine, endpoint, candidate.point[0], candidate.point[1]);
+    cadNewLineState.start = candidate.point.slice();
+    start = candidate.point.slice();
+    orthogonalAxis = candidate.axis;
+  }
+
   const type = /^E/i.test(firstLine.id || '') ? 'E' : 'W';
   const id = cadNextLineId(type);
   const line = cadWorkingDoc.createElementNS(SVG_NS, 'line');
@@ -4120,7 +4181,9 @@ function cadCloseWallSequence() {
   renderCadComparison();
   cadUpdateControls();
   cadSetStatus(
-    `✓ Sequenza chiusa con ${id} · ultimo punto collegato all'inizio`,
+    orthogonal
+      ? `✓ Sequenza chiusa ortogonalmente con ${id} · chiusura ${orthogonalAxis}`
+      : `✓ Sequenza chiusa con ${id} · ultimo punto collegato all'inizio`,
     'dirty'
   );
 }
@@ -4998,7 +5061,8 @@ if (cadDelete)
   cadDelete.addEventListener('click', cadDeleteSelected);
 if (cadNewLine)
   cadNewLine.addEventListener('click', cadToggleNewLine);
-cadCloseSequence?.addEventListener('click', cadCloseWallSequence);
+cadCloseSequence?.addEventListener('click', () => cadCloseWallSequence(false));
+cadCloseOrthogonalSequence?.addEventListener('click', () => cadCloseWallSequence(true));
 cadStopSequence?.addEventListener('click', () => {
   cadHideContextMenu();
   cadCancelNewLine();
@@ -5084,8 +5148,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.47: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.47' })
+// v0.48: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.48' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
