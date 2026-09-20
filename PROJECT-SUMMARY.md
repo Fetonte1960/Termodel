@@ -604,13 +604,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.36
+Termodel Web v0.37
 ```
 
-Commit frontend di riferimento per la v0.36:
+Commit frontend di riferimento per la v0.37:
 
 ```text
-dddbfcd510cf8909931be851a34b67695220e623  Align symbol properties with desktop XAML
+886f0b10055881d43b92f861505f1be5a63bbf98  Make North properties contextual
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -619,7 +619,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La prova ha però evidenziato che il pannello v0.35 era troppo generico rispetto a MainWindow.xaml. La v0.36 è su `main` e deve essere verificata pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.36 ha riallineato i pannelli simbolo ai riferimenti XAML/DatiCad; la v0.37 è su `main` e deve essere verificata pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -1854,9 +1854,25 @@ La v0.31 migliora esclusivamente la resa grafica del Nord senza cambiare il cont
 
 La v0.32 aumenta ulteriormente il margine di rispetto del simbolo Nord in pianta: il simbolo viene spostato più verso il bordo esterno alto-destra, mantenendo invariati dimensione, contratto SVG e orientamento.
 
+### Rifinitura v0.37 — pannello Nord contestuale
+
+Per recuperare spazio nella colonna proprietà, il pannello Nord non è più sempre visibile.
+
+Comportamento:
+
+- il pannello `Orientamento edificio · Nord` è chiuso di default;
+- il simbolo Nord nel canvas CAD è cliccabile;
+- cliccando il simbolo Nord si apre il pannello contestuale;
+- quando il Nord è aperto, le sezioni proprietà parete/simbolo vengono nascoste;
+- l'intestazione diventa `Dati CAD · Nord`;
+- il pannello contiene un pulsante `×` per richiuderlo;
+- selezionando una parete o un altro simbolo, iniziando un nuovo inserimento o cambiando piano, il pannello Nord si richiude automaticamente;
+- chiudendo il pannello torna il normale contesto proprietà CAD;
+- la persistenza e il contratto SVG del Nord restano invariati.
+
 ### Stato
 
-**IMPLEMENTATO IN v0.30 E RIFINITO IN v0.31/v0.32**.
+**IMPLEMENTATO IN v0.30 E RIFINITO IN v0.31/v0.32/v0.37**.
 
 ---
 
@@ -2399,7 +2415,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.36.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.37.**
 
 Stato operativo corrente:
 
@@ -2409,7 +2425,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.36 presente su `main`;
+- v0.37 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2422,6 +2438,7 @@ Stato operativo corrente:
 - v0.34 rende visibile e robusta l'attivazione dei comandi simbolo: pulsante in stato attivo, cursore crosshair e messaggio operativo immediato; il refresh del pannello laterale non può più annullare il feedback del comando.
 - v0.35 seleziona automaticamente il simbolo appena inserito e attiva il pannello laterale contestuale; FIN/PON/LOC espongono e modificano gli attributi presenti nei tspan SVG, Allinea resta minimale.
 - v0.36 sostituisce il pannello generico con controlli conformi a `MainWindow.xaml` e `DatiCad`: combo metadata-driven, valori dagli archivi, pulsanti Arc verso gli archivi correlati e gestione delle fonti ponte/altezza/quota come in `ScriptCad.cs`.
+- v0.37 rende il pannello Nord contestuale: chiuso di default, apertura cliccando il simbolo Nord nel CAD, chiusura con × o cambio di contesto, liberando spazio nella colonna proprietà.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2432,7 +2449,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.32: simbolo Nord in pianta sufficientemente distanziato dalla geometria → `?` laterale assente quando l'orientamento è definito → freccia della bussola rivolta verso l'esterno;  
+> 2. verificare manualmente la v0.37: pannello Nord chiuso di default → clic sul simbolo Nord → apertura `Dati CAD · Nord` → modifica orientamento → chiusura con × → selezione parete/simbolo richiude automaticamente il Nord;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
