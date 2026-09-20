@@ -1,4 +1,4 @@
-// GeneraPianta Web Lite v0.5
+// GeneraPianta Web Lite v0.6
 // Input: SVG Termodel già interpretato da GPT.
 // Topologia: JSTS (port JavaScript di JTS, famiglia di NetTopologySuite).
 // Scopo pubblico concordato: sola geometria 2D necessaria a pianta pulita,
@@ -88,6 +88,48 @@ function readLocali(calpestabile) {
         x: numberAttr(el, 'x'),
         y: numberAttr(el, 'y'),
         descrizione: descrizione || el.id || `Locale ${index + 1}`
+      };
+    });
+}
+
+function symbolRows(element) {
+  const values = {};
+  Array.from(element?.querySelectorAll?.('tspan') || []).forEach((tspan) => {
+    const line = String(tspan.textContent || '').trim();
+    const comma = line.indexOf(',');
+    if (comma < 0) return;
+    const key = line.slice(0, comma).trim().toUpperCase();
+    const value = line.slice(comma + 1).trim();
+    if (key) values[key] = value;
+  });
+  return values;
+}
+
+function numberSymbolValue(rows, key) {
+  const value = Number.parseFloat(String(rows?.[key] ?? '').replace(',', '.'));
+  return Number.isFinite(value) ? value : null;
+}
+
+function readFinestre(calpestabile) {
+  return Array.from(calpestabile.children)
+    .filter((el) => {
+      if (el.localName !== 'text') return false;
+      const rows = symbolRows(el);
+      return String(rows.BLOCCO || '').trim().toUpperCase() === 'FIN';
+    })
+    .map((el, index) => {
+      const rows = symbolRows(el);
+      return {
+        id: el.id || `F${String(index + 1).padStart(3, '0')}`,
+        x: numberAttr(el, 'x'),
+        y: numberAttr(el, 'y'),
+        porta: rows.PORTA || '',
+        tipo: rows.TIPO || '',
+        larghezzaCm: numberSymbolValue(rows, 'LARGHEZZA'),
+        altezzaCm: numberSymbolValue(rows, 'ALTEZZA'),
+        sottofinestraCm: numberSymbolValue(rows, 'SOTTOFINESTRA'),
+        sopraluceCm: numberSymbolValue(rows, 'SOPRALUCE'),
+        numeroAnte: rows.NUMEROANTE || ''
       };
     });
 }
@@ -214,17 +256,38 @@ function segmentLength(a, b) {
   return Math.hypot(b[0] - a[0], b[1] - a[1]);
 }
 
-function distancePointToSegment(point, a, b) {
+function nearestPointOnSegment(point, a, b) {
   const vx = b[0] - a[0];
   const vy = b[1] - a[1];
   const wx = point[0] - a[0];
   const wy = point[1] - a[1];
   const len2 = vx * vx + vy * vy;
-  if (len2 <= 1e-12) return Math.hypot(wx, wy);
+  if (len2 <= 1e-12) return a.slice();
   const t = Math.max(0, Math.min(1, (wx * vx + wy * vy) / len2));
-  const px = a[0] + t * vx;
-  const py = a[1] + t * vy;
-  return Math.hypot(point[0] - px, point[1] - py);
+  return [a[0] + t * vx, a[1] + t * vy];
+}
+
+function distancePointToSegment(point, a, b) {
+  const projected = nearestPointOnSegment(point, a, b);
+  return Math.hypot(point[0] - projected[0], point[1] - projected[1]);
+}
+
+function nearestWallForPoint(point, linee) {
+  const candidates = (linee || [])
+    .filter(line => line.wallClass === 'external' || line.wallClass === 'internal')
+    .map((line) => {
+      const a = [line.x1, line.y1];
+      const b = [line.x2, line.y2];
+      const projected = nearestPointOnSegment(point, a, b);
+      return {
+        line,
+        point: projected,
+        distance: Math.hypot(point[0] - projected[0], point[1] - projected[1])
+      };
+    })
+    .sort((a, b) => a.distance - b.distance);
+
+  return candidates[0] || null;
 }
 
 function sourceLineForEdge(start, end, linee) {
@@ -580,6 +643,7 @@ export function generaPiantaDaSvg(svgText) {
     throw new Error('Nessuna parete disponibile per GeneraPianta Web.');
 
   const localiInput = readLocali(calpestabile);
+  const finestreInput = readFinestre(calpestabile);
   const geometryFactory = new jsts.geom.GeometryFactory();
 
   const lineStrings = linee.map(line =>
@@ -640,6 +704,50 @@ export function generaPiantaDaSvg(svgText) {
     externalWallThicknessCm: EXTERNAL_WALL_THICKNESS_CM
   };
 
+  const finestre = finestreInput.map((finestra) => {
+    const match = nearestWallForPoint([finestra.x, finestra.y], linee);
+    if (!match) {
+      return {
+        ...finestra,
+        wallLineId: '',
+        wallClass: '',
+        wallThicknessCm: null,
+        wallDirection: null,
+        wallNormal: null
+      };
+    }
+
+    const line = match.line;
+    const dx = line.x2 - line.x1;
+    const dy = line.y2 - line.y1;
+    const length = Math.hypot(dx, dy);
+    const direction = length > 1e-9 ? [dx / length, dy / length] : [1, 0];
+
+    let normal;
+    if (line.wallClass === 'external') {
+      normal = outwardNormal(
+        jsts,
+        geometryFactory,
+        buildingPolygon,
+        [line.x1, line.y1],
+        [line.x2, line.y2]
+      );
+    }
+    if (!normal) normal = [-direction[1], direction[0]];
+
+    return {
+      ...finestra,
+      x: match.point[0],
+      y: match.point[1],
+      wallLineId: line.id,
+      wallClass: line.wallClass,
+      wallThicknessCm: line.thicknessCm,
+      wallDirection: direction,
+      wallNormal: normal,
+      wallDistanceCm: match.distance
+    };
+  });
+
   const warningUnici = [...new Set(warnings)];
   const edgeRoles = locali.flatMap(locale => locale.edgeRoles || []);
   const geometricExternalEdges = edgeRoles.filter(e => e.geometricRole === 'external').length;
@@ -655,6 +763,7 @@ export function generaPiantaDaSvg(svgText) {
   return {
     linee,
     locali,
+    finestre,
     edificio,
     svgPulito,
     defaults: {
@@ -665,6 +774,7 @@ export function generaPiantaDaSvg(svgText) {
     stats: {
       linee: linee.length,
       loc: localiInput.length,
+      finestre: finestre.length,
       poligoniJsts: polygons.length,
       locali: locali.length,
       geometricExternalEdges,

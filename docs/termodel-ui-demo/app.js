@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.56';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.55';
+} from './archivio-web.js?v=0.56';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,8 +18,8 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.55';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.55';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.56';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.56';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -1689,6 +1689,8 @@ const AI_PREVIEW_EXTERNAL_WALL_THICKNESS_M = 0.40;
 const AI_PREVIEW_INTERNAL_WALL_THICKNESS_M = 0.15;
 const AI_PREVIEW_FLOOR_THICKNESS_M = 0.20;
 const AI_PREVIEW_CEILING_THICKNESS_M = 0.20;
+const AI_PREVIEW_WINDOW_DEPTH_EXTRA_M = 0.04;
+const AI_PREVIEW_WINDOW_COLOR = '#2F9CC0';
 
 function svgRingToThreePoints(ring) {
   return ring.map(([x, y]) => new THREE.Vector2(Number(x) / 100, -Number(y) / 100));
@@ -1788,6 +1790,72 @@ function createWallMassPrimitive(plan) {
   });
 }
 
+function createWindowPreviewPrimitive(finestra, index) {
+  const widthCm = Number(finestra?.larghezzaCm);
+  const heightCm = Number(finestra?.altezzaCm);
+  const sillCm = Number(finestra?.sottofinestraCm);
+  const wallThicknessCm = Number(finestra?.wallThicknessCm);
+  const direction = finestra?.wallDirection;
+  const normal = finestra?.wallNormal;
+
+  if (
+    !Number.isFinite(widthCm) || widthCm <= 0 ||
+    !Number.isFinite(heightCm) || heightCm <= 0 ||
+    !Number.isFinite(sillCm) ||
+    !Number.isFinite(wallThicknessCm) || wallThicknessCm <= 0 ||
+    !Array.isArray(direction) || direction.length < 2 ||
+    !Array.isArray(normal) || normal.length < 2
+  ) return null;
+
+  const extraDepthCm = AI_PREVIEW_WINDOW_DEPTH_EXTRA_M * 100;
+  const depthCm = wallThicknessCm + extraDepthCm;
+  const halfWidth = widthCm / 2;
+  const halfDepth = depthCm / 2;
+
+  let centerX = Number(finestra.x);
+  let centerY = Number(finestra.y);
+  if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) return null;
+
+  // Le E sono il filo interno: la massa muraria cresce verso l'esterno.
+  // Portiamo quindi il centro del FIN a metà spessore della parete.
+  if (finestra.wallClass === 'external') {
+    centerX += normal[0] * wallThicknessCm / 2;
+    centerY += normal[1] * wallThicknessCm / 2;
+  }
+
+  const tx = Number(direction[0]);
+  const ty = Number(direction[1]);
+  const nx = Number(normal[0]);
+  const ny = Number(normal[1]);
+  if (![tx, ty, nx, ny].every(Number.isFinite)) return null;
+
+  const shell = [
+    [centerX - tx * halfWidth - nx * halfDepth, centerY - ty * halfWidth - ny * halfDepth],
+    [centerX + tx * halfWidth - nx * halfDepth, centerY + ty * halfWidth - ny * halfDepth],
+    [centerX + tx * halfWidth + nx * halfDepth, centerY + ty * halfWidth + ny * halfDepth],
+    [centerX - tx * halfWidth + nx * halfDepth, centerY - ty * halfWidth + ny * halfDepth]
+  ];
+
+  const zBottom = sillCm / 100;
+  const zTop = zBottom + heightCm / 100;
+
+  return createPrismMeshPrimitive({
+    shell,
+    holes: [],
+    zBottom,
+    zTop,
+    id: finestra.id || `FIN-${index + 1}`,
+    numero: index + 1,
+    tipo: 'Finestra',
+    descrizione:
+      `${finestra.id || 'FIN'} · ${(widthCm / 100).toFixed(2)} × ${(heightCm / 100).toFixed(2)} m` +
+      (finestra.wallLineId ? ` · ${finestra.wallLineId}` : ''),
+    parte: 'finestra-provvisoria',
+    color: AI_PREVIEW_WINDOW_COLOR,
+    opacity: 0.96
+  });
+}
+
 function createSlabMeshPrimitive(locale, index, tipo) {
   const isFloor = tipo === 'Pavimento';
   const zBottom = isFloor ? -AI_PREVIEW_FLOOR_THICKNESS_M : AI_PREVIEW_WALL_HEIGHT_M;
@@ -1817,8 +1885,11 @@ function createAiPreviewModelFromPlan(plan) {
     createSlabMeshPrimitive(locale, index, 'Pavimento'));
   const ceilings = plan.locali.map((locale, index) =>
     createSlabMeshPrimitive(locale, index, 'Soffitto'));
+  const windows = (plan.finestre || [])
+    .map(createWindowPreviewPrimitive)
+    .filter(Boolean);
 
-  const primitives = [...walls, ...floors, ...ceilings];
+  const primitives = [...walls, ...floors, ...ceilings, ...windows];
 
   return {
     format: 'TermodelWebModel',
@@ -1835,13 +1906,15 @@ function createAiPreviewModelFromPlan(plan) {
       internalWallThicknessMeters: AI_PREVIEW_INTERNAL_WALL_THICKNESS_M,
       floorThicknessMeters: AI_PREVIEW_FLOOR_THICKNESS_M,
       ceilingThicknessMeters: AI_PREVIEW_CEILING_THICKNESS_M,
-      note: 'GeneraPianta v0.5: i lati esterni dei locali restano sul filo E; i lati interni sono spostati di 7.5 cm verso il locale; il perimetro edificio è spostato di 40 cm verso l’esterno.'
+      windowDepthExtraMeters: AI_PREVIEW_WINDOW_DEPTH_EXTRA_M,
+      note: 'GeneraPianta v0.6: FIN rappresentati nel 3D provvisorio come parallelepipedi autonomi senza sottrazione della massa muraria.'
     },
     previewCounts: {
       walls: walls.length,
       wallMassBodies: wallMass ? 1 : 0,
       floors: floors.length,
       ceilings: ceilings.length,
+      windows: windows.length,
       rooms: plan.locali.length
     },
     primitiveCount: primitives.length,
@@ -5318,6 +5391,7 @@ function processSvgText(text) {
       `✓ Incongruenze E/W GPT vs geometria: ${plan.stats.classificationMismatches}\n` +
       `✓ ${counts.floors} pavimenti · spessore default ${AI_PREVIEW_FLOOR_THICKNESS_M.toFixed(2)} m\n` +
       `✓ ${counts.ceilings} soffitti · spessore default ${AI_PREVIEW_CEILING_THICKNESS_M.toFixed(2)} m\n` +
+      `✓ ${counts.windows || 0} FIN visibili nel 3D provvisorio\n` +
       `✓ Pianta SVG pulita generata\n` +
       `✓ Anteprima 3D caricata nel viewer` + warningText;
 
@@ -5575,8 +5649,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.55: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.55' })
+// v0.56: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.56' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
