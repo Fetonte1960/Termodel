@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`c9372b4f655f3278a5df90dcf97be33e467d7363` — `Split Snap into Near and Endpoint v0.53`  
+`c66f04b24626bded1780735a4d8066124982fb17` — `Make window insertion continuous v0.54`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -642,13 +642,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.53
+Termodel Web v0.54
 ```
 
-Commit frontend di riferimento per la v0.53:
+Commit frontend di riferimento per la v0.54:
 
 ```text
-c9372b4f655f3278a5df90dcf97be33e467d7363  Split Snap into Near and Endpoint v0.53
+c66f04b24626bded1780735a4d8066124982fb17  Make window insertion continuous v0.54
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -657,7 +657,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.53 sono su `main` e devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. Le revisioni successive fino alla v0.54 sono su `main` e devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -3036,6 +3036,58 @@ Split Snap into Near and Endpoint v0.53
 
 ---
 
+## 12.21 Inserimento continuo Porta/Finestra — v0.54
+
+La v0.54 trasforma il comando `Porta/Finestra` (simbolo `FIN`) in una modalità di inserimento continuo analoga alla multilinea delle pareti.
+
+Comportamento:
+
+- attivando `Porta/Finestra`, il comando resta attivo;
+- ogni clic valido vicino a una parete inserisce un nuovo simbolo FIN;
+- dopo l'inserimento il comando non torna in modalità selezione;
+- il cursore e lo stato di inserimento restano attivi per la finestra successiva;
+- ogni FIN resta un'entità autonoma e genera la propria voce Undo;
+- il comando termina con:
+  - `Esc`;
+  - tasto destro → `Interrompi sequenza`;
+  - pressione del pulsante attivo `Interrompi sequenza`.
+
+Durante la sequenza FIN il menu destro mostra soltanto:
+
+```text
+Interrompi sequenza
+```
+
+Gli altri comandi simbolo restano a inserimento singolo:
+
+```text
+Allinea
+Ponte
+Locale
+```
+
+Il normale menu destro delle pareti con `Chiudi / Chiudi ortogonale / Interrompi sequenza` resta invariato.
+
+File modificati:
+
+```text
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/app.js
+```
+
+Commit:
+
+```text
+c66f04b24626bded1780735a4d8066124982fb17
+Make window insertion continuous v0.54
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.54 — DA VERIFICARE MANUALMENTE NEL BROWSER.**
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -3208,7 +3260,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.53.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.54.**
 
 Stato operativo corrente:
 
@@ -3218,7 +3270,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.53 presente su `main`;
+- v0.54 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -3248,6 +3300,7 @@ Stato operativo corrente:
 - v0.51 termina automaticamente la multilinea quando il punto finale del nuovo segmento fa Snap su una parete diversa dall'ultima parete della sequenza; lo Snap ora espone anche l'ID della parete bersaglio.
 - v0.52 aggiunge nel menu del tasto destro, quando il CAD è neutro, `Ripeti ultimo comando`; memorizza Nuova parete e i quattro comandi simbolo e li riattiva con lo stato corrente.
 - v0.53 divide lo Snap in `Vicino` e `Estremo` come modalità radio alternative, con `Vicino` default; Orto resta indipendente e attivo di default, mentre lo stop multilinea su parete bersaglio continua a funzionare in entrambe le modalità.
+- v0.54 rende `Porta/Finestra` un comando continuo: ogni FIN inserito lascia il comando attivo per il successivo; Esc, pulsante attivo o tasto destro → `Interrompi sequenza` terminano la sequenza. Allinea/Ponte/Locale restano singoli.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -3258,9 +3311,9 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
-> 2. verificare manualmente la v0.53: aprire il menu `Snap` e verificare `Vicino` selezionato di default e `Estremo` alternativo; in `Vicino` provare l'aggancio a metà parete, in `Estremo` verificare che lo stesso punto intermedio non agganci e che siano agganciabili solo i capi. Controllare i messaggi `SNAP VICINO / SNAP ESTREMO`, Orto e lo stop multilinea su altra parete;  
+> 2. verificare manualmente la v0.54: attivare `Porta/Finestra`, inserire almeno 3 FIN consecutivi su pareti diverse e verificare che il comando resti attivo dopo ogni inserimento; provare Esc e tasto destro → `Interrompi sequenza`; verificare inoltre che Ponte, Locale e Allinea restino a singolo inserimento e che il menu parete non sia cambiato;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `c9372b4f655f3278a5df90dcf97be33e467d7363`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `c66f04b24626bded1780735a4d8066124982fb17`.
