@@ -443,6 +443,42 @@ L'obiettivo di questa fase è trasferire nel Web il modello generico già collau
 
 ---
 
+## 2.3 Generazione modello 3D — provvisoria nel frontend, definitiva sul server
+
+Decisione architetturale registrata il **2026-09-20**.
+
+La generazione del modello 3D attualmente presente nel frontend Web deve essere considerata **provvisoria**, utile come anteprima e supporto durante lo sviluppo del CAD/browser.
+
+Stato noto della generazione 3D provvisoria:
+
+- non implementa tutte le entità e tutte le regole del modello Termodel;
+- in particolare, **non gestisce attualmente le finestre / simboli FIN come aperture del modello 3D**;
+- il fatto che un FIN sia correttamente presente nel CAD/progetto non implica quindi che debba già comparire nel 3D provvisorio del browser;
+- questa limitazione non deve portare a inventare nel frontend una seconda logica autorevole di costruzione del modello.
+
+Direzione definitiva:
+
+```text
+progetto Termodel strutturato
+        ↓
+Termodel.Core
+logica autorevole proveniente dal Termodel desktop
+        ↓
+Termodel.WebService
+generazione / aggiornamento modello 3D completo
+        ↓
+frontend Web
+visualizzazione del modello prodotto dal server
+```
+
+La generazione 3D definitiva dovrà quindi essere prodotta dal **Core/WebService** e dovrà gestire correttamente, tra le altre entità, pareti, aperture/finestre FIN e comportamento multipiano secondo le regole autorevoli di Termodel.
+
+Conseguenza operativa:
+
+> Non usare l'attuale generatore 3D frontend come riferimento funzionale definitivo e non espanderlo automaticamente per colmare ogni mancanza. Eventuali miglioramenti provvisori devono restare chiaramente separati dalla futura generazione server autorevole.
+
+---
+
 ## 3. Responsabilità e confini
 
 La divisione operativa corrente è esplicita:
@@ -3358,6 +3394,7 @@ Stato operativo corrente:
 - v0.53 divide lo Snap in `Vicino` e `Estremo` come modalità radio alternative, con `Vicino` default; Orto resta indipendente e attivo di default, mentre lo stop multilinea su parete bersaglio continua a funzionare in entrambe le modalità.
 - v0.54 rende `Porta/Finestra` un comando continuo: ogni FIN inserito lascia il comando attivo per il successivo; Esc, pulsante attivo o tasto destro → `Interrompi sequenza` terminano la sequenza. Allinea/Ponte/Locale restano singoli.
 - v0.55 aggiunge `Finestra 2 punti` senza sostituire il FIN a un punto: due estremi sulla stessa parete definiscono una linea provvisoria, il punto medio diventa la posizione del FIN e la distanza diventa `LARGHEZZA`; anche questo comando resta continuo fino a Esc/interruzione.
+- la generazione 3D corrente nel frontend è **provvisoria** e non gestisce le finestre FIN; la generazione 3D completa e autorevole sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -3371,6 +3408,6 @@ Priorità immediate:
 > 2. verificare manualmente la v0.55: verificare prima che `Porta/Finestra` a un punto sia invariato; poi attivare `Finestra 2 punti`, scegliere due punti sulla stessa parete e controllare linea provvisoria, posizione FIN al punto medio e `LARGHEZZA` uguale alla distanza misurata. Provare un secondo punto lontano/altra parete (deve essere rifiutato), inserire più finestre consecutive e terminare con Esc/tasto destro;  
 > 3. verificare manualmente la v0.36: FIN → combo Porta/Tipo finestra + Arc Pareti/Finestre; PON → Tipo ponte + Arc Ponti + Fonte lunghezza; LOC → combo/Arc Zone-Pareti-Confini; verificare Applica e riapertura del simbolo; quindi completare trascinamento, snap in spostamento e vincolo LOC;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
-> 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
+> 5. portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano, includendo correttamente le aperture/finestre FIN; l'attuale generazione 3D frontend resta provvisoria e non è il riferimento funzionale definitivo.
 
 Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `aebc9898833291b03ff20a380807c27e0aeb14cd`.
