@@ -3386,6 +3386,14 @@ Il salvataggio è completamente locale e non usa il WebService.
 
 Prima di qualsiasi futura richiesta autorevole al server, il frontend deve costruire il progetto unico aggiornato tramite la stessa conversione usata da `Salva`.
 
+È stabilita una distinzione obbligatoria fra **progetto locale completo** e **payload destinato al server**:
+
+- il progetto locale può conservare gli sfondi necessari al CAD/browser;
+- gli **sfondi non devono essere trasmessi a Termodel.Core / Termodel.WebService**;
+- prima dell'invio server deve essere generata una variante del progetto unico priva dei contenuti raster/SVG usati come sfondo;
+- devono essere esclusi anche Data URL/Base64 ed eventuali future sezioni o asset dedicati agli sfondi;
+- il server non deve dipendere dagli sfondi per ricostruire, validare o calcolare il progetto.
+
 Flusso obbligatorio:
 
 ```text
@@ -3393,15 +3401,25 @@ utente modifica CAD / archivi
         ↓
 buildCurrentProjectText()
         ↓
-TERMODEL-PROJECT-TEXT-V1 aggiornato e coerente
+TERMODEL-PROJECT-TEXT-V1 locale aggiornato
         ├── Salva locale
+        │      └── può conservare gli sfondi
+        │
         ├── invio AI
+        │      └── politica da definire separatamente
+        │
         └── futura richiesta WebService
+               ↓
+          filtro payload server
+               ↓
+          rimuove tutti gli sfondi
+               ↓
+          progetto unico per Core/WebService
 ```
 
 Non introdurre API server operative che ricevano copie parziali o stato frontend sparso quando la funzione richiede il progetto corrente completo.
 
-**Salva e futuro invio server devono partire dalla stessa serializzazione del progetto unico.**
+**Salva locale e futuro invio server partono dallo stesso progetto aggiornato, ma il payload server deve essere filtrato: gli sfondi non vengono mai trasmessi al server.**
 
 Commit frontend:
 
@@ -3634,7 +3652,8 @@ Stato operativo corrente:
 - v0.55 aggiunge `Finestra 2 punti` senza sostituire il FIN a un punto: due estremi sulla stessa parete definiscono una linea provvisoria, il punto medio diventa la posizione del FIN e la distanza diventa `LARGHEZZA`; anche questo comando resta continuo fino a Esc/interruzione.
 - v0.56 mostra i FIN nel 3D provvisorio come parallelepipedi orientati sulla parete, dimensionati da `LARGHEZZA / ALTEZZA / SOTTOFINESTRA` e leggermente più profondi della parete; la prova reale ha evidenziato un difetto di allineamento/profondità sulle E ancora da correggere.
 - v0.57 usa un progetto vuoto locale consolidato in JavaScript per `Nuovo` e per strutturare un semplice SVG AI, eliminando la necessità di tenere acceso il WebService durante i test frontend.
-- v0.58 implementa il round-trip bidirezionale `progetto unico ↔ frontend`: `Apri`, `Salva` e `Salva con nome` usano `TERMODEL-PROJECT-TEXT-V1`; geometria e archivi JSON/XML vengono ricomposti e il manifest aggiorna le impronte. Questa serializzazione è obbligatoria prima di future richieste al WebService.
+- v0.58 implementa il round-trip bidirezionale `progetto unico ↔ frontend`: `Apri`, `Salva` e `Salva con nome` usano `TERMODEL-PROJECT-TEXT-V1`; geometria e archivi JSON/XML vengono ricomposti e il manifest aggiorna le impronte. Questa serializzazione è la base prima di future richieste al WebService.
+- decisione architetturale: gli sfondi sono risorse locali/frontend e **non devono essere trasmessi a Termodel.Core / Termodel.WebService**; il futuro payload server deve derivare dal progetto unico aggiornato filtrando completamente raster/SVG, Data URL/Base64 e relativi asset di sfondo.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -3646,7 +3665,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 Priorità immediate:
 
 > 1. verificare manualmente la v0.58 **con WebService spento**: `Nuovo` → disegnare almeno una parete/FIN → modificare un valore archivio → `Salva` → `Apri...` il file appena scaricato e verificare che geometria, Piani e archivio modificato siano identici; ripetere con `Salva con nome`;  
-> 2. dopo il collaudo del round-trip, considerare `buildCurrentProjectText()` la precondizione obbligatoria di qualsiasi futura chiamata WebService che lavori sul progetto: il server dovrà ricevere il `TERMODEL-PROJECT-TEXT-V1` aggiornato, non stato parziale;  
+> 2. dopo il collaudo del round-trip, usare `buildCurrentProjectText()` come base obbligatoria di qualsiasi futura chiamata WebService; prima dell'invio produrre però un payload server filtrato, **senza sfondi raster/SVG, Data URL/Base64 o relativi asset**;  
 > 3. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
 > 4. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
 > 5. portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano, includendo correttamente le aperture/finestre FIN; l'attuale generazione 3D frontend resta provvisoria e non è il riferimento funzionale definitivo.
@@ -3727,7 +3746,7 @@ Nuovo
 
 Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttamente sopra il file precedentemente aperto. `Salva con nome` chiede il nome e genera anch'esso un download.
 
-**Precondizione per il futuro server:** qualsiasi API che lavori sul progetto corrente deve ricevere il risultato di `buildCurrentProjectText()`. Non inviare geometria o archivi come stati separati se l'operazione richiede il progetto completo.
+**Precondizione per il futuro server:** qualsiasi API che lavori sul progetto corrente deve partire dal risultato di `buildCurrentProjectText()`. Prima della chiamata deve però essere prodotta una variante del progetto unico che **esclude tutti gli sfondi raster/SVG e gli eventuali asset di sfondo**. Non inviare geometria o archivi come stati separati se l'operazione richiede il progetto completo.
 
 **Problema aperto indipendente dal round-trip — FIN nel 3D provvisorio v0.56:**
 
