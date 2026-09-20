@@ -9,12 +9,17 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.42';
+} from './archivio-web.js?v=0.43';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
 const WEB_SERVICE_CAPABILITIES_URL = `${WEB_SERVICE_BASE_URL}/api/model/capabilities`;
 const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
+
+const appRoot = document.getElementById('app');
+const appTitleText = document.getElementById('appTitleText');
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.43';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.43';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -1811,7 +1816,14 @@ function createAiPreviewModelFromPlan(plan) {
   };
 }
 
+function setCadLayoutMode(active) {
+  appRoot?.classList.toggle('cad-layout-mode', active);
+  if (appTitleText)
+    appTitleText.textContent = active ? APP_CAD_TITLE : APP_MAIN_TITLE;
+}
+
 function activateModelPage() {
+  setCadLayoutMode(false);
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
@@ -4625,6 +4637,7 @@ function activateCadPage() {
     return;
   }
 
+  setCadLayoutMode(true);
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   if (cadPage) cadPage.classList.add('active');
@@ -4922,8 +4935,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.42: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.42' })
+// v0.43: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.43' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
