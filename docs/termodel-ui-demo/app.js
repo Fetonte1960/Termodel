@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.49';
+} from './archivio-web.js?v=0.50';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,8 +18,8 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.49';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.49';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.50';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.50';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -5181,8 +5181,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.49: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.49' })
+// v0.50: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.50' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
