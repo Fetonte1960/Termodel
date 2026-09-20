@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.43';
+} from './archivio-web.js?v=0.44';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,13 +18,15 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.43';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.43';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.44';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.44';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
 const cadPage = document.getElementById('cadPage');
 const cadCanvas = document.getElementById('cadCanvas');
+const cadContextMenu = document.getElementById('cadContextMenu');
+const cadStopSequence = document.getElementById('cadStopSequence');
 const cadAddBackground = document.getElementById('cadAddBackground');
 const cadBackgroundFile = document.getElementById('cadBackgroundFile');
 const cadShowBackground = document.getElementById('cadShowBackground');
@@ -3677,7 +3679,7 @@ function cadUpdateControls() {
   if (cadNewLine) {
     cadNewLine.disabled = !hasDoc;
     cadNewLine.classList.toggle('active', drawingLine);
-    cadNewLine.textContent = drawingLine ? '× Annulla linea' : '＋ Nuova linea';
+    cadNewLine.textContent = drawingLine ? '× Interrompi sequenza' : '＋ Nuova linea';
   }
   [[cadInsertAlign,'ALLINEA'],[cadInsertOpening,'FIN'],[cadInsertBridge,'PON'],[cadInsertRoom,'LOC']].forEach(pair => {
     const button = pair[0];
@@ -3697,7 +3699,7 @@ function cadUpdateControls() {
   if (!hasDoc) cadSetStatus('Genera prima una pianta');
   else if (drawingLine) {
     const tipo = (cadNewLineType?.value || 'W').toUpperCase();
-    cadSetStatus(cadNewLineState ? ('Piano ' + cadCurrentPlane() + ' · Nuova ' + tipo + ' · clicca il punto finale') : ('Piano ' + cadCurrentPlane() + ' · Nuova ' + tipo + ' · clicca il punto iniziale'));
+    cadSetStatus(cadNewLineState ? ('Piano ' + cadCurrentPlane() + ' · Nuova ' + tipo + ' · clicca il punto successivo · tasto destro per interrompere') : ('Piano ' + cadCurrentPlane() + ' · Nuova ' + tipo + ' · clicca il punto iniziale'));
   } else if (insertingSymbol) {
     const needsWall = cadSymbolInsertType === 'FIN' || cadSymbolInsertType === 'PON';
     cadSetStatus(
@@ -3877,7 +3879,21 @@ function cadNextLineId(prefix) {
   return id;
 }
 
+function cadHideContextMenu() {
+  if (cadContextMenu) cadContextMenu.hidden = true;
+}
+
+function cadShowLineContextMenu(event) {
+  if (!cadContextMenu || cadToolMode !== 'line') return;
+  const width = 180;
+  const height = 36;
+  cadContextMenu.style.left = Math.max(0, Math.min(event.clientX, window.innerWidth - width - 4)) + 'px';
+  cadContextMenu.style.top = Math.max(0, Math.min(event.clientY, window.innerHeight - height - 4)) + 'px';
+  cadContextMenu.hidden = false;
+}
+
 function cadCancelNewLine(svg = cadCanvas?.querySelector('svg')) {
+  cadHideContextMenu();
   cadToolMode = 'select';
   cadNewLineState = null;
   if (svg) {
@@ -3988,12 +4004,20 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
   cadUndoStack.push(cadNewLineState.before);
   cadRedoStack = [];
   cadSelectedLineId = id;
-  cadToolMode = 'select';
-  cadNewLineState = null;
+
+  // Modalità multilinea: il punto finale appena confermato diventa
+  // automaticamente il punto iniziale del segmento successivo.
+  cadToolMode = 'line';
+  cadNewLineState = {
+    start: point.slice(),
+    before: cadSerializeWorkingSvg()
+  };
 
   renderCadComparison();
+  const nextSvg = cadCanvas?.querySelector('svg');
+  if (nextSvg) cadRenderNewLinePreview(nextSvg, point, false);
   cadSetStatus(
-    `✓ ${id} creata sul piano ${cadCurrentPlane()}${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · finale SNAP' : ''} · premi Rigenera pianta`,
+    `✓ ${id} creata${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · SNAP' : ''} · continua dal punto finale · tasto destro per interrompere`,
     'dirty'
   );
 }
@@ -4256,9 +4280,22 @@ function cadInstallPointerEditing(svg) {
     if (event.button === 1) cadStartPan(svg, event);
   }, true);
 
+  // In modalità parete il tasto destro apre un menu CAD minimale
+  // per interrompere esplicitamente la sequenza multilinea.
+  svg.addEventListener('contextmenu', event => {
+    if (cadToolMode !== 'line') {
+      cadHideContextMenu();
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    cadShowLineContextMenu(event);
+  });
+
   // Le modalità di inserimento intercettano il click sinistro prima delle singole entità.
   svg.addEventListener('pointerdown', event => {
     if (event.button !== 0) return;
+    cadHideContextMenu();
     if (cadToolMode === 'symbol') {
       event.preventDefault();
       event.stopPropagation();
@@ -4858,6 +4895,14 @@ if (cadDelete)
   cadDelete.addEventListener('click', cadDeleteSelected);
 if (cadNewLine)
   cadNewLine.addEventListener('click', cadToggleNewLine);
+cadStopSequence?.addEventListener('click', () => {
+  cadHideContextMenu();
+  cadCancelNewLine();
+});
+document.addEventListener('pointerdown', event => {
+  if (!cadContextMenu || cadContextMenu.hidden) return;
+  if (!cadContextMenu.contains(event.target)) cadHideContextMenu();
+});
 cadInsertAlign?.addEventListener('click', () => cadToggleSymbolInsert('ALLINEA'));
 cadInsertOpening?.addEventListener('click', () => cadToggleSymbolInsert('FIN'));
 cadInsertBridge?.addEventListener('click', () => cadToggleSymbolInsert('PON'));
@@ -4935,8 +4980,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.43: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.43' })
+// v0.44: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.44' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {

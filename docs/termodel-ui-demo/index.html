@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.43 — layout dedicato CAD 2D</title>
+  <title>Termodel Web v0.44 — pareti multilinea CAD</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -567,6 +567,27 @@
       vector-effect: non-scaling-stroke;
       pointer-events: none;
     }
+    .cad-context-menu {
+      position: fixed;
+      z-index: 90;
+      min-width: 170px;
+      padding: 3px;
+      border: 1px solid #888;
+      background: #f5f5f5;
+      box-shadow: 2px 3px 8px rgba(0,0,0,.22);
+    }
+    .cad-context-menu[hidden] { display: none; }
+    .cad-context-menu button {
+      display: block;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      padding: 6px 10px;
+      text-align: left;
+      color: #111;
+      cursor: pointer;
+    }
+    .cad-context-menu button:hover { background: #dcecff; }
     .cad-properties {
       position: absolute;
       top: 68px;
@@ -841,7 +862,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.43</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.44</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -905,6 +926,9 @@
         </div>
         <div id="cadCanvas" class="cad-canvas">
           <div class="cad-empty">Genera prima una pianta da raster con AI. Qui potrai correggere direttamente le pareti E/W del DisegnoInput.svg.</div>
+        </div>
+        <div id="cadContextMenu" class="cad-context-menu" hidden role="menu" aria-label="Menu contestuale CAD">
+          <button id="cadStopSequence" type="button" role="menuitem">Interrompi sequenza</button>
         </div>
 
         <aside id="cadPropertiesPanel" class="cad-properties" aria-label="Dati CAD Termodel">
@@ -1226,6 +1250,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.43"></script>
+  <script type="module" src="./app.js?v=0.44"></script>
 </body>
 </html>
