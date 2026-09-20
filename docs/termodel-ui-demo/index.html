@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.44 — pareti multilinea CAD</title>
+  <title>Termodel Web v0.45 — menu toolbar CAD</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -462,6 +462,57 @@
       align-content: center;
     }
     .cad-toolbar label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .cad-tool-menu {
+      position: relative;
+      display: inline-block;
+    }
+    .cad-tool-menu > summary {
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border: 1px solid #888;
+      background: linear-gradient(#fff,#dedede);
+      color: #111;
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+    }
+    .cad-tool-menu > summary::-webkit-details-marker { display: none; }
+    .cad-tool-menu[open] > summary {
+      background: linear-gradient(#eef9ff,#cfe8f6);
+      border-color: #5c8db2;
+      font-weight: 700;
+    }
+    .cad-tool-dropdown {
+      position: absolute;
+      top: 31px;
+      left: 0;
+      z-index: 30;
+      min-width: 210px;
+      display: grid;
+      gap: 6px;
+      padding: 7px;
+      border: 1px solid #888;
+      background: #f4f4f4;
+      box-shadow: 2px 4px 10px rgba(0,0,0,.22);
+    }
+    .cad-tool-dropdown.compact { min-width: 155px; }
+    .cad-tool-dropdown label {
+      justify-content: flex-start;
+      min-height: 24px;
+      padding: 2px 3px;
+    }
+    .cad-tool-dropdown button,
+    .cad-tool-dropdown select {
+      width: 100%;
+      min-width: 0;
+    }
+    .cad-tool-dropdown .cad-tool-separator {
+      height: 1px;
+      margin: 1px 0;
+      background: #c8c8c8;
+    }
     .cad-toolbar-plane {
       display:inline-flex;
       align-items:center;
@@ -862,7 +913,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.44</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.45</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -895,26 +946,45 @@
       </section>
       <section id="cadPage" class="page cad-page" aria-label="Viewer CAD Web">
         <div class="cad-toolbar">
-          <button id="cadAddBackground" type="button" title="Importa uno sfondo raster o SVG per il piano corrente">＋ Aggiungi sfondo</button>
-          <input id="cadBackgroundFile" type="file" accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden />
-          <label><input id="cadShowBackground" type="checkbox" checked /> Sfondo</label>
-          <label><input id="cadShowInput" type="checkbox" checked /> Disegno input</label>
-          <label><input id="cadSnap" type="checkbox" checked /> Snap</label>
-          <label title="Vincola le nuove linee a orizzontale o verticale"><input id="cadOrtho" type="checkbox" /> Orto</label>
+          <details class="cad-tool-menu">
+            <summary>Sfondo</summary>
+            <div class="cad-tool-dropdown">
+              <button id="cadAddBackground" type="button" title="Importa uno sfondo raster o SVG per il piano corrente">＋ Aggiungi sfondo</button>
+              <input id="cadBackgroundFile" type="file" accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden />
+              <label><input id="cadShowBackground" type="checkbox" checked /> Mostra sfondo</label>
+              <label><input id="cadShowInput" type="checkbox" checked /> Mostra disegno input</label>
+            </div>
+          </details>
+
+          <details class="cad-tool-menu">
+            <summary>Disegna</summary>
+            <div class="cad-tool-dropdown">
+              <select id="cadNewLineType" title="Tipo della nuova parete">
+                <option value="W" selected>W interna</option>
+                <option value="E">E esterna</option>
+              </select>
+              <button id="cadNewLine" type="button" title="Clicca il punto iniziale e poi i punti successivi">＋ Nuova parete</button>
+              <div class="cad-tool-separator"></div>
+              <button id="cadInsertAlign" type="button" title="Inserisci Allinea sul piano/layer corrente">＋ Allinea</button>
+              <button id="cadInsertOpening" type="button" title="Inserisci FIN: porta o finestra secondo i DatiCad correnti">＋ Porta/Finestra</button>
+              <button id="cadInsertBridge" type="button" title="Inserisci un ponte termico PON sulla parete">＋ Ponte</button>
+              <button id="cadInsertRoom" type="button" title="Inserisci un simbolo locale LOC">＋ Locale</button>
+            </div>
+          </details>
+
+          <details class="cad-tool-menu">
+            <summary>Snap</summary>
+            <div class="cad-tool-dropdown compact">
+              <label><input id="cadSnap" type="checkbox" checked /> Attiva Snap</label>
+              <label title="Vincola le nuove pareti a orizzontale o verticale"><input id="cadOrtho" type="checkbox" /> Orto</label>
+            </div>
+          </details>
+
           <span class="cad-toolbar-plane" title="Piano corrente e archivio Piani">
             <span class="cad-toolbar-plane-label">Piano</span>
             <select id="cadPropPiano" aria-label="Piano corrente"></select>
             <button id="cadOpenPianiArchive" class="cad-toolbar-arc" type="button" title="Apri archivio Piani">Arc</button>
           </span>
-          <select id="cadNewLineType" title="Tipo della nuova parete">
-            <option value="W" selected>W interna</option>
-            <option value="E">E esterna</option>
-          </select>
-          <button id="cadNewLine" type="button" title="Clicca il punto iniziale e poi il punto finale">＋ Nuova linea</button>
-          <button id="cadInsertAlign" type="button" title="Inserisci Allinea sul piano/layer corrente">＋ Allinea</button>
-          <button id="cadInsertOpening" type="button" title="Inserisci FIN: porta o finestra secondo i DatiCad correnti">＋ Porta/Finestra</button>
-          <button id="cadInsertBridge" type="button" title="Inserisci un ponte termico PON sulla parete">＋ Ponte</button>
-          <button id="cadInsertRoom" type="button" title="Inserisci un simbolo locale LOC">＋ Locale</button>
           <button id="cadUndo" type="button" disabled title="Annulla ultima modifica">↶ Undo</button>
           <button id="cadRedo" type="button" disabled title="Ripristina modifica annullata">↷ Redo</button>
           <button id="cadDelete" type="button" disabled title="Elimina la parete selezionata">Elimina</button>
@@ -934,7 +1004,7 @@
         <aside id="cadPropertiesPanel" class="cad-properties" aria-label="Dati CAD Termodel">
           <div id="cadPropertiesHead" class="cad-properties-head">Dati CAD · Pareti</div>
           <div id="cadPropertiesEmpty" class="cad-properties-empty">
-            I dati correnti della parete verranno usati da ＋ Nuova linea.
+            I dati correnti della parete verranno usati da ＋ Nuova parete.
           </div>
           <div id="cadPropertiesBody" class="cad-properties-body" hidden>
             <section id="cadNorthPropertiesSection" class="cad-properties-section" hidden>
@@ -1250,6 +1320,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.44"></script>
+  <script type="module" src="./app.js?v=0.45"></script>
 </body>
 </html>

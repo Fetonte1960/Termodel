@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.44';
+} from './archivio-web.js?v=0.45';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -18,8 +18,8 @@ const WEB_SERVICE_NEW_PROJECT_URL = `${WEB_SERVICE_BASE_URL}/api/projects/new`;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.44';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.44';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.45';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.45';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -1185,6 +1185,30 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
+const cadToolMenus = Array.from(document.querySelectorAll('.cad-tool-menu'));
+
+function cadCloseToolMenus(except = null) {
+  cadToolMenus.forEach(menu => {
+    if (menu !== except) menu.open = false;
+  });
+}
+
+cadToolMenus.forEach(menu => {
+  menu.addEventListener('toggle', () => {
+    if (menu.open) cadCloseToolMenus(menu);
+  });
+});
+
+document.querySelectorAll('.cad-tool-dropdown button').forEach(button => {
+  button.addEventListener('click', () => {
+    button.closest('.cad-tool-menu')?.removeAttribute('open');
+  });
+});
+
+document.addEventListener('pointerdown', event => {
+  if (!event.target.closest('.cad-tool-menu')) cadCloseToolMenus();
+});
+
 document.querySelectorAll('.menu > button').forEach(button => {
   button.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -1350,7 +1374,7 @@ async function startBlankProjectFromCad() {
 
     projectStartContext = { target: 'cad', archiveName: '' };
     activateCadPage();
-    cadSetStatus('Progetto vuoto · usa ＋ Nuova linea per iniziare il disegno');
+    cadSetStatus('Progetto vuoto · usa ＋ Nuova parete per iniziare il disegno');
   } catch (error) {
     setStructuredProjectState(false);
     console.error('Creazione progetto vuoto non riuscita:', error);
@@ -3614,7 +3638,7 @@ function cadWallPropertySelectionChanged() {
   if (cadFindSourceLine(cadSelectedLineId))
     cadCommitToolbarToSelectedLine();
   else
-    cadSetStatus(`Piano ${cadCurrentPlane()} · valori correnti aggiornati per ＋ Nuova linea`);
+    cadSetStatus(`Piano ${cadCurrentPlane()} · valori correnti aggiornati per ＋ Nuova parete`);
 }
 
 function cadCurrentPlaneChanged() {
@@ -3679,7 +3703,7 @@ function cadUpdateControls() {
   if (cadNewLine) {
     cadNewLine.disabled = !hasDoc;
     cadNewLine.classList.toggle('active', drawingLine);
-    cadNewLine.textContent = drawingLine ? '× Interrompi sequenza' : '＋ Nuova linea';
+    cadNewLine.textContent = drawingLine ? '× Interrompi sequenza' : '＋ Nuova parete';
   }
   [[cadInsertAlign,'ALLINEA'],[cadInsertOpening,'FIN'],[cadInsertBridge,'PON'],[cadInsertRoom,'LOC']].forEach(pair => {
     const button = pair[0];
@@ -3699,7 +3723,7 @@ function cadUpdateControls() {
   if (!hasDoc) cadSetStatus('Genera prima una pianta');
   else if (drawingLine) {
     const tipo = (cadNewLineType?.value || 'W').toUpperCase();
-    cadSetStatus(cadNewLineState ? ('Piano ' + cadCurrentPlane() + ' · Nuova ' + tipo + ' · clicca il punto successivo · tasto destro per interrompere') : ('Piano ' + cadCurrentPlane() + ' · Nuova ' + tipo + ' · clicca il punto iniziale'));
+    cadSetStatus(cadNewLineState ? ('Piano ' + cadCurrentPlane() + ' · Parete ' + tipo + ' · clicca il punto successivo · tasto destro per interrompere') : ('Piano ' + cadCurrentPlane() + ' · Parete ' + tipo + ' · clicca il punto iniziale'));
   } else if (insertingSymbol) {
     const needsWall = cadSymbolInsertType === 'FIN' || cadSymbolInsertType === 'PON';
     cadSetStatus(
@@ -3970,13 +3994,13 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
     };
     cadRenderNewLinePreview(svg, point, snapped.snapped);
     cadSetStatus(
-      `Nuova ${(cadNewLineType?.value || 'W').toUpperCase()} · punto iniziale${snapped.snapped ? ' · SNAP' : ''}${cadOrtho?.checked ? ' · ORTO' : ''} · clicca il finale`
+      `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · punto iniziale${snapped.snapped ? ' · SNAP' : ''}${cadOrtho?.checked ? ' · ORTO' : ''} · clicca il punto successivo`
     );
     return;
   }
 
   if (cadPointDistance(cadNewLineState.start, point) < 0.5) {
-    cadSetStatus('La nuova linea deve avere una lunghezza maggiore di zero.', 'error');
+    cadSetStatus('La nuova parete deve avere una lunghezza maggiore di zero.', 'error');
     return;
   }
 
@@ -4315,7 +4339,7 @@ function cadInstallPointerEditing(svg) {
       const snapped = cadNewLineTargetPoint(cadClientPoint(svg, event));
       cadRenderNewLinePreview(svg, snapped.point, snapped.snapped);
       cadSetStatus(
-        `Nuova ${(cadNewLineType?.value || 'W').toUpperCase()} · clicca il punto finale${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · SNAP' : ''}`
+        `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · clicca il punto successivo${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · SNAP' : ''}`
       );
       return;
     }
@@ -4980,8 +5004,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.44: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.44' })
+// v0.45: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.45' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
