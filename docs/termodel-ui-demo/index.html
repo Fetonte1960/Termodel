@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.36 — pannelli simboli conformi XAML</title>
+  <title>Termodel Web v0.37 — pannello Nord contestuale</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -637,6 +637,29 @@
       align-items: center;
       padding: 8px 7px;
     }
+    .cad-north-section-head {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .cad-north-close {
+      min-width:28px;
+      height:24px;
+      padding:0 7px;
+      border:1px solid #aaa;
+      border-radius:4px;
+      background:#f6f6f6;
+      cursor:pointer;
+      font-weight:700;
+      line-height:1;
+    }
+    .cad-north-close:hover {
+      background:#ececec;
+    }
+    #cadNorthOverlay {
+      cursor:pointer;
+    }
     .cad-north-dial {
       position: relative;
       width: 68px;
@@ -790,7 +813,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.36</div>
+      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.37</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -873,8 +896,11 @@
               </div>
             </section>
 
-            <section class="cad-properties-section">
-              <div class="cad-properties-section-title">Orientamento edificio · Nord</div>
+            <section id="cadNorthPropertiesSection" class="cad-properties-section" hidden>
+              <div class="cad-north-section-head">
+                <div class="cad-properties-section-title">Orientamento edificio · Nord</div>
+                <button id="cadNorthClose" class="cad-north-close" type="button" title="Chiudi pannello Nord" aria-label="Chiudi pannello Nord">×</button>
+              </div>
               <div class="cad-north-control">
                 <div class="cad-north-dial" aria-label="Bussola Nord">
                   <span class="cad-north-dial-label">N</span>
@@ -1168,6 +1194,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.36"></script>
+  <script type="module" src="./app.js?v=0.37"></script>
 </body>
 </html>

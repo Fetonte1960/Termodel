@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.36';
+} from './archivio-web.js?v=0.37';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -61,6 +61,8 @@ const cadSymbolApply = document.getElementById('cadSymbolApply');
 const cadOpenPianiArchive = document.getElementById('cadOpenPianiArchive');
 const cadOpenParetiArchive = document.getElementById('cadOpenParetiArchive');
 const cadOpenConfiniArchive = document.getElementById('cadOpenConfiniArchive');
+const cadNorthPropertiesSection = document.getElementById('cadNorthPropertiesSection');
+const cadNorthClose = document.getElementById('cadNorthClose');
 const cadNorthDefined = document.getElementById('cadNorthDefined');
 const cadNorthRange = document.getElementById('cadNorthRange');
 const cadNorthAngle = document.getElementById('cadNorthAngle');
@@ -1991,6 +1993,22 @@ function ensureNorthSymbolInSvgText(svgText) {
   return new XMLSerializer().serializeToString(doc.documentElement);
 }
 
+function cadNorthPanelIsOpen() {
+  return Boolean(cadNorthPropertiesSection && !cadNorthPropertiesSection.hidden);
+}
+
+function cadOpenNorthPanel() {
+  if (!cadNorthPropertiesSection) return;
+  cadNorthPropertiesSection.hidden = false;
+  cadUpdateNorthControls();
+}
+
+function cadCloseNorthPanel(updatePanel = true) {
+  if (!cadNorthPropertiesSection) return;
+  cadNorthPropertiesSection.hidden = true;
+  if (updatePanel) cadUpdatePropertiesPanel();
+}
+
 function cadUpdateNorthControls() {
   const defined = northOrientationDeg !== null;
   const value = defined ? Math.round(northOrientationDeg) : 0;
@@ -2060,7 +2078,30 @@ function cadRenderNorthOverlay(svg, viewBoxValues) {
   const group = svgNode('g', {
     id: 'cadNorthOverlay',
     transform: `translate(${x} ${y})`,
-    'pointer-events': 'none'
+    'pointer-events': 'all',
+    role: 'button',
+    tabindex: '0',
+    'aria-label': 'Apri proprietà orientamento Nord'
+  });
+
+  const openNorth = event => {
+    if (cadToolMode !== 'select') return;
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    cadSelectedLineId = '';
+    cadSelectedSymbolId = '';
+    cadOpenNorthPanel();
+    cadUpdatePropertiesPanel();
+    cadSetStatus(
+      northOrientationDeg === null
+        ? 'Nord selezionato · orientamento non definito'
+        : 'Nord selezionato · ' + Math.round(northOrientationDeg) + '°'
+    );
+  };
+
+  group.addEventListener('pointerdown', openNorth);
+  group.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') openNorth(event);
   });
   group.appendChild(svgNode('circle', {
     cx: 0, cy: 0, r: radius,
@@ -2617,6 +2658,7 @@ function cadToggleSymbolInsert(type) {
 
   if (cadToolMode === 'line') cadCancelNewLine();
 
+  cadCloseNorthPanel(false);
   cadToolMode = 'symbol';
   cadSymbolInsertType = normalized;
   cadSelectedLineId = '';
@@ -3113,20 +3155,23 @@ function cadUpdatePropertiesPanel() {
 
   const derived = cadRefreshToolbarControls();
   const symbolType = symbol ? cadSymbolBlockType(symbol) : '';
+  const northOpen = cadNorthPanelIsOpen();
 
-  if (cadWallPropertiesSection) cadWallPropertiesSection.hidden = Boolean(symbol);
-  if (cadWallGeometrySection) cadWallGeometrySection.hidden = Boolean(symbol);
-  if (cadSymbolPropertiesSection) cadSymbolPropertiesSection.hidden = !symbol;
+  if (cadWallPropertiesSection) cadWallPropertiesSection.hidden = Boolean(symbol) || northOpen;
+  if (cadWallGeometrySection) cadWallGeometrySection.hidden = Boolean(symbol) || northOpen;
+  if (cadSymbolPropertiesSection) cadSymbolPropertiesSection.hidden = !symbol || northOpen;
 
   if (cadPropertiesHead) {
-    if (symbol)
+    if (northOpen)
+      cadPropertiesHead.textContent = 'Dati CAD · Nord';
+    else if (symbol)
       cadPropertiesHead.textContent = 'Dati CAD · ' + cadSymbolInsertLabel(symbolType) + ' ' + symbol.id;
     else
       cadPropertiesHead.textContent = line ? `Dati CAD · Parete ${line.id}` : 'Dati CAD · Nuova parete';
   }
 
   if (cadPropEntity)
-    cadPropEntity.value = symbol?.id || line?.id || 'Nuova parete';
+    cadPropEntity.value = northOpen ? 'Nord progetto' : (symbol?.id || line?.id || 'Nuova parete');
 
   if (symbol) {
     const x = Number(symbol.getAttribute('x'));
@@ -3221,6 +3266,7 @@ function cadCurrentPlaneChanged() {
   if (cadToolMode === 'symbol')
     cadCancelSymbolInsert();
 
+  cadCloseNorthPanel(false);
   cadToolbarState.piano = requested;
   cadSelectedLineId = '';
   cadSelectedSymbolId = '';
@@ -3335,6 +3381,7 @@ function cadSetWorkingSvg(svgText) {
   cadToolMode = 'select';
   cadNewLineState = null;
   cadSymbolInsertType = '';
+  cadCloseNorthPanel(false);
 
   if (normalized)
     console.info(`CAD multipiano: assegnate ${normalized} entità legacy al piano "${current}".`);
@@ -3446,6 +3493,7 @@ function cadToggleNewLine() {
     return;
   }
 
+  cadCloseNorthPanel(false);
   cadSymbolInsertType = '';
   cadToolMode = 'line';
   cadNewLineState = null;
@@ -3560,7 +3608,10 @@ function cadClientPoint(svg, event) {
 
 function cadSelectLine(id, svg = cadCanvas?.querySelector('svg')) {
   cadSelectedLineId = cadFindSourceLine(id) ? id : '';
-  if (cadSelectedLineId) cadSelectedSymbolId = '';
+  if (cadSelectedLineId) {
+    cadSelectedSymbolId = '';
+    cadCloseNorthPanel(false);
+  }
   if (svg) cadSyncOverlay(svg);
   cadUpdatePropertiesPanel();
   cadUpdateControls();
@@ -3568,7 +3619,10 @@ function cadSelectLine(id, svg = cadCanvas?.querySelector('svg')) {
 
 function cadSelectSymbol(id, svg = cadCanvas?.querySelector('svg')) {
   cadSelectedSymbolId = cadFindSourceSymbol(id) ? id : '';
-  if (cadSelectedSymbolId) cadSelectedLineId = '';
+  if (cadSelectedSymbolId) {
+    cadSelectedLineId = '';
+    cadCloseNorthPanel(false);
+  }
   if (svg) cadSyncOverlay(svg);
   cadUpdatePropertiesPanel();
   cadUpdateControls();
@@ -4266,6 +4320,7 @@ cadInsertRoom?.addEventListener('click', () => cadToggleSymbolInsert('LOC'));
 if (cadPropConfirm)
   cadPropConfirm.addEventListener('click', cadApplyProperties);
 cadSymbolApply?.addEventListener('click', cadApplySelectedSymbolProperties);
+cadNorthClose?.addEventListener('click', () => cadCloseNorthPanel(true));
 cadNorthDefined?.addEventListener('change', () => {
   cadSetNorthOrientation(cadNorthDefined.checked ? (cadNorthAngle?.value || 0) : null);
 });
@@ -4335,8 +4390,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.36: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.36' })
+// v0.37: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.37' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
