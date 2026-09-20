@@ -8,7 +8,7 @@ import {
   loadTermodelProjectText,
   openArchivioWeb,
   getArchivioWebRecords
-} from './archivio-web.js?v=0.29';
+} from './archivio-web.js?v=0.30';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -49,6 +49,11 @@ const cadPropConfirm = document.getElementById('cadPropConfirm');
 const cadOpenPianiArchive = document.getElementById('cadOpenPianiArchive');
 const cadOpenParetiArchive = document.getElementById('cadOpenParetiArchive');
 const cadOpenConfiniArchive = document.getElementById('cadOpenConfiniArchive');
+const cadNorthDefined = document.getElementById('cadNorthDefined');
+const cadNorthRange = document.getElementById('cadNorthRange');
+const cadNorthAngle = document.getElementById('cadNorthAngle');
+const cadNorthNeedle = document.getElementById('cadNorthNeedle');
+const cadNorthUnknown = document.getElementById('cadNorthUnknown');
 const status = document.querySelector('.viewport-status');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd3d3d3);
@@ -71,8 +76,10 @@ scene.add(sun);
 
 const modelGroup = new THREE.Group();
 const edgeGroup = new THREE.Group();
+const north3DGroup = new THREE.Group();
 scene.add(modelGroup);
 scene.add(edgeGroup);
+scene.add(north3DGroup);
 
 let floor = null;
 let homeView = null;
@@ -86,6 +93,7 @@ let webServiceCapabilities = null;
 let lastAiPreviewData = null;
 let lastCleanPlanSvg = '';
 let lastGeneratedPlan = null;
+let northOrientationDeg = null;
 
 // Edita nel CAD v0.10: editor SVG semantico E/W con costruzione, snap
 // e pannello proprietà ispirato a Grid_DatiCad/Grid_pareti del desktop.
@@ -656,6 +664,102 @@ function disposeObject(root) {
   root.clear();
 }
 
+function disposeNorth3DMarker() {
+  north3DGroup.traverse((obj) => {
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) {
+      const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+      materials.forEach((material) => {
+        if (material.map) material.map.dispose();
+        material.dispose();
+      });
+    }
+  });
+  north3DGroup.clear();
+}
+
+function createNorth3DLabel(text, worldScale) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 4;
+  ctx.fillRect(4, 4, 248, 120);
+  ctx.strokeRect(4, 4, 248, 120);
+  ctx.fillStyle = '#111';
+  ctx.font = 'bold 52px Segoe UI, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 128, 64);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false
+  });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(worldScale * 1.55, worldScale * 0.78, 1);
+  sprite.renderOrder = 50;
+  return sprite;
+}
+
+function updateNorth3DMarker() {
+  disposeNorth3DMarker();
+
+  const box = new THREE.Box3().setFromObject(modelGroup);
+  if (box.isEmpty()) return;
+
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const modelSize = Math.max(size.x, size.z, 1);
+  const markerLength = Math.max(modelSize * 0.18, 1.2);
+  const origin = new THREE.Vector3(
+    box.max.x + modelSize * 0.05,
+    box.min.y + 0.06,
+    box.max.z + modelSize * 0.05
+  );
+
+  if (northOrientationDeg === null) {
+    const label = createNorth3DLabel('N ?', Math.max(modelSize * 0.12, 0.9));
+    label.position.copy(origin).add(new THREE.Vector3(0, modelSize * 0.08, 0));
+    north3DGroup.add(label);
+    return;
+  }
+
+  // 0° = alto della pianta. SVG Y cresce verso il basso; nel 3D tale verso
+  // corrisponde a +Z. Gli angoli positivi sono orari: 90° -> +X.
+  const radians = THREE.MathUtils.degToRad(northOrientationDeg);
+  const direction = new THREE.Vector3(
+    Math.sin(radians),
+    0,
+    Math.cos(radians)
+  ).normalize();
+
+  const arrow = new THREE.ArrowHelper(
+    direction,
+    origin,
+    markerLength,
+    0xc62828,
+    markerLength * 0.28,
+    markerLength * 0.16
+  );
+  north3DGroup.add(arrow);
+
+  const label = createNorth3DLabel(
+    `N ${Math.round(northOrientationDeg)}°`,
+    Math.max(modelSize * 0.10, 0.8)
+  );
+  label.position.copy(origin)
+    .add(direction.clone().multiplyScalar(markerLength * 1.18))
+    .add(new THREE.Vector3(0, modelSize * 0.06, 0));
+  north3DGroup.add(label);
+}
+
 function fromTermodelPoint(vertex) {
   // Termodel/Helix usa Z-up. Three.js usa Y-up.
   return [vertex[0], vertex[2], -vertex[1]];
@@ -912,10 +1016,11 @@ async function createStructuredProjectFromSvg(svgText) {
   }
 
   const emptyProjectText = extractProjectTextFromServerResponse(rawResponse);
+  const projectSvgText = ensureNorthSymbolInSvgText(svgText);
   const structuredProjectText = replaceProjectTextSection(
     emptyProjectText,
     'geometry/project.svg',
-    svgText
+    projectSvgText
   );
 
   const project = await loadTermodelProjectText(structuredProjectText);
@@ -944,6 +1049,7 @@ function renderModelData(data, options = {}) {
   });
 
   fitView();
+  updateNorth3DMarker();
   edgeGroup.visible = true;
   applyFilters();
   setReturnProjectState(currentModelMode === 'ai');
@@ -974,6 +1080,8 @@ async function loadModel() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
+    northOrientationDeg = null;
+    cadUpdateNorthControls();
     renderModelData(data, {
       mode: 'project',
       label: 'PROGETTO ORIGINALE'
@@ -1200,6 +1308,8 @@ async function startBlankProjectFromCad() {
     lastGeneratedPlan = null;
     lastAiPreviewData = null;
     cadSetWorkingSvg(svg);
+    validatedSvg = cadSerializeWorkingSvg();
+    rasterSvgText.value = validatedSvg;
 
     setStructuredProjectState(true);
     setMainAiStatus(`✓ Progetto vuoto creato: ${project.projectName} · archivi e CAD attivi`);
@@ -1741,6 +1851,247 @@ function downloadArchitecturalDxf() {
 
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const NORTH_SYMBOL_ID = 'termodel-north';
+const NORTH_ORIENTATION_ATTR = 'data-termodel-orientamento';
+
+function normalizeNorthAngle(value) {
+  if (value === null || value === undefined || value === '' || value === '?')
+    return null;
+  const number = Number(value);
+  if (!Number.isFinite(number)) return null;
+  return ((number % 360) + 360) % 360;
+}
+
+function northSvgViewBox(doc) {
+  const root = doc?.documentElement;
+  const raw = String(root?.getAttribute('viewBox') || '').trim();
+  const values = raw.split(/[ ,]+/).map(Number);
+  if (values.length === 4 && values.every(Number.isFinite))
+    return values;
+
+  const width = Number(root?.getAttribute('width')) || 1200;
+  const height = Number(root?.getAttribute('height')) || 800;
+  return [0, 0, width, height];
+}
+
+function northSvgElement(doc, name, attributes = {}) {
+  const node = doc.createElementNS(SVG_NS, name);
+  Object.entries(attributes).forEach(([key, value]) => {
+    if (value !== null && value !== undefined)
+      node.setAttribute(key, String(value));
+  });
+  return node;
+}
+
+function readNorthOrientationFromSvg(doc) {
+  const group = doc?.getElementById?.(NORTH_SYMBOL_ID);
+  if (!group) return null;
+  return normalizeNorthAngle(group.getAttribute(NORTH_ORIENTATION_ATTR));
+}
+
+function ensureNorthSymbolInSvg(doc, angle = readNorthOrientationFromSvg(doc)) {
+  const root = doc?.documentElement;
+  if (!root) return null;
+
+  let group = doc.getElementById(NORTH_SYMBOL_ID);
+  if (!group) {
+    group = northSvgElement(doc, 'g', { id: NORTH_SYMBOL_ID });
+    root.appendChild(group);
+  } else if (group.parentElement !== root) {
+    root.appendChild(group);
+  }
+
+  const normalized = normalizeNorthAngle(angle);
+  group.setAttribute('data-termodel-accessorio', 'NORD');
+  group.setAttribute(
+    NORTH_ORIENTATION_ATTR,
+    normalized === null ? '?' : String(Math.round(normalized * 100) / 100)
+  );
+  group.setAttribute('pointer-events', 'none');
+
+  while (group.firstChild) group.removeChild(group.firstChild);
+
+  const [minX, minY, width, height] = northSvgViewBox(doc);
+  const radius = Math.min(Math.max(Math.min(width, height) * 0.045, 28), 70);
+  const x = minX + width - radius * 1.45;
+  const y = minY + radius * 1.45;
+  group.setAttribute('transform', `translate(${x} ${y})`);
+
+  group.appendChild(northSvgElement(doc, 'circle', {
+    cx: 0, cy: 0, r: radius,
+    fill: '#ffffff', 'fill-opacity': 0.88,
+    stroke: '#333333', 'stroke-width': Math.max(1.5, radius * 0.035)
+  }));
+
+  if (normalized === null) {
+    const text = northSvgElement(doc, 'text', {
+      x: 0, y: radius * 0.16,
+      'text-anchor': 'middle',
+      'font-family': 'Segoe UI, Arial, sans-serif',
+      'font-size': radius * 0.55,
+      'font-weight': 700,
+      fill: '#a11616'
+    });
+    text.textContent = 'N ?';
+    group.appendChild(text);
+    return group;
+  }
+
+  const arrow = northSvgElement(doc, 'g', {
+    transform: `rotate(${normalized})`
+  });
+  arrow.appendChild(northSvgElement(doc, 'line', {
+    x1: 0, y1: radius * 0.25,
+    x2: 0, y2: -radius * 0.70,
+    stroke: '#c62828',
+    'stroke-width': Math.max(2, radius * 0.06),
+    'stroke-linecap': 'round'
+  }));
+  arrow.appendChild(northSvgElement(doc, 'polygon', {
+    points: `0,${-radius * 0.82} ${-radius * 0.13},${-radius * 0.55} ${radius * 0.13},${-radius * 0.55}`,
+    fill: '#c62828'
+  }));
+  group.appendChild(arrow);
+
+  const n = northSvgElement(doc, 'text', {
+    x: 0, y: radius * 0.48,
+    'text-anchor': 'middle',
+    'font-family': 'Segoe UI, Arial, sans-serif',
+    'font-size': radius * 0.34,
+    'font-weight': 700,
+    fill: '#111111'
+  });
+  n.textContent = 'N';
+  group.appendChild(n);
+  return group;
+}
+
+function ensureNorthSymbolInSvgText(svgText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(String(svgText ?? ''), 'image/svg+xml');
+  if (doc.querySelector('parsererror'))
+    throw new Error('SVG non valido durante la normalizzazione del simbolo Nord.');
+  ensureNorthSymbolInSvg(doc);
+  return new XMLSerializer().serializeToString(doc.documentElement);
+}
+
+function cadUpdateNorthControls() {
+  const defined = northOrientationDeg !== null;
+  const value = defined ? Math.round(northOrientationDeg) : 0;
+
+  if (cadNorthDefined) cadNorthDefined.checked = defined;
+  if (cadNorthRange) {
+    cadNorthRange.disabled = !defined;
+    cadNorthRange.value = String(value);
+  }
+  if (cadNorthAngle) {
+    cadNorthAngle.disabled = !defined;
+    cadNorthAngle.value = defined ? String(value) : '';
+  }
+  if (cadNorthNeedle) {
+    cadNorthNeedle.hidden = !defined;
+    cadNorthNeedle.style.transform = `rotate(${value}deg)`;
+  }
+  if (cadNorthUnknown) cadNorthUnknown.hidden = defined;
+}
+
+function cadSyncNorthFromWorkingDoc() {
+  northOrientationDeg = readNorthOrientationFromSvg(cadWorkingDoc);
+  ensureNorthSymbolInSvg(cadWorkingDoc, northOrientationDeg);
+  cadUpdateNorthControls();
+  updateNorth3DMarker();
+}
+
+function cadSetNorthOrientation(value) {
+  northOrientationDeg = normalizeNorthAngle(value);
+
+  if (cadWorkingDoc) {
+    ensureNorthSymbolInSvg(cadWorkingDoc, northOrientationDeg);
+    validatedSvg = cadSerializeWorkingSvg();
+    if (rasterSvgText) rasterSvgText.value = validatedSvg;
+  }
+
+  cadUpdateNorthControls();
+  updateNorth3DMarker();
+
+  if (cadWorkingDoc && cadPage?.classList.contains('active'))
+    renderCadComparison();
+
+  cadUpdateControls();
+  cadSetStatus(
+    northOrientationDeg === null
+      ? 'Nord non definito · nel 3D viene mostrato N ?'
+      : `Nord ${Math.round(northOrientationDeg)}° · 0° alto pianta · positivo orario`,
+    cadWorkingDoc && cadIsDirty() ? 'dirty' : ''
+  );
+}
+
+function cadRenderNorthOverlay(svg, viewBoxValues) {
+  if (!Array.isArray(viewBoxValues) || viewBoxValues.length !== 4) return;
+  const [minX, minY, width, height] = viewBoxValues;
+  if (![minX, minY, width, height].every(Number.isFinite)) return;
+
+  const radius = Math.min(Math.max(Math.min(width, height) * 0.045, 28), 70);
+  const x = minX + width - radius * 1.45;
+  const y = minY + radius * 1.45;
+
+  const group = svgNode('g', {
+    id: 'cadNorthOverlay',
+    transform: `translate(${x} ${y})`,
+    'pointer-events': 'none'
+  });
+  group.appendChild(svgNode('circle', {
+    cx: 0, cy: 0, r: radius,
+    fill: '#ffffff', 'fill-opacity': 0.94,
+    stroke: '#333333', 'stroke-width': Math.max(1.5, radius * 0.035),
+    'vector-effect': 'non-scaling-stroke'
+  }));
+
+  if (northOrientationDeg === null) {
+    const text = svgNode('text', {
+      x: 0, y: radius * 0.16,
+      fill: '#a11616',
+      'text-anchor': 'middle',
+      'font-family': 'Segoe UI, Arial, sans-serif',
+      'font-size': radius * 0.55,
+      'font-weight': 700
+    });
+    text.textContent = 'N ?';
+    group.appendChild(text);
+  } else {
+    const arrow = svgNode('g', {
+      transform: `rotate(${northOrientationDeg})`
+    });
+    arrow.appendChild(svgNode('line', {
+      x1: 0, y1: radius * 0.25,
+      x2: 0, y2: -radius * 0.70,
+      stroke: '#c62828',
+      'stroke-width': Math.max(2, radius * 0.06),
+      'stroke-linecap': 'round',
+      'vector-effect': 'non-scaling-stroke'
+    }));
+    arrow.appendChild(svgNode('polygon', {
+      points: `0,${-radius * 0.82} ${-radius * 0.13},${-radius * 0.55} ${radius * 0.13},${-radius * 0.55}`,
+      fill: '#c62828'
+    }));
+    group.appendChild(arrow);
+
+    const n = svgNode('text', {
+      x: 0, y: radius * 0.48,
+      fill: '#111111',
+      'text-anchor': 'middle',
+      'font-family': 'Segoe UI, Arial, sans-serif',
+      'font-size': radius * 0.34,
+      'font-weight': 700
+    });
+    n.textContent = 'N';
+    group.appendChild(n);
+  }
+
+  svg.appendChild(group);
+}
+
+
 
 function svgNode(name, attributes = {}) {
   const node = document.createElementNS(SVG_NS, name);
@@ -2310,6 +2661,7 @@ function cadSetWorkingSvg(svgText) {
   cadCleanPlanByPlane = new Map();
   cadGeneratedPlanByPlane = new Map();
 
+  cadSyncNorthFromWorkingDoc();
   const normalized = cadNormalizePlaneAssignments();
   const current = cadCurrentPlane();
   if (lastCleanPlanSvg) cadCleanPlanByPlane.set(current, lastCleanPlanSvg);
@@ -2901,6 +3253,7 @@ function renderCadComparison() {
   }
 
   svg.appendChild(inputLayer);
+  cadRenderNorthOverlay(svg, vb);
   cadCanvas.appendChild(svg);
 
   cadInstallPointerEditing(svg);
@@ -2925,6 +3278,7 @@ function cadUndoEdit() {
   if (!cadUndoStack.length || !cadWorkingDoc) return;
   cadRedoStack.push(cadSerializeWorkingSvg());
   cadWorkingDoc = cadParseSvg(cadUndoStack.pop());
+  cadSyncNorthFromWorkingDoc();
   if (!cadFindSourceLine(cadSelectedLineId)) cadSelectedLineId = '';
   renderCadComparison();
 }
@@ -2933,6 +3287,7 @@ function cadRedoEdit() {
   if (!cadRedoStack.length || !cadWorkingDoc) return;
   cadUndoStack.push(cadSerializeWorkingSvg());
   cadWorkingDoc = cadParseSvg(cadRedoStack.pop());
+  cadSyncNorthFromWorkingDoc();
   if (!cadFindSourceLine(cadSelectedLineId)) cadSelectedLineId = '';
   renderCadComparison();
 }
@@ -3050,7 +3405,8 @@ function processSvgText(text) {
     lastCleanPlanSvg = plan.svgPulito;
     lastGeneratedPlan = plan;
     cadSetWorkingSvg(svg);
-    rasterSvgText.value = svg;
+    validatedSvg = cadSerializeWorkingSvg();
+    rasterSvgText.value = validatedSvg;
     showSvgPreview(plan.svgPulito);
     showAiPreviewModel(plan);
 
@@ -3208,6 +3564,17 @@ if (cadNewLine)
   cadNewLine.addEventListener('click', cadToggleNewLine);
 if (cadPropConfirm)
   cadPropConfirm.addEventListener('click', cadApplyProperties);
+cadNorthDefined?.addEventListener('change', () => {
+  cadSetNorthOrientation(cadNorthDefined.checked ? (cadNorthAngle?.value || 0) : null);
+});
+cadNorthRange?.addEventListener('input', () => {
+  if (cadNorthDefined?.checked)
+    cadSetNorthOrientation(cadNorthRange.value);
+});
+cadNorthAngle?.addEventListener('change', () => {
+  if (cadNorthDefined?.checked)
+    cadSetNorthOrientation(cadNorthAngle.value);
+});
 cadPropPiano?.addEventListener('change', cadCurrentPlaneChanged);
 [cadPropTipoParete, cadPropConfineParete].forEach(control => {
   control?.addEventListener('change', cadWallPropertySelectionChanged);
@@ -3263,8 +3630,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.29: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.29' })
+// v0.30: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.30' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {

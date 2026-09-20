@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.29 — import AI normalizzato sul piano corrente</title>
+  <title>Termodel Web v0.30 — simbolo Nord CAD e 3D</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -622,6 +622,98 @@
       border: 1px solid #777;
       background: #ccc;
     }
+    .cad-north-control {
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+      padding: 8px 7px;
+    }
+    .cad-north-dial {
+      position: relative;
+      width: 68px;
+      height: 68px;
+      border: 1px solid #777;
+      border-radius: 50%;
+      background:
+        linear-gradient(#888,#888) center/1px 100% no-repeat,
+        linear-gradient(90deg,#888,#888) center/100% 1px no-repeat,
+        radial-gradient(circle,#fff 0 48%,#e8e8e8 49% 100%);
+      box-shadow: inset 0 0 0 4px #f7f7f7;
+    }
+    .cad-north-dial-label {
+      position: absolute;
+      left: 50%;
+      top: 3px;
+      transform: translateX(-50%);
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .cad-north-needle {
+      position: absolute;
+      left: calc(50% - 1px);
+      top: 9px;
+      width: 2px;
+      height: 25px;
+      background: #c62828;
+      transform-origin: 50% 25px;
+      transform: rotate(0deg);
+    }
+    .cad-north-needle::before {
+      content: '';
+      position: absolute;
+      left: -5px;
+      top: -1px;
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 10px solid #c62828;
+      transform: rotate(180deg);
+    }
+    .cad-north-unknown {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      color: #a11616;
+    }
+    .cad-north-fields {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+    .cad-north-defined {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .cad-north-angle {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 64px;
+      gap: 5px;
+      align-items: center;
+    }
+    .cad-north-angle input[type="range"] {
+      width: 100%;
+      min-width: 0;
+    }
+    .cad-north-angle input[type="number"] {
+      width: 64px;
+      height: 26px;
+      border: 1px solid #999;
+      padding: 2px 4px;
+      font: inherit;
+    }
+    .cad-north-help {
+      color: #59636d;
+      line-height: 1.25;
+      font-size: 10px;
+    }
     .cad-prop-actions {
       display: flex;
       gap: 6px;
@@ -691,7 +783,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.29</div>
+      <div class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.30</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -767,6 +859,28 @@
               <div class="cad-prop-row">
                 <label for="cadPropLayer">Layer:</label>
                 <input id="cadPropLayer" type="text" readonly />
+              </div>
+            </section>
+
+            <section class="cad-properties-section">
+              <div class="cad-properties-section-title">Orientamento edificio · Nord</div>
+              <div class="cad-north-control">
+                <div class="cad-north-dial" aria-label="Bussola Nord">
+                  <span class="cad-north-dial-label">N</span>
+                  <i id="cadNorthNeedle" class="cad-north-needle" aria-hidden="true"></i>
+                  <span id="cadNorthUnknown" class="cad-north-unknown">?</span>
+                </div>
+                <div class="cad-north-fields">
+                  <label class="cad-north-defined">
+                    <input id="cadNorthDefined" type="checkbox" />
+                    Orientamento definito
+                  </label>
+                  <div class="cad-north-angle">
+                    <input id="cadNorthRange" type="range" min="0" max="359" step="1" value="0" disabled />
+                    <input id="cadNorthAngle" type="number" min="0" max="359" step="1" placeholder="?" disabled aria-label="Angolo Nord in gradi" />
+                  </div>
+                  <div class="cad-north-help">0° = alto della pianta · positivo in senso orario. Il Nord è unico per tutto il progetto.</div>
+                </div>
               </div>
             </section>
 
@@ -1028,6 +1142,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.29"></script>
+  <script type="module" src="./app.js?v=0.30"></script>
 </body>
 </html>
