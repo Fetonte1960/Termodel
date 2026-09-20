@@ -9,7 +9,7 @@ import {
   openArchivioWeb,
   getArchivioWebRecords,
   getArchivioWebSchema
-} from './archivio-web.js?v=0.41';
+} from './archivio-web.js?v=0.42';
 
 const MODEL_URL = './TermodelWebModel.json';
 const WEB_SERVICE_BASE_URL = 'http://localhost:5080';
@@ -27,6 +27,7 @@ const cadShowInput = document.getElementById('cadShowInput');
 const cadReturnModel = document.getElementById('cadReturnModel');
 const cadExportArchitectural = document.getElementById('cadExportArchitectural');
 const cadSnap = document.getElementById('cadSnap');
+const cadOrtho = document.getElementById('cadOrtho');
 const cadUndo = document.getElementById('cadUndo');
 const cadRedo = document.getElementById('cadRedo');
 const cadDelete = document.getElementById('cadDelete');
@@ -3793,6 +3794,39 @@ function cadSnapPoint(point, movingLineId) {
   };
 }
 
+function cadOrthoPoint(point, start) {
+  const dx = point[0] - start[0];
+  const dy = point[1] - start[1];
+
+  // La direzione dominante decide automaticamente orizzontale/verticale.
+  return Math.abs(dx) >= Math.abs(dy)
+    ? [point[0], start[1]]
+    : [start[0], point[1]];
+}
+
+function cadNewLineTargetPoint(rawPoint) {
+  // Il primo punto continua a usare il normale Snap.
+  if (!cadNewLineState || cadOrtho?.checked !== true) {
+    const snapped = cadSnapPoint(rawPoint, '');
+    return { ...snapped, ortho: false };
+  }
+
+  const start = cadNewLineState.start;
+  const constrained = cadOrthoPoint(rawPoint, start);
+  const snapped = cadSnapPoint(constrained, '');
+
+  // Snap e Orto convivono solo se il punto agganciato rispetta davvero
+  // lo stesso asse ortogonale. In caso contrario prevale Orto.
+  if (snapped.snapped) {
+    const snappedOrtho = cadOrthoPoint(snapped.point, start);
+    if (cadPointDistance(snapped.point, snappedOrtho) <= CAD_JOIN_EPSILON) {
+      return { point: snapped.point, snapped: true, ortho: true };
+    }
+  }
+
+  return { point: constrained, snapped: false, ortho: true };
+}
+
 function cadConnectedEndpointRefs(point) {
   const refs = [];
   cadEditableSourceLines().forEach(line => {
@@ -3898,7 +3932,7 @@ function cadRenderNewLinePreview(svg, currentPoint = null, snapped = false) {
 }
 
 function cadStartOrFinishNewLine(svg, rawPoint) {
-  const snapped = cadSnapPoint(rawPoint, '');
+  const snapped = cadNewLineTargetPoint(rawPoint);
   const point = snapped.point;
 
   if (!cadNewLineState) {
@@ -3908,7 +3942,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
     };
     cadRenderNewLinePreview(svg, point, snapped.snapped);
     cadSetStatus(
-      `Nuova ${(cadNewLineType?.value || 'W').toUpperCase()} · punto iniziale${snapped.snapped ? ' · SNAP' : ''} · clicca il finale`
+      `Nuova ${(cadNewLineType?.value || 'W').toUpperCase()} · punto iniziale${snapped.snapped ? ' · SNAP' : ''}${cadOrtho?.checked ? ' · ORTO' : ''} · clicca il finale`
     );
     return;
   }
@@ -3947,7 +3981,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
 
   renderCadComparison();
   cadSetStatus(
-    `✓ ${id} creata sul piano ${cadCurrentPlane()}${snapped.snapped ? ' · finale SNAP' : ''} · premi Rigenera pianta`,
+    `✓ ${id} creata sul piano ${cadCurrentPlane()}${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · finale SNAP' : ''} · premi Rigenera pianta`,
     'dirty'
   );
 }
@@ -4229,10 +4263,10 @@ function cadInstallPointerEditing(svg) {
     if (cadMovePan(svg, event)) return;
 
     if (cadToolMode === 'line' && cadNewLineState) {
-      const snapped = cadSnapPoint(cadClientPoint(svg, event), '');
+      const snapped = cadNewLineTargetPoint(cadClientPoint(svg, event));
       cadRenderNewLinePreview(svg, snapped.point, snapped.snapped);
       cadSetStatus(
-        `Nuova ${(cadNewLineType?.value || 'W').toUpperCase()} · clicca il punto finale${snapped.snapped ? ' · SNAP' : ''}`
+        `Nuova ${(cadNewLineType?.value || 'W').toUpperCase()} · clicca il punto finale${snapped.ortho ? ' · ORTO' : ''}${snapped.snapped ? ' · SNAP' : ''}`
       );
       return;
     }
@@ -4888,8 +4922,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.41: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.41' })
+// v0.42: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.42' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
