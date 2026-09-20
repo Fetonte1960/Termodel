@@ -604,13 +604,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.33
+Termodel Web v0.34
 ```
 
-Commit frontend di riferimento per la v0.33:
+Commit frontend di riferimento per la v0.34:
 
 ```text
-5eded8708180be7b500f012d14778c2655f43c49  Enable CAD symbol insertion on current layer
+8befbac140661b5806a18f58349e182834908f18  Make CAD symbol insertion visibly activate
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -619,7 +619,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.30 è stata osservata direttamente su `https://www.termodel.it/termodel-ui-demo/` il 2026-09-20 con simbolo Nord visibile nel CAD e controllo laterale operativo. La v0.33 è su `main`; le revisioni successive non vanno considerate pubblicamente verificate finché non compaiono sul sito.
+La v0.30 è stata osservata direttamente su `https://www.termodel.it/termodel-ui-demo/` il 2026-09-20 con simbolo Nord visibile nel CAD e controllo laterale operativo. La v0.33 è stata osservata dall'utente con i pulsanti simbolo presenti, ma il comando Porta/Finestra non dava un feedback percepibile alla pressione. La v0.34 è su `main` e deve essere verificata pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -2119,9 +2119,22 @@ Restano da sviluppare nella sezione 12.7:
 - modifica e consolidamento degli attributi dopo la selezione;
 - eliminazione del simbolo selezionato.
 
+### Correzione v0.34 — feedback e attivazione comando simbolo
+
+La prova utente della v0.33 ha evidenziato che la pressione di `＋ Porta/Finestra` poteva apparire senza effetto.
+
+La v0.34 rende l'attivazione del comando indipendente dall'aggiornamento del pannello laterale e introduce feedback immediato:
+
+- il pulsante attivo cambia in `× Porta/Finestra` (analogamente per gli altri simboli);
+- il canvas passa a cursore a mirino;
+- la barra di stato indica immediatamente `clicca vicino a una parete` per FIN/PON;
+- per Allinea/Locale indica `clicca il punto di inserimento`;
+- eventuali problemi nel refresh del pannello laterale non interrompono più l'attivazione del comando;
+- `Esc` o una seconda pressione sul pulsante annullano la modalità inserimento.
+
 ### Stato
 
-**PARZIALMENTE IMPLEMENTATO IN v0.33 — INSERIMENTO ATTIVO; EDITING CONTESTUALE DA COMPLETARE.**
+**PARZIALMENTE IMPLEMENTATO IN v0.34 — INSERIMENTO ATTIVO CON FEEDBACK VISIBILE; EDITING CONTESTUALE DA COMPLETARE.**
 
 ---
 
@@ -2297,7 +2310,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.33.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.34.**
 
 Stato operativo corrente:
 
@@ -2307,7 +2320,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.33 presente su `main`;
+- v0.34 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -2317,6 +2330,7 @@ Stato operativo corrente:
 - v0.31 rifinisce la presentazione del Nord: simbolo in pianta più discreto e distanziato, `?` laterale nascosto quando definito, freccia della bussola corretta verso l'esterno;
 - v0.32 aumenta ulteriormente il margine del simbolo Nord rispetto alla geometria, spostandolo verso il bordo esterno alto-destra.
 - v0.33 attiva i pulsanti di inserimento simboli CAD `Allinea / Porta-Finestra / Ponte / Locale`, usando automaticamente Piano corrente e `Piani.LayerCad`, con FIN/PON agganciati alla parete.
+- v0.34 rende visibile e robusta l'attivazione dei comandi simbolo: pulsante in stato attivo, cursore crosshair e messaggio operativo immediato; il refresh del pannello laterale non può più annullare il feedback del comando.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -2328,7 +2342,7 @@ Priorità immediate:
 
 > 1. verificare manualmente la v0.29 pubblicata ripetendo il caso reale: `Importa da AI` con SVG monopiano privo di `data-termodel-piano` → progetto strutturato → `Edita nel Cad` → pareti e LOC visibili sul piano `Unico`; quindi provare anche un progetto con almeno due record in `Piani`;  
 > 2. verificare manualmente la v0.32: simbolo Nord in pianta sufficientemente distanziato dalla geometria → `?` laterale assente quando l'orientamento è definito → freccia della bussola rivolta verso l'esterno;  
-> 3. verificare manualmente la v0.33: inserimento Allinea / Porta-Finestra / Ponte / Locale sul piano corrente, LayerCad corretto e snap FIN/PON sulla parete; quindi completare la sezione 12.7 con selezione, trascinamento e pannello laterale contestuale dei simboli;  
+> 3. verificare manualmente la v0.34: pressione di Porta/Finestra → pulsante `× Porta/Finestra` + cursore a mirino + messaggio `clicca vicino a una parete` → clic parete → FIN inserito con Piano/LayerCad correnti; ripetere per Allinea/Ponte/Locale; quindi completare la sezione 12.7 con selezione, trascinamento e pannello laterale contestuale dei simboli;  
 > 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
 > 5. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
