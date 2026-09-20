@@ -604,13 +604,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.27
+Termodel Web v0.28
 ```
 
-Commit frontend di riferimento per la v0.27:
+Commit frontend di riferimento per la v0.28:
 
 ```text
-ca4571b1412670569b6cf2a96213a48a6659eacf  Link CAD wall editing to project archives
+255aadff3b9fe341320368f3267c1e187fb86ce0  Rebuild clean multipane CAD implementation
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -619,7 +619,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.24
 ```
 
-finché la v0.25 non viene osservata direttamente su `https://www.termodel.it/termodel-ui-demo/`.
+finché la v0.28 non viene osservata direttamente su `https://www.termodel.it/termodel-ui-demo/`.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -627,9 +627,9 @@ La v0.25 ha aggiunto il primo **avvio guidato del progetto personale**:
 
 - i pulsanti Archivio e `Edita nel Cad` non sono più disabilitati nella demo;
 - senza progetto strutturato aprono la finestra `Crea il tuo progetto Termodel`;
-- la finestra offre `Disegna da zero`, `Istruisci AI`, `Importa da AI`;
+- la finestra offre `Edita nel Cad`, `Istruisci AI`, `Importa da AI`;
 - `File → Nuovo` apre la stessa finestra;
-- `Disegna da zero` usa `POST /api/projects/new` per inizializzare progetto e archivi;
+- `Edita nel Cad` usa `POST /api/projects/new` per inizializzare progetto e archivi;
 - il frontend sostituisce `geometry/project.svg` con uno SVG vuoto valido e apre il CAD Web;
 - il CAD da zero parte con una tavola vuota e abilita `＋ Nuova linea`;
 - se l'ingresso proveniva da un archivio, dopo la creazione del progetto vuoto viene aperto l'archivio richiesto;
@@ -680,11 +680,36 @@ Per **editazione linea esistente**:
 
 - se sono presenti i metadati Termodel, vengono caricati nella toolbar;
 - se il tipo parete non è ancora esplicito, il CAD prova a riconoscerlo dal colore della linea come fa il desktop con il colore DXF;
-- modificando Tipo parete / Confine / Piano, la linea viene aggiornata e la resa grafica si riallinea a colore e tipo linea correlati;
+- modificando Tipo parete / Confine, la linea viene aggiornata e la resa grafica si riallinea a colore e tipo linea correlati; il selettore Piano è invece il selettore del **piano corrente** e non trasferisce implicitamente la linea tra piani;
 - i pulsanti `Arc` aprono gli archivi Piani, Pareti e Confini;
 - modifiche agli archivi notificano il CAD, che ricarica combo e resa grafica.
 
 Il bridge `ArchivioWeb → CAD` è attualmente di lettura dei record in memoria; la persistenza unificata del contenitore progetto resta da completare.
+
+La v0.28 rende operativo il primo **CAD 2D multipiano** sul file progetto unico:
+
+- `Piano corrente` deriva da `Piani.Nome`;
+- `Layer` resta readonly e deriva da `Piani.LayerCad`;
+- il canvas mostra e rende editabili solo le entità del piano corrente;
+- le nuove linee ereditano automaticamente `data-termodel-piano="<Piani.Nome>"`;
+- cambiare Piano rifiltra la vista senza spostare le entità tra piani;
+- gli ID E/W restano univoci nell'intero `geometry/project.svg`, non soltanto nel piano visibile;
+- le entità legacy prive di `data-termodel-piano` vengono assegnate in memoria al piano corrente/default all'apertura del CAD, per mantenere la compatibilità con i progetti monopiano precedenti;
+- i simboli testuali già presenti vengono filtrati per piano quando possiedono/ereditano `data-termodel-piano`, pur non essendo ancora editabili;
+- `GeneraPianta.js` riceve una copia filtrata del solo piano corrente, mentre `validatedSvg` / `geometry/project.svg` continuano a conservare tutte le entità di tutti i piani;
+- la pianta architettonica pulita viene mantenuta separatamente per piano quando viene rigenerata.
+
+Questa è una separazione di **vista**, non di progetto:
+
+```text
+un solo progetto / un solo geometry/project.svg
+        ↓
+più piani
+        ↓
+CAD 2D = filtro del piano corrente
+```
+
+La generazione del **modello 3D completo multipiano** non è ancora implementata in questa revisione: il GeneraPianta/preview browser continua a lavorare sul piano corrente; il modello completo resterà una funzione da portare progressivamente nel Core/WebService.
 
 La v0.24 completa il primo collegamento automatico del flusso AI → progetto strutturato:
 
@@ -1579,24 +1604,28 @@ Quando viene selezionata una entità già presente:
 
 L'eventuale trasferimento esplicito di una entità da un piano a un altro deve essere trattato come una modifica semantica del suo `data-termodel-piano`, non come semplice cambio grafico di colore/layer.
 
-### Stato reale della v0.27
+### Stato reale della v0.28
 
-La v0.27 contiene già alcuni elementi coerenti con questa architettura:
+La v0.28 realizza il primo comportamento multipiano effettivo:
 
-- la toolbar `Piano` legge `Piani.Nome`;
+- la toolbar `Piano corrente` legge `Piani.Nome`;
 - `Layer` è readonly e deriva da `Piani.LayerCad`;
-- le nuove linee ricevono `data-termodel-piano`;
-- le linee esistenti possono riportare il proprio `data-termodel-piano` nella toolbar.
+- `cadEditableSourceLines()` restituisce soltanto le E/W del piano corrente;
+- il rendering del canvas filtra linee e simboli testuali sul piano corrente;
+- le nuove linee ricevono automaticamente `data-termodel-piano`;
+- il cambio Piano deseleziona l'entità corrente e rifiltra il canvas senza modificare il progetto;
+- gli ID delle nuove E/W vengono calcolati sull'intero progetto per evitare duplicati tra piani;
+- le entità di vecchi progetti monopiano prive dell'attributo Piano vengono normalizzate sul piano default all'apertura;
+- la rigenerazione architettonica usa soltanto una copia del piano corrente ma conserva intatto il documento SVG multipiano completo.
 
-Manca però ancora la parte multipiano vera e propria:
+Restano da completare:
 
-- `cadEditableSourceLines()` legge oggi tutte le linee E/W del gruppo `calpestabile`;
-- il canvas non filtra ancora le entità per piano corrente;
-- non esiste ancora un comando completo di passaggio piano che aggiorni la vista;
-- FIN/PON/LOC non sono ancora gestiti come entità multipiano editabili;
-- il formato geometrico corrente deve essere reso coerente con il fatto che il contenitore progetto rappresenta più piani.
+- editing multipiano reale di `FIN/PON/LOC`;
+- eventuale comando esplicito per trasferire una entità da un piano a un altro;
+- persistenza unificata CAD + archivi nel contenitore `TERMODEL-PROJECT-TEXT-V1`;
+- generazione/aggiornamento del modello 3D completo multipiano tramite Core/WebService.
 
-### Prossimo comportamento da implementare
+### Comportamento multipiano di riferimento
 
 ```text
 apertura CAD
@@ -1607,7 +1636,7 @@ scegli / ripristina piano corrente
     ↓
 mostra solo entità di quel piano
     ↓
-Nuova linea / FIN / PON / LOC
+Nuova linea
     ↓
 assegna automaticamente data-termodel-piano
     ↓
@@ -1617,6 +1646,8 @@ canvas rifiltrato
     ↓
 stesso file progetto unico
 ```
+
+Questo comportamento è implementato per le pareti E/W nella v0.28 e deve essere esteso senza cambiare filosofia a `FIN/PON/LOC`.
 
 Questo principio multipiano ha precedenza sulle implementazioni CAD che assumono implicitamente un solo piano.
 
@@ -1794,7 +1825,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.27.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.28.**
 
 Stato operativo corrente:
 
@@ -1804,10 +1835,11 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - controllo `GET /api/model/capabilities` collegato al WebService locale;
 - `POST /api/projects/new` collegata sperimentalmente con richiesta minima `{}`, in attesa della documentazione formale del DTO;
-- v0.27 presente su `main`;
+- v0.28 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 rende `Edita nel Cad` sempre attivo e diretto: se manca il progetto, lo inizializza via WebService e apre subito il CAD 2D;
-- v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly.
+- v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
+- v0.28 rende il CAD 2D multipiano per le pareti E/W: piano corrente, filtro canvas, nuove entità assegnate al piano corrente, ID globali e GeneraPianta limitato al piano visibile mantenendo completo lo SVG di progetto.
 
 Il flusso AI → progetto strutturato v0.24 è stato verificato manualmente dall'utente: dopo l'importazione AI gli archivi risultano attivi e compilati dal progetto server.
 
@@ -1817,9 +1849,9 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. verificare manualmente la v0.27 pubblicata: `Edita nel Cad` → toolbar laterale popolata dagli archivi → Nuova linea con colore/tipo linea corretti → selezione/modifica linea esistente coerente con gli archivi;  
-> 2. rendere il CAD realmente **multipiano** secondo la sezione 12.5: stato Piano corrente, filtro del canvas per `data-termodel-piano`, nuove entità assegnate automaticamente al piano corrente e passaggio tra piani senza cambiare progetto;  
-> 3. mantenere il CAD Web conforme a `SorgentiTermodel/Library/MainWindow.xaml` (`Grid_DatiCad` / `Grid_pareti`) e proseguire con il parser/editor dei simboli `FIN/PON/LOC`, anch'essi multipiano, e il collegamento alle tipologie degli archivi;  
-> 4. unificare progressivamente stato CAD e stato archivi nel contenitore progetto.
+> 1. verificare manualmente la v0.28 pubblicata con un progetto contenente almeno due record in `Piani`: cambio Piano → canvas rifiltrato → nuova E/W sul piano corrente → ritorno al primo piano senza perdita delle entità;  
+> 2. estendere la stessa semantica multipiano ai simboli `FIN/PON/LOC`, insieme al parser/editor e al collegamento agli archivi;  
+> 3. unificare progressivamente stato CAD e stato archivi nel contenitore progetto;  
+> 4. successivamente portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano.
 
 Prima di iniziare questo refactoring, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `eadb72430a1f585bf542f50403cbb494c869dcc4`.
