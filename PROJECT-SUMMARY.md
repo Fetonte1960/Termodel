@@ -689,10 +689,18 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.79
+Termodel Web v0.80
 ```
 
-Commit frontend di riferimento per la v0.79:
+Commit frontend di riferimento per la v0.80:
+
+```text
+21e7ee7ef399384b7355432273035eb102bff4cb  Add Android explore palette and on-demand help
+7799a4be4689204ba0520f620562eb4266d31340  Publish Termodel Web v0.80 Android explore UI
+cf5206d1776129f693d61ecda9aeae437d654d59  Enable contextual help only after Android help request
+```
+
+Base mobile v0.79:
 
 ```text
 48daf5fbf5f347c05e41e4127c85ec08789909a6  Complete mobile CAD data sheet behavior
@@ -794,13 +802,33 @@ Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
 
+La v0.80 introduce una modalità di navigazione specifica **solo Android** nel
+viewer 3D:
+
+- l'help non si apre più automaticamente all'avvio o toccando menu/tab/comandi;
+- sopra il disegno 3D compare un piccolo box con `Esplora` e `?`;
+- `?` riattiva il sistema help contestuale storico e apre `Benvenuto`;
+- finché il pannello help resta aperto, menu/tab/comandi continuano a mostrare
+  i relativi contenuti help come prima;
+- chiudendo il pannello con `×`, Android torna alla modalità senza help
+  automatico;
+- `Esplora` apre un elenco di funzioni realmente esplorabili;
+- la prima voce è `Disegno unifilare`, che richiama direttamente
+  `activateCadPage()`, quindi segue lo stesso flusso di `Edita nel Cad`;
+- la struttura della palette è predisposta per aggiungere altre funzioni
+  esplorabili in seguito;
+- desktop e altri sistemi mantengono il comportamento help precedente.
+
+La v0.80 non modifica Service/Core né contratti Frontend↔Service.
+Sintassi `app.js` verificata; resta da eseguire il test manuale su Android.
+
 Ultima versione pubblica verificata manualmente dall'utente:
 
 ```text
 Termodel Web v0.77 — caricamento UI su Chrome Android, 21 settembre 2026
 ```
 
-La v0.79 responsive è pubblicata ma non ancora verificata manualmente.
+La v0.80 Android Esplora è pubblicata ma non ancora verificata manualmente.
 
 La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.63 sono su `main`; v0.57-v0.63 devono essere verificate pubblicamente.
 
