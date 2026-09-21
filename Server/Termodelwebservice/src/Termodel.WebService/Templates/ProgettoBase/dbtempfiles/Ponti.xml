@@ -1,0 +1,165 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfArrayOfKeyValueOfstringanyType xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Copertura / Solaio di copertura</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Copertura / Solaio di copertura</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TrasmLin</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0.4</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Categoria</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">8</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Solaio di interpiano</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Solaio di interpiano</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TrasmLin</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0.7</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Categoria</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">8</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Pavimento / Solaio controterra</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Pavimento / Solaio controterra</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TrasmLin</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0.5</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Categoria</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">8</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Balcone</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Balcone</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TrasmLin</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0.7</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Categoria</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">1</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Pilastro</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Pilastro</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TrasmLin</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0.9</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Categoria</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">6</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Angolo sporgente senza pilastro</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Angolo sporgente senza pilastro</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TrasmLin</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">-0.15</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Categoria</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">2</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Angolo rientrante senza pilastro</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Angolo rientrante senza pilastro</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TrasmLin</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0.05</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Categoria</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">2</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Parete interna</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Parete interna</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TrasmLin</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Categoria</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">4</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Finestra / Porta</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Finestra / Porta</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TrasmLin</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0.15</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Categoria</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">7</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+</ArrayOfArrayOfKeyValueOfstringanyType>

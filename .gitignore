@@ -6,3 +6,9 @@ workspace/**/packages/
 Locale/
 *.user
 *.suo
+Server/**/bin/
+Server/**/obj/
+Server/**/.vs/
+Server/**/*.user
+Server/**/*.suo
+Server/**/*.tmp

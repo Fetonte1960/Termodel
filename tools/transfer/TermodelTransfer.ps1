@@ -1,7 +1,8 @@
 param(
     [ValidateSet('status','export','import','pull','push','receive','publish')]
     [string]$Action = 'status',
-    [string]$Message = ''
+    [string]$Message = '',
+    [string]$Name = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -18,7 +19,12 @@ $ProjectRoot = (Resolve-Path (Join-Path $RepoRoot $config.projectRoot)).Path
 $WorkspaceRoot = Join-Path $RepoRoot $config.workspaceRoot
 $BackupRoot = Join-Path $RepoRoot '_backups'
 $ExcludedDirectories = @($config.excludeDirectories)
+$ExcludedFiles = @($config.excludeFiles)
 $Mappings = @($config.mappings | Where-Object { $_.enabled -eq $true })
+
+if (-not [string]::IsNullOrWhiteSpace($Name)) {
+    $Mappings = @($Mappings | Where-Object { $_.name -eq $Name })
+}
 
 if ($Mappings.Count -eq 0) {
     throw 'Nessun mapping abilitato in transfer-map.json'
@@ -35,6 +41,13 @@ function Ensure-Directory([string]$path) {
     if (-not (Test-Path $path)) {
         New-Item -ItemType Directory -Path $path -Force | Out-Null
     }
+}
+
+function Get-MappingTarget($mapping) {
+    # Modificato da Codex per realizzare: consentire moduli versionati direttamente
+    # nel repository, mantenendo compatibilità con il precedente workspace.
+    $base = if ($mapping.targetBase -eq 'repository') { $RepoRoot } else { $WorkspaceRoot }
+    return Join-Path $base $mapping.target
 }
 
 function Invoke-RobocopySafe {
@@ -68,16 +81,22 @@ function Invoke-RobocopySafe {
         $args += $ExcludedDirectories
     }
 
+    if ($ExcludedFiles.Count -gt 0) {
+        $args += '/XF'
+        $args += $ExcludedFiles
+    }
+
     & robocopy @args | Out-Null
     $code = $LASTEXITCODE
     if ($code -ge 8) {
-        throw "Robocopy terminato con errore $code: $Source -> $Destination"
+        # Modificato da Codex per realizzare: delimitare la variabile prima dei due punti.
+        throw "Robocopy terminato con errore ${code}: $Source -> $Destination"
     }
 }
 
 function Copy-MappingExport($mapping) {
     $source = Join-Path $ProjectRoot $mapping.source
-    $target = Join-Path $WorkspaceRoot $mapping.target
+    $target = Get-MappingTarget $mapping
 
     if (-not (Test-Path $source)) {
         throw "Sorgente non trovata per '$($mapping.name)': $source"
@@ -114,7 +133,7 @@ function Backup-Destination($mapping, [string]$destination) {
 }
 
 function Copy-MappingImport($mapping) {
-    $source = Join-Path $WorkspaceRoot $mapping.target
+    $source = Get-MappingTarget $mapping
     $target = Join-Path $ProjectRoot $mapping.source
 
     if (-not (Test-Path $source)) {
@@ -143,6 +162,9 @@ function Test-Excluded([string]$relativePath) {
     foreach ($p in $parts) {
         if ($ExcludedDirectories -contains $p) { return $true }
     }
+    foreach ($pattern in $ExcludedFiles) {
+        if ((Split-Path $relativePath -Leaf) -like $pattern) { return $true }
+    }
     return $false
 }
 
@@ -158,7 +180,8 @@ function Get-HashTable([string]$path) {
 
     $base = (Resolve-Path $path).Path
     Get-ChildItem $base -Recurse -File | ForEach-Object {
-        $rel = $_.FullName.Substring($base.Length).TrimStart('\\','/')
+        # Modificato da Codex per realizzare: passare caratteri singoli a TrimStart.
+        $rel = $_.FullName.Substring($base.Length).TrimStart('\','/')
         if (-not (Test-Excluded $rel)) {
             $table[$rel] = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
         }
@@ -172,7 +195,7 @@ function Show-Status {
 
     foreach ($mapping in $Mappings) {
         $local = Join-Path $ProjectRoot $mapping.source
-        $git = Join-Path $WorkspaceRoot $mapping.target
+        $git = Get-MappingTarget $mapping
 
         Write-Host "[$($mapping.name)]" -ForegroundColor Yellow
         $a = Get-HashTable $local
@@ -238,7 +261,7 @@ function Git-Push {
     Write-Title 'GIT COMMIT + PUSH'
     Assert-Git
 
-    & git -C $RepoRoot add -- 'workspace' 'transfer-map.json' 'tools/transfer' '.gitignore'
+    & git -C $RepoRoot add -- 'workspace' 'Server' 'transfer-map.json' 'tools/transfer' '.gitignore'
     if ($LASTEXITCODE -ne 0) { throw 'git add fallito.' }
 
     & git -C $RepoRoot diff --cached --quiet

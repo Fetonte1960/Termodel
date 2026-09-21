@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfArrayOfKeyValueOfstringanyType xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Attivo</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Attivo</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Nome</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Unico</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Tipo</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Calpestabile</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>NomeFile</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">DisegnoInput</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>LayerCad</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Unico</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Quota</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>AltezzaNetta</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">2.8</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>AltezzaLorda</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">3.4</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>PianiUguali</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">1</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TipoFinestre</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Nessuno</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+</ArrayOfArrayOfKeyValueOfstringanyType>

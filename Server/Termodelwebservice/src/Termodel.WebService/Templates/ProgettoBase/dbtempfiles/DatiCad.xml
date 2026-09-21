@@ -1,0 +1,173 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfArrayOfKeyValueOfstringanyType xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>LordoNetto</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Lordo</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Piano</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Unico</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Layer</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Unico</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TipoParete</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Parete esterna isolata</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ConfineParete</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Automatico</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Colore</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">1 - Rosso</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TipoLinea</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Continuous</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TipoFinestra</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Serramento in metallo  con vetrocamera alluminio taglio termico Telaio: 6 cm</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>AltezzaFinestra</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">1.4</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>LarghezzaFinestra</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">1.16</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>SottoFinestra</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">1</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TipoPonte</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Finestra / Porta</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>OrientamentoPonte</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Orizzontale</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>FonteLunghezzaPonte</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Altezza parete o lunghezza parete</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>LungPonte</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string"></Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescrizioneLocale</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Appartamento</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Zona</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Zona climatizzata</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>FonteAltezza</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Da piano</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>AltezzaLorda</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">3.3</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>AltezzaNetta</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">2.9</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>FonteQuotaPavimento</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Da piano</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>QuotaPavimento</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string"></Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TipoSoffitto</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Solaio interpiano</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ConfineSoffitto</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Automatico</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TipoPavimento</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Solaio interpiano</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ConfinePavimento</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Automatico</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ConfineSoffittoAutomatico</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Esterno</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ConfinePavimentoAutomatico</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Terreno</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ProgrammaCad</Key>
+      <Value i:nil="true" />
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>VersioneCad</Key>
+      <Value i:nil="true" />
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ColoreFalda</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">1 - Rosso</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ColoreCopertura</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Solaio piano</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>QuotaColmo</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">3.5</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>QuotaGronda</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">3</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>AnteFinestra</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">2</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>SopraLuce</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>QuotaSced</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>PareteSced</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Colmo semplice</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>QuotaShed</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>PareteShed</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Dal piano sottostante</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>LatoParteBassaShed</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Colmo semplice</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Porta</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Struttura trasparente</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+</ArrayOfArrayOfKeyValueOfstringanyType>

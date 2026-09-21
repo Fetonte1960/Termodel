@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfArrayOfKeyValueOfstringanyType xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Codice</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">2c4314b7-44a0-4fc1-bf1c-25e873dc7bb7</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Vetrata infisso: Serramento in metallo  con vetrocamera alluminio taglio termico Telaio: 6 cm</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Serramento in metallo  con vetrocamera alluminio taglio termico Telaio: 6 cm</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>PontiAutomatici</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Finestra</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>LarghezzaProfiloTelaio</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0.08</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Finestrata</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Finestra semplice</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Codice</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">2a8c4ef7-98e6-4c19-aced-93aab40ce11d</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Vetrata infisso: Serramento in metallo vetrosemplice in alluminio senza taglio termico Telaio: 6 cm</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DescBreve</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Serramento in metallo vetrosemplice in alluminio senza taglio termico Telaio: 6 cm</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>PontiAutomatici</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Finestra</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>LarghezzaProfiloTelaio</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">0.08</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+</ArrayOfArrayOfKeyValueOfstringanyType>

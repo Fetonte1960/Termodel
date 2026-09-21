@@ -53,3 +53,20 @@ Esempio:
 `source` e relativo alla radice dei sorgenti Termodel; `target` e relativo a `GitHub\workspace`.
 
 Per affidare un nuovo modulo a GPT basta aggiungere un mapping. Non e necessario mettere l'intera soluzione su GitHub.
+
+## Termodel WebService
+
+Il mapping `TermodelWebService` usa direttamente la destinazione versionata
+`Server/Termodelwebservice`, invece del precedente `workspace`. Per limitare le
+operazioni a questo modulo usare:
+
+```powershell
+tools\transfer\TermodelTransfer.ps1 -Action status -Name TermodelWebService
+tools\transfer\TermodelTransfer.ps1 -Action export -Name TermodelWebService
+tools\transfer\TermodelTransfer.ps1 -Action import -Name TermodelWebService
+```
+
+Eseguire sempre `status` prima di una copia. `export` rende la copia GitHub
+speculare al sorgente locale; `import` non cancella file locali e crea prima un
+backup sotto `_backups`. I wrapper `SERVICE_A_GITHUB.cmd` e
+`SERVICE_DA_GITHUB.cmd` mostrano le differenze e chiedono conferma.
