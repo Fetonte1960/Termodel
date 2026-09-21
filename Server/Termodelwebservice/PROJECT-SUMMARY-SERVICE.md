@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-21 — Invarianza Polig3D e TermodelWebModel v3 completo
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - riportare `Polig3D` del Core verso il comportamento e la struttura del
@@ -114,7 +114,35 @@ Criteri di completamento:
 - aggiornamento della stessa voce a `ESEGUITO` solo a lavoro concluso.
 
 Risultato:
-- in corso.
+- `CopiedFromTermodel/Model/Polig3D.cs` è ora una copia **byte-per-byte
+  identica** a `SorgentiTermodel/Library/leggidxf/Polig3D.cs`; entrambi hanno
+  Git blob SHA `d7d835a8a39febb3c3b26bcb88a8cc5cebb19411`;
+- il Core usa `Xbim.Essentials 6.1.605` come struttura IFC in memoria richiesta
+  dal codice Desktop; non viene prodotto né richiesto un file IFC come artifact;
+- WPF/MainWindow/filtri/DrawBim sono sostituiti da facciate headless limitate
+  alla superficie richiesta da `Polig3D`;
+- `Polig3D.ElementiAssociati`, `Separatore`, `StessaZona`, `Falda`,
+  `NomePiano` e le relazioni semantiche Desktop sono conservati e alimentano
+  il renderer headless;
+- `TermodelWebModel v3` espone campi espliciti
+  `filterMetadata/piano/confine/separatore/stessaZona/fittizia/falda`;
+- il renderer headless conserva per le primitive generate da
+  `DrawPolyEstruso` la semantica Desktop `source=ExtrudedVisual3D,
+  parte=lati` e `source=MeshGeometry3D, parte=tappi`, mantenendo
+  `numero` uguale all'indice 1-based dell'ElementoAssociato usato dal redraw
+  Desktop;
+- `Modello.Close_modello` esegue `Polig3D.TrovaConfini` e poi
+  `Polig3D.GrafRedraw(... forzaModello3D:true)`, quindi il JSON deriva dal
+  catalogo semantico dopo l'analisi confini;
+- build GitHub Actions sul commit
+  `9eb3ddfccb09d0d610e531c21495456924b2107b`: **0 errori, 154 warning**;
+- workflow esteso con smoke HTTP nel commit
+  `297d593be6b7e205e3dcb9052d8f6a13cf2878e6`: build riuscita e percorso
+  `POST /api/projects/new -> POST /api/model/3d` eseguito con successo sul
+  progetto vuoto, verificando `TermodelWebModel v3`, `Z-up` e 0 primitive;
+- confronto golden avanzato con le 546 primitive del progetto mansardato:
+  **non ancora eseguito**, perché manca ancora il corrispondente file unico SVG
+  multipiano utilizzabile dal Service.
 
 
 
@@ -355,13 +383,15 @@ non può essere aggirato dal server.
 
 ### Motore Modello3D headless
 
-Sono state selezionate e adattate con modifiche minime le classi `LeggiDxf`,
-`DXFLineCheck`, `GeneraModello`, `GeneraPianta`, `Tetti`, `Confini`, `Polig3D` e
-`Modello`. Una compatibilità `netDxf` minima viene popolata dallo SVG del file
-unico; non è un lettore DXF generale. `UtiDb` e `Database.DB` lavorano sugli
-archivi XML in memoria. WPF/Helix sono sostituiti esclusivamente nei punti UI o
-diagnostici; la geometria usa NetTopologySuite. Lo stato storico viene protetto
-da un gate seriale.
+Sono state selezionate le classi strategiche `LeggiDxf`, `DXFLineCheck`,
+`GeneraModello`, `GeneraPianta`, `Tetti`, `Confini`, `Polig3D` e
+`Modello`. `Polig3D` è ora identico byte-per-byte al sorgente Desktop; la
+compatibilità headless è ottenuta sotto la classe tramite xBIM in memoria e
+facciate WPF/MainWindow/DrawBim. Una compatibilità `netDxf` minima viene
+popolata dallo SVG del file unico; non è un lettore DXF generale. `UtiDb` e
+`Database.DB` lavorano sugli archivi XML in memoria. La geometria topologica
+continua a usare NetTopologySuite e lo stato storico resta protetto da un gate
+seriale.
 
 `POST /api/model/3d` riceve `text/plain; charset=utf-8` e restituisce direttamente
 `TermodelWebModel` v3 JSON. Non produce IFC. `GET
@@ -593,18 +623,23 @@ Implementato e verificato:
   `AggiungiZoneStandard`;
 - Virtual Project: workspace temporaneo e facciata `GestProg` per percorsi
   Desktop-like;
-- motore 3D headless senza IFC;
+- `Polig3D` Core byte-per-byte identico al riferimento Desktop;
+- xBIM Essentials usato solo come struttura IFC in memoria, senza artifact IFC;
+- facciate headless per WPF/MainWindow/filtri/DrawBim;
+- `TermodelWebModel v3` completo dei metadati avanzati dei filtri;
 - endpoint Modello3D e pianta pulita;
-- GitHub Actions per restore/build automatico;
-- build Release corrente su GitHub Actions con 0 errori e 108 warning;
-- test HTTP minimo storico sul `ProgettoVuoto` eseguito prima dell'ultimo
-  refactoring di compatibilità.
+- GitHub Actions per restore/build automatico e smoke HTTP;
+- build Release corrente verificata con 0 errori e 154 warning;
+- smoke HTTP corrente: `/health`, `POST /api/projects/new` e
+  `POST /api/model/3d` riusciti sul `ProgettoVuoto`, con v3 Z-up e 0
+  primitive.
 
 Incompleto:
 
-- riesecuzione HTTP locale del `ProgettoVuoto` dopo il nuovo strato Virtual
-  CAD/DB/Project;
-- file unico/golden test del progetto mansardato;
+- esecuzione locale Visual Studio del nuovo percorso xBIM/Polig3D (lo smoke
+  HTTP cloud è già riuscito);
+- file unico/golden test del progetto mansardato e confronto delle 546
+  primitive;
 - regression test automatici e Golden Results versionati;
 - workflow `AggiornaCalcolo`/`calculationId` e artifact per le view, concordato ma non ancora implementato;
 - API CRUD archivi, persistenza e concorrenza multiutente;
