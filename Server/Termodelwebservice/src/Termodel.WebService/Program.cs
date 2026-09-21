@@ -154,8 +154,7 @@ app.MapGet(
 
     return Results.Bytes(
         snapshot.CopyModel3DJson(),
-        contentType: "application/json; charset=utf-8",
-        statusCode: StatusCodes.Status200OK);
+        contentType: "application/json; charset=utf-8");
 });
 
 // Funzione realizzata da Codex in autonomia
