@@ -329,20 +329,24 @@ pulite nello snapshot restano fasi successive.
 
 ### Commissione frontend — copia diagnostica risposte Service
 
-Stato: **COMMISSIONATO** — 21 settembre 2026.
+Stato: **ESEGUITO** — 21 settembre 2026.
 
-Durante il collaudo del flusso `Aggiorna Modello`, il frontend deve preparare
-automaticamente negli appunti un testo diagnostico contenente le risposte
-effettivamente ricevute dal Service:
+Termodel Web v0.74 prepara automaticamente negli appunti, dopo
+`Aggiorna Modello`, un blocco diagnostico `TERMODEL-SERVICE-EXCHANGE-V1`
+contenente le risposte effettivamente ricevute dal Service:
 
-- risposta di `POST /api/calculations`;
-- `calculationId` e manifest restituiti;
-- risposta di `GET .../artifacts/model3d`;
-- in caso di errore, status HTTP e corpo/Problem Details disponibili.
+- status HTTP e corpo della risposta di `POST /api/calculations`;
+- `calculationId`, manifest e diagnostica presenti nella risposta POST;
+- URL, status HTTP e corpo di `GET .../artifacts/model3d`;
+- in caso di errore, la risposta disponibile e il messaggio client.
 
-La copia negli appunti è una funzione diagnostica del frontend e non modifica
-il contratto HTTP, lo snapshot o il contenuto degli artifact. Il fallimento
-della Clipboard API non deve far fallire il calcolo o il rendering.
+Il testo copiato contiene le risposte del server, non il payload progetto
+inviato. Viene inoltre mantenuto in
+`globalThis.TERMODEL_LAST_SERVER_EXCHANGE` come supporto diagnostico.
+
+La Clipboard API viene tentata per prima; esiste un fallback browser basato su
+selezione/copia. L'eventuale impossibilità di copiare non deve far fallire il
+calcolo o il rendering e viene indicata nella barra di stato.
 
 ### Commissione frontend — indicatore origine rendering
 
