@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.68';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.69';
 import {
   parseDxfPlotSource,
   getDxfLayerSummary,
@@ -8,7 +8,7 @@ import {
   convertDxfToSvg,
   dxfUnitFromInsUnits,
   dxfUnitScaleToCm
-} from './dxf-plotter.js?v=0.68';
+} from './dxf-plotter.js?v=0.69';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -19,16 +19,16 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.68';
+} from './archivio-web.js?v=0.69';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.68';
+} from './termodel-project-text.js?v=0.69';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.68';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.69';
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
@@ -36,8 +36,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.68';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.68';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.69';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.69';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -340,17 +340,9 @@ const DEMO_HELP = {
     title: 'Crea piano da raster con AI',
     body: '<p>Comando attivo nella demo: selezioni una pianta, copi le istruzioni Termodel, apri il tuo ChatGPT e alleghi la stessa immagine. Al ritorno puoi incollare il blocco <code>TERMODEL-SVG-TEXT-V1</code>: la demo lo decodifica, valida lo SVG, genera un <strong>TermodelWebModel JSON 3D provvisorio</strong> e lo visualizza nel viewer.</p>'
   },
-  'Ritorna al progetto': {
-    title: 'Ritorna al progetto',
-    body: '<p>Abbandona soltanto la visualizzazione 3D provvisoria costruita dallo SVG AI e ricarica il <code>TermodelWebModel.json</code> originale del progetto. Lo SVG incollato e la pianta selezionata restano disponibili nella finestra AI.</p>'
-  },
   'Edita nel Cad': {
     title: 'Edita nel CAD — viewer Web',
     body: '<p>Nella demo Web apre il confronto 2D: la <strong>pianta pulita</strong> prodotta da GeneraPianta/JSTS viene mostrata in grigio e il <strong>DisegnoInput.svg</strong> viene sovrapposto con linee colorate e più spesse. Il pulsante <strong>Esporta pianta CAD (.DXF)</strong> scarica la geometria ripulita in DXF AutoCAD 2013, in millimetri.</p>'
-  },
-  'Visualizza Plugin Cad': {
-    title: 'Visualizza Plugin CAD',
-    body: '<p>Attiva la modalità Plugin: Termodel diventa compatto e resta visibile accanto ad AutoCAD per configurare i parametri delle entità prima dell\'inserimento.</p>'
   },
   'Aggiorna Modello': {
     title: 'Aggiorna Modello',
@@ -920,11 +912,6 @@ function resetView() {
   controls.update();
 }
 
-function setReturnProjectState(enabled) {
-  const button = document.getElementById('returnProject');
-  if (button) button.disabled = !enabled;
-}
-
 function setStructuredProjectState(enabled) {
   structuredProjectActive = Boolean(enabled);
   const needsProject = !structuredProjectActive;
@@ -1117,7 +1104,6 @@ function renderModelData(data, options = {}) {
   updateNorth3DMarker();
   edgeGroup.visible = true;
   applyFilters();
-  setReturnProjectState(currentModelMode === 'ai');
 
   const objectInfo = document.querySelector('#infoPage .classic-row:nth-child(3) strong');
   if (objectInfo) {
@@ -1177,15 +1163,6 @@ document.getElementById('resetView').addEventListener('click', async () => {
   await loadModel();
   resetView();
 });
-
-const returnProjectButton = document.getElementById('returnProject');
-if (returnProjectButton) {
-  returnProjectButton.addEventListener('click', async () => {
-    showDemoHelp('Ritorna al progetto');
-    await loadModel();
-    resetView();
-  });
-}
 
 const filtersCheck = document.getElementById('filtersCheck');
 const viewCube = document.querySelector('.view-cube');
@@ -6239,7 +6216,7 @@ document.addEventListener('keydown', event => {
   }
 });
 // v0.63: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.68' })
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.69' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
