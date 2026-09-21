@@ -47,13 +47,56 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.81';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.81';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.82';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.82';
 
 const TERMODEL_ANDROID_DEVICE = /Android/i.test(navigator.userAgent || '');
 let androidHelpEnabled = false;
 if (TERMODEL_ANDROID_DEVICE)
   document.documentElement.classList.add('termodel-android');
+
+function syncAndroidViewportLayout() {
+  if (!TERMODEL_ANDROID_DEVICE || !appRoot) return;
+
+  const viewport = window.visualViewport;
+  const width = Math.max(
+    1,
+    Math.round(viewport?.width || window.innerWidth || document.documentElement.clientWidth || 1)
+  );
+  const height = Math.max(
+    320,
+    Math.round(viewport?.height || window.innerHeight || document.documentElement.clientHeight || 320)
+  );
+
+  // Su alcuni Chrome/Android datati 100%, 100vh e 100dvh non seguono
+  // correttamente la viewport visibile. Qui imponiamo la misura reale.
+  document.documentElement.style.height = height + 'px';
+  document.body.style.height = height + 'px';
+  appRoot.style.height = height + 'px';
+  appRoot.style.minHeight = height + 'px';
+
+  if (appRoot.classList.contains('cad-layout-mode')) {
+    // In CAD toolbar/titlebar sono gestite dal layout CAD; nessuna riga fantasma.
+    appRoot.style.gridTemplateRows = 'minmax(0, 1fr)';
+  } else if (width <= 760) {
+    // titlebar nascosta: menu, tab, viewer elastico, barra comandi.
+    appRoot.style.gridTemplateRows = '42px 40px minmax(0, 1fr) 48px';
+  } else {
+    // Torna alle media query responsive normali in landscape/tablet.
+    appRoot.style.removeProperty('grid-template-rows');
+  }
+
+  requestAnimationFrame(() => {
+    if (typeof resize === 'function') resize();
+  });
+}
+
+if (TERMODEL_ANDROID_DEVICE) {
+  syncAndroidViewportLayout();
+  window.addEventListener('resize', syncAndroidViewportLayout);
+  window.addEventListener('orientationchange', syncAndroidViewportLayout);
+  window.visualViewport?.addEventListener?.('resize', syncAndroidViewportLayout);
+}
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -2431,6 +2474,9 @@ function setCadLayoutMode(active) {
   appRoot?.classList.toggle('cad-layout-mode', active);
   if (appTitleText)
     appTitleText.textContent = active ? APP_CAD_TITLE : APP_MAIN_TITLE;
+
+  if (TERMODEL_ANDROID_DEVICE)
+    syncAndroidViewportLayout();
 }
 
 function activateModelPage() {
