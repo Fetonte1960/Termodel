@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`c35f940058c6cba7dc7cb2825b4958c72ce75630` — `Publish Termodel Web v0.77 coverage background fallback`  
+`bd4dccaf4c19671674d3f7a01cd56ba3c1e7934d` — `Use overlay filters on smartphones`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -746,11 +746,32 @@ nuovo comando `Colmo`. Il Colmo usa esattamente gli attributi Desktop/Core
 `PARETESHED` ed è inserito con snap alla linea più vicina. Il frontend non
 calcola il tetto 3D.
 
+La v0.78 introduce il primo layout responsive specifico per smartphone,
+derivato dal test reale mostrato dall'utente su Chrome Android in modalità
+orizzontale. Sotto 820 px CSS:
+
+- i Filtri Grafici partono chiusi per non sottrarre larghezza al viewer;
+- quando aperti diventano un pannello overlay laterale, con pulsante di
+  chiusura e controlli touch più grandi;
+- il viewer 3D resta a tutta larghezza anche con i filtri aperti;
+- menu e tab diventano scorrevoli orizzontalmente e con target touch maggiori;
+- la barra comandi inferiore usa pulsanti da 40 px e scorrimento orizzontale;
+- il comando filtri viene abbreviato visivamente in `Filtri`;
+- status e badge origine rendering vengono compattati per non coprire il
+  modello;
+- finestre informative/avvio progetto vengono adattate alla larghezza mobile.
+
+Il comportamento desktop resta invariato: pannello filtri da 228 px e layout
+storico. La v0.78 è implementata e verificata sintatticamente, ma deve ancora
+essere provata dall'utente sul telefono.
+
 Ultima versione pubblica verificata manualmente dall'utente:
 
 ```text
-Termodel Web v0.30
+Termodel Web v0.77 — caricamento UI su Chrome Android, 21 settembre 2026
 ```
+
+La v0.78 responsive è pubblicata ma non ancora verificata manualmente.
 
 La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.63 sono su `main`; v0.57-v0.63 devono essere verificate pubblicamente.
 
