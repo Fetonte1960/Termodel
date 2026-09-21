@@ -47,8 +47,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.75';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.75';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.76';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.76';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -4978,6 +4978,56 @@ function cadDuplicateBackgroundToPlane(sourcePlane, targetPlane, targetLayer) {
   return true;
 }
 
+function cadCreateInputDrawingBackgroundToPlane(sourcePlane, targetPlane, targetLayer) {
+  if (!cadWorkingDoc || cadPlaneBackground(cadWorkingDoc, sourcePlane))
+    return false;
+
+  const sourceSvg = cadSerializeCurrentPlaneSvg();
+  if (!sourceSvg.trim()) return false;
+
+  const sourceDoc = new DOMParser().parseFromString(sourceSvg, 'image/svg+xml');
+  if (sourceDoc.querySelector('parsererror')) return false;
+
+  // Lo sfondo di fallback deve essere una fotografia vettoriale del DisegnoInput,
+  // non una seconda geometria tecnica. Elimina quindi accessori locali (Nord,
+  // contenitore sfondi, ecc.) dalla copia SVG incorporata.
+  Array.from(sourceDoc.querySelectorAll('[data-termodel-accessorio]'))
+    .forEach(element => element.remove());
+
+  const sourceGroup = cadCalpestabile(sourceDoc);
+  const hasDrawing = Array.from(sourceGroup?.children || []).some(element =>
+    element.localName === 'line' || element.localName === 'text'
+  );
+  if (!hasDrawing) return false;
+
+  const viewBox =
+    cadParseViewBox(sourceDoc.documentElement.getAttribute('viewBox')) ||
+    cadGeometryViewBox(cadWorkingDoc, sourcePlane);
+  if (!viewBox) return false;
+
+  sourceDoc.documentElement.setAttribute('viewBox', cadFormatViewBox(viewBox));
+  const svgText = new XMLSerializer().serializeToString(sourceDoc.documentElement);
+  const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
+
+  const group = cadBackgroundContainer(cadWorkingDoc, true);
+  const image = cadWorkingDoc.createElementNS(SVG_NS, 'image');
+  image.setAttribute('data-termodel-sfondo', '1');
+  image.setAttribute('data-termodel-piano', targetPlane);
+  image.setAttribute('data-termodel-layer', targetLayer);
+  image.setAttribute('data-termodel-sfondo-tipo', 'vector');
+  image.setAttribute('data-termodel-nome-file', 'DisegnoInput · ' + sourcePlane);
+  image.setAttribute('data-termodel-sorgente', 'DisegnoInput');
+  image.setAttribute('x', String(viewBox[0]));
+  image.setAttribute('y', String(viewBox[1]));
+  image.setAttribute('width', String(viewBox[2]));
+  image.setAttribute('height', String(viewBox[3]));
+  image.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  image.setAttribute('opacity', '0.72');
+  image.setAttribute('href', dataUrl);
+  group.appendChild(image);
+  return true;
+}
+
 function cadCreateCoveragePlane() {
   if (!structuredProjectActive || !cadWorkingDoc) {
     cadSetStatus('Crea o apri prima un progetto Termodel.', 'error');
@@ -5016,13 +5066,21 @@ function cadCreateCoveragePlane() {
     return;
   }
 
-  const backgroundDuplicated = cadDuplicateBackgroundToPlane(
-    sourcePlane,
-    cadText(added.Nome) || name,
-    cadText(added.LayerCad) || layer
-  );
+  const targetPlane = cadText(added.Nome) || name;
+  const targetLayer = cadText(added.LayerCad) || layer;
 
-  cadToolbarState.piano = cadText(added.Nome) || name;
+  let backgroundMode = 'none';
+  if (cadDuplicateBackgroundToPlane(sourcePlane, targetPlane, targetLayer)) {
+    backgroundMode = 'duplicated';
+  } else if (cadCreateInputDrawingBackgroundToPlane(
+    sourcePlane,
+    targetPlane,
+    targetLayer
+  )) {
+    backgroundMode = 'input';
+  }
+
+  cadToolbarState.piano = targetPlane;
   cadSelectedLineId = '';
   cadSelectedSymbolId = '';
   cadDragState = null;
@@ -5036,10 +5094,12 @@ function cadCreateCoveragePlane() {
 
   cadSetStatus(
     '✓ Creato piano ' + cadToolbarState.piano +
-    ' · Tipo Copertura · Layer ' + (cadText(added.LayerCad) || layer) +
-    (backgroundDuplicated
+    ' · Tipo Copertura · Layer ' + targetLayer +
+    (backgroundMode === 'duplicated'
       ? ' · sfondo duplicato dal piano ' + sourcePlane
-      : ' · piano sorgente senza sfondo da duplicare'),
+      : backgroundMode === 'input'
+        ? ' · DisegnoInput del piano ' + sourcePlane + ' usato come sfondo vettoriale'
+        : ' · nessuno sfondo o DisegnoInput utilizzabile'),
     'dirty'
   );
 }
