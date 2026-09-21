@@ -47,8 +47,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.80';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.80';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.81';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.81';
 
 const TERMODEL_ANDROID_DEVICE = /Android/i.test(navigator.userAgent || '');
 let androidHelpEnabled = false;
