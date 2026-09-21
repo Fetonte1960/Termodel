@@ -10,7 +10,9 @@ riportabile nel Core condiviso oppure esclusiva del server.
 ## Regole
 
 - `definizionedati/definizionedati.json` resta la fonte autorevole e non viene modificato.
-- WPF, Helix e IFC non fanno parte del percorso Web.
+- WPF e Helix non sono dipendenze runtime del percorso Web; xBIM Essentials è
+  usato soltanto come modello dati IFC in memoria per conservare invariato
+  `Polig3D`, senza esportare file IFC.
 - Le funzioni database, geometriche e di validazione usate dal modello sono reali.
 - Le sole funzioni di UI o diagnostica grafica possono essere no-op controllati.
 - Una funzione funzionale non supportata genera `NotSupportedException`; non restituisce successo fittizio.
@@ -27,8 +29,8 @@ riportabile nel Core condiviso oppure esclusiva del server.
 | `CopiedFromTermodel/Leggidxf/DXFLineCheck.cs` | `Leggidxf/DXFLineCheck.cs` | geometria/topologia reale |
 | `CopiedFromTermodel/Leggidxf/Tetti.cs` | `Leggidxf/Tetti.cs` | geometria reale, contenitori IFC sostituiti |
 | `CopiedFromTermodel/Leggidxf/Confini.cs` | `Leggidxf/Confini.cs` | regole reali, geometria neutra |
-| `CopiedFromTermodel/Model/Polig3D.cs` | `Leggidxf/Polig3D.cs` | semantica reale, output IFC escluso |
-| `CopiedFromTermodel/Model/Modello.cs` | `Modello.cs` | facciata compatibile headless |
+| `CopiedFromTermodel/Model/Polig3D.cs` | `Leggidxf/Polig3D.cs` | copia byte-per-byte invariata; dipendenze soddisfatte da facciate headless/xBIM in memoria |
+| `CopiedFromTermodel/Model/Modello.cs` | `Modello.cs` | adattatore headless che materializza le strutture xBIM in memoria e alimenta `ElementoAssociato` |
 
 ## Dipendenze sostitutive
 
@@ -38,8 +40,8 @@ riportabile nel Core condiviso oppure esclusiva del server.
 | `UtiDb` / `Database.DB` | Virtual DB: archivi XML del file unico in memoria con semantica Desktop per i metodi migrati |
 | `GestProg` | Virtual Project: `ProjectWorkspace` temporaneo con percorsi Desktop-like |
 | `TermodelLog` | diagnostica strutturata per la risposta HTTP |
-| WPF / Helix | no-op controllati o sink diagnostico |
-| Xbim / IFC | tipi geometrici neutrali e `TermodelWebModel` JSON |
+| WPF / Helix | facciate/no-op controllati e renderer headless `DrawBim` |
+| Xbim / IFC | `Xbim.Essentials 6.1.605` come modello dati in memoria; nessun file IFC prodotto |
 
 ## Provenienza verificata
 
@@ -84,6 +86,40 @@ Verifica di compilazione: GitHub Actions run #2 sul commit
 `2753e468c7d1da6b9fb4602152b3fabb0abec17c` completata con 0 errori e
 108 warning. Il runtime HTTP dopo questo refactoring non è ancora stato
 rieseguito.
+
+## Invarianza Polig3D e JSON v3
+
+Dal 21 settembre 2026
+`CopiedFromTermodel/Model/Polig3D.cs` e
+`SorgentiTermodel/Library/leggidxf/Polig3D.cs` hanno lo stesso Git blob SHA:
+
+```text
+d7d835a8a39febb3c3b26bcb88a8cc5cebb19411
+```
+
+Il file è quindi byte-per-byte invariato. Il Core soddisfa le sue dipendenze
+tramite `Xbim.Essentials` in memoria e le facciate di
+`Compatibility/HeadlessDesktopUi.cs`.
+
+Il renderer `DrawBim` headless produce `TermodelWebModel v3` dal medesimo
+`Polig3D.ElementiAssociati` usato dal Desktop e valorizza
+`filterMetadata`, `piano`, `confine`, `separatore`, `stessaZona`,
+`fittizia` e `falda`. Per le estrusioni conserva inoltre
+`ExtrudedVisual3D/lati` e `MeshGeometry3D/tappi`, con `numero` uguale
+all'indice 1-based dell'elemento nel redraw.
+
+`Modello.Close_modello` chiama prima `Polig3D.TrovaConfini` e poi
+`Polig3D.GrafRedraw`, quindi i metadati sono letti dopo l'elaborazione
+semantica dei confini.
+
+Verifica GitHub Actions sul commit
+`297d593be6b7e205e3dcb9052d8f6a13cf2878e6`: build Release con 0 errori
+(154 warning) e smoke HTTP riuscito per
+`/api/projects/new -> /api/model/3d` sul progetto vuoto.
+
+Resta separato il golden test del progetto mansardato da 546 primitive: non
+può essere dichiarato confrontato finché non è disponibile il corrispondente
+file unico SVG multipiano per il Service.
 
 ## Endpoint Modello3D
 
