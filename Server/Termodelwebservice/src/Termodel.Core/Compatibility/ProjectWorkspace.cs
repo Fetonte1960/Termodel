@@ -50,13 +50,13 @@ public sealed class ProjectWorkspace : IDisposable
                 name.EndsWith(".xml", StringComparison.Ordinal))
             {
                 string archiveName = name[archivePrefix.Length..];
-                workspace.WriteText(Path.Combine(workspace.DatabasePath, archiveName), content);
+                WriteText(Path.Combine(workspace.DatabasePath, archiveName), content);
             }
 
             if (name.Equals("thermal/input.xml", StringComparison.Ordinal))
-                workspace.WriteText(workspace.XmlInputPath, content);
+                WriteText(workspace.XmlInputPath, content);
             else if (name.Equals("thermal/input.json", StringComparison.Ordinal))
-                workspace.WriteText(Path.Combine(workspace.XmlPath, "input.json"), content);
+                WriteText(Path.Combine(workspace.XmlPath, "input.json"), content);
         }
 
         return workspace;
