@@ -51,6 +51,7 @@ const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.8
 const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.80';
 
 const TERMODEL_ANDROID_DEVICE = /Android/i.test(navigator.userAgent || '');
+let androidHelpEnabled = false;
 if (TERMODEL_ANDROID_DEVICE)
   document.documentElement.classList.add('termodel-android');
 
@@ -487,6 +488,8 @@ function createDemoHelpPanel() {
   document.querySelector('.workspace').appendChild(panel);
   panel.querySelector('#demoHelpClose').addEventListener('click', () => {
     panel.hidden = true;
+    if (TERMODEL_ANDROID_DEVICE)
+      androidHelpEnabled = false;
   });
   return panel;
 }
@@ -499,7 +502,7 @@ function showDemoHelp(key, options = {}) {
 
   // Su Android l'help non interrompe più l'esplorazione ad ogni comando:
   // viene aperto soltanto dal pulsante "?" della palette Esplora.
-  if (TERMODEL_ANDROID_DEVICE && !options.force)
+  if (TERMODEL_ANDROID_DEVICE && !options.force && !androidHelpEnabled)
     return;
 
   if (!demoHelpPanel) demoHelpPanel = createDemoHelpPanel();
@@ -628,12 +631,14 @@ function createAndroidExploreBox() {
   help.addEventListener('click', (event) => {
     event.stopPropagation();
     setOpen(false);
+    androidHelpEnabled = true;
     showDemoHelp('Benvenuto', { force: true });
   });
 
   singleLine.addEventListener('click', (event) => {
     event.stopPropagation();
     setOpen(false);
+    androidHelpEnabled = false;
     if (demoHelpPanel) demoHelpPanel.hidden = true;
     activateCadPage();
   });
