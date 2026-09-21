@@ -327,6 +327,21 @@ snapshot. In questa prima implementazione il manifest contiene soltanto
 l'artifact `model3d`; XML nazionale, dispersioni, pannelli, spirali e piante
 pulite nello snapshot restano fasi successive.
 
+### Commissione frontend — fallback sfondo Copertura da DisegnoInput
+
+Stato: **COMMISSIONATO** — 21 settembre 2026.
+
+Estensione del comando `＋ Copertura`:
+
+- se il piano corrente possiede già uno sfondo locale, resta valido il
+  comportamento v0.75: lo sfondo viene duplicato sul nuovo piano;
+- se il piano corrente non possiede uno sfondo, il frontend deve costruire
+  uno sfondo vettoriale locale a partire dal DisegnoInput del piano corrente;
+- tale riferimento deve conservare allineamento e scala del disegno sorgente,
+  ma non deve diventare geometria tecnica della nuova copertura;
+- lo sfondo generato resta una risorsa esclusivamente frontend e deve essere
+  escluso dal payload inviato al Service secondo le regole già vigenti.
+
 ### Commissione frontend — nuovo piano Copertura per test Service avanzato
 
 Stato: **ESEGUITO** — 21 settembre 2026.
