@@ -689,10 +689,17 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.73
+Termodel Web v0.74
 ```
 
-Commit frontend di riferimento per la v0.73:
+Commit frontend di riferimento per la v0.74:
+
+```text
+435c2ef0cb37d46b40d89c100ce9b008e1208a5c  Copy Service responses to clipboard
+51dab1b83c688701482acdebca895e05df6419d1  Publish Termodel Web v0.74
+```
+
+Base v0.73 immediatamente precedente:
 
 ```text
 753d12050f73e91a3134000400927bfadfe5e960  Build canonical SVG payload for TermodelService
@@ -700,6 +707,17 @@ Commit frontend di riferimento per la v0.73:
 ce3ed27f08a6a466a12e4a9721ceecf91b574cb5  Publish Termodel Web v0.73
 cf90174307eda011fc78aa568917b369d810f63c  Harden canonical SVG plane mapping diagnostics
 ```
+
+La prima prova runtime dopo il payload canonico v0.73 ha completato il ciclo
+browser pubblico → `POST /api/calculations` → snapshot → artifact
+`model3d`: il frontend ha mostrato `PROGETTO CORRENTE · SERVER` con
+**0 primitive e 19 diagnostiche**. Questo conferma la comunicazione e la lettura
+dell'artifact, ma non ancora la correttezza geometrica; le diagnostiche devono
+essere analizzate.
+
+La v0.74 aggiunge la copia automatica negli appunti delle risposte POST + GET
+del Service in formato diagnostico `TERMODEL-SERVICE-EXCHANGE-V1`, così il
+risultato runtime può essere incollato direttamente in chat.
 
 Ultima versione pubblica verificata manualmente dall'utente:
 
