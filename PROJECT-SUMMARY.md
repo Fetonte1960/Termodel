@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`cab56e06fe38060a835990681482f65549a41d22` — `Add real DXF drawing units v0.61`  
+`254b77d30d7238e148a3aeda4f50d9637bbe502c` — `Formalize automatic DXF scaling v0.62`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,13 +679,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.61
+Termodel Web v0.62
 ```
 
-Commit frontend di riferimento per la v0.61:
+Commit frontend di riferimento per la v0.62:
 
 ```text
-cab56e06fe38060a835990681482f65549a41d22  Add real DXF drawing units v0.61
+254b77d30d7238e148a3aeda4f50d9637bbe502c  Formalize automatic DXF scaling v0.62
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -694,7 +694,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.61 sono su `main`; v0.57-v0.61 devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.62 sono su `main`; v0.57-v0.62 devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -3817,6 +3817,113 @@ Add real DXF drawing units v0.61
 
 ---
 
+## 12.29 Scala automatica DXF e normalizzazione coordinate — v0.62
+
+Decisione architetturale definitiva:
+
+> **Per uno sfondo DXF, l'unità scelta nel dialog di importazione costituisce la calibrazione automatica del disegno. Se il DXF e l'unità sono corretti, non è richiesta alcuna calibrazione manuale successiva.**
+
+La trasformazione verso il CAD Web Termodel è:
+
+```text
+mm → cm : × 0,1
+cm → cm : × 1
+m  → cm : × 100
+```
+
+Dopo la conversione metrica, il plotter può adattare il sistema di coordinate al CAD Termodel mediante:
+
+- traslazione dell'origine;
+- inversione dell'asse Y necessaria per SVG;
+- ampliamento del viewBox.
+
+Queste operazioni sono **rigide rispetto alle distanze** e non introducono fattori di scala ulteriori.
+
+In v0.62 `dxf-plotter.js` normalizza l'origine della geometria convertita a `0,0` mediante una traslazione SVG, mantenendo la geometria già espressa in centimetri Termodel.
+
+Lo SVG risultante è marcato con:
+
+```text
+data-termodel-coordinate-normalization="origin"
+data-termodel-source-unit
+data-termodel-unit-scale-cm
+```
+
+e lo sfondo nel CAD conserva:
+
+```text
+data-termodel-dxf-scala-automatica="1"
+data-termodel-dxf-unita
+data-termodel-dxf-fattore-cm
+data-termodel-dxf-origine-x-cm
+data-termodel-dxf-origine-y-cm
+```
+
+Il pannello di calibrazione, quando lo sfondo corrente è DXF in scala automatica, informa esplicitamente che `Calibra` deve essere usato soltanto come correzione di un DXF o di un'unità dichiarata erroneamente.
+
+### Test di invarianza delle distanze
+
+Test sintetico con DXF in metri e coordinate lontane dall'origine:
+
+```text
+punto iniziale X = 1000,0000 m
+punto finale   X = 1013,0977 m
+
+distanza DXF = 13,0977 m
+```
+
+Dopo:
+
+```text
+m → cm
+normalizzazione origine
+inversione Y SVG
+```
+
+risultato verificato:
+
+```text
+1309,77 cm Termodel
+= 13,0977 m
+```
+
+Errore numerico misurato:
+
+```text
+~9×10^-13 cm
+```
+
+quindi trascurabile e dovuto esclusivamente alla rappresentazione floating-point.
+
+### Regola operativa per i test reali
+
+Per verificare la scala di un DXF reale:
+
+1. misurare in AutoCAD due punti geometrici precisi con `DIST`;
+2. importare il DXF scegliendo l'unità corretta;
+3. verificare la stessa distanza nel CAD Termodel;
+4. **non usare Calibra** prima del confronto;
+5. se la distanza differisce sugli stessi punti, trattare la differenza come errore del percorso di importazione e non come normale necessità di calibrazione.
+
+La calibrazione manuale resta prevista solo per:
+
+- DXF con unità errata o assente;
+- disegni già scalati in modo anomalo;
+- correzioni volontarie dell'utente.
+
+### Stato
+
+**IMPLEMENTATO IN v0.62 — INVARIANZA DELLA SCALA VERIFICATA AUTOMATICAMENTE; DA CONTINUARE IL COLLAUDO VISIVO SUL DXF REALE FARMACIA.**
+
+Commit:
+
+```text
+254b77d30d7238e148a3aeda4f50d9637bbe502c
+Formalize automatic DXF scaling v0.62
+```
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -3991,7 +4098,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.61.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.62.**
 
 Stato operativo corrente:
 
@@ -4001,7 +4108,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.61 presente su `main`;
+- v0.62 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -4040,6 +4147,7 @@ Stato operativo corrente:
 - v0.59 consolida gli sfondi nel progetto locale come `assets/backgrounds/index.json` + `assets/backgrounds/BGxxx.data`: `geometry/project.svg` resta leggero e contiene solo il riferimento; `Apri` reidrata il Data URL nel CAD. I vecchi sfondi incorporati vengono migrati automaticamente al primo Salva.
 - v0.60 aggiunge lo sfondo DXF: `Aggiungi sfondo` riconosce `.dxf`, apre un dialog layer/opzioni e converte il contenuto 2D in SVG con `dxf-plotter.js`; default tutti i layer + solo LINE/POLYLINE/LWPOLYLINE.
 - v0.61 stabilisce `cm` come unità interna del CAD Web e aggiunge nel dialog DXF la combo `m / cm / mm`, proposta da `$INSUNITS`; il plotter normalizza la geometria in cm e lo sfondo DXF entra alla dimensione reale 1:1 senza essere adattato al viewBox esistente.
+- v0.62 formalizza che la scelta dell'unità DXF è la **calibrazione automatica**: il plotter converte in cm, normalizza l'origine e inverte Y senza alterare le distanze. `Calibra` resta solo una correzione eccezionale per DXF/unità errati.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -4050,7 +4158,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. verificare manualmente la v0.61 **con WebService spento**: `Nuovo` → `Aggiungi sfondo` → scegliere un DXF di dimensione nota → verificare unità proposta da `$INSUNITS`, provare `m/cm/mm` e controllare che una distanza nota risulti corretta in Termodel senza calibrazione; quindi Salva → Apri e verificare persistenza;  
+> 1. continuare il collaudo manuale v0.62 sul DXF reale `Farmacia.dxf`: confrontare in AutoCAD e Termodel la **stessa distanza fra gli stessi punti**, senza usare `Calibra`; l'unità rilevata/selezionata `m` deve rendere il DXF già in scala reale;  
 > 2. dopo il collaudo del round-trip, usare `buildCurrentProjectText()` come base obbligatoria di qualsiasi futura chiamata WebService; prima dell'invio produrre però un payload server filtrato, **senza sfondi raster/SVG, Data URL/Base64 o relativi asset**;  
 > 3. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
 > 4. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
@@ -4064,10 +4172,10 @@ Se questa conversazione termina, una nuova chat deve poter riprendere senza rico
 
 ```text
 branch: main
-frontend: Termodel Web v0.61
+frontend: Termodel Web v0.62
 ultimo commit funzionale frontend:
-cab56e06fe38060a835990681482f65549a41d22
-Add real DXF drawing units v0.61
+254b77d30d7238e148a3aeda4f50d9637bbe502c
+Formalize automatic DXF scaling v0.62
 ```
 
 **File da leggere per il lavoro immediato sul progetto unico:**
@@ -4128,7 +4236,7 @@ dxfUnitScaleToCm(unit)
 
 **Nota importante sulla struttura del codice:** l'import degli archivi è ancora implementato da `loadTermodelProjectText(...)` in `archivio-web.js`; `app.js` orchestra la conversione verso lo stato CAD; `termodel-project-text.js` centralizza parsing/sostituzione delle sezioni e soprattutto la ricostruzione del progetto unico. Non riscrivere ArchivioWeb da zero.
 
-**Test già eseguiti sulla v0.58-v0.61:**
+**Test già eseguiti sulla v0.58-v0.62:**
 
 - sintassi JavaScript valida per `app.js`, `archivio-web.js` e `termodel-project-text.js`;
 - round-trip strutturale sul vero `ProgettoVuoto.termodel.txt`: 26 sezioni prima e dopo;
@@ -4136,7 +4244,8 @@ dxfUnitScaleToCm(unit)
 - struttura hash del manifest verificata a 64 caratteri;
 - v0.59: aggiunta di uno sfondo sintetico porta le sezioni 26 → 28, con indice + asset presenti nel manifest; rimuovendo lo sfondo il progetto torna a 26 sezioni e le entry vengono eliminate;
 - v0.60: test DXF sintetico superato per layer, linee/polilinee, testo opzionale e BLOCK/INSERT opzionale;
-- v0.61: test scala reale superato: `4000 mm`, `400 cm` e `4 m` producono tutti `400 cm = 4 m` nel CAD Termodel.
+- v0.61: test scala reale superato: `4000 mm`, `400 cm` e `4 m` producono tutti `400 cm = 4 m` nel CAD Termodel;
+- v0.62: test con coordinate lontane dall'origine superato: `1000 → 1013,0977 m` resta esattamente `13,0977 m` dopo conversione in cm e normalizzazione origine.
 
 **Limite del test automatico:** l'ambiente usato per il controllo non esponeva Web Crypto; il percorso è stato esercitato con un digest simulato per controllare la ricomposizione. Nel browser reale `buildTermodelProjectText()` usa `crypto.subtle.digest('SHA-256', ...)`. È quindi obbligatorio il test manuale reale di Salva.
 
@@ -4154,8 +4263,9 @@ Nuovo
 → verificare layer tutti selezionati
 → verificare Solo linee / polilinee attivo
 → Converti
-→ controllare una distanza nota nel CAD prima di calibrare
-→ eventualmente usare la calibrazione solo come correzione
+→ controllare la stessa distanza fra gli stessi punti nel CAD
+→ NON calibrare se DXF e unità sono corretti
+→ usare la calibrazione solo come correzione di DXF/unità errati
 → Salva
 → Apri... il file appena scaricato
 → verificare che sfondo, dimensione e unità restino coerenti
@@ -4175,4 +4285,4 @@ Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttament
 
 **Altri lavori aperti CAD:** trascinamento simboli, snap durante lo spostamento e vincolo LOC.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `cab56e06fe38060a835990681482f65549a41d22`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `254b77d30d7238e148a3aeda4f50d9637bbe502c`.
