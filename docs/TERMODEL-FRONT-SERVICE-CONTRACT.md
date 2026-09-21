@@ -333,6 +333,39 @@ Per il rendering server viene mostrata una forma abbreviata del
 L'indicatore descrive il modello attualmente visualizzato e non viene usato come
 prova autonoma della correttezza del calcolo.
 
+### Commissione frontend — SVG tecnico canonico per AggiornaCalcolo
+
+Stato: **COMMISSIONATO** — 21 settembre 2026.
+
+Anomalia osservata nella prima prova reale browser → Service:
+
+```text
+Errore Aggiorna Modello: AggiornaCalcolo:
+Lo SVG deve dichiarare data-termodel-units='cm'.
+```
+
+Diagnosi concordata: il frontend sta sostituendo `geometry/project.svg`
+canonico del progetto con lo SVG operativo CAD/AI, perdendo l'involucro
+`TERMODEL-PROJECT-SVG-V1` e i metadati obbligatori dei piani.
+
+Intervento commissionato:
+
+- lasciare invariato lo SVG locale usato dal CAD e dagli sfondi;
+- costruire solo per il payload server un `geometry/project.svg` tecnico
+  canonico con radice `data-termodel-format="TERMODEL-PROJECT-SVG-V1"` e
+  `data-termodel-units="cm"`;
+- ricostruire i gruppi di piano dai dati autorevoli del progetto, mantenendo
+  `floor-id/name/role/file/layer/order`;
+- distribuire nei gruppi di piano le entità tecniche `line` e `text`
+  presenti nello SVG CAD in base a `data-termodel-piano`, escludendo sfondi
+  e accessori esclusivamente frontend;
+- rigenerare manifest e SHA-256 sul payload realmente trasmesso;
+- non modificare il WebService/Core per aggirare la validazione.
+
+Criterio di completamento: il payload prodotto dal frontend deve superare la
+validazione strutturale di `SvgDxfReader` per unità e gruppi piano, senza
+alterare il progetto locale.
+
 ### Commissione frontend — pulsante Aggiorna Modello
 
 Stato: **ESEGUITO** — 21 settembre 2026.
