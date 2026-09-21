@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.63';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.64';
 import {
   parseDxfPlotSource,
   getDxfLayerSummary,
@@ -8,7 +8,7 @@ import {
   convertDxfToSvg,
   dxfUnitFromInsUnits,
   dxfUnitScaleToCm
-} from './dxf-plotter.js?v=0.63';
+} from './dxf-plotter.js?v=0.64';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -19,16 +19,16 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.63';
+} from './archivio-web.js?v=0.64';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.63';
+} from './termodel-project-text.js?v=0.64';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.63';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.64';
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
@@ -36,8 +36,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.63';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.63';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.64';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.64';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -191,6 +191,8 @@ let cadGeneratedPlanByPlane = new Map();
 const CAD_SNAP_DISTANCE = 12;
 const CAD_JOIN_EPSILON = 0.05;
 const CAD_CALIBRATION_ORTHO_EPSILON = 0.05;
+const CAD_BACKGROUND_MIDPOINT_MIN_CM = 5;
+const CAD_BACKGROUND_MIDPOINT_MAX_CM = 20;
 
 const COMPONENTI = [
   ['Parete', true],
@@ -2689,6 +2691,7 @@ function cadPlaneBackground(doc = cadWorkingDoc, planeName = cadCurrentPlane()) 
 }
 
 // v0.63 — Snap additivo agli endpoint dello sfondo vettoriale.
+// v0.64 — aggiunge alla cache i punti medi fittizi tra endpoint distanti 5–20 cm.
 let cadBackgroundSnapCache = {
   background: null,
   href: '',
@@ -2892,6 +2895,57 @@ function cadMapSvgPointToBackground(point, sourceViewBox, background) {
   ];
 }
 
+function cadAddBackgroundMidpointCandidates(realPoints) {
+  const uniqueReal = new Map();
+  (realPoints || []).forEach(point => {
+    if (!Array.isArray(point) || !point.every(Number.isFinite)) return;
+    const key = point[0].toFixed(4) + ',' + point[1].toFixed(4);
+    if (!uniqueReal.has(key)) uniqueReal.set(key, point);
+  });
+
+  const base = Array.from(uniqueReal.values());
+  if (base.length < 2) return base;
+
+  const cellSize = CAD_BACKGROUND_MIDPOINT_MAX_CM;
+  const cells = new Map();
+  base.forEach((point, index) => {
+    const key = Math.floor(point[0] / cellSize) + ',' + Math.floor(point[1] / cellSize);
+    if (!cells.has(key)) cells.set(key, []);
+    cells.get(key).push(index);
+  });
+
+  const minDistance2 = CAD_BACKGROUND_MIDPOINT_MIN_CM * CAD_BACKGROUND_MIDPOINT_MIN_CM;
+  const maxDistance2 = CAD_BACKGROUND_MIDPOINT_MAX_CM * CAD_BACKGROUND_MIDPOINT_MAX_CM;
+  const midpoints = new Map();
+
+  base.forEach((point, index) => {
+    const gx = Math.floor(point[0] / cellSize);
+    const gy = Math.floor(point[1] / cellSize);
+
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const neighbours = cells.get((gx + dx) + ',' + (gy + dy));
+        if (!neighbours) continue;
+
+        neighbours.forEach(otherIndex => {
+          if (otherIndex <= index) return;
+          const other = base[otherIndex];
+          const vx = other[0] - point[0];
+          const vy = other[1] - point[1];
+          const distance2 = vx * vx + vy * vy;
+          if (distance2 < minDistance2 || distance2 > maxDistance2) return;
+
+          const midpoint = [(point[0] + other[0]) / 2, (point[1] + other[1]) / 2];
+          const key = midpoint[0].toFixed(4) + ',' + midpoint[1].toFixed(4);
+          if (!uniqueReal.has(key) && !midpoints.has(key)) midpoints.set(key, midpoint);
+        });
+      }
+    }
+  });
+
+  return base.concat(Array.from(midpoints.values()));
+}
+
 function cadBuildBackgroundSnapGrid(points) {
   const grid = new Map();
   const cellSize = Math.max(CAD_SNAP_DISTANCE, 0.001);
@@ -2947,7 +3001,7 @@ function cadBackgroundSnapCacheForCurrentPlane() {
             const key = mapped[0].toFixed(4) + ',' + mapped[1].toFixed(4);
             if (!unique.has(key)) unique.set(key, mapped);
           });
-          points = Array.from(unique.values());
+          points = cadAddBackgroundMidpointCandidates(Array.from(unique.values()));
         }
       }
     }
@@ -6231,7 +6285,7 @@ document.addEventListener('keydown', event => {
   }
 });
 // v0.63: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.63' })
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.64' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
