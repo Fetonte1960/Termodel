@@ -213,8 +213,14 @@ Risultato:
   confronto golden da 546 primitive; il JSON avanzato è compilato ed esposto,
   ma i metadati per primitive reali devono ancora essere esercitati con un
   file unico di prova rappresentativo;
-- esecuzione locale Visual Studio: **non ancora effettuata dopo questa
-  modifica**; la verifica corrente è GitHub Actions + smoke HTTP cloud.
+- esecuzione locale Visual Studio/browser: **effettuata il 21 settembre 2026**.
+  `GET /api/model/capabilities` ha risposto su `http://localhost:5080`;
+  il frontend pubblico ha poi completato
+  `POST /api/calculations -> calculationId -> GET artifact model3d`.
+  Il primo progetto reale provato ha restituito **0 primitive e 19
+  diagnostiche**: comunicazione e snapshot sono quindi raggiunti realmente,
+  ma la correttezza geometrica non è ancora verificata e le diagnostiche
+  devono essere analizzate.
 
 
 ### INCARICO 2026-09-21 — SVG tecnico canonico frontend per AggiornaCalcolo
