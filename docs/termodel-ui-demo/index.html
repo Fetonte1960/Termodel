@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.66 — toolbar CAD compatta</title>
+  <title>Termodel Web v0.67 — icone toolbar CAD</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -1050,7 +1050,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.66</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.67</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -1084,7 +1084,7 @@
       <section id="cadPage" class="page cad-page" aria-label="Viewer CAD Web">
         <div class="cad-toolbar">
           <details class="cad-tool-menu">
-            <summary>Sfondo</summary>
+            <summary>▧ Sfondo</summary>
             <div class="cad-tool-dropdown">
               <button id="cadAddBackground" type="button" title="Importa uno sfondo raster, SVG o DXF per il piano corrente">＋ Aggiungi sfondo</button>
               <input id="cadBackgroundFile" type="file" accept=".dxf,application/dxf,.svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden />
@@ -1094,7 +1094,7 @@
           </details>
 
           <details class="cad-tool-menu">
-            <summary>Disegna</summary>
+            <summary>✎ Disegna</summary>
             <div class="cad-tool-dropdown">
               <select id="cadNewLineType" title="Tipo della nuova parete">
                 <option value="W" selected>W interna</option>
@@ -1111,7 +1111,7 @@
           </details>
 
           <details class="cad-tool-menu">
-            <summary>Snap</summary>
+            <summary>⌖ Snap</summary>
             <div class="cad-tool-dropdown compact">
               <label title="Aggancia al punto più vicino lungo una parete"><input id="cadSnapNear" name="cadSnapMode" type="radio" value="near" checked /> Vicino</label>
               <label title="Aggancia esclusivamente agli estremi delle pareti"><input id="cadSnapEndpoint" name="cadSnapMode" type="radio" value="endpoint" /> Estremo</label>
@@ -1124,16 +1124,16 @@
           <span class="cad-toolbar-plane" title="Piano corrente e archivio Piani">
             <span class="cad-toolbar-plane-label">Piano</span>
             <select id="cadPropPiano" aria-label="Piano corrente"></select>
-            <button id="cadOpenPianiArchive" class="cad-toolbar-arc" type="button" title="Apri archivio Piani">Arc</button>
+            <button id="cadOpenPianiArchive" class="cad-toolbar-arc" type="button" title="Apri archivio Piani">▤ Arc</button>
           </span>
           <button id="cadUndo" type="button" disabled title="Annulla ultima modifica">↶ Undo</button>
           <button id="cadRedo" type="button" disabled title="Ripristina modifica annullata">↷ Redo</button>
-          <button id="cadDelete" type="button" disabled title="Elimina la parete selezionata">Elimina</button>
-          <button id="cadRegenerate" class="cad-primary" type="button" disabled>Rigenera pianta</button>
+          <button id="cadDelete" type="button" disabled title="Elimina la parete selezionata">× Elimina</button>
+          <button id="cadRegenerate" class="cad-primary" type="button" disabled>⟳ Rigenera pianta</button>
           <span id="cadEditStatus" class="cad-status">Seleziona una parete E/W</span>
           <span class="cad-spacer"></span>
-          <button id="cadExportArchitectural" type="button" disabled title="Disponibile dopo la generazione della pianta">Esporta pianta CAD (.DXF)</button>
-          <button id="cadReturnModel" type="button" title="Se il DisegnoInput è stato modificato, rigenera automaticamente il modello prima di tornare">Torna al modello 3d</button>
+          <button id="cadExportArchitectural" type="button" disabled title="Disponibile dopo la generazione della pianta">⇩ Esporta pianta CAD (.DXF)</button>
+          <button id="cadReturnModel" type="button" title="Se il DisegnoInput è stato modificato, rigenera automaticamente il modello prima di tornare">↩ Torna al modello 3d</button>
         </div>
         <div id="cadCanvas" class="cad-canvas">
           <div class="cad-empty">Genera prima una pianta da raster con AI. Qui potrai correggere direttamente le pareti E/W del DisegnoInput.svg.</div>
@@ -1524,6 +1524,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.66"></script>
+  <script type="module" src="./app.js?v=0.67"></script>
 </body>
 </html>
