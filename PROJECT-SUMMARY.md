@@ -689,15 +689,16 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.72
+Termodel Web v0.73
 ```
 
-Commit frontend di riferimento per la v0.72:
+Commit frontend di riferimento per la v0.73:
 
 ```text
-6e144ad715390731b0894e066b274a9d9ac49d77  Add server project payload builder
-2c11bccf5062c11ad1c82785bdf5042d903eeaf6  Connect Aggiorna Modello to calculation API
-ff3467cd401fdb35a45fdc89c41105e5b48ae24d  Publish Termodel Web v0.71
+753d12050f73e91a3134000400927bfadfe5e960  Build canonical SVG payload for TermodelService
+07f460deeb6a96b69ec5df08a055665fd4fcebe2  Use canonical Service payload in Termodel Web v0.73
+ce3ed27f08a6a466a12e4a9721ceecf91b574cb5  Publish Termodel Web v0.73
+cf90174307eda011fc78aa568917b369d810f63c  Harden canonical SVG plane mapping diagnostics
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -1268,7 +1269,8 @@ POST /api/model/3d
 ```
 
 `POST /api/model/3d` riceve il file unico testuale e restituisce
-`TermodelWebModel v3`.
+`TermodelWebModel v3`. Il nuovo ciclo è inoltre operativo lato Service tramite
+`POST /api/calculations` e `GET /api/calculations/{calculationId}/artifacts/model3d`.
 
 `GET /api/model/clean-floor/{floorName}` restituisce la pianta pulita prodotta
 dalla generazione corrente.
@@ -1276,6 +1278,35 @@ dalla generazione corrente.
 Dalla **v0.57** il frontend non usa più `GET /api/model/capabilities` né
 `POST /api/projects/new` per il bootstrap locale: `Nuovo` e l'importazione di
 un semplice SVG usano il template locale `progetto-vuoto.js`.
+
+### v0.73 — payload SVG tecnico canonico per il Service
+
+La prima prova reale di `Aggiorna Modello` con il WebService locale ha
+raggiunto `POST /api/calculations` e il Core, fermandosi correttamente nella
+validazione `SvgDxfReader` con:
+
+```text
+Lo SVG deve dichiarare data-termodel-units='cm'.
+```
+
+La causa era frontend: `geometry/project.svg` veniva sostituito con lo SVG
+operativo CAD/AI e perdeva l'involucro tecnico creato dal Service.
+
+La v0.73 lascia invariato lo SVG locale e costruisce soltanto per il POST uno
+SVG tecnico:
+
+```text
+TERMODEL-PROJECT-SVG-V1
+data-termodel-units="cm"
+    ↓
+g piano con floor-id/name/role/file/layer/order
+    ↓
+line + text BLOCCO tecnici
+```
+
+Gli sfondi e gli accessori grafici frontend non entrano nel payload; manifest e
+hash vengono ricalcolati dopo la trasformazione. La sintassi JavaScript è stata
+verificata. La prova runtime v0.73 sul PC deve ancora essere ripetuta.
 
 ### v0.72 — origine del rendering visibile
 
