@@ -2095,7 +2095,8 @@ function showAiPreviewModel(plan) {
   lastAiPreviewData = createAiPreviewModelFromPlan(plan);
   renderModelData(lastAiPreviewData, {
     mode: 'ai',
-    label: 'ANTEPRIMA AI — GENERAPIANTA.JS'
+    label: 'ANTEPRIMA AI — GENERAPIANTA.JS',
+    renderOrigin: 'local'
   });
   activateModelPage();
 }
