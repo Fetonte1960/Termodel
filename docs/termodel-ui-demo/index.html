@@ -2,8 +2,8 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Termodel Web v0.80 — Android CAD landscape</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Termodel Web v0.79 — smartphone CAD e archivi</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -14,17 +14,6 @@
     #app.cad-layout-mode .menubar,
     #app.cad-layout-mode .tabs,
     #app.cad-layout-mode .bottom-bar { display: none; }
-
-    /* Termodel Web v0.80 — fullscreen Android CAD */
-    html:fullscreen,
-    html:fullscreen body {
-      width: 100%;
-      height: 100%;
-    }
-    html:fullscreen #app {
-      width: 100vw;
-      height: 100dvh;
-    }
 
     .titlebar {
       display: flex; align-items: center; gap: 7px; padding: 0 6px;
@@ -1626,7 +1615,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.80</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.79</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -2136,6 +2125,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.80"></script>
+  <script type="module" src="./app.js?v=0.79"></script>
 </body>
 </html>
