@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **0.7**  
+Versione documento: **0.8**  
 Aggiornamento: **21 settembre 2026**  
 Stato: **architettura concordata; implementazione progressiva**
 
@@ -329,9 +329,9 @@ pulite nello snapshot restano fasi successive.
 
 ### Commissione frontend — modalità Copertura e simbolo Colmo
 
-Stato: **COMMISSIONATO** — 21 settembre 2026.
+Stato: **ESEGUITO** — 21 settembre 2026.
 
-Riferimenti verificati prima dell'implementazione:
+Riferimenti usati:
 
 - `docs/infotermodelGPT.html`;
 - `SorgentiTermodel/Library/leggidxf/CadGPT.xaml.cs`;
@@ -340,18 +340,19 @@ Riferimenti verificati prima dell'implementazione:
 - `Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/Leggidxf/LeggiDxf.cs`;
 - `Server/Termodelwebservice/src/Termodel.Core/NetDxfCompat/SvgDxfReader.cs`.
 
-La modalità CAD del piano `Tipo=Copertura` deve:
+Termodel Web v0.77 implementa la modalità CAD specifica per
+`Piani.Tipo=Copertura`:
 
-- mostrare lo sfondo locale della copertura in grigio, per distinguerlo
-  chiaramente dalle nuove linee tecniche;
-- nascondere i comandi Porta/Finestra, Finestra 2 punti e Ponte;
-- mantenere il comando di linea, presentandolo come
+- lo sfondo locale duplicato o derivato dal DisegnoInput viene visualizzato
+  in grigio e con opacità ridotta;
+- i comandi Porta/Finestra, Finestra 2 punti e Ponte vengono nascosti;
+- il comando di linea resta disponibile con dicitura
   `Linea perimetro falde`;
-- mantenere il comando LOC presentandolo all'utente come `Centrofalda`,
-  senza cambiare il formato tecnico del blocco;
-- aggiungere il comando `Colmo`, disponibile soltanto sui piani Copertura;
-- inserire il Colmo sulla linea più vicina, come richiesto dal motore;
-- serializzare il simbolo nel formato tecnico già usato dal Desktop/Core:
+- il blocco tecnico `LOC` resta invariato ma nel CAD viene presentato come
+  `Centrofalda`;
+- compare il comando `Colmo` soltanto in modalità Copertura;
+- il punto di inserimento del Colmo viene agganciato alla linea più vicina;
+- il simbolo viene serializzato secondo lo standard Desktop/Core:
 
 ```text
 BLOCCO,Colmo
@@ -362,12 +363,23 @@ QUOTASHED,...
 PARETESHED,...
 ```
 
-- permettere l'editing degli attributi Colmo usando i campi `DatiCad`
-  esistenti `QuotaColmo`, `QuotaGronda`, `LatoParteBassaShed`,
-  `QuotaShed`, `PareteShed`, rispettando combo e archivi definiti da
+- il pannello proprietà del Colmo modifica i cinque attributi usando i campi
+  `DatiCad` già esistenti: `QuotaColmo`, `QuotaGronda`,
+  `LatoParteBassaShed`, `QuotaShed`, `PareteShed`;
+- `PareteShed` riusa la combo/archivio Pareti prevista da
   `definizionedati.json`;
-- non modificare `definizionedati.json` e non introdurre logica tetti nel
-  frontend: l'elaborazione 3D resta responsabilità del Service/Core.
+- il pannello linee cambia intestazione in
+  `Copertura · Linee perimetro falde`;
+- il frontend continua a non generare il tetto 3D: i blocchi e le linee sono
+  input per il Service/Core.
+
+Il comportamento corrisponde al Core corrente: `LeggiDxf` legge i blocchi
+`Colmo`, associa il simbolo alla linea più vicina, assegna
+`QUOTACOLMO` ai vertici della linea, registra `QUOTAGRONDA` e gestisce
+`QUOTASHED/LATOPARTEBASSA/PARETESHED` per gli shed.
+
+Verifica eseguita: sintassi JavaScript valida e presenza dei comandi/formati
+controllata nei sorgenti. Test funzionale browser → Service ancora da eseguire.
 
 ### Commissione frontend — fallback sfondo Copertura da DisegnoInput
 
