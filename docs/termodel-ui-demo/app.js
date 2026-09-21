@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.67';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.68';
 import {
   parseDxfPlotSource,
   getDxfLayerSummary,
@@ -8,7 +8,7 @@ import {
   convertDxfToSvg,
   dxfUnitFromInsUnits,
   dxfUnitScaleToCm
-} from './dxf-plotter.js?v=0.67';
+} from './dxf-plotter.js?v=0.68';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -19,16 +19,16 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.67';
+} from './archivio-web.js?v=0.68';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.67';
+} from './termodel-project-text.js?v=0.68';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.67';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.68';
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
@@ -36,8 +36,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.67';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.67';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.68';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.68';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -343,10 +343,6 @@ const DEMO_HELP = {
   'Ritorna al progetto': {
     title: 'Ritorna al progetto',
     body: '<p>Abbandona soltanto la visualizzazione 3D provvisoria costruita dallo SVG AI e ricarica il <code>TermodelWebModel.json</code> originale del progetto. Lo SVG incollato e la pianta selezionata restano disponibili nella finestra AI.</p>'
-  },
-  'DisegnoInput': {
-    title: 'DisegnoInput',
-    body: '<p>Seleziona il disegno di input associato al progetto. Il modello Termodel viene costruito interpretando i DXF e i layer configurati nei piani.</p>'
   },
   'Edita nel Cad': {
     title: 'Edita nel CAD — viewer Web',
@@ -6243,7 +6239,7 @@ document.addEventListener('keydown', event => {
   }
 });
 // v0.63: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.67' })
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.68' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
@@ -6255,12 +6251,6 @@ document.querySelectorAll('[data-action]').forEach(button => {
     showDemoHelp(button.dataset.action);
   });
 });
-
-const drawingSelect = document.querySelector('select[aria-label="Disegno input"]');
-if (drawingSelect) {
-  drawingSelect.addEventListener('click', () => showDemoHelp('DisegnoInput'));
-  drawingSelect.addEventListener('change', () => showDemoHelp('DisegnoInput'));
-}
 
 projectStartClose?.addEventListener('click', closeProjectStartDialog);
 projectStartCloseBottom?.addEventListener('click', closeProjectStartDialog);
