@@ -327,6 +327,23 @@ snapshot. In questa prima implementazione il manifest contiene soltanto
 l'artifact `model3d`; XML nazionale, dispersioni, pannelli, spirali e piante
 pulite nello snapshot restano fasi successive.
 
+### Commissione frontend — copia diagnostica risposte Service
+
+Stato: **COMMISSIONATO** — 21 settembre 2026.
+
+Durante il collaudo del flusso `Aggiorna Modello`, il frontend deve preparare
+automaticamente negli appunti un testo diagnostico contenente le risposte
+effettivamente ricevute dal Service:
+
+- risposta di `POST /api/calculations`;
+- `calculationId` e manifest restituiti;
+- risposta di `GET .../artifacts/model3d`;
+- in caso di errore, status HTTP e corpo/Problem Details disponibili.
+
+La copia negli appunti è una funzione diagnostica del frontend e non modifica
+il contratto HTTP, lo snapshot o il contenuto degli artifact. Il fallimento
+della Clipboard API non deve far fallire il calcolo o il rendering.
+
 ### Commissione frontend — indicatore origine rendering
 
 Stato: **ESEGUITO** — 21 settembre 2026.
