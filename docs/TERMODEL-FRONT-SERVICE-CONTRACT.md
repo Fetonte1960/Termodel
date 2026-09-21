@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **0.2**  
+Versione documento: **0.3**  
 Aggiornamento: **21 settembre 2026**  
 Stato: **architettura concordata; implementazione progressiva**
 
@@ -302,12 +302,19 @@ L'azione concettuale principale fra frontend e server è:
 AggiornaCalcolo
 ```
 
-Endpoint previsto:
+Endpoint:
 
 ```http
 POST /api/calculations
 Content-Type: text/plain; charset=utf-8
 ```
+
+**Stato implementazione 21 settembre 2026:** il primo ciclo è operativo lato
+Service. La chiamata esegue il motore una sola volta, genera un
+`calculationId`, serializza il `TermodelWebModel v3` e lo conserva nello
+snapshot. In questa prima implementazione il manifest contiene soltanto
+l'artifact `model3d`; XML nazionale, dispersioni, pannelli, spirali e piante
+pulite nello snapshot restano fasi successive.
 
 Body:
 
@@ -455,7 +462,17 @@ il server potrebbe teoricamente produrre.
 
 ## 7. Lettura degli artifact
 
-Schema API previsto:
+Stato implementazione corrente:
+
+```http
+GET /api/calculations/{calculationId}/artifacts/model3d
+```
+
+Questo endpoint legge il JSON già serializzato nello snapshot in memoria e non
+richiama `GeneraModello`. Letture ripetute dello stesso `calculationId`
+restituiscono quindi lo stesso artifact finché lo snapshot esiste.
+
+Schema API complessivo previsto nelle fasi successive:
 
 ```http
 GET /api/calculations/{calculationId}/artifacts/model3d
@@ -588,6 +605,11 @@ dalla **stessa elaborazione del progetto**.
 
 Nella prima versione è ammesso un workspace temporaneo per ogni
 `calculationId`.
+
+**Implementazione iniziale attuale:** per il solo artifact `model3d` lo
+snapshot è mantenuto in memoria dal WebService come byte JSON immutabili
+indicizzati per `calculationId`. Si perde quindi al riavvio del processo.
+Questo è intenzionale per la prima prova e non modifica il contratto HTTP.
 
 Esempio concettuale:
 
