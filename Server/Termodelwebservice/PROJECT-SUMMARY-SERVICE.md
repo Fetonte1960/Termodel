@@ -217,6 +217,30 @@ Risultato:
   modifica**; la verifica corrente è GitHub Actions + smoke HTTP cloud.
 
 
+### INCARICO 2026-09-21 — SVG tecnico canonico frontend per AggiornaCalcolo
+Stato: COMMISSIONATO
+
+Commissionato:
+- correggere la prima anomalia runtime reale di `POST /api/calculations`,
+  dove `SvgDxfReader` rifiuta `geometry/project.svg` perché il frontend ha
+  sostituito lo SVG tecnico del progetto con lo SVG operativo CAD/AI;
+- mantenere invariato lo SVG locale del CAD;
+- generare per il solo payload server uno SVG `TERMODEL-PROJECT-SVG-V1`
+  canonico in centimetri, con gruppi piano e metadati richiesti dal Core;
+- usare i dati correnti del progetto/archivio Piani per costruire i gruppi e
+  trasferire soltanto entità tecniche supportate dal reader;
+- non rilassare la validazione del server e non introdurre formati alternativi;
+- aggiornare contratto e Summary a intervento concluso.
+
+Criteri di completamento:
+- sintassi JavaScript verificata;
+- payload senza `assets/backgrounds/*` e senza elementi grafici locali;
+- radice SVG con `data-termodel-units="cm"`;
+- gruppi piano con `data-termodel-floor-id/name/role/file/layer/order`;
+- stato riportato a ESEGUITO soltanto dopo l'implementazione;
+- la prova runtime successiva sul PC resta distinta dall'implementazione.
+
+
 ## 2. Posizioni e struttura
 
 Sorgente locale compilato e avviato da Visual Studio:
