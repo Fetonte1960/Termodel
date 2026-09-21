@@ -689,14 +689,15 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.70
+Termodel Web v0.71
 ```
 
-Commit frontend di riferimento per la v0.70:
+Commit frontend di riferimento per la v0.71:
 
 ```text
-d0b801250a1ad5a04e91d326ec19c44470109f4f  Add PDF raster import dialog v0.70
-3b2f0feb2f753b88bae9cf0dc2787f539195ec17  Add PDF raster background import v0.70
+6e144ad715390731b0894e066b274a9d9ac49d77  Add server project payload builder
+2c11bccf5062c11ad1c82785bdf5042d903eeaf6  Connect Aggiorna Modello to calculation API
+ff3467cd401fdb35a45fdc89c41105e5b48ae24d  Publish Termodel Web v0.71
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -1276,61 +1277,51 @@ Dalla **v0.57** il frontend non usa più `GET /api/model/capabilities` né
 `POST /api/projects/new` per il bootstrap locale: `Nuovo` e l'importazione di
 un semplice SVG usano il template locale `progetto-vuoto.js`.
 
-### Workflow concordato ma non ancora implementato: AggiornaCalcolo
+### Workflow v0.71 implementato: Aggiorna Modello → AggiornaCalcolo
 
-Il contratto condiviso definisce come direzione:
+Il pulsante `Aggiorna Modello` applica ora il contratto condiviso:
 
 ```text
-frontend
-    ↓
-costruisce progetto corrente
-    ↓
-filtra le risorse puramente locali/frontend
-    ↓
-POST /api/calculations
-    ↓
-calculationId + manifest artifact
-    ↓
-view frontend leggono gli artifact dello snapshot
+nessun progetto strutturato
+    → carica TermodelWebModel.json demo
+
+progetto strutturato corrente
+    → buildCurrentProjectText()
+    → buildTermodelServerPayload()
+    → rimozione assets/backgrounds/* e riferimenti SVG di sfondo
+    → rigenerazione manifest/hash del payload
+    → POST http://localhost:5080/api/calculations
+    → calculationId + manifest
+    → GET href artifact model3d
+    → TermodelWebModel v3
+    → renderModelData(...)
 ```
 
-Principi già consolidati:
+Il progetto locale completo continua a conservare gli sfondi; viene filtrata
+solo la copia temporanea inviata al Service. La base URL del Service resta una
+configurazione dell'ambiente: il frontend usa come default di sviluppo
+`http://localhost:5080`.
+
+Sono memorizzati lato frontend il `calculationId` e il manifest dell'ultima
+elaborazione riuscita, predisponendo le view future alla lettura degli altri
+artifact dello stesso snapshot.
+
+Principi invariati:
 
 - una sola elaborazione coerente per ogni `AggiornaCalcolo`;
-- `calculationId` identifica l'elaborazione/snapshot, non il progetto;
-- leggere un artifact non deve rieseguire il calcolo;
-- le view ricevono dati/artifact, non HTML prodotto dal Core;
-- gli endpoint legacy `POST /api/model/3d` e
-  `GET /api/model/clean-floor/{floorName}` restano durante la migrazione;
-- `POST /api/calculations` è **progettato ma non ancora implementato**.
+- leggere `model3d` non deve ricalcolare;
+- gli endpoint legacy restano disponibili durante la migrazione;
+- gli artifact successivi saranno aggiunti progressivamente secondo il
+  contratto condiviso.
 
-Artifact previsti progressivamente includono modello 3D, piante pulite, XML
-nazionale, report dispersioni, pannelli e spirali.
-
-### Regola payload server
-
-Resta vincolante la decisione già registrata nella v0.58-v0.59:
-
-> **gli sfondi locali/frontend non devono essere trasmessi al server.**
-
-Quindi "file unico completo" nel contratto significa **progetto tecnico
-completo necessario al calcolo**, non copia byte-per-byte del progetto locale.
-
-Il futuro payload server deve partire dal progetto unico corrente ma escludere
-`assets/backgrounds/*`, Data URL/Base64 di sfondo e riferimenti usati
-esclusivamente dal CAD per gli sfondi locali.
-
-Le sezioni tecniche necessarie al motore, per esempio
-`project/DisegnoInput.dxf` quando appartiene realmente al progetto Termodel,
-non vanno confuse con gli asset locali di sfondo.
+Verifica corrente: implementato nei sorgenti v0.71 e sintassi JavaScript
+controllata. Non è ancora stato eseguito il test funzionale sul browser pubblico
+contro il WebService locale del PC.
 
 **Non esistono ancora API CRUD ufficiali per gli archivi.**
 
 Il frontend non deve inventare endpoint, DTO o artifact non presenti nel
 contratto condiviso e nello stato reale del Service.
-
-Per adesso non è richiesta alcuna modifica immediata alla UI Web per il nuovo
-workflow `AggiornaCalcolo`.
 
 ---
 
