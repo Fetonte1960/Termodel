@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.65 — Nord 3D semplificato</title>
+  <title>Termodel Web v0.66 — toolbar CAD compatta</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -589,9 +589,9 @@
 
     .cad-page { background: #ececec; color: #222; }
     .cad-toolbar {
-      position: absolute; left: 0; right: 0; top: 0; height: 68px; z-index: 6;
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-      padding: 6px 9px; background: #e5e5e5; border-bottom: 1px solid #aaa;
+      position: absolute; left: 0; right: 0; top: 0; height: 38px; z-index: 6;
+      display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
+      padding: 4px 9px; background: #e5e5e5; border-bottom: 1px solid #aaa;
       align-content: center;
     }
     .cad-toolbar label { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -701,7 +701,7 @@
     .cad-toolbar .cad-status.dirty { color: #9a5a00; font-weight: 700; }
     .cad-toolbar .cad-status.error { color: #a11616; font-weight: 700; }
     .cad-canvas {
-      position: absolute; left: 0; right: 310px; top: 68px; bottom: 0;
+      position: absolute; left: 0; right: 310px; top: 38px; bottom: 0;
       overflow: hidden; background: #f6f6f6;
       display: flex; align-items: center; justify-content: center;
     }
@@ -778,7 +778,7 @@
     .cad-context-menu button:hover { background: #dcecff; }
     .cad-properties {
       position: absolute;
-      top: 68px;
+      top: 38px;
       right: 0;
       bottom: 0;
       width: 310px;
@@ -1050,7 +1050,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.65</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.66</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -1524,6 +1524,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.65"></script>
+  <script type="module" src="./app.js?v=0.66"></script>
 </body>
 </html>
