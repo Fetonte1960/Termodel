@@ -689,10 +689,10 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.71
+Termodel Web v0.72
 ```
 
-Commit frontend di riferimento per la v0.71:
+Commit frontend di riferimento per la v0.72:
 
 ```text
 6e144ad715390731b0894e066b274a9d9ac49d77  Add server project payload builder
@@ -1276,6 +1276,29 @@ dalla generazione corrente.
 Dalla **v0.57** il frontend non usa più `GET /api/model/capabilities` né
 `POST /api/projects/new` per il bootstrap locale: `Nuovo` e l'importazione di
 un semplice SVG usano il template locale `progetto-vuoto.js`.
+
+### v0.72 — origine del rendering visibile
+
+Il viewer 3D mostra ora in modo persistente la provenienza del modello:
+
+```text
+ANTEPRIMA LOCALE · nessuna elaborazione server
+```
+
+per il JSON demo e le preview costruite nel browser, oppure:
+
+```text
+RENDERING ELABORATO DA TERMODEL SERVICE · calculationId <breve>
+```
+
+quando il modello visualizzato proviene dall'artifact `model3d` di uno
+snapshot restituito da `POST /api/calculations`. L'identificativo completo è
+disponibile nel tooltip. Questo rende immediatamente distinguibile il redraw
+autorevole del Service dalle anteprime locali.
+
+Verifica corrente: implementato nei sorgenti e sintassi JavaScript controllata;
+resta da verificare nel browser pubblico il ciclo reale contro il Service
+locale.
 
 ### Workflow v0.71 implementato: Aggiorna Modello → AggiornaCalcolo
 
