@@ -47,8 +47,83 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.79';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.79';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.80';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.80';
+
+const TERMODEL_ANDROID_DEVICE = /Android/i.test(navigator.userAgent || '');
+let androidCadFullscreenOwned = false;
+let androidCadOrientationLocked = false;
+
+async function enterAndroidCadLandscape() {
+  if (!TERMODEL_ANDROID_DEVICE) return false;
+
+  const root = document.documentElement;
+  const alreadyFullscreen = Boolean(document.fullscreenElement);
+
+  if (!alreadyFullscreen && typeof root?.requestFullscreen === 'function') {
+    try {
+      try {
+        await root.requestFullscreen({ navigationUI: 'hide' });
+      } catch (_) {
+        // Alcune versioni Android accettano requestFullscreen ma non
+        // l'opzione navigationUI.
+        await root.requestFullscreen();
+      }
+      androidCadFullscreenOwned = Boolean(document.fullscreenElement);
+    } catch (error) {
+      console.info('Android CAD: fullscreen non disponibile.', error);
+    }
+  }
+
+  try {
+    if (typeof screen?.orientation?.lock === 'function') {
+      await screen.orientation.lock('landscape');
+      androidCadOrientationLocked = true;
+    }
+  } catch (error) {
+    // Il lock può essere rifiutato dal browser/dispositivo: il responsive
+    // v0.79 resta comunque pienamente utilizzabile.
+    console.info('Android CAD: blocco landscape non disponibile.', error);
+  }
+
+  requestAnimationFrame(() => {
+    if (cadPage?.classList.contains('active')) renderCadComparison();
+    resize();
+  });
+
+  return androidCadOrientationLocked || Boolean(document.fullscreenElement);
+}
+
+async function exitAndroidCadLandscape() {
+  if (!TERMODEL_ANDROID_DEVICE) return;
+
+  if (androidCadOrientationLocked) {
+    try {
+      screen?.orientation?.unlock?.();
+    } catch (error) {
+      console.info('Android CAD: sblocco orientamento non disponibile.', error);
+    }
+    androidCadOrientationLocked = false;
+  }
+
+  const exitOwnedFullscreen = androidCadFullscreenOwned;
+  androidCadFullscreenOwned = false;
+
+  if (
+    exitOwnedFullscreen &&
+    document.fullscreenElement &&
+    typeof document.exitFullscreen === 'function'
+  ) {
+    try {
+      await document.exitFullscreen();
+    } catch (error) {
+      console.info('Android CAD: uscita fullscreen non disponibile.', error);
+    }
+  }
+
+  requestAnimationFrame(resize);
+}
+
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -6732,6 +6807,7 @@ function cadReturnToModel() {
 
   cadSetMobilePropertiesOpen(false);
   activateModelPage();
+  void exitAndroidCadLandscape();
 }
 
 function activateCadPage() {
@@ -6740,6 +6816,8 @@ function activateCadPage() {
     void startBlankProjectFromCad();
     return;
   }
+
+  void enterAndroidCadLandscape();
 
   setCadLayoutMode(true);
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -7087,6 +7165,30 @@ if (cadReturnModel)
 if (cadExportArchitectural)
   cadExportArchitectural.addEventListener('click', downloadArchitecturalDxf);
 
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && TERMODEL_ANDROID_DEVICE) {
+    androidCadFullscreenOwned = false;
+    if (androidCadOrientationLocked) {
+      try {
+        screen?.orientation?.unlock?.();
+      } catch (_) {}
+      androidCadOrientationLocked = false;
+    }
+  }
+
+  requestAnimationFrame(() => {
+    if (cadPage?.classList.contains('active')) renderCadComparison();
+    resize();
+  });
+});
+
+screen?.orientation?.addEventListener?.('change', () => {
+  requestAnimationFrame(() => {
+    if (cadPage?.classList.contains('active')) renderCadComparison();
+    resize();
+  });
+});
+
 // Scorciatoie operative del mini-CAD.
 document.addEventListener('keydown', event => {
   if (!cadPage?.classList.contains('active')) return;
@@ -7140,6 +7242,7 @@ projectStartModal?.addEventListener('click', event => {
 });
 projectStartBlank?.addEventListener('click', () => {
   projectStartContext = { target: 'cad', archiveName: '' };
+  void enterAndroidCadLandscape();
   void startBlankProjectFromCad();
 });
 projectStartInstructAi?.addEventListener('click', async event => {
@@ -7148,6 +7251,7 @@ projectStartInstructAi?.addEventListener('click', async event => {
 });
 projectStartImportAi?.addEventListener('click', async event => {
   const context = projectStartContext;
+  if (context.target === 'cad') void enterAndroidCadLandscape();
   closeProjectStartDialog();
   await importAiFromMainForm(event);
   if (structuredProjectActive) {
