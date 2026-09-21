@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`c35f940058c6cba7dc7cb2825b4958c72ce75630` — `Publish Termodel Web v0.76 coverage background fallback`  
+`c35f940058c6cba7dc7cb2825b4958c72ce75630` — `Publish Termodel Web v0.77 coverage background fallback`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -737,6 +737,14 @@ La v0.76 completa `＋ Copertura`: se il piano sorgente non ha uno
 sfondo locale, il DisegnoInput corrente viene trasformato in uno sfondo
 vettoriale SVG locale della copertura. È solo un riferimento grafico: non
 duplica la geometria tecnica e resta escluso dal payload inviato al Service.
+
+La v0.77 specializza il CAD quando il piano corrente è di tipo
+`Copertura`: sfondo locale in grigio, FIN/PON nascosti, comando linea
+rinominato `Linea perimetro falde`, LOC presentato come `Centrofalda` e
+nuovo comando `Colmo`. Il Colmo usa esattamente gli attributi Desktop/Core
+`QUOTACOLMO`, `QUOTAGRONDA`, `LATOPARTEBASSA`, `QUOTASHED`,
+`PARETESHED` ed è inserito con snap alla linea più vicina. Il frontend non
+calcola il tetto 3D.
 
 Ultima versione pubblica verificata manualmente dall'utente:
 
