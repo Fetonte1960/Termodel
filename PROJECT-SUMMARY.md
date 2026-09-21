@@ -689,7 +689,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.80
+Termodel Web v0.81
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -801,6 +801,23 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+La v0.81 corregge un conflitto tra le media query mobile emerso nel test
+reale su Chrome Android in verticale: la regola `max-width:820px` sovrascriveva
+la griglia a quattro righe definita sotto 760 px, lasciando la `.workspace`
+nella riga fissa da circa 40 px e quindi appiattendo il viewer 3D.
+
+La correzione è specifica Android e viene applicata come ultima regola CSS:
+
+```text
+menu 42px
+tab 40px
+workspace minmax(0,1fr)
+bottom bar 48px
+```
+
+con `height:100dvh` su `body/#app`, in modo che Chrome Android utilizzi
+l'intera altezza visibile. Desktop e altri sistemi restano invariati.
 
 La v0.80 introduce una modalità di navigazione specifica **solo Android** nel
 viewer 3D:
