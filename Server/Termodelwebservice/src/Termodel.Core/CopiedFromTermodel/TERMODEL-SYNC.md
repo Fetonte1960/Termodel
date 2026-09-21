@@ -14,7 +14,7 @@ restare minima, commentata e confrontabile con il riferimento indicato.
 | `Leggidxf/GeneraPianta.cs` | `SorgentiTermodel/Library/leggidxf/GeneraPianta.cs` | PENDING |
 | `Leggidxf/LeggiDxf.cs` | `SorgentiTermodel/Library/leggidxf/LeggiDxf.cs` | PENDING |
 | `Leggidxf/Tetti.cs` | `SorgentiTermodel/Library/leggidxf/Tetti.cs` | PENDING |
-| `Model/Polig3D.cs` | `SorgentiTermodel/Library/leggidxf/Polig3D.cs` | PENDING |
+| `Model/Polig3D.cs` | `SorgentiTermodel/Library/leggidxf/Polig3D.cs` | PENDING — BYTE-IDENTICAL, Git blob `d7d835a8a39febb3c3b26bcb88a8cc5cebb19411` |
 | `Model/Modello.cs` | `SorgentiTermodel/Library/Modello.cs` | PENDING |
 
 Il supporto desktop `SorgentiTermodel/Library/utilities/ErrorManager.cs` è
