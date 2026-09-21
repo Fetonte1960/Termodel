@@ -1,4 +1,4 @@
-// Termodel Web v0.71 — conversione bidirezionale TERMODEL-PROJECT-TEXT-V1.
+// Termodel Web v0.73 — conversione bidirezionale TERMODEL-PROJECT-TEXT-V1.
 // Il progetto unico resta il contenitore; questo modulo aggiorna soltanto le
 // sezioni modificate dal frontend e conserva tutte le altre sezioni.
 // Gli sfondi locali sono consolidati in assets/backgrounds/* e vengono
@@ -239,6 +239,275 @@ export function hydrateTermodelBackgrounds(projectText, geometrySvg) {
   return new XMLSerializer().serializeToString(doc.documentElement);
 }
 
+const TERMODEL_PROJECT_SVG_FORMAT = 'TERMODEL-PROJECT-SVG-V1';
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
+function parseProjectManifest(parsed) {
+  const raw = parsed.sections.get('manifest.json');
+  if (!raw) throw new Error('Il progetto non contiene manifest.json.');
+  try {
+    const manifest = JSON.parse(raw);
+    if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest))
+      throw new Error('radice non valida');
+    return manifest;
+  } catch (error) {
+    throw new Error('manifest.json non valido: ' + error.message);
+  }
+}
+
+function readServerFloors(parsed) {
+  const manifest = parseProjectManifest(parsed);
+  const manifestFloors = Array.isArray(manifest.floors) ? manifest.floors : [];
+  let piani = [];
+
+  const rawPiani = parsed.sections.get('archives/json/Piani.json');
+  if (rawPiani) {
+    try {
+      piani = parseArchiveJsonShape(rawPiani).records || [];
+    } catch (_) {
+      piani = [];
+    }
+  }
+
+  const count = Math.max(manifestFloors.length, piani.length);
+  if (!count)
+    throw new Error('Il progetto non contiene piani utilizzabili dal Service.');
+
+  return Array.from({ length: count }, (_, index) => {
+    const mf = manifestFloors[index] && typeof manifestFloors[index] === 'object'
+      ? manifestFloors[index]
+      : {};
+    const pr = piani[index] && typeof piani[index] === 'object'
+      ? piani[index]
+      : {};
+
+    const id = String(mf.id || ('F' + String(index + 1).padStart(3, '0'))).trim();
+    const name = String(pr.Nome ?? mf.name ?? '').trim();
+    const type = String(pr.Tipo ?? mf.type ?? '').trim();
+    const fileName = String(pr.NomeFile ?? mf.fileName ?? '').trim();
+    const layer = String(pr.LayerCad ?? mf.cadLayer ?? '').trim();
+    const role = type.toLowerCase();
+
+    if (!id || !name || !fileName || !layer)
+      throw new Error('Piano ' + (index + 1) + ': metadati incompleti per il payload Service.');
+    if (role !== 'calpestabile' && role !== 'copertura')
+      throw new Error(
+        'Piano "' + name + '": Tipo deve essere Calpestabile oppure Copertura.'
+      );
+
+    return {
+      id,
+      name,
+      role,
+      fileName,
+      layer,
+      order: Number.isInteger(Number(mf.order)) ? Number(mf.order) : index
+    };
+  }).sort((a, b) => a.order - b.order);
+}
+
+function sameProjectToken(a, b) {
+  return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+}
+
+function technicalBlockText(element) {
+  if (!element || element.localName !== 'text') return false;
+  const rows = Array.from(element.children || [])
+    .filter(child => child.localName === 'tspan')
+    .map(child => String(child.textContent || '').trim())
+    .filter(Boolean);
+  const first = rows[0] || String(element.textContent || '').trim();
+  return /^BLOCCO\s*,/i.test(first);
+}
+
+function technicalSvgChildren(group) {
+  if (!group) return [];
+  return Array.from(group.children || []).filter((element) =>
+    element.localName === 'line' ||
+    (element.localName === 'text' && technicalBlockText(element))
+  );
+}
+
+function cloneSvgTechnicalNode(targetDocument, source) {
+  const clone = targetDocument.createElementNS(SVG_NAMESPACE, source.localName);
+
+  Array.from(source.attributes || []).forEach((attribute) => {
+    if (attribute.name === 'xmlns') return;
+    clone.setAttribute(attribute.name, attribute.value);
+  });
+
+  Array.from(source.childNodes || []).forEach((child) => {
+    if (child.nodeType === 1) {
+      clone.appendChild(cloneSvgTechnicalNode(targetDocument, child));
+    } else if (child.nodeType === 3 || child.nodeType === 4) {
+      clone.appendChild(targetDocument.createTextNode(child.nodeValue || ''));
+    }
+  });
+
+  return clone;
+}
+
+function normalizeServerLineAttributes(line, floor) {
+  if (!line || line.localName !== 'line') return;
+
+  if (!String(line.getAttribute('data-termodel-layer') || '').trim())
+    line.setAttribute('data-termodel-layer', floor.layer);
+
+  if (!String(line.getAttribute('data-termodel-linetype') || '').trim()) {
+    const localType = String(line.getAttribute('data-termodel-tipo-linea') || '').trim();
+    if (localType) line.setAttribute('data-termodel-linetype', localType);
+  }
+
+  if (!String(line.getAttribute('data-termodel-color') || '').trim()) {
+    const localColor = String(line.getAttribute('data-termodel-colore') || '').trim();
+    const match = localColor.match(/^\s*(\d+)/);
+    if (match) line.setAttribute('data-termodel-color', match[1]);
+  }
+}
+
+function localElementBelongsToFloor(element, floor, floorCount) {
+  const plane = String(element.getAttribute('data-termodel-piano') || '').trim();
+  if (plane)
+    return sameProjectToken(plane, floor.name) || sameProjectToken(plane, floor.id);
+
+  const layer = String(element.getAttribute('data-termodel-layer') || '').trim();
+  if (layer && floor.layer)
+    return sameProjectToken(layer, floor.layer);
+
+  // Gli SVG-LFT storici non avevano metadati di piano sulle singole entità.
+  // Il fallback è sicuro soltanto quando il progetto ha un unico piano.
+  return floorCount === 1;
+}
+
+function buildCanonicalServerGeometry(projectText, geometrySvg) {
+  if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined')
+    throw new Error('DOM XML non disponibile: impossibile preparare geometry/project.svg.');
+
+  const project = parseTermodelProjectText(projectText);
+  const floors = readServerFloors(project);
+
+  const sourceDoc = new DOMParser().parseFromString(String(geometrySvg || ''), 'image/svg+xml');
+  if (sourceDoc.querySelector('parsererror'))
+    throw new Error('geometry/project.svg non è XML valido.');
+
+  const sourceRoot = sourceDoc.documentElement;
+  if (!sourceRoot || sourceRoot.localName !== 'svg')
+    throw new Error('geometry/project.svg non contiene una radice SVG.');
+
+  const outputDoc = new DOMParser().parseFromString(
+    '<svg xmlns="' + SVG_NAMESPACE + '"></svg>',
+    'image/svg+xml'
+  );
+  const outputRoot = outputDoc.documentElement;
+  outputRoot.setAttribute('version', '1.1');
+  outputRoot.setAttribute('data-termodel-format', TERMODEL_PROJECT_SVG_FORMAT);
+  outputRoot.setAttribute('data-termodel-units', 'cm');
+
+  const directGroups = Array.from(sourceRoot.children || [])
+    .filter(element => element.localName === 'g');
+
+  const canonicalGroups = directGroups.filter(group =>
+    String(group.getAttribute('data-termodel-floor-id') || '').trim()
+  );
+
+  let sourceTechnicalCount = 0;
+  let assignedTechnicalCount = 0;
+
+  floors.forEach((floor) => {
+    const outputGroup = outputDoc.createElementNS(SVG_NAMESPACE, 'g');
+    outputGroup.setAttribute(
+      'id',
+      'floor-' + floor.id.replace(/[^A-Za-z0-9_-]+/g, '_')
+    );
+    outputGroup.setAttribute('data-termodel-floor-id', floor.id);
+    outputGroup.setAttribute('data-termodel-name', floor.name);
+    outputGroup.setAttribute('data-termodel-role', floor.role);
+    outputGroup.setAttribute('data-termodel-file', floor.fileName);
+    outputGroup.setAttribute('data-termodel-layer', floor.layer);
+    outputGroup.setAttribute('data-termodel-order', String(floor.order));
+
+    let sourceGroup = null;
+    let candidates = [];
+
+    if (canonicalGroups.length) {
+      sourceGroup = canonicalGroups.find(group =>
+        sameProjectToken(group.getAttribute('data-termodel-floor-id'), floor.id) ||
+        sameProjectToken(group.getAttribute('data-termodel-name'), floor.name)
+      ) || null;
+
+      candidates = technicalSvgChildren(sourceGroup);
+      sourceTechnicalCount += candidates.length;
+    } else {
+      sourceGroup = directGroups.find(group =>
+        sameProjectToken(group.id, floor.role)
+      ) || null;
+
+      const roleCandidates = technicalSvgChildren(sourceGroup);
+      if (floor === floors[0])
+        sourceTechnicalCount = directGroups
+          .filter(group => ['calpestabile', 'copertura'].includes(String(group.id || '').toLowerCase()))
+          .reduce((count, group) => count + technicalSvgChildren(group).length, 0);
+
+      candidates = roleCandidates.filter(element =>
+        localElementBelongsToFloor(element, floor, floors.length)
+      );
+    }
+
+    candidates.forEach((element) => {
+      const clone = cloneSvgTechnicalNode(outputDoc, element);
+      if (clone.localName === 'line')
+        normalizeServerLineAttributes(clone, floor);
+      else if (!String(clone.getAttribute('data-termodel-layer') || '').trim())
+        clone.setAttribute('data-termodel-layer', floor.layer);
+
+      outputGroup.appendChild(clone);
+      assignedTechnicalCount++;
+    });
+
+    outputRoot.appendChild(outputGroup);
+  });
+
+  if (sourceTechnicalCount > 0 && assignedTechnicalCount === 0)
+    throw new Error(
+      'Nessuna entità tecnica dello SVG CAD è associabile ai piani del progetto.'
+    );
+
+  return new XMLSerializer().serializeToString(outputRoot);
+}
+
+function validateCanonicalServerGeometry(geometrySvg) {
+  const doc = new DOMParser().parseFromString(String(geometrySvg || ''), 'image/svg+xml');
+  if (doc.querySelector('parsererror'))
+    throw new Error('geometry/project.svg tecnico non è XML valido.');
+
+  const root = doc.documentElement;
+  if (root.namespaceURI !== SVG_NAMESPACE || root.localName !== 'svg')
+    throw new Error('geometry/project.svg tecnico non usa il namespace SVG.');
+  if (root.getAttribute('data-termodel-format') !== TERMODEL_PROJECT_SVG_FORMAT)
+    throw new Error('geometry/project.svg tecnico non dichiara TERMODEL-PROJECT-SVG-V1.');
+  if (String(root.getAttribute('data-termodel-units') || '').toLowerCase() !== 'cm')
+    throw new Error("geometry/project.svg tecnico non dichiara data-termodel-units='cm'.");
+
+  const groups = Array.from(root.children || []).filter(element => element.localName === 'g');
+  if (!groups.length)
+    throw new Error('geometry/project.svg tecnico non contiene gruppi di piano.');
+
+  const required = [
+    'data-termodel-floor-id',
+    'data-termodel-name',
+    'data-termodel-role',
+    'data-termodel-file',
+    'data-termodel-layer',
+    'data-termodel-order'
+  ];
+  groups.forEach((group, index) => {
+    required.forEach((name) => {
+      if (!String(group.getAttribute(name) || '').trim())
+        throw new Error('Piano ' + (index + 1) + ': attributo SVG obbligatorio ' + name + ' mancante.');
+    });
+  });
+}
+
 function stripTermodelBackgroundElements(geometrySvg) {
   const source = String(geometrySvg || '');
   if (!source.trim()) return source;
@@ -250,9 +519,6 @@ function stripTermodelBackgroundElements(geometrySvg) {
   if (doc.querySelector('parsererror'))
     throw new Error('geometry/project.svg non è XML valido.');
 
-  // Gli image marcati come sfondo sono risorse esclusivamente frontend.
-  // Nel payload tecnico non devono restare né il raster né il riferimento
-  // data-termodel-background-id usato per la reidratazione locale.
   doc.querySelectorAll(
     'image[data-termodel-sfondo="1"], image[data-termodel-background-id]'
   ).forEach(image => image.remove());
@@ -260,13 +526,13 @@ function stripTermodelBackgroundElements(geometrySvg) {
   return new XMLSerializer().serializeToString(doc.documentElement);
 }
 
-// Termodel Web v0.71: deriva dal progetto locale completo il payload tecnico
-// previsto dal contratto Frontend <-> Service. Non modifica il progetto locale.
+// Termodel Web v0.73: deriva dal progetto locale completo il payload tecnico
+// previsto dal contratto Frontend <-> Service. Lo SVG operativo del CAD resta
+// locale; nel payload viene costruito TERMODEL-PROJECT-SVG-V1 canonico.
 export async function buildTermodelServerPayload(source) {
   let result = normalizeSource(source);
   let parsed = parseTermodelProjectText(result);
 
-  // Rimuove indice e contenuti binari/Data URL degli sfondi locali.
   for (const name of parsed.sectionOrder) {
     if (name.startsWith(TERMODEL_BACKGROUND_SECTION_PREFIX))
       result = removeTermodelProjectSection(result, name);
@@ -277,13 +543,16 @@ export async function buildTermodelServerPayload(source) {
   if (!geometrySvg)
     throw new Error('Il progetto non contiene geometry/project.svg.');
 
+  const localWithoutBackgrounds = stripTermodelBackgroundElements(geometrySvg);
+  const serverGeometry = buildCanonicalServerGeometry(result, localWithoutBackgrounds);
+  validateCanonicalServerGeometry(serverGeometry);
+
   result = replaceTermodelProjectSection(
     result,
     'geometry/project.svg',
-    stripTermodelBackgroundElements(geometrySvg)
+    serverGeometry
   );
 
-  // Ricostruisce sections/hash del manifest sul payload realmente trasmesso.
   result = await refreshManifest(result);
 
   const verify = parseTermodelProjectText(result);
