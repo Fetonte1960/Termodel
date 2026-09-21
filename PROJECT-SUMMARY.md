@@ -689,7 +689,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.81
+Termodel Web v0.82
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -801,6 +801,22 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+La v0.82 sostituisce per Android la dipendenza dall'altezza CSS con una
+correzione runtime basata sulla viewport reale:
+
+- usa `visualViewport.height/width` quando disponibili, con fallback a
+  `innerHeight/innerWidth`;
+- imposta direttamente l'altezza in pixel di `html`, `body` e `#app`;
+- sotto 760 px assegna inline le quattro righe reali
+  `42px 40px minmax(0,1fr) 48px`;
+- in modalità CAD imposta una sola riga elastica;
+- ricalcola il layout su `resize`, `orientationchange` e variazioni della
+  `visualViewport`;
+- richiama il resize del renderer dopo l'aggiornamento.
+
+Questa correzione nasce dal secondo test reale Android, dove la v0.81 risultava
+ancora appiattita. Desktop e altri sistemi restano invariati.
 
 La v0.81 corregge un conflitto tra le media query mobile emerso nel test
 reale su Chrome Android in verticale: la regola `max-width:820px` sovrascriveva
