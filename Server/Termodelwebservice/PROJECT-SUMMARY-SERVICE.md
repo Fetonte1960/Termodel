@@ -84,6 +84,40 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-21 — Invarianza Polig3D e TermodelWebModel v3 completo
+Stato: COMMISSIONATO
+
+Commissionato:
+- riportare `Polig3D` del Core verso il comportamento e la struttura del
+  Desktop, evitando la versione semplificata che perde
+  `ElementoAssociato/ElementiAssociati`;
+- conservare nel Core i metadati semantici necessari a filtri, XML e calcoli:
+  piano, confine, separatore, stessaZona, fittizia e falda;
+- usare la stessa strategia già adottata per `LeggiDxf`: mantenere il più
+  possibile invariata la classe strategica e sostituire solo le dipendenze
+  UI/rendering con facciate headless;
+- usare xBIM reale come supporto dati IFC in memoria se necessario, senza
+  introdurre un secondo motore geometrico o un falso xBIM esteso;
+- fare produrre al Core un unico `TermodelWebModel v3` semanticamente
+  compatibile con `SorgentiTermodel/Work/Web/DrawBimJson.cs`, senza creare
+  formati JSON alternativi;
+- mantenere compatibili gli endpoint legacy durante l'intervento;
+- non modificare frontend né contratto condiviso salvo necessità esplicita.
+
+Criteri di completamento:
+- soluzione Service compilata da GitHub Actions con 0 errori;
+- DTO/artifact `TermodelWebModel v3` con i metadati avanzati espliciti;
+- semantica di `numero/source/parte` riallineata al riferimento Desktop per
+  quanto esercitato dal motore Core;
+- stato e limiti reali documentati, distinguendo build, esecuzione HTTP e
+  confronto golden;
+- aggiornamento della stessa voce a `ESEGUITO` solo a lavoro concluso.
+
+Risultato:
+- in corso.
+
+
+
 ## 2. Posizioni e struttura
 
 Sorgente locale compilato e avviato da Visual Studio:
