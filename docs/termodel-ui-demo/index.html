@@ -759,6 +759,7 @@
       border-color: #5c8db2;
       font-weight: 700;
     }
+    .cad-mobile-properties-toggle { display: none; }
     .cad-toolbar button.active {
       background: linear-gradient(#fff4c9,#f2d984);
       border-color: #9f7b19;
@@ -1093,9 +1094,9 @@
     .cad-swatch.window { background: #00897b; }
 
     @media (max-width: 900px) {
-      .cad-toolbar { height: 104px; }
-      .cad-canvas { top: 104px; right: 280px; }
-      .cad-properties { top: 104px; width: 280px; }
+      .cad-toolbar { height: 76px; }
+      .cad-canvas { top: 76px; right: 260px; }
+      .cad-properties { top: 76px; width: 260px; }
       .cad-toolbar .cad-spacer { display: none; }
       .raster-ai-body {
         grid-template-columns: 1fr;
@@ -1104,9 +1105,302 @@
       .raster-ai-window { height: 94vh; }
       .raster-ai-preview-box { min-height: 280px; }
     }
+
     @media (max-width: 760px) {
-      #app { grid-template-rows: 24px 23px 27px 1fr 39px; }
-      .bottom-bar { gap: 3px; }
+      html, body {
+        font-size: 13px;
+        overscroll-behavior: none;
+      }
+
+      #app {
+        grid-template-rows: 42px 40px minmax(0,1fr) 48px;
+      }
+      #app > .titlebar { display: none; }
+      #app.cad-layout-mode {
+        grid-template-rows: minmax(0,1fr);
+      }
+
+      .menubar {
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+      }
+      .menu { flex: 0 0 auto; }
+      .menu > button {
+        min-width: 72px;
+        height: 42px;
+        padding: 0 13px;
+        font-size: 14px;
+      }
+      .dropdown {
+        position: fixed;
+        top: 44px;
+        left: 8px;
+        right: 8px;
+        width: auto;
+        min-width: 0;
+        max-height: calc(100dvh - 104px);
+        overflow: auto;
+        z-index: 120;
+      }
+      .dropdown button {
+        min-height: 44px;
+        padding: 9px 16px;
+        font-size: 14px;
+      }
+
+      .tabs {
+        min-width: 0;
+        align-items: stretch;
+        gap: 2px;
+        padding: 0 4px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+      }
+      .tab {
+        flex: 0 0 auto;
+        min-width: 104px;
+        height: 40px;
+        padding: 5px 12px;
+        font-size: 13px;
+      }
+
+      .bottom-bar {
+        height: 48px;
+        gap: 5px;
+        padding: 4px 5px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+      }
+      .bottom-bar button {
+        flex: 0 0 auto;
+        height: 40px;
+        padding: 4px 11px;
+        font-size: 13px;
+      }
+      .check-wrap {
+        flex: 0 0 auto;
+        min-height: 40px;
+      }
+
+      #viewer { right: 0 !important; }
+      .viewport-status {
+        left: 6px;
+        top: 6px;
+        max-width: calc(100% - 12px);
+        padding: 4px 6px;
+        font-size: 10px;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .render-origin-badge {
+        left: 6px;
+        top: 34px;
+        max-width: calc(100% - 12px);
+        padding: 4px 6px;
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .axis {
+        left: 8px;
+        bottom: 8px;
+        transform: scale(.82);
+        transform-origin: left bottom;
+      }
+      .view-cube {
+        right: 8px !important;
+        bottom: 8px;
+        transform: scale(.82);
+        transform-origin: right bottom;
+      }
+
+      .info-page, .calc-page { padding: 12px; }
+      .classic-group { max-width: none; padding: 12px; }
+      .classic-row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+        padding: 7px 0;
+      }
+
+      /* CAD mobile: il disegno usa tutta la larghezza. */
+      .cad-toolbar {
+        height: 48px;
+        gap: 6px;
+        padding: 4px 6px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+      }
+      .cad-toolbar > * { flex: 0 0 auto; }
+      .cad-toolbar button,
+      .cad-toolbar select,
+      .cad-tool-menu > summary {
+        height: 40px;
+        min-height: 40px;
+        font-size: 13px;
+      }
+      .cad-tool-menu > summary { padding: 2px 11px; }
+      .cad-tool-dropdown {
+        position: fixed;
+        top: 52px;
+        left: 8px;
+        right: 8px;
+        width: auto;
+        min-width: 0;
+        max-height: calc(100dvh - 64px);
+        overflow: auto;
+        padding: 9px;
+        z-index: 150;
+      }
+      .cad-tool-dropdown button,
+      .cad-tool-dropdown select,
+      .cad-tool-dropdown label {
+        min-height: 42px;
+        font-size: 14px;
+      }
+      .cad-toolbar-plane {
+        height: 40px;
+        padding: 0 5px;
+      }
+      .cad-toolbar-plane select {
+        min-width: 105px;
+        max-width: 150px;
+      }
+      .cad-toolbar .cad-status {
+        min-width: 150px;
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .cad-toolbar .cad-spacer { display: none; }
+      .cad-mobile-properties-toggle {
+        display: inline-block;
+        font-weight: 700;
+        background: linear-gradient(#fff7c8,#efd56a) !important;
+        border-color: #9b7d1d !important;
+      }
+      .cad-mobile-properties-toggle.active {
+        background: linear-gradient(#eef9ff,#cfe8f6) !important;
+        border-color: #46799e !important;
+      }
+
+      .cad-canvas {
+        top: 48px;
+        right: 0;
+        bottom: 0;
+      }
+      .cad-properties {
+        display: none;
+        top: 52px;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        width: auto;
+        z-index: 80;
+        border: 1px solid #7f8790;
+        box-shadow: 0 10px 32px rgba(0,0,0,.34);
+      }
+      .cad-page.mobile-properties-open .cad-properties {
+        display: block;
+      }
+      .cad-properties-head {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        padding: 11px 10px;
+        font-size: 14px;
+      }
+      .cad-properties-body { padding: 8px; }
+      .cad-prop-row {
+        grid-template-columns: 1fr;
+        gap: 3px;
+        padding: 6px;
+      }
+      .cad-prop-row label {
+        white-space: normal;
+        font-size: 12px;
+      }
+      .cad-prop-row input,
+      .cad-prop-row select,
+      .cad-prop-arc {
+        min-height: 40px;
+        height: 40px;
+        font-size: 14px;
+      }
+      .cad-prop-actions button {
+        min-height: 40px;
+        height: 40px;
+        font-size: 13px;
+      }
+      .cad-north-angle input[type="number"] {
+        height: 40px;
+      }
+      .cad-legend { display: none; }
+
+      /* Finestre di lavoro: pieno schermo e controlli toccabili. */
+      .ai-instruct-modal,
+      .raster-ai-modal,
+      .dxf-import-modal,
+      .svg-export-modal {
+        padding: 0;
+      }
+      .ai-instruct-window,
+      .raster-ai-window,
+      .dxf-import-window,
+      .pdf-import-window,
+      .svg-export-window {
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        max-height: none;
+        min-height: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+      .raster-ai-foot,
+      .dxf-import-foot,
+      .svg-export-foot {
+        overflow-x: auto;
+      }
+      .raster-ai-foot button,
+      .dxf-import-foot button,
+      .svg-export-actions button,
+      .ai-instruct-foot button,
+      .pdf-page-toolbar button {
+        min-height: 40px;
+      }
+      .pdf-preview-wrap {
+        min-height: 180px;
+        max-height: 55dvh;
+        padding: 5px;
+      }
+    }
+
+    @media (max-width: 760px) and (orientation: landscape) {
+      #app:not(.cad-layout-mode) {
+        grid-template-rows: 36px 34px minmax(0,1fr) 44px;
+      }
+      .menu > button { height: 36px; }
+      .tab { height: 34px; }
+      .bottom-bar { height: 44px; }
+      .bottom-bar button { height: 36px; }
+      .render-origin-badge { top: 32px; }
+    }
+
+    @media (pointer: coarse) {
+      button, select, input[type="checkbox"], input[type="radio"] {
+        touch-action: manipulation;
+      }
     }
 
     /* Termodel Web v0.78 — adattamento smartphone */
@@ -1400,6 +1694,7 @@
             <button id="cadOpenPianiArchive" class="cad-toolbar-arc" type="button" title="Apri archivio Piani">▤ Arc</button>
             <button id="cadAddRoofPlane" class="cad-toolbar-arc" type="button" title="Crea un nuovo piano Copertura usando lo stesso sfondo del piano corrente">＋ Copertura</button>
           </span>
+          <button id="cadMobilePropertiesToggle" class="cad-mobile-properties-toggle" type="button" aria-expanded="false" title="Apri o chiudi il pannello Dati CAD">▤ Dati</button>
           <button id="cadUndo" type="button" disabled title="Annulla ultima modifica">↶ Undo</button>
           <button id="cadRedo" type="button" disabled title="Ripristina modifica annullata">↷ Redo</button>
           <button id="cadDelete" type="button" disabled title="Elimina la parete selezionata">× Elimina</button>
