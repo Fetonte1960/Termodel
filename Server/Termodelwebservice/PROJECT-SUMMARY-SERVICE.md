@@ -17,6 +17,14 @@ docs/TERMODEL-FRONT-SERVICE-CONTRACT.md
 Endpoint, artifact e orchestrazione comuni devono essere definiti lì; questo
 Summary registra invece lo stato di implementazione del Service.
 
+Il contratto condiviso formalizza inoltre i due file principali della
+comunicazione: il payload tecnico `TERMODEL-PROJECT-TEXT-V1`, filtrato delle
+risorse esclusivamente frontend prima di `POST /api/calculations`, e
+`TermodelWebModel v3` come artifact `model3d` destinato al redraw 3D. Lo
+schema dettagliato e le regole di compatibilità sono mantenuti esclusivamente
+in `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md`.
+
+
 ## 1. Regole per una nuova chat AI
 
 Prima di intervenire:
