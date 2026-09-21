@@ -2205,7 +2205,7 @@ function cadSetNorthOrientation(value) {
   cadUpdateControls();
   cadSetStatus(
     northOrientationDeg === null
-      ? 'Nord non definito · nel 3D viene mostrato N ?'
+      ? 'Nord non definito · nel 3D non viene mostrato alcun indicatore'
       : `Nord ${Math.round(northOrientationDeg)}° · 0° alto pianta · positivo orario`,
     cadWorkingDoc && cadIsDirty() ? 'dirty' : ''
   );
