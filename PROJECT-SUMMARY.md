@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`752e5fda8c10206246bbe1d306c822233353ad2a` — `Fix DXF text rendering v0.60`  
+`cab56e06fe38060a835990681482f65549a41d22` — `Add real DXF drawing units v0.61`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,14 +679,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.60
+Termodel Web v0.61
 ```
 
-Commit frontend di riferimento per la v0.60:
+Commit frontend di riferimento per la v0.61:
 
 ```text
-2c178090d70a94cc834e5ed3e3ad1a1f8d56ca75  Add DXF background converter v0.60
-752e5fda8c10206246bbe1d306c822233353ad2a  Fix DXF text rendering v0.60
+cab56e06fe38060a835990681482f65549a41d22  Add real DXF drawing units v0.61
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -695,7 +694,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.60 sono su `main`; v0.57-v0.60 devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.61 sono su `main`; v0.57-v0.61 devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -3722,6 +3721,102 @@ Fix DXF text rendering v0.60
 
 ---
 
+## 12.28 Unità reali per lo sfondo DXF — v0.61
+
+La v0.61 definisce formalmente la scala tra DXF e CAD Web Termodel.
+
+Convenzione autorevole frontend:
+
+```text
+unità interna CAD Termodel Web = centimetri
+```
+
+Nel dialog `Importa sfondo DXF` è presente la combo:
+
+```text
+Unità del disegno:
+m
+cm
+mm
+```
+
+La scelta iniziale viene proposta leggendo `$INSUNITS`:
+
+```text
+4 → mm
+5 → cm
+6 → m
+```
+
+Se `$INSUNITS` è assente, zero o non corrisponde a una delle tre unità gestite, la combo parte da `cm` e resta correggibile dall'utente.
+
+Fattori verso Termodel:
+
+```text
+DXF mm × 0,1 = cm Termodel
+DXF cm × 1   = cm Termodel
+DXF m  × 100 = cm Termodel
+```
+
+Il fattore viene applicato dal plotter a tutte le coordinate convertite e, quando il testo è attivo, anche all'altezza del testo. Poiché BLOCK/INSERT vengono trasformati prima della normalizzazione finale, anche traslazioni/scale dei blocchi confluiscono correttamente nelle coordinate in centimetri.
+
+### Inserimento dello sfondo
+
+Per un DXF convertito non si usa più la dimensione del viewBox del progetto come larghezza/altezza dello sfondo.
+
+Il render SVG DXF contiene un viewBox espresso in centimetri Termodel e viene inserito con la propria dimensione reale.
+
+Esempio verificato:
+
+```text
+4000 unità con mm → 400 cm → 4,000 m
+400  unità con cm → 400 cm → 4,000 m
+4    unità con m  → 400 cm → 4,000 m
+```
+
+Dopo l'inserimento il viewBox del CAD viene ampliato per comprendere lo sfondo reale, senza stirarlo.
+
+Gli attributi SVG dello sfondo conservano inoltre:
+
+```text
+data-termodel-dxf-unita
+data-termodel-dxf-fattore-cm
+```
+
+La calibrazione v0.41 resta disponibile come correzione manuale successiva nel caso il DXF dichiari unità errate o l'utente scelga un'unità non corretta.
+
+### Test automatici v0.61
+
+Test numerico su una linea di 4 metri:
+
+```text
+4000 mm → bounds.width = 400 cm → 4 m
+400 cm  → bounds.width = 400 cm → 4 m
+4 m     → bounds.width = 400 cm → 4 m
+```
+
+Verificati anche:
+
+- sintassi `app.js`;
+- sintassi `dxf-plotter.js`;
+- cache/versione v0.61 coerente;
+- rilevamento automatico `$INSUNITS` per mm/cm/m;
+- SVG DXF con dimensioni fisiche in cm;
+- nessuna occorrenza operativa residua `v=0.60` in `app.js`.
+
+### Stato
+
+**IMPLEMENTATO IN v0.61 — TEST NUMERICO SUPERATO; DA VERIFICARE MANUALMENTE NEL BROWSER CON UN DXF REALE DI DIMENSIONE NOTA.**
+
+Commit:
+
+```text
+cab56e06fe38060a835990681482f65549a41d22
+Add real DXF drawing units v0.61
+```
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -3896,7 +3991,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.60.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.61.**
 
 Stato operativo corrente:
 
@@ -3906,7 +4001,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.60 presente su `main`;
+- v0.61 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -3944,6 +4039,7 @@ Stato operativo corrente:
 - decisione architetturale: gli sfondi sono risorse locali/frontend e **non devono essere trasmessi a Termodel.Core / Termodel.WebService**; il futuro payload server deve derivare dal progetto unico aggiornato filtrando completamente raster/SVG, Data URL/Base64 e relativi asset di sfondo.
 - v0.59 consolida gli sfondi nel progetto locale come `assets/backgrounds/index.json` + `assets/backgrounds/BGxxx.data`: `geometry/project.svg` resta leggero e contiene solo il riferimento; `Apri` reidrata il Data URL nel CAD. I vecchi sfondi incorporati vengono migrati automaticamente al primo Salva.
 - v0.60 aggiunge lo sfondo DXF: `Aggiungi sfondo` riconosce `.dxf`, apre un dialog layer/opzioni e converte il contenuto 2D in SVG con `dxf-plotter.js`; default tutti i layer + solo LINE/POLYLINE/LWPOLYLINE.
+- v0.61 stabilisce `cm` come unità interna del CAD Web e aggiunge nel dialog DXF la combo `m / cm / mm`, proposta da `$INSUNITS`; il plotter normalizza la geometria in cm e lo sfondo DXF entra alla dimensione reale 1:1 senza essere adattato al viewBox esistente.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -3954,7 +4050,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. verificare manualmente la v0.60 **con WebService spento**: `Nuovo` → `Aggiungi sfondo` → scegliere un DXF architettonico reale → verificare dialog layer/default `tutti + solo linee` → convertire → controllare resa SVG, eventuale calibrazione, Salva → Apri e persistenza dello sfondo;  
+> 1. verificare manualmente la v0.61 **con WebService spento**: `Nuovo` → `Aggiungi sfondo` → scegliere un DXF di dimensione nota → verificare unità proposta da `$INSUNITS`, provare `m/cm/mm` e controllare che una distanza nota risulti corretta in Termodel senza calibrazione; quindi Salva → Apri e verificare persistenza;  
 > 2. dopo il collaudo del round-trip, usare `buildCurrentProjectText()` come base obbligatoria di qualsiasi futura chiamata WebService; prima dell'invio produrre però un payload server filtrato, **senza sfondi raster/SVG, Data URL/Base64 o relativi asset**;  
 > 3. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
 > 4. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
@@ -3968,10 +4064,10 @@ Se questa conversazione termina, una nuova chat deve poter riprendere senza rico
 
 ```text
 branch: main
-frontend: Termodel Web v0.60
+frontend: Termodel Web v0.61
 ultimo commit funzionale frontend:
-752e5fda8c10206246bbe1d306c822233353ad2a
-Fix DXF text rendering v0.60
+cab56e06fe38060a835990681482f65549a41d22
+Add real DXF drawing units v0.61
 ```
 
 **File da leggere per il lavoro immediato sul progetto unico:**
@@ -4021,19 +4117,26 @@ parseDxfPlotSource(text)
     DXF ASCII → modello 2D per dialog/conversore
 
 convertDxfToSvg(model, options)
-    layer/opzioni DXF → SVG semplificato da usare come sfondo
+    layer/opzioni/unità DXF → SVG semplificato in centimetri Termodel
+
+dxfUnitFromInsUnits(insUnits)
+    $INSUNITS 4/5/6 → mm/cm/m
+
+dxfUnitScaleToCm(unit)
+    mm=0,1 · cm=1 · m=100
 ```
 
 **Nota importante sulla struttura del codice:** l'import degli archivi è ancora implementato da `loadTermodelProjectText(...)` in `archivio-web.js`; `app.js` orchestra la conversione verso lo stato CAD; `termodel-project-text.js` centralizza parsing/sostituzione delle sezioni e soprattutto la ricostruzione del progetto unico. Non riscrivere ArchivioWeb da zero.
 
-**Test già eseguiti sulla v0.58-v0.60:**
+**Test già eseguiti sulla v0.58-v0.61:**
 
 - sintassi JavaScript valida per `app.js`, `archivio-web.js` e `termodel-project-text.js`;
 - round-trip strutturale sul vero `ProgettoVuoto.termodel.txt`: 26 sezioni prima e dopo;
 - modifica di prova `Piani.AltezzaNetta 3 → 3.2` mantenuta coerente in JSON, XML e `manifest.floors`;
 - struttura hash del manifest verificata a 64 caratteri;
 - v0.59: aggiunta di uno sfondo sintetico porta le sezioni 26 → 28, con indice + asset presenti nel manifest; rimuovendo lo sfondo il progetto torna a 26 sezioni e le entry vengono eliminate;
-- v0.60: test DXF sintetico superato per layer, linee/polilinee, testo opzionale e BLOCK/INSERT opzionale.
+- v0.60: test DXF sintetico superato per layer, linee/polilinee, testo opzionale e BLOCK/INSERT opzionale;
+- v0.61: test scala reale superato: `4000 mm`, `400 cm` e `4 m` producono tutti `400 cm = 4 m` nel CAD Termodel.
 
 **Limite del test automatico:** l'ambiente usato per il controllo non esponeva Web Crypto; il percorso è stato esercitato con un digest simulato per controllare la ricomposizione. Nel browser reale `buildTermodelProjectText()` usa `crypto.subtle.digest('SHA-256', ...)`. È quindi obbligatorio il test manuale reale di Salva.
 
@@ -4045,15 +4148,17 @@ modello demo
 
 Nuovo
 → Aggiungi sfondo
-→ scegliere un DXF architettonico reale
+→ scegliere un DXF con almeno una misura reale nota
+→ verificare unità proposta da $INSUNITS
+→ scegliere/correggere m, cm o mm
 → verificare layer tutti selezionati
 → verificare Solo linee / polilinee attivo
-→ provare conversione
-→ se necessario provare curve / testo / esplodi blocchi
-→ eventualmente calibra
+→ Converti
+→ controllare una distanza nota nel CAD prima di calibrare
+→ eventualmente usare la calibrazione solo come correzione
 → Salva
 → Apri... il file appena scaricato
-→ verificare che lo sfondo DXF convertito ricompaia identico
+→ verificare che sfondo, dimensione e unità restino coerenti
 ```
 
 Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttamente sopra il file precedentemente aperto. `Salva con nome` chiede il nome e genera anch'esso un download.
@@ -4070,4 +4175,4 @@ Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttament
 
 **Altri lavori aperti CAD:** trascinamento simboli, snap durante lo spostamento e vincolo LOC.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `752e5fda8c10206246bbe1d306c822233353ad2a`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `cab56e06fe38060a835990681482f65549a41d22`.
