@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **0.1**  
+Versione documento: **0.2**  
 Aggiornamento: **21 settembre 2026**  
 Stato: **architettura concordata; implementazione progressiva**
 
@@ -124,6 +124,173 @@ thermal/input.json
 Il server non deve modificare implicitamente il file unico ricevuto mentre
 calcola. Un eventuale futuro "progetto aggiornato dal server" dovrà essere
 definito come operazione esplicita e separata.
+
+## 2.1 Standard del payload Frontend → Service
+
+Il file trasmesso dal frontend a `POST /api/calculations` mantiene il formato:
+
+```text
+TERMODEL-PROJECT-TEXT-V1
+```
+
+Non viene introdotta una seconda versione del progetto soltanto per il server:
+si tratta dello stesso contenitore, derivato dallo stato corrente del progetto
+e filtrato delle sole risorse locali/frontend.
+
+Trasporto:
+
+```http
+Content-Type: text/plain; charset=utf-8
+```
+
+Struttura del contenitore:
+
+```text
+[TERMODEL-PROJECT-TEXT-V1]
+---BEGIN:manifest.json---
+...
+---END:manifest.json---
+---BEGIN:geometry/project.svg---
+...
+---END:geometry/project.svg---
+...
+[END-TERMODEL-PROJECT-TEXT-V1]
+```
+
+Regole normative del payload server:
+
+- `manifest.json` e `geometry/project.svg` devono essere presenti;
+- le sezioni tecniche del progetto devono essere conservate, comprese quelle
+  necessarie al motore come archivi, input termici e
+  `project/DisegnoInput.dxf` quando previsto dal progetto;
+- tutte le sezioni `assets/backgrounds/*` devono essere escluse;
+- il payload non deve contenere Data URL/Base64 appartenenti agli sfondi CAD;
+- da `geometry/project.svg` devono essere eliminati gli elementi/riferimenti
+  usati esclusivamente per visualizzare o reidratare tali sfondi;
+- geometria tecnica, simboli, attributi Termodel e dati necessari al calcolo non
+  devono essere eliminati;
+- dopo il filtraggio, l'eventuale elenco delle sezioni e i relativi hash nel
+  `manifest.json` devono descrivere il payload realmente trasmesso, non il file
+  locale completo;
+- il server tratta il testo ricevuto come input immutabile della specifica
+  elaborazione.
+
+Il file locale completo può quindi continuare a contenere sfondi e altre
+risorse di lavoro del browser, mentre il payload server contiene soltanto il
+progetto tecnico.
+
+## 2.2 Standard dell'artifact grafico Server → Frontend
+
+L'artifact logico:
+
+```text
+model3d
+```
+
+usa come formato grafico condiviso:
+
+```text
+TermodelWebModel v3
+```
+
+e viene restituito come:
+
+```http
+Content-Type: application/json
+```
+
+Questo JSON è il formato destinato al redraw 3D dopo l'elaborazione autorevole
+del progetto da parte del server. Deriva dalle primitive finali del motore
+Termodel/DrawBim e non è una copia del progetto né un formato di editing.
+
+Struttura radice:
+
+```json
+{
+  "format": "TermodelWebModel",
+  "version": 3,
+  "coordinateSystem": "Z-up",
+  "generatedAtUtc": "2026-09-21T00:00:00Z",
+  "primitiveCount": 1,
+  "primitives": []
+}
+```
+
+Campi radice:
+
+- `format`: deve essere `TermodelWebModel`;
+- `version`: versione del formato, attualmente `3`;
+- `coordinateSystem`: coordinate Termodel finali, attualmente `Z-up`;
+- `generatedAtUtc`: istante di generazione in formato temporale ISO;
+- `primitiveCount`: numero delle primitive;
+- `primitives`: elenco delle primitive grafiche.
+
+Ogni primitiva può contenere:
+
+```json
+{
+  "kind": "mesh",
+  "source": "MeshGeometry3D",
+  "parte": "mesh",
+  "numero": 1,
+  "id": "elemento",
+  "tipo": "Parete",
+  "descrizione": "",
+  "filterMetadata": true,
+  "piano": "Piano Terra",
+  "confine": "Esterno",
+  "separatore": false,
+  "stessaZona": false,
+  "fittizia": false,
+  "falda": false,
+  "color": "#A0522D",
+  "opacity": 1.0,
+  "lineWidth": 1.0,
+  "text": "",
+  "vertices": [[0,0,0],[1,0,0],[1,1,0]],
+  "indices": [0,1,2]
+}
+```
+
+Significato:
+
+- `kind`: tipo grafico; i valori correnti comprendono `mesh`,
+  `lineSegments` e `label`;
+- `source` e `parte`: provenienza e porzione grafica della primitiva;
+- `numero`, `id`, `tipo`, `descrizione`: collegamento informativo con
+  l'elemento Termodel;
+- `filterMetadata`: indica se sono disponibili metadati completi per i filtri;
+- `piano`, `confine`, `separatore`, `stessaZona`, `fittizia`, `falda`:
+  metadati necessari a riprodurre i Filtri Grafici del Desktop;
+- `color`: colore RGB `#RRGGBB`;
+- `opacity`: opacità numerica;
+- `lineWidth`: spessore logico per primitive lineari;
+- `text`: testo delle eventuali label;
+- `vertices`: coordinate finali `[x,y,z]` nel sistema `Z-up`;
+- `indices`: indici dei vertici; triangoli per le mesh e coppie per i segmenti.
+
+Regole di consumo frontend:
+
+- il redraw 3D deve ricostruire la scena dall'artifact senza ricalcolare il
+  modello Termodel nel browser;
+- la conversione dal sistema `Z-up` di Termodel al sistema grafico usato dal
+  viewer è responsabilità del frontend e non modifica il JSON;
+- se `filterMetadata=false`, il frontend non deve inventare piano, confine o
+  altri metadati mancanti;
+- campi aggiuntivi compatibili possono essere ignorati dai client che non li
+  conoscono;
+- un `kind` non ancora supportato dal viewer non deve rendere inutilizzabile
+  l'intero artifact;
+- questo JSON è un risultato derivato dello snapshot: non deve essere usato per
+  ricostruire o sostituire il `TERMODEL-PROJECT-TEXT-V1`;
+- leggere nuovamente `model3d` per lo stesso `calculationId` non deve
+  provocare una nuova elaborazione.
+
+Le fonti implementative correnti del formato sono
+`SorgentiTermodel/Work/Web/DrawBimJson.cs`,
+`Server/Termodelwebservice/src/Termodel.Core/Model3D/TermodelWebModel.cs` e il
+renderer di `docs/termodel-ui-demo/app.js`. Il contratto resta comunque il
+riferimento comune fra frontend e server.
 
 ---
 
