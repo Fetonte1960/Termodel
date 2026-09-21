@@ -46,8 +46,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.73';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.73';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.74';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.74';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -1199,6 +1199,85 @@ function termodelServiceUrl(path) {
   return TERMODEL_SERVICE_BASE_URL + (value.startsWith('/') ? value : '/' + value);
 }
 
+let lastTermodelServerExchange = '';
+
+function buildTermodelServerExchangeReport(exchange = {}) {
+  const lines = [
+    '[TERMODEL-SERVICE-EXCHANGE-V1]',
+    'generatedAtUtc=' + new Date().toISOString(),
+    'serviceBaseUrl=' + TERMODEL_SERVICE_BASE_URL
+  ];
+
+  if (exchange.postStatus !== undefined && exchange.postStatus !== null) {
+    lines.push(
+      '',
+      'POST /api/calculations',
+      'HTTP ' + exchange.postStatus,
+      '---BEGIN:POST_RESPONSE---',
+      String(exchange.postBody || ''),
+      '---END:POST_RESPONSE---'
+    );
+  }
+
+  if (exchange.modelUrl) {
+    lines.push(
+      '',
+      'GET ' + exchange.modelUrl,
+      exchange.modelStatus !== undefined && exchange.modelStatus !== null
+        ? 'HTTP ' + exchange.modelStatus
+        : 'HTTP non disponibile',
+      '---BEGIN:MODEL3D_RESPONSE---',
+      String(exchange.modelBody || ''),
+      '---END:MODEL3D_RESPONSE---'
+    );
+  }
+
+  if (exchange.error) {
+    lines.push(
+      '',
+      '---BEGIN:CLIENT_ERROR---',
+      String(exchange.error),
+      '---END:CLIENT_ERROR---'
+    );
+  }
+
+  return lines.join('\n');
+}
+
+async function copyTermodelServerExchange(exchange) {
+  const text = buildTermodelServerExchangeReport(exchange);
+  lastTermodelServerExchange = text;
+  globalThis.TERMODEL_LAST_SERVER_EXCHANGE = text;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (error) {
+    console.warn('Clipboard API non disponibile per la diagnostica Service.', error);
+  }
+
+  // Fallback per browser che negano navigator.clipboard dopo una richiesta async.
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-10000px';
+    textarea.style.top = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    return copied;
+  } catch (error) {
+    console.warn('Copia diagnostica Service non riuscita.', error);
+    return false;
+  }
+}
+
 async function readTermodelServiceError(response) {
   const contentType = response.headers.get('content-type') || '';
   try {
@@ -1225,6 +1304,14 @@ async function loadCalculatedModelFromService() {
   loading = true;
   status.textContent = 'Preparazione progetto per TermodelService...';
 
+  const exchange = {
+    postStatus: null,
+    postBody: '',
+    modelUrl: '',
+    modelStatus: null,
+    modelBody: ''
+  };
+
   try {
     // Salva prima nel contenitore corrente geometria e archivi modificati.
     // Il progetto locale conserva gli sfondi; il payload HTTP è una copia filtrata.
@@ -1243,6 +1330,9 @@ async function loadCalculatedModelFromService() {
         cache: 'no-store'
       }
     );
+
+    exchange.postStatus = calculationResponse.status;
+    exchange.postBody = await calculationResponse.clone().text();
 
     if (!calculationResponse.ok) {
       const detail = await readTermodelServiceError(calculationResponse);
@@ -1263,10 +1353,15 @@ async function loadCalculatedModelFromService() {
     if (!modelArtifact)
       throw new Error('Lo snapshot non contiene l\'artifact model3d.');
 
+    exchange.modelUrl = String(modelArtifact.href);
     status.textContent = 'Ricezione TermodelWebModel v3...';
     const modelResponse = await fetch(termodelServiceUrl(modelArtifact.href), {
       cache: 'no-store'
     });
+
+    exchange.modelStatus = modelResponse.status;
+    exchange.modelBody = await modelResponse.clone().text();
+
     if (!modelResponse.ok) {
       const detail = await readTermodelServiceError(modelResponse);
       throw new Error('Artifact model3d: ' + detail);
@@ -1287,15 +1382,20 @@ async function loadCalculatedModelFromService() {
     const diagnostics = Array.isArray(calculation.diagnostics)
       ? calculation.diagnostics.filter(Boolean)
       : [];
-    if (diagnostics.length) {
-      status.textContent =
-        `PROGETTO CORRENTE · SERVER · ${data.primitiveCount ?? data.primitives.length} primitive · ${diagnostics.length} diagnostica/e`;
-    }
+    const copied = await copyTermodelServerExchange(exchange);
+
+    status.textContent =
+      `PROGETTO CORRENTE · SERVER · ${data.primitiveCount ?? data.primitives.length} primitive · ${diagnostics.length} diagnostica/e` +
+      (copied ? ' · risposta copiata negli appunti' : ' · copia appunti non riuscita');
   } catch (error) {
     console.error(error);
     currentCalculationId = '';
     currentCalculationManifest = null;
-    status.textContent = 'Errore Aggiorna Modello: ' + error.message;
+    exchange.error = error?.message || String(error);
+    const copied = await copyTermodelServerExchange(exchange);
+    status.textContent =
+      'Errore Aggiorna Modello: ' + error.message +
+      (copied ? ' · risposta copiata negli appunti' : ' · copia appunti non riuscita');
   } finally {
     loading = false;
   }
