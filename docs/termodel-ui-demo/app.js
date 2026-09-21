@@ -46,7 +46,7 @@ const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
 const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.71';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.70';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.71';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
