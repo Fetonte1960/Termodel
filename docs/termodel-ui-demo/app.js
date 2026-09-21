@@ -47,8 +47,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.76';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.76';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.77';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.77';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -105,6 +105,7 @@ const cadInsertOpening = document.getElementById('cadInsertOpening');
 const cadInsertOpeningTwoPoint = document.getElementById('cadInsertOpeningTwoPoint');
 const cadInsertBridge = document.getElementById('cadInsertBridge');
 const cadInsertRoom = document.getElementById('cadInsertRoom');
+const cadInsertRidge = document.getElementById('cadInsertRidge');
 const cadNewLineType = document.getElementById('cadNewLineType');
 const cadEditStatus = document.getElementById('cadEditStatus');
 const cadPropertiesHead = document.getElementById('cadPropertiesHead');
@@ -3670,6 +3671,7 @@ async function cadImportBackgroundFile(file, options = {}) {
   image.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   image.setAttribute('opacity', '0.72');
   image.setAttribute('href', dataUrl);
+  cadStyleCoverageBackground(image);
   group.appendChild(image);
 
   if (useRealSize) {
@@ -3882,7 +3884,8 @@ function cadSymbolInsertLabel(type) {
   if (type === 'ALLINEA') return 'Allinea';
   if (type === 'FIN') return 'Porta/Finestra';
   if (type === 'PON') return 'Ponte';
-  if (type === 'LOC') return 'Locale';
+  if (type === 'LOC') return cadPlaneIsCoverage() ? 'Centrofalda' : 'Locale';
+  if (type === 'COLMO') return 'Colmo';
   return 'Simbolo';
 }
 
@@ -3903,6 +3906,17 @@ function cadToggleSymbolInsert(type) {
   }
 
   const normalized = String(type || '').toUpperCase();
+  const coverage = cadPlaneIsCoverage();
+
+  if (normalized === 'COLMO' && !coverage) {
+    cadSetStatus('Il comando Colmo è disponibile soltanto sui piani Copertura.', 'error');
+    return;
+  }
+  if (coverage && (normalized === 'FIN' || normalized === 'PON')) {
+    cadSetStatus('Finestre e ponti non sono disponibili sul piano Copertura.', 'error');
+    return;
+  }
+
   if (cadToolMode === 'symbol' && cadSymbolInsertType === normalized) {
     cadCancelSymbolInsert();
     return;
@@ -3922,7 +3936,7 @@ function cadToggleSymbolInsert(type) {
   // dall'aggiornamento del pannello laterale.
   cadUpdateControls();
 
-  const needsWall = normalized === 'FIN' || normalized === 'PON';
+  const needsWall = normalized === 'FIN' || normalized === 'PON' || normalized === 'COLMO';
   cadSetStatus(
     'Piano ' + cadCurrentPlane() +
     ' · Layer ' + cadCurrentLayer() +
@@ -4116,7 +4130,7 @@ function cadInsertSymbolAtPoint(rawPoint) {
   if (!plane || !layer) { cadSetStatus('Piano/LayerCad corrente non disponibile: impossibile inserire il simbolo.', 'error'); return; }
   let point = rawPoint.slice();
   let wallSnapped = false;
-  if (cadSymbolInsertType === 'FIN' || cadSymbolInsertType === 'PON') {
+  if (cadSymbolInsertType === 'FIN' || cadSymbolInsertType === 'PON' || cadSymbolInsertType === 'COLMO') {
     const snap = cadNearestWallPoint(rawPoint);
     if (!snap.snapped) { cadSetStatus(cadSymbolInsertLabel(cadSymbolInsertType) + ': clicca vicino a una parete del piano corrente.', 'error'); return; }
     point = snap.point;
@@ -4169,6 +4183,16 @@ function cadInsertSymbolAtPoint(rawPoint) {
       'ALTEZZALORDA,' + (altezzaDaPiano ? 'Da piano' : cadText(dati.AltezzaLorda)),
       'ALTEZZANETTA,' + (altezzaDaPiano ? 'Da piano' : cadText(dati.AltezzaNetta)),
       'QUOTAPAVIMENTO,' + (quotaDaPiano ? 'Da piano' : cadText(dati.QuotaPavimento))
+    ];
+  } else if (cadSymbolInsertType === 'COLMO') {
+    id = cadNextSymbolId('COL');
+    rows = [
+      'BLOCCO,Colmo',
+      'QUOTACOLMO,' + (cadText(dati.QuotaColmo) || '3.5'),
+      'QUOTAGRONDA,' + (cadText(dati.QuotaGronda) || '3'),
+      'LATOPARTEBASSA,' + (cadText(dati.LatoParteBassaShed) || 'Colmo semplice'),
+      'QUOTASHED,' + (cadText(dati.QuotaShed) || '0'),
+      'PARETESHED,' + (cadText(dati.PareteShed) || 'Dal piano sottostante')
     ];
   }
   if (!id || !rows.length) return;
@@ -4244,6 +4268,13 @@ const CAD_SYMBOL_PANEL_CONFIG = {
     { key: 'CCOPERTURA', field: 'ColoreCopertura', label: 'Colore copertura' },
     { key: 'TPAV', field: 'TipoPavimento', label: 'Tipo Pavimento', arc: true },
     { key: 'CPAV', field: 'ConfinePavimento', label: 'Confine Pavimento', arc: true }
+  ],
+  COLMO: [
+    { key: 'QUOTACOLMO', field: 'QuotaColmo', label: 'Quota colmo (m)' },
+    { key: 'QUOTAGRONDA', field: 'QuotaGronda', label: 'Quota gronda (m)' },
+    { key: 'QUOTASHED', field: 'QuotaShed', label: 'Quota shed (m)' },
+    { key: 'LATOPARTEBASSA', field: 'LatoParteBassaShed', label: 'Lato parte bassa shed' },
+    { key: 'PARETESHED', field: 'PareteShed', label: 'Tipo parete shed', arc: true }
   ],
   ALLINEA: []
 };
@@ -4404,8 +4435,10 @@ function cadRenderSelectedSymbolFields(symbol) {
       : type === 'PON'
         ? 'Ponti termici'
         : type === 'LOC'
-          ? 'Locali'
-          : 'Simbolo di allineamento';
+          ? (cadPlaneIsCoverage() ? 'Centrofalda' : 'Locali')
+          : type === 'COLMO'
+            ? 'Tetti · Colmo'
+            : 'Simbolo di allineamento';
     cadSymbolSectionTitle.textContent = title;
   }
 
@@ -4545,6 +4578,11 @@ function cadApplySelectedSymbolProperties() {
       'QUOTAPAVIMENTO',
       fonteQuota === 'Da piano' ? 'Da piano' : cadSymbolPanelControlValue('QUOTAPAVIMENTO')
     );
+  }
+
+  if (type === 'COLMO') {
+    ['QUOTACOLMO','QUOTAGRONDA','QUOTASHED','LATOPARTEBASSA','PARETESHED']
+      .forEach(key => cadSetSymbolAttribute(symbol, key, cadSymbolPanelControlValue(key)));
   }
 
   const after = cadSerializeWorkingSvg();
@@ -4851,11 +4889,23 @@ function cadUpdatePropertiesPanel() {
   if (cadSymbolPropertiesSection) cadSymbolPropertiesSection.hidden = !symbol || northOpen;
   cadUpdateCalibrationPanel(line, northOpen);
 
+  if (cadWallPropertiesSection) {
+    const title = cadWallPropertiesSection.querySelector('.cad-properties-section-title');
+    if (title)
+      title.textContent = cadPlaneIsCoverage()
+        ? 'Copertura · Linee perimetro falde'
+        : 'Edificio · Pareti';
+  }
+
   if (cadPropertiesHead) {
     if (northOpen)
       cadPropertiesHead.textContent = 'Dati CAD · Nord';
     else if (symbol)
       cadPropertiesHead.textContent = 'Dati CAD · ' + cadSymbolInsertLabel(symbolType) + ' ' + symbol.id;
+    else if (cadPlaneIsCoverage())
+      cadPropertiesHead.textContent = line
+        ? `Dati CAD · Linea perimetro falde ${line.id}`
+        : 'Dati CAD · Linea perimetro falde';
     else
       cadPropertiesHead.textContent = line ? `Dati CAD · Parete ${line.id}` : 'Dati CAD · Nuova parete';
   }
@@ -4965,6 +5015,22 @@ function cadUniquePlaneToken(field, base) {
   return candidate;
 }
 
+function cadStyleCoverageBackground(image) {
+  if (!image) return;
+  image.setAttribute('data-termodel-copertura-riferimento', '1');
+  image.setAttribute('opacity', '0.42');
+
+  const oldStyle = cadText(image.getAttribute('style'))
+    .replace(/(?:^|;)\s*filter\s*:[^;]*/ig, '')
+    .replace(/(?:^|;)\s*opacity\s*:[^;]*/ig, '')
+    .replace(/^;+|;+$/g, '');
+
+  image.setAttribute(
+    'style',
+    (oldStyle ? oldStyle + ';' : '') + 'filter:grayscale(1);opacity:0.42'
+  );
+}
+
 function cadDuplicateBackgroundToPlane(sourcePlane, targetPlane, targetLayer) {
   const source = cadPlaneBackground(cadWorkingDoc, sourcePlane);
   if (!source) return false;
@@ -4974,6 +5040,7 @@ function cadDuplicateBackgroundToPlane(sourcePlane, targetPlane, targetLayer) {
   clone.setAttribute('data-termodel-piano', targetPlane);
   clone.setAttribute('data-termodel-layer', targetLayer);
   clone.removeAttribute('data-termodel-background-id');
+  cadStyleCoverageBackground(clone);
   group.appendChild(clone);
   return true;
 }
@@ -5158,6 +5225,12 @@ function cadUpdateControls() {
   const insertingSymbol = cadToolMode === 'symbol';
   const drawingWindowTwoPoint = cadToolMode === 'window2';
   const busy = drawingLine || insertingSymbol || drawingWindowTwoPoint;
+  const coverage = cadPlaneIsCoverage();
+
+  if (cadInsertOpening) cadInsertOpening.hidden = coverage;
+  if (cadInsertOpeningTwoPoint) cadInsertOpeningTwoPoint.hidden = coverage;
+  if (cadInsertBridge) cadInsertBridge.hidden = coverage;
+  if (cadInsertRidge) cadInsertRidge.hidden = !coverage;
 
   if (cadAddBackground) cadAddBackground.disabled = !hasDoc || busy;
   if (cadAddRoofPlane) cadAddRoofPlane.disabled = !hasDoc || busy;
@@ -5172,9 +5245,11 @@ function cadUpdateControls() {
   if (cadNewLine) {
     cadNewLine.disabled = !hasDoc;
     cadNewLine.classList.toggle('active', drawingLine);
-    cadNewLine.textContent = drawingLine ? '× Interrompi sequenza' : '＋ Nuova parete';
+    cadNewLine.textContent = drawingLine
+      ? '× Interrompi sequenza'
+      : (coverage ? '＋ Linea perimetro falde' : '＋ Nuova parete');
   }
-  [[cadInsertAlign,'ALLINEA'],[cadInsertOpening,'FIN'],[cadInsertBridge,'PON'],[cadInsertRoom,'LOC']].forEach(pair => {
+  [[cadInsertAlign,'ALLINEA'],[cadInsertOpening,'FIN'],[cadInsertBridge,'PON'],[cadInsertRoom,'LOC'],[cadInsertRidge,'COLMO']].forEach(pair => {
     const button = pair[0];
     const type = pair[1];
     if (!button) return;
@@ -5202,7 +5277,10 @@ function cadUpdateControls() {
   if (!hasDoc) cadSetStatus('Genera prima una pianta');
   else if (drawingLine) {
     const tipo = (cadNewLineType?.value || 'W').toUpperCase();
-    cadSetStatus(cadNewLineState ? ('Piano ' + cadCurrentPlane() + ' · Parete ' + tipo + ' · clicca il punto successivo · tasto destro per interrompere') : ('Piano ' + cadCurrentPlane() + ' · Parete ' + tipo + ' · clicca il punto iniziale'));
+    const lineLabel = coverage ? 'Linea perimetro falde' : ('Parete ' + tipo);
+    cadSetStatus(cadNewLineState
+      ? ('Piano ' + cadCurrentPlane() + ' · ' + lineLabel + ' · clicca il punto successivo · tasto destro per interrompere')
+      : ('Piano ' + cadCurrentPlane() + ' · ' + lineLabel + ' · clicca il punto iniziale'));
   } else if (drawingWindowTwoPoint) {
     cadSetStatus(
       cadWindowTwoPointState
@@ -5210,7 +5288,7 @@ function cadUpdateControls() {
         : ('Finestra 2 punti · clicca il primo punto vicino a una parete · Esc o tasto destro per interrompere')
     );
   } else if (insertingSymbol) {
-    const needsWall = cadSymbolInsertType === 'FIN' || cadSymbolInsertType === 'PON';
+    const needsWall = cadSymbolInsertType === 'FIN' || cadSymbolInsertType === 'PON' || cadSymbolInsertType === 'COLMO';
     cadSetStatus(
       'Piano ' + cadCurrentPlane() +
       ' · Layer ' + cadCurrentLayer() +
@@ -5529,7 +5607,7 @@ function cadRepeatLastCadCommand() {
     return;
   }
 
-  const match = /^symbol:(ALLINEA|FIN|PON|LOC)$/.exec(cadLastRepeatableCommand);
+  const match = /^symbol:(ALLINEA|FIN|PON|LOC|COLMO)$/.exec(cadLastRepeatableCommand);
   if (match) cadToggleSymbolInsert(match[1]);
 }
 
@@ -5607,7 +5685,7 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
     };
     cadRenderNewLinePreview(svg, point, snapped.snapped);
     cadSetStatus(
-      `Parete ${(cadNewLineType?.value || 'W').toUpperCase()} · punto iniziale${snapped.snapped ? ' · ' + cadSnapLabel(snapped) : ''}${cadOrtho?.checked ? ' · ORTO' : ''} · clicca il punto successivo`
+      `${cadPlaneIsCoverage() ? 'Linea perimetro falde' : ('Parete ' + (cadNewLineType?.value || 'W').toUpperCase())} · punto iniziale${snapped.snapped ? ' · ' + cadSnapLabel(snapped) : ''}${cadOrtho?.checked ? ' · ORTO' : ''} · clicca il punto successivo`
     );
     return;
   }
@@ -6843,6 +6921,7 @@ cadInsertOpening?.addEventListener('click', () => cadToggleSymbolInsert('FIN'));
 cadInsertOpeningTwoPoint?.addEventListener('click', cadToggleWindowTwoPoint);
 cadInsertBridge?.addEventListener('click', () => cadToggleSymbolInsert('PON'));
 cadInsertRoom?.addEventListener('click', () => cadToggleSymbolInsert('LOC'));
+cadInsertRidge?.addEventListener('click', () => cadToggleSymbolInsert('COLMO'));
 if (cadPropConfirm)
   cadPropConfirm.addEventListener('click', cadApplyProperties);
 cadSymbolApply?.addEventListener('click', cadApplySelectedSymbolProperties);
