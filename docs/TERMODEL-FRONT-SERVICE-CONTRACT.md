@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **0.5**  
+Versione documento: **0.6**  
 Aggiornamento: **21 settembre 2026**  
 Stato: **architettura concordata; implementazione progressiva**
 
@@ -329,29 +329,38 @@ pulite nello snapshot restano fasi successive.
 
 ### Commissione frontend — nuovo piano Copertura per test Service avanzato
 
-Stato: **COMMISSIONATO** — 21 settembre 2026.
+Stato: **ESEGUITO** — 21 settembre 2026.
 
-Obiettivo: predisporre nel CAD 2D Web uno strumento minimo per provare le
-funzioni avanzate del Service relative a tetti e locali mansardati.
+Termodel Web v0.75 aggiunge il comando `＋ Copertura` accanto ad `Arc`
+nella selezione del piano.
 
-Il comando `＋ Copertura`, collocato accanto ad `Arc` nella selezione piano,
-deve:
+Il comando:
 
-- creare nell'archivio `Piani` un nuovo record inizializzato secondo
-  `definizionedati.json`;
-- assegnare `Tipo = Copertura`;
-- usare un nome e un `LayerCad` univoci (`Copertura`, `Copertura 2`, ...);
-- mantenere lo stesso `NomeFile` del piano corrente;
-- duplicare sul nuovo piano soltanto lo sfondo locale del piano corrente,
-  mantenendone posizione, scala e calibrazione;
-- non duplicare pareti, simboli o altra geometria tecnica;
-- commutare immediatamente il CAD 2D sul nuovo piano;
-- escludere i piani `Copertura` dalla generazione dell'anteprima 3D locale:
-  la copertura deve essere elaborata autorevolmente dal Service tramite
-  `Aggiorna Modello`.
+- crea un vero record `Piani` inizializzato secondo
+  `definizionedati.json`, senza modificare lo schema;
+- imposta `Tipo = Copertura`;
+- genera `Nome` e `LayerCad` univoci (`Copertura`,
+  `Copertura 2`, ...);
+- mantiene il `NomeFile` del piano sorgente;
+- duplica esclusivamente lo sfondo locale, mantenendo trasformazioni,
+  dimensioni e calibrazione, e lo associa al nuovo piano/layer;
+- non duplica pareti, simboli o altra geometria tecnica;
+- commuta immediatamente il CAD sul nuovo piano;
+- consolida la geometria 2D di un piano `Copertura` senza invocare
+  `GeneraPianta.js` e senza produrre un tetto 3D locale;
+- lascia invariata l'anteprima locale dei piani `Calpestabile`.
 
-Il progetto tecnico trasmesso al Service continua invece a contenere il piano
-`Copertura` e la sua geometria tecnica; soltanto lo sfondo resta locale.
+La trasformazione verso `TERMODEL-PROJECT-SVG-V1` è stata inoltre resa
+multipiano: nello SVG operativo Web le entità possono restare nel contenitore
+storico comune, mentre `data-termodel-piano` e `LayerCad` determinano il
+gruppo tecnico corretto inviato al Service. Il piano `Copertura` e le sue
+entità tecniche vengono quindi trasmessi a `AggiornaCalcolo`; lo sfondo
+resta esclusivamente frontend.
+
+Verifica eseguita: sintassi JavaScript dei moduli modificati valida e diff
+limitato a frontend/contratto. La prova funzionale reale di tetti e locali
+mansardati sul Service è il passo successivo e non è ancora dichiarata
+verificata.
 
 ### Commissione frontend — copia diagnostica risposte Service
 
