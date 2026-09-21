@@ -689,8 +689,20 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.76
+Termodel Web v0.79
 ```
+
+Commit frontend di riferimento per la v0.79:
+
+```text
+48daf5fbf5f347c05e41e4127c85ec08789909a6  Complete mobile CAD data sheet behavior
+583a4f942751ec8859d8dd6fe015f8fe18cbbfff  Make ArchivioWeb phone friendly
+183aa5f3351c5b1b3546dc296c5e7df7cf467af1  Publish Termodel Web v0.79 mobile completion
+6f2a2a9324c96792863d40a396dedb68cd7d9d8b  Close mobile CAD data sheet on return
+```
+
+Base responsive v0.78:
+`f496d0e8...`, `bd4dccaf...`, `086f30c2...`, `85434679...`.
 
 Commit frontend di riferimento per la v0.75:
 
@@ -765,13 +777,30 @@ Il comportamento desktop resta invariato: pannello filtri da 228 px e layout
 storico. La v0.78 è implementata e verificata sintatticamente, ma deve ancora
 essere provata dall'utente sul telefono.
 
+La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
+
+- il CAD usa il canvas a tutta larghezza sotto 760 px;
+- la toolbar CAD è scorrevole orizzontalmente e usa target touch più grandi;
+- il nuovo pulsante `Dati` apre/chiude il pannello proprietà come overlay,
+  senza sottrarre permanentemente circa 280 px al disegno;
+- il pannello Dati torna chiuso caricando un nuovo disegno o tornando al 3D;
+- menu CAD, campi proprietà e comandi principali hanno dimensioni touch;
+- modali principali vengono adattate al pieno schermo del telefono;
+- `ArchivioWeb` sotto 600 px usa finestra full-screen, tab scorrevoli,
+  tabella + form impilate, campi alti 42 px e footer comandi scorrevole;
+- `app.js` usa cache-busting `archivio-web.js?v=0.79`.
+
+Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
+non cambia contratti Frontend↔Service e non modifica Core/WebService.
+Il test manuale reale su smartphone resta necessario.
+
 Ultima versione pubblica verificata manualmente dall'utente:
 
 ```text
 Termodel Web v0.77 — caricamento UI su Chrome Android, 21 settembre 2026
 ```
 
-La v0.78 responsive è pubblicata ma non ancora verificata manualmente.
+La v0.79 responsive è pubblicata ma non ancora verificata manualmente.
 
 La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.63 sono su `main`; v0.57-v0.63 devono essere verificate pubblicamente.
 
