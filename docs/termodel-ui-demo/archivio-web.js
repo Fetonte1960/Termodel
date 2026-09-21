@@ -963,6 +963,36 @@ export function getArchivioWebRecords(name) {
   return archiveRecords(name).map(record => ({ ...record }));
 }
 
+export function addArchivioWebRecord(name, overrides = {}) {
+  commitFormToRecord();
+
+  if (!archiveState.project)
+    throw new Error('Nessun progetto Termodel completo caricato.');
+  if (!archiveState.schema?.[name])
+    throw new Error('Archivio non definito: ' + name);
+
+  const records = archiveRecords(name);
+  const record = createInitializedRecord(name);
+
+  for (const [field, value] of Object.entries(overrides || {})) {
+    if (!Object.prototype.hasOwnProperty.call(record, field)) continue;
+    record[field] = value;
+  }
+
+  applyCorrelations(name, record);
+  records.push(record);
+  archiveState.dirty = true;
+
+  if (archiveState.ui?.modal?.classList.contains('visible') &&
+      archiveState.currentArchive === name) {
+    archiveState.currentIndex = records.length - 1;
+    renderArchive();
+  }
+
+  window.dispatchEvent(new CustomEvent('termodel:archives-updated'));
+  return { ...record };
+}
+
 export function markArchivioWebSaved() {
   commitFormToRecord();
   archiveState.dirty = false;
