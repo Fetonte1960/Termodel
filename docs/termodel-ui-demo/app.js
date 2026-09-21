@@ -47,8 +47,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.77';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.77';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.78';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.78';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -551,6 +551,70 @@ function installFilterStyles() {
       font-size: 11px;
       line-height: 1.25;
     }
+    .web-filter-mobile-head { display: none; }
+
+    @media (max-width: 820px) {
+      .web-filter-panel {
+        width: min(86vw, 320px);
+        left: auto;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        padding: 7px 8px 10px;
+        border-left: 1px solid #7f8992;
+        box-shadow: -7px 0 22px rgba(0,0,0,.28);
+        z-index: 40;
+      }
+      .web-filter-mobile-head {
+        position: sticky;
+        top: -7px;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 46px;
+        margin: -7px -8px 7px;
+        padding: 5px 8px 5px 12px;
+        border-bottom: 1px solid #aaa;
+        background: #e5e5e5;
+        font-size: 14px;
+      }
+      .web-filter-mobile-close {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #888;
+        background: linear-gradient(#fff,#dedede);
+        color: #111;
+        font-size: 24px;
+        line-height: 1;
+      }
+      .web-filter-tree {
+        min-height: 0;
+        padding: 6px 7px 10px;
+      }
+      .web-filter-tree summary {
+        min-height: 34px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+      }
+      .web-filter-items {
+        padding-left: 18px;
+      }
+      .web-filter-row {
+        min-height: 36px;
+        font-size: 14px;
+      }
+      .web-filter-row input {
+        width: 19px;
+        height: 19px;
+        margin-right: 8px;
+      }
+      .web-filter-note {
+        font-size: 12px;
+      }
+    }
   `;
   document.head.appendChild(style);
 }
@@ -562,6 +626,10 @@ function createFilterPanel() {
   panel.id = 'webFilterPanel';
   panel.className = 'web-filter-panel';
   panel.innerHTML = `
+    <div class="web-filter-mobile-head">
+      <strong>Filtri grafici</strong>
+      <button type="button" class="web-filter-mobile-close" aria-label="Chiudi filtri">×</button>
+    </div>
     <div class="web-filter-tree">
       <details open>
         <summary>Piani</summary>
@@ -1430,11 +1498,24 @@ document.getElementById('resetView').addEventListener('click', async () => {
 
 const filtersCheck = document.getElementById('filtersCheck');
 const viewCube = document.querySelector('.view-cube');
+const mobileViewerQuery = window.matchMedia('(max-width: 820px)');
+
+function isMobileViewerLayout() {
+  return mobileViewerQuery.matches;
+}
 
 function setFilterPanelVisibility(visible) {
+  const mobile = isMobileViewerLayout();
   filterPanel.classList.toggle('visible', visible);
-  viewer.style.right = visible ? '228px' : '0';
-  if (viewCube) viewCube.style.right = visible ? '248px' : '20px';
+  filterPanel.classList.toggle('mobile-overlay', mobile);
+
+  // Desktop: comportamento storico, i filtri riservano 228 px.
+  // Smartphone: il pannello è un overlay e il viewer conserva tutta la larghezza.
+  viewer.style.right = mobile ? '0' : (visible ? '228px' : '0');
+
+  if (viewCube)
+    viewCube.style.right = mobile ? '8px' : (visible ? '248px' : '20px');
+
   requestAnimationFrame(resize);
 }
 
@@ -1443,8 +1524,28 @@ filtersCheck.addEventListener('change', (event) => {
   showDemoHelp('Mostra Filtri Grafici');
 });
 
-// Come nel desktop: all'avvio il check e il pannello Filtri Grafici sono visibili.
+filterPanel.querySelector('.web-filter-mobile-close')?.addEventListener('click', () => {
+  filtersCheck.checked = false;
+  setFilterPanelVisibility(false);
+});
+
+// Desktop conserva il comportamento storico. Su smartphone i filtri partono
+// chiusi per lasciare al modello 3D la massima superficie disponibile.
+if (isMobileViewerLayout())
+  filtersCheck.checked = false;
+
 setFilterPanelVisibility(filtersCheck.checked);
+
+const onMobileViewerLayoutChange = () => {
+  if (isMobileViewerLayout() && filterPanel.classList.contains('visible'))
+    filtersCheck.checked = false;
+  setFilterPanelVisibility(filtersCheck.checked);
+};
+
+if (typeof mobileViewerQuery.addEventListener === 'function')
+  mobileViewerQuery.addEventListener('change', onMobileViewerLayoutChange);
+else if (typeof mobileViewerQuery.addListener === 'function')
+  mobileViewerQuery.addListener(onMobileViewerLayoutChange);
 
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
