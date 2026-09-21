@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`19858510d09104384e29d9651cf72b349bbbf612` — `Bump Termodel Web to v0.64`  
+`9f839515f8f5913479cbd6677beef10afb9d5fe1` — `Align undefined north status v0.65`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,14 +679,15 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.64
+Termodel Web v0.65
 ```
 
-Commit frontend di riferimento per la v0.64:
+Commit frontend di riferimento per la v0.65:
 
 ```text
-ab2370fccf03895cc928a524f09d25c4f6b8d32d  Add divider midpoint background snap v0.64
-19858510d09104384e29d9651cf72b349bbbf612  Bump Termodel Web to v0.64
+fea442138e7552a559a1624e05a7ad7fbcb12e04  Simplify 3D north marker v0.65
+589b86aba4be71f89ecb79b35e3a50a8e7014f5d  Bump Termodel Web to v0.65
+9f839515f8f5913479cbd6677beef10afb9d5fe1  Align undefined north status v0.65
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -1800,38 +1801,32 @@ Il simbolo deve essere registrato in almeno uno SVG del progetto e deve sopravvi
 
 La rappresentazione SVG concreta deve essere definita in una implementazione successiva senza inventare contratti incompatibili con il progetto esistente.
 
-### Presenza obbligatoria nel modello 3D
+### Comportamento nel modello 3D — aggiornato in v0.65
 
-Il viewer/modello 3D deve mostrare il simbolo Nord **d'ufficio**, anche quando il progetto non contiene ancora una definizione esplicita.
+Il viewer 3D usa una rappresentazione volutamente minimale del Nord.
 
-Regola:
+Regola corrente:
 
 ```text
 orientamento Nord definito
         ↓
-simbolo Nord nel 3D
-ruotato nella direzione corretta
+solo freccia 3D
+ruotata nella direzione corretta
+        ↓
+nessuna scritta
+nessun angolo numerico
+nessun riquadro
 
 orientamento Nord NON definito
         ↓
-simbolo Nord comunque presente nel 3D
-        +
-indicatore "?"
-        ↓
-orientamento sconosciuto / da confermare
+nessun indicatore 3D
+nessuna freccia
+nessuna scritta
 ```
 
-Il sistema **non deve inventare un orientamento convenzionale** quando il dato manca.
+Il sistema continua a **non inventare un orientamento convenzionale** quando il dato manca.
 
-Il simbolo con `?` significa esplicitamente:
-
-> Nord presente come riferimento grafico, ma orientamento reale non ancora definito o confermato.
-
-Quando l'utente definisce l'orientamento:
-
-- il `?` scompare;
-- il simbolo assume la direzione corretta;
-- CAD 2D e modello 3D devono utilizzare lo stesso valore di orientamento.
+Il contratto e l'editing del Nord nel CAD 2D restano invariati; questa semplificazione riguarda esclusivamente il viewer 3D.
 
 ### Editing
 
@@ -1901,9 +1896,10 @@ CAD 2D:
 
 Viewer 3D:
 
-- il Nord viene aggiunto d'ufficio ad ogni modello visualizzato;
-- se definito, una freccia 3D indica la direzione coerente con lo stesso angolo del CAD;
-- se non definito, compare `N ?` senza freccia orientata;
+- il comportamento originario v0.30 è stato **superato dalla v0.65**;
+- se il Nord è definito, compare soltanto una freccia 3D nella direzione coerente con lo stesso angolo del CAD;
+- non viene mostrata alcuna label, scritta `N`, angolo numerico o riquadro;
+- se il Nord non è definito, nel viewer 3D non compare alcun indicatore;
 - il simbolo non partecipa ai filtri grafici del modello edilizio.
 
 Persistenza:
@@ -1942,9 +1938,44 @@ Comportamento:
 - chiudendo il pannello torna il normale contesto proprietà CAD;
 - la persistenza e il contratto SVG del Nord restano invariati.
 
+### Rifinitura v0.65 — Nord 3D minimale
+
+La v0.65 semplifica esclusivamente la resa del Nord nel viewer 3D:
+
+- rimossa la funzione `createNorth3DLabel(...)`;
+- rimosso il cartiglio `N xx°` quando l'orientamento è definito;
+- rimosso il cartiglio `N ?` quando l'orientamento non è definito;
+- `updateNorth3DMarker()` termina subito se `northOrientationDeg === null`;
+- quando l'orientamento è definito resta soltanto `THREE.ArrowHelper`;
+- il Nord CAD 2D, la persistenza SVG e i controlli di orientamento restano invariati.
+
+Test eseguiti:
+
+```text
+sintassi app.js                  OK
+ArrowHelper nel marker 3D       presente
+label/sprite nel marker 3D      assenti
+Nord non definito               return immediato
+createNorth3DLabel               assente
+messaggio "nel 3D viene N ?"     assente
+```
+
+Commit:
+
+```text
+fea442138e7552a559a1624e05a7ad7fbcb12e04
+Simplify 3D north marker v0.65
+
+589b86aba4be71f89ecb79b35e3a50a8e7014f5d
+Bump Termodel Web to v0.65
+
+9f839515f8f5913479cbd6677beef10afb9d5fe1
+Align undefined north status v0.65
+```
+
 ### Stato
 
-**IMPLEMENTATO IN v0.30 E RIFINITO IN v0.31/v0.32/v0.37**.
+**IMPLEMENTATO IN v0.65 — TEST STATICI/SINTATTICI SUPERATI; DA VERIFICARE VISIVAMENTE NEL BROWSER.**
 
 ---
 
@@ -4311,7 +4342,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.64.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.65.**
 
 Stato operativo corrente:
 
@@ -4321,7 +4352,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.64 presente su `main`;
+- v0.65 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -4363,6 +4394,7 @@ Stato operativo corrente:
 - v0.62 formalizza che la scelta dell'unità DXF è la **calibrazione automatica**: il plotter converte in cm, normalizza l'origine e inverte Y senza alterare le distanze. `Calibra` resta solo una correzione eccezionale per DXF/unità errati.
 - v0.63 aggiunge lo **Snap sfondo vettoriale** attivo di default: endpoint/vertici dello SVG si sommano allo Snap normale; il candidato più vicino vince, ma lo snap sfondo non restituisce `targetLineId` e quindi non viene scambiato per una parete Termodel.
 - v0.64 implementa lo **Snap asse divisori**: la cache dello sfondo vettoriale aggiunge un punto medio fittizio per ogni coppia di endpoint reali distante tra 5 e 20 cm; la ricerca usa una griglia spaziale da 20 cm, i punti vengono deduplicati e i fittizi non generano ricorsivamente altri fittizi.
+- v0.65 semplifica il **Nord nel viewer 3D**: se definito resta soltanto la freccia; se non definito non compare nulla. Nessuna label `N xx°` o `N ?`; il CAD 2D resta invariato.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -4387,10 +4419,10 @@ Se questa conversazione termina, una nuova chat deve poter riprendere senza rico
 
 ```text
 branch: main
-frontend: Termodel Web v0.64
+frontend: Termodel Web v0.65
 ultimo commit funzionale frontend:
-ab2370fccf03895cc928a524f09d25c4f6b8d32d
-Add divider midpoint background snap v0.64
+9f839515f8f5913479cbd6677beef10afb9d5fe1
+Align undefined north status v0.65
 ```
 
 **File da leggere per il lavoro immediato sul progetto unico:**
@@ -4460,7 +4492,7 @@ cadSnapPoint(point, movingLineId)
 
 **Nota importante sulla struttura del codice:** l'import degli archivi è ancora implementato da `loadTermodelProjectText(...)` in `archivio-web.js`; `app.js` orchestra la conversione verso lo stato CAD; `termodel-project-text.js` centralizza parsing/sostituzione delle sezioni e soprattutto la ricostruzione del progetto unico. Non riscrivere ArchivioWeb da zero.
 
-**Test già eseguiti sulla v0.58-v0.64:**
+**Test già eseguiti sulla v0.58-v0.65:**
 
 - sintassi JavaScript valida per `app.js`, `archivio-web.js` e `termodel-project-text.js`;
 - round-trip strutturale sul vero `ProgettoVuoto.termodel.txt`: 26 sezioni prima e dopo;
@@ -4471,7 +4503,8 @@ cadSnapPoint(point, movingLineId)
 - v0.61: test scala reale superato: `4000 mm`, `400 cm` e `4 m` producono tutti `400 cm = 4 m` nel CAD Termodel;
 - v0.62: test con coordinate lontane dall'origine superato: `1000 → 1013,0977 m` resta esattamente `13,0977 m` dopo conversione in cm e normalizzazione origine;
 - v0.63: test Snap sfondo superato: mapping SVG→CAD corretto, `SNAP SFONDO`, `snapSource=background` e `targetLineId=""`;
-- v0.64: test punti medi superato sulle soglie 4,99 / 5 / 12 / 20 / 20,01 cm; la sintassi del corpo eseguibile di `app.js` è valida.
+- v0.64: test punti medi superato sulle soglie 4,99 / 5 / 12 / 20 / 20,01 cm; la sintassi del corpo eseguibile di `app.js` è valida;
+- v0.65: Nord 3D verificato staticamente: `ArrowHelper` presente solo per orientamento definito, nessuna label/sprite nel marker, `createNorth3DLabel` rimossa, orientamento non definito → nessun indicatore.
 
 **Limite del test automatico:** l'ambiente usato per il controllo non esponeva Web Crypto; il percorso è stato esercitato con un digest simulato per controllare la ricomposizione. Nel browser reale `buildTermodelProjectText()` usa `crypto.subtle.digest('SHA-256', ...)`. È quindi obbligatorio il test manuale reale di Salva.
 
@@ -4511,4 +4544,4 @@ Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttament
 
 **Altri lavori aperti CAD:** trascinamento simboli, snap durante lo spostamento e vincolo LOC.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `19858510d09104384e29d9651cf72b349bbbf612`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `9f839515f8f5913479cbd6677beef10afb9d5fe1`.
