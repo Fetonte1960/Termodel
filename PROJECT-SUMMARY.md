@@ -1187,36 +1187,140 @@ e non con la struttura XML `DataContractSerializer`.
 
 ## 12. Stato WebService
 
-Documento di coordinamento:
+La linea backend è ora un progetto autonomo nel repository comune:
+
+```text
+Server/Termodelwebservice/
+├── PROJECT-SUMMARY-SERVICE.md
+├── Termodel.WebService.sln
+└── src/
+    ├── Termodel.Core/
+    └── Termodel.WebService/
+```
+
+Il frontend Web, Termodel.Core e Termodel.WebService restano aree distinte e non
+devono duplicarsi reciprocamente.
+
+### Riferimenti autorevoli per l'integrazione
+
+Prima di modificare qualunque comunicazione Frontend ↔ Service leggere:
+
+```text
+docs/TERMODEL-FRONT-SERVICE-CONTRACT.md
+```
+
+Questo è il **contratto condiviso autorevole** per:
+
+- endpoint;
+- request/response;
+- nomi e formati degli artifact;
+- `calculationId`;
+- lifecycle degli snapshot;
+- diagnostica/errori;
+- orchestrazione frontend/server.
+
+Il summary specifico della linea backend è:
+
+```text
+Server/Termodelwebservice/PROJECT-SUMMARY-SERVICE.md
+```
+
+`PROJECT-SUMMARY.md` Web e `PROJECT-SUMMARY-SERVICE.md` restano separati;
+non duplicare qui il contratto completo.
+
+La nota:
 
 ```text
 docs/termodel-ui-demo/info_termodelwebservice.md
 ```
 
-Endpoint verificati/documentati attualmente:
+è secondaria e rimanda al contratto condiviso.
+
+Commit che introduce il contratto comune:
+
+```text
+b20ff1dbf43010ab7ea47e7ce53edc06f5f6fc3f
+Add shared frontend-service communication contract
+```
+
+### Endpoint Service già implementati
+
+Secondo il summary Service corrente:
 
 ```text
 GET  /
 GET  /health
 GET  /api/model/capabilities
+GET  /api/model/clean-floor/{floorName}
 POST /api/projects/new
+POST /api/model/3d
 ```
 
-`POST /api/projects/new` crea il contenitore progetto completo con SVG multipiano e archivi XML/JSON.
+`POST /api/model/3d` riceve il file unico testuale e restituisce
+`TermodelWebModel v3`.
 
-Dalla **v0.57** il frontend non usa più `GET /api/model/capabilities` né `POST /api/projects/new` per inizializzare un progetto durante i test browser: `Nuovo` e l'importazione di un semplice SVG usano il template statico locale derivato dal progetto base reale. Gli endpoint restano disponibili lato WebService per usi server e integrazione futura.
+`GET /api/model/clean-floor/{floorName}` restituisce la pianta pulita prodotta
+dalla generazione corrente.
+
+Dalla **v0.57** il frontend non usa più `GET /api/model/capabilities` né
+`POST /api/projects/new` per il bootstrap locale: `Nuovo` e l'importazione di
+un semplice SVG usano il template locale `progetto-vuoto.js`.
+
+### Workflow concordato ma non ancora implementato: AggiornaCalcolo
+
+Il contratto condiviso definisce come direzione:
+
+```text
+frontend
+    ↓
+costruisce progetto corrente
+    ↓
+filtra le risorse puramente locali/frontend
+    ↓
+POST /api/calculations
+    ↓
+calculationId + manifest artifact
+    ↓
+view frontend leggono gli artifact dello snapshot
+```
+
+Principi già consolidati:
+
+- una sola elaborazione coerente per ogni `AggiornaCalcolo`;
+- `calculationId` identifica l'elaborazione/snapshot, non il progetto;
+- leggere un artifact non deve rieseguire il calcolo;
+- le view ricevono dati/artifact, non HTML prodotto dal Core;
+- gli endpoint legacy `POST /api/model/3d` e
+  `GET /api/model/clean-floor/{floorName}` restano durante la migrazione;
+- `POST /api/calculations` è **progettato ma non ancora implementato**.
+
+Artifact previsti progressivamente includono modello 3D, piante pulite, XML
+nazionale, report dispersioni, pannelli e spirali.
+
+### Regola payload server
+
+Resta vincolante la decisione già registrata nella v0.58-v0.59:
+
+> **gli sfondi locali/frontend non devono essere trasmessi al server.**
+
+Quindi "file unico completo" nel contratto significa **progetto tecnico
+completo necessario al calcolo**, non copia byte-per-byte del progetto locale.
+
+Il futuro payload server deve partire dal progetto unico corrente ma escludere
+`assets/backgrounds/*`, Data URL/Base64 di sfondo e riferimenti usati
+esclusivamente dal CAD per gli sfondi locali.
+
+Le sezioni tecniche necessarie al motore, per esempio
+`project/DisegnoInput.dxf` quando appartiene realmente al progetto Termodel,
+non vanno confuse con gli asset locali di sfondo.
 
 **Non esistono ancora API CRUD ufficiali per gli archivi.**
 
-Il frontend non deve inventare endpoint come se fossero disponibili.
+Il frontend non deve inventare endpoint, DTO o artifact non presenti nel
+contratto condiviso e nello stato reale del Service.
 
-Quando servirà il provider server:
-
-1. definire il requisito frontend;
-2. proporre un contratto;
-3. consegnarlo alla chat Core/WebService;
-4. attendere l'implementazione/approvazione;
-5. creare `TermodelWebServiceProvider` soltanto sul contratto reale.
+Per adesso non è richiesta alcuna modifica immediata alla UI Web per il nuovo
+workflow `AggiornaCalcolo`.
 
 ---
 
@@ -4638,6 +4742,7 @@ Stato operativo corrente:
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
 - v0.70 presente su `main`;
+- architettura Frontend ↔ Service aggiornata al commit `b20ff1db`: contratto condiviso in `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md`; il nuovo workflow `POST /api/calculations` + `calculationId` è concordato ma non ancora implementato; gli sfondi locali restano esclusi dal payload server.
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -4725,7 +4830,9 @@ docs/termodel-ui-demo/archivio-web.js
 docs/termodel-ui-demo/termodel-project-text.js
 docs/termodel-ui-demo/progetto-vuoto.js
 SorgentiTermodel/Library/projects/ProgettoVuoto/ProgettoVuoto.termodel.txt
-```
+
+docs/TERMODEL-FRONT-SERVICE-CONTRACT.md   # obbligatorio solo per integrazione frontend/server
+Server/Termodelwebservice/PROJECT-SUMMARY-SERVICE.md  # stato backend```
 
 Fonte del template vuoto:
 

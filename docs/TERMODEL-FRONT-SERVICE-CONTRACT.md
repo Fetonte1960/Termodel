@@ -74,9 +74,38 @@ Il formato di scambio principale è:
 TERMODEL-PROJECT-TEXT-V1
 ```
 
-Il frontend invia al server l'intero progetto necessario al calcolo.
+Il frontend invia al server l'intero **progetto tecnico necessario al calcolo**.
 
-Il file unico rappresenta lo **stato autorevole del progetto inviato**.
+Questo non significa che il payload server debba essere identico byte-per-byte
+al file locale salvato dal browser.
+
+È già stabilita una distinzione fra:
+
+```text
+progetto locale completo
+    può contenere risorse puramente frontend
+
+payload server
+    contiene il progetto tecnico necessario al calcolo
+```
+
+In particolare, gli **sfondi locali del CAD non devono essere trasmessi a
+Termodel.Core / Termodel.WebService**.
+
+Prima di `POST /api/calculations`, il frontend dovrà quindi derivare il payload
+server dal `TERMODEL-PROJECT-TEXT-V1` corrente eliminando:
+
+- sezioni `assets/backgrounds/*`;
+- Data URL/Base64 appartenenti agli sfondi;
+- riferimenti SVG usati esclusivamente per ricollegare gli sfondi locali;
+- eventuali future risorse equivalenti dichiarate come locali/frontend.
+
+Questa esclusione non riguarda sezioni tecniche del progetto necessarie al
+motore, ad esempio `project/DisegnoInput.dxf` quando fa parte del progetto
+Termodel e non è soltanto una risorsa grafica locale di sfondo.
+
+Il file unico filtrato inviato al server rappresenta lo **stato autorevole del
+progetto tecnico inviato**.
 
 Gli elaborati prodotti dal server sono invece **derivati** da quello stato.
 
@@ -335,7 +364,10 @@ il precedente calculationId diventa STALE
 utente/comando richiede AggiornaCalcolo
         |
         v
-frontend costruisce TERMODEL-PROJECT-TEXT-V1
+frontend costruisce TERMODEL-PROJECT-TEXT-V1 corrente
+        |
+        v
+filtra le sole risorse locali/frontend (es. sfondi)
         |
         v
 POST /api/calculations
