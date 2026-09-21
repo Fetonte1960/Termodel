@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`cf90174307eda011fc78aa568917b369d810f63c` — `Harden canonical SVG plane mapping diagnostics`  
+`256837119635d80e7cd94bc162c69e506c82c7d1` — `Publish Termodel Web v0.75 coverage tool`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -689,15 +689,20 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.74
+Termodel Web v0.75
 ```
 
-Commit frontend di riferimento per la v0.74:
+Commit frontend di riferimento per la v0.75:
 
 ```text
-435c2ef0cb37d46b40d89c100ce9b008e1208a5c  Copy Service responses to clipboard
-51dab1b83c688701482acdebca895e05df6419d1  Publish Termodel Web v0.74
+eea1929202a03e5106b6d1d6d38cc2128df8322e  Add initialized archive record API
+f61f947bc0e6b1da5d5a60673440fc527645b02c  Add CAD coverage plane workflow
+af791f54ace15c35202c3358d3495bc4c738d4cf  Map multipiano CAD entities into Service payload
+256837119635d80e7cd94bc162c69e506c82c7d1  Publish Termodel Web v0.75 coverage tool
 ```
+
+Base v0.74:
+`435c2ef0...` / `51dab1b8...` — diagnostica Service negli appunti.
 
 Base v0.73 immediatamente precedente:
 
@@ -718,6 +723,14 @@ essere analizzate.
 La v0.74 aggiunge la copia automatica negli appunti delle risposte POST + GET
 del Service in formato diagnostico `TERMODEL-SERVICE-EXCHANGE-V1`, così il
 risultato runtime può essere incollato direttamente in chat.
+
+La v0.75 introduce nella toolbar CAD il comando **＋ Copertura** per i test
+avanzati del Service. Crea un vero record `Piani` di tipo `Copertura`,
+duplica soltanto lo sfondo locale del piano corrente, commuta il CAD sul nuovo
+piano e non genera localmente il tetto 3D. I piani `Calpestabile` continuano
+a usare l'anteprima locale. Il payload canonico multipiano usa
+`data-termodel-piano`/`LayerCad` per separare correttamente anche la
+geometria della copertura destinata al Service.
 
 Ultima versione pubblica verificata manualmente dall'utente:
 
