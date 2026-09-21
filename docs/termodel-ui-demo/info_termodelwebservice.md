@@ -4,7 +4,15 @@
 
 Questa nota coordina il frontend Termodel Web con il backend ASP.NET Core sperimentale. Non modifica la definizione funzionale o grafica del frontend e distingue le funzioni già provate da quelle ancora in studio.
 
-Aggiornamento: 19 settembre 2026.
+Il contratto condiviso e autorevole per endpoint, `AggiornaCalcolo`, `calculationId`, artifact, versionamento ed errori è:
+
+```text
+docs/TERMODEL-FRONT-SERVICE-CONTRACT.md
+```
+
+Questa nota resta un documento di orientamento frontend; in caso di differenza sul contratto di comunicazione prevale il documento condiviso.
+
+Aggiornamento: 21 settembre 2026.
 
 ## Separazione delle responsabilità
 

@@ -8,6 +8,15 @@ Questo è il documento autorevole di continuità per **Termodel.Core** e
 **Termodel.WebService**. Non sostituisce né deve modificare il
 `PROJECT-SUMMARY.md` della linea Web JavaScript.
 
+Il contratto condiviso con il frontend è mantenuto separatamente in:
+
+```text
+docs/TERMODEL-FRONT-SERVICE-CONTRACT.md
+```
+
+Endpoint, artifact e orchestrazione comuni devono essere definiti lì; questo
+Summary registra invece lo stato di implementazione del Service.
+
 ## 1. Regole per una nuova chat AI
 
 Prima di intervenire:
