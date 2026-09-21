@@ -327,6 +327,48 @@ snapshot. In questa prima implementazione il manifest contiene soltanto
 l'artifact `model3d`; XML nazionale, dispersioni, pannelli, spirali e piante
 pulite nello snapshot restano fasi successive.
 
+### Commissione frontend — modalità Copertura e simbolo Colmo
+
+Stato: **COMMISSIONATO** — 21 settembre 2026.
+
+Riferimenti verificati prima dell'implementazione:
+
+- `docs/infotermodelGPT.html`;
+- `SorgentiTermodel/Library/leggidxf/CadGPT.xaml.cs`;
+- `SorgentiTermodel/Library/leggidxf/ScriptCad.cs`;
+- `SorgentiTermodel/Library/MainWindow.xaml`;
+- `Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/Leggidxf/LeggiDxf.cs`;
+- `Server/Termodelwebservice/src/Termodel.Core/NetDxfCompat/SvgDxfReader.cs`.
+
+La modalità CAD del piano `Tipo=Copertura` deve:
+
+- mostrare lo sfondo locale della copertura in grigio, per distinguerlo
+  chiaramente dalle nuove linee tecniche;
+- nascondere i comandi Porta/Finestra, Finestra 2 punti e Ponte;
+- mantenere il comando di linea, presentandolo come
+  `Linea perimetro falde`;
+- mantenere il comando LOC presentandolo all'utente come `Centrofalda`,
+  senza cambiare il formato tecnico del blocco;
+- aggiungere il comando `Colmo`, disponibile soltanto sui piani Copertura;
+- inserire il Colmo sulla linea più vicina, come richiesto dal motore;
+- serializzare il simbolo nel formato tecnico già usato dal Desktop/Core:
+
+```text
+BLOCCO,Colmo
+QUOTACOLMO,...
+QUOTAGRONDA,...
+LATOPARTEBASSA,...
+QUOTASHED,...
+PARETESHED,...
+```
+
+- permettere l'editing degli attributi Colmo usando i campi `DatiCad`
+  esistenti `QuotaColmo`, `QuotaGronda`, `LatoParteBassaShed`,
+  `QuotaShed`, `PareteShed`, rispettando combo e archivi definiti da
+  `definizionedati.json`;
+- non modificare `definizionedati.json` e non introdurre logica tetti nel
+  frontend: l'elaborazione 3D resta responsabilità del Service/Core.
+
 ### Commissione frontend — fallback sfondo Copertura da DisegnoInput
 
 Stato: **ESEGUITO** — 21 settembre 2026.
