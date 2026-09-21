@@ -2,5 +2,7 @@
   <ItemGroup>
     <!-- Modificato da Codex per realizzare: geometria e topologia reali del Core 3D headless. -->
     <PackageReference Include="NetTopologySuite" Version="2.6.0" />
+    <!-- Polig3D/Modello conservano le strutture IFC Desktop in memoria; nessun renderer geometrico xBIM. -->
+    <PackageReference Include="Xbim.Essentials" Version="6.1.605" />
   </ItemGroup>
 </Project>
