@@ -443,6 +443,16 @@ L'obiettivo di questa fase è trasferire nel Web il modello generico già collau
 
 ---
 
+
+### Standard dei due file di comunicazione Frontend ↔ Service
+
+Il contratto condiviso formalizza ora i due formati principali della
+comunicazione: il payload tecnico `TERMODEL-PROJECT-TEXT-V1` inviato al server
+senza sfondi locali/frontend e l'artifact grafico `TermodelWebModel v3`
+restituito come `model3d` per il redraw 3D. Il dettaglio normativo resta in
+`docs/TERMODEL-FRONT-SERVICE-CONTRACT.md`.
+
+
 ## 2.3 Generazione modello 3D — provvisoria nel frontend, definitiva sul server
 
 Decisione architetturale registrata il **2026-09-20**.
