@@ -716,6 +716,7 @@ export function convertDxfToSvg(model, options = {}) {
       ' y="' + item.y.toFixed(5) + '"' +
       ' font-family="Arial, sans-serif"' +
       ' font-size="' + item.height.toFixed(5) + '"' +
+      ' fill="#222" stroke="none"' +
       transform + '>' +
       escapeXml(item.text) +
       '</text>'
