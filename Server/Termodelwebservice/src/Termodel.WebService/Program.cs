@@ -1,9 +1,13 @@
 using System.Text;
+using System.Text.Json;
 using Termodel.Core;
 using Termodel.Core.ProjectFiles;
 using Termodel.Leggidxf;
+using Termodel.WebService.Calculations;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSingleton<CalculationSnapshotStore>();
 
 const string TermodelWebCorsPolicy = "TermodelWeb";
 
@@ -67,6 +71,92 @@ app.MapGet("/health", () => Results.Ok(new
 
 // Funzione realizzata da Codex in autonomia
 app.MapGet("/api/model/capabilities", () => Results.Ok(CoreInformation.GetCapabilities()));
+
+// Funzione realizzata da Codex in autonomia
+app.MapPost("/api/calculations", async (
+    HttpRequest request,
+    CalculationSnapshotStore snapshots,
+    CancellationToken cancellationToken) =>
+{
+    if (request.ContentType is null ||
+        !request.ContentType.StartsWith("text/plain", StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Problem(
+            title: "Content-Type non supportato",
+            detail: "Inviare il file unico TERMODEL-PROJECT-TEXT-V1 come text/plain; charset=utf-8.",
+            statusCode: StatusCodes.Status415UnsupportedMediaType);
+    }
+
+    try
+    {
+        using var reader = new StreamReader(
+            request.Body,
+            Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true);
+
+        string projectText = await reader.ReadToEndAsync(cancellationToken);
+
+        Model3DGenerationResult result =
+            await new GeneraModello().GeneraAsync(projectText, cancellationToken);
+
+        byte[] model3DJson = JsonSerializer.SerializeToUtf8Bytes(result.Model);
+        CalculationSnapshot snapshot = snapshots.Create(model3DJson, result.Diagnostics);
+
+        string model3DHref =
+            $"/api/calculations/{snapshot.Id:D}/artifacts/model3d";
+
+        return Results.Json(new
+        {
+            contractVersion = "TERMODEL-FRONT-SERVICE-V1",
+            calculationId = snapshot.Id,
+            status = "completed",
+            artifacts = new[]
+            {
+                new
+                {
+                    name = "model3d",
+                    contentType = "application/json",
+                    href = model3DHref
+                }
+            },
+            diagnostics = snapshot.Diagnostics
+        });
+    }
+    catch (InvalidDataException exception)
+    {
+        return Results.Problem(
+            title: "File unico o geometria non validi",
+            detail: exception.Message,
+            statusCode: StatusCodes.Status422UnprocessableEntity);
+    }
+    catch (NotSupportedException exception)
+    {
+        return Results.Problem(
+            title: "Funzione del progetto non ancora supportata",
+            detail: exception.Message,
+            statusCode: StatusCodes.Status422UnprocessableEntity);
+    }
+});
+
+// Funzione realizzata da Codex in autonomia
+app.MapGet(
+    "/api/calculations/{calculationId:guid}/artifacts/model3d",
+    (Guid calculationId, CalculationSnapshotStore snapshots) =>
+{
+    if (!snapshots.TryGet(calculationId, out CalculationSnapshot? snapshot) ||
+        snapshot is null)
+    {
+        return Results.Problem(
+            title: "Snapshot di calcolo non disponibile",
+            detail: $"Il calculationId '{calculationId:D}' non esiste o non è più disponibile.",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    return Results.Bytes(
+        snapshot.CopyModel3DJson(),
+        contentType: "application/json; charset=utf-8",
+        statusCode: StatusCodes.Status200OK);
+});
 
 // Funzione realizzata da Codex in autonomia
 app.MapPost("/api/model/3d", async (HttpRequest request, CancellationToken cancellationToken) =>
