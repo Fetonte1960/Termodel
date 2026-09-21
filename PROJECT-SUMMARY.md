@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`7b662643bb8fe12d05295745361881c3a8e8f49d` — `Align visible Termodel Web version to v0.75`  
+`c35f940058c6cba7dc7cb2825b4958c72ce75630` — `Publish Termodel Web v0.76 coverage background fallback`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -689,7 +689,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.75
+Termodel Web v0.76
 ```
 
 Commit frontend di riferimento per la v0.75:
@@ -732,6 +732,11 @@ piano e non genera localmente il tetto 3D. I piani `Calpestabile` continuano
 a usare l'anteprima locale. Il payload canonico multipiano usa
 `data-termodel-piano`/`LayerCad` per separare correttamente anche la
 geometria della copertura destinata al Service.
+
+La v0.76 completa `＋ Copertura`: se il piano sorgente non ha uno
+sfondo locale, il DisegnoInput corrente viene trasformato in uno sfondo
+vettoriale SVG locale della copertura. È solo un riferimento grafico: non
+duplica la geometria tecnica e resta escluso dal payload inviato al Service.
 
 Ultima versione pubblica verificata manualmente dall'utente:
 
