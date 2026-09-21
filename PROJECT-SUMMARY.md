@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`3b2f0feb2f753b88bae9cf0dc2787f539195ec17` — `Add PDF raster background import v0.70`  
+`cf90174307eda011fc78aa568917b369d810f63c` — `Harden canonical SVG plane mapping diagnostics`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
