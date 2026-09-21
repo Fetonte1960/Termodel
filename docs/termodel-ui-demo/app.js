@@ -47,8 +47,12 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.79';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.79';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.80';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.80';
+
+const TERMODEL_ANDROID_DEVICE = /Android/i.test(navigator.userAgent || '');
+if (TERMODEL_ANDROID_DEVICE)
+  document.documentElement.classList.add('termodel-android');
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -489,9 +493,15 @@ function createDemoHelpPanel() {
 
 let demoHelpPanel = null;
 
-function showDemoHelp(key) {
+function showDemoHelp(key, options = {}) {
   const info = DEMO_HELP[key];
   if (!info) return;
+
+  // Su Android l'help non interrompe più l'esplorazione ad ogni comando:
+  // viene aperto soltanto dal pulsante "?" della palette Esplora.
+  if (TERMODEL_ANDROID_DEVICE && !options.force)
+    return;
+
   if (!demoHelpPanel) demoHelpPanel = createDemoHelpPanel();
   document.getElementById('demoHelpTitle').textContent = info.title;
   document.getElementById('demoHelpBody').innerHTML = info.body;
@@ -501,6 +511,139 @@ function showDemoHelp(key) {
 function helpKeyFromElement(element) {
   if (!element) return '';
   return element.dataset.helpKey || element.textContent.trim();
+}
+
+function installAndroidExploreStyles() {
+  if (!TERMODEL_ANDROID_DEVICE || document.getElementById('androidExploreStyles'))
+    return;
+
+  const style = document.createElement('style');
+  style.id = 'androidExploreStyles';
+  style.textContent = `
+    .android-explore-box {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 32;
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+    .android-explore-main,
+    .android-explore-help,
+    .android-explore-action {
+      min-height: 38px;
+      border: 1px solid #7f8790;
+      border-radius: 5px;
+      background: rgba(250,250,250,.94);
+      color: #111;
+      box-shadow: 0 2px 8px rgba(0,0,0,.24);
+      font-size: 13px;
+      font-weight: 700;
+      touch-action: manipulation;
+    }
+    .android-explore-main {
+      padding: 0 12px;
+    }
+    .android-explore-help {
+      width: 38px;
+      padding: 0;
+      font-size: 20px;
+    }
+    .android-explore-main.active {
+      background: #dff1ff;
+      border-color: #4d82a8;
+    }
+    .android-explore-menu {
+      position: absolute;
+      top: 44px;
+      right: 0;
+      min-width: 190px;
+      display: grid;
+      gap: 5px;
+      padding: 6px;
+      border: 1px solid #7f8790;
+      border-radius: 5px;
+      background: rgba(244,244,244,.98);
+      box-shadow: 0 4px 14px rgba(0,0,0,.28);
+    }
+    .android-explore-menu[hidden] {
+      display: none;
+    }
+    .android-explore-action {
+      width: 100%;
+      padding: 7px 10px;
+      text-align: left;
+      background: linear-gradient(#fff,#e7e7e7);
+      font-weight: 600;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function createAndroidExploreBox() {
+  if (!TERMODEL_ANDROID_DEVICE || !modelPage)
+    return null;
+
+  const existing = document.getElementById('androidExploreBox');
+  if (existing) return existing;
+
+  installAndroidExploreStyles();
+
+  const box = document.createElement('div');
+  box.id = 'androidExploreBox';
+  box.className = 'android-explore-box';
+  box.innerHTML = `
+    <button id="androidExploreToggle" class="android-explore-main" type="button"
+      aria-expanded="false">Esplora</button>
+    <button id="androidExploreHelp" class="android-explore-help" type="button"
+      aria-label="Apri help Termodel" title="Help">?</button>
+    <div id="androidExploreMenu" class="android-explore-menu" hidden>
+      <button id="androidExploreSingleLine" class="android-explore-action" type="button">
+        Disegno unifilare
+      </button>
+    </div>
+  `;
+
+  modelPage.appendChild(box);
+
+  const toggle = box.querySelector('#androidExploreToggle');
+  const help = box.querySelector('#androidExploreHelp');
+  const menu = box.querySelector('#androidExploreMenu');
+  const singleLine = box.querySelector('#androidExploreSingleLine');
+
+  const setOpen = (open) => {
+    const next = Boolean(open);
+    menu.hidden = !next;
+    toggle.classList.toggle('active', next);
+    toggle.setAttribute('aria-expanded', next ? 'true' : 'false');
+  };
+
+  toggle.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setOpen(menu.hidden);
+  });
+
+  help.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setOpen(false);
+    showDemoHelp('Benvenuto', { force: true });
+  });
+
+  singleLine.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setOpen(false);
+    if (demoHelpPanel) demoHelpPanel.hidden = true;
+    activateCadPage();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!box.contains(event.target))
+      setOpen(false);
+  });
+
+  return box;
 }
 
 function installFilterStyles() {
@@ -7204,7 +7347,10 @@ newProjectButton?.addEventListener('click', event => {
 
 setStructuredProjectState(false);
 
-showDemoHelp('Benvenuto');
+if (TERMODEL_ANDROID_DEVICE)
+  createAndroidExploreBox();
+else
+  showDemoHelp('Benvenuto');
 
 renderer.setAnimationLoop(() => {
   controls.update();
