@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **0.3**  
+Versione documento: **0.4**  
 Aggiornamento: **21 settembre 2026**  
 Stato: **architettura concordata; implementazione progressiva**
 
@@ -315,6 +315,31 @@ Service. La chiamata esegue il motore una sola volta, genera un
 snapshot. In questa prima implementazione il manifest contiene soltanto
 l'artifact `model3d`; XML nazionale, dispersioni, pannelli, spirali e piante
 pulite nello snapshot restano fasi successive.
+
+### Commissione frontend — pulsante Aggiorna Modello
+
+Stato: **COMMISSIONATO** — 21 settembre 2026.
+
+Il pulsante `Aggiorna Modello` del frontend deve applicare il seguente
+comportamento senza introdurre endpoint alternativi:
+
+```text
+nessun progetto strutturato
+    -> carica il TermodelWebModel.json di esempio
+
+progetto strutturato corrente
+    -> costruisce TERMODEL-PROJECT-TEXT-V1 corrente
+    -> deriva il payload tecnico senza sfondi locali/frontend
+    -> POST /api/calculations
+    -> riceve calculationId + manifest
+    -> segue l'href dell'artifact model3d
+    -> GET artifact model3d
+    -> renderizza TermodelWebModel v3 nel viewer
+```
+
+Il file progetto locale completo deve restare invariato rispetto alle proprie
+risorse frontend: il filtraggio degli sfondi produce soltanto il payload
+temporaneo destinato al Service.
 
 Body:
 
