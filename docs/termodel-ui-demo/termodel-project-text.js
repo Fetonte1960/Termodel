@@ -1,4 +1,4 @@
-// Termodel Web v0.59 — conversione bidirezionale TERMODEL-PROJECT-TEXT-V1.
+// Termodel Web v0.71 — conversione bidirezionale TERMODEL-PROJECT-TEXT-V1.
 // Il progetto unico resta il contenitore; questo modulo aggiorna soltanto le
 // sezioni modificate dal frontend e conserva tutte le altre sezioni.
 // Gli sfondi locali sono consolidati in assets/backgrounds/* e vengono
@@ -237,6 +237,60 @@ export function hydrateTermodelBackgrounds(projectText, geometrySvg) {
   });
 
   return new XMLSerializer().serializeToString(doc.documentElement);
+}
+
+function stripTermodelBackgroundElements(geometrySvg) {
+  const source = String(geometrySvg || '');
+  if (!source.trim()) return source;
+
+  if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined')
+    throw new Error('DOM XML non disponibile: impossibile filtrare gli sfondi per il Service.');
+
+  const doc = new DOMParser().parseFromString(source, 'image/svg+xml');
+  if (doc.querySelector('parsererror'))
+    throw new Error('geometry/project.svg non è XML valido.');
+
+  // Gli image marcati come sfondo sono risorse esclusivamente frontend.
+  // Nel payload tecnico non devono restare né il raster né il riferimento
+  // data-termodel-background-id usato per la reidratazione locale.
+  doc.querySelectorAll(
+    'image[data-termodel-sfondo="1"], image[data-termodel-background-id]'
+  ).forEach(image => image.remove());
+
+  return new XMLSerializer().serializeToString(doc.documentElement);
+}
+
+// Termodel Web v0.71: deriva dal progetto locale completo il payload tecnico
+// previsto dal contratto Frontend <-> Service. Non modifica il progetto locale.
+export async function buildTermodelServerPayload(source) {
+  let result = normalizeSource(source);
+  let parsed = parseTermodelProjectText(result);
+
+  // Rimuove indice e contenuti binari/Data URL degli sfondi locali.
+  for (const name of parsed.sectionOrder) {
+    if (name.startsWith(TERMODEL_BACKGROUND_SECTION_PREFIX))
+      result = removeTermodelProjectSection(result, name);
+  }
+
+  parsed = parseTermodelProjectText(result);
+  const geometrySvg = parsed.sections.get('geometry/project.svg');
+  if (!geometrySvg)
+    throw new Error('Il progetto non contiene geometry/project.svg.');
+
+  result = replaceTermodelProjectSection(
+    result,
+    'geometry/project.svg',
+    stripTermodelBackgroundElements(geometrySvg)
+  );
+
+  // Ricostruisce sections/hash del manifest sul payload realmente trasmesso.
+  result = await refreshManifest(result);
+
+  const verify = parseTermodelProjectText(result);
+  if (verify.sectionOrder.some(name => name.startsWith(TERMODEL_BACKGROUND_SECTION_PREFIX)))
+    throw new Error('Il payload Service contiene ancora sezioni di sfondo locali.');
+
+  return result;
 }
 
 function parseArchiveJsonShape(sectionText) {
