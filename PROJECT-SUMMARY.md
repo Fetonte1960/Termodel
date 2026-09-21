@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`4bc8103ee017d96a5d4d5406e93182e0c60caab9` — `Clean obsolete main toolbar logic v0.69`  
+`3b2f0feb2f753b88bae9cf0dc2787f539195ec17` — `Add PDF raster background import v0.70`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,14 +679,14 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.69
+Termodel Web v0.70
 ```
 
-Commit frontend di riferimento per la v0.69:
+Commit frontend di riferimento per la v0.70:
 
 ```text
-a02a0688dc7e2a042b9f2fbe5911ed470b3aa98f  Remove obsolete main toolbar buttons v0.69
-4bc8103ee017d96a5d4d5406e93182e0c60caab9  Clean obsolete main toolbar logic v0.69
+d0b801250a1ad5a04e91d326ec19c44470109f4f  Add PDF raster import dialog v0.70
+3b2f0feb2f753b88bae9cf0dc2787f539195ec17  Add PDF raster background import v0.70
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -2167,6 +2167,100 @@ Clean obsolete main toolbar logic v0.69
 ### Stato
 
 **IMPLEMENTATO IN v0.69 — VERIFICA STATICA SUPERATA; DA VERIFICARE VISIVAMENTE NEL BROWSER.**
+
+
+---
+
+## 12.36 Import PDF raster — v0.70
+
+La v0.70 implementa la **prima fase** della gestione PDF nel CAD Web.
+
+Obiettivo:
+
+```text
+Sfondo → Aggiungi sfondo
+        ↓
+selezione PDF
+        ↓
+scelta pagina + anteprima
+        ↓
+rasterizzazione pagina
+        ↓
+PNG
+        ↓
+normale sfondo raster Termodel
+        ↓
+Calibra con misura reale
+```
+
+### Scelta pagina
+
+Il dialog PDF mostra:
+
+- nome file e numero totale di pagine;
+- pagina corrente;
+- pulsanti precedente/successiva;
+- input numerico per andare direttamente a una pagina;
+- dimensione fisica indicativa del foglio in mm;
+- anteprima raster della pagina.
+
+### Rasterizzazione
+
+La pagina scelta viene renderizzata lato browser con **Mozilla PDF.js / pdfjs-dist 6.3.289**, caricato in modo lazy soltanto quando viene selezionato un PDF.
+
+Risorse:
+
+```text
+https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.mjs
+https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.worker.mjs
+```
+
+Qualità:
+
+```text
+anteprima: lato maggiore massimo 900 px
+import finale: lato maggiore massimo 3000 px
+formato generato: PNG
+sfondo Termodel: raster
+```
+
+Il PDF originale non viene inserito nello SVG/CAD: dopo la conversione il flusso utilizza il PNG generato, compatibile con l'attuale persistenza degli sfondi.
+
+### Scala
+
+In questa prima fase **la dimensione fisica del foglio PDF non viene interpretata come scala reale dell'edificio**.
+
+Il flusso corretto è:
+
+```text
+import PDF raster
+→ traccia/seleziona una parete orizzontale o verticale con misura reale nota
+→ Calibra
+→ ridimensionamento uniforme di sfondo + geometria del piano
+```
+
+Una futura fase potrà aggiungere scale dichiarate `1:50 / 1:100 / 1:200 / personalizzata`, ma non è implementata in v0.70.
+
+### Robustezza
+
+- `Esc`, pulsante `×`, click esterno e `Annulla` chiudono il dialog;
+- il documento PDF viene distrutto/rilasciato dopo annullamento o dopo rasterizzazione;
+- cambi pagina rapidi usano un token di anteprima e canvas temporanei per non sovrapporre rendering concorrenti;
+- PDF protetti/non leggibili vengono segnalati attraverso il normale errore di importazione sfondo.
+
+Commit:
+
+```text
+d0b801250a1ad5a04e91d326ec19c44470109f4f
+Add PDF raster import dialog v0.70
+
+3b2f0feb2f753b88bae9cf0dc2787f539195ec17
+Add PDF raster background import v0.70
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.70 — VERIFICA STATICA/SINTATTICA SUPERATA; DA COLLAUDARE CON UN PDF REALE NEL BROWSER.**
 
 ---
 
@@ -4533,7 +4627,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.69.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.70.**
 
 Stato operativo corrente:
 
@@ -4543,7 +4637,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.69 presente su `main`;
+- v0.70 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -4590,6 +4684,7 @@ Stato operativo corrente:
 - v0.67 aggiunge **icone testuali semplici** ai comandi visibili della toolbar CAD, nello stesso stile di `↶ Undo` / `↷ Redo`: `▧ Sfondo`, `✎ Disegna`, `⌖ Snap`, `▤ Arc`, `× Elimina`, `⟳ Rigenera pianta`, `⇩ Esporta pianta CAD`, `↩ Torna al modello 3d`. Nessuna libreria grafica aggiunta e nessuna logica dei comandi modificata.
 - v0.68 rimuove dalla **toolbar principale inferiore** il combo statico `DisegnoInput`: nel frontend corrente non selezionava realmente il disegno da editare e apriva soltanto un help dimostrativo. Rimossi anche gli handler `drawingSelect`, la voce help ormai inutilizzata e il CSS specifico del select. `Edita nel Cad` continua a operare direttamente sul progetto corrente.
 - v0.69 rimuove dalla **toolbar principale inferiore** anche `Ritorna al progetto` e `Visualizza Plugin Cad`, considerati fuori contesto nel frontend Web corrente. Rimossi CSS, handler/stato `returnProject` e help dedicati. La bottom-bar resta focalizzata su gestione progetto, AI, ingresso CAD, aggiornamento modello e filtri grafici.
+- v0.70 introduce la **prima fase import PDF** nel CAD Web: `Sfondo → Aggiungi sfondo` accetta PDF; un dialog permette di scegliere la pagina e vederne l'anteprima; la pagina scelta viene rasterizzata in PNG e passa poi nel normale flusso sfondo raster. La scala edilizia non viene dedotta dal foglio PDF: dopo l'import si usa la calibrazione già esistente con una misura reale.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -4600,11 +4695,12 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. collaudare manualmente la v0.64 sul DXF reale `Farmacia.dxf`: verificare che gli endpoint reali continuino a fare Snap e che fra due endpoint distanti 5–20 cm sia disponibile anche il punto medio fittizio utile per tracciare l'asse del divisorio, senza interferire con lo Snap normale;  
-> 2. dopo il collaudo del round-trip, usare `buildCurrentProjectText()` come base obbligatoria di qualsiasi futura chiamata WebService; prima dell'invio produrre però un payload server filtrato, **senza sfondi raster/SVG, Data URL/Base64 o relativi asset**;  
-> 3. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
-> 4. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
-> 5. portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano, includendo correttamente le aperture/finestre FIN; l'attuale generazione 3D frontend resta provvisoria e non è il riferimento funzionale definitivo.
+> 1. collaudare manualmente la v0.70 con un PDF reale multipagina: `Sfondo → Aggiungi sfondo → PDF`, cambiare pagina, verificare anteprima, importare la pagina come raster e provare `Calibra` con una misura reale;  
+> 2. collaudare manualmente la v0.64 sul DXF reale `Farmacia.dxf`: verificare che gli endpoint reali continuino a fare Snap e che fra due endpoint distanti 5–20 cm sia disponibile anche il punto medio fittizio utile per tracciare l'asse del divisorio, senza interferire con lo Snap normale;  
+> 3. dopo il collaudo del round-trip, usare `buildCurrentProjectText()` come base obbligatoria di qualsiasi futura chiamata WebService; prima dell'invio produrre però un payload server filtrato, **senza sfondi raster/SVG, Data URL/Base64 o relativi asset**;  
+> 4. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
+> 5. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
+> 6. portare nel Core/WebService la generazione/aggiornamento del modello 3D completo multipiano, includendo correttamente le aperture/finestre FIN; l'attuale generazione 3D frontend resta provvisoria e non è il riferimento funzionale definitivo.
 
 ### Handoff rapido per una nuova chat
 
@@ -4614,10 +4710,10 @@ Se questa conversazione termina, una nuova chat deve poter riprendere senza rico
 
 ```text
 branch: main
-frontend: Termodel Web v0.69
+frontend: Termodel Web v0.70
 ultimo commit funzionale frontend:
-4bc8103ee017d96a5d4d5406e93182e0c60caab9
-Clean obsolete main toolbar logic v0.69
+3b2f0feb2f753b88bae9cf0dc2787f539195ec17
+Add PDF raster background import v0.70
 ```
 
 **File da leggere per il lavoro immediato sul progetto unico:**
@@ -4687,7 +4783,7 @@ cadSnapPoint(point, movingLineId)
 
 **Nota importante sulla struttura del codice:** l'import degli archivi è ancora implementato da `loadTermodelProjectText(...)` in `archivio-web.js`; `app.js` orchestra la conversione verso lo stato CAD; `termodel-project-text.js` centralizza parsing/sostituzione delle sezioni e soprattutto la ricostruzione del progetto unico. Non riscrivere ArchivioWeb da zero.
 
-**Test già eseguiti sulla v0.58-v0.69:**
+**Test già eseguiti sulla v0.58-v0.70:**
 
 - sintassi JavaScript valida per `app.js`, `archivio-web.js` e `termodel-project-text.js`;
 - round-trip strutturale sul vero `ProgettoVuoto.termodel.txt`: 26 sezioni prima e dopo;
@@ -4703,7 +4799,8 @@ cadSnapPoint(point, movingLineId)
 - v0.66: toolbar CAD verificata staticamente a 38 px; canvas e pannello proprietà allineati con `top: 38px`; sintassi `app.js` valida;
 - v0.67: verificata la presenza delle icone testuali su tutti i comandi visibili della toolbar; `Undo/Redo` invariati; sintassi `app.js` valida;
 - v0.68: combo `DisegnoInput` assente dalla bottom-bar, handler `drawingSelect` e help dedicato rimossi; `Edita nel Cad` resta presente; sintassi `app.js` valida;
-- v0.69: `Ritorna al progetto` e `Visualizza Plugin Cad` assenti dalla bottom-bar; CSS/handler/help specifici rimossi; `Edita nel Cad` e `Aggiorna Modello` restano presenti; sintassi `app.js` valida.
+- v0.69: `Ritorna al progetto` e `Visualizza Plugin Cad` assenti dalla bottom-bar; CSS/handler/help specifici rimossi; `Edita nel Cad` e `Aggiorna Modello` restano presenti; sintassi `app.js` valida;
+- v0.70: verificati staticamente accettazione `.pdf`, dialog pagina/anteprima, routing PDF → raster PNG, risoluzione massima 3000 px, gestione Esc/Annulla e presenza di tutti gli ID; sintassi `app.js` valida. Il rendering reale PDF.js resta da collaudare nel browser.
 
 **Limite del test automatico:** l'ambiente usato per il controllo non esponeva Web Crypto; il percorso è stato esercitato con un digest simulato per controllare la ricomposizione. Nel browser reale `buildTermodelProjectText()` usa `crypto.subtle.digest('SHA-256', ...)`. È quindi obbligatorio il test manuale reale di Salva.
 
@@ -4743,4 +4840,4 @@ Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttament
 
 **Altri lavori aperti CAD:** trascinamento simboli, snap durante lo spostamento e vincolo LOC.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `4bc8103ee017d96a5d4d5406e93182e0c60caab9`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `3b2f0feb2f753b88bae9cf0dc2787f539195ec17`.
