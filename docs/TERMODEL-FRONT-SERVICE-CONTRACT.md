@@ -888,6 +888,17 @@ attualmente con origine autorizzata:
 https://www.termodel.it
 ```
 
+Il Termodel WebService locale opera attualmente tramite HTTP sulla porta
+`5080`. La base URL predefinita dell'ambiente di sviluppo è quindi:
+
+```text
+http://localhost:5080
+```
+
+Tutti i percorsi API descritti in questo documento sono relativi a questa base
+URL durante le prove locali. Per esempio, l'endpoint di stato completo è
+`http://localhost:5080/health`.
+
 Il browser può richiedere autorizzazione Local Network Access / Private Network
 Access.
 
