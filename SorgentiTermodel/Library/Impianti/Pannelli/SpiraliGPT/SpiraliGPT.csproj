@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Modificato da Codex per realizzare: workspace GPT compilabile come libreria indipendente. -->
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SpiralHeatingGPT</RootNamespace>
+    <AssemblyName>SpiraliGPT</AssemblyName>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Clipper2" Version="1.4.0" />
+    <!-- Modificato da Codex per realizzare: offset poligonali robusti nel solo motore SpiraliGPT. -->
+    <PackageReference Include="NetTopologySuite" Version="2.5.0" />
+  </ItemGroup>
+
+</Project>

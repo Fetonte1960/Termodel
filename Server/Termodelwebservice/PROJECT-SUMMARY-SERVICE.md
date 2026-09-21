@@ -74,6 +74,20 @@ e SHA-256 devono essere verificati. Nuovi adattamenti si preparano nel Service
 o in `SorgentiTermodel/Work`; l'obiettivo è duplicare il meno possibile e
 convergere verso un Core realmente condiviso.
 
+Il 21 settembre 2026 la Library è stata completata, come riferimento Desktop,
+anche per la generazione XML APE nazionale e per pannelli radianti/spirali. Sono
+stati aggiunti senza modifiche `GestXml`, `CalcoliXML`, `CalcoloAPE`, `Cened`,
+`PannelliRadianti`, `IoPannelli`, `IoTubi`, `CalcoloPannelli` e i sorgenti dei
+motori `SpiraliGPT` e `SpiralHeating` di Vittorio. Percorsi, dipendenze,
+esclusioni e SHA-256 sono registrati in
+`SorgentiTermodel/Library/RIFERIMENTI-DESKTOP-APE-PANNELLI.md`. Tutte le 21
+copie sono risultate byte-per-byte uguali agli originali locali.
+
+Questa integrazione non implementa XML APE o pannelli nel WebService: rende
+soltanto disponibile il riferimento autorevole per una futura estrazione
+headless. Restano da isolare dipendenze WPF/MainWindow, Helix, IFC/Xbim,
+netDxf, Windows Forms e altre librerie Desktop.
+
 Le copie temporanee sono sotto:
 
 ```text
