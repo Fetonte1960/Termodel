@@ -41,12 +41,13 @@ let pdfJsModulePromise = null;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
+const renderOriginBadge = document.getElementById('renderOriginBadge');
 const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.71';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.71';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.72';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.72';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -1102,6 +1103,28 @@ async function openProjectFile(file) {
   return project;
 }
 
+function setRenderOriginBadge(origin, calculationId = '') {
+  if (!renderOriginBadge) return;
+
+  const isService = origin === 'service';
+  renderOriginBadge.classList.toggle('service', isService);
+  renderOriginBadge.classList.toggle('local', !isService);
+
+  if (isService) {
+    const id = String(calculationId || '').trim();
+    const shortId = id ? id.slice(0, 12) : '';
+    renderOriginBadge.textContent =
+      'RENDERING ELABORATO DA TERMODEL SERVICE' +
+      (shortId ? ' · calculationId ' + shortId : '');
+    renderOriginBadge.title = id
+      ? 'Artifact model3d dello snapshot ' + id
+      : 'Artifact model3d elaborato da Termodel Service';
+  } else {
+    renderOriginBadge.textContent = 'ANTEPRIMA LOCALE · nessuna elaborazione server';
+    renderOriginBadge.title = 'Rendering prodotto dal browser o dal JSON demo, senza elaborazione Termodel Service.';
+  }
+}
+
 function renderModelData(data, options = {}) {
   if (data.format !== 'TermodelWebModel' || !Array.isArray(data.primitives))
     throw new Error('Formato TermodelWebModel non valido');
@@ -1109,6 +1132,7 @@ function renderModelData(data, options = {}) {
   currentModelMode = options.mode || 'project';
   currentModelLabel = options.label || 'Termodel Web Model';
   lastModelData = data;
+  setRenderOriginBadge(options.renderOrigin || 'local', options.calculationId || '');
 
   disposeObject(modelGroup);
   disposeObject(edgeGroup);
@@ -1157,7 +1181,8 @@ async function loadModel() {
     cadUpdateNorthControls();
     renderModelData(data, {
       mode: 'project',
-      label: 'PROGETTO ORIGINALE'
+      label: 'PROGETTO ORIGINALE',
+      renderOrigin: 'local'
     });
     setStructuredProjectState(false);
   } catch (error) {
@@ -1253,7 +1278,9 @@ async function loadCalculatedModelFromService() {
 
     renderModelData(data, {
       mode: 'project',
-      label: 'PROGETTO CORRENTE · SERVER'
+      label: 'PROGETTO CORRENTE · SERVER',
+      renderOrigin: 'service',
+      calculationId: currentCalculationId
     });
     resetView();
 
@@ -6174,7 +6201,8 @@ function cadRegeneratePlan() {
     lastAiPreviewData = createAiPreviewModelFromPlan(plan);
     renderModelData(lastAiPreviewData, {
       mode: 'ai',
-      label: 'ANTEPRIMA AI — GENERAPIANTA.JS'
+      label: 'ANTEPRIMA AI — GENERAPIANTA.JS',
+      renderOrigin: 'local'
     });
 
     rasterExportSvg.disabled = false;
