@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.67 — icone toolbar CAD</title>
+  <title>Termodel Web v0.68 — toolbar main semplificata</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -55,7 +55,7 @@
       display: flex; align-items: center; gap: 5px; padding: 3px 5px;
       background: #e5e5e5; border-top: 1px solid #aaa; overflow-x: auto; white-space: nowrap;
     }
-    .bottom-bar button, .bottom-bar select {
+    .bottom-bar button {
       height: 26px; border: 1px solid #999; border-radius: 0; background: linear-gradient(#fff,#dedede); padding: 2px 7px; color: #111;
     }
     .bottom-bar button:active { background: #d3d3d3; }
@@ -65,7 +65,6 @@
       background: linear-gradient(#eef9ff,#cfe8f6);
       border-color: #5c8db2;
     }
-    .bottom-bar select { min-width: 100px; }
     .check-wrap { display: inline-flex; align-items: center; gap: 5px; padding-left: 2px; }
 
     .viewport-status {
@@ -1050,7 +1049,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.67</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.68</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -1286,7 +1285,6 @@
       <button type="button" id="instructAiButton" class="ai-main-button" title="Copia negli appunti le istruzioni minime per collegare l'AI a Termodel">Istruisci AI</button>
       <button type="button" id="importAiButton" class="ai-main-button" title="Importa direttamente dagli appunti il progetto restituito dall'AI">Importa da AI</button>
       <button type="button" id="returnProject" disabled>Ritorna al progetto</button>
-      <select aria-label="Disegno input"><option>DisegnoInput</option></select>
       <button type="button" data-action="Edita nel Cad">Edita nel Cad</button>
       <button type="button" data-action="Visualizza Plugin Cad">Visualizza Plugin Cad</button>
       <button type="button" id="resetView">Aggiorna Modello</button>
@@ -1524,6 +1522,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.67"></script>
+  <script type="module" src="./app.js?v=0.68"></script>
 </body>
 </html>
