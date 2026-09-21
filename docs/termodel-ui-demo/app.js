@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.69';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.70';
 import {
   parseDxfPlotSource,
   getDxfLayerSummary,
@@ -8,7 +8,7 @@ import {
   convertDxfToSvg,
   dxfUnitFromInsUnits,
   dxfUnitScaleToCm
-} from './dxf-plotter.js?v=0.69';
+} from './dxf-plotter.js?v=0.70';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -19,16 +19,21 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.69';
+} from './archivio-web.js?v=0.70';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.69';
+} from './termodel-project-text.js?v=0.70';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.69';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.70';
+const PDFJS_MODULE_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.mjs';
+const PDFJS_WORKER_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.worker.mjs';
+const PDF_PREVIEW_MAX_DIMENSION = 900;
+const PDF_RASTER_MAX_DIMENSION = 3000;
+let pdfJsModulePromise = null;
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
@@ -36,8 +41,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.69';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.69';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.70';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.70';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -52,6 +57,17 @@ const cadAddBackground = document.getElementById('cadAddBackground');
 const cadBackgroundFile = document.getElementById('cadBackgroundFile');
 const cadShowBackground = document.getElementById('cadShowBackground');
 const cadShowInput = document.getElementById('cadShowInput');
+const pdfImportModal = document.getElementById('pdfImportModal');
+const pdfImportFileName = document.getElementById('pdfImportFileName');
+const pdfImportInfo = document.getElementById('pdfImportInfo');
+const pdfPreviewCanvas = document.getElementById('pdfPreviewCanvas');
+const pdfPageNumber = document.getElementById('pdfPageNumber');
+const pdfPageCount = document.getElementById('pdfPageCount');
+const pdfPrevPage = document.getElementById('pdfPrevPage');
+const pdfNextPage = document.getElementById('pdfNextPage');
+const pdfImportClose = document.getElementById('pdfImportClose');
+const pdfImportCancel = document.getElementById('pdfImportCancel');
+const pdfImportRasterize = document.getElementById('pdfImportRasterize');
 const dxfImportModal = document.getElementById('dxfImportModal');
 const dxfImportFileName = document.getElementById('dxfImportFileName');
 const dxfImportInfo = document.getElementById('dxfImportInfo');
@@ -2962,6 +2978,227 @@ function cadBackgroundSnapCandidates(point) {
   return result;
 }
 
+let pdfImportState = null;
+
+function cadIsPdfFile(file) {
+  return file?.type === 'application/pdf' || /\.pdf$/i.test(file?.name || '');
+}
+
+async function cadLoadPdfJs() {
+  if (!pdfJsModulePromise) {
+    pdfJsModulePromise = import(PDFJS_MODULE_URL)
+      .then(module => {
+        if (module?.GlobalWorkerOptions)
+          module.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+        return module;
+      })
+      .catch(error => {
+        pdfJsModulePromise = null;
+        throw error;
+      });
+  }
+  return pdfJsModulePromise;
+}
+
+function cadPdfPageSizeMm(page) {
+  const viewport = page.getViewport({ scale: 1 });
+  return {
+    width: viewport.width * 25.4 / 72,
+    height: viewport.height * 25.4 / 72
+  };
+}
+
+async function cadRenderPdfPage(page, maxDimension) {
+  const baseViewport = page.getViewport({ scale: 1 });
+  const baseMax = Math.max(baseViewport.width, baseViewport.height, 1);
+  const scale = Math.max(0.1, Math.min(6, Number(maxDimension || 1) / baseMax));
+  const viewport = page.getViewport({ scale });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.ceil(viewport.width));
+  canvas.height = Math.max(1, Math.ceil(viewport.height));
+
+  const context = canvas.getContext('2d', { alpha: false });
+  if (!context) throw new Error('Canvas 2D non disponibile per la rasterizzazione PDF.');
+
+  await page.render({
+    canvasContext: context,
+    viewport,
+    background: 'rgb(255,255,255)'
+  }).promise;
+
+  return { canvas, viewport, baseViewport, scale };
+}
+
+function cadCanvasToPngBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob);
+      else reject(new Error('Impossibile creare il PNG dalla pagina PDF.'));
+    }, 'image/png');
+  });
+}
+
+function cadPdfUpdatePageControls() {
+  const state = pdfImportState;
+  if (!state) return;
+  const count = state.pdfDoc.numPages;
+  if (pdfPageNumber) {
+    pdfPageNumber.min = '1';
+    pdfPageNumber.max = String(count);
+    pdfPageNumber.value = String(state.pageNumber);
+  }
+  if (pdfPageCount) pdfPageCount.textContent = 'di ' + count;
+  if (pdfPrevPage) pdfPrevPage.disabled = state.pageNumber <= 1;
+  if (pdfNextPage) pdfNextPage.disabled = state.pageNumber >= count;
+}
+
+async function cadRenderPdfPreview() {
+  const state = pdfImportState;
+  if (!state) return;
+
+  const token = ++state.previewToken;
+  cadPdfUpdatePageControls();
+  if (pdfImportRasterize) pdfImportRasterize.disabled = true;
+  if (pdfImportInfo)
+    pdfImportInfo.textContent = 'Preparazione pagina ' + state.pageNumber + '...';
+
+  try {
+    const page = await state.pdfDoc.getPage(state.pageNumber);
+    const rendered = await cadRenderPdfPage(page, PDF_PREVIEW_MAX_DIMENSION);
+    if (pdfImportState !== state || token !== state.previewToken) return;
+
+    if (pdfPreviewCanvas) {
+      pdfPreviewCanvas.width = rendered.canvas.width;
+      pdfPreviewCanvas.height = rendered.canvas.height;
+      const ctx = pdfPreviewCanvas.getContext('2d', { alpha: false });
+      ctx?.drawImage(rendered.canvas, 0, 0);
+    }
+
+    const sizeMm = cadPdfPageSizeMm(page);
+    if (pdfImportInfo) {
+      pdfImportInfo.textContent =
+        'Pagina ' + state.pageNumber + ' di ' + state.pdfDoc.numPages +
+        ' · foglio circa ' + sizeMm.width.toFixed(1) + ' × ' + sizeMm.height.toFixed(1) + ' mm' +
+        ' · anteprima ' + rendered.canvas.width + ' × ' + rendered.canvas.height + ' px';
+    }
+  } catch (error) {
+    if (pdfImportState !== state || token !== state.previewToken) return;
+    console.error('Anteprima PDF non riuscita:', error);
+    if (pdfImportInfo)
+      pdfImportInfo.textContent = 'Anteprima PDF non disponibile: ' + (error?.message || error);
+  } finally {
+    if (pdfImportState === state && token === state.previewToken && pdfImportRasterize)
+      pdfImportRasterize.disabled = false;
+  }
+}
+
+function cadSetPdfPage(value) {
+  const state = pdfImportState;
+  if (!state) return;
+  const requested = Math.round(Number(value));
+  if (!Number.isFinite(requested)) {
+    cadPdfUpdatePageControls();
+    return;
+  }
+  const next = Math.min(state.pdfDoc.numPages, Math.max(1, requested));
+  if (next === state.pageNumber) {
+    cadPdfUpdatePageControls();
+    return;
+  }
+  state.pageNumber = next;
+  void cadRenderPdfPreview();
+}
+
+function closePdfImportDialog(importSelected = false) {
+  const state = pdfImportState;
+  if (!state) return;
+
+  pdfImportState = null;
+  pdfImportModal?.classList.remove('visible');
+  pdfImportModal?.setAttribute('aria-hidden', 'true');
+
+  if (importSelected) {
+    state.resolve({
+      file: state.file,
+      pdfDoc: state.pdfDoc,
+      pageNumber: state.pageNumber
+    });
+  } else {
+    Promise.resolve(state.pdfDoc.destroy?.()).catch(() => {});
+    state.resolve(null);
+  }
+}
+
+async function openPdfImportDialog(file) {
+  const pdfjs = await cadLoadPdfJs();
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const loadingTask = pdfjs.getDocument({ data: bytes });
+  const pdfDoc = await loadingTask.promise;
+
+  if (!pdfDoc.numPages) {
+    await pdfDoc.destroy?.();
+    throw new Error('Il PDF non contiene pagine importabili.');
+  }
+
+  return new Promise(resolve => {
+    pdfImportState = {
+      file,
+      pdfDoc,
+      pageNumber: 1,
+      previewToken: 0,
+      resolve
+    };
+
+    if (pdfImportFileName)
+      pdfImportFileName.textContent = (file.name || 'documento.pdf') + ' · ' + pdfDoc.numPages + ' pagine';
+
+    pdfImportModal?.classList.add('visible');
+    pdfImportModal?.setAttribute('aria-hidden', 'false');
+    cadPdfUpdatePageControls();
+    void cadRenderPdfPreview();
+  });
+}
+
+async function cadConvertPdfBackground(file) {
+  cadSetStatus('Caricamento PDF · ' + (file.name || 'documento.pdf') + '...');
+  const selection = await openPdfImportDialog(file);
+  if (!selection) {
+    cadSetStatus('Importazione PDF annullata.');
+    return;
+  }
+
+  const { pdfDoc, pageNumber } = selection;
+  try {
+    cadSetStatus('Rasterizzazione PDF · pagina ' + pageNumber + '...');
+    const page = await pdfDoc.getPage(pageNumber);
+    const rendered = await cadRenderPdfPage(page, PDF_RASTER_MAX_DIMENSION);
+    const blob = await cadCanvasToPngBlob(rendered.canvas);
+    const stem = (file.name || 'sfondo').replace(/\.pdf$/i, '') || 'sfondo';
+    const pngFile = new File(
+      [blob],
+      stem + '-pagina-' + pageNumber + '.png',
+      { type: 'image/png' }
+    );
+
+    await cadImportBackgroundFile(pngFile, {
+      statusLabel: 'PDF raster',
+      originalName: (file.name || 'documento.pdf') + ' · pagina ' + pageNumber
+    });
+
+    const sizeMm = cadPdfPageSizeMm(page);
+    cadSetStatus(
+      '✓ PDF pagina ' + pageNumber + '/' + pdfDoc.numPages +
+      ' → sfondo raster PNG ' + rendered.canvas.width + ' × ' + rendered.canvas.height + ' px' +
+      ' · foglio ' + sizeMm.width.toFixed(1) + ' × ' + sizeMm.height.toFixed(1) + ' mm' +
+      ' · usa Calibra con una misura reale',
+      'dirty'
+    );
+  } finally {
+    await pdfDoc.destroy?.();
+  }
+}
+
 let dxfImportState = null;
 
 function cadIsDxfFile(file) {
@@ -3120,6 +3357,11 @@ function cadBackgroundKind(file) {
 async function cadImportBackgroundFile(file, options = {}) {
   if (!cadWorkingDoc || !file) return;
 
+  if (cadIsPdfFile(file)) {
+    await cadConvertPdfBackground(file);
+    return;
+  }
+
   if (cadIsDxfFile(file) && file.type !== 'image/svg+xml') {
     await cadConvertDxfBackground(file);
     return;
@@ -3128,7 +3370,7 @@ async function cadImportBackgroundFile(file, options = {}) {
   const isSvg = file.type === 'image/svg+xml' || /\.svg$/i.test(file.name || '');
   const isRaster = /^image\//i.test(file.type || '') && !isSvg;
   if (!isSvg && !isRaster) {
-    cadSetStatus('Formato sfondo non supportato. Usa DXF, SVG o un file immagine.', 'error');
+    cadSetStatus('Formato sfondo non supportato. Usa PDF, DXF, SVG o un file immagine.', 'error');
     return;
   }
 
@@ -6038,6 +6280,10 @@ rasterAiModal.addEventListener('click', (event) => {
 });
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
+  if (pdfImportModal?.classList.contains('visible')) {
+    closePdfImportDialog(false);
+    return;
+  }
   if (dxfImportModal?.classList.contains('visible')) {
     closeDxfImportDialog(null);
     return;
@@ -6054,6 +6300,23 @@ document.addEventListener('keydown', (event) => {
     closeRasterAiDialog();
 });
 
+
+pdfPrevPage?.addEventListener('click', () => {
+  if (pdfImportState) cadSetPdfPage(pdfImportState.pageNumber - 1);
+});
+pdfNextPage?.addEventListener('click', () => {
+  if (pdfImportState) cadSetPdfPage(pdfImportState.pageNumber + 1);
+});
+pdfPageNumber?.addEventListener('change', () => cadSetPdfPage(pdfPageNumber.value));
+pdfPageNumber?.addEventListener('keydown', event => {
+  if (event.key === 'Enter') cadSetPdfPage(pdfPageNumber.value);
+});
+pdfImportRasterize?.addEventListener('click', () => closePdfImportDialog(true));
+pdfImportCancel?.addEventListener('click', () => closePdfImportDialog(false));
+pdfImportClose?.addEventListener('click', () => closePdfImportDialog(false));
+pdfImportModal?.addEventListener('click', event => {
+  if (event.target === pdfImportModal) closePdfImportDialog(false);
+});
 
 dxfSelectAll?.addEventListener('click', () => {
   dxfLayerList?.querySelectorAll('input[type="checkbox"][data-dxf-layer]').forEach(input => {
@@ -6216,7 +6479,7 @@ document.addEventListener('keydown', event => {
   }
 });
 // v0.63: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.69' })
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.70' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
