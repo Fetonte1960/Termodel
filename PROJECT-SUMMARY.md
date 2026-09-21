@@ -689,17 +689,10 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.80
+Termodel Web v0.79
 ```
 
-Commit frontend di riferimento per la v0.80:
-
-```text
-5eeb4fcde2001601b68cef458f97cfbe183e7f10  Force Android CAD fullscreen landscape when supported
-cdaa101699b954f3b41d347a32acdc8b0435a07d  Publish Termodel Web v0.80 Android landscape
-```
-
-Base mobile v0.79:
+Commit frontend di riferimento per la v0.79:
 
 ```text
 48daf5fbf5f347c05e41e4127c85ec08789909a6  Complete mobile CAD data sheet behavior
@@ -801,33 +794,13 @@ Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
 
-La v0.80 aggiunge il comportamento specifico Android per l'ingresso nel CAD:
-
-- rileva Android senza cambiare il comportamento desktop;
-- all'apertura effettiva del CAD tenta `requestFullscreen()`;
-- dopo il fullscreen tenta `screen.orientation.lock("landscape")`;
-- i flussi di creazione/import progetto destinati al CAD anticipano il tentativo
-  di fullscreen sul gesto utente, prima delle operazioni asincrone;
-- tornando al modello 3D viene eseguito `screen.orientation.unlock()`;
-- il fullscreen viene chiuso soltanto se era stato aperto dal CAD Termodel,
-  evitando di chiudere un fullscreen eventualmente già attivo per altre ragioni;
-- se Fullscreen API o Screen Orientation API vengono negate/non supportate,
-  il CAD continua con il responsive v0.79 senza bloccare l'utente;
-- `fullscreenchange` e cambio orientamento provocano il riallineamento del
-  canvas/viewer;
-- il viewport usa `viewport-fit=cover` per il fullscreen mobile.
-
-La v0.80 non modifica Service/Core né il contratto Frontend↔Service.
-Sintassi `app.js` verificata; il comportamento reale
-fullscreen + landscape deve ancora essere provato su Chrome Android.
-
 Ultima versione pubblica verificata manualmente dall'utente:
 
 ```text
 Termodel Web v0.77 — caricamento UI su Chrome Android, 21 settembre 2026
 ```
 
-La v0.80 Android landscape è pubblicata ma non ancora verificata manualmente.
+La v0.79 responsive è pubblicata ma non ancora verificata manualmente.
 
 La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.63 sono su `main`; v0.57-v0.63 devono essere verificate pubblicamente.
 
