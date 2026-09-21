@@ -32,7 +32,7 @@ jobs:
 
       - name: Build
         run: dotnet build Termodel.WebService.sln --configuration Release --no-restore
-      - name: Smoke test HTTP project to model3d
+      - name: Smoke test HTTP legacy and calculation snapshot
         shell: pwsh
         run: |
           $env:ASPNETCORE_URLS = "http://127.0.0.1:5080"
@@ -63,12 +63,37 @@ jobs:
             }
 
             $project = Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/projects/new" -Method Post -ContentType "application/json" -Body "{}"
-            $model = Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/model/3d" -Method Post -ContentType "text/plain; charset=utf-8" -Body $project
 
-            if ($model.format -ne "TermodelWebModel") { throw "Formato model3d inatteso: $($model.format)" }
-            if ($model.version -ne 3) { throw "Versione model3d inattesa: $($model.version)" }
-            if ($model.coordinateSystem -ne "Z-up") { throw "Sistema coordinate inatteso: $($model.coordinateSystem)" }
-            if ($model.primitiveCount -ne 0) { throw "Il ProgettoVuoto deve produrre 0 primitive, ottenute: $($model.primitiveCount)" }
+            # Endpoint legacy mantenuto compatibile.
+            $legacyModel = Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/model/3d" -Method Post -ContentType "text/plain; charset=utf-8" -Body $project
+            if ($legacyModel.format -ne "TermodelWebModel") { throw "Formato legacy model3d inatteso: $($legacyModel.format)" }
+            if ($legacyModel.version -ne 3) { throw "Versione legacy model3d inattesa: $($legacyModel.version)" }
+            if ($legacyModel.coordinateSystem -ne "Z-up") { throw "Sistema coordinate legacy inatteso: $($legacyModel.coordinateSystem)" }
+            if ($legacyModel.primitiveCount -ne 0) { throw "Il ProgettoVuoto legacy deve produrre 0 primitive, ottenute: $($legacyModel.primitiveCount)" }
+
+            # Nuovo ciclo AggiornaCalcolo.
+            $calculation = Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body $project
+            if ($calculation.contractVersion -ne "TERMODEL-FRONT-SERVICE-V1") { throw "Contract version inattesa: $($calculation.contractVersion)" }
+            if ($calculation.status -ne "completed") { throw "Stato calcolo inatteso: $($calculation.status)" }
+            if (-not $calculation.calculationId) { throw "calculationId mancante." }
+
+            $artifact = @($calculation.artifacts | Where-Object { $_.name -eq "model3d" })
+            if ($artifact.Count -ne 1) { throw "Manifest model3d non valido." }
+            if ($artifact[0].contentType -ne "application/json") { throw "Content-Type manifest model3d inatteso: $($artifact[0].contentType)" }
+
+            $artifactUrl = "http://127.0.0.1:5080$($artifact[0].href)"
+            $firstResponse = Invoke-WebRequest -Uri $artifactUrl -Method Get
+            $secondResponse = Invoke-WebRequest -Uri $artifactUrl -Method Get
+
+            if ($firstResponse.Content -ne $secondResponse.Content) {
+              throw "Lo stesso calculationId non ha restituito lo stesso snapshot model3d."
+            }
+
+            $snapshotModel = $firstResponse.Content | ConvertFrom-Json
+            if ($snapshotModel.format -ne "TermodelWebModel") { throw "Formato snapshot model3d inatteso: $($snapshotModel.format)" }
+            if ($snapshotModel.version -ne 3) { throw "Versione snapshot model3d inattesa: $($snapshotModel.version)" }
+            if ($snapshotModel.coordinateSystem -ne "Z-up") { throw "Sistema coordinate snapshot inatteso: $($snapshotModel.coordinateSystem)" }
+            if ($snapshotModel.primitiveCount -ne 0) { throw "Il ProgettoVuoto snapshot deve produrre 0 primitive, ottenute: $($snapshotModel.primitiveCount)" }
           }
           finally {
             if ($service -and -not $service.HasExited) {
