@@ -147,7 +147,7 @@ Risultato:
 
 
 ### INCARICO 2026-09-21 — Prova AggiornaCalcolo e artifact model3d v3
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - esporre il primo ciclo reale del contratto `AggiornaCalcolo` senza ancora
@@ -177,6 +177,44 @@ Criteri di completamento:
 - `GET .../artifacts/model3d` eseguito almeno due volte sullo stesso id con
   JSON v3 valido e senza nuova elaborazione;
 - stato, limiti e commit registrati qui prima di passare a `ESEGUITO`.
+
+Risultato:
+- implementato `CalculationSnapshotStore` nel WebService come storage
+  temporaneo in memoria, indicizzato per `Guid calculationId`;
+- `POST /api/calculations` esegue `GeneraModello.GeneraAsync` una sola volta,
+  serializza immediatamente il `TermodelWebModel v3` in byte JSON e registra
+  quei byte nello snapshot;
+- la risposta di `POST /api/calculations` contiene
+  `contractVersion = TERMODEL-FRONT-SERVICE-V1`, `calculationId`,
+  `status = completed`, manifest dell'artifact `model3d` e diagnostica;
+- implementato
+  `GET /api/calculations/{calculationId}/artifacts/model3d`: legge soltanto
+  i byte JSON già catturati e non richiama `GeneraModello`;
+- snapshot inesistente restituisce Problem Details HTTP 404;
+- gli endpoint legacy `POST /api/model/3d` e
+  `GET /api/model/clean-floor/{floorName}` sono rimasti disponibili;
+- il workflow GitHub Actions è stato esteso per esercitare sia il percorso
+  legacy sia il nuovo ciclo
+  `/api/projects/new -> /api/calculations -> GET model3d -> GET model3d`;
+- GitHub Actions run #23 sul commit
+  `2cb8b15860f39e475ada2fda3d61c9dbd6dfa600`: **build riuscita,
+  0 errori, 154 warning; smoke HTTP riuscito**;
+- lo smoke verifica un `calculationId` reale, un manifest con href
+  `model3d`, `TermodelWebModel v3`, coordinate `Z-up`, 0 primitive sul
+  `ProgettoVuoto` e identità byte-per-byte delle due letture successive
+  dello stesso artifact;
+- il primo tentativo sul commit
+  `ee02243a2e8b4c7b38d6ad4cc41b20f356b0eecc` aveva un solo errore di
+  overload `Results.Bytes`; corretto nel commit `2cb8b158...`;
+- contratto condiviso aggiornato alla versione documento 0.3 nel commit
+  `70647ecd502e843bff7944ae125c29c0d67a51a2` per indicare che il ciclo
+  `model3d` è ora operativo;
+- **non ancora eseguito** il test con un progetto geometrico non vuoto né il
+  confronto golden da 546 primitive; il JSON avanzato è compilato ed esposto,
+  ma i metadati per primitive reali devono ancora essere esercitati con un
+  file unico di prova rappresentativo;
+- esecuzione locale Visual Studio: **non ancora effettuata dopo questa
+  modifica**; la verifica corrente è GitHub Actions + smoke HTTP cloud.
 
 
 ## 2. Posizioni e struttura
@@ -433,10 +471,12 @@ seriale.
 /api/model/clean-floor/{floorName}` restituisce lo SVG architettonico pulito
 dell'ultima generazione.
 
-Il 21 settembre 2026 la soluzione è stata compilata su copia temporanea con
-0 errori e 108 avvisi di nullabilità ereditati. Il test HTTP con `ProgettoVuoto`
-ha restituito 200 e un modello valido con 0 primitive; un Content-Type errato
-ha restituito 415. Il server di prova è stato arrestato.
+La verifica corrente del 21 settembre 2026 usa GitHub Actions: build Release
+con 0 errori e 154 warning. Lo smoke HTTP esegue sia il percorso legacy sia il
+nuovo percorso snapshot sul `ProgettoVuoto`; `POST /api/calculations`
+restituisce un `calculationId` e due letture successive dell'artifact
+`model3d` risultano identiche. La prova con geometria reale e il confronto
+golden restano aperti.
 
 ## 5. API implementate
 
@@ -447,17 +487,30 @@ GET  /api/model/capabilities
 GET  /api/model/clean-floor/{floorName}
 POST /api/projects/new
 POST /api/model/3d
+POST /api/calculations
+GET  /api/calculations/{calculationId}/artifacts/model3d
 ```
 
 `POST /api/projects/new` accetta JSON/DTO e restituisce il file unico come testo
-UTF-8 con HTTP 201. `POST /api/model/3d` accetta il file unico testuale e
-restituisce `TermodelWebModel` v3. Errori di progetto o funzioni non supportate
-sono restituiti come Problem Details; Content-Type non valido produce 415.
+UTF-8 con HTTP 201. `POST /api/model/3d` resta l'endpoint legacy che accetta il
+file unico testuale e restituisce direttamente `TermodelWebModel` v3.
+
+`POST /api/calculations` è il primo endpoint del nuovo workflow:
+esegue una sola generazione, assegna un `calculationId` e conserva
+`model3d` nello snapshot. `GET
+/api/calculations/{calculationId}/artifacts/model3d` restituisce l'artifact
+già serializzato senza ricalcolo. Lo storage è attualmente in memoria e viene
+perso al riavvio del Service.
+
+Errori di progetto o funzioni non supportate sono restituiti come Problem
+Details; Content-Type non valido produce 415 e calculationId non disponibile
+produce 404.
 
 ### Workflow server concordato: AggiornaCalcolo
 
-Decisione architetturale consolidata del 21 settembre 2026, **progettata ma non
-ancora implementata**.
+Decisione architetturale consolidata del 21 settembre 2026. **La prima parte è
+ora implementata per l'artifact `model3d`; gli altri artifact della Fase 1 e
+le fasi termico/pannelli restano da completare.**
 
 Il frontend dovrà inviare il file unico `TERMODEL-PROJECT-TEXT-V1` con una sola
 operazione di aggiornamento generale, concettualmente `AggiornaCalcolo`. Il
@@ -519,8 +572,9 @@ La migrazione al nuovo workflow deve essere progressiva e retrocompatibile.
 
 Sequenza di implementazione concordata:
 
-1. **Fase 1:** `POST /api/calculations`, `calculationId`, storage dello
-   snapshot, modello 3D e piante pulite;
+1. **Fase 1:** `POST /api/calculations`, `calculationId`, storage snapshot
+   e artifact `model3d` **implementati**; resta da spostare nello snapshot la
+   pianta pulita ed esporla per `calculationId`;
 2. **Fase 2:** XML nazionale e report dispersioni;
 3. **Fase 3:** calcolo pannelli radianti e spirali SVG;
 4. estensioni successive: ulteriori elaborati Desktop, regression test e
