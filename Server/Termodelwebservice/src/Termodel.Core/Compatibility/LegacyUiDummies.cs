@@ -78,3 +78,13 @@ namespace Termodel.utilities
         }
     }
 }
+
+
+namespace Termodel.utilities
+{
+    // Alias con il nome storico usato da Polig3D.
+    public static class ErroreManager
+    {
+        public static void VisualizzaErrori() => ErrorManager.VisualizzaErrori();
+    }
+}

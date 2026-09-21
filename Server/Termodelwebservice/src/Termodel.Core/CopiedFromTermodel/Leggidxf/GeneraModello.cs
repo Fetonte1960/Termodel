@@ -21,6 +21,7 @@ namespace Termodel.Leggidxf;
 public sealed class GeneraModello
 {
     private static readonly SemaphoreSlim GenerationGate = new(1, 1);
+    public static string PrimoErrore = string.Empty;
 
     // Funzione realizzata da Codex in autonomia
     public async Task<Model3DGenerationResult> GeneraAsync(

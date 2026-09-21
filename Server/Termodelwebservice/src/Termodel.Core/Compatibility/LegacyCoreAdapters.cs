@@ -170,13 +170,18 @@ namespace Termodel.utilities
 
     public static class TermodelLog
     {
-        public enum LogCategory { generale, colmi, spezza }
+        public enum LogCategory { generale, colmi, spezza, GeneraModello, PontiAutomatici }
 
         private static readonly AsyncLocal<List<string>?> CurrentMessages = new();
 
         public static string LogContesto { get; set; } = string.Empty;
+        public static string? erroreDaMostrare { get; set; }
         public static IReadOnlyList<string> Messages => CurrentMessages.Value ?? [];
-        public static void Reset() => CurrentMessages.Value = [];
+        public static void Reset()
+        {
+            CurrentMessages.Value = [];
+            erroreDaMostrare = null;
+        }
         public static bool IsEnabled(LogCategory category) => false;
         public static void WriteLog(string message, LogCategory category = LogCategory.generale) => Add("info", message);
         public static void LogOperation(string message) => Add("operation", message);
