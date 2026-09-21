@@ -535,6 +535,100 @@ function ensureStyles() {
       }
       .archive-web-status { max-width:28%; }
     }
+
+    @media (max-width: 600px) {
+      .archive-web-modal {
+        padding:0;
+        align-items:stretch;
+        justify-content:stretch;
+      }
+      .archive-web-window {
+        width:100vw;
+        height:100dvh;
+        min-height:0;
+        border:0;
+        box-shadow:none;
+        grid-template-rows:auto auto minmax(0,1fr) auto;
+      }
+      .archive-web-head {
+        min-height:50px;
+        padding:7px 9px 7px 12px;
+      }
+      .archive-web-head h2 { font-size:16px; }
+      .archive-web-subtitle {
+        max-width:72vw;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+      .archive-web-close {
+        width:42px;
+        height:42px;
+        flex:0 0 auto;
+      }
+      .archive-web-tabs {
+        flex-wrap:nowrap;
+        overflow-x:auto;
+        overflow-y:hidden;
+        gap:5px;
+        padding:5px;
+        -webkit-overflow-scrolling:touch;
+      }
+      .archive-web-tabs button {
+        flex:0 0 auto;
+        min-height:40px;
+        padding:6px 11px;
+        font-size:13px;
+      }
+      .archive-web-body {
+        min-height:0;
+        grid-template-columns:1fr;
+        grid-template-rows:minmax(150px,42%) minmax(0,58%);
+        gap:4px;
+        padding:4px;
+      }
+      .archive-web-table {
+        font-size:13px;
+      }
+      .archive-web-table th,
+      .archive-web-table td {
+        min-height:40px;
+        padding:9px 8px;
+      }
+      .archive-web-form {
+        grid-template-columns:1fr;
+        gap:3px;
+        padding:9px;
+        align-items:stretch;
+      }
+      .archive-web-form label {
+        margin-top:6px;
+        font-size:12px;
+        font-weight:600;
+      }
+      .archive-web-form input,
+      .archive-web-form select {
+        min-height:42px;
+        padding:7px 8px;
+        font-size:14px;
+      }
+      .archive-web-foot {
+        min-height:52px;
+        gap:5px;
+        padding:5px;
+        overflow-x:auto;
+        overflow-y:hidden;
+        -webkit-overflow-scrolling:touch;
+      }
+      .archive-web-foot button {
+        flex:0 0 auto;
+        min-height:40px;
+        padding:6px 10px;
+        font-size:13px;
+      }
+      .archive-web-spacer { display:none; }
+      .archive-web-status { display:none; }
+    }
   `;
   document.head.appendChild(style);
 }
