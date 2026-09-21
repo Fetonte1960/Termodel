@@ -67,9 +67,12 @@ unica è:
 SorgentiTermodel/Library/
 ```
 
-È consultiva e in sola lettura. Non va duplicata dentro `Server`. Nuovi
-adattamenti si preparano in `SorgentiTermodel/Work`; l'obiettivo è duplicare il
-meno possibile e convergere verso un Core realmente condiviso.
+È consultiva e non va duplicata dentro `Server`. Durante il normale sviluppo
+non viene adattata; può essere aggiornata o integrata, dopo autorizzazione
+esplicita, con copie non modificate di sorgenti desktop selezionati. Provenienza
+e SHA-256 devono essere verificati. Nuovi adattamenti si preparano nel Service
+o in `SorgentiTermodel/Work`; l'obiettivo è duplicare il meno possibile e
+convergere verso un Core realmente condiviso.
 
 Le copie temporanee sono sotto:
 
@@ -77,10 +80,18 @@ Le copie temporanee sono sotto:
 src/Termodel.Core/CopiedFromTermodel/
 ```
 
-La mappa `TERMODEL-SYNC: PENDING`, le origini e le lacune della Library sono in
-`CopiedFromTermodel/TERMODEL-SYNC.md`. Mancano attualmente come riferimenti
-GitHub `Modello.cs` e `utilities/ErrorManager.cs`; non sono stati aggiunti alla
-Library perché l'area è protetta in sola lettura.
+La mappa `TERMODEL-SYNC: PENDING` e le origini sono in
+`CopiedFromTermodel/TERMODEL-SYNC.md`. Il 21 settembre 2026 sono stati integrati
+nella Library unica `Modello.cs` e `utilities/ErrorManager.cs`, copiati senza
+modifiche dagli originali desktop e verificati mediante SHA-256.
+
+```text
+Modello.cs
+7B201DA17781CB2682EC9AF25D798B753EC590850031572A4A07E63975B125F0
+
+utilities/ErrorManager.cs
+6A7E93D009526D4DA5ED0F800B6155AB0B90C52237C13E76CEC52C4204863ECD
+```
 
 ## 4. Storia consolidata dello sviluppo Service
 
@@ -287,7 +298,8 @@ Incompleto:
   autorizzazione specifica;
 - il frontend Web resta funzionante e separato;
 - `PROJECT-SUMMARY.md` Web e questo summary Service non si fondono;
-- `SorgentiTermodel/Library` non si duplica e non si modifica durante il normale
-  sviluppo Service;
+- `SorgentiTermodel/Library` non si duplica e non si adatta durante il normale
+  sviluppo Service; può essere integrata con copie desktop non modificate solo
+  dopo autorizzazione esplicita e verifica SHA-256;
 - nessun risultato proposto è dichiarato verificato senza build/test reali;
 - compatibilità e reversibilità prevalgono sui refactoring opportunistici.
