@@ -410,11 +410,13 @@ function buildCanonicalServerGeometry(projectText, geometrySvg) {
     String(group.getAttribute('data-termodel-floor-id') || '').trim()
   );
 
+  const legacyTechnicalElements = directGroups
+    .filter(group => ['calpestabile', 'copertura'].includes(String(group.id || '').toLowerCase()))
+    .flatMap(group => technicalSvgChildren(group));
+
   let sourceTechnicalCount = canonicalGroups.length
     ? canonicalGroups.reduce((count, group) => count + technicalSvgChildren(group).length, 0)
-    : directGroups
-        .filter(group => ['calpestabile', 'copertura'].includes(String(group.id || '').toLowerCase()))
-        .reduce((count, group) => count + technicalSvgChildren(group).length, 0);
+    : legacyTechnicalElements.length;
   let assignedTechnicalCount = 0;
 
   floors.forEach((floor) => {
@@ -441,13 +443,11 @@ function buildCanonicalServerGeometry(projectText, geometrySvg) {
 
       candidates = technicalSvgChildren(sourceGroup);
     } else {
-      sourceGroup = directGroups.find(group =>
-        sameProjectToken(group.id, floor.role)
-      ) || null;
-
-      const roleCandidates = technicalSvgChildren(sourceGroup);
-
-      candidates = roleCandidates.filter(element =>
+      // Lo SVG operativo del CAD Web usa storicamente un contenitore comune
+      // "calpestabile" anche quando il progetto diventa multipiano. L'identità
+      // reale del piano è data dai metadati data-termodel-piano/layer.
+      // Per questo non si deduce il ruolo dal nome del gruppo locale.
+      candidates = legacyTechnicalElements.filter(element =>
         localElementBelongsToFloor(element, floor, floors.length)
       );
     }
@@ -525,7 +525,7 @@ function stripTermodelBackgroundElements(geometrySvg) {
   return new XMLSerializer().serializeToString(doc.documentElement);
 }
 
-// Termodel Web v0.73: deriva dal progetto locale completo il payload tecnico
+// Termodel Web v0.75: deriva dal progetto locale completo il payload tecnico
 // previsto dal contratto Frontend <-> Service. Lo SVG operativo del CAD resta
 // locale; nel payload viene costruito TERMODEL-PROJECT-SVG-V1 canonico.
 export async function buildTermodelServerPayload(source) {
