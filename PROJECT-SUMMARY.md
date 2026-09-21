@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`5450b6200fe93f9f5e8b5faf85c9bdc480fbf170` — `Clean obsolete drawing selector logic v0.68`  
+`4bc8103ee017d96a5d4d5406e93182e0c60caab9` — `Clean obsolete main toolbar logic v0.69`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,14 +679,14 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.68
+Termodel Web v0.69
 ```
 
-Commit frontend di riferimento per la v0.68:
+Commit frontend di riferimento per la v0.69:
 
 ```text
-132286d0d675c7401888ff60d52c1f70709fa55f  Remove drawing selector from main toolbar v0.68
-5450b6200fe93f9f5e8b5faf85c9bdc480fbf170  Clean obsolete drawing selector logic v0.68
+a02a0688dc7e2a042b9f2fbe5911ed470b3aa98f  Remove obsolete main toolbar buttons v0.69
+4bc8103ee017d96a5d4d5406e93182e0c60caab9  Clean obsolete main toolbar logic v0.69
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -2112,6 +2112,61 @@ Clean obsolete drawing selector logic v0.68
 ### Stato
 
 **IMPLEMENTATO IN v0.68 — VERIFICA STATICA SUPERATA; DA VERIFICARE VISIVAMENTE NEL BROWSER.**
+
+
+---
+
+## 12.35 Toolbar main essenziale — v0.69
+
+La v0.69 prosegue la semplificazione della toolbar principale inferiore iniziata in v0.68.
+
+Sono stati rimossi:
+
+```text
+Ritorna al progetto
+Visualizza Plugin Cad
+```
+
+Motivazione:
+
+- `Ritorna al progetto` apparteneva al vecchio flusso demo/anteprima AI e ricaricava il modello demo originale;
+- `Visualizza Plugin Cad` rappresentava la modalità plugin del desktop/AutoCAD e nel frontend Web corrente apriva soltanto un help dimostrativo;
+- nessuno dei due è necessario nel flusso operativo corrente del Web.
+
+Sono stati rimossi anche:
+
+- stile CSS specifico `#returnProject`;
+- funzione `setReturnProjectState(...)` e relativo aggiornamento durante il rendering;
+- handler `returnProjectButton`;
+- help `Ritorna al progetto`;
+- help `Visualizza Plugin Cad`.
+
+Bottom-bar corrente:
+
+```text
+Gestione Piani
+→ Istruisci AI
+→ Importa da AI
+→ Edita nel Cad
+→ Aggiorna Modello
+→ Mostra Filtri Grafici
+```
+
+Non sono state modificate le funzioni di caricamento progetto, CAD 2D, viewer 3D o aggiornamento modello.
+
+Commit:
+
+```text
+a02a0688dc7e2a042b9f2fbe5911ed470b3aa98f
+Remove obsolete main toolbar buttons v0.69
+
+4bc8103ee017d96a5d4d5406e93182e0c60caab9
+Clean obsolete main toolbar logic v0.69
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.69 — VERIFICA STATICA SUPERATA; DA VERIFICARE VISIVAMENTE NEL BROWSER.**
 
 ---
 
@@ -4478,7 +4533,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.68.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.69.**
 
 Stato operativo corrente:
 
@@ -4488,7 +4543,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.68 presente su `main`;
+- v0.69 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -4534,6 +4589,7 @@ Stato operativo corrente:
 - v0.66 compatta la **toolbar superiore del CAD 2D**: altezza ridotta da 68 px a 38 px e padding verticale da 6 px a 4 px; canvas e pannello proprietà iniziano ora a 38 px, recuperando 30 px di spazio verticale utile. I controlli mantengono altezza 28 px e la logica CAD resta invariata.
 - v0.67 aggiunge **icone testuali semplici** ai comandi visibili della toolbar CAD, nello stesso stile di `↶ Undo` / `↷ Redo`: `▧ Sfondo`, `✎ Disegna`, `⌖ Snap`, `▤ Arc`, `× Elimina`, `⟳ Rigenera pianta`, `⇩ Esporta pianta CAD`, `↩ Torna al modello 3d`. Nessuna libreria grafica aggiunta e nessuna logica dei comandi modificata.
 - v0.68 rimuove dalla **toolbar principale inferiore** il combo statico `DisegnoInput`: nel frontend corrente non selezionava realmente il disegno da editare e apriva soltanto un help dimostrativo. Rimossi anche gli handler `drawingSelect`, la voce help ormai inutilizzata e il CSS specifico del select. `Edita nel Cad` continua a operare direttamente sul progetto corrente.
+- v0.69 rimuove dalla **toolbar principale inferiore** anche `Ritorna al progetto` e `Visualizza Plugin Cad`, considerati fuori contesto nel frontend Web corrente. Rimossi CSS, handler/stato `returnProject` e help dedicati. La bottom-bar resta focalizzata su gestione progetto, AI, ingresso CAD, aggiornamento modello e filtri grafici.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -4558,10 +4614,10 @@ Se questa conversazione termina, una nuova chat deve poter riprendere senza rico
 
 ```text
 branch: main
-frontend: Termodel Web v0.68
+frontend: Termodel Web v0.69
 ultimo commit funzionale frontend:
-5450b6200fe93f9f5e8b5faf85c9bdc480fbf170
-Clean obsolete drawing selector logic v0.68
+4bc8103ee017d96a5d4d5406e93182e0c60caab9
+Clean obsolete main toolbar logic v0.69
 ```
 
 **File da leggere per il lavoro immediato sul progetto unico:**
@@ -4631,7 +4687,7 @@ cadSnapPoint(point, movingLineId)
 
 **Nota importante sulla struttura del codice:** l'import degli archivi è ancora implementato da `loadTermodelProjectText(...)` in `archivio-web.js`; `app.js` orchestra la conversione verso lo stato CAD; `termodel-project-text.js` centralizza parsing/sostituzione delle sezioni e soprattutto la ricostruzione del progetto unico. Non riscrivere ArchivioWeb da zero.
 
-**Test già eseguiti sulla v0.58-v0.68:**
+**Test già eseguiti sulla v0.58-v0.69:**
 
 - sintassi JavaScript valida per `app.js`, `archivio-web.js` e `termodel-project-text.js`;
 - round-trip strutturale sul vero `ProgettoVuoto.termodel.txt`: 26 sezioni prima e dopo;
@@ -4646,7 +4702,8 @@ cadSnapPoint(point, movingLineId)
 - v0.65: Nord 3D verificato staticamente: `ArrowHelper` presente solo per orientamento definito, nessuna label/sprite nel marker, `createNorth3DLabel` rimossa, orientamento non definito → nessun indicatore;
 - v0.66: toolbar CAD verificata staticamente a 38 px; canvas e pannello proprietà allineati con `top: 38px`; sintassi `app.js` valida;
 - v0.67: verificata la presenza delle icone testuali su tutti i comandi visibili della toolbar; `Undo/Redo` invariati; sintassi `app.js` valida;
-- v0.68: combo `DisegnoInput` assente dalla bottom-bar, handler `drawingSelect` e help dedicato rimossi; `Edita nel Cad` resta presente; sintassi `app.js` valida.
+- v0.68: combo `DisegnoInput` assente dalla bottom-bar, handler `drawingSelect` e help dedicato rimossi; `Edita nel Cad` resta presente; sintassi `app.js` valida;
+- v0.69: `Ritorna al progetto` e `Visualizza Plugin Cad` assenti dalla bottom-bar; CSS/handler/help specifici rimossi; `Edita nel Cad` e `Aggiorna Modello` restano presenti; sintassi `app.js` valida.
 
 **Limite del test automatico:** l'ambiente usato per il controllo non esponeva Web Crypto; il percorso è stato esercitato con un digest simulato per controllare la ricomposizione. Nel browser reale `buildTermodelProjectText()` usa `crypto.subtle.digest('SHA-256', ...)`. È quindi obbligatorio il test manuale reale di Salva.
 
@@ -4686,4 +4743,4 @@ Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttament
 
 **Altri lavori aperti CAD:** trascinamento simboli, snap durante lo spostamento e vincolo LOC.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `5450b6200fe93f9f5e8b5faf85c9bdc480fbf170`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `4bc8103ee017d96a5d4d5406e93182e0c60caab9`.
