@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`256837119635d80e7cd94bc162c69e506c82c7d1` — `Publish Termodel Web v0.75 coverage tool`  
+`7b662643bb8fe12d05295745361881c3a8e8f49d` — `Align visible Termodel Web version to v0.75`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -699,6 +699,7 @@ eea1929202a03e5106b6d1d6d38cc2128df8322e  Add initialized archive record API
 f61f947bc0e6b1da5d5a60673440fc527645b02c  Add CAD coverage plane workflow
 af791f54ace15c35202c3358d3495bc4c738d4cf  Map multipiano CAD entities into Service payload
 256837119635d80e7cd94bc162c69e506c82c7d1  Publish Termodel Web v0.75 coverage tool
+7b662643bb8fe12d05295745361881c3a8e8f49d  Align visible Termodel Web version to v0.75
 ```
 
 Base v0.74:
