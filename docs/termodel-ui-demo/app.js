@@ -20,7 +20,7 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.75';
+} from './archivio-web.js?v=0.79';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
@@ -47,8 +47,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.78';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.78';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.79';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.79';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -135,6 +135,7 @@ const cadSymbolFields = document.getElementById('cadSymbolFields');
 const cadSymbolApply = document.getElementById('cadSymbolApply');
 const cadOpenPianiArchive = document.getElementById('cadOpenPianiArchive');
 const cadAddRoofPlane = document.getElementById('cadAddRoofPlane');
+const cadMobilePropertiesToggle = document.getElementById('cadMobilePropertiesToggle');
 const cadOpenParetiArchive = document.getElementById('cadOpenParetiArchive');
 const cadOpenConfiniArchive = document.getElementById('cadOpenConfiniArchive');
 const cadNorthPropertiesSection = document.getElementById('cadNorthPropertiesSection');
@@ -5305,6 +5306,21 @@ function cadApplyProperties() {
   cadWallPropertySelectionChanged();
 }
 
+function cadSetMobilePropertiesOpen(open) {
+  if (!cadPage || !cadMobilePropertiesToggle) return;
+  const next = Boolean(open);
+  cadPage.classList.toggle('mobile-properties-open', next);
+  cadMobilePropertiesToggle.classList.toggle('active', next);
+  cadMobilePropertiesToggle.setAttribute('aria-expanded', next ? 'true' : 'false');
+  cadMobilePropertiesToggle.textContent = next ? '× Dati' : '▤ Dati';
+}
+
+function cadToggleMobileProperties() {
+  cadSetMobilePropertiesOpen(
+    !cadPage?.classList.contains('mobile-properties-open')
+  );
+}
+
 function cadSetStatus(message, kind = '') {
   if (!cadEditStatus) return;
   cadEditStatus.textContent = message;
@@ -5333,6 +5349,8 @@ function cadUpdateControls() {
   if (cadInsertBridge) cadInsertBridge.hidden = coverage;
   if (cadInsertRidge) cadInsertRidge.hidden = !coverage;
 
+  if (cadMobilePropertiesToggle)
+    cadMobilePropertiesToggle.disabled = !hasDoc;
   if (cadAddBackground) cadAddBackground.disabled = !hasDoc || busy;
   if (cadAddRoofPlane) cadAddRoofPlane.disabled = !hasDoc || busy;
   if (cadShowBackground)
@@ -5442,6 +5460,7 @@ function cadSetWorkingSvg(svgText) {
   cadNewLineState = null;
   cadSymbolInsertType = '';
   cadCloseNorthPanel(false);
+  cadSetMobilePropertiesOpen(false);
 
   if (normalized)
     console.info(`CAD multipiano: assegnate ${normalized} entità legacy al piano "${current}".`);
@@ -7044,6 +7063,7 @@ cadPropPiano?.addEventListener('change', cadCurrentPlaneChanged);
 });
 cadOpenPianiArchive?.addEventListener('click', () => openArchivioWeb('Piani'));
 cadAddRoofPlane?.addEventListener('click', cadCreateCoveragePlane);
+cadMobilePropertiesToggle?.addEventListener('click', cadToggleMobileProperties);
 cadOpenParetiArchive?.addEventListener('click', () => openArchivioWeb('Pareti'));
 cadOpenConfiniArchive?.addEventListener('click', () => openArchivioWeb('Confini'));
 window.addEventListener('termodel:archives-updated', () => {
