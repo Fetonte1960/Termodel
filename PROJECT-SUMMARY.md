@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`952b605637dc44095639e3b0b4d41fa7d06347ce` — `Add vector background endpoint snap v0.63`  
+`19858510d09104384e29d9651cf72b349bbbf612` — `Bump Termodel Web to v0.64`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,13 +679,14 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.63
+Termodel Web v0.64
 ```
 
-Commit frontend di riferimento per la v0.63:
+Commit frontend di riferimento per la v0.64:
 
 ```text
-952b605637dc44095639e3b0b4d41fa7d06347ce  Add vector background endpoint snap v0.63
+ab2370fccf03895cc928a524f09d25c4f6b8d32d  Add divider midpoint background snap v0.64
+19858510d09104384e29d9651cf72b349bbbf612  Bump Termodel Web to v0.64
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -4088,11 +4089,51 @@ Obiettivo pratico:
 
 > ricalcare più rapidamente l'asse di muri/divisori rappresentati nel DXF/SVG da due linee parallele, anche quando non esiste nello sfondo un'entità grafica esplicita sull'asse.
 
+### Implementazione v0.64
+
+La v0.64 implementa la regola direttamente nella costruzione della cache Snap dello sfondo vettoriale in `app.js`.
+
+Per evitare un confronto globale O(n²) su DXF ricchi, gli endpoint reali vengono indicizzati in una griglia spaziale con cella da **20 cm**. Ogni endpoint confronta soltanto i punti nelle celle adiacenti; per ogni coppia distinta la distanza viene calcolata nelle coordinate CAD Termodel già espresse in centimetri.
+
+Se:
+
+```text
+5 cm ≤ distanza(P1,P2) ≤ 20 cm
+```
+
+viene aggiunto:
+
+```text
+M = ((x1+x2)/2, (y1+y2)/2)
+```
+
+La deduplicazione usa la stessa precisione a quattro decimali già usata per gli endpoint della cache. I punti medi vengono prodotti esclusivamente dagli endpoint reali iniziali e non vengono reinseriti nel ciclo di generazione.
+
+Test automatici eseguiti:
+
+```text
+4,99 cm  → nessun punto medio
+5,00 cm  → punto medio
+12,00 cm → punto medio
+20,00 cm → punto medio
+20,01 cm → nessun punto medio
+```
+
+Verificata anche la sintassi del corpo eseguibile di `app.js`.
+
+Commit:
+
+```text
+ab2370fccf03895cc928a524f09d25c4f6b8d32d
+Add divider midpoint background snap v0.64
+
+19858510d09104384e29d9651cf72b349bbbf612
+Bump Termodel Web to v0.64
+```
+
 ### Stato
 
-**REGOLA REGISTRATA — NON ANCORA IMPLEMENTATA.**
-
-Non incrementare la versione frontend finché non viene modificato il codice eseguibile.
+**IMPLEMENTATO IN v0.64 — TEST AUTOMATICI SUPERATI; DA VERIFICARE MANUALMENTE SUL DXF REALE `Farmacia.dxf`.**
 
 ---
 
@@ -4270,7 +4311,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.63.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.64.**
 
 Stato operativo corrente:
 
@@ -4280,7 +4321,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.63 presente su `main`;
+- v0.64 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -4321,7 +4362,7 @@ Stato operativo corrente:
 - v0.61 stabilisce `cm` come unità interna del CAD Web e aggiunge nel dialog DXF la combo `m / cm / mm`, proposta da `$INSUNITS`; il plotter normalizza la geometria in cm e lo sfondo DXF entra alla dimensione reale 1:1 senza essere adattato al viewBox esistente.
 - v0.62 formalizza che la scelta dell'unità DXF è la **calibrazione automatica**: il plotter converte in cm, normalizza l'origine e inverte Y senza alterare le distanze. `Calibra` resta solo una correzione eccezionale per DXF/unità errati.
 - v0.63 aggiunge lo **Snap sfondo vettoriale** attivo di default: endpoint/vertici dello SVG si sommano allo Snap normale; il candidato più vicino vince, ma lo snap sfondo non restituisce `targetLineId` e quindi non viene scambiato per una parete Termodel.
-- decisione successiva alla v0.63, ancora da implementare: per facilitare l'asse dei divisori, la cache Snap sfondo dovrà aggiungere un punto medio fittizio per ogni coppia di endpoint reali distante tra 5 e 20 cm; i fittizi non generano ricorsivamente altri fittizi.
+- v0.64 implementa lo **Snap asse divisori**: la cache dello sfondo vettoriale aggiunge un punto medio fittizio per ogni coppia di endpoint reali distante tra 5 e 20 cm; la ricerca usa una griglia spaziale da 20 cm, i punti vengono deduplicati e i fittizi non generano ricorsivamente altri fittizi.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -4332,7 +4373,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. implementare e collaudare l'estensione Snap asse divisori registrata in §12.31: nella cache dello sfondo vettoriale, ogni coppia di endpoint reali distante 5–20 cm genera un punto medio fittizio; verificare poi sul DXF reale `Farmacia.dxf` endpoint e punti medi senza interferire con lo Snap normale;  
+> 1. collaudare manualmente la v0.64 sul DXF reale `Farmacia.dxf`: verificare che gli endpoint reali continuino a fare Snap e che fra due endpoint distanti 5–20 cm sia disponibile anche il punto medio fittizio utile per tracciare l'asse del divisorio, senza interferire con lo Snap normale;  
 > 2. dopo il collaudo del round-trip, usare `buildCurrentProjectText()` come base obbligatoria di qualsiasi futura chiamata WebService; prima dell'invio produrre però un payload server filtrato, **senza sfondi raster/SVG, Data URL/Base64 o relativi asset**;  
 > 3. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
 > 4. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
@@ -4346,10 +4387,10 @@ Se questa conversazione termina, una nuova chat deve poter riprendere senza rico
 
 ```text
 branch: main
-frontend: Termodel Web v0.63
+frontend: Termodel Web v0.64
 ultimo commit funzionale frontend:
-952b605637dc44095639e3b0b4d41fa7d06347ce
-Add vector background endpoint snap v0.63
+ab2370fccf03895cc928a524f09d25c4f6b8d32d
+Add divider midpoint background snap v0.64
 ```
 
 **File da leggere per il lavoro immediato sul progetto unico:**
@@ -4407,8 +4448,11 @@ dxfUnitFromInsUnits(insUnits)
 dxfUnitScaleToCm(unit)
     mm=0,1 · cm=1 · m=100
 
+cadAddBackgroundMidpointCandidates(realPoints)
+    endpoint reali sfondo → aggiunge punti medi fittizi per coppie a 5–20 cm
+
 cadBackgroundSnapCandidates(point)
-    sfondo SVG vettoriale → endpoint vicini al cursore
+    sfondo SVG vettoriale → endpoint + punti medi vicini al cursore
 
 cadSnapPoint(point, movingLineId)
     Snap pareti + endpoint sfondo → candidato più vicino
@@ -4416,7 +4460,7 @@ cadSnapPoint(point, movingLineId)
 
 **Nota importante sulla struttura del codice:** l'import degli archivi è ancora implementato da `loadTermodelProjectText(...)` in `archivio-web.js`; `app.js` orchestra la conversione verso lo stato CAD; `termodel-project-text.js` centralizza parsing/sostituzione delle sezioni e soprattutto la ricostruzione del progetto unico. Non riscrivere ArchivioWeb da zero.
 
-**Test già eseguiti sulla v0.58-v0.63:**
+**Test già eseguiti sulla v0.58-v0.64:**
 
 - sintassi JavaScript valida per `app.js`, `archivio-web.js` e `termodel-project-text.js`;
 - round-trip strutturale sul vero `ProgettoVuoto.termodel.txt`: 26 sezioni prima e dopo;
@@ -4426,7 +4470,8 @@ cadSnapPoint(point, movingLineId)
 - v0.60: test DXF sintetico superato per layer, linee/polilinee, testo opzionale e BLOCK/INSERT opzionale;
 - v0.61: test scala reale superato: `4000 mm`, `400 cm` e `4 m` producono tutti `400 cm = 4 m` nel CAD Termodel;
 - v0.62: test con coordinate lontane dall'origine superato: `1000 → 1013,0977 m` resta esattamente `13,0977 m` dopo conversione in cm e normalizzazione origine;
-- v0.63: test Snap sfondo superato: mapping SVG→CAD corretto, `SNAP SFONDO`, `snapSource=background` e `targetLineId=""`.
+- v0.63: test Snap sfondo superato: mapping SVG→CAD corretto, `SNAP SFONDO`, `snapSource=background` e `targetLineId=""`;
+- v0.64: test punti medi superato sulle soglie 4,99 / 5 / 12 / 20 / 20,01 cm; la sintassi del corpo eseguibile di `app.js` è valida.
 
 **Limite del test automatico:** l'ambiente usato per il controllo non esponeva Web Crypto; il percorso è stato esercitato con un digest simulato per controllare la ricomposizione. Nel browser reale `buildTermodelProjectText()` usa `crypto.subtle.digest('SHA-256', ...)`. È quindi obbligatorio il test manuale reale di Salva.
 
@@ -4443,8 +4488,10 @@ Nuovo
 → Snap → Sfondo vettoriale deve essere ON
 → Nuova parete
 → avvicinarsi a un endpoint/vertice del DXF
-→ verificare SNAP SFONDO
-→ cliccare e controllare che l'estremo cada esattamente sul vertice
+→ verificare SNAP SFONDO sull'endpoint reale
+→ individuare una coppia di endpoint distanti 5–20 cm
+→ portare il cursore circa a metà e verificare SNAP SFONDO sul punto medio fittizio
+→ tracciare l'asse del divisorio
 → verificare che lo snap sfondo non interrompa la sequenza come se fosse una parete
 → Salva
 → Apri... e verificare persistenza dello sfondo
@@ -4464,4 +4511,4 @@ Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttament
 
 **Altri lavori aperti CAD:** trascinamento simboli, snap durante lo spostamento e vincolo LOC.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `952b605637dc44095639e3b0b4d41fa7d06347ce`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `19858510d09104384e29d9651cf72b349bbbf612`.
