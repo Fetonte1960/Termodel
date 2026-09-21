@@ -348,9 +348,11 @@ progetto.
 
 Il lavoro è iniziato valutando un motore Termodel eseguibile su server ASP.NET
 Core con modifiche minime ai sorgenti desktop. Form, WPF e visualizzazione 3D
-desktop sono stati esclusi dal motore. È stata valutata inizialmente anche la
-generazione IFC, ma per la comunicazione col frontend è stato scelto un modello
-3D JSON diretto: evita Xbim e semplifica distribuzione e hosting.
+desktop sono stati esclusi dal runtime. Per la comunicazione col frontend resta
+scelto un modello 3D JSON diretto. La decisione è stata successivamente
+affinata: `Xbim.Essentials` viene usato come modello dati IFC **in memoria**
+per mantenere invariato `Polig3D`, ma il Service non esporta IFC e non usa il
+renderer geometrico xBIM.
 
 ### Soluzione separata
 
