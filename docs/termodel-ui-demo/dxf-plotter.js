@@ -1,4 +1,4 @@
-// Termodel Web v0.60 — DXF background "pen plotter".
+// Termodel Web v0.61 — DXF background "pen plotter" con unità reali.
 // Parser ASCII DXF deliberately limited to 2D background rendering.
 // It does not create Termodel entities: it converts selected DXF content to SVG.
 
@@ -11,6 +11,23 @@ const UNIT_NAMES = new Map([
   [6, 'm'],
   [10, 'yard']
 ]);
+
+const TERMODEL_DXF_UNIT_TO_CM = Object.freeze({
+  mm: 0.1,
+  cm: 1,
+  m: 100
+});
+
+export function dxfUnitFromInsUnits(insUnits) {
+  if (Number(insUnits) === 4) return 'mm';
+  if (Number(insUnits) === 5) return 'cm';
+  if (Number(insUnits) === 6) return 'm';
+  return 'cm';
+}
+
+export function dxfUnitScaleToCm(unit) {
+  return TERMODEL_DXF_UNIT_TO_CM[unit] || 1;
+}
 
 function dxfPairs(text) {
   const lines = String(text || '').replace(/\r/g, '').split('\n');
@@ -522,11 +539,16 @@ function normalizeOptions(model, options = {}) {
   const layers = options.layers instanceof Set
     ? options.layers
     : new Set(Array.isArray(options.layers) ? options.layers : available);
+  const unit = ['m', 'cm', 'mm'].includes(options.unit)
+    ? options.unit
+    : dxfUnitFromInsUnits(model?.header?.insUnits);
   return {
     layers,
     curves: Boolean(options.curves),
     convertText: Boolean(options.convertText),
-    explodeBlocks: Boolean(options.explodeBlocks)
+    explodeBlocks: Boolean(options.explodeBlocks),
+    unit,
+    unitScaleToCm: dxfUnitScaleToCm(unit)
   };
 }
 
@@ -599,9 +621,16 @@ export function convertDxfToSvg(model, options = {}) {
     return layerPaths.get(key);
   };
 
+  const scalePointToCm = p => ({
+    x: p.x * normalized.unitScaleToCm,
+    y: p.y * normalized.unitScaleToCm
+  });
+
   const emitPolyline = (points, matrix, layer) => {
     if (!points || points.length < 2) return false;
-    const transformed = points.map(p => transformPoint(matrix, p));
+    const transformed = points.map(p =>
+      scalePointToCm(transformPoint(matrix, p))
+    );
     transformed.forEach(updateBounds);
     const commands = transformed.map((p, index) =>
       (index ? 'L ' : 'M ') + p.x.toFixed(5) + ' ' + (-p.y).toFixed(5)
@@ -655,7 +684,7 @@ export function convertDxfToSvg(model, options = {}) {
     } else if (normalized.curves && entity.type === 'SPLINE') {
       emitted = emitPolyline(entity.controlPoints || [], matrix, layer);
     } else if (normalized.convertText && (entity.type === 'TEXT' || entity.type === 'MTEXT')) {
-      const p = transformPoint(matrix, entity.point);
+      const p = scalePointToCm(transformPoint(matrix, entity.point));
       updateBounds(p);
       const content = cleanMText(entity.text);
       if (content) {
@@ -663,7 +692,7 @@ export function convertDxfToSvg(model, options = {}) {
           layer,
           x: p.x,
           y: -p.y,
-          height: Math.max(0.1, entity.height || 2.5),
+          height: Math.max(0.1, (entity.height || 2.5) * normalized.unitScaleToCm),
           rotation: -(entity.rotation || 0),
           text: content
         });
@@ -727,9 +756,13 @@ export function convertDxfToSvg(model, options = {}) {
     '<?xml version="1.0" encoding="UTF-8"?>' +
     '<svg xmlns="http://www.w3.org/2000/svg"' +
     ' viewBox="' + vb.map(value => value.toFixed(5)).join(' ') + '"' +
+    ' width="' + vb[2].toFixed(5) + 'cm"' +
+    ' height="' + vb[3].toFixed(5) + 'cm"' +
     ' fill="none" stroke="#222" stroke-width="' + Math.max(width, height) / 1800 + '"' +
     ' stroke-linecap="round" stroke-linejoin="round"' +
-    ' data-termodel-dxf-plotter="1">' +
+    ' data-termodel-dxf-plotter="1"' +
+    ' data-termodel-source-unit="' + normalized.unit + '"' +
+    ' data-termodel-unit-scale-cm="' + normalized.unitScaleToCm + '">' +
     groups.join('') +
     '</svg>';
 
@@ -737,6 +770,11 @@ export function convertDxfToSvg(model, options = {}) {
     svgText,
     stats,
     bounds: { minX, minY, maxX, maxY, width, height },
+    viewBox: vb.slice(),
+    drawingUnit: normalized.unit,
+    unitScaleToCm: normalized.unitScaleToCm,
+    realWidthMeters: width / 100,
+    realHeightMeters: height / 100,
     unitsCode: model.header.insUnits,
     unitsLabel: model.header.unitsLabel
   };

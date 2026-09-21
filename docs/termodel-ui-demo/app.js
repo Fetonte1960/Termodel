@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.60';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.61';
 import {
   parseDxfPlotSource,
   getDxfLayerSummary,
   estimateDxfConversion,
-  convertDxfToSvg
-} from './dxf-plotter.js?v=0.60';
+  convertDxfToSvg,
+  dxfUnitFromInsUnits,
+  dxfUnitScaleToCm
+} from './dxf-plotter.js?v=0.61';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -17,16 +19,16 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.60';
+} from './archivio-web.js?v=0.61';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.60';
+} from './termodel-project-text.js?v=0.61';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.60';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.61';
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
@@ -34,8 +36,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.60';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.60';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.61';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.61';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -56,6 +58,7 @@ const dxfImportInfo = document.getElementById('dxfImportInfo');
 const dxfLayerList = document.getElementById('dxfLayerList');
 const dxfSelectAll = document.getElementById('dxfSelectAll');
 const dxfSelectNone = document.getElementById('dxfSelectNone');
+const dxfDrawingUnit = document.getElementById('dxfDrawingUnit');
 const dxfModeLines = document.getElementById('dxfModeLines');
 const dxfModeCurves = document.getElementById('dxfModeCurves');
 const dxfConvertText = document.getElementById('dxfConvertText');
@@ -2702,6 +2705,7 @@ function dxfSelectedLayers() {
 function dxfDialogOptions() {
   return {
     layers: dxfSelectedLayers(),
+    unit: dxfDrawingUnit?.value || 'cm',
     curves: Boolean(dxfModeCurves?.checked),
     convertText: Boolean(dxfConvertText?.checked),
     explodeBlocks: Boolean(dxfExplodeBlocks?.checked)
@@ -2712,11 +2716,13 @@ function updateDxfImportSummary() {
   if (!dxfImportState || !dxfImportSummary) return;
   const options = dxfDialogOptions();
   const estimate = estimateDxfConversion(dxfImportState.model, options);
+  const scaleToCm = dxfUnitScaleToCm(options.unit);
   dxfImportSummary.textContent =
     'Layer selezionati: ' + options.layers.size + ' / ' + dxfImportState.layers.length + '\n' +
     'Entità previste: ' + estimate.selected +
     ' · ignorate: ' + estimate.ignored +
-    (estimate.blocks ? ' · blocchi da esplodere: ' + estimate.blocks : '');
+    (estimate.blocks ? ' · blocchi da esplodere: ' + estimate.blocks : '') + '\n' +
+    'Scala reale: 1 unità DXF = ' + scaleToCm + ' cm Termodel';
   if (dxfImportConvert) dxfImportConvert.disabled = options.layers.size === 0;
 }
 
@@ -2767,6 +2773,8 @@ function openDxfImportDialog(file, model) {
       });
     }
 
+    if (dxfDrawingUnit)
+      dxfDrawingUnit.value = dxfUnitFromInsUnits(model.header?.insUnits);
     if (dxfModeLines) dxfModeLines.checked = true;
     if (dxfModeCurves) dxfModeCurves.checked = false;
     if (dxfConvertText) dxfConvertText.checked = false;
@@ -2796,12 +2804,21 @@ async function cadConvertDxfBackground(file) {
 
   await cadImportBackgroundFile(svgFile, {
     statusLabel: 'DXF convertito',
-    originalName: file.name || 'sfondo.dxf'
+    originalName: file.name || 'sfondo.dxf',
+    sourceUnit: result.drawingUnit,
+    unitScaleToCm: result.unitScaleToCm,
+    realSizeCm: {
+      width: result.viewBox[2],
+      height: result.viewBox[3]
+    }
   });
 
   cadSetStatus(
     '✓ DXF convertito in sfondo SVG · ' +
-    result.stats.converted + ' entità · Piano ' + cadCurrentPlane() +
+    result.stats.converted + ' entità · ' +
+    result.realWidthMeters.toFixed(3) + ' × ' +
+    result.realHeightMeters.toFixed(3) + ' m · ' +
+    result.drawingUnit + ' → cm · Piano ' + cadCurrentPlane() +
     ' · ' + (file.name || 'sfondo.dxf'),
     'dirty'
   );
@@ -2861,14 +2878,36 @@ async function cadImportBackgroundFile(file, options = {}) {
   image.setAttribute('data-termodel-layer', cadCurrentLayer());
   image.setAttribute('data-termodel-sfondo-tipo', cadBackgroundKind(file));
   image.setAttribute('data-termodel-nome-file', options.originalName || file.name || '');
+  if (options.sourceUnit)
+    image.setAttribute('data-termodel-dxf-unita', options.sourceUnit);
+  if (Number.isFinite(options.unitScaleToCm))
+    image.setAttribute('data-termodel-dxf-fattore-cm', String(options.unitScaleToCm));
+
+  const realWidth = Number(options.realSizeCm?.width);
+  const realHeight = Number(options.realSizeCm?.height);
+  const useRealSize =
+    Number.isFinite(realWidth) && realWidth > 0 &&
+    Number.isFinite(realHeight) && realHeight > 0;
+
   image.setAttribute('x', String(viewBox[0]));
   image.setAttribute('y', String(viewBox[1]));
-  image.setAttribute('width', String(viewBox[2]));
-  image.setAttribute('height', String(viewBox[3]));
+  image.setAttribute('width', String(useRealSize ? realWidth : viewBox[2]));
+  image.setAttribute('height', String(useRealSize ? realHeight : viewBox[3]));
   image.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   image.setAttribute('opacity', '0.72');
   image.setAttribute('href', dataUrl);
   group.appendChild(image);
+
+  if (useRealSize) {
+    const projectViewBox = cadGeometryViewBox(cadWorkingDoc, '');
+    if (projectViewBox) {
+      cadWorkingDoc.documentElement.setAttribute('viewBox', cadFormatViewBox(projectViewBox));
+      cadViewportBase = projectViewBox.slice();
+      const planeViewBox = cadGeometryViewBox(cadWorkingDoc, plane);
+      cadViewport = planeViewBox?.slice() || projectViewBox.slice();
+      ensureNorthSymbolInSvg(cadWorkingDoc, northOrientationDeg);
+    }
+  }
 
   cadUndoStack.push(before);
   cadRedoStack = [];
@@ -5716,7 +5755,7 @@ dxfSelectNone?.addEventListener('click', () => {
   });
   updateDxfImportSummary();
 });
-[dxfModeLines, dxfModeCurves, dxfConvertText, dxfExplodeBlocks].forEach(control => {
+[dxfDrawingUnit, dxfModeLines, dxfModeCurves, dxfConvertText, dxfExplodeBlocks].forEach(control => {
   control?.addEventListener('change', updateDxfImportSummary);
 });
 dxfImportConvert?.addEventListener('click', () => closeDxfImportDialog(dxfDialogOptions()));
@@ -5857,8 +5896,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.60: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.60' })
+// v0.61: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.61' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {

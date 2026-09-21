@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.60 — sfondo DXF convertito</title>
+  <title>Termodel Web v0.61 — unità reali sfondo DXF</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -445,6 +445,28 @@
     .dxf-layer-row:last-child { border-bottom: 0; }
     .dxf-layer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dxf-layer-count { color: #69737d; font-variant-numeric: tabular-nums; }
+    .dxf-unit-row {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 100px;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 8px;
+      border: 1px solid #c8ccd0;
+      background: #f8fafb;
+    }
+    .dxf-unit-row select {
+      width: 100%;
+      height: 28px;
+      border: 1px solid #888;
+      background: #fff;
+    }
+    .dxf-unit-note {
+      grid-column: 1 / -1;
+      color: #65717b;
+      font-size: 11px;
+      line-height: 1.35;
+    }
     .dxf-option-group { display: grid; gap: 9px; }
     .dxf-option-group label { display: flex; gap: 7px; align-items: flex-start; }
     .dxf-option-note { color: #65717b; font-size: 11px; line-height: 1.35; margin-left: 23px; }
@@ -1028,7 +1050,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.60</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.61</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -1433,6 +1455,17 @@
         </section>
         <section class="dxf-import-card">
           <h3>Conversione tipo plotter</h3>
+          <div class="dxf-unit-row">
+            <strong>Unità del disegno:</strong>
+            <select id="dxfDrawingUnit" aria-label="Unità del disegno DXF">
+              <option value="m">m</option>
+              <option value="cm">cm</option>
+              <option value="mm">mm</option>
+            </select>
+            <div class="dxf-unit-note">
+              Termodel lavora internamente in centimetri. L'unità viene proposta da $INSUNITS quando disponibile e può essere corretta manualmente.
+            </div>
+          </div>
           <div class="dxf-option-group">
             <label>
               <input id="dxfModeLines" name="dxfMode" type="radio" checked />
@@ -1490,6 +1523,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.60"></script>
+  <script type="module" src="./app.js?v=0.61"></script>
 </body>
 </html>
