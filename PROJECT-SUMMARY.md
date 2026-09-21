@@ -4037,6 +4037,63 @@ Commit:
 Add vector background endpoint snap v0.63
 ```
 
+
+---
+
+## 12.31 Snap fittizio al centro dei divisori — regola registrata
+
+Decisione CAD registrata il **2026-09-21** per facilitare il tracciamento dell'asse dei divisori quando lo sfondo vettoriale fornisce soltanto gli endpoint delle due facce del divisorio.
+
+La cache dello **Snap sfondo vettoriale** deve essere arricchita con punti fittizi intermedi.
+
+Regola:
+
+```text
+per ogni coppia di endpoint reali della cache sfondo:
+    distanza >= 5 cm
+    distanza <= 20 cm
+        ↓
+    aggiungi alla cache il punto medio della coppia
+```
+
+Il punto medio è quindi:
+
+```text
+M.x = (P1.x + P2.x) / 2
+M.y = (P1.y + P2.y) / 2
+```
+
+Scopo:
+
+```text
+faccia 1 divisorio  ●
+                    │
+                    ◎  punto medio fittizio = asse divisorio
+                    │
+faccia 2 divisorio  ●
+```
+
+Regole operative:
+
+- l'unità è quella interna del CAD Web: **centimetri**;
+- la soglia inclusiva è **5 cm ≤ distanza ≤ 20 cm**;
+- gli endpoint reali restano nella cache e continuano a essere candidati di Snap;
+- i punti medi si **sommano** agli endpoint reali, non li sostituiscono;
+- il punto fittizio deve comportarsi come uno Snap sfondo, quindi `snapSource = background` e `targetLineId = ""`;
+- i punti fittizi devono essere deduplicati con la stessa logica usata per gli endpoint reali;
+- per evitare generazione ricorsiva/esplosiva, i punti medi vengono calcolati **una sola volta a partire dagli endpoint reali dello sfondo** e i punti fittizi aggiunti non generano a loro volta ulteriori punti medi;
+- la funzione resta subordinata a `Snap → Sfondo vettoriale`: se il check è disattivato, non devono essere usati né endpoint reali né punti medi fittizi.
+
+Obiettivo pratico:
+
+> ricalcare più rapidamente l'asse di muri/divisori rappresentati nel DXF/SVG da due linee parallele, anche quando non esiste nello sfondo un'entità grafica esplicita sull'asse.
+
+### Stato
+
+**REGOLA REGISTRATA — NON ANCORA IMPLEMENTATA.**
+
+Non incrementare la versione frontend finché non viene modificato il codice eseguibile.
+
 ---
 
 ## 13. Protocollo progetto
@@ -4264,6 +4321,7 @@ Stato operativo corrente:
 - v0.61 stabilisce `cm` come unità interna del CAD Web e aggiunge nel dialog DXF la combo `m / cm / mm`, proposta da `$INSUNITS`; il plotter normalizza la geometria in cm e lo sfondo DXF entra alla dimensione reale 1:1 senza essere adattato al viewBox esistente.
 - v0.62 formalizza che la scelta dell'unità DXF è la **calibrazione automatica**: il plotter converte in cm, normalizza l'origine e inverte Y senza alterare le distanze. `Calibra` resta solo una correzione eccezionale per DXF/unità errati.
 - v0.63 aggiunge lo **Snap sfondo vettoriale** attivo di default: endpoint/vertici dello SVG si sommano allo Snap normale; il candidato più vicino vince, ma lo snap sfondo non restituisce `targetLineId` e quindi non viene scambiato per una parete Termodel.
+- decisione successiva alla v0.63, ancora da implementare: per facilitare l'asse dei divisori, la cache Snap sfondo dovrà aggiungere un punto medio fittizio per ogni coppia di endpoint reali distante tra 5 e 20 cm; i fittizi non generano ricorsivamente altri fittizi.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -4274,7 +4332,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. collaudare manualmente la v0.63 sul DXF reale `Farmacia.dxf`: `Snap → Sfondo vettoriale` deve essere attivo di default; durante `Nuova parete` il cursore vicino a un vertice DXF deve mostrare `SNAP SFONDO` e fissare il punto esattamente sul vertice;  
+> 1. implementare e collaudare l'estensione Snap asse divisori registrata in §12.31: nella cache dello sfondo vettoriale, ogni coppia di endpoint reali distante 5–20 cm genera un punto medio fittizio; verificare poi sul DXF reale `Farmacia.dxf` endpoint e punti medi senza interferire con lo Snap normale;  
 > 2. dopo il collaudo del round-trip, usare `buildCurrentProjectText()` come base obbligatoria di qualsiasi futura chiamata WebService; prima dell'invio produrre però un payload server filtrato, **senza sfondi raster/SVG, Data URL/Base64 o relativi asset**;  
 > 3. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
 > 4. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
