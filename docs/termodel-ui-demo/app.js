@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.64';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.65';
 import {
   parseDxfPlotSource,
   getDxfLayerSummary,
@@ -8,7 +8,7 @@ import {
   convertDxfToSvg,
   dxfUnitFromInsUnits,
   dxfUnitScaleToCm
-} from './dxf-plotter.js?v=0.64';
+} from './dxf-plotter.js?v=0.65';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -19,16 +19,16 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.64';
+} from './archivio-web.js?v=0.65';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.64';
+} from './termodel-project-text.js?v=0.65';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.64';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.65';
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
@@ -36,8 +36,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.64';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.64';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.65';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.65';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -756,38 +756,12 @@ function disposeNorth3DMarker() {
   north3DGroup.clear();
 }
 
-function createNorth3DLabel(text, worldScale) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 128;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(255,255,255,0.92)';
-  ctx.strokeStyle = '#333';
-  ctx.lineWidth = 4;
-  ctx.fillRect(4, 4, 248, 120);
-  ctx.strokeRect(4, 4, 248, 120);
-  ctx.fillStyle = '#111';
-  ctx.font = 'bold 52px Segoe UI, Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 128, 64);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  const material = new THREE.SpriteMaterial({
-    map: texture,
-    transparent: true,
-    depthTest: false
-  });
-  const sprite = new THREE.Sprite(material);
-  sprite.scale.set(worldScale * 1.55, worldScale * 0.78, 1);
-  sprite.renderOrder = 50;
-  return sprite;
-}
-
 function updateNorth3DMarker() {
   disposeNorth3DMarker();
+
+  // Nel viewer 3D il Nord è volutamente minimale:
+  // se non è definito non viene mostrato nulla; se è definito compare solo la freccia.
+  if (northOrientationDeg === null) return;
 
   const box = new THREE.Box3().setFromObject(modelGroup);
   if (box.isEmpty()) return;
@@ -801,13 +775,6 @@ function updateNorth3DMarker() {
     box.min.y + 0.06,
     box.max.z + modelSize * 0.05
   );
-
-  if (northOrientationDeg === null) {
-    const label = createNorth3DLabel('N ?', Math.max(modelSize * 0.12, 0.9));
-    label.position.copy(origin).add(new THREE.Vector3(0, modelSize * 0.08, 0));
-    north3DGroup.add(label);
-    return;
-  }
 
   // 0° = alto della pianta. SVG Y cresce verso il basso; nel 3D tale verso
   // corrisponde a +Z. Gli angoli positivi sono orari: 90° -> +X.
@@ -827,15 +794,6 @@ function updateNorth3DMarker() {
     markerLength * 0.16
   );
   north3DGroup.add(arrow);
-
-  const label = createNorth3DLabel(
-    `N ${Math.round(northOrientationDeg)}°`,
-    Math.max(modelSize * 0.10, 0.8)
-  );
-  label.position.copy(origin)
-    .add(direction.clone().multiplyScalar(markerLength * 1.18))
-    .add(new THREE.Vector3(0, modelSize * 0.06, 0));
-  north3DGroup.add(label);
 }
 
 function fromTermodelPoint(vertex) {
@@ -6285,7 +6243,7 @@ document.addEventListener('keydown', event => {
   }
 });
 // v0.63: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.64' })
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.65' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
