@@ -218,27 +218,40 @@ Risultato:
 
 
 ### INCARICO 2026-09-21 — SVG tecnico canonico frontend per AggiornaCalcolo
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - correggere la prima anomalia runtime reale di `POST /api/calculations`,
-  dove `SvgDxfReader` rifiuta `geometry/project.svg` perché il frontend ha
-  sostituito lo SVG tecnico del progetto con lo SVG operativo CAD/AI;
+  dove `SvgDxfReader` rifiutava `geometry/project.svg` perché il frontend
+  aveva sostituito lo SVG tecnico del progetto con lo SVG operativo CAD/AI;
 - mantenere invariato lo SVG locale del CAD;
 - generare per il solo payload server uno SVG `TERMODEL-PROJECT-SVG-V1`
   canonico in centimetri, con gruppi piano e metadati richiesti dal Core;
-- usare i dati correnti del progetto/archivio Piani per costruire i gruppi e
-  trasferire soltanto entità tecniche supportate dal reader;
-- non rilassare la validazione del server e non introdurre formati alternativi;
-- aggiornare contratto e Summary a intervento concluso.
+- non rilassare la validazione del server.
 
-Criteri di completamento:
+Risultato:
+- prima prova locale reale: `GET /api/model/capabilities` raggiunto con
+  successo e `POST /api/calculations` arrivato fino a `SvgDxfReader`;
+- l'errore runtime osservato era
+  `Lo SVG deve dichiarare data-termodel-units='cm'.`;
+- Termodel Web v0.73 costruisce ora il solo payload server in forma canonica,
+  lasciando invariato lo SVG operativo del CAD;
+- radice SVG: `TERMODEL-PROJECT-SVG-V1`, namespace SVG, unità `cm`;
+- gruppi piano: `floor-id/name/role/file/layer/order` derivati da
+  manifest/archivio Piani;
+- entità trasferite: `line` e blocchi `text` tecnici; sfondi/accessori
+  frontend esclusi;
+- adattati anche, se presenti, tipo linea e colore locali ai nomi letti da
+  `SvgDxfReader`;
+- manifest/hash rigenerati sul payload finale;
 - sintassi JavaScript verificata;
-- payload senza `assets/backgrounds/*` e senza elementi grafici locali;
-- radice SVG con `data-termodel-units="cm"`;
-- gruppi piano con `data-termodel-floor-id/name/role/file/layer/order`;
-- stato riportato a ESEGUITO soltanto dopo l'implementazione;
-- la prova runtime successiva sul PC resta distinta dall'implementazione.
+- commit principali frontend:
+  `753d12050f73e91a3134000400927bfadfe5e960`,
+  `07f460deeb6a96b69ec5df08a055665fd4fcebe2`,
+  `ce3ed27f08a6a466a12e4a9721ceecf91b574cb5`,
+  `cf90174307eda011fc78aa568917b369d810f63c`;
+- nuova prova runtime v0.73 sul PC: **non ancora eseguita**; non dichiarare
+  ancora superata la validazione HTTP finché l'utente non ripete il test.
 
 
 ## 2. Posizioni e struttura
