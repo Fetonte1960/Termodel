@@ -318,7 +318,20 @@ pulite nello snapshot restano fasi successive.
 
 ### Commissione frontend — pulsante Aggiorna Modello
 
-Stato: **COMMISSIONATO** — 21 settembre 2026.
+Stato: **ESEGUITO** — 21 settembre 2026.
+
+Implementazione frontend: Termodel Web v0.71. Il pulsante mantiene il JSON demo
+quando non esiste un progetto strutturato; con progetto corrente costruisce un
+payload tecnico temporaneo tramite `buildTermodelServerPayload(...)`, chiama
+`POST /api/calculations`, segue l'`href` dell'artifact `model3d` e passa il
+`TermodelWebModel v3` ricevuto al renderer esistente.
+
+Il payload temporaneo rimuove `assets/backgrounds/*` e gli elementi SVG
+marcati come sfondo, quindi rigenera l'elenco sezioni e gli SHA-256 del
+`manifest.json`. Il progetto locale completo non viene privato degli sfondi.
+
+Stato di verifica: sintassi JavaScript controllata; il ciclo browser pubblico
+→ WebService locale → artifact 3D deve ancora essere provato sul PC reale.
 
 Il pulsante `Aggiorna Modello` del frontend deve applicare il seguente
 comportamento senza introdurre endpoint alternativi:
