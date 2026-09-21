@@ -260,6 +260,20 @@ Risultato:
   ancora superata la validazione HTTP finché l'utente non ripete il test.
 
 
+### PROSSIMA PROVA — tetti e locali mansardati da Termodel Web v0.75
+
+Il frontend dispone ora di uno strumento di test multipiano: `＋ Copertura`
+crea un record `Piani` con `Tipo=Copertura`, stesso `NomeFile` del piano
+sorgente e `LayerCad` distinto. Lo sfondo viene duplicato solo localmente,
+mentre la geometria tecnica della copertura entra nel payload canonico
+`TERMODEL-PROJECT-SVG-V1`.
+
+Il frontend non genera un tetto 3D locale per i piani `Copertura`: la prossima
+prova deve quindi verificare realmente la catena
+`GeneraModello -> Tetti -> Polig3D -> TermodelWebModel v3` e il comportamento
+dei locali mansardati. Nessun codice Service è stato modificato per questa
+funzione frontend.
+
 ## 2. Posizioni e struttura
 
 Sorgente locale compilato e avviato da Visual Studio:
