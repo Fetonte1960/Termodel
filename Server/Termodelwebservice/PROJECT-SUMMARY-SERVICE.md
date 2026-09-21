@@ -42,6 +42,47 @@ Prima di intervenire:
    confronto golden;
 9. aggiornare questo summary quando cambiano contratti, stato o prossimi passi.
 10. **Regola permanente di autorizzazione:** quando l'utente autorizza modifiche al progetto, registrare prima in questo Summary (e nel contratto condiviso se pertinente) le decisioni/lo stato concordati, quindi applicare le modifiche al codice; al termine aggiornare nuovamente lo stato reale se implementazione, build o test cambiano.
+11. **Registro incarichi obbligatorio:** ogni autorizzazione esplicita a procedere deve creare, prima delle modifiche, una voce nel registro incarichi con `Stato: COMMISSIONATO`, descrizione concreta del lavoro e criteri di completamento. Quando il lavoro è terminato, la stessa voce deve essere aggiornata a `Stato: ESEGUITO`, indicando risultato reale, build/test effettuati e commit. Se la chat termina durante il lavoro, la voce deve restare `COMMISSIONATO`: la chat successiva deve considerarla lavoro affidato ma non ancora concluso e riprenderla prima di dichiararla eseguita.
+
+## 1.1 Registro incarichi autorizzati
+
+Questo registro serve a garantire continuità anche se una chat termina durante
+un intervento.
+
+Formato obbligatorio per ogni nuovo incarico autorizzato:
+
+```text
+### INCARICO <data/identificativo breve>
+Stato: COMMISSIONATO | ESEGUITO
+
+Commissionato:
+- obiettivo concreto;
+- file/componenti previsti;
+- vincoli da rispettare;
+- criteri di completamento.
+
+Risultato:
+- compilazione;
+- esecuzione;
+- test;
+- confronto con riferimento;
+- commit finali.
+```
+
+Regole:
+
+- `COMMISSIONATO` significa che l'utente ha autorizzato il lavoro ma il
+  risultato non è ancora stato completato/verificato;
+- `ESEGUITO` si usa soltanto quando il lavoro commissionato è terminato;
+- compilazione, esecuzione, test e confronto devono essere descritti
+  separatamente e non dedotti dal solo stato `ESEGUITO`;
+- non creare una nuova voce per ogni commit tecnico dello stesso incarico:
+  aggiornare la voce originaria;
+- una chat nuova deve controllare prima di tutto se esistono incarichi ancora
+  `COMMISSIONATO` e considerarli lavoro pendente autorizzato.
+
+Al momento dell'introduzione di questa regola non risultano incarichi tecnici
+già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ## 2. Posizioni e struttura
 
