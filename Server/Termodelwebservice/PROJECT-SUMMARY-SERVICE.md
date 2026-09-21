@@ -33,6 +33,7 @@ Prima di intervenire:
 8. distinguere sempre proposta, implementazione, compilazione, prova HTTP e
    confronto golden;
 9. aggiornare questo summary quando cambiano contratti, stato o prossimi passi.
+10. **Regola permanente di autorizzazione:** quando l'utente autorizza modifiche al progetto, registrare prima in questo Summary (e nel contratto condiviso se pertinente) le decisioni/lo stato concordati, quindi applicare le modifiche al codice; al termine aggiornare nuovamente lo stato reale se implementazione, build o test cambiano.
 
 ## 2. Posizioni e struttura
 
@@ -115,6 +116,89 @@ Modello.cs
 utilities/ErrorManager.cs
 6A7E93D009526D4DA5ED0F800B6155AB0B90C52237C13E76CEC52C4204863ECD
 ```
+
+## 3.1 Strategia permanente di compatibilità Desktop
+
+Decisione architetturale consolidata il 21 settembre 2026.
+
+Per migrare il motore storico senza riscriverne inutilmente gli algoritmi, il
+Service deve preferire **facciate di compatibilità** che presentino al codice
+Desktop gli stessi concetti che esso si aspetta, pur ricavandoli dal file unico.
+
+Architettura di riferimento:
+
+```text
+TERMODEL-PROJECT-TEXT-V1
+        |
+        +--> Virtual CAD
+        |      SVG multipiano -> API netDxf compatibile
+        |      file/layer/blocchi/linetype/colori/Z
+        |
+        +--> Virtual DB
+        |      archives/xml/*.xml -> UtiDb / Database.DB compatibili
+        |
+        +--> Virtual Project
+               workspace temporaneo per elaborazione
+               percorsi/file attesi da GestProg e moduli file-based
+        |
+        v
+codice Desktop/Core riusato
+LeggiDxf / GestXml / CalcoloAPE / pannelli / ecc.
+```
+
+Principio permanente:
+
+> quando il codice Desktop richiede una risorsa, preferire che il Core gliela
+> presenti nel formato/comportamento già atteso invece di modificare
+> l'algoritmo storico per adattarlo al Web.
+
+### Virtual CAD
+
+Il Desktop può usare lo stesso DXF per più piani, distinguendoli tramite
+`Piani.NomeFile` + `Piani.LayerCad`. Il file unico usa invece SVG multipiano,
+ma deve conservare la stessa semantica logica.
+
+Lo strato compatibile deve quindi poter ricostruire un documento CAD virtuale
+per nome file contenente più layer, inclusi progressivamente layer ausiliari
+(es. tubi pannelli), in modo che il codice storico continui a filtrare
+`dxf.Lines`, blocchi e layer senza conoscere la sorgente SVG.
+
+Lo stato attuale è parziale: il 3D usa già `SvgDxfReader` e un `DxfDocument`
+compatibile, ma oggi il documento viene costruito principalmente per singolo
+gruppo/piano. Va evoluto verso il documento logico multi-layer per `NomeFile`
+senza trasformare `netDxf` compatibile in un lettore DXF generale.
+
+### Virtual DB
+
+Gli archivi autorevoli per il motore nel file unico sono
+`archives/xml/*.xml`. `ProjectArchiveDatabase` li carica in memoria e
+l'adattatore `UtiDb` / `Database.DB` deve replicare la semantica Desktop,
+non solo le firme necessarie alla compilazione.
+
+Prima di collegare `GestXml` devono essere allineati almeno:
+
+- comportamento dei lookup non trovati (`null` dove il Desktop restituisce
+  `null`, non stringa vuota);
+- `TipoZona` e valori testuali esattamente coerenti col Desktop;
+- `AggiungiZoneStandard`;
+- ulteriori metodi richiesti dai moduli migrati, aggiunti alla facciata invece
+  di modificare i chiamanti storici.
+
+Il JSON parallelo degli archivi è una rappresentazione utile al Web/AI; il
+motore Core continua a usare come riferimento runtime gli XML del file unico,
+finché il contratto non stabilirà diversamente.
+
+### Virtual Project
+
+I moduli Desktop file-based (`GestXml`, `CalcoloAPE`, `Cened`,
+`IoPannelli` e successivi) devono poter lavorare in un workspace temporaneo
+isolato per elaborazione/`calculationId`, che materializzi soltanto i file
+necessari con percorsi simili al progetto Desktop.
+
+Il workspace è un adattatore interno, non il formato autorevole del progetto.
+Il file unico resta l'input autorevole; gli output del workspace diventano
+artifact dello snapshot e non devono essere reinseriti implicitamente nel
+progetto.
 
 ## 4. Storia consolidata dello sviluppo Service
 
