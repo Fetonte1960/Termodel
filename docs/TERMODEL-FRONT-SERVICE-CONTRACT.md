@@ -316,6 +316,15 @@ snapshot. In questa prima implementazione il manifest contiene soltanto
 l'artifact `model3d`; XML nazionale, dispersioni, pannelli, spirali e piante
 pulite nello snapshot restano fasi successive.
 
+### Commissione frontend — indicatore origine rendering
+
+Stato: **COMMISSIONATO** — 21 settembre 2026.
+
+Il viewer 3D deve mostrare in modo persistente se il modello visualizzato è
+un'anteprima locale oppure un artifact elaborato da Termodel Service. Per un
+artifact server deve essere mostrato anche il relativo `calculationId`, almeno
+in forma abbreviata.
+
 ### Commissione frontend — pulsante Aggiorna Modello
 
 Stato: **ESEGUITO** — 21 settembre 2026.
