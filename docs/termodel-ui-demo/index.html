@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.77 — CAD Copertura e Colmo</title>
+  <title>Termodel Web v0.78 — esperienza mobile</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -1108,6 +1108,205 @@
       #app { grid-template-rows: 24px 23px 27px 1fr 39px; }
       .bottom-bar { gap: 3px; }
     }
+
+    /* Termodel Web v0.78 — adattamento smartphone */
+    @media (max-width: 820px) {
+      html, body {
+        font-size: 13px;
+      }
+
+      #app {
+        grid-template-rows: 28px 36px 40px minmax(0,1fr) 52px;
+      }
+
+      .titlebar {
+        min-width: 0;
+        padding: 0 8px;
+      }
+
+      .title-text {
+        min-width: 0;
+        font-size: 12px;
+      }
+
+      .menubar {
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      .menubar::-webkit-scrollbar { display: none; }
+
+      .menu {
+        flex: 0 0 auto;
+      }
+
+      .menu > button {
+        min-width: 64px;
+        padding: 0 12px;
+        font-size: 13px;
+      }
+
+      .dropdown {
+        position: fixed;
+        top: 64px;
+        left: 6px;
+        right: 6px;
+        width: auto;
+        min-width: 0;
+        max-height: calc(100dvh - 126px);
+        overflow: auto;
+        z-index: 80;
+      }
+
+      .dropdown button {
+        min-height: 42px;
+        padding: 10px 14px;
+        font-size: 14px;
+      }
+
+      .tabs {
+        min-width: 0;
+        align-items: stretch;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      .tabs::-webkit-scrollbar { display: none; }
+
+      .tab {
+        flex: 0 0 auto;
+        height: 36px;
+        min-width: max-content;
+        padding: 6px 13px;
+        font-size: 13px;
+      }
+
+      .bottom-bar {
+        min-width: 0;
+        gap: 6px;
+        padding: 5px 6px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+      }
+      .bottom-bar::-webkit-scrollbar { display: none; }
+
+      .bottom-bar button {
+        flex: 0 0 auto;
+        height: 40px;
+        min-width: max-content;
+        padding: 5px 12px;
+        font-size: 13px;
+        scroll-snap-align: start;
+      }
+
+      .check-wrap {
+        flex: 0 0 auto;
+        height: 40px;
+        min-width: 88px;
+        justify-content: center;
+        gap: 7px;
+        padding: 0 11px;
+        border: 1px solid #999;
+        background: linear-gradient(#fff,#dedede);
+        font-size: 0;
+        scroll-snap-align: start;
+      }
+
+      .check-wrap::after {
+        content: "Filtri";
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .check-wrap input {
+        width: 19px;
+        height: 19px;
+        margin: 0;
+      }
+
+      .viewport-status {
+        left: 6px;
+        right: 6px;
+        top: 6px;
+        max-width: calc(100% - 12px);
+        padding: 3px 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 10px;
+      }
+
+      .render-origin-badge {
+        left: 6px;
+        right: auto;
+        top: 31px;
+        max-width: calc(100% - 12px);
+        padding: 4px 6px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 10px;
+      }
+
+      .axis {
+        left: 8px;
+        bottom: 8px;
+        transform: scale(.82);
+        transform-origin: left bottom;
+      }
+
+      .view-cube {
+        right: 8px !important;
+        bottom: 8px;
+        transform: scale(.82);
+        transform-origin: right bottom;
+      }
+
+      .info-page,
+      .calc-page {
+        padding: 14px 10px;
+      }
+
+      .classic-group {
+        max-width: none;
+      }
+
+      .classic-row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+        padding: 6px 0;
+      }
+
+      .ai-instruct-modal,
+      .project-start-modal,
+      .svg-export-modal {
+        padding: 8px;
+      }
+
+      .ai-instruct-window,
+      .project-start-window,
+      .svg-export-window {
+        width: 100%;
+        max-height: calc(100dvh - 16px);
+      }
+
+      .project-start-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .project-start-actions button {
+        min-height: 54px;
+      }
+    }
+
   </style>
   <script type="importmap">
   {
@@ -1122,7 +1321,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.77</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.78</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -1631,6 +1830,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.77"></script>
+  <script type="module" src="./app.js?v=0.78"></script>
 </body>
 </html>
