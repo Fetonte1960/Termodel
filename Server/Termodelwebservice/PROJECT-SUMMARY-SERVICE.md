@@ -274,6 +274,21 @@ prova deve quindi verificare realmente la catena
 dei locali mansardati. Nessun codice Service è stato modificato per questa
 funzione frontend.
 
+### FRONTEND TEST TOOLING — modalità Copertura v0.77
+
+Il frontend Web dispone ora dei comandi minimi per esercitare realmente la
+logica tetti del Service senza duplicarla nel browser. In un piano
+`Tipo=Copertura` vengono disegnate linee perimetrali di falda e possono essere
+inseriti blocchi `Colmo` con gli attributi già letti dal Core:
+`QUOTACOLMO`, `QUOTAGRONDA`, `QUOTASHED`, `LATOPARTEBASSA`,
+`PARETESHED`.
+
+Il riferimento implementativo resta `LeggiDxf.AssociaBlocchiAParete("Colmo",...)`:
+il prossimo test deve verificare sul runtime locale che il Colmo venga
+associato alla linea corretta, che le quote Z vengano propagate e che il
+`TermodelWebModel v3` contenga le falde/mansardati attesi. Nessun sorgente
+Service/Core è stato modificato da questo intervento.
+
 ## 2. Posizioni e struttura
 
 Sorgente locale compilato e avviato da Visual Studio:
