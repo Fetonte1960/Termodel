@@ -26,7 +26,7 @@ import {
   buildTermodelServerPayload,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.71';
+} from './termodel-project-text.js?v=0.73';
 
 const MODEL_URL = './TermodelWebModel.json';
 const TERMODEL_SERVICE_BASE_URL = String(
@@ -46,8 +46,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.72';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.72';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.73';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.73';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
