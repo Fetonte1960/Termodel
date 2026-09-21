@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-20**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`9b828a4ac412273b6e6f9d9be0e9dc356d73b024` — `Consolidate background assets in project files v0.59`  
+`752e5fda8c10206246bbe1d306c822233353ad2a` — `Fix DXF text rendering v0.60`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,13 +679,14 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.59
+Termodel Web v0.60
 ```
 
-Commit frontend di riferimento per la v0.59:
+Commit frontend di riferimento per la v0.60:
 
 ```text
-9b828a4ac412273b6e6f9d9be0e9dc356d73b024  Consolidate background assets in project files v0.59
+2c178090d70a94cc834e5ed3e3ad1a1f8d56ca75  Add DXF background converter v0.60
+752e5fda8c10206246bbe1d306c822233353ad2a  Fix DXF text rendering v0.60
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -694,7 +695,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.59 sono su `main`; v0.57-v0.59 devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.60 sono su `main`; v0.57-v0.60 devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -3568,6 +3569,159 @@ Consolidate background assets in project files v0.59
 
 ---
 
+## 12.27 Sfondo DXF con conversore tipo plotter — v0.60
+
+La v0.60 estende `Sfondo → Aggiungi sfondo` ai file `.dxf`.
+
+Flusso:
+
+```text
+Aggiungi sfondo
+    ↓
+file raster / SVG
+    → percorso esistente
+
+file DXF
+    ↓
+parser DXF 2D locale
+    ↓
+dialog Importa sfondo DXF
+    ↓
+dxf-plotter.js
+    ↓
+SVG semplificato
+    ↓
+normale sfondo vettoriale Termodel
+```
+
+Nuovo modulo:
+
+```text
+docs/termodel-ui-demo/dxf-plotter.js
+```
+
+Il modulo è autonomo e non richiede CDN/npm: legge DXF ASCII sufficiente per l'uso come sfondo e produce un SVG tipo "plotter a penna". Non crea entità Termodel e non modifica Core/WebService.
+
+### Dialog DXF
+
+Prima della conversione viene mostrato un dialog con:
+
+- elenco layer con checkbox;
+- pulsanti `Tutti` / `Nessuno`;
+- `Solo linee / polilinee`;
+- `Linee + curve`;
+- `Converti testo`;
+- `Esplodi blocchi`;
+- riepilogo del numero di entità previste.
+
+Default approvati:
+
+```text
+tutti i layer     selezionati
+solo linee        attivo
+converti testo    disattivo
+esplodi blocchi   disattivo
+```
+
+Per "solo linee" la v0.60 comprende:
+
+```text
+LINE
+POLYLINE
+LWPOLYLINE
+```
+
+Con `Linee + curve` aggiunge:
+
+```text
+ARC
+CIRCLE
+ELLIPSE
+SPLINE
+```
+
+Le curve vengono discretizzate in tratti SVG.
+
+Con `Converti testo`:
+
+```text
+TEXT
+MTEXT
+```
+
+vengono resi come testo SVG.
+
+Con `Esplodi blocchi` gli `INSERT` vengono percorsi ricorsivamente applicando posizione, scala e rotazione del BLOCK.
+
+### Integrazione con sfondi/progetto unico
+
+Il DXF viene convertito **prima** di entrare nel normale sistema sfondi.
+
+Il CAD riceve quindi un normale SVG/Data URL e tutto il comportamento v0.59 resta valido:
+
+- un solo sfondo per piano;
+- visibilità Sfondo on/off;
+- calibrazione;
+- undo/redo;
+- Salva/Apri progetto unico;
+- consolidamento in `assets/backgrounds/*`;
+- esclusione degli sfondi dal futuro payload WebService.
+
+Il nome originale `.dxf` viene conservato nei metadati dello sfondo anche se il contenuto usato dal CAD è SVG.
+
+### Test eseguiti
+
+Test sintetico con:
+
+- due layer;
+- LINE;
+- LWPOLYLINE;
+- TEXT;
+- BLOCK + INSERT;
+- `$INSUNITS = mm`.
+
+Risultato:
+
+```text
+default:
+  tutti i layer
+  solo linee
+  testo NO
+  blocchi NO
+
+2 entità convertite
+testo ignorato
+INSERT ignorato
+
+opzioni complete:
+  testo SI
+  blocchi SI
+
+4 entità convertite
+testo presente
+blocco esploso
+```
+
+Sintassi verificata per `app.js` e `dxf-plotter.js`.
+
+È stato inoltre provato il parser sul `project/DisegnoInput.dxf` del progetto vuoto. Quel DXF contiene principalmente definizioni BLOCK e due TEXT nell'ENTITIES principale, quindi con il default "solo linee / blocchi non esplosi" non produce geometria visibile: il convertitore segnala correttamente che le opzioni selezionate non producono geometria.
+
+### Stato
+
+**IMPLEMENTATO IN v0.60 — TEST SINTETICO SUPERATO; DA VERIFICARE MANUALMENTE NEL BROWSER CON UN DXF ARCHITETTONICO REALE.**
+
+Commit:
+
+```text
+2c178090d70a94cc834e5ed3e3ad1a1f8d56ca75
+Add DXF background converter v0.60
+
+752e5fda8c10206246bbe1d306c822233353ad2a
+Fix DXF text rendering v0.60
+```
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -3742,7 +3896,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.59.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.60.**
 
 Stato operativo corrente:
 
@@ -3752,7 +3906,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.59 presente su `main`;
+- v0.60 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -3789,6 +3943,7 @@ Stato operativo corrente:
 - v0.58 implementa il round-trip bidirezionale `progetto unico ↔ frontend`: `Apri`, `Salva` e `Salva con nome` usano `TERMODEL-PROJECT-TEXT-V1`; geometria e archivi JSON/XML vengono ricomposti e il manifest aggiorna le impronte. Questa serializzazione è la base prima di future richieste al WebService.
 - decisione architetturale: gli sfondi sono risorse locali/frontend e **non devono essere trasmessi a Termodel.Core / Termodel.WebService**; il futuro payload server deve derivare dal progetto unico aggiornato filtrando completamente raster/SVG, Data URL/Base64 e relativi asset di sfondo.
 - v0.59 consolida gli sfondi nel progetto locale come `assets/backgrounds/index.json` + `assets/backgrounds/BGxxx.data`: `geometry/project.svg` resta leggero e contiene solo il riferimento; `Apri` reidrata il Data URL nel CAD. I vecchi sfondi incorporati vengono migrati automaticamente al primo Salva.
+- v0.60 aggiunge lo sfondo DXF: `Aggiungi sfondo` riconosce `.dxf`, apre un dialog layer/opzioni e converte il contenuto 2D in SVG con `dxf-plotter.js`; default tutti i layer + solo LINE/POLYLINE/LWPOLYLINE.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -3799,7 +3954,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. verificare manualmente la v0.59 **con WebService spento**: sul modello demo confermare `Salva` e `Salva con nome` disabilitati; poi `Nuovo` → aggiungere uno sfondo raster o SVG → disegnare almeno una parete/FIN → modificare un valore archivio → `Salva` → `Apri...` il file appena scaricato e verificare sfondo, geometria, calibrazione/posizione, Piani e archivio modificato; ripetere con `Salva con nome`;  
+> 1. verificare manualmente la v0.60 **con WebService spento**: `Nuovo` → `Aggiungi sfondo` → scegliere un DXF architettonico reale → verificare dialog layer/default `tutti + solo linee` → convertire → controllare resa SVG, eventuale calibrazione, Salva → Apri e persistenza dello sfondo;  
 > 2. dopo il collaudo del round-trip, usare `buildCurrentProjectText()` come base obbligatoria di qualsiasi futura chiamata WebService; prima dell'invio produrre però un payload server filtrato, **senza sfondi raster/SVG, Data URL/Base64 o relativi asset**;  
 > 3. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
 > 4. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
@@ -3813,10 +3968,10 @@ Se questa conversazione termina, una nuova chat deve poter riprendere senza rico
 
 ```text
 branch: main
-frontend: Termodel Web v0.59
+frontend: Termodel Web v0.60
 ultimo commit funzionale frontend:
-9b828a4ac412273b6e6f9d9be0e9dc356d73b024
-Consolidate background assets in project files v0.59
+752e5fda8c10206246bbe1d306c822233353ad2a
+Fix DXF text rendering v0.60
 ```
 
 **File da leggere per il lavoro immediato sul progetto unico:**
@@ -3861,17 +4016,24 @@ consolidateTermodelBackgrounds(svg)
 
 hydrateTermodelBackgrounds(projectText, svg)
     asset progetto → Data URL temporaneo nel CAD
+
+parseDxfPlotSource(text)
+    DXF ASCII → modello 2D per dialog/conversore
+
+convertDxfToSvg(model, options)
+    layer/opzioni DXF → SVG semplificato da usare come sfondo
 ```
 
 **Nota importante sulla struttura del codice:** l'import degli archivi è ancora implementato da `loadTermodelProjectText(...)` in `archivio-web.js`; `app.js` orchestra la conversione verso lo stato CAD; `termodel-project-text.js` centralizza parsing/sostituzione delle sezioni e soprattutto la ricostruzione del progetto unico. Non riscrivere ArchivioWeb da zero.
 
-**Test già eseguiti sulla v0.58-v0.59:**
+**Test già eseguiti sulla v0.58-v0.60:**
 
 - sintassi JavaScript valida per `app.js`, `archivio-web.js` e `termodel-project-text.js`;
 - round-trip strutturale sul vero `ProgettoVuoto.termodel.txt`: 26 sezioni prima e dopo;
 - modifica di prova `Piani.AltezzaNetta 3 → 3.2` mantenuta coerente in JSON, XML e `manifest.floors`;
 - struttura hash del manifest verificata a 64 caratteri;
-- v0.59: aggiunta di uno sfondo sintetico porta le sezioni 26 → 28, con indice + asset presenti nel manifest; rimuovendo lo sfondo il progetto torna a 26 sezioni e le entry vengono eliminate.
+- v0.59: aggiunta di uno sfondo sintetico porta le sezioni 26 → 28, con indice + asset presenti nel manifest; rimuovendo lo sfondo il progetto torna a 26 sezioni e le entry vengono eliminate;
+- v0.60: test DXF sintetico superato per layer, linee/polilinee, testo opzionale e BLOCK/INSERT opzionale.
 
 **Limite del test automatico:** l'ambiente usato per il controllo non esponeva Web Crypto; il percorso è stato esercitato con un digest simulato per controllare la ricomposizione. Nel browser reale `buildTermodelProjectText()` usa `crypto.subtle.digest('SHA-256', ...)`. È quindi obbligatorio il test manuale reale di Salva.
 
@@ -3882,15 +4044,16 @@ modello demo
 → Salva / Salva con nome devono essere disabilitati
 
 Nuovo
-→ Aggiungi sfondo raster o SVG
+→ Aggiungi sfondo
+→ scegliere un DXF architettonico reale
+→ verificare layer tutti selezionati
+→ verificare Solo linee / polilinee attivo
+→ provare conversione
+→ se necessario provare curve / testo / esplodi blocchi
 → eventualmente calibra
-→ disegnare almeno una parete e un FIN
-→ modificare almeno un valore in un archivio
 → Salva
 → Apri... il file appena scaricato
-→ verificare che lo sfondo ricompaia identico
-→ verificare geometria, Piani e valore archivio
-→ ripetere con Salva con nome
+→ verificare che lo sfondo DXF convertito ricompaia identico
 ```
 
 Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttamente sopra il file precedentemente aperto. `Salva con nome` chiede il nome e genera anch'esso un download.
@@ -3907,4 +4070,4 @@ Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttament
 
 **Altri lavori aperti CAD:** trascinamento simboli, snap durante lo spostamento e vincolo LOC.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `9b828a4ac412273b6e6f9d9be0e9dc356d73b024`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `752e5fda8c10206246bbe1d306c822233353ad2a`.
