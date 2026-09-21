@@ -23,11 +23,15 @@ import {
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
+  buildTermodelServerPayload,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.70';
+} from './termodel-project-text.js?v=0.71';
 
 const MODEL_URL = './TermodelWebModel.json';
+const TERMODEL_SERVICE_BASE_URL = String(
+  globalThis.TERMODEL_SERVICE_BASE_URL || 'http://localhost:5080'
+).replace(/\/+$/, '');
 const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.70';
 const PDFJS_MODULE_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.mjs';
 const PDFJS_WORKER_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.worker.mjs';
@@ -41,7 +45,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.70';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.71';
 const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.70';
 
 const viewer = document.getElementById('viewer');
@@ -173,6 +177,8 @@ let structuredProjectActive = false;
 let emptyProjectTextPromise = null;
 let currentProjectText = '';
 let currentProjectFileName = '';
+let currentCalculationId = '';
+let currentCalculationManifest = null;
 let lastAiPreviewData = null;
 let lastCleanPlanSvg = '';
 let lastGeneratedPlan = null;
@@ -1162,6 +1168,112 @@ async function loadModel() {
   }
 }
 
+function termodelServiceUrl(path) {
+  const value = String(path || '');
+  if (/^https?:\/\//i.test(value)) return value;
+  return TERMODEL_SERVICE_BASE_URL + (value.startsWith('/') ? value : '/' + value);
+}
+
+async function readTermodelServiceError(response) {
+  const contentType = response.headers.get('content-type') || '';
+  try {
+    if (contentType.includes('json')) {
+      const problem = await response.json();
+      return problem.detail || problem.title || JSON.stringify(problem);
+    }
+    const text = await response.text();
+    if (text.trim()) return text.trim();
+  } catch (error) {
+    console.warn('Impossibile leggere la diagnostica del WebService.', error);
+  }
+  return 'HTTP ' + response.status;
+}
+
+async function loadCalculatedModelFromService() {
+  if (loading) return;
+  if (!structuredProjectActive || !currentProjectText) {
+    await loadModel();
+    resetView();
+    return;
+  }
+
+  loading = true;
+  status.textContent = 'Preparazione progetto per TermodelService...';
+
+  try {
+    // Salva prima nel contenitore corrente geometria e archivi modificati.
+    // Il progetto locale conserva gli sfondi; il payload HTTP è una copia filtrata.
+    const completeProjectText = await buildCurrentProjectText();
+    const serverPayload = await buildTermodelServerPayload(completeProjectText);
+
+    status.textContent = 'AggiornaCalcolo: elaborazione TermodelService...';
+    const calculationResponse = await fetch(
+      termodelServiceUrl('/api/calculations'),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8'
+        },
+        body: serverPayload,
+        cache: 'no-store'
+      }
+    );
+
+    if (!calculationResponse.ok) {
+      const detail = await readTermodelServiceError(calculationResponse);
+      throw new Error('AggiornaCalcolo: ' + detail);
+    }
+
+    const calculation = await calculationResponse.json();
+    if (calculation.contractVersion !== 'TERMODEL-FRONT-SERVICE-V1')
+      throw new Error('Versione contratto WebService non riconosciuta.');
+
+    if (!calculation.calculationId)
+      throw new Error('Il WebService non ha restituito calculationId.');
+
+    const artifacts = Array.isArray(calculation.artifacts) ? calculation.artifacts : [];
+    const modelArtifact = artifacts.find(item =>
+      item && item.name === 'model3d' && typeof item.href === 'string' && item.href
+    );
+    if (!modelArtifact)
+      throw new Error('Lo snapshot non contiene l\'artifact model3d.');
+
+    status.textContent = 'Ricezione TermodelWebModel v3...';
+    const modelResponse = await fetch(termodelServiceUrl(modelArtifact.href), {
+      cache: 'no-store'
+    });
+    if (!modelResponse.ok) {
+      const detail = await readTermodelServiceError(modelResponse);
+      throw new Error('Artifact model3d: ' + detail);
+    }
+
+    const data = await modelResponse.json();
+    currentCalculationId = String(calculation.calculationId);
+    currentCalculationManifest = calculation;
+
+    renderModelData(data, {
+      mode: 'project',
+      label: 'PROGETTO CORRENTE · SERVER'
+    });
+    resetView();
+
+    const diagnostics = Array.isArray(calculation.diagnostics)
+      ? calculation.diagnostics.filter(Boolean)
+      : [];
+    if (diagnostics.length) {
+      status.textContent =
+        `PROGETTO CORRENTE · SERVER · ${data.primitiveCount ?? data.primitives.length} primitive · ${diagnostics.length} diagnostica/e`;
+    }
+  } catch (error) {
+    console.error(error);
+    currentCalculationId = '';
+    currentCalculationManifest = null;
+    status.textContent = 'Errore Aggiorna Modello: ' + error.message;
+  } finally {
+    loading = false;
+  }
+}
+
 function resize() {
   const w = Math.max(1, viewer.clientWidth);
   const h = Math.max(1, viewer.clientHeight);
@@ -1176,8 +1288,14 @@ window.addEventListener('resize', resize);
 
 document.getElementById('resetView').addEventListener('click', async () => {
   showDemoHelp('Aggiorna Modello');
-  await loadModel();
-  resetView();
+
+  if (!structuredProjectActive || !currentProjectText) {
+    await loadModel();
+    resetView();
+    return;
+  }
+
+  await loadCalculatedModelFromService();
 });
 
 const filtersCheck = document.getElementById('filtersCheck');
