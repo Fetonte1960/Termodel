@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.62 — scala automatica DXF</title>
+  <title>Termodel Web v0.63 — snap sfondo vettoriale</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -1050,7 +1050,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.62</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.63</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -1116,6 +1116,7 @@
               <label title="Aggancia al punto più vicino lungo una parete"><input id="cadSnapNear" name="cadSnapMode" type="radio" value="near" checked /> Vicino</label>
               <label title="Aggancia esclusivamente agli estremi delle pareti"><input id="cadSnapEndpoint" name="cadSnapMode" type="radio" value="endpoint" /> Estremo</label>
               <div class="cad-tool-separator"></div>
+              <label title="Somma allo Snap normale gli endpoint dello sfondo SVG vettoriale"><input id="cadSnapBackground" type="checkbox" checked /> Sfondo vettoriale</label>
               <label title="Vincola le nuove pareti a orizzontale o verticale"><input id="cadOrtho" type="checkbox" checked /> Orto</label>
             </div>
           </details>
@@ -1523,6 +1524,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.62"></script>
+  <script type="module" src="./app.js?v=0.63"></script>
 </body>
 </html>

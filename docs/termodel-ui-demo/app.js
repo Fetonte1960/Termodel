@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.62';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.63';
 import {
   parseDxfPlotSource,
   getDxfLayerSummary,
@@ -8,7 +8,7 @@ import {
   convertDxfToSvg,
   dxfUnitFromInsUnits,
   dxfUnitScaleToCm
-} from './dxf-plotter.js?v=0.62';
+} from './dxf-plotter.js?v=0.63';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -19,16 +19,16 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.62';
+} from './archivio-web.js?v=0.63';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.62';
+} from './termodel-project-text.js?v=0.63';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.62';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.63';
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
@@ -36,8 +36,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.62';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.62';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.63';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.63';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -71,6 +71,7 @@ const cadReturnModel = document.getElementById('cadReturnModel');
 const cadExportArchitectural = document.getElementById('cadExportArchitectural');
 const cadSnapNear = document.getElementById('cadSnapNear');
 const cadSnapEndpoint = document.getElementById('cadSnapEndpoint');
+const cadSnapBackground = document.getElementById('cadSnapBackground');
 const cadOrtho = document.getElementById('cadOrtho');
 const cadUndo = document.getElementById('cadUndo');
 const cadRedo = document.getElementById('cadRedo');
@@ -2687,6 +2688,295 @@ function cadPlaneBackground(doc = cadWorkingDoc, planeName = cadCurrentPlane()) 
   ) || null;
 }
 
+// v0.63 — Snap additivo agli endpoint dello sfondo vettoriale.
+let cadBackgroundSnapCache = {
+  background: null,
+  href: '',
+  x: '',
+  y: '',
+  width: '',
+  height: '',
+  preserveAspectRatio: '',
+  points: [],
+  grid: new Map()
+};
+
+function cadVectorPlaneBackground() {
+  const background = cadPlaneBackground(cadWorkingDoc, cadCurrentPlane());
+  if (!background) return null;
+  return cadText(background.getAttribute('data-termodel-sfondo-tipo')).toLowerCase() === 'vector'
+    ? background
+    : null;
+}
+
+function cadDecodeSvgDataUrl(dataUrl) {
+  const source = String(dataUrl || '');
+  const comma = source.indexOf(',');
+  if (comma < 0 || !/^data:image\/svg\+xml/i.test(source)) return '';
+  const header = source.slice(0, comma);
+  const payload = source.slice(comma + 1);
+  try {
+    if (/;base64(?:;|$)/i.test(header)) {
+      const binary = atob(payload);
+      const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+    return decodeURIComponent(payload);
+  } catch (error) {
+    console.warn('Snap sfondo: Data URL SVG non decodificabile.', error);
+    return '';
+  }
+}
+
+function cadSvgMatrixIdentity() { return [1, 0, 0, 1, 0, 0]; }
+
+function cadSvgMatrixMultiply(a, b) {
+  return [
+    a[0] * b[0] + a[2] * b[1],
+    a[1] * b[0] + a[3] * b[1],
+    a[0] * b[2] + a[2] * b[3],
+    a[1] * b[2] + a[3] * b[3],
+    a[0] * b[4] + a[2] * b[5] + a[4],
+    a[1] * b[4] + a[3] * b[5] + a[5]
+  ];
+}
+
+function cadSvgMatrixApply(matrix, point) {
+  return [
+    matrix[0] * point[0] + matrix[2] * point[1] + matrix[4],
+    matrix[1] * point[0] + matrix[3] * point[1] + matrix[5]
+  ];
+}
+
+function cadSvgTransformMatrix(value) {
+  const source = String(value || '').trim();
+  if (!source) return cadSvgMatrixIdentity();
+  let result = cadSvgMatrixIdentity();
+  const re = /([a-zA-Z]+)\s*\(([^)]*)\)/g;
+  let match;
+  while ((match = re.exec(source))) {
+    const name = match[1].toLowerCase();
+    const values = match[2].trim().split(/[ ,]+/).filter(Boolean).map(Number);
+    let next = cadSvgMatrixIdentity();
+
+    if (name === 'matrix' && values.length >= 6 && values.slice(0, 6).every(Number.isFinite)) {
+      next = values.slice(0, 6);
+    } else if (name === 'translate' && Number.isFinite(values[0])) {
+      next = [1, 0, 0, 1, values[0], Number.isFinite(values[1]) ? values[1] : 0];
+    } else if (name === 'scale' && Number.isFinite(values[0])) {
+      const sy = Number.isFinite(values[1]) ? values[1] : values[0];
+      next = [values[0], 0, 0, sy, 0, 0];
+    } else if (name === 'rotate' && Number.isFinite(values[0])) {
+      const radians = values[0] * Math.PI / 180;
+      const c = Math.cos(radians);
+      const s = Math.sin(radians);
+      const rotation = [c, s, -s, c, 0, 0];
+      if (Number.isFinite(values[1]) && Number.isFinite(values[2])) {
+        const toCenter = [1, 0, 0, 1, values[1], values[2]];
+        const fromCenter = [1, 0, 0, 1, -values[1], -values[2]];
+        next = cadSvgMatrixMultiply(toCenter, cadSvgMatrixMultiply(rotation, fromCenter));
+      } else next = rotation;
+    }
+    result = cadSvgMatrixMultiply(result, next);
+  }
+  return result;
+}
+
+function cadSvgNumberPairs(value) {
+  const numbers = String(value || '').trim().split(/[ ,]+/).filter(Boolean).map(Number).filter(Number.isFinite);
+  const points = [];
+  for (let i = 0; i + 1 < numbers.length; i += 2) points.push([numbers[i], numbers[i + 1]]);
+  return points;
+}
+
+function cadSvgPathVertices(pathData) {
+  const segments = [];
+  const re = /([a-zA-Z])([^a-zA-Z]*)/g;
+  let match;
+  while ((match = re.exec(String(pathData || '')))) segments.push([match[1], match[2]]);
+
+  const points = [];
+  let current = [0, 0];
+  let subpathStart = null;
+  const addPoint = point => {
+    if (!point.every(Number.isFinite)) return;
+    current = point.slice();
+    points.push(current.slice());
+  };
+
+  for (const [rawCommand, payload] of segments) {
+    const command = rawCommand.toUpperCase();
+    const relative = rawCommand !== command;
+    const values = payload.trim().split(/[ ,]+/).filter(Boolean).map(Number).filter(Number.isFinite);
+
+    if (command === 'M' || command === 'L') {
+      for (let i = 0; i + 1 < values.length; i += 2) {
+        const base = relative ? current : [0, 0];
+        const point = [base[0] + values[i], base[1] + values[i + 1]];
+        addPoint(point);
+        if (command === 'M' && i === 0) subpathStart = point.slice();
+      }
+    } else if (command === 'H') {
+      values.forEach(value => addPoint([(relative ? current[0] : 0) + value, current[1]]));
+    } else if (command === 'V') {
+      values.forEach(value => addPoint([current[0], (relative ? current[1] : 0) + value]));
+    } else if (command === 'Z' && subpathStart) {
+      addPoint(subpathStart);
+    }
+  }
+  return points;
+}
+
+function cadCollectSvgEndpointCandidates(svgDoc) {
+  const root = svgDoc?.documentElement;
+  if (!root || root.localName !== 'svg') return [];
+  const result = [];
+  const append = (matrix, points) => points.forEach(point => result.push(cadSvgMatrixApply(matrix, point)));
+
+  const visit = (element, parentMatrix) => {
+    if (!element || element.nodeType !== 1) return;
+    const matrix = cadSvgMatrixMultiply(parentMatrix, cadSvgTransformMatrix(element.getAttribute('transform')));
+    const name = element.localName;
+
+    if (name === 'line') {
+      append(matrix, [[Number(element.getAttribute('x1') || 0), Number(element.getAttribute('y1') || 0)],
+                      [Number(element.getAttribute('x2') || 0), Number(element.getAttribute('y2') || 0)]]);
+    } else if (name === 'polyline' || name === 'polygon') {
+      append(matrix, cadSvgNumberPairs(element.getAttribute('points')));
+    } else if (name === 'path') {
+      append(matrix, cadSvgPathVertices(element.getAttribute('d')));
+    } else if (name === 'rect') {
+      const x = Number(element.getAttribute('x') || 0);
+      const y = Number(element.getAttribute('y') || 0);
+      const width = Number(element.getAttribute('width') || 0);
+      const height = Number(element.getAttribute('height') || 0);
+      if ([x,y,width,height].every(Number.isFinite) && width >= 0 && height >= 0)
+        append(matrix, [[x,y],[x+width,y],[x+width,y+height],[x,y+height]]);
+    }
+
+    Array.from(element.children || []).forEach(child => visit(child, matrix));
+  };
+
+  visit(root, cadSvgMatrixIdentity());
+  return result.filter(point => point.every(Number.isFinite));
+}
+
+function cadMapSvgPointToBackground(point, sourceViewBox, background) {
+  if (!sourceViewBox || sourceViewBox.length !== 4 || !background) return null;
+  const [vx, vy, vw, vh] = sourceViewBox;
+  const x = Number(background.getAttribute('x'));
+  const y = Number(background.getAttribute('y'));
+  const width = Number(background.getAttribute('width'));
+  const height = Number(background.getAttribute('height'));
+  if (![vx,vy,vw,vh,x,y,width,height].every(Number.isFinite) || vw <= 0 || vh <= 0 || width <= 0 || height <= 0) return null;
+
+  const preserve = String(background.getAttribute('preserveAspectRatio') || 'xMidYMid meet').trim();
+  const sx = width / vw;
+  const sy = height / vh;
+
+  if (/^none(?:\s|$)/i.test(preserve))
+    return [x + (point[0] - vx) * sx, y + (point[1] - vy) * sy];
+
+  const scale = /(?:^|\s)slice(?:\s|$)/i.test(preserve) ? Math.max(sx, sy) : Math.min(sx, sy);
+  const renderedWidth = vw * scale;
+  const renderedHeight = vh * scale;
+  let alignX = 0.5, alignY = 0.5;
+  if (/xMin/i.test(preserve)) alignX = 0;
+  else if (/xMax/i.test(preserve)) alignX = 1;
+  if (/YMin/i.test(preserve)) alignY = 0;
+  else if (/YMax/i.test(preserve)) alignY = 1;
+
+  return [
+    x + (width - renderedWidth) * alignX + (point[0] - vx) * scale,
+    y + (height - renderedHeight) * alignY + (point[1] - vy) * scale
+  ];
+}
+
+function cadBuildBackgroundSnapGrid(points) {
+  const grid = new Map();
+  const cellSize = Math.max(CAD_SNAP_DISTANCE, 0.001);
+  points.forEach(point => {
+    const key = Math.floor(point[0] / cellSize) + ',' + Math.floor(point[1] / cellSize);
+    if (!grid.has(key)) grid.set(key, []);
+    grid.get(key).push(point);
+  });
+  return grid;
+}
+
+function cadBackgroundSnapCacheForCurrentPlane() {
+  const background = cadVectorPlaneBackground();
+  if (!background) {
+    cadBackgroundSnapCache = {background:null,href:'',x:'',y:'',width:'',height:'',preserveAspectRatio:'',points:[],grid:new Map()};
+    return cadBackgroundSnapCache;
+  }
+
+  const href = background.getAttribute('href') || '';
+  const x = background.getAttribute('x') || '';
+  const y = background.getAttribute('y') || '';
+  const width = background.getAttribute('width') || '';
+  const height = background.getAttribute('height') || '';
+  const preserveAspectRatio = background.getAttribute('preserveAspectRatio') || '';
+
+  if (cadBackgroundSnapCache.background === background &&
+      cadBackgroundSnapCache.href === href &&
+      cadBackgroundSnapCache.x === x &&
+      cadBackgroundSnapCache.y === y &&
+      cadBackgroundSnapCache.width === width &&
+      cadBackgroundSnapCache.height === height &&
+      cadBackgroundSnapCache.preserveAspectRatio === preserveAspectRatio)
+    return cadBackgroundSnapCache;
+
+  let points = [];
+  try {
+    const svgText = cadDecodeSvgDataUrl(href);
+    if (svgText) {
+      const svgDoc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+      if (!svgDoc.querySelector('parsererror')) {
+        const root = svgDoc.documentElement;
+        let sourceViewBox = cadParseViewBox(root.getAttribute('viewBox'));
+        if (!sourceViewBox) {
+          const sw = Number.parseFloat(root.getAttribute('width') || '');
+          const sh = Number.parseFloat(root.getAttribute('height') || '');
+          if (Number.isFinite(sw) && sw > 0 && Number.isFinite(sh) && sh > 0) sourceViewBox = [0,0,sw,sh];
+        }
+        if (sourceViewBox) {
+          const unique = new Map();
+          cadCollectSvgEndpointCandidates(svgDoc).forEach(point => {
+            const mapped = cadMapSvgPointToBackground(point, sourceViewBox, background);
+            if (!mapped || !mapped.every(Number.isFinite)) return;
+            const key = mapped[0].toFixed(4) + ',' + mapped[1].toFixed(4);
+            if (!unique.has(key)) unique.set(key, mapped);
+          });
+          points = Array.from(unique.values());
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Snap sfondo: impossibile estrarre gli endpoint SVG.', error);
+  }
+
+  cadBackgroundSnapCache = {background,href,x,y,width,height,preserveAspectRatio,points,grid:cadBuildBackgroundSnapGrid(points)};
+  return cadBackgroundSnapCache;
+}
+
+function cadBackgroundSnapCandidates(point) {
+  if (cadSnapBackground?.checked !== true || cadShowBackground?.checked === false || !cadVectorPlaneBackground()) return [];
+  const cache = cadBackgroundSnapCacheForCurrentPlane();
+  if (!cache.points.length) return [];
+
+  const cellSize = Math.max(CAD_SNAP_DISTANCE, 0.001);
+  const gx = Math.floor(point[0] / cellSize);
+  const gy = Math.floor(point[1] / cellSize);
+  const result = [];
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      const cell = cache.grid.get((gx + dx) + ',' + (gy + dy));
+      if (cell) result.push(...cell);
+    }
+  }
+  return result;
+}
+
 let dxfImportState = null;
 
 function cadIsDxfFile(file) {
@@ -4234,6 +4524,8 @@ function cadUpdateControls() {
   if (cadAddBackground) cadAddBackground.disabled = !hasDoc || busy;
   if (cadShowBackground)
     cadShowBackground.disabled = !hasDoc || !cadPlaneBackground(cadWorkingDoc, cadCurrentPlane());
+  if (cadSnapBackground)
+    cadSnapBackground.disabled = !hasDoc || !cadVectorPlaneBackground();
   if (cadUndo) cadUndo.disabled = !cadUndoStack.length || busy;
   if (cadRedo) cadRedo.disabled = !cadRedoStack.length || busy;
   if (cadDelete) cadDelete.disabled = !selected || busy;
@@ -4360,6 +4652,7 @@ function cadSnapMode() {
 
 function cadSnapLabel(result) {
   if (!result?.snapped) return '';
+  if (result.snapSource === 'background') return 'SNAP SFONDO';
   return result.snapMode === 'endpoint' ? 'SNAP ESTREMO' : 'SNAP VICINO';
 }
 
@@ -4368,6 +4661,7 @@ function cadSnapPoint(point, movingLineId) {
   let best = point;
   let bestDistance = CAD_SNAP_DISTANCE + 1;
   let bestLineId = '';
+  let bestSource = '';
 
   cadEditableSourceLines().forEach(line => {
     if (line.id === movingLineId) return;
@@ -4381,18 +4675,29 @@ function cadSnapPoint(point, movingLineId) {
           best = candidate.slice();
           bestDistance = distance;
           bestLineId = line.id || '';
+          bestSource = 'wall';
         }
       }
       return;
     }
 
-    // Snap Vicino: proiezione sul punto geometricamente più vicino del tratto.
     const projected = cadNearestPointOnSegment(point, a, b);
     const segmentDistance = cadPointDistance(point, projected);
     if (segmentDistance < bestDistance) {
       best = projected;
       bestDistance = segmentDistance;
       bestLineId = line.id || '';
+      bestSource = 'wall';
+    }
+  });
+
+  cadBackgroundSnapCandidates(point).forEach(candidate => {
+    const distance = cadPointDistance(point, candidate);
+    if (distance < bestDistance) {
+      best = candidate.slice();
+      bestDistance = distance;
+      bestLineId = '';
+      bestSource = 'background';
     }
   });
 
@@ -4400,8 +4705,9 @@ function cadSnapPoint(point, movingLineId) {
   return {
     point: snapped ? best : point,
     snapped,
-    targetLineId: snapped ? bestLineId : '',
-    snapMode: mode
+    targetLineId: snapped && bestSource === 'wall' ? bestLineId : '',
+    snapMode: mode,
+    snapSource: snapped ? bestSource : ''
   };
 }
 
@@ -5802,9 +6108,16 @@ cadBackgroundFile?.addEventListener('change', async () => {
   }
 });
 if (cadShowBackground)
-  cadShowBackground.addEventListener('change', applyCadLayerVisibility);
+  cadShowBackground.addEventListener('change', () => {
+    applyCadLayerVisibility();
+    cadUpdateControls();
+  });
 if (cadShowInput)
   cadShowInput.addEventListener('change', applyCadLayerVisibility);
+cadSnapBackground?.addEventListener('change', () => {
+  const enabled = cadSnapBackground.checked && !!cadVectorPlaneBackground();
+  cadSetStatus(enabled ? 'Snap sfondo vettoriale attivo · solo endpoint' : 'Snap sfondo vettoriale disattivato');
+});
 cadCalibrateBackground?.addEventListener('click', cadApplyBackgroundCalibration);
 cadCalibrationRealMeters?.addEventListener('keydown', event => {
   if (event.key === 'Enter' && !cadCalibrateBackground?.disabled)
@@ -5917,8 +6230,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.62: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.62' })
+// v0.63: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.63' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
