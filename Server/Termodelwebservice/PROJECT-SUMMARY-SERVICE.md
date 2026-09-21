@@ -182,6 +182,82 @@ UTF-8 con HTTP 201. `POST /api/model/3d` accetta il file unico testuale e
 restituisce `TermodelWebModel` v3. Errori di progetto o funzioni non supportate
 sono restituiti come Problem Details; Content-Type non valido produce 415.
 
+### Workflow server concordato: AggiornaCalcolo
+
+Decisione architetturale consolidata del 21 settembre 2026, **progettata ma non
+ancora implementata**.
+
+Il frontend dovrà inviare il file unico `TERMODEL-PROJECT-TEXT-V1` con una sola
+operazione di aggiornamento generale, concettualmente `AggiornaCalcolo`. Il
+server dovrà eseguire una sola ricostruzione coerente del progetto e produrre
+gli elaborati derivati, replicando progressivamente il flusso del Desktop senza
+duplicarne il motore.
+
+Contratto previsto:
+
+```text
+Frontend
+  -> POST /api/calculations
+       body: file unico TERMODEL-PROJECT-TEXT-V1
+  -> Termodel.Core ricostruisce il progetto una sola volta
+  -> genera gli elaborati disponibili
+  -> restituisce calculationId + manifest degli artifact
+```
+
+Ogni elaborazione deve essere identificata da un `calculationId`. Non bisogna
+basare le nuove API sul concetto di "ultimo calcolo globale", perché due
+browser, due progetti o più utenti potrebbero altrimenti leggere risultati
+incrociati.
+
+Le view del frontend non devono rilanciare i calcoli. Devono leggere gli
+elaborati dello snapshot già prodotto, mediante richieste specifiche del tipo:
+
+```text
+GET /api/calculations/{id}/artifacts/model3d
+GET /api/calculations/{id}/artifacts/xml-nazionale
+GET /api/calculations/{id}/artifacts/report-dispersioni
+GET /api/calculations/{id}/artifacts/pannelli
+GET /api/calculations/{id}/artifacts/spirali/{piano}
+GET /api/calculations/{id}/artifacts/pianta-pulita/{piano}
+```
+
+Nomi e dettagli definitivi degli endpoint potranno essere affinati durante
+l'implementazione, ma il principio è consolidato: **una elaborazione produce
+uno snapshot coerente; le view leggono gli artifact dello snapshot**.
+
+Formati indicativi degli artifact:
+
+- modello 3D: JSON;
+- XML nazionale: `application/xml`;
+- report dispersioni: dati JSON, non HTML generato dal Core;
+- report pannelli: dati JSON;
+- spirali: SVG per piano;
+- pianta pulita: SVG per piano;
+- eventuali esecutivi DXF: `application/dxf`.
+
+Per la prima implementazione è ammesso un workspace temporaneo per
+`calculationId`, vicino al comportamento file-based del Desktop. Questo
+consente di migrare con modifiche minime `GestXml`, `IoPannelli` e le altre
+classi storiche; in seguito gli artifact potranno essere gestiti con uno storage
+più evoluto senza cambiare il contratto concettuale.
+
+Compatibilità: gli endpoint correnti `POST /api/model/3d` e
+`GET /api/model/clean-floor/{floorName}` non vanno eliminati nella prima fase.
+La migrazione al nuovo workflow deve essere progressiva e retrocompatibile.
+
+Sequenza di implementazione concordata:
+
+1. **Fase 1:** `POST /api/calculations`, `calculationId`, storage dello
+   snapshot, modello 3D e piante pulite;
+2. **Fase 2:** XML nazionale e report dispersioni;
+3. **Fase 3:** calcolo pannelli radianti e spirali SVG;
+4. estensioni successive: ulteriori elaborati Desktop, regression test e
+   persistenza/multiutente.
+
+Regola di efficienza: `AggiornaCalcolo` deve ricostruire il modello **una sola
+volta**. Richiedere XML, spirali, report o 3D non deve provocare una nuova
+elaborazione completa del progetto.
+
 ## 6. EnergyPlus, gbXML e IDF
 
 EnergyPlus fa parte della direzione futura del Service, non dello stato già
@@ -287,6 +363,7 @@ Incompleto:
 
 - file unico/golden test del progetto mansardato;
 - regression test automatici e Golden Results versionati;
+- workflow `AggiornaCalcolo`/`calculationId` e artifact per le view, concordato ma non ancora implementato;
 - API CRUD archivi, persistenza e concorrenza multiutente;
 - autenticazione e autorizzazione;
 - EnergyPlus, gbXML e IDF;
@@ -296,14 +373,18 @@ Incompleto:
 
 ## 11. Prossimi passi consigliati
 
-1. generare lo SVG multipiano e il file unico del progetto mansardato;
-2. eseguire `POST /api/model/3d` e confrontare il risultato con le 546 primitive
+1. implementare la Fase 1 del workflow `AggiornaCalcolo`: `calculationId`,
+   snapshot, modello 3D e piante pulite, mantenendo gli endpoint esistenti;
+2. generare lo SVG multipiano e il file unico del progetto mansardato;
+3. eseguire `POST /api/model/3d` e confrontare il risultato con le 546 primitive
    del JSON desktop, definendo tolleranze e report;
-3. creare una suite automatica di regression test e `GoldenResults/`;
-4. definire API autorevoli per schema, archivi, validazione e CRUD;
-5. progettare il contratto energetico prima di scegliere gbXML o IDF;
-6. provare build e runtime in Docker locale;
-7. ridurre gradualmente `CopiedFromTermodel` spostando la logica condivisibile
+4. creare una suite automatica di regression test e `GoldenResults/`;
+5. integrare progressivamente XML nazionale/dispersioni e poi pannelli/spirali
+   nel nuovo workflow;
+6. definire API autorevoli per schema, archivi, validazione e CRUD;
+7. progettare il contratto energetico prima di scegliere gbXML o IDF;
+8. provare build e runtime in Docker locale;
+9. ridurre gradualmente `CopiedFromTermodel` spostando la logica condivisibile
    in un unico Core compatibile anche col desktop.
 
 ## 12. Vincoli permanenti
