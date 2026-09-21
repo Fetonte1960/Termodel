@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`7b81afe14158b0d1dacc2ded3ddcf83f60c2f1d2` — `Bump Termodel Web to v0.67`  
+`5450b6200fe93f9f5e8b5faf85c9bdc480fbf170` — `Clean obsolete drawing selector logic v0.68`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,14 +679,14 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.67
+Termodel Web v0.68
 ```
 
-Commit frontend di riferimento per la v0.67:
+Commit frontend di riferimento per la v0.68:
 
 ```text
-5cf848f68f4e2c7837a6c069ad5529f2e2674be4  Add simple CAD toolbar icons v0.67
-7b81afe14158b0d1dacc2ded3ddcf83f60c2f1d2  Bump Termodel Web to v0.67
+132286d0d675c7401888ff60d52c1f70709fa55f  Remove drawing selector from main toolbar v0.68
+5450b6200fe93f9f5e8b5faf85c9bdc480fbf170  Clean obsolete drawing selector logic v0.68
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -2064,6 +2064,54 @@ Bump Termodel Web to v0.67
 ### Stato
 
 **IMPLEMENTATO IN v0.67 — VERIFICA STATICA SUPERATA; DA VERIFICARE VISIVAMENTE NEL BROWSER.**
+
+
+---
+
+## 12.34 Rimozione selettore DisegnoInput dalla toolbar main — v0.68
+
+La v0.68 elimina dalla toolbar principale inferiore il combo:
+
+```text
+DisegnoInput ▼
+```
+
+Motivazione: nel frontend Web corrente quel controllo era statico, conteneva un'unica voce e non partecipava alla scelta reale della geometria da editare. L'azione corretta è direttamente:
+
+```text
+Edita nel Cad
+```
+
+sul progetto corrente.
+
+Sono stati rimossi:
+
+- il `select[aria-label="Disegno input"]` da `index.html`;
+- gli handler JavaScript `drawingSelect` che mostravano soltanto l'help dimostrativo;
+- la voce `DEMO_HELP['DisegnoInput']` ormai inutilizzata;
+- il CSS specifico `.bottom-bar select`.
+
+La sequenza della bottom-bar diventa quindi:
+
+```text
+... → Ritorna al progetto → Edita nel Cad → Visualizza Plugin Cad → Aggiorna Modello → ...
+```
+
+Nessuna logica del CAD o del progetto unico è stata modificata.
+
+Commit:
+
+```text
+132286d0d675c7401888ff60d52c1f70709fa55f
+Remove drawing selector from main toolbar v0.68
+
+5450b6200fe93f9f5e8b5faf85c9bdc480fbf170
+Clean obsolete drawing selector logic v0.68
+```
+
+### Stato
+
+**IMPLEMENTATO IN v0.68 — VERIFICA STATICA SUPERATA; DA VERIFICARE VISIVAMENTE NEL BROWSER.**
 
 ---
 
@@ -4430,7 +4478,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.67.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.68.**
 
 Stato operativo corrente:
 
@@ -4440,7 +4488,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.67 presente su `main`;
+- v0.68 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -4485,6 +4533,7 @@ Stato operativo corrente:
 - v0.65 semplifica il **Nord nel viewer 3D**: se definito resta soltanto la freccia; se non definito non compare nulla. Nessuna label `N xx°` o `N ?`; il CAD 2D resta invariato.
 - v0.66 compatta la **toolbar superiore del CAD 2D**: altezza ridotta da 68 px a 38 px e padding verticale da 6 px a 4 px; canvas e pannello proprietà iniziano ora a 38 px, recuperando 30 px di spazio verticale utile. I controlli mantengono altezza 28 px e la logica CAD resta invariata.
 - v0.67 aggiunge **icone testuali semplici** ai comandi visibili della toolbar CAD, nello stesso stile di `↶ Undo` / `↷ Redo`: `▧ Sfondo`, `✎ Disegna`, `⌖ Snap`, `▤ Arc`, `× Elimina`, `⟳ Rigenera pianta`, `⇩ Esporta pianta CAD`, `↩ Torna al modello 3d`. Nessuna libreria grafica aggiunta e nessuna logica dei comandi modificata.
+- v0.68 rimuove dalla **toolbar principale inferiore** il combo statico `DisegnoInput`: nel frontend corrente non selezionava realmente il disegno da editare e apriva soltanto un help dimostrativo. Rimossi anche gli handler `drawingSelect`, la voce help ormai inutilizzata e il CSS specifico del select. `Edita nel Cad` continua a operare direttamente sul progetto corrente.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -4509,10 +4558,10 @@ Se questa conversazione termina, una nuova chat deve poter riprendere senza rico
 
 ```text
 branch: main
-frontend: Termodel Web v0.67
+frontend: Termodel Web v0.68
 ultimo commit funzionale frontend:
-7b81afe14158b0d1dacc2ded3ddcf83f60c2f1d2
-Bump Termodel Web to v0.67
+5450b6200fe93f9f5e8b5faf85c9bdc480fbf170
+Clean obsolete drawing selector logic v0.68
 ```
 
 **File da leggere per il lavoro immediato sul progetto unico:**
@@ -4582,7 +4631,7 @@ cadSnapPoint(point, movingLineId)
 
 **Nota importante sulla struttura del codice:** l'import degli archivi è ancora implementato da `loadTermodelProjectText(...)` in `archivio-web.js`; `app.js` orchestra la conversione verso lo stato CAD; `termodel-project-text.js` centralizza parsing/sostituzione delle sezioni e soprattutto la ricostruzione del progetto unico. Non riscrivere ArchivioWeb da zero.
 
-**Test già eseguiti sulla v0.58-v0.67:**
+**Test già eseguiti sulla v0.58-v0.68:**
 
 - sintassi JavaScript valida per `app.js`, `archivio-web.js` e `termodel-project-text.js`;
 - round-trip strutturale sul vero `ProgettoVuoto.termodel.txt`: 26 sezioni prima e dopo;
@@ -4596,7 +4645,8 @@ cadSnapPoint(point, movingLineId)
 - v0.64: test punti medi superato sulle soglie 4,99 / 5 / 12 / 20 / 20,01 cm; la sintassi del corpo eseguibile di `app.js` è valida;
 - v0.65: Nord 3D verificato staticamente: `ArrowHelper` presente solo per orientamento definito, nessuna label/sprite nel marker, `createNorth3DLabel` rimossa, orientamento non definito → nessun indicatore;
 - v0.66: toolbar CAD verificata staticamente a 38 px; canvas e pannello proprietà allineati con `top: 38px`; sintassi `app.js` valida;
-- v0.67: verificata la presenza delle icone testuali su tutti i comandi visibili della toolbar; `Undo/Redo` invariati; sintassi `app.js` valida.
+- v0.67: verificata la presenza delle icone testuali su tutti i comandi visibili della toolbar; `Undo/Redo` invariati; sintassi `app.js` valida;
+- v0.68: combo `DisegnoInput` assente dalla bottom-bar, handler `drawingSelect` e help dedicato rimossi; `Edita nel Cad` resta presente; sintassi `app.js` valida.
 
 **Limite del test automatico:** l'ambiente usato per il controllo non esponeva Web Crypto; il percorso è stato esercitato con un digest simulato per controllare la ricomposizione. Nel browser reale `buildTermodelProjectText()` usa `crypto.subtle.digest('SHA-256', ...)`. È quindi obbligatorio il test manuale reale di Salva.
 
@@ -4636,4 +4686,4 @@ Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttament
 
 **Altri lavori aperti CAD:** trascinamento simboli, snap durante lo spostamento e vincolo LOC.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `7b81afe14158b0d1dacc2ded3ddcf83f60c2f1d2`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `5450b6200fe93f9f5e8b5faf85c9bdc480fbf170`.
