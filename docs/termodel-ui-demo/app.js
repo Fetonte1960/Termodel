@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.66';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.67';
 import {
   parseDxfPlotSource,
   getDxfLayerSummary,
@@ -8,7 +8,7 @@ import {
   convertDxfToSvg,
   dxfUnitFromInsUnits,
   dxfUnitScaleToCm
-} from './dxf-plotter.js?v=0.66';
+} from './dxf-plotter.js?v=0.67';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -19,16 +19,16 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.66';
+} from './archivio-web.js?v=0.67';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.66';
+} from './termodel-project-text.js?v=0.67';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.66';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.67';
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
@@ -36,8 +36,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.66';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.66';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.67';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.67';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -6243,7 +6243,7 @@ document.addEventListener('keydown', event => {
   }
 });
 // v0.63: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.66' })
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.67' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
