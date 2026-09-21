@@ -16,17 +16,18 @@ import {
   loadTermodelProjectText,
   openArchivioWeb,
   getArchivioWebRecords,
+  addArchivioWebRecord,
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.70';
+} from './archivio-web.js?v=0.75';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
   buildTermodelServerPayload,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.73';
+} from './termodel-project-text.js?v=0.75';
 
 const MODEL_URL = './TermodelWebModel.json';
 const TERMODEL_SERVICE_BASE_URL = String(
@@ -46,8 +47,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.74';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.74';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.75';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.75';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -132,6 +133,7 @@ const cadSymbolPosition = document.getElementById('cadSymbolPosition');
 const cadSymbolFields = document.getElementById('cadSymbolFields');
 const cadSymbolApply = document.getElementById('cadSymbolApply');
 const cadOpenPianiArchive = document.getElementById('cadOpenPianiArchive');
+const cadAddRoofPlane = document.getElementById('cadAddRoofPlane');
 const cadOpenParetiArchive = document.getElementById('cadOpenParetiArchive');
 const cadOpenConfiniArchive = document.getElementById('cadOpenConfiniArchive');
 const cadNorthPropertiesSection = document.getElementById('cadNorthPropertiesSection');
@@ -4939,6 +4941,109 @@ function cadWallPropertySelectionChanged() {
     cadSetStatus(`Piano ${cadCurrentPlane()} · valori correnti aggiornati per ＋ Nuova parete`);
 }
 
+function cadPlaneRecord(planeName = cadCurrentPlane()) {
+  return cadFindRecord(cadArchiveRecords('Piani'), 'Nome', planeName);
+}
+
+function cadPlaneIsCoverage(planeName = cadCurrentPlane()) {
+  return cadText(cadPlaneRecord(planeName)?.Tipo).toLowerCase() === 'copertura';
+}
+
+function cadUniquePlaneToken(field, base) {
+  const used = new Set(
+    cadArchiveRecords('Piani')
+      .map(record => cadText(record?.[field]).toLowerCase())
+      .filter(Boolean)
+  );
+
+  let candidate = base;
+  let index = 2;
+  while (used.has(candidate.toLowerCase())) {
+    candidate = base + ' ' + index;
+    index++;
+  }
+  return candidate;
+}
+
+function cadDuplicateBackgroundToPlane(sourcePlane, targetPlane, targetLayer) {
+  const source = cadPlaneBackground(cadWorkingDoc, sourcePlane);
+  if (!source) return false;
+
+  const group = cadBackgroundContainer(cadWorkingDoc, true);
+  const clone = source.cloneNode(true);
+  clone.setAttribute('data-termodel-piano', targetPlane);
+  clone.setAttribute('data-termodel-layer', targetLayer);
+  clone.removeAttribute('data-termodel-background-id');
+  group.appendChild(clone);
+  return true;
+}
+
+function cadCreateCoveragePlane() {
+  if (!structuredProjectActive || !cadWorkingDoc) {
+    cadSetStatus('Crea o apri prima un progetto Termodel.', 'error');
+    return;
+  }
+
+  if (cadToolMode === 'line') cadCancelNewLine();
+  if (cadToolMode === 'symbol') cadCancelSymbolInsert();
+  if (cadToolMode === 'window2') cadCancelWindowTwoPoint();
+
+  const sourcePlane = cadCurrentPlane();
+  const sourceRecord = cadPlaneRecord(sourcePlane);
+  if (!sourceRecord) {
+    cadSetStatus('Piano corrente non trovato nell\'archivio Piani.', 'error');
+    return;
+  }
+
+  // Prima di cambiare piano rende esplicita l'appartenenza delle entità legacy
+  // al piano sorgente, così il payload multipiano può separarle senza ambiguità.
+  cadNormalizePlaneAssignments();
+
+  const name = cadUniquePlaneToken('Nome', 'Copertura');
+  const layer = cadUniquePlaneToken('LayerCad', 'Copertura');
+  const fileName = cadText(sourceRecord.NomeFile) || 'DisegnoInput';
+
+  let added;
+  try {
+    added = addArchivioWebRecord('Piani', {
+      Nome: name,
+      Tipo: 'Copertura',
+      NomeFile: fileName,
+      LayerCad: layer
+    });
+  } catch (error) {
+    cadSetStatus('Impossibile creare il piano Copertura: ' + error.message, 'error');
+    return;
+  }
+
+  const backgroundDuplicated = cadDuplicateBackgroundToPlane(
+    sourcePlane,
+    cadText(added.Nome) || name,
+    cadText(added.LayerCad) || layer
+  );
+
+  cadToolbarState.piano = cadText(added.Nome) || name;
+  cadSelectedLineId = '';
+  cadSelectedSymbolId = '';
+  cadDragState = null;
+  cadCleanPlanByPlane.delete(cadToolbarState.piano);
+  cadGeneratedPlanByPlane.delete(cadToolbarState.piano);
+  cadRestorePlanePreview();
+  cadRefreshToolbarControls();
+  renderCadComparison();
+  cadUpdatePropertiesPanel();
+  cadUpdateControls();
+
+  cadSetStatus(
+    '✓ Creato piano ' + cadToolbarState.piano +
+    ' · Tipo Copertura · Layer ' + (cadText(added.LayerCad) || layer) +
+    (backgroundDuplicated
+      ? ' · sfondo duplicato dal piano ' + sourcePlane
+      : ' · piano sorgente senza sfondo da duplicare'),
+    'dirty'
+  );
+}
+
 function cadCurrentPlaneChanged() {
   const requested = cadText(cadPropPiano?.value);
   if (!requested || requested === cadCurrentPlane()) {
@@ -4995,6 +5100,7 @@ function cadUpdateControls() {
   const busy = drawingLine || insertingSymbol || drawingWindowTwoPoint;
 
   if (cadAddBackground) cadAddBackground.disabled = !hasDoc || busy;
+  if (cadAddRoofPlane) cadAddRoofPlane.disabled = !hasDoc || busy;
   if (cadShowBackground)
     cadShowBackground.disabled = !hasDoc || !cadPlaneBackground(cadWorkingDoc, cadCurrentPlane());
   if (cadSnapBackground)
@@ -6285,9 +6391,35 @@ function cadRegeneratePlan() {
 
   try {
     const svgText = cadSerializeWorkingSvg();
+    const current = cadCurrentPlane();
+
+    // Le coperture sono input tecnico del motore Termodel. Il browser non
+    // tenta di inventarne il 3D: consolida il CAD 2D e lascia al Service
+    // Tetti/Polig3D la generazione autorevole di falde e locali mansardati.
+    if (cadPlaneIsCoverage(current)) {
+      validatedSvg = svgText;
+      cadCommittedSvg = svgText;
+      rasterSvgText.value = svgText;
+      lastCleanPlanSvg = '';
+      lastGeneratedPlan = null;
+      cadCleanPlanByPlane.delete(current);
+      cadGeneratedPlanByPlane.delete(current);
+
+      rasterExportSvg.disabled = true;
+      if (rasterDownloadAiJson) rasterDownloadAiJson.disabled = true;
+      if (rasterDownloadCleanSvg) rasterDownloadCleanSvg.disabled = true;
+      if (cadExportArchitectural) cadExportArchitectural.disabled = true;
+
+      renderCadComparison();
+      cadSetStatus(
+        '✓ Piano ' + current +
+        ' consolidato · Copertura esclusa dall\'anteprima 3D locale · usa Aggiorna Modello'
+      );
+      return true;
+    }
+
     const currentPlaneSvg = cadSerializeCurrentPlaneSvg();
     const plan = generaPiantaDaSvg(currentPlaneSvg);
-    const current = cadCurrentPlane();
 
     validatedSvg = svgText;
     lastCleanPlanSvg = plan.svgPulito;
@@ -6671,6 +6803,7 @@ cadPropPiano?.addEventListener('change', cadCurrentPlaneChanged);
   control?.addEventListener('change', cadWallPropertySelectionChanged);
 });
 cadOpenPianiArchive?.addEventListener('click', () => openArchivioWeb('Piani'));
+cadAddRoofPlane?.addEventListener('click', cadCreateCoveragePlane);
 cadOpenParetiArchive?.addEventListener('click', () => openArchivioWeb('Pareti'));
 cadOpenConfiniArchive?.addEventListener('click', () => openArchivioWeb('Confini'));
 window.addEventListener('termodel:archives-updated', () => {
