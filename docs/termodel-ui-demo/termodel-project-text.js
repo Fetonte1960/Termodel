@@ -410,7 +410,11 @@ function buildCanonicalServerGeometry(projectText, geometrySvg) {
     String(group.getAttribute('data-termodel-floor-id') || '').trim()
   );
 
-  let sourceTechnicalCount = 0;
+  let sourceTechnicalCount = canonicalGroups.length
+    ? canonicalGroups.reduce((count, group) => count + technicalSvgChildren(group).length, 0)
+    : directGroups
+        .filter(group => ['calpestabile', 'copertura'].includes(String(group.id || '').toLowerCase()))
+        .reduce((count, group) => count + technicalSvgChildren(group).length, 0);
   let assignedTechnicalCount = 0;
 
   floors.forEach((floor) => {
@@ -436,17 +440,12 @@ function buildCanonicalServerGeometry(projectText, geometrySvg) {
       ) || null;
 
       candidates = technicalSvgChildren(sourceGroup);
-      sourceTechnicalCount += candidates.length;
     } else {
       sourceGroup = directGroups.find(group =>
         sameProjectToken(group.id, floor.role)
       ) || null;
 
       const roleCandidates = technicalSvgChildren(sourceGroup);
-      if (floor === floors[0])
-        sourceTechnicalCount = directGroups
-          .filter(group => ['calpestabile', 'copertura'].includes(String(group.id || '').toLowerCase()))
-          .reduce((count, group) => count + technicalSvgChildren(group).length, 0);
 
       candidates = roleCandidates.filter(element =>
         localElementBelongsToFloor(element, floor, floors.length)
