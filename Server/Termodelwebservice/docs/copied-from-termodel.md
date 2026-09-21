@@ -34,9 +34,9 @@ riportabile nel Core condiviso oppure esclusiva del server.
 
 | Dipendenza desktop | Sostituzione WebService |
 |---|---|
-| `netDxf` | `Termodel.NetDxfCompat`, popolato dallo SVG del file unico |
-| `UtiDb` / `Database.DB` | archivi XML del file unico in memoria |
-| `GestProg` | contesto isolato della richiesta |
+| `netDxf` | Virtual CAD: documento logico multi-layer per `NomeFile`, popolato dallo SVG e risolto da `DxfDocument.Load` |
+| `UtiDb` / `Database.DB` | Virtual DB: archivi XML del file unico in memoria con semantica Desktop per i metodi migrati |
+| `GestProg` | Virtual Project: `ProjectWorkspace` temporaneo con percorsi Desktop-like |
 | `TermodelLog` | diagnostica strutturata per la risposta HTTP |
 | WPF / Helix | no-op controllati o sink diagnostico |
 | Xbim / IFC | tipi geometrici neutrali e `TermodelWebModel` JSON |
@@ -58,6 +58,32 @@ headless del file unico.
 il delta con il desktop, ma nel percorso Web non legge né scrive DXF: pubblica
 uno SVG `TERMODEL-CLEAN-FLOOR-SVG-V1` per nome piano. Il WebService lo espone
 con `GET /api/model/clean-floor/{floorName}`.
+
+## Virtual CAD / DB / Project
+
+Dal 21 settembre 2026 il percorso Web non passa più direttamente un
+`DxfDocument` già pronto a un metodo speciale di `LeggiDxf` come via
+principale. `GeneraModello` crea un `ProjectWorkspace`, registra il documento
+CAD virtuale sotto un percorso DXF materializzato e richiama il metodo storico
+`LeggiFileDxf`. `DxfDocument.Load` intercetta quel percorso tramite un
+registro scoped alla richiesta.
+
+`SvgDxfReader` crea un documento condiviso per `NomeFile`, quindi conserva la
+semantica Desktop "stesso DXF, più piani distinti dai layer". Gli elementi SVG
+possono dichiarare anche layer ausiliari tramite `data-termodel-layer`.
+
+Il Virtual DB continua a deserializzare `archives/xml/*.xml` e ora allinea
+`GetDataDB`, `TipoZona` e `AggiungiZoneStandard` al comportamento Desktop
+rilevante. Gli archivi mancanti restano errori strutturati lato Service.
+
+`ProjectWorkspace` replica inoltre gli XML archivio in `dbtempfiles/`, gli
+input termici in `xml/` e i percorsi CAD in `project/`, predisponendo
+l'ambiente per la futura integrazione di `GestXml`, `CalcoloAPE` e pannelli.
+
+Verifica di compilazione: GitHub Actions run #2 sul commit
+`2753e468c7d1da6b9fb4602152b3fabb0abec17c` completata con 0 errori e
+108 warning. Il runtime HTTP dopo questo refactoring non è ancora stato
+rieseguito.
 
 ## Endpoint Modello3D
 
