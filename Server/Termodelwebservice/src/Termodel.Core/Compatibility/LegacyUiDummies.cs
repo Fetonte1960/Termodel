@@ -70,5 +70,11 @@ namespace Termodel.utilities
             ErrorMessage = string.Empty;
             return true;
         }
+
+        public static void VisualizzaErrori()
+        {
+            if (!string.IsNullOrWhiteSpace(ErrorMessage))
+                TermodelLog.LogError(ErrorMessage);
+        }
     }
 }

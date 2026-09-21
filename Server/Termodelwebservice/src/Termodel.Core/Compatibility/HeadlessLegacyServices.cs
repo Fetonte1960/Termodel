@@ -122,6 +122,12 @@ namespace Termodel.utilities
             CurrentWorkspace.Value?.XmlOutputPath ??
             (string.IsNullOrWhiteSpace(PathProg) ? string.Empty : Path.Combine(PathProg, "xml", "output.xml"));
 
+        public static string FileLocaleSvgPath =>
+            string.IsNullOrWhiteSpace(PathProg) ? string.Empty : Path.Combine(PathProg, "locale.svg");
+
+        public static string FileLocaleXmlPath =>
+            string.IsNullOrWhiteSpace(PathProg) ? string.Empty : Path.Combine(PathProg, "locale.xml");
+
         public static bool Rivestimenti { get; set; }
 
         public static void UseWorkspace(ProjectWorkspace workspace)
@@ -162,6 +168,11 @@ namespace Termodel.utilities
             // UI/Helix esclusa dal percorso Web: il documento è già consumato dal Core.
         }
 
+        public void RenderFiltrato(object? viewport, object? filters, bool visualizzaTutto = false)
+        {
+            // Diagnostica grafica Desktop non materializzata nel Service.
+        }
+
         // Funzione realizzata da Codex in autonomia
         public static List<LineString> EstraiLinee2DdaPoligono(Geometry polygon)
         {
@@ -191,6 +202,11 @@ namespace Termodel.Impianti.Pannelli
         {
             if (document.Layers.Any(layer => layer.Name.Contains("TUB", StringComparison.OrdinalIgnoreCase)))
                 throw new NotSupportedException("Il file unico contiene circuiti radianti CAD non ancora supportati dal Core 3D Web.");
+        }
+
+        public static void DisegnaSvgSpirali(object? viewport, string svgPath, double quotaPiano = 0)
+        {
+            // Il relativo artifact SVG sarà gestito separatamente dallo snapshot.
         }
     }
 }
