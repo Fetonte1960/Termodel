@@ -1,4 +1,4 @@
-// Termodel Web v0.61 — DXF background "pen plotter" con unità reali.
+// Termodel Web v0.62 — DXF background "pen plotter" con scala automatica e origine normalizzata.
 // Parser ASCII DXF deliberately limited to 2D background rendering.
 // It does not create Termodel entities: it converts selected DXF content to SVG.
 
@@ -717,10 +717,17 @@ export function convertDxfToSvg(model, options = {}) {
 
   const width = Math.max(1e-6, maxX - minX);
   const height = Math.max(1e-6, maxY - minY);
+
+  // Adattamento al CAD Termodel:
+  // 1) la scala e' gia' in cm;
+  // 2) spostiamo l'origine geometrica a 0,0;
+  // 3) NON applichiamo ulteriori fattori: le distanze restano invarianti.
+  const originShiftX = -minX;
+  const originShiftY = -minY;
   const margin = Math.max(width, height) * 0.02 || 1;
   const vb = [
-    minX - margin,
-    minY - margin,
+    -margin,
+    -margin,
     width + margin * 2,
     height + margin * 2
   ];
@@ -762,8 +769,11 @@ export function convertDxfToSvg(model, options = {}) {
     ' stroke-linecap="round" stroke-linejoin="round"' +
     ' data-termodel-dxf-plotter="1"' +
     ' data-termodel-source-unit="' + normalized.unit + '"' +
-    ' data-termodel-unit-scale-cm="' + normalized.unitScaleToCm + '">' +
+    ' data-termodel-unit-scale-cm="' + normalized.unitScaleToCm + '"' +
+    ' data-termodel-coordinate-normalization="origin">' +
+    '<g transform="translate(' + originShiftX.toFixed(5) + ' ' + originShiftY.toFixed(5) + ')">' +
     groups.join('') +
+    '</g>' +
     '</svg>';
 
   return {
@@ -775,6 +785,10 @@ export function convertDxfToSvg(model, options = {}) {
     unitScaleToCm: normalized.unitScaleToCm,
     realWidthMeters: width / 100,
     realHeightMeters: height / 100,
+    originOffsetCm: {
+      x: minX,
+      y: minY
+    },
     unitsCode: model.header.insUnits,
     unitsLabel: model.header.unitsLabel
   };

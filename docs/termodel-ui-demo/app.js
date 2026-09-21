@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { generaPiantaDaSvg } from './genera-pianta.js?v=0.61';
+import { generaPiantaDaSvg } from './genera-pianta.js?v=0.62';
 import {
   parseDxfPlotSource,
   getDxfLayerSummary,
@@ -8,7 +8,7 @@ import {
   convertDxfToSvg,
   dxfUnitFromInsUnits,
   dxfUnitScaleToCm
-} from './dxf-plotter.js?v=0.61';
+} from './dxf-plotter.js?v=0.62';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -19,16 +19,16 @@ import {
   getArchivioWebSchema,
   getArchivioWebState,
   markArchivioWebSaved
-} from './archivio-web.js?v=0.61';
+} from './archivio-web.js?v=0.62';
 import {
   isTermodelProjectText as isCompleteTermodelProjectText,
   buildTermodelProjectText,
   consolidateTermodelBackgrounds,
   hydrateTermodelBackgrounds
-} from './termodel-project-text.js?v=0.61';
+} from './termodel-project-text.js?v=0.62';
 
 const MODEL_URL = './TermodelWebModel.json';
-const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.61';
+const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.62';
 
 const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
@@ -36,8 +36,8 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.61';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.61';
+const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.62';
+const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.62';
 
 const viewer = document.getElementById('viewer');
 const modelPage = document.getElementById('modelPage');
@@ -2722,7 +2722,8 @@ function updateDxfImportSummary() {
     'Entità previste: ' + estimate.selected +
     ' · ignorate: ' + estimate.ignored +
     (estimate.blocks ? ' · blocchi da esplodere: ' + estimate.blocks : '') + '\n' +
-    'Scala reale: 1 unità DXF = ' + scaleToCm + ' cm Termodel';
+    'Scala automatica: 1 unità DXF = ' + scaleToCm + ' cm Termodel' + '\n' +
+    'Calibrazione manuale: non necessaria se unità e DXF sono corretti.';
   if (dxfImportConvert) dxfImportConvert.disabled = options.layers.size === 0;
 }
 
@@ -2807,6 +2808,8 @@ async function cadConvertDxfBackground(file) {
     originalName: file.name || 'sfondo.dxf',
     sourceUnit: result.drawingUnit,
     unitScaleToCm: result.unitScaleToCm,
+    automaticDxfScale: true,
+    originOffsetCm: result.originOffsetCm,
     realSizeCm: {
       width: result.viewBox[2],
       height: result.viewBox[3]
@@ -2818,7 +2821,7 @@ async function cadConvertDxfBackground(file) {
     result.stats.converted + ' entità · ' +
     result.realWidthMeters.toFixed(3) + ' × ' +
     result.realHeightMeters.toFixed(3) + ' m · ' +
-    result.drawingUnit + ' → cm · Piano ' + cadCurrentPlane() +
+    'scala automatica ' + result.drawingUnit + ' → cm · Piano ' + cadCurrentPlane() +
     ' · ' + (file.name || 'sfondo.dxf'),
     'dirty'
   );
@@ -2882,6 +2885,12 @@ async function cadImportBackgroundFile(file, options = {}) {
     image.setAttribute('data-termodel-dxf-unita', options.sourceUnit);
   if (Number.isFinite(options.unitScaleToCm))
     image.setAttribute('data-termodel-dxf-fattore-cm', String(options.unitScaleToCm));
+  if (options.automaticDxfScale)
+    image.setAttribute('data-termodel-dxf-scala-automatica', '1');
+  if (Number.isFinite(options.originOffsetCm?.x))
+    image.setAttribute('data-termodel-dxf-origine-x-cm', String(options.originOffsetCm.x));
+  if (Number.isFinite(options.originOffsetCm?.y))
+    image.setAttribute('data-termodel-dxf-origine-y-cm', String(options.originOffsetCm.y));
 
   const realWidth = Number(options.realSizeCm?.width);
   const realHeight = Number(options.realSizeCm?.height);
@@ -3960,13 +3969,25 @@ function cadUpdateCalibrationPanel(line, northOpen = false) {
   if (changedReference && cadCalibrationRealMeters)
     cadCalibrationRealMeters.value = Number(lengthM.toFixed(3)).toString();
 
-  const hasBackground = Boolean(cadPlaneBackground(cadWorkingDoc, cadCurrentPlane()));
+  const background = cadPlaneBackground(cadWorkingDoc, cadCurrentPlane());
+  const hasBackground = Boolean(background);
+  const autoDxfScale = background?.getAttribute('data-termodel-dxf-scala-automatica') === '1';
+  const dxfUnit = cadText(background?.getAttribute('data-termodel-dxf-unita'));
   if (cadCalibrateBackground) cadCalibrateBackground.disabled = !hasBackground;
 
   if (cadCalibrationNote) {
-    cadCalibrationNote.textContent = hasBackground
-      ? 'Calibra usa questa parete come riferimento e ridimensiona sfondo, linee e posizioni dei simboli del piano corrente.'
-      : 'Aggiungi prima uno sfondo al piano corrente. Le pareti inclinate non sono ammesse come riferimento.';
+    if (!hasBackground) {
+      cadCalibrationNote.textContent =
+        'Aggiungi prima uno sfondo al piano corrente. Le pareti inclinate non sono ammesse come riferimento.';
+    } else if (autoDxfScale) {
+      cadCalibrationNote.textContent =
+        'DXF già in scala automatica' +
+        (dxfUnit ? ' (' + dxfUnit + ' → cm)' : '') +
+        '. Usa Calibra solo per correggere un DXF o una unità dichiarata in modo errato.';
+    } else {
+      cadCalibrationNote.textContent =
+        'Calibra usa questa parete come riferimento e ridimensiona sfondo, linee e posizioni dei simboli del piano corrente.';
+    }
   }
 }
 
@@ -5896,8 +5917,8 @@ document.addEventListener('keydown', event => {
     cadRedoEdit();
   }
 });
-// v0.61: ArchivioWeb usa il file progetto completo + definizionedati.json.
-initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.61' })
+// v0.62: ArchivioWeb usa il file progetto completo + definizionedati.json.
+initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.62' })
   .catch(error => console.error('ArchivioWeb non inizializzato:', error));
 
 document.querySelectorAll('[data-action]').forEach(button => {
