@@ -1,6 +1,7 @@
 using NetTopologySuite.Geometries;
 using netDxf;
 using Termodel.Core.Model3D;
+using Termodel.Core.Compatibility;
 
 // Modificato da Codex per realizzare: sola porzione geometrica realmente usata
 // da DXFLineCheck; non viene copiata l'intera utility desktop.
@@ -97,11 +98,48 @@ public static class GeometriaHelper
 
 namespace Termodel.utilities
 {
-    // Modificato da Codex per realizzare: contesto minimo della generazione headless.
+    // Facciata del progetto Desktop sul workspace temporaneo della richiesta.
     public static class GestProg
     {
-        public static string PathProg { get; set; } = string.Empty;
+        private static readonly AsyncLocal<ProjectWorkspace?> CurrentWorkspace = new();
+        private static readonly AsyncLocal<string?> LegacyPath = new();
+
+        public static string PathProg
+        {
+            get => CurrentWorkspace.Value?.RootPath ?? LegacyPath.Value ?? string.Empty;
+            set => LegacyPath.Value = value;
+        }
+
+        public static string PathProgDB =>
+            CurrentWorkspace.Value?.DatabasePath ??
+            (string.IsNullOrWhiteSpace(PathProg) ? string.Empty : Path.Combine(PathProg, "dbtempfiles"));
+
+        public static string FileXMLPath =>
+            CurrentWorkspace.Value?.XmlInputPath ??
+            (string.IsNullOrWhiteSpace(PathProg) ? string.Empty : Path.Combine(PathProg, "xml", "input.xml"));
+
+        public static string FileXMLOutPath =>
+            CurrentWorkspace.Value?.XmlOutputPath ??
+            (string.IsNullOrWhiteSpace(PathProg) ? string.Empty : Path.Combine(PathProg, "xml", "output.xml"));
+
         public static bool Rivestimenti { get; set; }
+
+        public static void UseWorkspace(ProjectWorkspace workspace)
+        {
+            ArgumentNullException.ThrowIfNull(workspace);
+            CurrentWorkspace.Value = workspace;
+            LegacyPath.Value = workspace.RootPath;
+        }
+
+        public static void ClearWorkspace()
+        {
+            CurrentWorkspace.Value = null;
+            LegacyPath.Value = null;
+        }
+
+        public static string FileDXFPath(string logicalName) =>
+            CurrentWorkspace.Value?.GetCadFilePath(logicalName) ??
+            throw new InvalidOperationException("Workspace progetto non inizializzato.");
     }
 
     // Modificato da Codex per realizzare: diagnostica grafica sostituita da

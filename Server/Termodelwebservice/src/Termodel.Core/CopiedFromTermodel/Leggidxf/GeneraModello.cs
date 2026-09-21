@@ -34,6 +34,8 @@ public sealed class GeneraModello
         }
         finally
         {
+            netDxf.DxfDocumentRegistry.Clear();
+            GestProg.ClearWorkspace();
             Database.DB.Clear();
             GenerationGate.Release();
         }
@@ -42,6 +44,9 @@ public sealed class GeneraModello
     private static Model3DGenerationResult GeneraSerializzato(string projectText)
     {
         ProjectTextDocument project = ProjectTextDocument.Parse(projectText);
+        using ProjectWorkspace workspace = ProjectWorkspace.Create(project);
+        GestProg.UseWorkspace(workspace);
+
         ProjectArchiveDatabase archiveDatabase = ProjectArchiveDatabase.Load(project);
         var utiDb = new UtiDb(archiveDatabase);
         Database.DB.Use(utiDb);
@@ -50,6 +55,16 @@ public sealed class GeneraModello
 
         IReadOnlyList<SvgDxfFloor> svgFloors = SvgDxfReader.ParseProjectSvg(
             project.GetRequiredSection("geometry/project.svg"));
+
+        foreach (IGrouping<string, SvgDxfFloor> fileGroup in svgFloors.GroupBy(
+                     floor => floor.FileName,
+                     StringComparer.OrdinalIgnoreCase))
+        {
+            SvgDxfFloor first = fileGroup.First();
+            string cadPath = workspace.GetCadFilePath(first.FileName);
+            netDxf.DxfDocumentRegistry.Register(cadPath, first.Document);
+        }
+
         ObservableCollection<Dictionary<string, object>> floorArchive = utiDb.GetCollection("Piani");
         List<FloorWorkItem> floors = CreateFloorPlan(floorArchive, svgFloors);
         if (floors.Count == 0)
@@ -91,12 +106,11 @@ public sealed class GeneraModello
                     model.Modello_piano(modelFloorName, floorElevation, StringToInTipoPiano(floor.Type));
                     if (floor.IsWalkable) hasWalkableFloor = true;
 
-                    reader.LeggiDocumentoDxf(
-                        floor.Cad.Document,
-                        $"svg:{floor.Cad.Id}",
+                    reader.LeggiFileDxf(
                         floor.Name,
                         floor.NetHeight,
                         floor.GrossHeight,
+                        workspace.GetCadFilePath(floor.Cad.FileName),
                         floor.Layer,
                         floor.Type,
                         utiDb.GetCollection("Pareti"),

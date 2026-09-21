@@ -21,7 +21,6 @@ public static class SvgDxfReader
     private const double CentimetersToMeters = 0.01;
     private static readonly XNamespace SvgNamespace = "http://www.w3.org/2000/svg";
 
-    // Funzione realizzata da Codex in autonomia
     public static IReadOnlyList<SvgDxfFloor> ParseProjectSvg(string svg)
     {
         XDocument document;
@@ -40,57 +39,100 @@ public static class SvgDxfReader
         if (!string.Equals(root.Attribute("data-termodel-units")?.Value, "cm", StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Lo SVG deve dichiarare data-termodel-units='cm'.");
 
-        var floors = new List<SvgDxfFloor>();
-        foreach (XElement group in root.Elements(SvgNamespace + "g"))
-            floors.Add(ParseFloor(group));
+        List<FloorSource> sources = root.Elements(SvgNamespace + "g")
+            .Select(ParseFloorSource)
+            .OrderBy(source => source.Order)
+            .ToList();
 
-        if (floors.Count == 0)
+        if (sources.Count == 0)
             throw new InvalidDataException("Lo SVG non contiene gruppi di piano Termodel.");
-        if (floors.Select(floor => floor.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() != floors.Count)
+        if (sources.Select(source => source.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() != sources.Count)
             throw new InvalidDataException("Lo SVG contiene identificativi di piano duplicati.");
 
-        return floors.OrderBy(floor => floor.Order).ToArray();
+        // Un solo DxfDocument logico per NomeFile, come nel Desktop:
+        // più piani possono quindi continuare a essere distinti tramite LayerCad.
+        var documents = new Dictionary<string, DxfDocument>(StringComparer.OrdinalIgnoreCase);
+        var floors = new List<SvgDxfFloor>(sources.Count);
+
+        foreach (FloorSource source in sources)
+        {
+            if (!documents.TryGetValue(source.FileName, out DxfDocument? cad))
+            {
+                cad = new DxfDocument();
+                documents.Add(source.FileName, cad);
+            }
+
+            GetOrCreateLayer(cad, source.Layer);
+
+            foreach (XElement element in source.Group.Elements())
+            {
+                Layer layer = ResolveLayer(cad, element, source.Layer);
+                if (element.Name == SvgNamespace + "line")
+                    cad.AddEntity(ParseLine(element, layer));
+                else if (element.Name == SvgNamespace + "text")
+                    cad.AddEntity(ParseBlock(element, layer, cad));
+                else
+                    throw new InvalidDataException(
+                        $"Piano '{source.Id}': elemento SVG '{element.Name.LocalName}' non supportato.");
+            }
+
+            floors.Add(new SvgDxfFloor(
+                source.Id,
+                source.Name,
+                source.Role,
+                source.FileName,
+                source.Layer,
+                source.Order,
+                cad));
+        }
+
+        return floors;
     }
 
-    private static SvgDxfFloor ParseFloor(XElement group)
+    private static FloorSource ParseFloorSource(XElement group)
     {
         string id = Required(group, "data-termodel-floor-id");
         string name = Required(group, "data-termodel-name");
-        string role = Required(group, "data-termodel-role");
+        string role = Required(group, "data-termodel-role").ToLowerInvariant();
         string fileName = Required(group, "data-termodel-file");
         string layerName = Required(group, "data-termodel-layer");
         int order = ParseInt(Required(group, "data-termodel-order"), "data-termodel-order");
+
         if (role is not ("calpestabile" or "copertura"))
             throw new InvalidDataException($"Piano '{id}': ruolo '{role}' non supportato.");
 
-        var result = new DxfDocument();
-        var layer = new Layer(layerName);
-        result.Layers.Add(layer);
+        return new FloorSource(group, id, name, role, fileName, layerName, order);
+    }
 
-        foreach (XElement element in group.Elements())
-        {
-            if (element.Name == SvgNamespace + "line")
-                result.AddEntity(ParseLine(element, layer));
-            else if (element.Name == SvgNamespace + "text")
-                result.AddEntity(ParseBlock(element, layer, result));
-            else
-                throw new InvalidDataException($"Piano '{id}': elemento SVG '{element.Name.LocalName}' non supportato.");
-        }
+    private static Layer ResolveLayer(DxfDocument document, XElement element, string defaultLayer)
+    {
+        string layerName = element.Attribute("data-termodel-layer")?.Value?.Trim() ?? string.Empty;
+        return GetOrCreateLayer(document, layerName.Length > 0 ? layerName : defaultLayer);
+    }
 
-        return new SvgDxfFloor(id, name, role, fileName, layerName, order, result);
+    private static Layer GetOrCreateLayer(DxfDocument document, string layerName)
+    {
+        if (!document.Layers.Contains(layerName))
+            document.Layers.Add(new Layer(layerName));
+        return document.Layers[layerName];
     }
 
     private static Line ParseLine(XElement element, Layer layer)
     {
-        var line = new Line(
-            new Vector3(ParseNumber(element, "x1") * CentimetersToMeters, ParseNumber(element, "y1") * CentimetersToMeters, ParseOptionalNumber(element, "data-z1") * CentimetersToMeters),
-            new Vector3(ParseNumber(element, "x2") * CentimetersToMeters, ParseNumber(element, "y2") * CentimetersToMeters, ParseOptionalNumber(element, "data-z2") * CentimetersToMeters))
+        return new Line(
+            new Vector3(
+                ParseNumber(element, "x1") * CentimetersToMeters,
+                ParseNumber(element, "y1") * CentimetersToMeters,
+                ParseOptionalNumber(element, "data-z1") * CentimetersToMeters),
+            new Vector3(
+                ParseNumber(element, "x2") * CentimetersToMeters,
+                ParseNumber(element, "y2") * CentimetersToMeters,
+                ParseOptionalNumber(element, "data-z2") * CentimetersToMeters))
         {
             Layer = layer,
             Linetype = new Linetype(element.Attribute("data-termodel-linetype")?.Value?.Trim() ?? "Continuous"),
             Color = new AciColor(ParseOptionalInt(element, "data-termodel-color", 1))
         };
-        return line;
     }
 
     private static Insert ParseBlock(XElement element, Layer layer, DxfDocument document)
@@ -118,23 +160,28 @@ public static class SvgDxfReader
         }
 
         if (!document.Blocks.Contains(blockName))
-        {
-            var definition = new Block(blockName);
-            foreach (string tag in values.Keys)
+            document.Blocks.Add(new Block(blockName));
+
+        Block definition = document.Blocks[blockName];
+        foreach (string tag in values.Keys)
+            if (!definition.AttributeTags.Contains(tag, StringComparer.OrdinalIgnoreCase))
                 definition.AttributeTags.Add(tag);
-            document.Blocks.Add(definition);
-        }
 
         var insert = new Insert(
-            document.Blocks[blockName],
-            new Vector3(ParseNumber(element, "x") * CentimetersToMeters, ParseNumber(element, "y") * CentimetersToMeters, 0))
+            definition,
+            new Vector3(
+                ParseNumber(element, "x") * CentimetersToMeters,
+                ParseNumber(element, "y") * CentimetersToMeters,
+                ParseOptionalNumber(element, "data-z") * CentimetersToMeters))
         {
             Layer = layer,
             Rotation = ParseOptionalNumber(element, "data-termodel-rotation")
         };
+
         foreach (netDxf.Entities.Attribute attribute in insert.Attributes)
             if (values.TryGetValue(attribute.Tag, out string? value))
                 attribute.Value = value;
+
         return insert;
     }
 
@@ -144,7 +191,8 @@ public static class SvgDxfReader
             : throw new InvalidDataException($"Attributo SVG obbligatorio '{attribute}' mancante.");
 
     private static double ParseNumber(XElement element, string attribute) =>
-        double.TryParse(Required(element, attribute), NumberStyles.Float, CultureInfo.InvariantCulture, out double value) && double.IsFinite(value)
+        double.TryParse(Required(element, attribute), NumberStyles.Float, CultureInfo.InvariantCulture, out double value) &&
+        double.IsFinite(value)
             ? value
             : throw new InvalidDataException($"Attributo SVG '{attribute}' non numerico.");
 
@@ -152,7 +200,8 @@ public static class SvgDxfReader
     {
         string? raw = element.Attribute(attribute)?.Value;
         if (string.IsNullOrWhiteSpace(raw)) return 0;
-        return double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out double value) && double.IsFinite(value)
+        return double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out double value) &&
+               double.IsFinite(value)
             ? value
             : throw new InvalidDataException($"Attributo SVG '{attribute}' non numerico.");
     }
@@ -168,4 +217,13 @@ public static class SvgDxfReader
         int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value)
             ? value
             : throw new InvalidDataException($"Attributo SVG '{name}' non intero.");
+
+    private sealed record FloorSource(
+        XElement Group,
+        string Id,
+        string Name,
+        string Role,
+        string FileName,
+        string Layer,
+        int Order);
 }

@@ -1,8 +1,5 @@
 using System.Collections;
 
-// Funzione realizzata da Codex in autonomia
-// Compatibilità minima con i soli membri netDxf usati dalle copie di LeggiDxf.
-// Non è un lettore o scrittore DXF generale.
 namespace netDxf
 {
     public readonly record struct Vector2(double X, double Y);
@@ -11,9 +8,37 @@ namespace netDxf
     {
         public Vector3(double x, double y) : this(x, y, 0) { }
 
-        // Modificato da Codex per realizzare: membro minimo usato dalla copia di LeggiDxf.
-        // Modificato da Codex per realizzare: preservare la quota Z con il tipo NTS dedicato.
-        public NetTopologySuite.Geometries.Coordinate Coordinate => new NetTopologySuite.Geometries.CoordinateZ(X, Y, Z);
+        public NetTopologySuite.Geometries.Coordinate Coordinate =>
+            new NetTopologySuite.Geometries.CoordinateZ(X, Y, Z);
+    }
+
+    /// <summary>
+    /// Registro scoped dei documenti CAD virtuali materializzati dal file unico.
+    /// DxfDocument.Load continua così a essere il punto di ingresso visto dal codice Desktop.
+    /// </summary>
+    public static class DxfDocumentRegistry
+    {
+        private static readonly AsyncLocal<Dictionary<string, DxfDocument>?> Current = new();
+
+        public static void Register(string fileName, DxfDocument document)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+            ArgumentNullException.ThrowIfNull(document);
+            (Current.Value ??= new Dictionary<string, DxfDocument>(StringComparer.OrdinalIgnoreCase))
+                [Normalize(fileName)] = document;
+        }
+
+        public static bool TryGet(string fileName, out DxfDocument? document)
+        {
+            document = null;
+            return !string.IsNullOrWhiteSpace(fileName) &&
+                   Current.Value is { } documents &&
+                   documents.TryGetValue(Normalize(fileName), out document);
+        }
+
+        public static void Clear() => Current.Value = null;
+
+        private static string Normalize(string fileName) => Path.GetFullPath(fileName);
     }
 
     public sealed class DxfDocument
@@ -23,9 +48,15 @@ namespace netDxf
         public Blocks.BlockCollection Blocks { get; } = new();
         public Tables.LayerCollection Layers { get; } = new();
 
-        public static DxfDocument Load(string fileName) =>
+        public static DxfDocument Load(string fileName)
+        {
+            if (DxfDocumentRegistry.TryGet(fileName, out DxfDocument? document) && document is not null)
+                return document;
+
             throw new NotSupportedException(
-                $"La compatibilità Web non legge file DXF ('{fileName}'). Usare SvgDxfReader sullo SVG del file unico.");
+                $"La compatibilità Web non legge direttamente il file DXF '{fileName}'. " +
+                "Il documento deve essere registrato dal Virtual CAD dello snapshot.");
+        }
 
         public void AddEntity(object entity)
         {
@@ -44,7 +75,7 @@ namespace netDxf
 
         public void Save(string fileName) =>
             throw new NotSupportedException(
-                $"La compatibilità Web non produce file DXF ('{fileName}').");
+                $"La compatibilità Web non produce direttamente file DXF ('{fileName}').");
     }
 }
 
@@ -168,11 +199,8 @@ namespace netDxf.Entities
 
 namespace netDxf.Collections
 {
-    // Namespace compatibile intenzionalmente vuoto: le collezioni necessarie
-    // sono esposte direttamente da DxfDocument.
 }
 
 namespace netDxf.Header
 {
-    // Namespace compatibile intenzionalmente vuoto.
 }

@@ -16,7 +16,6 @@ public sealed class ProjectArchiveDatabase
         _collections = collections;
     }
 
-    // Funzione realizzata da Codex in autonomia
     public static ProjectArchiveDatabase Load(ProjectTextDocument project)
     {
         var collections = new Dictionary<string, ObservableCollection<Dictionary<string, object>>>(
@@ -48,44 +47,66 @@ public sealed class ProjectArchiveDatabase
 
         if (collections.Count == 0)
             throw new InvalidDataException("Il file unico non contiene archivi XML.");
+
         return new ProjectArchiveDatabase(collections);
     }
 
-    // Funzione realizzata da Codex in autonomia
     public ObservableCollection<Dictionary<string, object>> GetCollection(string archiveName) =>
         _collections.TryGetValue(archiveName, out ObservableCollection<Dictionary<string, object>>? rows)
             ? rows
-            : throw new InvalidDataException($"Archivio '{archiveName}' non presente nel file unico.");
+            : throw new InvalidDataException(
+                $"Archivio '{archiveName}' non presente nel file unico.");
 
-    // Funzione realizzata da Codex in autonomia
+    /// <summary>
+    /// Replica la semantica Desktop: confronto testuale trimmed e case-sensitive;
+    /// se non esiste una corrispondenza o il risultato è vuoto ritorna null a runtime.
+    /// </summary>
     public string GetDataDB(
         string searchField,
         object? searchValue,
         string resultField,
         IEnumerable<Dictionary<string, object>> rows)
     {
-        string expected = Convert.ToString(searchValue, CultureInfo.InvariantCulture)?.Trim() ?? string.Empty;
-        Dictionary<string, object>? row = rows.FirstOrDefault(candidate =>
-            candidate.TryGetValue(searchField, out object? actual) &&
-            string.Equals(Convert.ToString(actual, CultureInfo.InvariantCulture)?.Trim(), expected, StringComparison.OrdinalIgnoreCase));
+        string? expected = Convert.ToString(searchValue, CultureInfo.InvariantCulture);
+        if (expected is null)
+            return null!;
 
-        return row is not null && row.TryGetValue(resultField, out object? value)
-            ? Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty
-            : string.Empty;
+        foreach (Dictionary<string, object> candidate in rows)
+        {
+            if (!candidate.TryGetValue(searchField, out object? actual))
+                continue;
+
+            string? keyValue = Convert.ToString(actual, CultureInfo.InvariantCulture);
+            if (keyValue is null ||
+                !string.Equals(keyValue.Trim(), expected.Trim(), StringComparison.Ordinal))
+                continue;
+
+            if (!candidate.TryGetValue(resultField, out object? value))
+                return null!;
+
+            string? result = value is double numericValue
+                ? numericValue.ToString(CultureInfo.InvariantCulture)
+                : value?.ToString();
+
+            return string.IsNullOrEmpty(result) ? null! : result;
+        }
+
+        return null!;
     }
 
-    // Funzione realizzata da Codex in autonomia
     public string GetDataDBSingleRow(
         string field,
         IEnumerable<Dictionary<string, object>> rows)
     {
         Dictionary<string, object>? row = rows.FirstOrDefault();
-        return row is not null && row.TryGetValue(field, out object? value)
-            ? Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty
-            : string.Empty;
+        if (row is null)
+            return "La collezione è vuota o null.";
+
+        return row.TryGetValue(field, out object? value)
+            ? value?.ToString() ?? string.Empty
+            : $"Il campo '{field}' non è stato trovato nella prima riga della collezione.";
     }
 
-    // Funzione realizzata da Codex in autonomia
     public bool ItemNessuno(object? value)
     {
         string text = Convert.ToString(value, CultureInfo.InvariantCulture)?.Trim() ?? string.Empty;
@@ -94,7 +115,6 @@ public sealed class ProjectArchiveDatabase
                text.Equals("NON DEFINITO", StringComparison.OrdinalIgnoreCase);
     }
 
-    // Funzione realizzata da Codex in autonomia
     public void RequireReferencedValue(
         string sourceDescription,
         object? value,
@@ -102,10 +122,15 @@ public sealed class ProjectArchiveDatabase
         string field)
     {
         if (ItemNessuno(value)) return;
+
         string expected = Convert.ToString(value, CultureInfo.InvariantCulture)?.Trim() ?? string.Empty;
         bool exists = GetCollection(archiveName).Any(row =>
             row.TryGetValue(field, out object? actual) &&
-            string.Equals(Convert.ToString(actual, CultureInfo.InvariantCulture)?.Trim(), expected, StringComparison.OrdinalIgnoreCase));
+            string.Equals(
+                Convert.ToString(actual, CultureInfo.InvariantCulture)?.Trim(),
+                expected,
+                StringComparison.Ordinal));
+
         if (!exists)
             throw new InvalidDataException(
                 $"{sourceDescription}: valore '{expected}' non presente in {archiveName}.{field}.");
