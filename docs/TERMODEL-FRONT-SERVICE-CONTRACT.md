@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **0.4**  
+Versione documento: **0.5**  
 Aggiornamento: **21 settembre 2026**  
 Stato: **architettura concordata; implementazione progressiva**
 
@@ -173,7 +173,18 @@ Regole normative del payload server:
   `manifest.json` devono descrivere il payload realmente trasmesso, non il file
   locale completo;
 - il server tratta il testo ricevuto come input immutabile della specifica
-  elaborazione.
+  elaborazione;
+- `geometry/project.svg` nel payload server deve usare il formato tecnico
+  `TERMODEL-PROJECT-SVG-V1`, con namespace SVG e
+  `data-termodel-units="cm"`;
+- i piani devono essere figli diretti `g` della radice SVG e dichiarare
+  `data-termodel-floor-id`, `data-termodel-name`,
+  `data-termodel-role`, `data-termodel-file`,
+  `data-termodel-layer` e `data-termodel-order`;
+- dentro ogni gruppo di piano il reader corrente accetta come entità tecniche
+  dirette `line` e `text`/blocchi; lo SVG operativo locale del CAD può
+  avere una struttura diversa, ma deve essere trasformato nella forma tecnica
+  canonica prima del POST senza alterare il progetto locale.
 
 Il file locale completo può quindi continuare a contenere sfondi e altre
 risorse di lavoro del browser, mentre il payload server contiene soltanto il
@@ -335,7 +346,7 @@ prova autonoma della correttezza del calcolo.
 
 ### Commissione frontend — SVG tecnico canonico per AggiornaCalcolo
 
-Stato: **COMMISSIONATO** — 21 settembre 2026.
+Stato: **ESEGUITO** — 21 settembre 2026.
 
 Anomalia osservata nella prima prova reale browser → Service:
 
@@ -344,27 +355,31 @@ Errore Aggiorna Modello: AggiornaCalcolo:
 Lo SVG deve dichiarare data-termodel-units='cm'.
 ```
 
-Diagnosi concordata: il frontend sta sostituendo `geometry/project.svg`
-canonico del progetto con lo SVG operativo CAD/AI, perdendo l'involucro
-`TERMODEL-PROJECT-SVG-V1` e i metadati obbligatori dei piani.
+La prova ha confermato che browser, CORS, `POST /api/calculations` e Core
+erano raggiunti; l'errore proveniva dalla validazione `SvgDxfReader`.
 
-Intervento commissionato:
+Termodel Web v0.73 corregge il payload senza modificare il WebService/Core:
 
-- lasciare invariato lo SVG locale usato dal CAD e dagli sfondi;
-- costruire solo per il payload server un `geometry/project.svg` tecnico
-  canonico con radice `data-termodel-format="TERMODEL-PROJECT-SVG-V1"` e
+- lo SVG locale CAD/AI resta invariato;
+- `buildTermodelServerPayload(...)` ricostruisce per il solo POST un
+  `geometry/project.svg` con radice
+  `data-termodel-format="TERMODEL-PROJECT-SVG-V1"` e
   `data-termodel-units="cm"`;
-- ricostruire i gruppi di piano dai dati autorevoli del progetto, mantenendo
+- i gruppi piano vengono ricavati dal manifest/archivio `Piani` e riportano
   `floor-id/name/role/file/layer/order`;
-- distribuire nei gruppi di piano le entità tecniche `line` e `text`
-  presenti nello SVG CAD in base a `data-termodel-piano`, escludendo sfondi
-  e accessori esclusivamente frontend;
-- rigenerare manifest e SHA-256 sul payload realmente trasmesso;
-- non modificare il WebService/Core per aggirare la validazione.
+- vengono trasferite soltanto le entità tecniche dirette `line` e i
+  `text` che dichiarano `BLOCCO,...`, assegnandole al piano tramite
+  `data-termodel-piano`/layer;
+- gli attributi locali `data-termodel-tipo-linea` e
+  `data-termodel-colore` vengono tradotti, quando disponibili, nei campi
+  `data-termodel-linetype` e `data-termodel-color` letti dal Core;
+- sfondi e accessori grafici frontend non entrano nello SVG tecnico;
+- manifest e SHA-256 vengono rigenerati sul payload finale.
 
-Criterio di completamento: il payload prodotto dal frontend deve superare la
-validazione strutturale di `SvgDxfReader` per unità e gruppi piano, senza
-alterare il progetto locale.
+Verifica eseguita: sintassi JavaScript di `app.js` e
+`termodel-project-text.js` valida e presenza dei metadati canonici
+controllata sui sorgenti. La nuova esecuzione runtime sul PC dopo v0.73 è
+ancora da effettuare e resta un livello di verifica separato.
 
 ### Commissione frontend — pulsante Aggiorna Modello
 
