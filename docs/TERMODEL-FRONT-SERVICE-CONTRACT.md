@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **0.6**  
+Versione documento: **0.7**  
 Aggiornamento: **21 settembre 2026**  
 Stato: **architettura concordata; implementazione progressiva**
 
@@ -329,18 +329,26 @@ pulite nello snapshot restano fasi successive.
 
 ### Commissione frontend — fallback sfondo Copertura da DisegnoInput
 
-Stato: **COMMISSIONATO** — 21 settembre 2026.
+Stato: **ESEGUITO** — 21 settembre 2026.
 
-Estensione del comando `＋ Copertura`:
+Termodel Web v0.76 completa `＋ Copertura` con questo fallback:
 
-- se il piano corrente possiede già uno sfondo locale, resta valido il
-  comportamento v0.75: lo sfondo viene duplicato sul nuovo piano;
-- se il piano corrente non possiede uno sfondo, il frontend deve costruire
-  uno sfondo vettoriale locale a partire dal DisegnoInput del piano corrente;
-- tale riferimento deve conservare allineamento e scala del disegno sorgente,
-  ma non deve diventare geometria tecnica della nuova copertura;
-- lo sfondo generato resta una risorsa esclusivamente frontend e deve essere
-  escluso dal payload inviato al Service secondo le regole già vigenti.
+- se il piano corrente possiede già uno sfondo locale, lo duplica sul nuovo
+  piano come nella v0.75;
+- se non esiste uno sfondo, costruisce una fotografia vettoriale SVG del
+  DisegnoInput del piano corrente e la incorpora come sfondo locale della
+  nuova copertura;
+- dalla copia SVG usata come sfondo vengono rimossi gli accessori locali
+  (Nord, contenitore sfondi, ecc.);
+- lo sfondo conserva lo stesso viewBox/allineamento del disegno sorgente ed è
+  marcato come `data-termodel-sfondo-tipo="vector"`;
+- pareti e simboli sorgenti non vengono duplicati come geometria tecnica della
+  copertura: compaiono soltanto dentro l'immagine SVG di riferimento;
+- il fallback resta risorsa frontend e viene escluso dal payload Service dalle
+  regole già vigenti sugli sfondi.
+
+Verifica eseguita: sintassi JavaScript valida e pubblicazione v0.76 coerente.
+La prova funzionale browser resta da eseguire.
 
 ### Commissione frontend — nuovo piano Copertura per test Service avanzato
 
