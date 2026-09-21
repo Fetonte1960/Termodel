@@ -318,12 +318,20 @@ pulite nello snapshot restano fasi successive.
 
 ### Commissione frontend — indicatore origine rendering
 
-Stato: **COMMISSIONATO** — 21 settembre 2026.
+Stato: **ESEGUITO** — 21 settembre 2026.
 
-Il viewer 3D deve mostrare in modo persistente se il modello visualizzato è
-un'anteprima locale oppure un artifact elaborato da Termodel Service. Per un
-artifact server deve essere mostrato anche il relativo `calculationId`, almeno
-in forma abbreviata.
+Termodel Web v0.72 mostra nel viewer un indicatore persistente dell'origine del
+modello visualizzato:
+
+- `ANTEPRIMA LOCALE · nessuna elaborazione server` per JSON demo e preview
+  prodotte nel browser;
+- `RENDERING ELABORATO DA TERMODEL SERVICE · calculationId ...` per
+  l'artifact `model3d` recuperato dallo snapshot server.
+
+Per il rendering server viene mostrata una forma abbreviata del
+`calculationId` e l'identificativo completo resta disponibile nel tooltip.
+L'indicatore descrive il modello attualmente visualizzato e non viene usato come
+prova autonoma della correttezza del calcolo.
 
 ### Commissione frontend — pulsante Aggiorna Modello
 
