@@ -29,10 +29,10 @@ public sealed class TermodelWebPrimitive
     public string Kind { get; init; } = "mesh";
 
     [JsonPropertyName("source")]
-    public string Source { get; init; } = "TermodelCore3D";
+    public string Source { get; init; } = string.Empty;
 
     [JsonPropertyName("parte")]
-    public string Parte { get; init; } = "completo";
+    public string Parte { get; init; } = string.Empty;
 
     [JsonPropertyName("numero")]
     public int Numero { get; init; }
@@ -46,8 +46,29 @@ public sealed class TermodelWebPrimitive
     [JsonPropertyName("descrizione")]
     public string Descrizione { get; init; } = string.Empty;
 
+    [JsonPropertyName("filterMetadata")]
+    public bool FilterMetadata { get; init; }
+
+    [JsonPropertyName("piano")]
+    public string Piano { get; init; } = string.Empty;
+
+    [JsonPropertyName("confine")]
+    public string Confine { get; init; } = string.Empty;
+
+    [JsonPropertyName("separatore")]
+    public bool Separatore { get; init; }
+
+    [JsonPropertyName("stessaZona")]
+    public bool StessaZona { get; init; }
+
+    [JsonPropertyName("fittizia")]
+    public bool Fittizia { get; init; }
+
+    [JsonPropertyName("falda")]
+    public bool Falda { get; init; }
+
     [JsonPropertyName("color")]
-    public string Color { get; init; } = "#A0522D";
+    public string Color { get; init; } = "#FFFFFF";
 
     [JsonPropertyName("opacity")]
     public double Opacity { get; init; } = 1;
@@ -64,6 +85,8 @@ public sealed class TermodelWebPrimitive
     [JsonPropertyName("indices")]
     public List<int> Indices { get; init; } = [];
 
+    // Metadati aggiuntivi compatibili (es. zona) che non fanno parte del
+    // contratto grafico minimo ma possono essere utili ai client futuri.
     [JsonExtensionData]
     public Dictionary<string, object?> Metadata { get; init; } = new(StringComparer.Ordinal);
 }
