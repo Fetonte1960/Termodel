@@ -730,7 +730,7 @@ Incompleto:
 - file unico/golden test del progetto mansardato e confronto delle 546
   primitive;
 - regression test automatici e Golden Results versionati;
-- workflow `AggiornaCalcolo`/`calculationId` e artifact per le view, concordato ma non ancora implementato;
+- completamento della Fase 1 con `pianta-pulita/{piano}` nello snapshot e successivi artifact per le view;
 - API CRUD archivi, persistenza e concorrenza multiutente;
 - autenticazione e autorizzazione;
 - EnergyPlus, gbXML e IDF;
