@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.71 — Aggiorna Modello via Service</title>
+  <title>Termodel Web v0.72 — origine rendering visibile</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -64,6 +64,26 @@
 
     .viewport-status {
       position: absolute; left: 8px; top: 8px; padding: 3px 6px; color: #555; background: rgba(230,230,230,.78); border: 1px solid rgba(120,120,120,.35); z-index: 4;
+    }
+    .render-origin-badge {
+      position: absolute; left: 8px; top: 34px; z-index: 4;
+      padding: 5px 8px;
+      border: 1px solid #9a9a9a;
+      background: rgba(245,245,245,.94);
+      color: #333;
+      font-weight: 700;
+      letter-spacing: .02em;
+      pointer-events: none;
+    }
+    .render-origin-badge.service {
+      border-color: #4f7d56;
+      background: rgba(233,247,235,.96);
+      color: #244e2b;
+    }
+    .render-origin-badge.local {
+      border-color: #a48b45;
+      background: rgba(255,248,220,.96);
+      color: #5f4c13;
     }
     .axis {
       position: absolute; left: 18px; bottom: 18px; width: 54px; height: 54px; z-index: 4; pointer-events: none;
@@ -1102,7 +1122,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.71</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.72</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -1130,6 +1150,7 @@
       <section id="modelPage" class="page active">
         <div id="viewer"></div>
         <div class="viewport-status">Three.js · prototipo Web della finestra grafica Termodel</div>
+        <div id="renderOriginBadge" class="render-origin-badge local">ANTEPRIMA LOCALE · nessuna elaborazione server</div>
         <div class="axis"><div class="o"></div><div class="z"></div><div class="x"></div><div class="y"></div><span class="lz">Z</span><span class="lx">X</span><span class="ly">Y</span></div>
         <div class="view-cube"><div class="cube-face"></div><div class="ring"></div></div>
       </section>
@@ -1608,6 +1629,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.71.1"></script>
+  <script type="module" src="./app.js?v=0.72"></script>
 </body>
 </html>
