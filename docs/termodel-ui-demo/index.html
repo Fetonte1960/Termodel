@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.59 — sfondi nel progetto unico</title>
+  <title>Termodel Web v0.60 — sfondo DXF convertito</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -361,6 +361,117 @@
       background: linear-gradient(#fff,#e5e5e5);
       padding: 6px 14px;
       cursor: pointer;
+    }
+
+    .dxf-import-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1250;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0,0,0,.52);
+    }
+    .dxf-import-modal.visible { display: flex; }
+    .dxf-import-window {
+      width: min(760px, 94vw);
+      max-height: 88vh;
+      display: grid;
+      grid-template-rows: auto minmax(0,1fr) auto;
+      background: #f4f5f7;
+      border: 1px solid #555;
+      box-shadow: 0 16px 46px rgba(0,0,0,.38);
+    }
+    .dxf-import-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 14px;
+      background: #26384a;
+      color: #fff;
+    }
+    .dxf-import-head h2 { margin: 0; font-size: 17px; }
+    .dxf-import-head p { margin: 3px 0 0; color: #dce6ef; }
+    .dxf-import-close {
+      width: 30px;
+      height: 28px;
+      border: 1px solid #8d9aa5;
+      background: #f5f5f5;
+      color: #111;
+      font-size: 20px;
+      line-height: 20px;
+      cursor: pointer;
+    }
+    .dxf-import-body {
+      min-height: 0;
+      overflow: auto;
+      display: grid;
+      grid-template-columns: minmax(250px, 1fr) minmax(250px, 1fr);
+      gap: 12px;
+      padding: 12px;
+    }
+    .dxf-import-card {
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid #b8bec5;
+      background: #fff;
+    }
+    .dxf-import-card h3 { margin: 0 0 8px; font-size: 13px; }
+    .dxf-import-info { margin-bottom: 9px; color: #4e5963; line-height: 1.4; }
+    .dxf-layer-actions { display: flex; gap: 6px; margin-bottom: 7px; }
+    .dxf-layer-actions button,
+    .dxf-import-foot button {
+      border: 1px solid #888;
+      background: linear-gradient(#fff,#e5e5e5);
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .dxf-layer-list {
+      max-height: 300px;
+      overflow: auto;
+      border: 1px solid #c8ccd0;
+      background: #fafafa;
+    }
+    .dxf-layer-row {
+      display: grid;
+      grid-template-columns: 24px minmax(0,1fr) auto;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 7px;
+      border-bottom: 1px solid #e1e3e5;
+    }
+    .dxf-layer-row:last-child { border-bottom: 0; }
+    .dxf-layer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dxf-layer-count { color: #69737d; font-variant-numeric: tabular-nums; }
+    .dxf-option-group { display: grid; gap: 9px; }
+    .dxf-option-group label { display: flex; gap: 7px; align-items: flex-start; }
+    .dxf-option-note { color: #65717b; font-size: 11px; line-height: 1.35; margin-left: 23px; }
+    .dxf-import-summary {
+      margin-top: 14px;
+      padding: 8px;
+      border: 1px solid #b8c4ce;
+      background: #f4f8fb;
+      line-height: 1.4;
+      white-space: pre-line;
+    }
+    .dxf-import-foot {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 7px;
+      padding: 9px 12px;
+      border-top: 1px solid #aaa;
+      background: #e8e8e8;
+    }
+    .dxf-import-foot button.primary {
+      background: #dff1ff;
+      border-color: #5c8db2;
+      font-weight: 700;
+    }
+    @media (max-width: 700px) {
+      .dxf-import-body { grid-template-columns: 1fr; }
     }
 
     .svg-export-modal {
@@ -917,7 +1028,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.59</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.60</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -953,8 +1064,8 @@
           <details class="cad-tool-menu">
             <summary>Sfondo</summary>
             <div class="cad-tool-dropdown">
-              <button id="cadAddBackground" type="button" title="Importa uno sfondo raster o SVG per il piano corrente">＋ Aggiungi sfondo</button>
-              <input id="cadBackgroundFile" type="file" accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden />
+              <button id="cadAddBackground" type="button" title="Importa uno sfondo raster, SVG o DXF per il piano corrente">＋ Aggiungi sfondo</button>
+              <input id="cadBackgroundFile" type="file" accept=".dxf,application/dxf,.svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden />
               <label><input id="cadShowBackground" type="checkbox" checked /> Mostra sfondo</label>
               <label><input id="cadShowInput" type="checkbox" checked /> Mostra disegno input</label>
             </div>
@@ -1301,6 +1412,55 @@
   </div>
 
 
+  <div id="dxfImportModal" class="dxf-import-modal" aria-hidden="true">
+    <section class="dxf-import-window" role="dialog" aria-modal="true" aria-labelledby="dxfImportTitle">
+      <header class="dxf-import-head">
+        <div>
+          <h2 id="dxfImportTitle">Importa sfondo DXF</h2>
+          <p id="dxfImportFileName">Analisi del disegno...</p>
+        </div>
+        <button id="dxfImportClose" class="dxf-import-close" type="button" aria-label="Chiudi">×</button>
+      </header>
+      <div class="dxf-import-body">
+        <section class="dxf-import-card">
+          <h3>Layer da convertire</h3>
+          <div id="dxfImportInfo" class="dxf-import-info"></div>
+          <div class="dxf-layer-actions">
+            <button id="dxfSelectAll" type="button">Tutti</button>
+            <button id="dxfSelectNone" type="button">Nessuno</button>
+          </div>
+          <div id="dxfLayerList" class="dxf-layer-list"></div>
+        </section>
+        <section class="dxf-import-card">
+          <h3>Conversione tipo plotter</h3>
+          <div class="dxf-option-group">
+            <label>
+              <input id="dxfModeLines" name="dxfMode" type="radio" checked />
+              <span><strong>Solo linee / polilinee</strong><div class="dxf-option-note">Default: LINE, POLYLINE e LWPOLYLINE.</div></span>
+            </label>
+            <label>
+              <input id="dxfModeCurves" name="dxfMode" type="radio" />
+              <span><strong>Linee + curve</strong><div class="dxf-option-note">Aggiunge archi, cerchi, ellissi e spline convertiti in tratti.</div></span>
+            </label>
+            <label>
+              <input id="dxfConvertText" type="checkbox" />
+              <span><strong>Converti testo</strong><div class="dxf-option-note">TEXT e MTEXT diventano testo SVG.</div></span>
+            </label>
+            <label>
+              <input id="dxfExplodeBlocks" type="checkbox" />
+              <span><strong>Esplodi blocchi</strong><div class="dxf-option-note">Gli INSERT vengono trasformati nella geometria contenuta nei BLOCK.</div></span>
+            </label>
+          </div>
+          <div id="dxfImportSummary" class="dxf-import-summary"></div>
+        </section>
+      </div>
+      <footer class="dxf-import-foot">
+        <button id="dxfImportCancel" type="button">Annulla</button>
+        <button id="dxfImportConvert" type="button" class="primary">Converti</button>
+      </footer>
+    </section>
+  </div>
+
   <div id="svgExportModal" class="svg-export-modal" aria-hidden="true">
     <section class="svg-export-window" role="dialog" aria-modal="true" aria-labelledby="svgExportTitle">
       <header class="svg-export-head">
@@ -1330,6 +1490,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.59"></script>
+  <script type="module" src="./app.js?v=0.60"></script>
 </body>
 </html>
