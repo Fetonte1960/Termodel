@@ -6,10 +6,10 @@
 >
 > Questo documento serve a evitare la perdita di contesto quando una chat diventa troppo lunga. Deve essere mantenuto breve, operativo e aggiornato dopo ogni intervento che cambia architettura, stato, file importanti, contratti o prossimi passi.
 
-Ultimo aggiornamento: **2026-09-20**  
+Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`254b77d30d7238e148a3aeda4f50d9637bbe502c` — `Formalize automatic DXF scaling v0.62`  
+`952b605637dc44095639e3b0b4d41fa7d06347ce` — `Add vector background endpoint snap v0.63`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -679,13 +679,13 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.62
+Termodel Web v0.63
 ```
 
-Commit frontend di riferimento per la v0.62:
+Commit frontend di riferimento per la v0.63:
 
 ```text
-254b77d30d7238e148a3aeda4f50d9637bbe502c  Formalize automatic DXF scaling v0.62
+952b605637dc44095639e3b0b4d41fa7d06347ce  Add vector background endpoint snap v0.63
 ```
 
 Ultima versione pubblica verificata manualmente dall'utente:
@@ -694,7 +694,7 @@ Ultima versione pubblica verificata manualmente dall'utente:
 Termodel Web v0.30
 ```
 
-La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.62 sono su `main`; v0.57-v0.62 devono essere verificate pubblicamente.
+La v0.35 è stata verificata manualmente dall'utente il 2026-09-20: dopo l'inserimento il simbolo viene selezionato e il pannello proprietà si attiva. La v0.56 è stata verificata parzialmente nel viewer: i FIN compaiono nel 3D, ma sulle pareti esterne è emerso un problema di allineamento/profondità da correggere. Le revisioni successive fino alla v0.63 sono su `main`; v0.57-v0.63 devono essere verificate pubblicamente.
 
 La v0.24 ha completato il primo collegamento automatico del flusso AI → progetto strutturato.
 
@@ -3924,6 +3924,121 @@ Formalize automatic DXF scaling v0.62
 
 ---
 
+## 12.30 Snap agli endpoint dello sfondo vettoriale — v0.63
+
+La v0.63 aggiunge al menu `Snap` del CAD:
+
+```text
+[x] Sfondo vettoriale
+```
+
+Il check è **attivo di default**.
+
+Questa funzione è additiva:
+
+- non sostituisce `Vicino` / `Estremo`;
+- non cambia il significato dello Snap normale sulle pareti Termodel;
+- aggiunge soltanto gli endpoint/vertici dello sfondo SVG vettoriale come candidati di snap;
+- tra tutti i candidati validi entro la tolleranza vince quello geometricamente più vicino.
+
+Schema:
+
+```text
+Snap pareti Termodel
+    +
+Snap endpoint sfondo vettoriale
+    ↓
+candidato più vicino
+```
+
+Lo snap sfondo viene applicato solo se:
+
+- esiste uno sfondo sul piano corrente;
+- lo sfondo è di tipo `vector`;
+- il check `Sfondo vettoriale` è attivo;
+- lo sfondo è visibile.
+
+Per gli SVG vengono estratti come candidati:
+
+- estremi di `<line>`;
+- vertici di `<polyline>`;
+- vertici di `<polygon>`;
+- vertici lineari dei `<path>` con comandi `M/L/H/V/Z`;
+- vertici dei `<rect>`.
+
+Le trasformazioni SVG `translate / scale / rotate / matrix`, il `viewBox` interno e il `preserveAspectRatio` dell'immagine di sfondo vengono riportati nelle coordinate CAD prima di costruire i punti di snap.
+
+Per lo sfondo DXF convertito dal plotter questo significa che i vertici prodotti dal DXF diventano direttamente utilizzabili per ricalcare la pianta.
+
+### Compatibilità con lo Snap Termodel
+
+Quando vince uno snap allo sfondo il risultato è marcato:
+
+```text
+snapSource = background
+targetLineId = ""
+```
+
+e il feedback utente è:
+
+```text
+SNAP SFONDO
+```
+
+La scelta `targetLineId=""` è intenzionale: uno spigolo dello sfondo non deve essere interpretato come una parete Termodel e non deve attivare la logica di arresto/chiusura automatica della sequenza pareti.
+
+### Prestazioni
+
+Gli endpoint dello SVG non vengono ricalcolati a ogni movimento del mouse.
+
+La v0.63 usa:
+
+- cache per sfondo/piano;
+- invalidazione automatica quando cambiano `href / x / y / width / height / preserveAspectRatio`;
+- deduplicazione dei vertici;
+- griglia spaziale con cella pari alla tolleranza di Snap.
+
+Durante il movimento vengono quindi controllati solo i punti nelle celle vicine al cursore.
+
+### Test automatici v0.63
+
+Verificati:
+
+- sintassi `app.js`;
+- trasformazione SVG `translate`;
+- mapping da viewBox SVG alle coordinate CAD;
+- parsing di vertici da path lineari;
+- default UI `Sfondo vettoriale = ON`;
+- caso in cui vince lo snap sfondo:
+  - `snapSource = background`;
+  - `targetLineId = ""`;
+  - label `SNAP SFONDO`.
+
+### Stato
+
+**IMPLEMENTATO IN v0.63 — TEST AUTOMATICI SUPERATI; DA VERIFICARE MANUALMENTE SULLO SFONDO DXF `Farmacia.dxf`.**
+
+Test manuale consigliato:
+
+```text
+Farmacia.dxf importato come sfondo vettoriale
+→ Snap → Sfondo vettoriale ON
+→ Nuova parete
+→ avvicinare il cursore a uno spigolo DXF
+→ verificare marcatore verde + "SNAP SFONDO"
+→ cliccare
+→ verificare che l'estremo della parete cada esattamente sul vertice dello sfondo
+```
+
+Commit:
+
+```text
+952b605637dc44095639e3b0b4d41fa7d06347ce
+Add vector background endpoint snap v0.63
+```
+
+---
+
 ## 13. Protocollo progetto
 
 Il protocollo progetto nasce come **standard di comunicazione con l'AI**: un singolo contenitore testuale deve poter rappresentare il progetto completo, **comprensivo di più piani fisici**, ed essere trasmesso anche tramite normale copia-incolla in una chat. Il contenitore è quindi a livello di progetto e non a livello del singolo piano.
@@ -4098,7 +4213,7 @@ Quali file devo leggere?
 
 ## 17. Stato operativo al momento della creazione
 
-**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.62.**
+**ArchivioWeb v0.22 esiste già e non deve essere riscritto da zero. Il frontend complessivo su main è ora v0.63.**
 
 Stato operativo corrente:
 
@@ -4108,7 +4223,7 @@ Stato operativo corrente:
 - semplice SVG AI con progetto già strutturato → riusa il progetto esistente;
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
-- v0.62 presente su `main`;
+- v0.63 presente su `main`;
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
@@ -4148,6 +4263,7 @@ Stato operativo corrente:
 - v0.60 aggiunge lo sfondo DXF: `Aggiungi sfondo` riconosce `.dxf`, apre un dialog layer/opzioni e converte il contenuto 2D in SVG con `dxf-plotter.js`; default tutti i layer + solo LINE/POLYLINE/LWPOLYLINE.
 - v0.61 stabilisce `cm` come unità interna del CAD Web e aggiunge nel dialog DXF la combo `m / cm / mm`, proposta da `$INSUNITS`; il plotter normalizza la geometria in cm e lo sfondo DXF entra alla dimensione reale 1:1 senza essere adattato al viewBox esistente.
 - v0.62 formalizza che la scelta dell'unità DXF è la **calibrazione automatica**: il plotter converte in cm, normalizza l'origine e inverte Y senza alterare le distanze. `Calibra` resta solo una correzione eccezionale per DXF/unità errati.
+- v0.63 aggiunge lo **Snap sfondo vettoriale** attivo di default: endpoint/vertici dello SVG si sommano allo Snap normale; il candidato più vicino vince, ma lo snap sfondo non restituisce `targetLineId` e quindi non viene scambiato per una parete Termodel.
 - la generazione 3D corrente nel frontend resta **provvisoria**; la generazione 3D completa e autorevole, con aperture reali, sarà responsabilità di Termodel.Core / Termodel.WebService.
 
 Il flusso AI → progetto strutturato, introdotto originariamente in v0.24 tramite progetto server, è stato mantenuto ma il bootstrap è stato sostituito in v0.57 dal progetto base locale consolidato in JavaScript. Dalla v0.58 lo stesso `TERMODEL-PROJECT-TEXT-V1` è anche ricostruibile dal frontend dopo le modifiche e costituisce la fotografia completa da salvare o, in futuro, inviare al server.
@@ -4158,7 +4274,7 @@ Le prime due priorità UX della sezione 12.4 sono state realizzate in v0.25.
 
 Priorità immediate:
 
-> 1. continuare il collaudo manuale v0.62 sul DXF reale `Farmacia.dxf`: confrontare in AutoCAD e Termodel la **stessa distanza fra gli stessi punti**, senza usare `Calibra`; l'unità rilevata/selezionata `m` deve rendere il DXF già in scala reale;  
+> 1. collaudare manualmente la v0.63 sul DXF reale `Farmacia.dxf`: `Snap → Sfondo vettoriale` deve essere attivo di default; durante `Nuova parete` il cursore vicino a un vertice DXF deve mostrare `SNAP SFONDO` e fissare il punto esattamente sul vertice;  
 > 2. dopo il collaudo del round-trip, usare `buildCurrentProjectText()` come base obbligatoria di qualsiasi futura chiamata WebService; prima dell'invio produrre però un payload server filtrato, **senza sfondi raster/SVG, Data URL/Base64 o relativi asset**;  
 > 3. correggere il difetto osservato nella v0.56 sui FIN 3D delle pareti esterne: alcuni parallelepipedi risultano male centrati nello spessore e visibili soprattutto dal lato interno; mantenere la soluzione provvisoria senza CSG/fori;  
 > 4. completare trascinamento simboli, snap in spostamento e vincolo LOC;  
@@ -4172,10 +4288,10 @@ Se questa conversazione termina, una nuova chat deve poter riprendere senza rico
 
 ```text
 branch: main
-frontend: Termodel Web v0.62
+frontend: Termodel Web v0.63
 ultimo commit funzionale frontend:
-254b77d30d7238e148a3aeda4f50d9637bbe502c
-Formalize automatic DXF scaling v0.62
+952b605637dc44095639e3b0b4d41fa7d06347ce
+Add vector background endpoint snap v0.63
 ```
 
 **File da leggere per il lavoro immediato sul progetto unico:**
@@ -4232,11 +4348,17 @@ dxfUnitFromInsUnits(insUnits)
 
 dxfUnitScaleToCm(unit)
     mm=0,1 · cm=1 · m=100
+
+cadBackgroundSnapCandidates(point)
+    sfondo SVG vettoriale → endpoint vicini al cursore
+
+cadSnapPoint(point, movingLineId)
+    Snap pareti + endpoint sfondo → candidato più vicino
 ```
 
 **Nota importante sulla struttura del codice:** l'import degli archivi è ancora implementato da `loadTermodelProjectText(...)` in `archivio-web.js`; `app.js` orchestra la conversione verso lo stato CAD; `termodel-project-text.js` centralizza parsing/sostituzione delle sezioni e soprattutto la ricostruzione del progetto unico. Non riscrivere ArchivioWeb da zero.
 
-**Test già eseguiti sulla v0.58-v0.62:**
+**Test già eseguiti sulla v0.58-v0.63:**
 
 - sintassi JavaScript valida per `app.js`, `archivio-web.js` e `termodel-project-text.js`;
 - round-trip strutturale sul vero `ProgettoVuoto.termodel.txt`: 26 sezioni prima e dopo;
@@ -4245,7 +4367,8 @@ dxfUnitScaleToCm(unit)
 - v0.59: aggiunta di uno sfondo sintetico porta le sezioni 26 → 28, con indice + asset presenti nel manifest; rimuovendo lo sfondo il progetto torna a 26 sezioni e le entry vengono eliminate;
 - v0.60: test DXF sintetico superato per layer, linee/polilinee, testo opzionale e BLOCK/INSERT opzionale;
 - v0.61: test scala reale superato: `4000 mm`, `400 cm` e `4 m` producono tutti `400 cm = 4 m` nel CAD Termodel;
-- v0.62: test con coordinate lontane dall'origine superato: `1000 → 1013,0977 m` resta esattamente `13,0977 m` dopo conversione in cm e normalizzazione origine.
+- v0.62: test con coordinate lontane dall'origine superato: `1000 → 1013,0977 m` resta esattamente `13,0977 m` dopo conversione in cm e normalizzazione origine;
+- v0.63: test Snap sfondo superato: mapping SVG→CAD corretto, `SNAP SFONDO`, `snapSource=background` e `targetLineId=""`.
 
 **Limite del test automatico:** l'ambiente usato per il controllo non esponeva Web Crypto; il percorso è stato esercitato con un digest simulato per controllare la ricomposizione. Nel browser reale `buildTermodelProjectText()` usa `crypto.subtle.digest('SHA-256', ...)`. È quindi obbligatorio il test manuale reale di Salva.
 
@@ -4257,18 +4380,16 @@ modello demo
 
 Nuovo
 → Aggiungi sfondo
-→ scegliere un DXF con almeno una misura reale nota
-→ verificare unità proposta da $INSUNITS
-→ scegliere/correggere m, cm o mm
-→ verificare layer tutti selezionati
-→ verificare Solo linee / polilinee attivo
-→ Converti
-→ controllare la stessa distanza fra gli stessi punti nel CAD
-→ NON calibrare se DXF e unità sono corretti
-→ usare la calibrazione solo come correzione di DXF/unità errati
+→ scegliere Farmacia.dxf
+→ importare in scala automatica
+→ Snap → Sfondo vettoriale deve essere ON
+→ Nuova parete
+→ avvicinarsi a un endpoint/vertice del DXF
+→ verificare SNAP SFONDO
+→ cliccare e controllare che l'estremo cada esattamente sul vertice
+→ verificare che lo snap sfondo non interrompa la sequenza come se fosse una parete
 → Salva
-→ Apri... il file appena scaricato
-→ verificare che sfondo, dimensione e unità restino coerenti
+→ Apri... e verificare persistenza dello sfondo
 ```
 
 Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttamente sopra il file precedentemente aperto. `Salva con nome` chiede il nome e genera anch'esso un download.
@@ -4285,4 +4406,4 @@ Nota UX: `Salva` in v0.58 genera un download del browser; non scrive direttament
 
 **Altri lavori aperti CAD:** trascinamento simboli, snap durante lo spostamento e vincolo LOC.
 
-Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `254b77d30d7238e148a3aeda4f50d9637bbe502c`.
+Prima di iniziare il prossimo intervento, ricontrollare `main` perché potrebbero essere arrivati nuovi commit dopo `952b605637dc44095639e3b0b4d41fa7d06347ce`.
