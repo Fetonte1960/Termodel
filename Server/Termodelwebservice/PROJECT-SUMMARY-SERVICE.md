@@ -163,10 +163,23 @@ per nome file contenente più layer, inclusi progressivamente layer ausiliari
 (es. tubi pannelli), in modo che il codice storico continui a filtrare
 `dxf.Lines`, blocchi e layer senza conoscere la sorgente SVG.
 
-Lo stato attuale è parziale: il 3D usa già `SvgDxfReader` e un `DxfDocument`
-compatibile, ma oggi il documento viene costruito principalmente per singolo
-gruppo/piano. Va evoluto verso il documento logico multi-layer per `NomeFile`
-senza trasformare `netDxf` compatibile in un lettore DXF generale.
+Stato implementato al 21 settembre 2026: `SvgDxfReader` costruisce un solo
+`DxfDocument` logico per `NomeFile`; i gruppi/piani che condividono il file
+condividono quindi anche il documento e restano distinti tramite `LayerCad`.
+Gli elementi SVG possono inoltre dichiarare un `data-termodel-layer` specifico,
+permettendo di rappresentare layer ausiliari nello stesso documento.
+
+`DxfDocument.Load(path)` consulta un registro CAD scoped alla richiesta.
+`GeneraModello` materializza nel Virtual Project un percorso DXF reale,
+registra sotto quel percorso il documento virtuale e richiama nuovamente il
+metodo storico `LeggiFileDxf(...)`. Di conseguenza `LeggiDxf` continua a
+passare da `File.Exists` e `DxfDocument.Load` come nel Desktop senza sapere
+che geometria e layer provengono dallo SVG.
+
+Il supporto geometrico dei layer ausiliari è predisposto; i circuiti pannelli
+restano però intenzionalmente non supportati dal percorso 3D corrente e
+`IoPannelli.LeggiTubiDXF` continua a segnalarli come funzione non ancora
+integrata.
 
 ### Virtual DB
 
@@ -175,14 +188,22 @@ Gli archivi autorevoli per il motore nel file unico sono
 l'adattatore `UtiDb` / `Database.DB` deve replicare la semantica Desktop,
 non solo le firme necessarie alla compilazione.
 
-Prima di collegare `GestXml` devono essere allineati almeno:
+Allineamento implementato al 21 settembre 2026:
 
-- comportamento dei lookup non trovati (`null` dove il Desktop restituisce
-  `null`, non stringa vuota);
-- `TipoZona` e valori testuali esattamente coerenti col Desktop;
-- `AggiungiZoneStandard`;
-- ulteriori metodi richiesti dai moduli migrati, aggiunti alla facciata invece
-  di modificare i chiamanti storici.
+- `GetDataDB` replica il comportamento Desktop rilevante: confronto trimmed
+  case-sensitive e `null` a runtime quando il dato non viene trovato o è
+  vuoto;
+- `TipoZona` usa i valori Desktop, incluso `Edificio adiacente`, e conserva
+  il comportamento per campo `Tipo` mancante;
+- `AggiungiZoneStandard` è disponibile attraverso `UtiDb` e
+  `Database.DB`;
+- la validazione server mantiene intenzionalmente errore strutturato quando un
+  archivio richiesto è assente dal file unico, invece di reintrodurre UI o
+  MessageBox.
+
+Ulteriori metodi verranno aggiunti alla facciata quando richiesti da
+`GestXml`, `CalcoloAPE`, pannelli o altri moduli, evitando modifiche ai
+chiamanti storici.
 
 Il JSON parallelo degli archivi è una rappresentazione utile al Web/AI; il
 motore Core continua a usare come riferimento runtime gli XML del file unico,
@@ -190,13 +211,23 @@ finché il contratto non stabilirà diversamente.
 
 ### Virtual Project
 
-I moduli Desktop file-based (`GestXml`, `CalcoloAPE`, `Cened`,
-`IoPannelli` e successivi) devono poter lavorare in un workspace temporaneo
-isolato per elaborazione/`calculationId`, che materializzi soltanto i file
-necessari con percorsi simili al progetto Desktop.
+È stato implementato `Compatibility/ProjectWorkspace.cs`. Per ogni
+elaborazione corrente esso materializza il file unico in una directory
+temporanea isolata, crea le sezioni del contenitore, replica
+`archives/xml/*.xml` sotto `dbtempfiles/`, espone `xml/input.xml` e
+`xml/output.xml` e fornisce i percorsi CAD logici usati dal Virtual CAD.
+
+La facciata `GestProg` espone ora `PathProg`, `PathProgDB`,
+`FileXMLPath`, `FileXMLOutPath` e `FileDXFPath(...)` sul workspace
+corrente. Il workspace viene eliminato al termine della generazione corrente.
+
+Questa è la base per i moduli Desktop file-based (`GestXml`, `CalcoloAPE`,
+`Cened`, `IoPannelli` e successivi). Non è ancora lo storage persistente
+degli snapshot `calculationId`: quel lifecycle verrà introdotto con
+`POST /api/calculations`.
 
 Il workspace è un adattatore interno, non il formato autorevole del progetto.
-Il file unico resta l'input autorevole; gli output del workspace diventano
+Il file unico resta l'input autorevole; gli output del workspace diventeranno
 artifact dello snapshot e non devono essere reinseriti implicitamente nel
 progetto.
 
@@ -426,7 +457,34 @@ e chiedono conferma prima della copia.
 Git pull/push restano operazioni separate. Non pubblicare automaticamente
 modifiche frontend preesistenti o non pertinenti.
 
-## 9. Compilazione ed esecuzione locale
+## 9. Compilazione ed esecuzione
+
+### Build automatica GitHub
+
+È presente:
+
+```text
+.github/workflows/termodel-service-build.yml
+```
+
+Il workflow viene avviato automaticamente dai push che modificano il Service
+(o il workflow stesso) e può essere avviato anche manualmente. Su runner
+Windows esegue:
+
+```text
+dotnet restore Termodel.WebService.sln
+dotnet build Termodel.WebService.sln --configuration Release --no-restore
+```
+
+Prima esecuzione dopo l'introduzione del Virtual CAD/DB/Project: fallita con
+3 errori tutti in `ProjectWorkspace.cs` per chiamata di metodo statico tramite
+istanza; corretti nel commit `2753e468c7d1da6b9fb4602152b3fabb0abec17c`.
+
+Seconda esecuzione GitHub Actions, run #2: **Build succeeded, 0 errori,
+108 warning**. Questo certifica la compilazione cloud del codice corrente, non
+l'esecuzione funzionale degli endpoint.
+
+### Esecuzione locale
 
 1. sincronizzare GitHub → locale e verificare le differenze;
 2. aprire `C:\DOCUMENTI\termomodel\codec\Termodelwebservice\Termodel.WebService.sln`;
@@ -446,14 +504,23 @@ Implementato e verificato:
 - progetto base incorporato e copia verificata della definizione dati;
 - file unico e endpoint Nuovo progetto;
 - CORS/PNA per il frontend pubblico;
-- parser SVG → compatibilità netDxf;
-- archivi XML in memoria;
+- Virtual CAD: SVG multipiano → documento netDxf virtuale multi-layer per
+  `NomeFile`, registro per `DxfDocument.Load` e riuso di `LeggiFileDxf`;
+- Virtual DB: archivi XML in memoria, `GetDataDB`/ `TipoZona` allineati e
+  `AggiungiZoneStandard`;
+- Virtual Project: workspace temporaneo e facciata `GestProg` per percorsi
+  Desktop-like;
 - motore 3D headless senza IFC;
 - endpoint Modello3D e pianta pulita;
-- build con 0 errori e test HTTP minimo.
+- GitHub Actions per restore/build automatico;
+- build Release corrente su GitHub Actions con 0 errori e 108 warning;
+- test HTTP minimo storico sul `ProgettoVuoto` eseguito prima dell'ultimo
+  refactoring di compatibilità.
 
 Incompleto:
 
+- riesecuzione HTTP locale del `ProgettoVuoto` dopo il nuovo strato Virtual
+  CAD/DB/Project;
 - file unico/golden test del progetto mansardato;
 - regression test automatici e Golden Results versionati;
 - workflow `AggiornaCalcolo`/`calculationId` e artifact per le view, concordato ma non ancora implementato;
