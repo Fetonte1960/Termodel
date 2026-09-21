@@ -146,6 +146,39 @@ Risultato:
 
 
 
+### INCARICO 2026-09-21 — Prova AggiornaCalcolo e artifact model3d v3
+Stato: COMMISSIONATO
+
+Commissionato:
+- esporre il primo ciclo reale del contratto `AggiornaCalcolo` senza ancora
+  integrare XML nazionale, dispersioni o pannelli;
+- implementare `POST /api/calculations` con body
+  `TERMODEL-PROJECT-TEXT-V1` in `text/plain; charset=utf-8`;
+- eseguire una sola volta il motore corrente `GeneraModello`, creare un
+  `calculationId` e catturare nello snapshot il `TermodelWebModel v3`
+  avanzato già prodotto dal Core;
+- esporre
+  `GET /api/calculations/{calculationId}/artifacts/model3d` in modo che
+  restituisca il JSON già catturato senza rieseguire il calcolo;
+- restituire da `POST /api/calculations` almeno
+  `contractVersion/calculationId/status/artifacts/diagnostics`;
+- mantenere invariati e funzionanti gli endpoint legacy
+  `POST /api/model/3d` e `GET /api/model/clean-floor/{floorName}`;
+- usare storage temporaneo in memoria per questa prima prova, isolato per
+  `calculationId`, senza introdurre persistenza prematura;
+- aggiungere uno smoke test HTTP automatico che verifichi creazione progetto,
+  aggiornamento, manifest e doppia lettura dell'artifact model3d dallo stesso
+  snapshot.
+
+Criteri di completamento:
+- build GitHub Actions con 0 errori;
+- `POST /api/calculations` eseguito realmente nello smoke test;
+- risposta contenente un `calculationId` e href `model3d`;
+- `GET .../artifacts/model3d` eseguito almeno due volte sullo stesso id con
+  JSON v3 valido e senza nuova elaborazione;
+- stato, limiti e commit registrati qui prima di passare a `ESEGUITO`.
+
+
 ## 2. Posizioni e struttura
 
 Sorgente locale compilato e avviato da Visual Studio:
