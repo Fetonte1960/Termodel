@@ -6730,6 +6730,7 @@ function cadReturnToModel() {
     if (!regenerated) return;
   }
 
+  cadSetMobilePropertiesOpen(false);
   activateModelPage();
 }
 
