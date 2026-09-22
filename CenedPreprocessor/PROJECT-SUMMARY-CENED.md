@@ -313,7 +313,40 @@ Controlli iniziali:
 
 La fixture è costruita usando elementi ed enumerazioni verificati contro lo schema pubblico gbXML 8.01. La validazione completa con il validator ufficiale gbXML verrà aggiunta alla pipeline di test.
 
-## 18. Prossimo passo
+## 18. Gate di fattibilità gbXML sugli ombreggiamenti
+
+Creato:
+
+`samples/GBXML-SHADING-001.xml`
+
+Il caso estende la stanza con due finestre introducendo cause geometriche di ombreggiamento esplicite:
+
+- balcone/aggetto orizzontale: profondità 1,20 m, quota 2,50 m;
+- setto verticale Ovest: profondità 0,80 m;
+- setto verticale Est: profondità 0,80 m;
+- palazzo di fronte: facciata ombreggiante a 8,00 m, larghezza 12,00 m, altezza 10,00 m.
+
+Tutti gli elementi ombreggianti sono rappresentati con `Surface surfaceType="Shade"`, senza estensioni proprietarie.
+
+Riferimento esterno: i test ASHRAE/gbXML includono esplicitamente un caso Balcony e un caso Roof With Extended Overhang nei quali il balcone/aggetto deve essere tradotto come superficie `Shade`.
+
+Caso di test:
+
+`tests/GBXML-SHADING-001.md`
+
+Controlli iniziali sul file:
+- gbXML 8.01;
+- 10 Surface totali;
+- 4 Surface di tipo Shade;
+- 2 Opening;
+- 4 Construction;
+- 1 Space;
+- 1 Zone;
+- nessun riferimento interno irrisolto.
+
+Decisione D-0014: questo caso è un **gate di fattibilità**. Non basta che gbXML possa memorizzare le superfici Shade: il futuro adapter dovrà leggerle senza perdita, associarle geometricamente alle aperture/facciate, distinguere aggetto orizzontale, setti verticali e ostacolo remoto ed estrarre profondità/distanze/quote necessarie al mapping CENED.
+
+## 19. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
