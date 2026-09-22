@@ -469,7 +469,7 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 
 ## CENED-0016 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** consolidare nel progetto i file di prova e caricarli automaticamente nella WebJS, senza richiedere ogni volta il caricamento manuale.
 
@@ -484,4 +484,26 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 - incrementare versione WebJS e aggiornare caption;
 - aggiornare test, Summary e documentazione;
 - deploy su `main/docs/cened-bridge/`;
+- nessuna modifica a Desktop, Core, Service o `definizionedati.json`.
+
+
+**Risultato CENED-0016:**
+- versione WebJS incrementata a `0.1.3-dev`;
+- consolidata la fixture runtime `src/WebJS/fixtures/GBXML-SHADING-001.xml`;
+- creata `src/WebJS/fixtures/BLUMATICA-XML-001-SANITIZED.xml`, derivata dal Golden Reference BLUMATICA-XML-001 e marcata DERIVATO-NON-VALIDATO;
+- dati personali e identificativi del Golden XML rimossi/sostituiti;
+- preservati i valori tecnici e i conteggi necessari ai test WebJS;
+- implementato autoload di entrambe le fixture all'avvio;
+- apertura automatica del Viewer 3D dopo il caricamento;
+- UI aggiornata per indicare `Fixture consolidata`;
+- pulsante rinominato `Ripristina fixture`;
+- import manuali mantenuti per sostituire singolarmente le sorgenti;
+- aggiornati README e test dual input;
+- registrata D-0016;
+- deploy eseguito su `main/docs/cened-bridge/`;
+- commit deploy index: `8875a3fa77b950029caf5927cba4edd6bf75b211`;
+- commit deploy gbXML fixture: `17d0ef6f0e2e0b3120deaf1f97581d7e36ee3a4c`;
+- commit deploy XML nazionale fixture: `dd6ac409bcc2127cdc4e03f4825bd867335f1c21`;
+- sorgente e deploy verificati identici;
+- verifica HTTP esterna non disponibile dagli strumenti della sessione;
 - nessuna modifica a Desktop, Core, Service o `definizionedati.json`.
