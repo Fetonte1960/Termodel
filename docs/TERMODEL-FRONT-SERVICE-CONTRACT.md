@@ -1,7 +1,7 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **0.8**  
-Aggiornamento: **21 settembre 2026**  
+Versione documento: **0.9**  
+Aggiornamento: **22 settembre 2026**  
 Stato: **architettura concordata; implementazione progressiva**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
@@ -645,6 +645,9 @@ Risposta indicativa:
   "contractVersion": "TERMODEL-FRONT-SERVICE-V1",
   "calculationId": "7d2d09e6-...",
   "status": "completed",
+  "savedProject": {
+    "fileName": "TermodelProject-20260922-143501000-7d2d09e6-....tmdl"
+  },
   "artifacts": [
     {
       "name": "model3d",
@@ -660,6 +663,18 @@ Risposta indicativa:
   "diagnostics": []
 }
 ```
+
+Su una risposta `completed` il Service corrente include anche
+`savedProject.fileName`. È il solo nome logico della copia persistente del
+`TERMODEL-PROJECT-TEXT-V1` realmente ricevuto ed elaborato con successo.
+Non contiene il path fisico del server e non introduce un nuovo formato.
+La copia viene scritta direttamente dal `projectText` del body in UTF-8,
+senza rigenerare manifest/geometria e senza aggiungere gli sfondi esclusivamente
+frontend. Il file è associato allo stesso `calculationId` tramite il nome.
+
+`savedProject` non è un artifact di calcolo e, in questa fase, non dispone di
+un endpoint di download. Il frontend può ignorare il campo senza cambiare il
+workflow esistente.
 
 Stati previsti:
 
@@ -845,7 +860,14 @@ Nella prima versione è ammesso un workspace temporaneo per ogni
 **Implementazione iniziale attuale:** per il solo artifact `model3d` lo
 snapshot è mantenuto in memoria dal WebService come byte JSON immutabili
 indicizzati per `calculationId`. Si perde quindi al riavvio del processo.
-Questo è intenzionale per la prima prova e non modifica il contratto HTTP.
+
+Separatamente dallo snapshot, dopo una elaborazione riuscita il WebService salva
+anche la copia persistente del payload tecnico ricevuto nella directory
+`SavedProjects/` del proprio content root, oppure nella directory indicata
+dalla variabile operativa `TERMODEL_SAVED_PROJECTS_DIR`. Il nome contiene
+timestamp UTC e lo stesso `calculationId`. Questa persistenza serve al recupero
+del progetto tecnico ricevuto e non cambia il lifecycle degli artifact dello
+snapshot.
 
 Esempio concettuale:
 
