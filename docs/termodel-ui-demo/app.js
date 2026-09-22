@@ -47,8 +47,10 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_MAIN_TITLE = 'Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.82';
-const APP_CAD_TITLE = 'Termodel Cad 2d Versione 0.82';
+const APP_VERSION = '0.83';
+const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
+const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
+const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
 const TERMODEL_ANDROID_DEVICE = /Android/i.test(navigator.userAgent || '');
 let androidHelpEnabled = false;
@@ -593,9 +595,11 @@ function installAndroidExploreStyles() {
       padding: 0 12px;
     }
     .android-explore-help {
-      width: 38px;
-      padding: 0;
-      font-size: 20px;
+      min-width: 48px;
+      width: auto;
+      padding: 0 7px;
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
     }
     .android-explore-main.active {
       background: #dff1ff;
@@ -644,7 +648,7 @@ function createAndroidExploreBox() {
     <button id="androidExploreToggle" class="android-explore-main" type="button"
       aria-expanded="false">Esplora</button>
     <button id="androidExploreHelp" class="android-explore-help" type="button"
-      aria-label="Apri help Termodel" title="Help">?</button>
+      aria-label="Apri help Termodel · versione ${APP_VERSION}" title="Help · Termodel Web v${APP_VERSION}">? ${APP_VERSION_SHORT}</button>
     <div id="androidExploreMenu" class="android-explore-menu" hidden>
       <button id="androidExploreSingleLine" class="android-explore-action" type="button">
         Disegno unifilare
