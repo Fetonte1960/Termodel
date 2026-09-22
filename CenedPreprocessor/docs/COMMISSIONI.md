@@ -27,3 +27,18 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 8. nessuna funzione applicativa Cened è stata ancora implementata.
 
 **Verifica:** presenza e contenuto dei file principali riletti sul branch `TermodelCened`; Project Summary aggiornato allo stato effettivo.
+
+## CENED-0002 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** verificare la definizione del prodotto rispetto alle condizioni e regole ARIA/CENED correnti e consolidarne la formulazione nel progetto.
+
+**Definizione proposta dall'utente:** software bridge tra formati standard di modelli termici e CENED+2 Motore; dopo l'importazione presenta/organizza i dati, avvia il calcolo, prepara l'XML e produce un'anteprima APE.
+
+**Ambito:**
+1. verificare la compatibilità concettuale con le Condizioni d'uso ARIA/CENED vigenti;
+2. distinguere il posizionamento commerciale "bridge" dalla qualificazione regolatoria di Client di terze parti;
+3. chiarire i limiti relativi alla riproduzione dell'interfaccia grafica CENED+2 Client;
+4. chiarire il ruolo dell'anteprima APE rispetto all'APE ufficiale/CEER;
+5. aggiornare lo storico decisioni e l'architettura senza implementare codice.
