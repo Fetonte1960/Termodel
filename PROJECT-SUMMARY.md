@@ -6,10 +6,10 @@
 >
 > Questo documento serve a evitare la perdita di contesto quando una chat diventa troppo lunga. Deve essere mantenuto breve, operativo e aggiornato dopo ogni intervento che cambia architettura, stato, file importanti, contratti o prossimi passi.
 
-Ultimo aggiornamento: **2026-09-21**  
+Ultimo aggiornamento: **2026-09-22**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`8e27a0281156787ef7521fe2088b750210caa3da` — `Publish Termodel Web v0.84 Android version badge`  
+`4d061f0991ef79c823dd5917844dbccbfeb8dd88` — `Publish Termodel Web v0.84 immersive Android UI`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -490,6 +490,121 @@ Conseguenza operativa:
 
 ---
 
+
+## 2.4 Nuova prospettiva prodotto — Termodel Desktop-class + ProjectBrowser
+
+Decisione di prodotto registrata il **2026-09-22**.
+
+Termodel Web non deve essere pensato come una sola interfaccia identica ridotta o ingrandita in funzione dello schermo. Sta emergendo una distinzione naturale tra **ambiente di progettazione** e **ambiente di consultazione del progetto**.
+
+### PC Windows / macOS — strumento di progettazione
+
+Su computer desktop o notebook, sia **Windows** sia **macOS**, Termodel mantiene il ruolo di ambiente di lavoro completo per il tecnico:
+
+```text
+PC Windows / macOS
+        ↓
+TERMODEL
+        ↓
+progettazione
+CAD/BIM 2D
+archivi
+editing dati
+AI
+calcoli
+generazione modello
+funzioni tecniche avanzate
+```
+
+Il grande schermo, mouse/tastiera e la disponibilità di spazio operativo rendono il PC la postazione primaria per **creare e modificare** il progetto.
+
+### Tablet / telefono — ProjectBrowser
+
+Su tablet e smartphone la direzione è diversa: il dispositivo diventa principalmente un **browser operativo del progetto**, con nome concettuale corrente:
+
+```text
+ProjectBrowser
+```
+
+Il tecnico deve poter portare il progetto con sé:
+
+```text
+ufficio
+   ↓
+progetto Termodel
+   ↓
+ProjectBrowser
+   ├── cantiere
+   ├── sopralluogo
+   ├── riunione tecnica
+   ├── incontro con cliente
+   └── presentazione / verifica sul posto
+```
+
+Il ProjectBrowser non nasce come "Termodel desktop rimpicciolito". Deve privilegiare:
+
+- visualizzazione 3D immersiva;
+- navigazione semplice e touch;
+- consultazione dei piani e degli elementi del progetto;
+- interrogazione dei dati tecnici collegati agli oggetti;
+- accesso agli elaborati e agli artifact prodotti dal Service;
+- presentazione chiara del progetto durante riunioni e sopralluoghi;
+- accesso rapido alle funzioni realmente utili sul campo.
+
+L'editing completo CAD/BIM resta principalmente una funzione della postazione PC. Eventuali modifiche mobili mirate potranno essere aggiunte quando utili, ma non devono obbligare il ProjectBrowser a replicare tutta l'interfaccia di progettazione.
+
+### Tablet di grande formato
+
+Il target mobile non va limitato allo smartphone.
+
+I **tablet di grande formato** sono un caso d'uso strategico: possono diventare una vera tavola tecnica digitale portatile, particolarmente adatta a:
+
+- consultazione del modello 3D;
+- visione di piante e dettagli;
+- confronto sul progetto attorno a un tavolo;
+- sopralluoghi e verifiche in cantiere;
+- presentazione al cliente;
+- consultazione degli elaborati senza portare un notebook.
+
+La UX deve quindi considerare almeno tre classi di utilizzo:
+
+```text
+PC / notebook
+    → progettazione completa
+
+tablet grande
+    → ProjectBrowser ricco / tavola tecnica portatile
+
+telefono
+    → ProjectBrowser essenziale / consultazione rapida
+```
+
+### Un solo progetto, più modalità di fruizione
+
+Questa distinzione non deve creare copie o formati concorrenti del progetto.
+
+Principio architetturale:
+
+```text
+stesso progetto Termodel
+stesso TERMODEL-PROJECT-TEXT-V1
+stessi snapshot calculationId / artifact
+            ↓
+      modalità di fruizione
+       /              \
+Termodel progettazione   ProjectBrowser
+PC Windows/macOS         tablet/telefono
+```
+
+Frontend, Core e WebService devono quindi restare coerenti e condividere lo stesso progetto; cambia soprattutto la **modalità di interazione** in funzione del dispositivo e del contesto operativo.
+
+### Collegamento con la v0.84 Android
+
+La schermata Android immersiva introdotta in **v0.84** — viewer 3D a tutta viewport con la sola palette `Esplora / ? NN` sovrapposta — va considerata il **primo esperimento concreto della direzione ProjectBrowser**.
+
+Non è più soltanto un adattamento responsive del Termodel desktop: è l'inizio di una UX mobile con un ruolo differente e deliberatamente più orientato a consultazione, esplorazione e uso sul campo.
+
+
 ## 3. Responsabilità e confini
 
 La divisione operativa corrente è esplicita:
@@ -689,7 +804,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.83
+Termodel Web v0.84
 ```
 
 Commit frontend di riferimento per la v0.80:
