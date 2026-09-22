@@ -90,7 +90,8 @@ CenedPreprocessor/
 │   └── README.md
 ├── GoldenResults/
 │   ├── README.md
-│   └── BLUMATICA-XML-001.md
+│   ├── BLUMATICA-XML-001.md
+│   └── BLUMATICA-APE-PREVIEW-001.md
 └── samples/
     └── README.md
 ```
@@ -192,7 +193,21 @@ Uso non consentito come automatismo: il file non è specifica normativa e non vi
 
 Dettagli: `docs/RIFERIMENTO-GESTXML-TERMODEL.md`.
 
-## 12. Prossimo passo
+## 12. Golden Reference anteprima APE
+
+Acquisito come riferimento di progetto **BLUMATICA-APE-PREVIEW-001**, derivato dal file RTF prodotto da Blumatica e fornito dall'utente.
+
+Caratteristiche:
+- riferimento per contenuti, sezioni e ordine logico dell'anteprima APE WebJS;
+- SHA-256 originale: `59e0300d1210a92cd31d5fe4e1e730797fa6d9ff0df6aabb61b41872de982e5f`;
+- file grezzo non pubblicato per presenza di dati personali reali;
+- grafica/layout Blumatica non vincolanti;
+- futura stampa WebJS da marcare come `ANTEPRIMA APE — NON UFFICIALE`;
+- la stampa deve derivare dallo stesso modello dati normalizzato usato per l'XML.
+
+Dettagli: `GoldenResults/BLUMATICA-APE-PREVIEW-001.md`.
+
+## 13. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
