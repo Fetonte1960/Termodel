@@ -166,3 +166,18 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - il file grezzo non è stato pubblicato perché contiene dati personali reali e il repository è pubblico;
 - nessuna modifica a codice WebJS, Desktop, Core, Service, frontend o `definizionedati.json`;
 - versione software invariata: `0.1.0-dev`, trattandosi di acquisizione documentale/riferimento.
+
+
+## CENED-0007 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** acquisire il sorgente `GestXml.cs` usato da Termodel per generare l'XML nazionale come fonte di ispirazione per la WebJS, esplicitamente non vincolante.
+
+**Regole:**
+- il sorgente Termodel non diventa specifica del Software Bridge;
+- non duplicare inutilmente il file se è già presente nel repository;
+- registrare lo snapshot fornito dall'utente tramite hash e percorso di riferimento;
+- estrarre soltanto principi, mapping e sequenze utili alla progettazione WebJS;
+- non trascinare nella WebJS dipendenze Desktop/WPF/Xbim, stato globale, coupling con MainWindow/Polig3D o valori hard-coded senza verifica;
+- in caso di conflitto prevalgono: specifiche normative/ARIA correnti, Golden Reference validati e specifica propria del Bridge.
