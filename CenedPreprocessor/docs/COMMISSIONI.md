@@ -261,7 +261,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0010 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** pubblicare la prima bozza WebJS 0.1.1-dev sul sito pubblico Termodel per consentirne la discussione diretta via browser.
 
@@ -272,3 +272,14 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - nessun altro file di `main` deve essere modificato;
 - nessuna modifica a Core, Service, Desktop o `definizionedati.json`;
 - verificare dopo il commit che l'URL pubblico risponda e mostri la versione 0.1.1-dev.
+
+
+**Risultato CENED-0010:**
+- pubblicata la copia di deploy della WebJS 0.1.1-dev in `main/docs/cened-bridge/index.html`;
+- commit di deploy su `main`: `dbee4c4b78477821f2c1ff24942ba76b7d9980bc`;
+- sorgente autorevole invariata in `TermodelCened/CenedPreprocessor/src/WebJS/index.html`;
+- URL pubblico previsto: `https://www.termodel.it/cened-bridge/?v=0.1.1`;
+- nessun altro file di `main` modificato;
+- nessuna modifica a Core, Service, Desktop o `definizionedati.json`;
+- il contenuto del deploy è stato verificato nel repository;
+- la sessione non ha potuto verificare la raggiungibilità HTTP esterna di `www.termodel.it` per limite di accesso/rete degli strumenti.
