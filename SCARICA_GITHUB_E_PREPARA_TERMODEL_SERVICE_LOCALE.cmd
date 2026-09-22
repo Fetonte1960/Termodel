@@ -59,7 +59,8 @@ echo Soluzione pronta per Visual Studio:
 echo %SOLUTION%
 echo.
 echo Apri la soluzione e usa Compila -^> Ricompila soluzione.
-exit /b 0
+set "FINAL_RC=0"
+goto :close_window
 
 :git_missing
 echo ERRORE: git.exe non e disponibile nel PATH.
@@ -107,4 +108,10 @@ goto :failed
 :failed
 echo.
 echo Aggiornamento interrotto in sicurezza.
-exit /b 1
+set "FINAL_RC=1"
+
+:close_window
+echo.
+echo Premi un tasto per chiudere questa finestra...
+pause >nul
+exit /b %FINAL_RC%

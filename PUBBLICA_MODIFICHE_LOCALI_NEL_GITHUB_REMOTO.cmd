@@ -57,5 +57,6 @@ echo Nessun Work locale viene forzato su GitHub.
 
 :FINE
 echo.
-pause
+echo Premi un tasto per chiudere questa finestra...
+pause >nul
 endlocal
