@@ -170,7 +170,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0007 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** acquisire il sorgente `GestXml.cs` usato da Termodel per generare l'XML nazionale come fonte di ispirazione per la WebJS, esplicitamente non vincolante.
 
@@ -181,3 +181,13 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - estrarre soltanto principi, mapping e sequenze utili alla progettazione WebJS;
 - non trascinare nella WebJS dipendenze Desktop/WPF/Xbim, stato globale, coupling con MainWindow/Polig3D o valori hard-coded senza verifica;
 - in caso di conflitto prevalgono: specifiche normative/ARIA correnti, Golden Reference validati e specifica propria del Bridge.
+
+
+**Risultato CENED-0007:**
+- acquisito lo snapshot `GestXml.cs` fornito dall'utente;
+- SHA-256 registrato: `906cde73c919fa90359daae0df0c00a1a088e318e3c2b9130b293ab1e51c0736`;
+- verificato che il contenuto corrisponde sostanzialmente al sorgente già presente in `SorgentiTermodel/Library/GestXml.cs`, evitando duplicazioni;
+- creato `docs/RIFERIMENTO-GESTXML-TERMODEL.md`;
+- registrata la decisione D-0010;
+- il sorgente è classificato come fonte di ispirazione tecnica non vincolante;
+- nessun codice WebJS, Desktop, Core, Service o `definizionedati.json` modificato.
