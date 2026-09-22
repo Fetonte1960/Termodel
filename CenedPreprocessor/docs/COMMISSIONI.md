@@ -341,7 +341,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0013 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** creare un sample gbXML pubblico e minimale da usare nei test del Bridge: una stanza rettangolare con due finestre.
 
@@ -360,3 +360,20 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - file collocato in `CenedPreprocessor/samples/`;
 - documentare geometria attesa e uso nei test;
 - nessuna modifica a WebJS/Desktop/Core/Service o `definizionedati.json`.
+
+
+**Risultato CENED-0013:**
+- creato `samples/GBXML-ROOM-2WINDOWS-001.xml`;
+- formato dichiarato gbXML 8.01 con unità SI;
+- geometria: stanza 4×4 m, h 3 m, area 16 m², volume 48 m³;
+- modellate 6 superfici di involucro e 2 finestre sulla parete Sud;
+- ogni finestra misura 1×1,2 m; area vetrata totale 2,4 m²;
+- area opaca netta attesa della parete Sud: 9,6 m²;
+- aggiunte 3 Construction schematiche e 1 Zone;
+- aggiornato `samples/README.md`;
+- creato `tests/GBXML-ROOM-2WINDOWS-001.md` con aspettative di regressione;
+- aggiornato `tests/README.md`;
+- controllati conteggi e riferimenti interni: nessun IDREF del sample risulta privo dell'ID corrispondente;
+- struttura/campi/enumerazioni confrontati con lo XSD pubblico gbXML 8.01;
+- validazione completa col validator ufficiale gbXML lasciata come controllo futuro della pipeline;
+- nessun codice applicativo e nessuna versione software modificati.
