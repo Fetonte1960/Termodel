@@ -33,3 +33,28 @@ La fase di import deve:
 Regola fondamentale: un risultato derivato presente nell'XML nazionale non può sostituire una causa fisica richiesta dal modello intermedio. Ad esempio, un fattore di ombreggiamento mensile non sostituisce la geometria dell'aggetto quando questa è necessaria per il mapping successivo.
 
 Il Bridge non modifica manualmente il modello tecnico: una discordanza deve essere corretta nel software sorgente e risolta mediante nuova esportazione.
+
+
+## Principio dei formati di scambio
+
+La specifica del Bridge distingue tra:
+
+- **formati esterni di scambio**: pubblici, documentati e riconosciuti;
+- **modello intermedio interno**: struttura propria del Bridge usata per normalizzazione, validazione e mapping.
+
+I formati esterni non vengono unificati artificialmente in un file proprietario.
+
+Ogni adapter deve dichiarare almeno:
+- formato;
+- versione/schema;
+- dominio coperto;
+- campi importati;
+- trasformazioni applicate;
+- priorità/autorità rispetto ad altre sorgenti;
+- diagnostica per dati mancanti o discordanti.
+
+La prima coppia supportata è:
+- `gbXML`;
+- XML nazionale APE/calcolo.
+
+L'obiettivo è poter aggiungere altri formati pubblici riconosciuti senza cambiare il contratto interno del Bridge.
