@@ -222,7 +222,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0009 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** realizzare la prima bozza WebJS navigabile del Software Bridge CENED da usare esclusivamente per discussione e consolidamento del prodotto.
 
@@ -244,3 +244,16 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 5. anteprima APE marcata `ANTEPRIMA APE — NON UFFICIALE`;
 6. nessun tentativo di calcolo energetico ufficiale;
 7. versione visibile in caption/interfaccia.
+
+
+**Risultato CENED-0009:**
+- versione incrementata da `0.1.0-dev` a `0.1.1-dev`;
+- creato `src/WebJS/index.html`, pagina autonoma HTML/CSS/JavaScript senza framework;
+- aggiornato `src/WebJS/README.md`;
+- implementati progetto demo, menu funzionale, validazione preliminare, tabelle del modello, risultati, anteprima APE e XML dimostrativo;
+- implementato import locale di XML nazionale `<documento>` con lettura dei blocchi `ape2015` e `datiCalcolo`;
+- JavaScript del file committato verificato sintatticamente con esito OK;
+- parser provato in Chromium headless contro il file `output.xml` fornito dall'utente: letti correttamente Reggio di Calabria, zona B, 43,3 m², 148,41 m³, classe F, EPgl,nren 217,04, 1 zona, 5 locali, 39 opache, 25 vetrate, 184 ponti termici e 2 impianti;
+- Motore CENED non chiamato;
+- nessuna modifica a Desktop, Termodel.Core, WebService o `definizionedati.json`;
+- nessun dato personale reale inserito nel progetto demo.
