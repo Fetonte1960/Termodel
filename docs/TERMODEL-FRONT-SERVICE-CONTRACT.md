@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.1**  
+Versione documento: **1.2**  
 Aggiornamento: **22 settembre 2026**  
-Stato: **projectId-only implementato lato Service; operazioni Apri/Salva/Salva con nome assegnate al Service; frontend/mobile in adeguamento separato**
+Stato: **projectId-only implementato lato Service; Apri/Salva server-owned; apertura esclusiva del progetto con recupero lock impropri; frontend/mobile in adeguamento separato**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -539,6 +539,201 @@ Service-vs-frontend definito qui è già vincolante.
 
 ---
 
+## 2.7 Cartella progetto e apertura esclusiva
+
+Decisione architetturale del **22 settembre 2026**.
+
+I file persistenti appartenenti a un progetto devono essere reperibili nella
+**cartella del progetto** gestita dal Service. La struttura di riferimento
+resta:
+
+```text
+SavedProjects/
+└── {projectId}/
+    ├── project.tmdl
+    ├── artifacts/
+    ├── logs/
+    └── ... eventuali metadati tecnici del Service
+```
+
+Il Service può usare workspace/staging temporanei per garantire aggiornamenti
+sicuri, ma tali directory non costituiscono una seconda copia autorevole del
+progetto e devono essere ripulibili. Il contenuto persistente ufficiale del
+progetto resta sotto `SavedProjects/{projectId}/`.
+
+### Un solo utilizzo in modifica per projectId
+
+Nel profilo Web/PC con Service, un progetto può essere aperto in modifica da
+**una sola pagina/sessione alla volta**.
+
+Alla prima apertura il Service acquisisce un lock esclusivo logico sul
+`projectId`. Una seconda richiesta di apertura dello stesso progetto, finché
+il lock è valido, deve essere rifiutata.
+
+Comportamento utente previsto:
+
+```text
+pagina A apre P123
+        ↓
+lock P123 acquisito
+
+pagina B tenta di aprire P123
+        ↓
+rifiuto
+        ↓
+"Il progetto è già in uso."
+```
+
+L'errore HTTP previsto per un progetto correttamente bloccato è:
+
+```http
+423 Locked
+```
+
+Il lock serve a impedire che due pagine modifichino e salvino contemporaneamente
+lo stesso progetto, evitando la perdita silenziosa delle modifiche dell'una o
+dell'altra.
+
+Progetti differenti restano invece indipendenti e possono essere aperti
+contemporaneamente:
+
+```text
+P123 → pagina A   consentito
+P456 → pagina B   consentito
+P789 → pagina C   consentito
+```
+
+### Token di apertura
+
+L'apertura riuscita può restituire un token temporaneo/opaco di possesso del
+lock, indicato concettualmente come `projectLockToken`.
+
+Questo token:
+- è valido solo per la sessione di apertura;
+- non viene scritto in `manifest.json`;
+- non modifica il `projectId`;
+- non è un nuovo identificatore del progetto né un `calculationId`;
+- serve esclusivamente a dimostrare al Service che la pagina che salva,
+  rinomina, aggiorna o chiude il progetto è quella che ne possiede il lock.
+
+Le future operazioni mutanti del progetto dovranno essere accettate soltanto
+dal possessore del lock valido.
+
+### Chiusura normale
+
+Quando la pagina chiude correttamente il progetto:
+
+```text
+Chiudi progetto
+      ↓
+Service rilascia il lock
+      ↓
+P123 torna apribile
+```
+
+La chiusura del lock non deve modificare `project.tmdl`, artifact o log.
+
+### Blocco improprio
+
+Il lock non deve poter rendere un progetto inutilizzabile indefinitamente.
+
+Situazioni da gestire:
+
+```text
+browser chiuso brutalmente
+scheda terminata
+PC client spento
+rete interrotta
+WebService terminato durante l'uso
+riavvio del WebService
+```
+
+Per questo il lock deve essere una **lease rinnovabile**, non un flag
+permanente senza scadenza.
+
+Il Service deve mantenere almeno:
+- identificativo/token del lock;
+- istante di apertura;
+- ultima attività/heartbeat;
+- stato del lock.
+
+La pagina attiva rinnova periodicamente la lease. Se gli heartbeat cessano per
+un tempo superiore alla soglia configurata, il lock viene classificato
+**stale** e può essere rimosso automaticamente dal Service.
+
+La durata esatta della lease/timeout sarà una configurazione implementativa;
+non deve essere codificata nel formato `TERMODEL-PROJECT-TEXT-V1`.
+
+### Riavvio del Service
+
+Al riavvio, il Service deve riconoscere i lock non più associati a una sessione
+valida e recuperarli senza toccare i file del progetto.
+
+Un lock residuo non è prova che il progetto sia ancora realmente in uso.
+
+La procedura di recovery deve quindi distinguere:
+
+```text
+lock vivo
+    → non aprire
+    → 423 "Il progetto è già in uso"
+
+lock scaduto/abbandonato
+    → rimuovere il lock
+    → consentire apertura
+
+stato dubbio
+    → non cancellare dati progetto
+    → richiedere sblocco esplicito
+```
+
+### Sblocco esplicito
+
+Il ProjectBrowser potrà esporre una funzione controllata:
+
+```text
+Sblocca progetto
+```
+
+destinata ai casi di lock improprio.
+
+Regole:
+- il frontend non elimina direttamente file di lock;
+- decide sempre il Service;
+- se il lock risulta attivo e recente, lo sblocco forzato deve richiedere una
+  conferma esplicita dell'utente;
+- lo sblocco elimina soltanto lo stato di occupazione e gli eventuali workspace
+  temporanei abbandonati;
+- non deve cancellare né modificare `project.tmdl`, gli artifact validi o i
+  log correnti del progetto.
+
+Finché non sarà introdotta autenticazione multiutente, questa funzione è
+pensata per il Service locale controllato dall'utente. In futuro
+l'autorizzazione allo sblocco dovrà rispettare proprietario/ruoli.
+
+### Relazione con Salva e Aggiorna Modello
+
+Con un progetto aperto e bloccato a favore della pagina corrente:
+
+```text
+Apri P123
+   ↓
+lock P123
+
+Salva
+Salva con nome
+Aggiorna Modello
+   ↓
+consentiti solo alla sessione che possiede il lock
+```
+
+`Salva con nome` conserva lo stesso `projectId` e quindi anche la stessa
+occupazione logica del progetto.
+
+Una futura `Duplica come nuovo progetto` produrrà invece un nuovo projectId e
+un lock indipendente.
+
+---
 ## 3. Operazione principale: AggiornaCalcolo
 
 L'azione concettuale principale fra frontend e server è:
