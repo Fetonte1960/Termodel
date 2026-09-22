@@ -48,7 +48,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.92';
+const APP_VERSION = '0.93';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -232,6 +232,7 @@ let currentCalculationManifest = null;
 let projectBrowserExamples = [];
 let projectBrowserExamplesPromise = null;
 let activeProjectBrowserExampleId = '';
+let androidExampleProgressHideTimer = null;
 let lastAiPreviewData = null;
 let lastCleanPlanSvg = '';
 let lastGeneratedPlan = null;
@@ -624,9 +625,14 @@ async function loadProjectBrowserExamples() {
           description: String(item.description || '').trim(),
           model3d: String(item.model3d || '').trim(),
           project: String(item.project || '').trim(),
+          geometry: String(item.geometry || '').trim(),
           default: item.default === true
         }))
-        .filter(item => item.id && item.name && item.model3d);
+        .filter(item =>
+          item.id &&
+          item.name &&
+          (item.model3d || item.project || item.geometry)
+        );
 
       return projectBrowserExamples;
     })
@@ -645,12 +651,12 @@ function syncAndroidExampleCadAvailability(singleLineButton) {
   const current = projectBrowserExamples.find(
     item => item.id === activeProjectBrowserExampleId
   );
-  const hasProject = Boolean(current?.project);
+  const hasCad = Boolean(current?.project || current?.geometry);
 
-  singleLineButton.disabled = !hasProject;
+  singleLineButton.disabled = !hasCad;
   singleLineButton.title =
     current
-      ? (hasProject ? '' : 'Questo esempio dispone per ora soltanto del modello 3D.')
+      ? (hasCad ? '' : 'Questo esempio dispone per ora soltanto del modello 3D.')
       : 'Seleziona prima un esempio.';
 }
 
@@ -707,6 +713,60 @@ async function populateAndroidExploreExamples(select, singleLineButton) {
   }
 }
 
+function ensureAndroidExampleProgress() {
+  if (!TERMODEL_ANDROID_DEVICE || !modelPage)
+    return null;
+
+  let panel = document.getElementById('androidExampleProgress');
+  if (panel) return panel;
+
+  panel = document.createElement('div');
+  panel.id = 'androidExampleProgress';
+  panel.className = 'android-example-progress';
+  panel.hidden = true;
+  panel.innerHTML = `
+    <div id="androidExampleProgressText" class="android-example-progress-text"></div>
+    <div class="android-example-progress-track" aria-hidden="true">
+      <div id="androidExampleProgressFill" class="android-example-progress-fill"></div>
+    </div>
+  `;
+  modelPage.appendChild(panel);
+  return panel;
+}
+
+function setAndroidExampleProgress(text, percent) {
+  const panel = ensureAndroidExampleProgress();
+  if (!panel) return;
+
+  if (androidExampleProgressHideTimer) {
+    clearTimeout(androidExampleProgressHideTimer);
+    androidExampleProgressHideTimer = null;
+  }
+
+  const label = panel.querySelector('#androidExampleProgressText');
+  const fill = panel.querySelector('#androidExampleProgressFill');
+  if (label) label.textContent = String(text || '');
+  if (fill) fill.style.width = Math.max(0, Math.min(100, Number(percent) || 0)) + '%';
+  panel.hidden = false;
+}
+
+function hideAndroidExampleProgress(delay = 320) {
+  const panel = document.getElementById('androidExampleProgress');
+  if (!panel) return;
+
+  if (androidExampleProgressHideTimer)
+    clearTimeout(androidExampleProgressHideTimer);
+
+  androidExampleProgressHideTimer = setTimeout(() => {
+    panel.hidden = true;
+    const label = panel.querySelector('#androidExampleProgressText');
+    const fill = panel.querySelector('#androidExampleProgressFill');
+    if (label) label.textContent = '';
+    if (fill) fill.style.width = '0%';
+    androidExampleProgressHideTimer = null;
+  }, Math.max(0, delay));
+}
+
 async function loadProjectBrowserExample(exampleId, singleLineButton) {
   const id = String(exampleId || '').trim();
   if (!id) return;
@@ -720,44 +780,82 @@ async function loadProjectBrowserExample(exampleId, singleLineButton) {
 
   loading = true;
   status.textContent = 'Caricamento esempio: ' + example.name + '...';
+  setAndroidExampleProgress('Sto preparando ' + example.name + '…', 8);
 
+  let completed = false;
   try {
-    let projectText = '';
+    let renderedByLocalGeometry = false;
+
     if (example.project) {
+      setAndroidExampleProgress('Sto caricando il progetto ' + example.name + '…', 24);
       const projectResponse = await fetch(
         projectBrowserResourceUrl(example.project) + '?t=' + Date.now(),
         { cache: 'no-store' }
       );
       if (!projectResponse.ok)
         throw new Error('Progetto esempio HTTP ' + projectResponse.status);
-      projectText = await projectResponse.text();
-    }
 
-    const modelResponse = await fetch(
-      projectBrowserResourceUrl(example.model3d) + '?t=' + Date.now(),
-      { cache: 'no-store' }
-    );
-    if (!modelResponse.ok)
-      throw new Error('Modello esempio HTTP ' + modelResponse.status);
-
-    const data = await modelResponse.json();
-
-    if (projectText) {
+      const projectText = await projectResponse.text();
+      setAndroidExampleProgress('Sto preparando CAD e archivi…', 52);
       await loadProjectTextIntoFrontend(projectText, {
         fileName: example.id + '.termodel.txt',
-        buildPreview: false
+        buildPreview: !example.model3d
       });
+      renderedByLocalGeometry = !example.model3d;
+    } else if (example.geometry) {
+      setAndroidExampleProgress('Sto caricando l’unifilare di ' + example.name + '…', 24);
+      const geometryResponse = await fetch(
+        projectBrowserResourceUrl(example.geometry) + '?t=' + Date.now(),
+        { cache: 'no-store' }
+      );
+      if (!geometryResponse.ok)
+        throw new Error('Geometria esempio HTTP ' + geometryResponse.status);
+
+      const svgText = await geometryResponse.text();
+
+      setAndroidExampleProgress('Sto preparando il progetto esplorabile…', 48);
+      await createStructuredProjectFromSvg(svgText);
+      currentProjectFileName = example.name + '.termodel.txt';
+
+      setAndroidExampleProgress('Sto generando il 3D dall’unifilare…', 68);
+      if (!processSvgText(svgText))
+        throw new Error('Impossibile generare l’anteprima 3D dell’esempio.');
+
+      renderedByLocalGeometry = true;
     } else {
       setStructuredProjectState(false);
     }
 
-    northOrientationDeg = null;
-    cadUpdateNorthControls();
-    renderModelData(data, {
-      mode: 'project',
-      label: 'ESEMPIO · ' + example.name,
-      renderOrigin: 'local'
-    });
+    if (example.model3d) {
+      setAndroidExampleProgress('Sto caricando il modello 3D…', 66);
+      const modelResponse = await fetch(
+        projectBrowserResourceUrl(example.model3d) + '?t=' + Date.now(),
+        { cache: 'no-store' }
+      );
+      if (!modelResponse.ok)
+        throw new Error('Modello esempio HTTP ' + modelResponse.status);
+
+      const data = await modelResponse.json();
+      setAndroidExampleProgress('Sto aggiornando la vista 3D…', 84);
+
+      northOrientationDeg = null;
+      cadUpdateNorthControls();
+      renderModelData(data, {
+        mode: 'project',
+        label: 'ESEMPIO · ' + example.name,
+        renderOrigin: 'local'
+      });
+
+      status.textContent =
+        'ESEMPIO · ' + example.name + ' · ' +
+        (data.primitiveCount ?? data.primitives.length) + ' primitive';
+    } else if (renderedByLocalGeometry) {
+      status.textContent = 'ESEMPIO · ' + example.name + ' · anteprima locale caricata';
+    } else {
+      throw new Error('L’esempio non contiene una vista caricabile.');
+    }
+
+    setAndroidExampleProgress('Sto completando la visualizzazione…', 94);
 
     activeProjectBrowserExampleId = example.id;
     syncAndroidExampleCadAvailability(singleLineButton);
@@ -765,11 +863,16 @@ async function loadProjectBrowserExample(exampleId, singleLineButton) {
     resetView();
     requestAnimationFrame(resize);
 
-    status.textContent =
-      'ESEMPIO · ' + example.name + ' · ' +
-      (data.primitiveCount ?? data.primitives.length) + ' primitive';
+    setAndroidExampleProgress('Appartamento pronto', 100);
+    completed = true;
+  } catch (error) {
+    setAndroidExampleProgress('Errore: ' + (error?.message || error), 100);
+    hideAndroidExampleProgress(1800);
+    throw error;
   } finally {
     loading = false;
+    if (completed)
+      hideAndroidExampleProgress(420);
   }
 }
 
@@ -901,6 +1004,44 @@ function installAndroidExploreStyles() {
       text-align: left;
       background: linear-gradient(#fff,#e7e7e7);
       font-weight: 600;
+    }
+    .android-example-progress {
+      position: absolute;
+      left: 50%;
+      bottom: 58px;
+      z-index: 34;
+      width: min(78vw, 390px);
+      transform: translateX(-50%);
+      padding: 8px 10px;
+      border: 1px solid #7f8790;
+      border-radius: 7px;
+      background: rgba(250,250,250,.96);
+      box-shadow: 0 3px 12px rgba(0,0,0,.28);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+    .android-example-progress[hidden] {
+      display: none;
+    }
+    .android-example-progress-text {
+      margin-bottom: 6px;
+      color: #20262c;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .android-example-progress-track {
+      width: 100%;
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #d7dce1;
+    }
+    .android-example-progress-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: #3d7fb1;
+      transition: width .16s ease;
     }
   `;
   document.head.appendChild(style);
