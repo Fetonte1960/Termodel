@@ -315,7 +315,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0012 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** consolidare come principio di prodotto che il Software Bridge accetta **formati pubblici riconosciuti, separati per dominio**, evitando un formato proprietario unico e onnivoro.
 
@@ -328,3 +328,12 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - il modello interno del Bridge può essere proprietario come struttura software, ma non deve essere imposto come formato di scambio esterno;
 - futuri formati pubblici riconosciuti potranno essere aggiunti tramite adapter, senza cambiare il principio del Bridge;
 - ogni formato importato deve avere schema/versione/provenienza verificabili e un mapping documentato verso il modello intermedio.
+
+
+**Risultato CENED-0012:**
+- registrata la decisione D-0013: formati pubblici riconosciuti separati per dominio;
+- confermata la prima coppia `gbXML + XML nazionale`;
+- stabilito che il modello intermedio è interno al Bridge e non viene imposto come formato di scambio esterno;
+- introdotto il principio degli adapter per supportare in futuro altri formati pubblici riconosciuti;
+- aggiornati `docs/ARCHITETTURA.md`, `spec/README.md` e `PROJECT-SUMMARY-CENED.md`;
+- nessun codice applicativo modificato.
