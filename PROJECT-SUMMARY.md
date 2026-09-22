@@ -5686,7 +5686,7 @@ Stato operativo corrente:
 - `File → Nuovo` / avvio CAD da zero → usa lo stesso template locale;
 - il frontend v0.57 non esegue più il probe automatico `GET /api/model/capabilities` e non usa `POST /api/projects/new` per il bootstrap del progetto;
 - v0.70 presente su `main`;
-- architettura Frontend ↔ Service aggiornata al commit `b20ff1db`: contratto condiviso in `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md`; il nuovo workflow `POST /api/calculations` + `calculationId` è concordato ma non ancora implementato; gli sfondi locali restano esclusi dal payload server.
+- storico: il contratto Frontend ↔ Service aveva inizialmente previsto un workflow `POST /api/calculations` con identificatore per-elaborazione; questa impostazione è ora superata dalla decisione projectId-only del 22/09/2026. Gli sfondi locali restano esclusi dal payload server.
 - v0.25 ha introdotto l'avvio guidato da Archivi/File→Nuovo;
 - v0.26 ha reso `Edita nel Cad` sempre attivo e diretto; **storicamente** inizializzava il progetto via WebService, ma dalla v0.57 lo stesso flusso usa il template locale `progetto-vuoto.js` e apre il CAD senza server;
 - v0.27 collega nuova linea ed editazione parete agli archivi Piani/Pareti/Confini tramite la toolbar laterale conforme a `MainWindow.xaml`; colore e tipo linea sono correlati readonly;
