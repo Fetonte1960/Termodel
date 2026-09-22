@@ -410,7 +410,44 @@ Deploy:
 
 La sessione non ha potuto verificare direttamente la raggiungibilità HTTP esterna di `www.termodel.it`; il contenuto del deploy è stato verificato nel repository.
 
-## 20. Prossimo passo
+## 20. WebJS 0.1.3-dev — fixture consolidate autocaricate
+
+Per rendere le prove autosufficienti, la WebJS ora carica automaticamente all'avvio una coppia di fixture runtime:
+
+- `src/WebJS/fixtures/GBXML-SHADING-001.xml`;
+- `src/WebJS/fixtures/BLUMATICA-XML-001-SANITIZED.xml`.
+
+La fixture gbXML è copia runtime del sample geometrico consolidato `samples/GBXML-SHADING-001.xml`.
+
+La fixture XML nazionale è derivata dal Golden Reference esterno `BLUMATICA-XML-001` fornito dall'utente:
+- Golden originale SHA-256 `4988a0700ad1aeb60ef6906235411a176baee514f7a902533dfcc1ad86980647`;
+- dati personali/identificativi rimossi o sostituiti;
+- stato `DERIVATO-NON-VALIDATO`;
+- preservati i valori tecnici usati dalla WebJS: Reggio di Calabria, zona B, 43,3 m², 148,41 m³, classe F, EPgl,nren 217,04;
+- preservati i conteggi di test: 5 locali, 39 superfici opache, 25 vetrate, 184 ponti termici e 2 impianti per il selettore WebJS.
+
+Comportamento:
+- nessun upload richiesto per il caso prova predefinito;
+- al termine dell'autoload si apre automaticamente il Viewer 3D;
+- la UI marca entrambe le sorgenti come `Fixture consolidata`;
+- gli import manuali restano disponibili per sostituire una singola sorgente;
+- `Ripristina fixture` ricarica la coppia consolidata.
+
+Verifiche:
+- JavaScript inline sintatticamente valido;
+- fixture nazionale: 5 locali, 39 opache, 25 vetrate, 184 ponti termici, 2 impianti;
+- assenza nella fixture nazionale di nome/cognome/email/telefono/indirizzo originale del Golden XML;
+- sorgente e deploy risultano identici per index e entrambe le fixture.
+
+Deploy:
+- `main/docs/cened-bridge/index.html`;
+- `main/docs/cened-bridge/fixtures/GBXML-SHADING-001.xml`;
+- `main/docs/cened-bridge/fixtures/BLUMATICA-XML-001-SANITIZED.xml`;
+- URL previsto: `https://www.termodel.it/cened-bridge/?v=0.1.3`.
+
+La verifica HTTP esterna dell'URL non è riuscita dagli strumenti della sessione; il contenuto su GitHub è stato verificato.
+
+## 21. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
