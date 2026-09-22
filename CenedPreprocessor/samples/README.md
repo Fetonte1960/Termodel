@@ -39,3 +39,26 @@ Il file dichiara gbXML **8.01**, unità SI e utilizza `PlanarGeometry/PolyLoop` 
 Le costruzioni sono volutamente schematiche e i dati sono interamente fittizi.
 
 Caso di test associato: `../tests/GBXML-ROOM-2WINDOWS-001.md`.
+
+
+## GBXML-SHADING-001
+
+File: `GBXML-SHADING-001.xml`
+
+Fixture avanzata per lo studio di fattibilità degli ombreggiamenti geometrici.
+
+Base edificio:
+- 1 stanza 4,00 × 4,00 × 3,00 m;
+- 2 finestre sulla facciata Sud;
+- sistema di riferimento: +X Est, +Y Nord, +Z alto;
+- facciata Sud sul piano `y = 0`.
+
+Elementi ombreggianti, tutti rappresentati con `Surface surfaceType="Shade"`:
+- balcone/aggetto orizzontale profondo 1,20 m a quota 2,50 m;
+- setto verticale Ovest profondo 0,80 m;
+- setto verticale Est profondo 0,80 m;
+- palazzo di fronte rappresentato dalla facciata ombreggiante a 8,00 m, larga 12,00 m e alta 10,00 m.
+
+Scopo: verificare che il Bridge possa leggere dal formato pubblico gbXML le **cause geometriche** dell'ombreggiamento, mantenendole distinte dai fattori/risultati derivati presenti nell'XML nazionale.
+
+Caso di test associato: `../tests/GBXML-SHADING-001.md`.
