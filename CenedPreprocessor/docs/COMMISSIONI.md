@@ -419,7 +419,7 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 
 ## CENED-0015 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** integrare nella WebJS del Software Bridge un viewer 3D read-only derivato dal renderer Three.js di Termodel Web e provarlo con il sample gbXML degli ombreggiamenti e con il Golden XML nazionale fornito dall'utente.
 
@@ -440,3 +440,28 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 2. Golden XML nazionale fornito dall'utente, identificato in progetto come `BLUMATICA-XML-001`: deve continuare a essere importato senza regressioni dal parser nazionale e deve fornire i dati complementari già verificati; il file grezzo non va committato perché contiene dati personali;
 3. verificare che l'XML nazionale da solo non venga usato per inventare geometria 3D mancante;
 4. testare sintassi JavaScript e comportamento del parser in browser/headless dove disponibile.
+
+
+**Risultato CENED-0015:**
+- versione WebJS incrementata a `0.1.2-dev` e caption aggiornata;
+- creato `src/WebJS/viewer3d.js`, renderer Three.js read-only derivato selettivamente da Termodel Web;
+- aggiunto import separato gbXML accanto all'import XML nazionale;
+- mantenuti separati stato geometrico gbXML e dati complementari XML nazionale;
+- implementato parser gbXML per Surface, Opening e Shade;
+- implementata classificazione preliminare Shade: aggetto/balcone, setto verticale, ostruzione esterna remota;
+- implementata associazione geometrica preliminare delle Shade alla facciata finestrata;
+- implementati viewer orbit/zoom/pianta/isometrica/spigoli/selezione e proprietà;
+- l'XML nazionale non viene mai convertito artificialmente in geometria 3D;
+- creato `tests/WEBJS-DUAL-INPUT-001.md` usando `GBXML-SHADING-001.xml` e il Golden Reference esterno `BLUMATICA-XML-001`;
+- il raw BLUMATICA-XML-001 non è stato committato per privacy;
+- sintassi JavaScript inline verificata OK;
+- sintassi modulo viewer verificata OK;
+- classificatore verificato sul sample: 6 superfici, 2 aperture, 4 Shade = 1 balcone + 2 setti + 1 ostacolo remoto a 8 m;
+- registrata D-0015;
+- deploy 0.1.2-dev eseguito su `main/docs/cened-bridge/`;
+- commit deploy index: `5624d030842e8751cd2ffa489def5138f9e7a410`;
+- commit deploy viewer: `54608dcc1ffd13f111daa5da7692495031c70767`;
+- copia deploy verificata identica alla sorgente autorevole;
+- URL previsto: `https://www.termodel.it/cened-bridge/?v=0.1.2`;
+- verifica HTTP esterna non disponibile dagli strumenti della sessione;
+- nessuna modifica a Desktop, Core, Service o `definizionedati.json`.
