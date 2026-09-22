@@ -2112,8 +2112,8 @@ Questo è il **contratto condiviso autorevole** per:
 - endpoint;
 - request/response;
 - nomi e formati degli artifact;
-- `calculationId`;
-- lifecycle degli snapshot;
+- `projectId`;
+- lifecycle del workspace persistente per progetto;
 - diagnostica/errori;
 - orchestrazione frontend/server.
 
@@ -2155,8 +2155,10 @@ POST /api/model/3d
 ```
 
 `POST /api/model/3d` riceve il file unico testuale e restituisce
-`TermodelWebModel v3`. Il nuovo ciclo è inoltre operativo lato Service tramite
-`POST /api/calculations` e `GET /api/calculations/{calculationId}/artifacts/model3d`.
+`TermodelWebModel v3`. La prima implementazione di `POST /api/calculations`
+usava un endpoint artifact per-elaborazione; questa parte è ora **legacy e
+commissionata per la sostituzione** con `projectId` e
+`GET /api/projects/{projectId}/artifacts/model3d`.
 
 `GET /api/model/clean-floor/{floorName}` restituisce la pianta pulita prodotta
 dalla generazione corrente.
@@ -2205,7 +2207,7 @@ ANTEPRIMA LOCALE · nessuna elaborazione server
 per il JSON demo e le preview costruite nel browser, oppure:
 
 ```text
-RENDERING ELABORATO DA TERMODEL SERVICE · calculationId <breve>
+RENDERING ELABORATO DA TERMODEL SERVICE · projectId <breve>
 ```
 
 quando il modello visualizzato proviene dall'artifact `model3d` di uno
@@ -2231,7 +2233,7 @@ progetto strutturato corrente
     → rimozione assets/backgrounds/* e riferimenti SVG di sfondo
     → rigenerazione manifest/hash del payload
     → POST http://localhost:5080/api/calculations
-    → calculationId + manifest
+    → projectId + manifest
     → GET href artifact model3d
     → TermodelWebModel v3
     → renderModelData(...)
@@ -2242,9 +2244,10 @@ solo la copia temporanea inviata al Service. La base URL del Service resta una
 configurazione dell'ambiente: il frontend usa come default di sviluppo
 `http://localhost:5080`.
 
-Sono memorizzati lato frontend il `calculationId` e il manifest dell'ultima
-elaborazione riuscita, predisponendo le view future alla lettura degli altri
-artifact dello stesso snapshot.
+La nuova architettura richiede al frontend di conservare il `projectId` nel
+manifest del progetto e usare gli artifact correnti dello stesso workspace.
+L'implementazione frontend precedente basata sull'identificatore per-elaborazione
+è da migrare insieme al Service.
 
 Principi invariati:
 
