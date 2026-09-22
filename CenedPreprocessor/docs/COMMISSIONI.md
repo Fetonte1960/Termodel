@@ -551,7 +551,7 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 
 ## CENED-0018 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** archiviazione preventiva, integrale e verificata dell'installazione locale CENED+2 Motore 1.1.14 prima di qualunque futura installazione o aggiornamento alla versione 1.1.15.
 
@@ -568,4 +568,16 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 - non pubblicare nel repository JAR, eseguibili, binari o altri componenti proprietari/licenziati CENED;
 - impostare lo stato `ESEGUITO` soltanto dopo la verifica integrale dell'archivio.
 
-**Risultato:** in attesa dell'esecuzione e della verifica dell'archivio.
+**Risultato CENED-0018:**
+- confermata dal registro di installazione la versione `1.1.14.10`, publisher `ARIA S.p.A.`, installata in `C:\Program Files\CenedPlus2`;
+- confermata la presenza del Motore `_CenedPlus2_installation\lib\cened2-lib-1.1.14-full.jar`;
+- confermato il runtime distribuito OpenJDK 64 bit `11.0.2+9`;
+- creata la copia integrale in `C:\CENED-Archive\CenedPlus2-1.1.14.10` senza modificare gli originali;
+- verificati **528 file** e **464.502.107 byte** sia in origine sia nell'archivio;
+- confronto integrale per percorso relativo, dimensione e SHA-256: **0 mancanti, 0 supplementari, 0 differenti**;
+- SHA-256 JAR Motore: `B646E5155149B25F0408DBB559FA518665E37A14725E3339A1CD0DC398EE0102`;
+- creato il manifest locale esterno `C:\CENED-Archive\CenedPlus2-1.1.14.10-MANIFEST.txt`, SHA-256 `92F2C0B4BC01A1F16E1CAB61AE9813E33D118A20D828D975D9A30B5FB752AF63`;
+- documentata la cartella utente esterna `C:\Users\USER1\AppData\Roaming\it.terraria.cenedplus.MainExecute`, presente ma vuota e pertanto non copiata;
+- creato `docs/ARCHIVIO-MOTORE-CENED-1.1.14.10.md` con manifest, hash ed esito della verifica;
+- nessun software, JAR o binario proprietario è stato inserito nel repository;
+- CENED+2 non è stato avviato e nessun aggiornamento alla versione 1.1.15 è stato eseguito.

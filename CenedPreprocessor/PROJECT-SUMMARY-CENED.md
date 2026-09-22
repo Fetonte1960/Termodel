@@ -497,7 +497,24 @@ Il sample è stato validato contro lo XSD 1.0 con esito positivo.
 
 Nessun codice applicativo modificato; versione WebJS resta `0.1.3-dev`.
 
-## 22. Prossimo passo
+## 22. Archivio preventivo Motore CENED 1.1.14.10
+
+Commissione `CENED-0018` completata il 22/09/2026.
+
+- versione locale verificata: `1.1.14.10`;
+- installazione originale: `C:\Program Files\CenedPlus2`;
+- archivio locale: `C:\CENED-Archive\CenedPlus2-1.1.14.10`;
+- manifest locale: `C:\CENED-Archive\CenedPlus2-1.1.14.10-MANIFEST.txt`;
+- contenuto verificato integralmente: 528 file, 464.502.107 byte, nessuna differenza di percorso, dimensione o SHA-256;
+- JAR Motore: `_CenedPlus2_installation\lib\cened2-lib-1.1.14-full.jar`;
+- SHA-256 JAR Motore: `B646E5155149B25F0408DBB559FA518665E37A14725E3339A1CD0DC398EE0102`;
+- runtime distribuito: OpenJDK 64 bit `11.0.2+9`;
+- configurazione utente esterna individuata: `C:\Users\USER1\AppData\Roaming\it.terraria.cenedplus.MainExecute`, presente ma vuota e non copiata;
+- dettagli e hash: `docs/ARCHIVIO-MOTORE-CENED-1.1.14.10.md`.
+
+Nessun componente proprietario è stato pubblicato nel repository. CENED non è stato avviato o modificato e l'aggiornamento 1.1.15 non è stato eseguito.
+
+## 23. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
