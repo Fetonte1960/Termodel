@@ -507,3 +507,25 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 - sorgente e deploy verificati identici;
 - verifica HTTP esterna non disponibile dagli strumenti della sessione;
 - nessuna modifica a Desktop, Core, Service o `definizionedati.json`.
+
+
+## CENED-0017 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** definire il terzo file opzionale di completamento del Software Bridge per i dati non disponibili o non determinabili con certezza da gbXML + XML nazionale.
+
+**Principi obbligatori:**
+- il terzo file è un **sidecar Bridge Completion XML**, non sostituisce gbXML né XML nazionale;
+- deve contenere esclusivamente dati mancanti, CENED-specifici o associazioni non risolvibili automaticamente;
+- è vietata la duplicazione volontaria di dati già autorevoli in gbXML o XML nazionale;
+- ogni campo deve dichiarare ambito/entità, destinazione logica, tipo, eventuale unità, valore, motivo del completamento e provenienza;
+- eventuali binding tra entità dei due file devono essere espliciti e separati dai valori di completamento;
+- il file deve essere versionato e validabile tramite XSD;
+- deve poter indicare il profilo/motore di destinazione senza vincolare lo schema a una singola versione CENED;
+- il Bridge resta read-only: eventuali modifiche al sidecar avvengono fuori dal Bridge e richiedono nuova importazione;
+- creare uno sample riferito a `GBXML-SHADING-001.xml` + `BLUMATICA-XML-001-SANITIZED.xml`;
+- documentare regole di autorità e conflitto;
+- aggiornare architettura, specifica, decisioni e Project Summary;
+- nessuna modifica a WebJS/Desktop/Core/Service o `definizionedati.json`;
+- nessun incremento versione software se non viene modificato codice applicativo.
