@@ -2,7 +2,7 @@
 
 Versione browser attiva del Software Bridge CENED.
 
-Versione corrente: **0.1.2-dev**
+Versione corrente: **0.1.3-dev**
 
 ## Stato
 
@@ -14,7 +14,7 @@ La prima bozza navigabile è:
 
 È volutamente realizzata come pagina HTML/CSS/JavaScript autonoma, senza framework e senza build, per rendere immediata la discussione del prodotto.
 
-## Funzioni presenti nella bozza 0.1.2-dev
+## Funzioni presenti nella bozza 0.1.3-dev
 
 - progetto demo con dati fittizi;
 - navigazione fra:
@@ -83,3 +83,18 @@ Il viewer:
 - classifica preliminarmente le `Shade` in aggetto/balcone, setto verticale e ostacolo remoto;
 - mostra proprietà e provenienza dell'entità selezionata;
 - non costruisce geometria a partire dall'XML nazionale.
+
+
+## Fixture consolidate automatiche
+
+Da 0.1.3-dev la modalità prova carica automaticamente, senza intervento dell'utente:
+
+- `fixtures/GBXML-SHADING-001.xml` per la geometria;
+- `fixtures/BLUMATICA-XML-001-SANITIZED.xml` per i dati nazionali complementari.
+
+La seconda fixture è **DERIVATO-NON-VALIDATO** dal Golden Reference BLUMATICA-XML-001:
+- conserva i valori tecnici e i conteggi necessari ai test WebJS;
+- rimuove/sostituisce dati personali e identificativi;
+- non viene presentata come file originale validato da Blumatica.
+
+I pulsanti di import manuale restano disponibili per prove con altri file.
