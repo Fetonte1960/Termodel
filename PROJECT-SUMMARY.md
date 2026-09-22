@@ -802,6 +802,17 @@ Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
 
+### Commissione Android — viewer 3D immersivo v0.84
+
+Stato: **COMMISSIONATO** — 22 settembre 2026.
+
+Direzione richiesta: sulla schermata principale Android deve restare soltanto
+il viewer 3D a tutto schermo. Titolo, menu, tab, barra inferiore, status,
+badge origine rendering, assi e cubo devono scomparire. La palette
+`Esplora / ? NN` resta come unico controllo sovrapposto e viene spostata
+nell'angolo in basso a destra. Il CAD continua ad aprirsi tramite
+`Esplora` con la propria interfaccia dedicata.
+
 La v0.83 rende immediatamente visibile su Android la versione caricata:
 il pulsante help della palette `Esplora`, prima mostrato come `?`, visualizza
 ora `? NN`, dove `NN` sono le ultime due cifre della versione Web
