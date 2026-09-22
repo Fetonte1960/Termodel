@@ -8,6 +8,7 @@ using Termodel.WebService.Calculations;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<CalculationSnapshotStore>();
+builder.Services.AddSingleton<SavedProjectStore>();
 
 const string TermodelWebCorsPolicy = "TermodelWeb";
 
@@ -76,6 +77,7 @@ app.MapGet("/api/model/capabilities", () => Results.Ok(CoreInformation.GetCapabi
 app.MapPost("/api/calculations", async (
     HttpRequest request,
     CalculationSnapshotStore snapshots,
+    SavedProjectStore savedProjects,
     CancellationToken cancellationToken) =>
 {
     if (request.ContentType is null ||
@@ -102,6 +104,21 @@ app.MapPost("/api/calculations", async (
         byte[] model3DJson = JsonSerializer.SerializeToUtf8Bytes(result.Model);
         CalculationSnapshot snapshot = snapshots.Create(model3DJson, result.Diagnostics);
 
+        string savedProjectFileName;
+        try
+        {
+            savedProjectFileName = await savedProjects.SaveAsync(
+                snapshot.Id,
+                snapshot.CreatedAtUtc,
+                projectText,
+                cancellationToken);
+        }
+        catch
+        {
+            snapshots.Remove(snapshot.Id);
+            throw;
+        }
+
         string model3DHref =
             $"/api/calculations/{snapshot.Id:D}/artifacts/model3d";
 
@@ -110,6 +127,10 @@ app.MapPost("/api/calculations", async (
             contractVersion = "TERMODEL-FRONT-SERVICE-V1",
             calculationId = snapshot.Id,
             status = "completed",
+            savedProject = new
+            {
+                fileName = savedProjectFileName
+            },
             artifacts = new[]
             {
                 new
