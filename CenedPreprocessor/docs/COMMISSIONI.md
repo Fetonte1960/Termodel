@@ -337,3 +337,26 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - introdotto il principio degli adapter per supportare in futuro altri formati pubblici riconosciuti;
 - aggiornati `docs/ARCHITETTURA.md`, `spec/README.md` e `PROJECT-SUMMARY-CENED.md`;
 - nessun codice applicativo modificato.
+
+
+## CENED-0013 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** creare un sample gbXML pubblico e minimale da usare nei test del Bridge: una stanza rettangolare con due finestre.
+
+**Requisiti del sample:**
+- formato gbXML conforme alla struttura pubblica dello standard;
+- riferimento alla versione corrente gbXML 8.01;
+- unità SI;
+- un solo edificio;
+- una sola zona/spazio termico;
+- stanza rettangolare 4,00 × 4,00 m, altezza 3,00 m;
+- due finestre su una parete esterna;
+- superfici di pavimento, copertura e quattro pareti esplicite;
+- geometria tramite `PlanarGeometry/PolyLoop`;
+- aperture esplicite tramite `Opening`;
+- dati interamente fittizi;
+- file collocato in `CenedPreprocessor/samples/`;
+- documentare geometria attesa e uso nei test;
+- nessuna modifica a WebJS/Desktop/Core/Service o `definizionedati.json`.
