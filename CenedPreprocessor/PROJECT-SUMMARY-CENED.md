@@ -52,6 +52,7 @@ CenedPreprocessor/
 ├── VERSION.txt
 ├── docs/
 │   ├── COMMISSIONI.md
+│   ├── DECISIONI.md
 │   ├── ARCHITETTURA.md
 │   └── CERTIFICAZIONE.md
 ├── spec/
@@ -84,6 +85,8 @@ Dopo l'intervento:
 4. cambiare la commissione in `ESEGUITO`;
 5. indicare commit/versione risultante.
 
+Le deliberazioni architetturali consolidate vengono registrate separatamente in `docs/DECISIONI.md`.
+
 ## 5. Versionamento
 
 Ogni versione software deve avere un numero esplicito.
@@ -92,7 +95,17 @@ La fonte iniziale è `VERSION.txt`. WebJS e Desktop dovranno mostrare la version
 
 ## 6. Stato corrente
 
-Fase iniziale: struttura repository e regole di continuità.
+La struttura Git iniziale è stata creata nel branch `TermodelCened`.
+
+Sono predisposti:
+- summary autonomo;
+- registro commissioni;
+- storico decisioni;
+- specifica comune;
+- aree WebJS e Desktop;
+- documentazione di certificazione;
+- test, Golden Results ed esempi;
+- versione iniziale `0.1.0-dev`.
 
 Non è ancora implementata alcuna trasformazione verso input Cened.
 
