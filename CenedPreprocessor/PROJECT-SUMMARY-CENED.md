@@ -252,7 +252,24 @@ Commit della copia di deploy su `main`:
 
 Nota di verifica: il contenuto pubblicato su `main` è stato verificato nel repository; l'ambiente strumenti di questa sessione non è riuscito a risolvere direttamente `www.termodel.it`, quindi la raggiungibilità HTTP esterna non è stata certificata dalla sessione.
 
-## 15. Prossimo passo
+## 15. Contratto di ingresso duale
+
+Decisione D-0012: il Bridge richiede **due file complementari** per costruire il modello intermedio:
+
+1. **gbXML** — fonte primaria per geometria e modello termico fisico;
+2. **XML nazionale** — fonte complementare per dati italiani/APE, codifiche, impianti e altri campi non sufficientemente rappresentati dal gbXML.
+
+Regole consolidate:
+- geometria, superfici, aperture, orientamenti e cause fisiche → autorità gbXML;
+- dati specifici nazionali e campi assenti dal gbXML → autorità XML nazionale;
+- dati duplicati discordanti → diagnostica, nessuna scelta silenziosa;
+- risultati energetici già presenti nell'XML nazionale → confronto/riferimento, non sostituzione delle cause fisiche;
+- il Bridge non edita il modello tecnico: le correzioni si fanno nel software sorgente e richiedono nuova esportazione;
+- il modello intermedio deve conservare la provenienza dei dati significativi.
+
+Esempio fondamentale: un fattore mensile di ombreggiamento presente nell'XML nazionale non sostituisce la geometria dell'aggetto quando questa è necessaria al mapping successivo.
+
+## 16. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
