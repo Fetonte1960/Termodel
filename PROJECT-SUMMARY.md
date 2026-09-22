@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-22**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`c9f40cfab3df6993991c5df252cc9f13c88d083f` — `Publish Termodel Web v0.85 Android ProjectBrowser CAD UI`  
+`062b1b50e5de1edb837b62b9daf709a9a7b8361c` — `Publish Termodel Web v0.86 Android CAD Explore panel`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -804,7 +804,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.85
+Termodel Web v0.86
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -916,6 +916,67 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### ProjectBrowser Android — pannello Esplora CAD v0.86
+
+Stato: **IMPLEMENTATO SU main** — 22 settembre 2026.
+
+La v0.86 rifinisce la palette minima del CAD 2D Android.
+
+La barra sovrapposta diventa:
+
+```text
+Home | Esplora | ? 86
+```
+
+Il selettore Piano non resta più visibile permanentemente nella palette.
+
+Premendo `Esplora` si apre verso l'alto un pannello che contiene:
+
+```text
+Piano            [ selettore ▼ ]
+☑ Sfondo
+☑ Unifilare input
+```
+
+Comportamento:
+
+- `Piano` continua a leggere `Piani.Nome`;
+- il cambio piano continua a pilotare il vero `cadPropPiano` e a richiamare
+  `cadCurrentPlaneChanged()`, quindi rifiltra realmente il piano CAD;
+- il check `Sfondo` pilota direttamente il controllo CAD esistente
+  `cadShowBackground`;
+- il check `Unifilare input` pilota direttamente il controllo CAD esistente
+  `cadShowInput`;
+- i due check non duplicano la logica di visibilità: inoltrano il cambio ai
+  controlli canonici del CAD;
+- `Home` continua a usare `cadReturnToModel()`;
+- `? 86` deriva da `APP_VERSION` e mantiene la convenzione delle ultime
+  due cifre;
+- il pannello Esplora si chiude cliccando fuori, premendo Home o aprendo Help;
+- desktop/non Android resta invariato.
+
+Commit frontend v0.86:
+
+```text
+4056c8a32ab3b94d5b74ad751dd34a5299fb4cd6
+Move Android CAD controls into Explore panel v0.86
+
+062b1b50e5de1edb837b62b9daf709a9a7b8361c
+Publish Termodel Web v0.86 Android CAD Explore panel
+```
+
+Verifiche statiche eseguite:
+
+- sintassi JavaScript di `app.js`: OK;
+- palette `Home / Esplora / ? 86`: presente;
+- selettore Piano dentro pannello Esplora: OK;
+- check Sfondo → controllo CAD reale: OK;
+- check Unifilare input → controllo CAD reale: OK;
+- cambio Piano → `cadCurrentPlaneChanged()`: OK;
+- cache-busting `app.js?v=0.86`: OK.
+
+Resta da collaudare visivamente sul telefono/tablet reale.
 
 ### ProjectBrowser Android — CAD 2D immersivo v0.85
 
