@@ -12,3 +12,4 @@ Server/**/.vs/
 Server/**/*.user
 Server/**/*.suo
 Server/**/*.tmp
+Server/Termodelwebservice/src/Termodel.WebService/SavedProjects/
