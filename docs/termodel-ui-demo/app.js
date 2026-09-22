@@ -47,7 +47,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.84';
+const APP_VERSION = '0.85';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -574,7 +574,8 @@ function installAndroidExploreStyles() {
     }
     .android-explore-main,
     .android-explore-help,
-    .android-explore-action {
+    .android-explore-action,
+    .android-project-plane {
       min-height: 38px;
       border: 1px solid #7f8790;
       border-radius: 5px;
@@ -594,6 +595,14 @@ function installAndroidExploreStyles() {
       padding: 0 7px;
       font-size: 14px;
       font-variant-numeric: tabular-nums;
+    }
+    .android-project-plane {
+      height: 38px;
+      min-width: 108px;
+      max-width: min(42vw, 190px);
+      padding: 0 28px 0 9px;
+      background: rgba(250,250,250,.96);
+      font-weight: 600;
     }
     .android-explore-main.active {
       background: #dff1ff;
@@ -689,6 +698,92 @@ function createAndroidExploreBox() {
       setOpen(false);
   });
 
+  return box;
+}
+
+let androidCadPlaneSelect = null;
+
+function refreshAndroidCadPlaneSelect() {
+  if (!TERMODEL_ANDROID_DEVICE || !androidCadPlaneSelect) return;
+
+  const planes = [];
+  cadArchiveRecords('Piani')
+    .map(record => cadText(record?.Nome))
+    .filter(Boolean)
+    .forEach(name => {
+      if (!planes.includes(name)) planes.push(name);
+    });
+
+  const current = cadCurrentPlane();
+  if (current && !planes.includes(current)) planes.push(current);
+
+  androidCadPlaneSelect.replaceChildren();
+  planes.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    androidCadPlaneSelect.appendChild(option);
+  });
+
+  androidCadPlaneSelect.disabled = planes.length === 0;
+  if (current) androidCadPlaneSelect.value = current;
+  else if (planes.length) androidCadPlaneSelect.value = planes[0];
+}
+
+function createAndroidCadBrowserBox() {
+  if (!TERMODEL_ANDROID_DEVICE || !cadPage)
+    return null;
+
+  const existing = document.getElementById('androidCadBrowserBox');
+  if (existing) {
+    androidCadPlaneSelect = existing.querySelector('#androidCadPlane');
+    refreshAndroidCadPlaneSelect();
+    return existing;
+  }
+
+  installAndroidExploreStyles();
+
+  const box = document.createElement('div');
+  box.id = 'androidCadBrowserBox';
+  box.className = 'android-explore-box android-cad-browser-box';
+  box.innerHTML = `
+    <button id="androidCadHome" class="android-explore-main" type="button"
+      aria-label="Torna al modello 3D">Home</button>
+    <select id="androidCadPlane" class="android-project-plane"
+      aria-label="Piano visualizzato" title="Piano visualizzato"></select>
+    <button id="androidCadHelp" class="android-explore-help" type="button"
+      aria-label="Apri help CAD · versione ${APP_VERSION}" title="Help · Termodel Web v${APP_VERSION}">? ${APP_VERSION_SHORT}</button>
+  `;
+
+  cadPage.appendChild(box);
+
+  const home = box.querySelector('#androidCadHome');
+  const help = box.querySelector('#androidCadHelp');
+  androidCadPlaneSelect = box.querySelector('#androidCadPlane');
+
+  home.addEventListener('click', event => {
+    event.stopPropagation();
+    androidHelpEnabled = false;
+    if (demoHelpPanel) demoHelpPanel.hidden = true;
+    cadReturnToModel();
+  });
+
+  androidCadPlaneSelect.addEventListener('change', event => {
+    event.stopPropagation();
+    const requested = cadText(androidCadPlaneSelect.value);
+    if (!requested || !cadPropPiano) return;
+    cadPropPiano.value = requested;
+    cadCurrentPlaneChanged();
+    refreshAndroidCadPlaneSelect();
+  });
+
+  help.addEventListener('click', event => {
+    event.stopPropagation();
+    androidHelpEnabled = true;
+    showDemoHelp('Edita nel Cad', { force: true });
+  });
+
+  refreshAndroidCadPlaneSelect();
   return box;
 }
 
@@ -3040,6 +3135,7 @@ function cadRefreshToolbarControls() {
   if (cadPropColorSwatch)
     cadPropColorSwatch.style.background = derived.colorCss || '#ccc';
 
+  refreshAndroidCadPlaneSelect();
   return derived;
 }
 
@@ -6951,6 +7047,7 @@ function activateCadPage() {
   cadRestorePlanePreview();
   renderCadComparison();
   cadUpdatePropertiesPanel();
+  refreshAndroidCadPlaneSelect();
 }
 
 function processSvgText(text) {
@@ -7396,10 +7493,12 @@ newProjectButton?.addEventListener('click', event => {
 
 setStructuredProjectState(false);
 
-if (TERMODEL_ANDROID_DEVICE)
+if (TERMODEL_ANDROID_DEVICE) {
   createAndroidExploreBox();
-else
+  createAndroidCadBrowserBox();
+} else {
   showDemoHelp('Benvenuto');
+}
 
 renderer.setAnimationLoop(() => {
   controls.update();
