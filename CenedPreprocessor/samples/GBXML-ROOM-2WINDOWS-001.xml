@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gbXML
+    xmlns="http://www.gbxml.org/schema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.gbxml.org/schema https://www.gbxml.org/schema/8-01/GreenBuildingXML_Ver8.01.xsd"
+    temperatureUnit="C"
+    lengthUnit="Meters"
+    areaUnit="SquareMeters"
+    volumeUnit="CubicMeters"
+    useSIUnitsForResults="true"
+    version="8.01"
+    SurfaceReferenceLocation="Interior">
+
+  <!--
+    TERMODEL CENED BRIDGE - FIXTURE GBXML-ROOM-2WINDOWS-001
+    Geometria fittizia:
+      stanza 4.00 x 4.00 m
+      altezza 3.00 m
+      superficie pavimento 16.00 m2
+      volume 48.00 m3
+      due finestre sulla parete Sud
+      ciascuna finestra 1.00 x 1.20 m
+  -->
+
+  <Campus id="Campus-001">
+    <Name>Fixture Termodel CENED Bridge</Name>
+
+    <Location>
+      <Name>Posizione fittizia</Name>
+      <ZipcodeOrPostalCode>00000</ZipcodeOrPostalCode>
+      <Longitude>9.000000</Longitude>
+      <Latitude>45.000000</Latitude>
+      <Elevation>0</Elevation>
+      <CADModelAzimuth>0</CADModelAzimuth>
+    </Location>
+
+    <Building id="Building-001" buildingType="SingleFamily">
+      <Name>Edificio test - una stanza</Name>
+      <Description>Fixture minima per test di importazione gbXML del CENED Bridge.</Description>
+      <Area>16.00</Area>
+
+      <Space
+          id="Space-001"
+          zoneIdRef="Zone-001"
+          conditionType="HeatedAndCooled">
+        <Name>Stanza 4x4</Name>
+        <Description>Unico spazio termico del caso prova.</Description>
+        <Area>16.00</Area>
+        <Volume>48.00</Volume>
+
+        <PlanarGeometry>
+          <PolyLoop>
+            <CartesianPoint><Coordinate>0</Coordinate><Coordinate>0</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+            <CartesianPoint><Coordinate>4</Coordinate><Coordinate>0</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+            <CartesianPoint><Coordinate>4</Coordinate><Coordinate>4</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+            <CartesianPoint><Coordinate>0</Coordinate><Coordinate>4</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          </PolyLoop>
+        </PlanarGeometry>
+      </Space>
+    </Building>
+
+    <!-- Pavimento: normale uscente verso il basso -->
+    <Surface id="Surface-Floor" surfaceType="SlabOnGrade" constructionIdRef="Construction-Floor">
+      <Name>Pavimento su terreno</Name>
+      <AdjacentSpaceId spaceIdRef="Space-001"/>
+      <PlanarGeometry>
+        <PolyLoop>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>0</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>4</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>4</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>0</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+        </PolyLoop>
+      </PlanarGeometry>
+    </Surface>
+
+    <!-- Copertura: normale uscente verso l'alto -->
+    <Surface id="Surface-Roof" surfaceType="Roof" constructionIdRef="Construction-Roof">
+      <Name>Copertura piana</Name>
+      <AdjacentSpaceId spaceIdRef="Space-001"/>
+      <PlanarGeometry>
+        <PolyLoop>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>0</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>0</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>4</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>4</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+        </PolyLoop>
+      </PlanarGeometry>
+    </Surface>
+
+    <!-- Parete Sud, y=0, contiene le due finestre -->
+    <Surface id="Surface-South" surfaceType="ExteriorWall" constructionIdRef="Construction-Wall">
+      <Name>Parete Sud con due finestre</Name>
+      <AdjacentSpaceId spaceIdRef="Space-001"/>
+      <PlanarGeometry>
+        <PolyLoop>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>0</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>0</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>0</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>0</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+        </PolyLoop>
+      </PlanarGeometry>
+
+      <Opening id="Window-South-01" openingType="FixedWindow" coordinatesAbsolute="true">
+        <Name>Finestra Sud 1</Name>
+        <U-value unit="WPerSquareMeterK">2.80</U-value>
+        <PlanarGeometry>
+          <PolyLoop>
+            <CartesianPoint><Coordinate>0.50</Coordinate><Coordinate>0</Coordinate><Coordinate>1.00</Coordinate></CartesianPoint>
+            <CartesianPoint><Coordinate>1.50</Coordinate><Coordinate>0</Coordinate><Coordinate>1.00</Coordinate></CartesianPoint>
+            <CartesianPoint><Coordinate>1.50</Coordinate><Coordinate>0</Coordinate><Coordinate>2.20</Coordinate></CartesianPoint>
+            <CartesianPoint><Coordinate>0.50</Coordinate><Coordinate>0</Coordinate><Coordinate>2.20</Coordinate></CartesianPoint>
+          </PolyLoop>
+        </PlanarGeometry>
+      </Opening>
+
+      <Opening id="Window-South-02" openingType="FixedWindow" coordinatesAbsolute="true">
+        <Name>Finestra Sud 2</Name>
+        <U-value unit="WPerSquareMeterK">2.80</U-value>
+        <PlanarGeometry>
+          <PolyLoop>
+            <CartesianPoint><Coordinate>2.50</Coordinate><Coordinate>0</Coordinate><Coordinate>1.00</Coordinate></CartesianPoint>
+            <CartesianPoint><Coordinate>3.50</Coordinate><Coordinate>0</Coordinate><Coordinate>1.00</Coordinate></CartesianPoint>
+            <CartesianPoint><Coordinate>3.50</Coordinate><Coordinate>0</Coordinate><Coordinate>2.20</Coordinate></CartesianPoint>
+            <CartesianPoint><Coordinate>2.50</Coordinate><Coordinate>0</Coordinate><Coordinate>2.20</Coordinate></CartesianPoint>
+          </PolyLoop>
+        </PlanarGeometry>
+      </Opening>
+    </Surface>
+
+    <!-- Parete Nord, y=4 -->
+    <Surface id="Surface-North" surfaceType="ExteriorWall" constructionIdRef="Construction-Wall">
+      <Name>Parete Nord</Name>
+      <AdjacentSpaceId spaceIdRef="Space-001"/>
+      <PlanarGeometry>
+        <PolyLoop>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>4</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>4</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>4</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>4</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+        </PolyLoop>
+      </PlanarGeometry>
+    </Surface>
+
+    <!-- Parete Ovest, x=0 -->
+    <Surface id="Surface-West" surfaceType="ExteriorWall" constructionIdRef="Construction-Wall">
+      <Name>Parete Ovest</Name>
+      <AdjacentSpaceId spaceIdRef="Space-001"/>
+      <PlanarGeometry>
+        <PolyLoop>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>4</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>0</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>0</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>0</Coordinate><Coordinate>4</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+        </PolyLoop>
+      </PlanarGeometry>
+    </Surface>
+
+    <!-- Parete Est, x=4 -->
+    <Surface id="Surface-East" surfaceType="ExteriorWall" constructionIdRef="Construction-Wall">
+      <Name>Parete Est</Name>
+      <AdjacentSpaceId spaceIdRef="Space-001"/>
+      <PlanarGeometry>
+        <PolyLoop>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>0</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>4</Coordinate><Coordinate>0</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>4</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+          <CartesianPoint><Coordinate>4</Coordinate><Coordinate>0</Coordinate><Coordinate>3</Coordinate></CartesianPoint>
+        </PolyLoop>
+      </PlanarGeometry>
+    </Surface>
+  </Campus>
+
+  <!--
+    Costruzioni schematiche: sufficienti per il test del mapping.
+    Non rappresentano una stratigrafia reale.
+  -->
+  <Construction id="Construction-Wall" constructionIsSchematic="true">
+    <Name>Parete demo</Name>
+    <U-value unit="WPerSquareMeterK">1.20</U-value>
+  </Construction>
+
+  <Construction id="Construction-Roof" constructionIsSchematic="true">
+    <Name>Copertura demo</Name>
+    <U-value unit="WPerSquareMeterK">1.00</U-value>
+  </Construction>
+
+  <Construction id="Construction-Floor" constructionIsSchematic="true">
+    <Name>Pavimento demo</Name>
+    <U-value unit="WPerSquareMeterK">0.80</U-value>
+  </Construction>
+
+  <Zone id="Zone-001">
+    <Name>Zona termica 1</Name>
+    <Description>Zona unica associata a Space-001.</Description>
+  </Zone>
+</gbXML>
