@@ -21,6 +21,7 @@ function escapeHtml(value) {
 
 function disposeActive() {
   if (!active) return;
+  try { active.ro?.disconnect(); } catch (_) {}
   try { active.controls?.dispose(); } catch (_) {}
   try { active.renderer?.dispose(); } catch (_) {}
   if (active.raf) cancelAnimationFrame(active.raf);
