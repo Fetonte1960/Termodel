@@ -410,7 +410,8 @@ public sealed class ProjectLockManager : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)\n            throw new ObjectDisposedException(nameof(ProjectLockManager));
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(ProjectLockManager));
     }
 
     public void Dispose()
