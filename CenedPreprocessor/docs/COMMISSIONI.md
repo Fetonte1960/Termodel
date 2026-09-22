@@ -57,7 +57,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0003 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** studio di fattibilità in sola lettura per l'integrazione headless di CENED+2 Motore con Termodel.Core / Termodel.WebService mediante runner Java separato.
 
@@ -79,3 +79,17 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 6. rischi tecnici e di licenza;
 7. modifiche minime future a Core/WebService;
 8. piano di prova reale successivo, non eseguito in questa commissione.
+
+
+**Risultato CENED-0003:**
+- creato `docs/STUDIO-FATTIBILITA-MOTORE-CENED.md`;
+- verificata la documentazione pubblica ARIA/CENED corrente;
+- rilevato che la versione ufficiale corrente è 1.1.15 e che la 1.1.14 installata non è più il riferimento per nuovi APE dal 03/06/2026;
+- confermata la disponibilità per gli Utenti Motore di un kit Motore 1.1.15 e specifiche tecniche dedicate;
+- analizzati in sola lettura `SorgentiTermodel/Library/output/Cened.cs`, `GestXml.cs` e lo stato del Service;
+- definita come architettura raccomandata: Core C# puro → WebService orchestratore → runner Java isolato → Motore CENED esterno;
+- non dichiarato headless: nessuna esecuzione reale del Motore è stata effettuata;
+- dipendenze complete e configurazione Spring restano da inventariare sul kit locale/ufficiale;
+- nessuna modifica a Termodel.Core, Termodel.WebService, frontend, Library operativa o `definizionedati.json`;
+- nessun JAR proprietario copiato nel repository;
+- nessuna compilazione o test runtime eseguiti, coerentemente con il perimetro di studio.
