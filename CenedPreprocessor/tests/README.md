@@ -59,3 +59,14 @@ Attese:
 - 6 superfici involucro, 2 aperture e 4 Shade dal gbXML;
 - 5 locali, 39 opache, 25 vetrate, 184 ponti termici e 2 impianti dalla fixture XML nazionale;
 - i pulsanti di import manuale devono continuare a sostituire solo la rispettiva sorgente.
+
+
+## Bridge Completion XML
+
+`BRIDGE-COMPLETION-001.md`
+
+Verifica:
+- validità XSD del sample;
+- struttura Header/Inputs/Bindings/CompletionFields;
+- regole semantiche di non duplicazione e non override;
+- distinzione `Provisional` / `Confirmed`.
