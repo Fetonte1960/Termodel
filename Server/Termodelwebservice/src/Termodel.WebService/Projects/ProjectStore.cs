@@ -64,7 +64,7 @@ public sealed class ProjectStore
 
                 return projectId;
             }
-            catch (IOException)
+            catch (IOException) when (File.Exists(reservationPath))
             {
                 // Un'altra richiesta/processo ha riservato lo stesso ID.
                 // Con un GUID è un caso estremamente raro, ma CreateNew rende
