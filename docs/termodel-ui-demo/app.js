@@ -47,7 +47,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.88';
+const APP_VERSION = '0.89';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -416,6 +416,38 @@ const DEMO_HELP = {
   'Edita nel Cad': {
     title: 'Edita nel CAD — viewer Web',
     body: '<p>Nella demo Web apre il confronto 2D: la <strong>pianta pulita</strong> prodotta da GeneraPianta/JSTS viene mostrata in grigio e il <strong>DisegnoInput.svg</strong> viene sovrapposto con linee colorate e più spesse. Il pulsante <strong>Esporta pianta CAD (.DXF)</strong> scarica la geometria ripulita in DXF AutoCAD 2013, in millimetri.</p>'
+  },
+  'CAD ProjectBrowser': {
+    title: 'MyHome3D — CAD 2D',
+    body: `
+      <p>Stai esplorando la rappresentazione 2D del progetto. Sul dispositivo touch usa <strong>un dito per spostare la tavola</strong> e <strong>due dita per zoomare</strong>.</p>
+      <p><strong>Home</strong> torna al modello 3D. <strong>Esplora</strong> apre i controlli del piano e delle rappresentazioni grafiche disponibili.</p>
+      <p class="demo-help-note">Il CAD del ProjectBrowser è pensato per consultare il progetto in modo semplice e leggibile, senza mostrare la toolbar completa di progettazione desktop.</p>
+    `
+  },
+  'CAD Esplora': {
+    title: 'CAD 2D — Esplora',
+    body: `
+      <p>Il pannello <strong>Esplora</strong> raccoglie i controlli essenziali della tavola 2D.</p>
+      <ol>
+        <li><strong>Piano</strong>: cambia il piano del progetto visualizzato.</li>
+        <li><strong>Sfondo</strong>: mostra o nasconde lo sfondo associato al piano.</li>
+        <li><strong>Unifilare input</strong>: mostra o nasconde il disegno tecnico di input.</li>
+      </ol>
+      <p>Le scelte agiscono sugli stessi dati e controlli usati dal CAD completo.</p>
+    `
+  },
+  'CAD Piano': {
+    title: 'CAD 2D — Piano',
+    body: '<p>Il selettore <strong>Piano</strong> cambia realmente il piano corrente del progetto e rifiltra la geometria 2D visualizzata. La sorgente è l\'archivio <strong>Piani</strong> del progetto Termodel.</p>'
+  },
+  'CAD Sfondo': {
+    title: 'CAD 2D — Sfondo',
+    body: '<p><strong>Sfondo</strong> mostra o nasconde l\'eventuale riferimento grafico locale del piano corrente. È un aiuto alla lettura e non sostituisce la geometria tecnica del progetto.</p>'
+  },
+  'CAD Unifilare input': {
+    title: 'CAD 2D — Unifilare input',
+    body: '<p><strong>Unifilare input</strong> mostra o nasconde la geometria SVG tecnica del piano corrente, cioè il disegno di input da cui Termodel ricava la rappresentazione del progetto.</p>'
   },
   'Aggiorna Modello': {
     title: 'Aggiorna Modello',
@@ -842,7 +874,9 @@ function createAndroidCadBrowserBox() {
 
   explore.addEventListener('click', event => {
     event.stopPropagation();
-    setOpen(menu.hidden);
+    const nextOpen = menu.hidden;
+    setOpen(nextOpen);
+    showDemoHelp(nextOpen ? 'CAD Esplora' : 'CAD ProjectBrowser');
   });
 
   androidCadPlaneSelect.addEventListener('change', event => {
@@ -852,6 +886,7 @@ function createAndroidCadBrowserBox() {
     cadPropPiano.value = requested;
     cadCurrentPlaneChanged();
     refreshAndroidCadExploreControls();
+    showDemoHelp('CAD Piano');
   });
 
   androidCadShowBackground.addEventListener('change', event => {
@@ -860,6 +895,7 @@ function createAndroidCadBrowserBox() {
     cadShowBackground.checked = androidCadShowBackground.checked;
     cadShowBackground.dispatchEvent(new Event('change', { bubbles: true }));
     refreshAndroidCadExploreControls();
+    showDemoHelp('CAD Sfondo');
   });
 
   androidCadShowInput.addEventListener('change', event => {
@@ -868,13 +904,14 @@ function createAndroidCadBrowserBox() {
     cadShowInput.checked = androidCadShowInput.checked;
     cadShowInput.dispatchEvent(new Event('change', { bubbles: true }));
     refreshAndroidCadExploreControls();
+    showDemoHelp('CAD Unifilare input');
   });
 
   help.addEventListener('click', event => {
     event.stopPropagation();
     setOpen(false);
     androidHelpEnabled = true;
-    showDemoHelp('Edita nel Cad', { force: true });
+    showDemoHelp('CAD ProjectBrowser', { force: true });
   });
 
   document.addEventListener('click', event => {
