@@ -71,7 +71,9 @@ CenedPreprocessor/
 │   ├── COMMISSIONI.md
 │   ├── DECISIONI.md
 │   ├── ARCHITETTURA.md
-│   └── CERTIFICAZIONE.md
+│   ├── CERTIFICAZIONE.md
+│   ├── RIFERIMENTI-CENED.md
+│   └── STUDIO-FATTIBILITA-MOTORE-CENED.md
 ├── spec/
 │   └── README.md
 ├── src/
@@ -139,7 +141,21 @@ Conclusioni consolidate:
 - non è ancora completo l'inventario delle dipendenze e della configurazione Spring perché questa sessione non ha accesso al filesystem locale e le specifiche tecniche complete sono riservate;
 - nessuna modifica è stata apportata a Termodel.Core, WebService, frontend o definizionedati.json.
 
-## 9. Prossimo passo
+## 9. Riferimenti permanenti CENED
+
+È stato creato `docs/RIFERIMENTI-CENED.md` come indice permanente dei riferimenti ufficiali ARIA/CENED.
+
+Contiene:
+- pagina ufficiale del Manuale d'uso Software CENED+2.0;
+- link diretti a Copertina/Indice e Moduli A-F;
+- pagina ufficiale Software CENED+2.0;
+- pagina generale Download;
+- nota sulla versione del manuale e distinzione dalla versione software corrente;
+- priorità dei moduli per lo sviluppo del Software Bridge.
+
+Regola: per future analisi funzionali del Client partire da questo file prima di eseguire nuove ricerche Web.
+
+## 10. Prossimo passo
 
 Studiare e documentare con precisione le **specifiche tecniche riservate agli Utenti Motore CENED+**, con priorità a:
 - invocazione del Motore;
