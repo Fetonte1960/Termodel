@@ -97,7 +97,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0004 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** acquisire e consolidare nel repository i link ufficiali ARIA/CENED al Manuale d'uso Software CENED+2.0 e ai relativi moduli, per evitare future ricerche ripetitive.
 
@@ -107,3 +107,13 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 3. registrare la pagina ufficiale Software CENED+2.0 come riferimento di versione corrente;
 4. non copiare i PDF nel repository;
 5. annotare data/versione riportata dalla documentazione e distinzione tra manuale storico e versione software corrente.
+
+
+**Risultato CENED-0004:**
+- creato `docs/RIFERIMENTI-CENED.md`;
+- registrata la pagina indice ufficiale del Manuale d'uso Software CENED+2.0;
+- registrati i link diretti ufficiali a Copertina/Indice e Moduli A, B, C, D, E, F;
+- registrate la pagina ufficiale Software CENED+2.0 e la pagina generale Download come fallback;
+- annotato che i moduli del manuale risultano datati 15/10/2019, mentre la versione software corrente verificata è Client/Motore 1.1.15 del 03/06/2026;
+- per Appendice I è stato conservato il collegamento tramite la pagina indice ufficiale, evitando di inventare un URL diretto non verificato;
+- nessun PDF ARIA è stato copiato nel repository.
