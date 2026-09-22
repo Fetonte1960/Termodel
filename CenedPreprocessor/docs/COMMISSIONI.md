@@ -381,7 +381,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0014 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** creare un sample gbXML avanzato per validare lo studio di fattibilità del Bridge sugli ombreggiamenti geometrici.
 
@@ -399,3 +399,19 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 **Scopo di fattibilità:**
 dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombreggiamento che l'XML nazionale tende a rappresentare solo tramite risultati/fattori derivati.
+
+
+**Risultato CENED-0014:**
+- creato `samples/GBXML-SHADING-001.xml`;
+- modellati con geometria gbXML pubblica: balcone/aggetto orizzontale, due setti verticali e ostacolo remoto rappresentativo di un palazzo di fronte;
+- usate 4 `Surface surfaceType="Shade"`, senza estensioni proprietarie;
+- balcone: 3,50 × 1,20 m, quota 2,50 m;
+- setti: profondità 0,80 m, altezza 1,90 m;
+- ostacolo remoto: distanza 8,00 m, larghezza 12,00 m, altezza 10,00 m;
+- creato `tests/GBXML-SHADING-001.md`;
+- aggiornati `samples/README.md` e `tests/README.md`;
+- registrata D-0014 come gate di fattibilità sugli ombreggiamenti geometrici;
+- verificati 10 Surface totali, 4 Shade effettive, 2 Opening, 4 Construction, 1 Space, 1 Zone e nessun riferimento interno irrisolto;
+- confrontato il principio con i test pubblici ASHRAE/gbXML Balcony e Roof With Extended Overhang, che richiedono la traduzione dell'aggetto come `Shade`;
+- la validazione completa tramite validator ufficiale gbXML resta un gate futuro automatizzato;
+- nessun codice applicativo e nessuna versione software modificati.
