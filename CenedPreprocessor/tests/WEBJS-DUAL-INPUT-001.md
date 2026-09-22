@@ -70,3 +70,18 @@ La fusione del Bridge avviene nel modello interno mantenendo la provenienza:
 - dati nazionali/complementari → XML nazionale.
 
 Il viewer è read-only e non corregge né modifica nessuno dei due file.
+
+
+## Modalità automatica da 0.1.3-dev
+
+La sequenza manuale precedente resta valida per sostituire le sorgenti durante prove specifiche, ma il caso predefinito non richiede più upload.
+
+All'apertura della WebJS devono essere caricati automaticamente:
+- `fixtures/BLUMATICA-XML-001-SANITIZED.xml`;
+- `fixtures/GBXML-SHADING-001.xml`.
+
+Al termine dell'autoload:
+- entrambe le sorgenti risultano presenti;
+- il Viewer 3D viene aperto automaticamente;
+- la UI identifica i file come **Fixture consolidata**;
+- l'utente può comunque sostituire singolarmente gbXML o XML nazionale con gli import manuali.
