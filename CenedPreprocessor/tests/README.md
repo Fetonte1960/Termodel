@@ -34,3 +34,14 @@ Input:
 `../samples/GBXML-SHADING-001.xml`
 
 Questo caso è il gate dello studio di fattibilità per dimostrare che il Bridge può conservare e interpretare balconi/aggetti, setti verticali e ostruzioni esterne remote come geometrie gbXML, prima di qualunque conversione verso parametri CENED.
+
+
+## Test WebJS dual input
+
+`WEBJS-DUAL-INPUT-001.md`
+
+Usa insieme:
+- `GBXML-SHADING-001.xml` come sorgente geometrica;
+- `BLUMATICA-XML-001` come Golden Reference esterno per l'XML nazionale.
+
+Il test verifica che le due sorgenti restino separate, che il viewer usi soltanto la geometria gbXML e che l'import dell'una non distrugga i dati dell'altra.
