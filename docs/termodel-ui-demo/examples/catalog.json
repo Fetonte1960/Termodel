@@ -6,6 +6,23 @@
       "name": "Appartamento",
       "description": "Primo esempio esplorabile MyHome3D",
       "geometry": "./examples/appartamento.svg",
+      "background": {
+        "url": "./examples/appartamento-background.jpg",
+        "id": "BG001",
+        "plane": "Unico",
+        "layer": "Unico",
+        "fileName": "appartamento semplice 1.jpg",
+        "kind": "raster",
+        "mimeType": "image/jpeg",
+        "x": -378.426,
+        "y": -108.564,
+        "width": 1806.386,
+        "height": 1204.257,
+        "opacity": 0.42,
+        "preserveAspectRatio": "xMidYMid meet",
+        "coverageReference": true,
+        "grayscale": true
+      },
       "default": true
     }
   ]
