@@ -1,6 +1,6 @@
 # TERMODEL CORE + WEBSERVICE — PROJECT SUMMARY
 
-Ultimo aggiornamento: **2026-09-21**  
+Ultimo aggiornamento: **2026-09-22**  
 Branch GitHub di riferimento: **main**  
 Repository: `https://github.com/Fetonte1960/Termodel`
 
@@ -262,7 +262,7 @@ Risultato:
 
 
 ### INCARICO 2026-09-22 — Salvataggio automatico progetto ricevuto da Aggiorna Modello
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - a ogni `POST /api/calculations` elaborato con successo salvare su disco una
@@ -298,7 +298,54 @@ Criteri di completamento:
   implementazione, compilazione, esecuzione, test, confronto e commit.
 
 Risultato:
-- in corso; non dichiarare ancora compilato/eseguito/testato.
+- **implementato:** aggiunto
+  `src/Termodel.WebService/Calculations/SavedProjectStore.cs`; salva
+  direttamente il `projectText` ricevuto come UTF-8 senza BOM, con scrittura
+  temporanea + rename finale, senza ricostruire il progetto;
+- directory predefinita:
+  `<ContentRootPath>/SavedProjects/`; per test/deployment può essere
+  sovrascritta con `TERMODEL_SAVED_PROJECTS_DIR`;
+- nome file:
+  `TermodelProject-yyyyMMdd-HHmmssfff-<calculationId>.tmdl`, con timestamp UTC
+  dello stesso snapshot;
+- `POST /api/calculations` crea lo snapshot solo dopo `GeneraAsync`
+  riuscito, salva il progetto con lo stesso `calculationId` e, se il
+  salvataggio fallisce, rimuove lo snapshot appena creato prima di propagare
+  l'errore;
+- risposta pubblica estesa in modo additivo con
+  `savedProject.fileName`; non viene esposto il path fisico e il progetto
+  salvato non è inserito nel manifest degli artifact;
+- contratto condiviso aggiornato a versione documento **0.9** nel commit
+  `db6c81d53a57b439e0375e014b6cbc1bf800f919`;
+- `.gitignore` esclude la cartella locale
+  `Server/Termodelwebservice/src/Termodel.WebService/SavedProjects/`;
+- **compilato:** GitHub Actions run **#35**, commit
+  `a52c3a11c50d08d148e749f71f25def0a325ac58`: build Release riuscita,
+  **154 warning, 0 errori**;
+- **eseguito:** nello stesso run il WebService è stato avviato realmente su
+  `127.0.0.1:5080` e lo smoke HTTP ha completato gli endpoint legacy e il
+  ciclo `POST /api/calculations -> GET model3d`;
+- **testato:** lo smoke ha verificato fisicamente un file `.tmdl` creato,
+  nome contenente lo stesso `calculationId`, contenuto letto da disco e
+  logicamente identico al `projectText`; due POST consecutivi hanno prodotto
+  due GUID e due file distinti; un POST con progetto non valido ha restituito
+  HTTP 422 senza aumentare il numero dei file `.tmdl`;
+- **endpoint legacy:** `POST /api/model/3d` continua a essere esercitato con
+  successo nello smoke; nessuna modifica a frontend, Termodel.Core, Library o
+  `definizionedati.json`;
+- **confronto con riferimento:** non applicabile a questa persistenza; non è
+  stato introdotto alcun nuovo formato e il contenuto è confrontato con il
+  testo ricevuto, non rigenerato;
+- **test locale Visual Studio dopo questa modifica:** non ancora eseguito sul
+  PC dell'utente; la verifica corrente è build + esecuzione HTTP + filesystem
+  reali su runner Windows GitHub Actions;
+- commit tecnici principali:
+  `1af4a0bb9876de49b01fc2ab6c5e55640a5b33b3`,
+  `a0a0f7325da81d030fbaa27facf86ea513dac520`,
+  `0e5261f0cdacc3242ce06a146568484c80f8dc82`,
+  `885942d2bb7538fdfc5d40c96332fe79e0422b9f`,
+  `db6c81d53a57b439e0375e014b6cbc1bf800f919`,
+  `a52c3a11c50d08d148e749f71f25def0a325ac58`.
 
 
 ### PROSSIMA PROVA — tetti e locali mansardati da Termodel Web v0.75
@@ -612,8 +659,12 @@ file unico testuale e restituisce direttamente `TermodelWebModel` v3.
 esegue una sola generazione, assegna un `calculationId` e conserva
 `model3d` nello snapshot. `GET
 /api/calculations/{calculationId}/artifacts/model3d` restituisce l'artifact
-già serializzato senza ricalcolo. Lo storage è attualmente in memoria e viene
-perso al riavvio del Service.
+già serializzato senza ricalcolo. Lo snapshot `model3d` resta in memoria e
+viene perso al riavvio del Service. Separatamente, dopo un'elaborazione
+riuscita, il payload tecnico ricevuto viene salvato in UTF-8 come file
+`.tmdl` sotto `<ContentRootPath>/SavedProjects/` (o nella directory
+`TERMODEL_SAVED_PROJECTS_DIR`) con timestamp e lo stesso `calculationId`.
+La risposta include `savedProject.fileName`; il path fisico non è esposto.
 
 Errori di progetto o funzioni non supportate sono restituiti come Problem
 Details; Content-Type non valido produce 415 e calculationId non disponibile
