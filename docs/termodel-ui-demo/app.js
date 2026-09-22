@@ -48,7 +48,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.91';
+const APP_VERSION = '0.92';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -647,11 +647,11 @@ function syncAndroidExampleCadAvailability(singleLineButton) {
   );
   const hasProject = Boolean(current?.project);
 
-  singleLineButton.disabled = Boolean(current) && !hasProject;
+  singleLineButton.disabled = !hasProject;
   singleLineButton.title =
-    Boolean(current) && !hasProject
-      ? 'Questo esempio dispone per ora soltanto del modello 3D.'
-      : '';
+    current
+      ? (hasProject ? '' : 'Questo esempio dispone per ora soltanto del modello 3D.')
+      : 'Seleziona prima un esempio.';
 }
 
 async function populateAndroidExploreExamples(select, singleLineButton) {
@@ -678,6 +678,11 @@ async function populateAndroidExploreExamples(select, singleLineButton) {
       return;
     }
 
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Scegli esempio…';
+    select.appendChild(placeholder);
+
     examples.forEach(example => {
       const option = document.createElement('option');
       option.value = example.id;
@@ -685,17 +690,10 @@ async function populateAndroidExploreExamples(select, singleLineButton) {
       select.appendChild(option);
     });
 
-    const preferred =
-      examples.find(example => example.default) ||
-      examples[0];
-
-    if (!activeProjectBrowserExampleId)
-      activeProjectBrowserExampleId = preferred.id;
-
     if (!examples.some(example => example.id === activeProjectBrowserExampleId))
-      activeProjectBrowserExampleId = preferred.id;
+      activeProjectBrowserExampleId = '';
 
-    select.value = activeProjectBrowserExampleId;
+    select.value = activeProjectBrowserExampleId || '';
     select.disabled = false;
     syncAndroidExampleCadAvailability(singleLineButton);
   } catch (error) {
@@ -711,7 +709,9 @@ async function populateAndroidExploreExamples(select, singleLineButton) {
 
 async function loadProjectBrowserExample(exampleId, singleLineButton) {
   const id = String(exampleId || '').trim();
-  if (!id || loading) return;
+  if (!id) return;
+  if (loading)
+    throw new Error('Viewer ancora in caricamento: riprova tra un istante.');
 
   const examples = await loadProjectBrowserExamples();
   const example = examples.find(item => item.id === id);
@@ -973,6 +973,7 @@ function createAndroidExploreBox() {
 
     try {
       await loadProjectBrowserExample(requested, singleLine);
+      exampleSelect.value = activeProjectBrowserExampleId;
       setOpen(false);
     } catch (error) {
       console.error('Caricamento esempio ProjectBrowser non riuscito:', error);
