@@ -816,9 +816,12 @@ tools\transfer\TermodelTransfer.ps1 -Action import -Name TermodelWebService
 ```
 
 L'export è speculare soltanto sulla copia GitHub. L'import è non distruttivo e
-crea prima un backup in `_backups/<data-ora>/TermodelWebService`. Usare anche i
-wrapper `SERVICE_A_GITHUB.cmd` e `SERVICE_DA_GITHUB.cmd`, che mostrano lo stato
-e chiedono conferma prima della copia.
+crea prima un backup in `_backups/<data-ora>/TermodelWebService`.
+`SERVICE_A_GITHUB.cmd` resta disponibile per il flusso assistito dal Service
+locale verso GitHub. Per aggiornare GitHub e poi predisporre il Service locale
+alla compilazione usare `AGGIORNA_TERMODEL_SERVICE.cmd` nella radice del
+repository: richiede un working tree pulito, usa esclusivamente fast-forward e
+non esegue build o avvio.
 
 Git pull/push restano operazioni separate. Non pubblicare automaticamente
 modifiche frontend preesistenti o non pertinenti.
