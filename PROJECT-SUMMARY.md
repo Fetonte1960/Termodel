@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-22**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`342b5767e446cdb0e9589b21c14399534002f370` — `Publish Termodel Web v0.89 Android CAD contextual help`  
+`0baaa0f0739fc795f2f198c4311944e0f913f46d` — `Keep Service command windows open`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -665,6 +665,114 @@ Piano corrente
 
 Questa è per ora una **direzione di sviluppo** e non una funzione dichiarata
 implementata. Non sono richieste modifiche al codice in questa registrazione.
+
+
+
+### Flusso concordato — esempi consolidati ProjectBrowser / MyHome3D
+
+Decisione operativa registrata il **2026-09-22**.
+
+Gli esempi pubblici del ProjectBrowser/MyHome3D devono essere costruiti a partire
+da **progetti Termodel reali e completi**, non da un solo JSON 3D dimostrativo.
+
+Il flusso operativo concordato è:
+
+```text
+Termodel Web / PC
+        ↓
+progetto completo
+        ↓
+Aggiorna Modello
+POST /api/calculations
+        ↓
+elaborazione Core riuscita
+        ↓
+calculationId + artifact dello stesso snapshot
+        ↓
+copia tecnica TERMODEL-PROJECT-TEXT-V1
+salvata dal WebService come .tmdl
+        ↓
+utente carica il .tmdl nella chat AI
+        +
+eventuali sfondi frontend separati
+        ↓
+AI consolida il progetto esempio
+        ↓
+pubblicazione statica sul sito
+        ↓
+ProjectBrowser / MyHome3D
+```
+
+Regole:
+
+- il progetto tecnico autorevole dell'esempio resta
+  `TERMODEL-PROJECT-TEXT-V1`;
+- la copia `.tmdl` salvata dal WebService deve provenire da una
+  **elaborazione riuscita** di `POST /api/calculations`;
+- il `calculationId` serve a garantire la provenienza comune degli artifact
+  durante la produzione/verifica dell'esempio, ma **non** è l'identificatore
+  permanente del progetto pubblicato;
+- `model3d` e gli altri elaborati devono derivare dallo **stesso snapshot**
+  del progetto e non devono essere ricostruiti da una demo precedente;
+- gli sfondi locali restano risorse frontend: non devono essere inviati al
+  Service. Possono essere caricati separatamente nella chat AI e reinseriti
+  durante il consolidamento; se il progetto locale consegnato all'AI contiene
+  già i propri `assets/backgrounds/*`, possono essere riutilizzati nella
+  copia pubblicata;
+- non si introduce un secondo formato progetto o un formato demo concorrente;
+- un esempio consolidato deve poter essere esplorato sul sito senza dipendere
+  dal WebService locale dell'utente;
+- un progetto esempio non deve essere considerato incompleto solo perché non
+  contiene entità non pertinenti al caso reale, per esempio Copertura, Colmo o
+  PON quando l'edificio di esempio non le richiede.
+
+Contenuto minimo atteso di un esempio consolidato:
+
+```text
+progetto Termodel completo
+├── TERMODEL-PROJECT-TEXT-V1
+├── archivi e geometria tecnica
+├── CAD 2D / unifilare
+├── sfondo/i frontend, se previsti
+├── model3d autorevole prodotto dal Core
+├── pianta pulita per i piani disponibili
+└── ulteriori elaborati SVG/artifact disponibili
+```
+
+Il CAD 2D del ProjectBrowser deve quindi poter presentare almeno:
+
+```text
+Piano corrente
+├── Unifilare input
+├── Sfondo
+├── Pianta pulita
+└── Elaborati 2D SVG selezionabili
+```
+
+Il primo caso candidato al consolidamento è un **appartamento semplice a un
+solo piano**, costruito realmente nel CAD Web con locali e finestre FIN,
+comprese finestre inserite con il comando **Finestra 2 punti**.
+
+Prima di consolidarlo come esempio definitivo deve superare realmente:
+
+```text
+Aggiorna Modello
+→ HTTP 200
+→ calculationId
+→ model3d ricevuto
+→ .tmdl tecnico salvato dal Service
+→ verifica CAD 2D / sfondo / pianta pulita
+→ assemblaggio statico dell'esempio
+```
+
+Stato al 2026-09-22: il progetto candidato arriva al Service ma
+`POST /api/calculations` restituisce ancora HTTP 422 sul controllo numerico
+degli attributi FIN. Il caso reale mostra FIN a due punti con larghezze
+geometriche espresse nel CAD Web in centimetri; la correzione deve preservare
+la geometria e i valori del progetto, adeguando invece il ponte Web/Core e la
+compatibilità con la semantica Desktop. Questo problema blocca il
+consolidamento autorevole del primo esempio finché il calcolo non termina con
+successo.
 
 
 ## 3. Responsabilità e confini
