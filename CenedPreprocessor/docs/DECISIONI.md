@@ -193,3 +193,25 @@ Principi:
 - il modello intermedio può avere una struttura proprietaria interna, ma non viene imposto come formato di scambio esterno;
 - nuovi formati pubblici riconosciuti potranno essere aggiunti in futuro tramite adapter dedicati senza cambiare l'architettura generale;
 - la presenza di più formati non autorizza correzioni silenziose delle incongruenze tra sorgenti.
+
+
+## 2026-09-22 — D-0014 — Gate di fattibilità sugli ombreggiamenti geometrici
+
+Lo studio di fattibilità del Bridge non può considerarsi sufficiente usando soltanto geometrie edilizie semplici.
+
+Viene introdotto il caso `GBXML-SHADING-001` come gate specifico per verificare che il formato pubblico gbXML e il futuro adapter del Bridge conservino le **cause geometriche dell'ombreggiamento**.
+
+Il caso deve comprendere almeno:
+- balcone/aggetto orizzontale;
+- setti/aggetti verticali;
+- ostruzione esterna remota, ad esempio un edificio di fronte.
+
+Gli elementi vengono rappresentati con superfici gbXML di tipo `Shade`, coerentemente con lo schema e con i test pubblici ASHRAE/gbXML per balconi e overhang.
+
+La fattibilità sarà considerata dimostrata sul dominio ombreggiamenti soltanto quando il parser sarà in grado di:
+- leggere senza perdita la geometria;
+- associare le superfici ombreggianti alle aperture/facciate interessate;
+- distinguere aggetti orizzontali, setti verticali e ostacoli remoti;
+- estrarre distanze, profondità e quote necessarie al mapping CENED.
+
+Non è sufficiente leggere un fattore di ombreggiamento già calcolato dall'XML nazionale.
