@@ -547,3 +547,25 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 - registrata D-0017;
 - aggiornati `docs/ARCHITETTURA.md`, `spec/README.md`, `samples/README.md`, `tests/README.md` e Project Summary;
 - nessun codice applicativo modificato e nessun incremento versione software.
+
+
+## CENED-0018 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** archiviazione preventiva, integrale e verificata dell'installazione locale CENED+2 Motore 1.1.14 prima di qualunque futura installazione o aggiornamento alla versione 1.1.15.
+
+**Perimetro e vincoli:**
+- verificare la versione effettivamente installata e il percorso di installazione;
+- non avviare CENED+2, procedure di installazione, aggiornamento o disinstallazione;
+- copiare integralmente l'albero installato in `C:\CENED-Archive\CenedPlus2-1.1.14.10\`, senza alterare gli originali;
+- conservare struttura, librerie, configurazioni, JAR e runtime Java distribuito;
+- verificare la presenza di `lib\cened2-lib-1.1.14-full.jar` e riconfermare la versione Java/OpenJDK;
+- calcolare SHA-256 per Motore, launcher, configurazioni e componenti principali;
+- confrontare origine e archivio per percorso relativo, dimensione e SHA-256;
+- individuare e documentare eventuali configurazioni utente esterne a `Program Files` prima di decidere se copiarle;
+- generare un manifest locale e registrare nel repository esclusivamente metadati, hash, percorso locale e risultato della verifica;
+- non pubblicare nel repository JAR, eseguibili, binari o altri componenti proprietari/licenziati CENED;
+- impostare lo stato `ESEGUITO` soltanto dopo la verifica integrale dell'archivio.
+
+**Risultato:** in attesa dell'esecuzione e della verifica dell'archivio.
