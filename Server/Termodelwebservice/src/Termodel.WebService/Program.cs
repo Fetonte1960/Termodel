@@ -8,6 +8,7 @@ using Termodel.WebService.Projects;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<ProjectStore>();
+builder.Services.AddSingleton<ProjectLockManager>();
 
 const string TermodelWebCorsPolicy = "TermodelWeb";
 
@@ -18,7 +19,7 @@ builder.Services.AddCors(options =>
     {
         policy
             .WithOrigins("https://www.termodel.it")
-            .WithMethods("GET", "POST", "OPTIONS")
+            .WithMethods("GET", "POST", "PUT", "OPTIONS")
             .AllowAnyHeader()
             .SetPreflightMaxAge(TimeSpan.FromHours(1));
     });
@@ -73,16 +74,322 @@ app.MapGet("/health", () => Results.Ok(new
 app.MapGet("/api/model/capabilities", () => Results.Ok(CoreInformation.GetCapabilities()));
 
 // Funzione realizzata da Codex in autonomia
+app.MapGet("/api/projects", async (
+    ProjectStore projects,
+    ProjectLockManager projectLocks,
+    CancellationToken cancellationToken) =>
+{
+    IReadOnlyList<ProjectListEntry> stored =
+        await projects.ListProjectsAsync(cancellationToken);
+
+    var result = new List<object>(stored.Count);
+    foreach (ProjectListEntry project in stored)
+    {
+        bool locked = await projectLocks.IsLockedAsync(
+            project.ProjectId,
+            cancellationToken);
+
+        result.Add(new
+        {
+            projectId = project.ProjectId,
+            projectName = project.ProjectName,
+            lastWriteTimeUtc = project.LastWriteTimeUtc,
+            artifactsStale = project.ArtifactsStale,
+            locked
+        });
+    }
+
+    return Results.Json(new
+    {
+        contractVersion = "TERMODEL-FRONT-SERVICE-V1",
+        projects = result
+    });
+});
+
+// Funzione realizzata da Codex in autonomia
 app.MapPost("/api/projects/allocate-id", async (
     ProjectStore projects,
+    ProjectLockManager projectLocks,
     CancellationToken cancellationToken) =>
 {
     Guid projectId = await projects.AllocateProjectIdAsync(cancellationToken);
+    ProjectLockLease lease = await projectLocks.AcquireAsync(
+        projectId,
+        cancellationToken);
 
     return Results.Ok(new
     {
         contractVersion = "TERMODEL-FRONT-SERVICE-V1",
-        projectId
+        projectId,
+        projectLockToken = lease.Token,
+        leaseExpiresAtUtc = lease.ExpiresAtUtc
+    });
+});
+
+// Funzione realizzata da Codex in autonomia
+app.MapPost("/api/projects/{projectId:guid}/open", async (
+    Guid projectId,
+    ProjectStore projects,
+    ProjectLockManager projectLocks,
+    CancellationToken cancellationToken) =>
+{
+    ProjectLockLease? lease = null;
+
+    try
+    {
+        lease = await projectLocks.AcquireAsync(projectId, cancellationToken);
+
+        string? projectText = await projects.ReadProjectAsync(
+            projectId,
+            cancellationToken);
+
+        if (projectText is null)
+        {
+            await projectLocks.ReleaseAsync(
+                projectId,
+                lease.Token,
+                cancellationToken);
+
+            return Results.Problem(
+                title: "Progetto non disponibile",
+                detail: $"Il progetto '{projectId:D}' non contiene project.tmdl.",
+                statusCode: StatusCodes.Status404NotFound);
+        }
+
+        bool artifactsStale =
+            await projects.AreArtifactsStaleAsync(projectId, cancellationToken);
+
+        return Results.Json(new
+        {
+            contractVersion = "TERMODEL-FRONT-SERVICE-V1",
+            projectId,
+            projectName = ProjectRequestIdentity.ReadProjectName(projectText),
+            projectLockToken = lease.Token,
+            leaseExpiresAtUtc = lease.ExpiresAtUtc,
+            artifactsStale,
+            projectText
+        });
+    }
+    catch (ProjectNotFoundException exception)
+    {
+        return Results.Problem(
+            title: "Progetto non disponibile",
+            detail: exception.Message,
+            statusCode: StatusCodes.Status404NotFound);
+    }
+    catch (ProjectLockedException exception)
+    {
+        return Results.Problem(
+            title: "Il progetto è già in uso",
+            detail: exception.Message,
+            statusCode: 423);
+    }
+    catch
+    {
+        if (lease is not null)
+        {
+            try
+            {
+                await projectLocks.ReleaseAsync(
+                    projectId,
+                    lease.Token,
+                    cancellationToken);
+            }
+            catch
+            {
+                // Il recovery del lock residuo è demandato al lock manager.
+            }
+        }
+
+        throw;
+    }
+});
+
+// Funzione realizzata da Codex in autonomia
+app.MapPut("/api/projects/{projectId:guid}/save", async (
+    Guid projectId,
+    HttpRequest request,
+    ProjectStore projects,
+    ProjectLockManager projectLocks,
+    CancellationToken cancellationToken) =>
+{
+    if (!IsTextProjectRequest(request))
+        return UnsupportedProjectContentType();
+
+    try
+    {
+        Guid lockToken = ProjectLockManager.ReadRequiredToken(request);
+        ProjectLockLease lease = await projectLocks.ValidateAndRenewAsync(
+            projectId,
+            lockToken,
+            cancellationToken);
+
+        string projectText = await ReadProjectTextAsync(request, cancellationToken);
+        EnsureRouteProjectId(projectId, projectText);
+
+        await projects.SaveProjectAsync(
+            projectId,
+            projectText,
+            cancellationToken);
+
+        return Results.Json(new
+        {
+            contractVersion = "TERMODEL-FRONT-SERVICE-V1",
+            projectId,
+            projectName = ProjectRequestIdentity.ReadProjectName(projectText),
+            status = "saved",
+            artifactsStale = true,
+            leaseExpiresAtUtc = lease.ExpiresAtUtc
+        });
+    }
+    catch (ProjectLockRequiredException exception)
+    {
+        return LockedProblem(exception.Message);
+    }
+    catch (InvalidDataException exception)
+    {
+        return InvalidProjectProblem(exception.Message);
+    }
+});
+
+// Funzione realizzata da Codex in autonomia
+app.MapPut("/api/projects/{projectId:guid}/save-as", async (
+    Guid projectId,
+    string projectName,
+    HttpRequest request,
+    ProjectStore projects,
+    ProjectLockManager projectLocks,
+    CancellationToken cancellationToken) =>
+{
+    if (!IsTextProjectRequest(request))
+        return UnsupportedProjectContentType();
+
+    try
+    {
+        Guid lockToken = ProjectLockManager.ReadRequiredToken(request);
+        ProjectLockLease lease = await projectLocks.ValidateAndRenewAsync(
+            projectId,
+            lockToken,
+            cancellationToken);
+
+        string projectText = await ReadProjectTextAsync(request, cancellationToken);
+        EnsureRouteProjectId(projectId, projectText);
+
+        string renamedProject =
+            ProjectRequestIdentity.SetProjectName(projectText, projectName);
+
+        EnsureRouteProjectId(projectId, renamedProject);
+
+        await projects.SaveProjectAsync(
+            projectId,
+            renamedProject,
+            cancellationToken);
+
+        return Results.Json(new
+        {
+            contractVersion = "TERMODEL-FRONT-SERVICE-V1",
+            projectId,
+            projectName = ProjectRequestIdentity.ReadProjectName(renamedProject),
+            status = "saved",
+            artifactsStale = true,
+            leaseExpiresAtUtc = lease.ExpiresAtUtc
+        });
+    }
+    catch (ProjectLockRequiredException exception)
+    {
+        return LockedProblem(exception.Message);
+    }
+    catch (InvalidDataException exception)
+    {
+        return InvalidProjectProblem(exception.Message);
+    }
+});
+
+// Funzione realizzata da Codex in autonomia
+app.MapPost("/api/projects/{projectId:guid}/heartbeat", async (
+    Guid projectId,
+    HttpRequest request,
+    ProjectLockManager projectLocks,
+    CancellationToken cancellationToken) =>
+{
+    try
+    {
+        Guid lockToken = ProjectLockManager.ReadRequiredToken(request);
+        ProjectLockLease lease = await projectLocks.ValidateAndRenewAsync(
+            projectId,
+            lockToken,
+            cancellationToken);
+
+        return Results.Ok(new
+        {
+            contractVersion = "TERMODEL-FRONT-SERVICE-V1",
+            projectId,
+            status = "locked",
+            leaseExpiresAtUtc = lease.ExpiresAtUtc
+        });
+    }
+    catch (ProjectLockRequiredException exception)
+    {
+        return LockedProblem(exception.Message);
+    }
+});
+
+// Funzione realizzata da Codex in autonomia
+app.MapPost("/api/projects/{projectId:guid}/close", async (
+    Guid projectId,
+    HttpRequest request,
+    ProjectLockManager projectLocks,
+    CancellationToken cancellationToken) =>
+{
+    try
+    {
+        Guid lockToken = ProjectLockManager.ReadRequiredToken(request);
+        await projectLocks.ReleaseAsync(
+            projectId,
+            lockToken,
+            cancellationToken);
+
+        return Results.Ok(new
+        {
+            contractVersion = "TERMODEL-FRONT-SERVICE-V1",
+            projectId,
+            status = "closed"
+        });
+    }
+    catch (ProjectLockRequiredException exception)
+    {
+        return LockedProblem(exception.Message);
+    }
+});
+
+// Funzione realizzata da Codex in autonomia
+app.MapPost("/api/projects/{projectId:guid}/unlock", async (
+    Guid projectId,
+    bool? force,
+    ProjectLockManager projectLocks,
+    CancellationToken cancellationToken) =>
+{
+    ProjectUnlockResult result = await projectLocks.UnlockAsync(
+        projectId,
+        force ?? false,
+        cancellationToken);
+
+    if (!result.Unlocked)
+    {
+        return Results.Problem(
+            title: "Conferma sblocco richiesta",
+            detail: result.WasActive
+                ? "Il progetto risulta ancora in uso. Ripetere lo sblocco con force=true soltanto dopo conferma esplicita dell'utente."
+                : "Il lock del progetto non può essere rimosso in questo momento.",
+            statusCode: result.RequiredForce ? StatusCodes.Status409Conflict : 423);
+    }
+
+    return Results.Ok(new
+    {
+        contractVersion = "TERMODEL-FRONT-SERVICE-V1",
+        projectId,
+        status = "unlocked",
+        forced = force ?? false
     });
 });
 
@@ -90,26 +397,22 @@ app.MapPost("/api/projects/allocate-id", async (
 app.MapPost("/api/calculations", async (
     HttpRequest request,
     ProjectStore projects,
+    ProjectLockManager projectLocks,
     CancellationToken cancellationToken) =>
 {
-    if (request.ContentType is null ||
-        !request.ContentType.StartsWith("text/plain", StringComparison.OrdinalIgnoreCase))
-    {
-        return Results.Problem(
-            title: "Content-Type non supportato",
-            detail: "Inviare il file unico TERMODEL-PROJECT-TEXT-V1 come text/plain; charset=utf-8.",
-            statusCode: StatusCodes.Status415UnsupportedMediaType);
-    }
+    if (!IsTextProjectRequest(request))
+        return UnsupportedProjectContentType();
 
     try
     {
-        using var reader = new StreamReader(
-            request.Body,
-            Encoding.UTF8,
-            detectEncodingFromByteOrderMarks: true);
-
-        string projectText = await reader.ReadToEndAsync(cancellationToken);
+        string projectText = await ReadProjectTextAsync(request, cancellationToken);
         Guid projectId = ProjectRequestIdentity.ReadProjectId(projectText);
+        Guid lockToken = ProjectLockManager.ReadRequiredToken(request);
+
+        ProjectLockLease lease = await projectLocks.ValidateAndRenewAsync(
+            projectId,
+            lockToken,
+            cancellationToken);
 
         ProjectCalculationData data = await projects.UpdateCurrentAsync(
             projectId,
@@ -147,15 +450,17 @@ app.MapPost("/api/calculations", async (
                     href = model3DHref
                 }
             },
-            diagnostics = data.Diagnostics
+            diagnostics = data.Diagnostics,
+            leaseExpiresAtUtc = lease.ExpiresAtUtc
         });
+    }
+    catch (ProjectLockRequiredException exception)
+    {
+        return LockedProblem(exception.Message);
     }
     catch (InvalidDataException exception)
     {
-        return Results.Problem(
-            title: "File unico, projectId o geometria non validi",
-            detail: exception.Message,
-            statusCode: StatusCodes.Status422UnprocessableEntity);
+        return InvalidProjectProblem(exception.Message);
     }
     catch (NotSupportedException exception)
     {
@@ -169,7 +474,11 @@ app.MapPost("/api/calculations", async (
 // Funzione realizzata da Codex in autonomia
 app.MapGet(
     "/api/projects/{projectId:guid}/artifacts/model3d",
-    async (Guid projectId, ProjectStore projects, CancellationToken cancellationToken) =>
+    async (
+        Guid projectId,
+        HttpResponse response,
+        ProjectStore projects,
+        CancellationToken cancellationToken) =>
 {
     byte[]? model3DJson =
         await projects.ReadModel3DAsync(projectId, cancellationToken);
@@ -182,28 +491,31 @@ app.MapGet(
             statusCode: StatusCodes.Status404NotFound);
     }
 
+    bool stale = await projects.AreArtifactsStaleAsync(
+        projectId,
+        cancellationToken);
+
+    response.Headers["X-Termodel-Artifact-Stale"] = stale ? "true" : "false";
+
     return Results.Bytes(
         model3DJson,
         contentType: "application/json; charset=utf-8");
 });
 
 // Funzione realizzata da Codex in autonomia
-app.MapPost("/api/model/3d", async (HttpRequest request, CancellationToken cancellationToken) =>
+app.MapPost("/api/model/3d", async (
+    HttpRequest request,
+    CancellationToken cancellationToken) =>
 {
-    if (request.ContentType is null ||
-        !request.ContentType.StartsWith("text/plain", StringComparison.OrdinalIgnoreCase))
-    {
-        return Results.Problem(
-            title: "Content-Type non supportato",
-            detail: "Inviare il file unico TERMODEL-PROJECT-TEXT-V1 come text/plain; charset=utf-8.",
-            statusCode: StatusCodes.Status415UnsupportedMediaType);
-    }
+    if (!IsTextProjectRequest(request))
+        return UnsupportedProjectContentType();
 
     try
     {
-        using var reader = new StreamReader(request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-        string projectText = await reader.ReadToEndAsync(cancellationToken);
-        Model3DGenerationResult result = await new GeneraModello().GeneraAsync(projectText, cancellationToken);
+        string projectText = await ReadProjectTextAsync(request, cancellationToken);
+        Model3DGenerationResult result =
+            await new GeneraModello().GeneraAsync(projectText, cancellationToken);
+
         return Results.Json(result.Model);
     }
     catch (InvalidDataException exception)
@@ -253,6 +565,7 @@ app.MapPost("/api/projects/new", (NuovoProgettoRequest request) =>
             request,
             definitionPath,
             baseProjectPath);
+
         return Results.Text(
             result.Contenuto,
             contentType: "text/plain; charset=utf-8",
@@ -283,3 +596,47 @@ app.MapPost("/api/projects/new", (NuovoProgettoRequest request) =>
 });
 
 app.Run();
+
+static bool IsTextProjectRequest(HttpRequest request) =>
+    request.ContentType is not null &&
+    request.ContentType.StartsWith("text/plain", StringComparison.OrdinalIgnoreCase);
+
+static IResult UnsupportedProjectContentType() =>
+    Results.Problem(
+        title: "Content-Type non supportato",
+        detail: "Inviare il file unico TERMODEL-PROJECT-TEXT-V1 come text/plain; charset=utf-8.",
+        statusCode: StatusCodes.Status415UnsupportedMediaType);
+
+static async Task<string> ReadProjectTextAsync(
+    HttpRequest request,
+    CancellationToken cancellationToken)
+{
+    using var reader = new StreamReader(
+        request.Body,
+        Encoding.UTF8,
+        detectEncodingFromByteOrderMarks: true);
+
+    return await reader.ReadToEndAsync(cancellationToken);
+}
+
+static void EnsureRouteProjectId(Guid projectId, string projectText)
+{
+    Guid manifestProjectId = ProjectRequestIdentity.ReadProjectId(projectText);
+    if (manifestProjectId != projectId)
+    {
+        throw new InvalidDataException(
+            $"manifest.projectId '{manifestProjectId:D}' non corrisponde al projectId della route '{projectId:D}'.");
+    }
+}
+
+static IResult LockedProblem(string detail) =>
+    Results.Problem(
+        title: "Il progetto è già in uso",
+        detail: detail,
+        statusCode: 423);
+
+static IResult InvalidProjectProblem(string detail) =>
+    Results.Problem(
+        title: "File unico, projectId o geometria non validi",
+        detail: detail,
+        statusCode: StatusCodes.Status422UnprocessableEntity);
