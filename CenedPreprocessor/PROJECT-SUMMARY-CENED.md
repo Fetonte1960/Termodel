@@ -346,7 +346,71 @@ Controlli iniziali sul file:
 
 Decisione D-0014: questo caso è un **gate di fattibilità**. Non basta che gbXML possa memorizzare le superfici Shade: il futuro adapter dovrà leggerle senza perdita, associarle geometricamente alle aperture/facciate, distinguere aggetto orizzontale, setti verticali e ostacolo remoto ed estrarre profondità/distanze/quote necessarie al mapping CENED.
 
-## 19. Prossimo passo
+## 19. WebJS 0.1.2-dev — Viewer 3D read-only e dual input
+
+Implementato il viewer 3D di controllo in:
+
+`src/WebJS/viewer3d.js`
+
+La WebJS ora espone due import separati:
+- **Importa gbXML** → geometria;
+- **Importa XML nazionale** → dati complementari/APE/calcolo.
+
+Principi:
+- i due import non si sovrascrivono;
+- la geometria 3D deriva esclusivamente dal gbXML;
+- l'XML nazionale non genera coordinate o ostruzioni mancanti;
+- viewer read-only, senza CAD/editing/snap;
+- renderer derivato selettivamente da Termodel Web: Three.js, OrbitControls, fit scena, spigoli e raycasting;
+- selezione 3D con proprietà e provenienza.
+
+Il parser gbXML:
+- legge `Surface/PlanarGeometry/PolyLoop`;
+- legge `Opening`;
+- legge `Surface surfaceType="Shade"`;
+- classifica preliminarmente le Shade in:
+  - `Aggetto orizzontale / balcone`;
+  - `Setto verticale`;
+  - `Ostruzione esterna remota`;
+- associa le Shade alla facciata finestrata geometricamente più vicina.
+
+Test sul sample `GBXML-SHADING-001.xml`:
+- 6 superfici involucro;
+- 2 aperture;
+- 4 Shade;
+- 1 balcone;
+- 2 setti;
+- 1 ostacolo remoto;
+- distanza ostacolo remoto = 8,00 m;
+- profondità balcone = 1,20 m;
+- profondità setti = 0,80 m.
+
+Test dual input documentato in:
+
+`tests/WEBJS-DUAL-INPUT-001.md`
+
+Il test usa:
+- `GBXML-SHADING-001.xml`;
+- Golden Reference esterno `BLUMATICA-XML-001` fornito dall'utente, non pubblicato per privacy.
+
+Per BLUMATICA-XML-001 restano le aspettative già verificate del parser WebJS: Reggio di Calabria, zona B, 43,3 m², 148,41 m³, classe F, EPgl,nren 217,04, 1 subEdificio, 5 locali, 39 opache, 25 vetrate, 184 ponti termici e 2 impianti nel selettore WebJS corrente.
+
+Verifiche codice:
+- JavaScript inline della pagina: sintassi OK;
+- modulo `viewer3d.js`: sintassi OK;
+- classificatore geometrico verificato sul sample: esito atteso;
+- sorgente e copia deploy confrontate byte-per-byte: identiche.
+
+Deploy:
+- `main/docs/cened-bridge/index.html`;
+- `main/docs/cened-bridge/viewer3d.js`;
+- URL previsto: `https://www.termodel.it/cened-bridge/?v=0.1.2`;
+- commit deploy index: `5624d030842e8751cd2ffa489def5138f9e7a410`;
+- commit deploy viewer: `54608dcc1ffd13f111daa5da7692495031c70767`.
+
+La sessione non ha potuto verificare direttamente la raggiungibilità HTTP esterna di `www.termodel.it`; il contenuto del deploy è stato verificato nel repository.
+
+## 20. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
