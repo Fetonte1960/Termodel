@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-22**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`0ffc26d31ace94da729f2c1c10bfa4b4ac1e88f8` — `Publish Termodel Web v0.87 Android CAD touch navigation`  
+`3457bb1661c6d549a144a62e5156e962b87299fb` — `Publish Termodel Web v0.88 MyHome3D mobile branding`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -866,7 +866,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.87
+Termodel Web v0.88
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -978,6 +978,80 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### Risultato mobile conseguito + branding MyHome3D v0.88
+
+Stato: **RISULTATO DI PRODOTTO CONSEGUITO SU main** — 22 settembre 2026.
+
+La direzione mobile ha raggiunto un primo obiettivo concreto e verificabile a
+livello di sorgenti/UI:
+
+> Termodel resta pensato principalmente come strumento di progettazione da
+> usare su PC Windows/macOS, ma lo stesso link, se aperto da dispositivo
+> Android mobile, presenta una vista ordinata, leggibile e coerente con il
+> ruolo di ProjectBrowser.
+
+Il comportamento mobile non è più quello di una pagina desktop semplicemente
+compressa. La home mostra il viewer 3D immersivo con pochi controlli
+sovrapposti; il CAD 2D usa una tavola a tutta viewport, palette minima,
+selezione piano e visibilità delle rappresentazioni; pan e pinch sono
+compatibili con touch.
+
+Questo risultato va considerato la base UX del futuro **ProjectBrowser /
+MyHome3D**. Restano naturalmente da consolidare i contenuti completi dei
+progetti esempio, gli elaborati SVG e le altre funzioni previste dalla roadmap,
+ma l'apertura dello stesso link su PC e mobile produce già due esperienze
+ordinate e adatte ai rispettivi contesti d'uso.
+
+#### Branding mobile v0.88
+
+La revisione v0.88 integra la versione direttamente nel box mobile con la forma:
+
+```text
+MyHome3D v. 88
+```
+
+Il testo è presente:
+
+- nel box della home/viewer 3D;
+- nel box del CAD 2D;
+- continua a funzionare come controllo per aprire l'help;
+- usa `APP_VERSION_SHORT`, quindi le ultime due cifre vengono aggiornate
+  automaticamente a ogni nuova versione.
+
+La palette home diventa concettualmente:
+
+```text
+Esplora | MyHome3D v. 88
+```
+
+e quella CAD:
+
+```text
+Home | Esplora | MyHome3D v. 88
+```
+
+Commit frontend v0.88:
+
+```text
+a62dd9fbdcdcd821d12f31f5f2a055ce5a9e1b4f
+Brand mobile ProjectBrowser as MyHome3D v.88
+
+3457bb1661c6d549a144a62e5156e962b87299fb
+Publish Termodel Web v0.88 MyHome3D mobile branding
+```
+
+Verifiche statiche:
+
+- sintassi JavaScript: OK;
+- branding presente sia home sia CAD: OK;
+- pan touch a un dito ancora presente: OK;
+- pinch zoom a due dita ancora presente: OK;
+- desktop non modificato;
+- cache-busting `app.js?v=0.88`: OK.
+
+Il collaudo visuale reale su telefono/tablet resta distinto dalla verifica
+statica dei sorgenti.
 
 ### ProjectBrowser Android — pan e pinch touch CAD v0.87
 
