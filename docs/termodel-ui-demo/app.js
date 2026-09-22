@@ -47,7 +47,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.87';
+const APP_VERSION = '0.88';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -683,7 +683,7 @@ function createAndroidExploreBox() {
     <button id="androidExploreToggle" class="android-explore-main" type="button"
       aria-expanded="false">Esplora</button>
     <button id="androidExploreHelp" class="android-explore-help" type="button"
-      aria-label="Apri help Termodel · versione ${APP_VERSION}" title="Help · Termodel Web v${APP_VERSION}">? ${APP_VERSION_SHORT}</button>
+      aria-label="Apri help Termodel · versione ${APP_VERSION}" title="Help · MyHome3D v. ${APP_VERSION_SHORT}">MyHome3D v. ${APP_VERSION_SHORT}</button>
     <div id="androidExploreMenu" class="android-explore-menu" hidden>
       <button id="androidExploreSingleLine" class="android-explore-action" type="button">
         Disegno unifilare
@@ -797,7 +797,7 @@ function createAndroidCadBrowserBox() {
     <button id="androidCadExploreToggle" class="android-explore-main" type="button"
       aria-expanded="false">Esplora</button>
     <button id="androidCadHelp" class="android-explore-help" type="button"
-      aria-label="Apri help CAD · versione ${APP_VERSION}" title="Help · Termodel Web v${APP_VERSION}">? ${APP_VERSION_SHORT}</button>
+      aria-label="Apri help CAD · versione ${APP_VERSION}" title="Help · MyHome3D v. ${APP_VERSION_SHORT}">MyHome3D v. ${APP_VERSION_SHORT}</button>
     <div id="androidCadExploreMenu" class="android-explore-menu" hidden>
       <label class="android-explore-field">
         <span>Piano</span>
