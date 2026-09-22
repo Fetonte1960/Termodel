@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-22**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`0baaa0f0739fc795f2f198c4311944e0f913f46d` — `Keep Service command windows open`  
+`102880645d7f38011e7b5e5bb60f8f89098c121b` — `Publish Termodel Web v0.94 CAD background`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -1232,6 +1232,66 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### ProjectBrowser Android — sfondo reale Appartamento v0.94
+
+Stato: **IMPLEMENTATO SU main** — 22 settembre 2026.
+
+La prova mobile v0.93 ha mostrato che nel CAD 2D dell'esempio `Appartamento`
+il checkbox `Sfondo` risultava disabilitato e il raster non era visibile.
+
+Causa:
+
+- l'esempio pubblicato conteneva soltanto la geometria
+  `examples/appartamento.svg`;
+- il CAD abilita `Mostra sfondo` soltanto quando trova nel piano corrente un
+  elemento `image[data-termodel-sfondo="1"]`;
+- il raster originale del progetto non era ancora incluso nel pacchetto
+  ProjectBrowser.
+
+Correzione v0.94:
+
+- aggiunto l'asset reale
+  `docs/termodel-ui-demo/examples/appartamento-background.jpg`;
+- il catalogo dell'esempio contiene ora anche i metadati dello sfondo del
+  piano `Unico`;
+- il loader mobile scarica il JPEG, lo converte in Data URL e lo inserisce
+  nella geometria prima della creazione del progetto strutturato;
+- `createStructuredProjectFromSvg()` consolida quindi lo sfondo negli asset
+  frontend del `TERMODEL-PROJECT-TEXT-V1`, mantenendolo separato dal payload
+  tecnico destinato al Service;
+- il CAD viene inizializzato con `Mostra sfondo` attivo;
+- il checkbox Android `Sfondo` deve risultare abilitato perché
+  `cadPlaneBackground(..., "Unico")` trova ora `BG001`;
+- la progress bar dell'esempio include anche la fase
+  `Sto caricando lo sfondo del piano…`.
+
+Versione:
+
+```text
+Termodel Web v0.94
+MyHome3D v. 94
+```
+
+Verifiche statiche:
+
+- sintassi JavaScript: OK;
+- catalogo JSON con background `Unico`: OK;
+- helper di caricamento/consolidamento background: presente;
+- `cadShowBackground.checked = true` durante il caricamento esempio: presente;
+- asset JPEG presente nel repository: 44.882 byte;
+- cache-busting `app.js?v=0.94`: presente.
+
+Resta da verificare sul dispositivo Android reale:
+
+```text
+Esplora → Appartamento
+→ Disegno unifilare
+→ Esplora CAD
+→ Sfondo attivo
+→ raster visibile
+→ toggle Sfondo ON/OFF funzionante
+```
 
 ### ProjectBrowser Android — Appartamento reale + progress v0.93
 
