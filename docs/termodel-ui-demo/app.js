@@ -30,6 +30,7 @@ import {
 } from './termodel-project-text.js?v=0.75';
 
 const MODEL_URL = './TermodelWebModel.json';
+const PROJECT_BROWSER_EXAMPLES_URL = './examples/catalog.json';
 const TERMODEL_SERVICE_BASE_URL = String(
   globalThis.TERMODEL_SERVICE_BASE_URL || 'http://localhost:5080'
 ).replace(/\/+$/, '');
@@ -47,7 +48,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.90';
+const APP_VERSION = '0.91';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -228,6 +229,9 @@ let currentProjectText = '';
 let currentProjectFileName = '';
 let currentCalculationId = '';
 let currentCalculationManifest = null;
+let projectBrowserExamples = [];
+let projectBrowserExamplesPromise = null;
+let activeProjectBrowserExampleId = '';
 let lastAiPreviewData = null;
 let lastCleanPlanSvg = '';
 let lastGeneratedPlan = null;
@@ -589,6 +593,186 @@ function helpKeyFromElement(element) {
   return element.dataset.helpKey || element.textContent.trim();
 }
 
+function projectBrowserResourceUrl(path) {
+  const value = String(path || '').trim();
+  if (!value) return '';
+  return new URL(value, window.location.href).href;
+}
+
+async function loadProjectBrowserExamples() {
+  if (projectBrowserExamplesPromise)
+    return projectBrowserExamplesPromise;
+
+  projectBrowserExamplesPromise = fetch(
+    PROJECT_BROWSER_EXAMPLES_URL + '?t=' + Date.now(),
+    { cache: 'no-store' }
+  )
+    .then(async response => {
+      if (!response.ok)
+        throw new Error('Catalogo esempi HTTP ' + response.status);
+
+      const catalog = await response.json();
+      if (catalog?.format !== 'TERMODEL-PROJECT-BROWSER-CATALOG-V1' ||
+          !Array.isArray(catalog.examples))
+        throw new Error('Catalogo esempi ProjectBrowser non valido.');
+
+      projectBrowserExamples = catalog.examples
+        .filter(item => item && typeof item.id === 'string' && typeof item.name === 'string')
+        .map(item => ({
+          id: String(item.id).trim(),
+          name: String(item.name).trim(),
+          description: String(item.description || '').trim(),
+          model3d: String(item.model3d || '').trim(),
+          project: String(item.project || '').trim(),
+          default: item.default === true
+        }))
+        .filter(item => item.id && item.name && item.model3d);
+
+      return projectBrowserExamples;
+    })
+    .catch(error => {
+      projectBrowserExamplesPromise = null;
+      projectBrowserExamples = [];
+      throw error;
+    });
+
+  return projectBrowserExamplesPromise;
+}
+
+function syncAndroidExampleCadAvailability(singleLineButton) {
+  if (!singleLineButton) return;
+
+  const current = projectBrowserExamples.find(
+    item => item.id === activeProjectBrowserExampleId
+  );
+  const hasProject = Boolean(current?.project);
+
+  singleLineButton.disabled = Boolean(current) && !hasProject;
+  singleLineButton.title =
+    Boolean(current) && !hasProject
+      ? 'Questo esempio dispone per ora soltanto del modello 3D.'
+      : '';
+}
+
+async function populateAndroidExploreExamples(select, singleLineButton) {
+  if (!select) return;
+
+  select.disabled = true;
+  select.replaceChildren();
+
+  const loadingOption = document.createElement('option');
+  loadingOption.value = '';
+  loadingOption.textContent = 'Caricamento esempi...';
+  select.appendChild(loadingOption);
+
+  try {
+    const examples = await loadProjectBrowserExamples();
+
+    select.replaceChildren();
+    if (!examples.length) {
+      const empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = 'Nessun esempio disponibile';
+      select.appendChild(empty);
+      select.disabled = true;
+      return;
+    }
+
+    examples.forEach(example => {
+      const option = document.createElement('option');
+      option.value = example.id;
+      option.textContent = example.name;
+      select.appendChild(option);
+    });
+
+    const preferred =
+      examples.find(example => example.default) ||
+      examples[0];
+
+    if (!activeProjectBrowserExampleId)
+      activeProjectBrowserExampleId = preferred.id;
+
+    if (!examples.some(example => example.id === activeProjectBrowserExampleId))
+      activeProjectBrowserExampleId = preferred.id;
+
+    select.value = activeProjectBrowserExampleId;
+    select.disabled = false;
+    syncAndroidExampleCadAvailability(singleLineButton);
+  } catch (error) {
+    console.error('Catalogo esempi ProjectBrowser non disponibile:', error);
+    select.replaceChildren();
+    const failed = document.createElement('option');
+    failed.value = '';
+    failed.textContent = 'Esempi non disponibili';
+    select.appendChild(failed);
+    select.disabled = true;
+  }
+}
+
+async function loadProjectBrowserExample(exampleId, singleLineButton) {
+  const id = String(exampleId || '').trim();
+  if (!id || loading) return;
+
+  const examples = await loadProjectBrowserExamples();
+  const example = examples.find(item => item.id === id);
+  if (!example)
+    throw new Error('Esempio ProjectBrowser non trovato: ' + id);
+
+  loading = true;
+  status.textContent = 'Caricamento esempio: ' + example.name + '...';
+
+  try {
+    let projectText = '';
+    if (example.project) {
+      const projectResponse = await fetch(
+        projectBrowserResourceUrl(example.project) + '?t=' + Date.now(),
+        { cache: 'no-store' }
+      );
+      if (!projectResponse.ok)
+        throw new Error('Progetto esempio HTTP ' + projectResponse.status);
+      projectText = await projectResponse.text();
+    }
+
+    const modelResponse = await fetch(
+      projectBrowserResourceUrl(example.model3d) + '?t=' + Date.now(),
+      { cache: 'no-store' }
+    );
+    if (!modelResponse.ok)
+      throw new Error('Modello esempio HTTP ' + modelResponse.status);
+
+    const data = await modelResponse.json();
+
+    if (projectText) {
+      await loadProjectTextIntoFrontend(projectText, {
+        fileName: example.id + '.termodel.txt',
+        buildPreview: false
+      });
+    } else {
+      setStructuredProjectState(false);
+    }
+
+    northOrientationDeg = null;
+    cadUpdateNorthControls();
+    renderModelData(data, {
+      mode: 'project',
+      label: 'ESEMPIO · ' + example.name,
+      renderOrigin: 'local'
+    });
+
+    activeProjectBrowserExampleId = example.id;
+    syncAndroidExampleCadAvailability(singleLineButton);
+    activateModelPage();
+    resetView();
+    requestAnimationFrame(resize);
+
+    status.textContent =
+      'ESEMPIO · ' + example.name + ' · ' +
+      (data.primitiveCount ?? data.primitives.length) + ' primitive';
+  } finally {
+    loading = false;
+  }
+}
+
 function installAndroidExploreStyles() {
   if (!TERMODEL_ANDROID_DEVICE || document.getElementById('androidExploreStyles'))
     return;
@@ -662,7 +846,7 @@ function installAndroidExploreStyles() {
       background: rgba(250,250,250,.96);
       font-weight: 600;
     }
-    .android-cad-browser-box .android-explore-menu {
+    .android-explore-menu {
       min-width: 230px;
     }
     .android-explore-field {
@@ -740,6 +924,11 @@ function createAndroidExploreBox() {
     <button id="androidExploreHelp" class="android-explore-help" type="button"
       aria-label="Apri help Termodel · versione ${APP_VERSION}" title="Help · MyHome3D v. ${APP_VERSION_SHORT}"><span class="android-myhome-icon" aria-hidden="true">⌂</span><span>MyHome3D v. ${APP_VERSION_SHORT}</span></button>
     <div id="androidExploreMenu" class="android-explore-menu" hidden>
+      <label class="android-explore-field">
+        <span>Esempio</span>
+        <select id="androidExploreExample" class="android-project-plane"
+          aria-label="Esempio esplorabile" title="Esempio esplorabile"></select>
+      </label>
       <button id="androidExploreSingleLine" class="android-explore-action" type="button">
         Disegno unifilare
       </button>
@@ -751,6 +940,7 @@ function createAndroidExploreBox() {
   const toggle = box.querySelector('#androidExploreToggle');
   const help = box.querySelector('#androidExploreHelp');
   const menu = box.querySelector('#androidExploreMenu');
+  const exampleSelect = box.querySelector('#androidExploreExample');
   const singleLine = box.querySelector('#androidExploreSingleLine');
 
   const setOpen = (open) => {
@@ -772,6 +962,24 @@ function createAndroidExploreBox() {
     showDemoHelp('Benvenuto', { force: true });
   });
 
+  exampleSelect.addEventListener('click', event => {
+    event.stopPropagation();
+  });
+
+  exampleSelect.addEventListener('change', async event => {
+    event.stopPropagation();
+    const requested = String(exampleSelect.value || '').trim();
+    if (!requested) return;
+
+    try {
+      await loadProjectBrowserExample(requested, singleLine);
+      setOpen(false);
+    } catch (error) {
+      console.error('Caricamento esempio ProjectBrowser non riuscito:', error);
+      status.textContent = 'Errore esempio: ' + error.message;
+    }
+  });
+
   singleLine.addEventListener('click', (event) => {
     event.stopPropagation();
     setOpen(false);
@@ -785,6 +993,7 @@ function createAndroidExploreBox() {
       setOpen(false);
   });
 
+  void populateAndroidExploreExamples(exampleSelect, singleLine);
   return box;
 }
 
