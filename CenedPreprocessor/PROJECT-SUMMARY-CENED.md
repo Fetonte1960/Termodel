@@ -269,7 +269,19 @@ Regole consolidate:
 
 Esempio fondamentale: un fattore mensile di ombreggiamento presente nell'XML nazionale non sostituisce la geometria dell'aggetto quando questa è necessaria al mapping successivo.
 
-## 16. Prossimo passo
+## 16. Principio formati pubblici riconosciuti
+
+Decisione D-0013: il Bridge accetta **formati pubblici, documentati e riconosciuti**, mantenuti separati per dominio fino alla fase di import/fusione.
+
+Prima applicazione:
+- `gbXML` → geometria/modello termico fisico;
+- XML nazionale → dati specifici nazionali/APE e completamento dei dati mancanti.
+
+Il modello intermedio resta interno al Bridge e non viene imposto come formato di scambio proprietario.
+
+L'architettura deve usare adapter per consentire in futuro l'aggiunta di altri formati pubblici riconosciuti senza cambiare il nucleo del Bridge.
+
+## 17. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
