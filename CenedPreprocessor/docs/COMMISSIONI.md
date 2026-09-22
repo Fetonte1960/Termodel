@@ -139,3 +139,18 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - la linea Desktop è sospesa fino a nuova decisione esplicita;
 - nessuna implementazione Desktop, runner Java, Termodel.Core o WebService è stata avviata;
 - nessun codice applicativo modificato in questa commissione.
+
+
+## CENED-0006 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** acquisire come riferimento di progetto l'XML `output.xml` fornito dall'utente, dichiarato testato con la funzione di import di Blumatica e analogo al documento XML nazionale che il Software Bridge dovrà sviluppare in output.
+
+**Vincoli:**
+- il repository è pubblico;
+- il file originale contiene dati personali e identificativi reali;
+- non pubblicare il file grezzo nel repository;
+- registrare hash, struttura, provenienza funzionale e valore come Golden Reference;
+- distinguere sempre il fatto che il test di import Blumatica è un'evidenza fornita dall'utente e non una validazione rieseguita da questa sessione;
+- usare il documento come riferimento per la struttura dell'output XML WebJS, senza assumere automaticamente che ogni campo sia richiesto da CENED Lombardia.
