@@ -89,3 +89,18 @@ Regole:
 - il riferimento viene usato per struttura, gerarchie, mapping e test di serializzazione dell'output XML WebJS;
 - il fatto che Blumatica lo importi non dimostra automaticamente conformità con CENED+2 Motore;
 - ogni futura copia anonimizzata o modificata non può essere chiamata "testata con Blumatica" finché non venga nuovamente verificata con un'importazione reale.
+
+
+## 2026-09-22 — D-0010 — GestXml Termodel come riferimento non vincolante
+
+Il sorgente Termodel `SorgentiTermodel/Library/GestXml.cs`, identificato nello snapshot fornito dall'utente con SHA-256 `906cde73c919fa90359daae0df0c00a1a088e318e3c2b9130b293ab1e51c0736`, viene acquisito come **fonte di ispirazione tecnica** per la WebJS.
+
+Non è una specifica normativa né un vincolo implementativo.
+
+Ordine di autorità:
+1. specifiche ufficiali ARIA/formato ufficiale;
+2. Golden Reference validati;
+3. specifica propria del Software Bridge;
+4. `GestXml.cs` come riferimento concettuale.
+
+Sono riutilizzabili concettualmente gerarchie, mapping, classificazione dei confini, calcoli geometrici e principi di serializzazione. Non devono essere trasferiti automaticamente coupling Desktop/WPF/Xbim, stato globale, valori hard-coded, fallback o formule non verificate.
