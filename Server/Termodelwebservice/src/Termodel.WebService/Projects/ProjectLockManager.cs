@@ -386,7 +386,7 @@ public sealed class ProjectLockManager : IDisposable
 
     private void ReleaseEntry(Guid projectId, ProjectLockEntry entry)
     {
-        _active.TryRemove(new KeyValuePair<Guid, ProjectLockEntry>(projectId, entry));
+        _active.TryRemove(projectId, out _);
         entry.Stream.Dispose();
         TryDeleteLockFile(GetLockPath(projectId));
     }
@@ -410,7 +410,7 @@ public sealed class ProjectLockManager : IDisposable
 
     private void ThrowIfDisposed()
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_disposed)\n            throw new ObjectDisposedException(nameof(ProjectLockManager));
     }
 
     public void Dispose()
