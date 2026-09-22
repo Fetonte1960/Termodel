@@ -124,7 +124,22 @@ Completati:
 
 Non è ancora implementata alcuna trasformazione verso input CENED+2 Motore.
 
-## 8. Prossimo passo
+## 8. Studio fattibilità Motore CENED
+
+Completato lo studio in sola lettura `docs/STUDIO-FATTIBILITA-MOTORE-CENED.md`.
+
+Conclusioni consolidate:
+- fattibilità tecnica alta per un'integrazione mediante processo Java separato;
+- il Core C# deve restare privo di dipendenze Java/JAR proprietarie;
+- il WebService dovrà eventualmente orchestrare un runner Java esterno e isolato;
+- la prima strategia deve usare una JVM per elaborazione finché thread safety e stato globale non siano verificati;
+- la versione 1.1.14 installata può essere usata per studio, ma il riferimento corrente ARIA è CENED+2 1.1.15;
+- il kit Motore 1.1.15 e le specifiche riservate agli Utenti Motore sono il riferimento da acquisire prima del prototipo;
+- non è ancora dimostrato il funzionamento headless;
+- non è ancora completo l'inventario delle dipendenze e della configurazione Spring perché questa sessione non ha accesso al filesystem locale e le specifiche tecniche complete sono riservate;
+- nessuna modifica è stata apportata a Termodel.Core, WebService, frontend o definizionedati.json.
+
+## 9. Prossimo passo
 
 Studiare e documentare con precisione le **specifiche tecniche riservate agli Utenti Motore CENED+**, con priorità a:
 - invocazione del Motore;
