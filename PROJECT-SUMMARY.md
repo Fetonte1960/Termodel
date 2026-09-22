@@ -1049,7 +1049,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.92
+Termodel Web v0.93
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -1161,6 +1161,84 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### ProjectBrowser Android — Appartamento reale + progress v0.93
+
+Stato: **IMPLEMENTATO SU main** — 22 settembre 2026.
+
+La prova reale v0.92 ha mostrato che la selezione della combo funzionava ma
+l'esempio puntava allo stesso `TermodelWebModel.json` già caricato all'avvio:
+il 3D quindi non mostrava alcun cambiamento percepibile e il comando
+`Disegno unifilare` restava disabilitato.
+
+La v0.93 usa invece la geometria reale del progetto Appartamento già costruito
+nel CAD Web come sorgente dell'esempio mobile.
+
+Nuovo asset:
+
+```text
+docs/termodel-ui-demo/examples/appartamento.svg
+```
+
+Contiene la geometria unifilare reale dell'Appartamento (17 linee
+architettoniche, 9 blocchi LOC, 9 blocchi FIN e simbolo Nord). Lo sfondo
+raster non è incluso in questo asset provvisorio leggero.
+
+Il catalogo `TERMODEL-PROJECT-BROWSER-CATALOG-V1` ora associa
+`Appartamento` alla proprietà:
+
+```json
+{
+  "geometry": "./examples/appartamento.svg"
+}
+```
+
+Comportamento mobile:
+
+- `Scegli esempio… → Appartamento` scarica l'unifilare reale;
+- il frontend costruisce un progetto strutturato locale partendo dal template
+  Termodel e dalla geometria dell'esempio;
+- `GeneraPianta.js` genera l'anteprima 3D locale dell'Appartamento, quindi la
+  vista cambia realmente rispetto al modello iniziale;
+- il progetto strutturato rende disponibile anche `Disegno unifilare`, che
+  apre lo stesso CAD 2D dell'esempio;
+- quando sarà disponibile il `model3d.json` autorevole prodotto dal Service,
+  potrà essere indicato nello stesso catalogo e sostituire l'anteprima locale
+  senza cambiare l'interfaccia ProjectBrowser.
+
+È stata aggiunta una barra di avanzamento mobile sovrapposta al viewer.
+Durante il caricamento mostra descrizioni del tipo:
+
+```text
+Sto preparando Appartamento…
+Sto caricando l’unifilare…
+Sto preparando il progetto esplorabile…
+Sto generando il 3D dall’unifilare…
+Sto completando la visualizzazione…
+```
+
+La barra arriva al 100% e descrizione + barra scompaiono automaticamente
+subito dopo il completamento. In caso di errore il messaggio rimane visibile
+brevemente prima di sparire.
+
+Versione visibile:
+
+```text
+Termodel Web v0.93
+MyHome3D v. 93
+```
+
+Verifiche statiche:
+
+- sintassi JavaScript: OK;
+- catalogo esempi: valido;
+- supporto `geometry`: presente;
+- progress overlay: presente;
+- `Disegno unifilare` abilitabile per esempi con `geometry` o `project`: presente;
+- asset Appartamento: 9 LOC, 9 FIN, Nord e geometria unifilare presenti;
+- cache-busting `app.js?v=0.93`: presente.
+
+Resta il collaudo visivo/interattivo sul dispositivo Android reale.
 
 ### ProjectBrowser Android — correzione attivazione esempio v0.92
 
