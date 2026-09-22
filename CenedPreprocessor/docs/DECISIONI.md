@@ -120,3 +120,56 @@ Regole:
 - la futura stampa WebJS deve essere chiaramente marcata come **ANTEPRIMA APE — NON UFFICIALE**;
 - il file originale non viene pubblicato nel repository pubblico perché contiene dati personali;
 - l'anteprima deve derivare dallo stesso modello dati normalizzato usato per l'XML, evitando mapping duplicati e divergenti.
+
+
+## 2026-09-22 — D-0012 — Ingresso duale obbligatorio: gbXML + XML nazionale
+
+Il Software Bridge adotta come contratto di ingresso una **coppia di file complementari**:
+
+1. **gbXML** — fonte primaria del modello geometrico/termico;
+2. **XML nazionale** — fonte complementare per i dati non presenti o non sufficientemente rappresentati nel gbXML.
+
+Flusso consolidato:
+
+```text
+gbXML
+  ├─ geometria
+  ├─ spazi
+  ├─ superfici
+  ├─ aperture
+  ├─ orientamenti
+  ├─ relazioni termiche
+  └─ geometrie/ostruzioni di ombreggiamento quando disponibili
+        \
+         \ 
+          > IMPORT + CONTROLLO DI COERENZA
+         /
+        /
+XML nazionale
+  ├─ dati generali/APE
+  ├─ dati italiani specifici
+  ├─ archivi/codifiche non presenti nel gbXML
+  ├─ dati impianti o altri dati mancanti
+  └─ risultati già disponibili, usati solo come confronto
+        ↓
+MODELLO INTERMEDIO UNICO DEL BRIDGE
+        ↓
+validazione / diagnostica
+        ↓
+futuro mapping CENED
+```
+
+### Autorità dei dati
+
+- **Geometria e cause fisiche:** prevale il gbXML.
+- **Dati specifici nazionali/APE e campi non rappresentati dal gbXML:** prevale l'XML nazionale.
+- **Dati duplicati:** il Bridge confronta i valori; una discordanza significativa viene segnalata e non corretta silenziosamente.
+- **Risultati energetici dell'XML nazionale:** sono dati di confronto e non possono sostituire informazioni causali mancanti, ad esempio la geometria di un aggetto con un semplice fattore mensile di ombreggiamento.
+
+### Principio di funzionamento
+
+Il Bridge è un componente di **fusione, normalizzazione e controllo**, non un editor del modello tecnico.
+
+Le correzioni devono essere eseguite nel software sorgente che ha prodotto uno dei due file e poi riesportate.
+
+Questa decisione supera l'idea di usare l'XML nazionale come input unico: l'XML nazionale rimane indispensabile, ma viene affiancato dal gbXML per conservare il modello fisico necessario alle trasformazioni successive.
