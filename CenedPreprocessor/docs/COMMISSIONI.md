@@ -377,3 +377,25 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - struttura/campi/enumerazioni confrontati con lo XSD pubblico gbXML 8.01;
 - validazione completa col validator ufficiale gbXML lasciata come controllo futuro della pipeline;
 - nessun codice applicativo e nessuna versione software modificati.
+
+
+## CENED-0014 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** creare un sample gbXML avanzato per validare lo studio di fattibilità del Bridge sugli ombreggiamenti geometrici.
+
+**Caso prova richiesto:**
+- edificio minimale con una stanza e due finestre;
+- balcone/aggetto orizzontale davanti alla parete finestrata;
+- setti verticali laterali;
+- ostacolo remoto rappresentativo di un palazzo di fronte;
+- geometrie espresse con elementi gbXML pubblici, senza estensioni proprietarie;
+- uso di `Surface surfaceType="Shade"` per gli elementi ombreggianti, coerentemente con lo schema e i campioni/test pubblici gbXML;
+- mantenere il caso deterministico e facilmente verificabile a mano;
+- documentare coordinate, distanze e risultati geometrici attesi;
+- creare il relativo documento di test;
+- non modificare WebJS/Desktop/Core/Service o `definizionedati.json`.
+
+**Scopo di fattibilità:**
+dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombreggiamento che l'XML nazionale tende a rappresentare solo tramite risultati/fattori derivati.
