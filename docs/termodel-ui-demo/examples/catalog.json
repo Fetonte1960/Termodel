@@ -2,9 +2,9 @@
   "format": "TERMODEL-PROJECT-BROWSER-CATALOG-V1",
   "examples": [
     {
-      "id": "termodel-demo-3d",
-      "name": "Esempio Termodel 3D",
-      "description": "Modello dimostrativo attualmente pubblicato",
+      "id": "appartamento",
+      "name": "Appartamento",
+      "description": "Primo esempio esplorabile MyHome3D",
       "model3d": "./TermodelWebModel.json",
       "default": true
     }
