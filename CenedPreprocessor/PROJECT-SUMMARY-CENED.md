@@ -232,7 +232,27 @@ Verifiche:
 
 Questa versione è esclusivamente una base di discussione del prodotto.
 
-## 14. Prossimo passo
+## 14. Pubblicazione WebJS 0.1.1-dev
+
+La bozza WebJS è stata pubblicata come copia di deploy in:
+
+`main/docs/cened-bridge/index.html`
+
+URL pubblico previsto:
+
+`https://www.termodel.it/cened-bridge/?v=0.1.1`
+
+La sorgente autorevole resta:
+
+`TermodelCened/CenedPreprocessor/src/WebJS/index.html`
+
+Commit della copia di deploy su `main`:
+
+`dbee4c4b78477821f2c1ff24942ba76b7d9980bc`
+
+Nota di verifica: il contenuto pubblicato su `main` è stato verificato nel repository; l'ambiente strumenti di questa sessione non è riuscito a risolvere direttamente `www.termodel.it`, quindi la raggiungibilità HTTP esterna non è stata certificata dalla sessione.
+
+## 15. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
