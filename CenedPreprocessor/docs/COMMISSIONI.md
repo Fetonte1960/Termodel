@@ -191,3 +191,19 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - registrata la decisione D-0010;
 - il sorgente è classificato come fonte di ispirazione tecnica non vincolante;
 - nessun codice WebJS, Desktop, Core, Service o `definizionedati.json` modificato.
+
+
+## CENED-0008 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** acquisire come riferimento di progetto l'anteprima APE prodotta da Blumatica, fornita in formato RTF, da usare come esempio di stampa/fac-simile per la futura WebJS.
+
+**Vincoli:**
+- il repository è pubblico;
+- il file originale contiene dati personali e identificativi reali;
+- non pubblicare l'RTF grezzo nel repository;
+- registrare hash, struttura, sezioni e ruolo funzionale del documento;
+- considerare il documento come riferimento di presentazione e contenuto, non come specifica grafica vincolante;
+- mantenere distinta l'anteprima APE non ufficiale dall'APE ufficiale depositato;
+- non copiare automaticamente grafica, loghi o layout proprietari di Blumatica.
