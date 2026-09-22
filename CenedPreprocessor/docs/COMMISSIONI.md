@@ -218,3 +218,29 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - stabilito che la futura WebJS userà una grafica originale e la dicitura `ANTEPRIMA APE — NON UFFICIALE`;
 - il file originale non è stato pubblicato perché contiene dati personali reali;
 - nessun codice WebJS, Desktop, Core, Service o `definizionedati.json` modificato.
+
+
+## CENED-0009 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** realizzare la prima bozza WebJS navigabile del Software Bridge CENED da usare esclusivamente per discussione e consolidamento del prodotto.
+
+**Perimetro:**
+- solo `CenedPreprocessor/src/WebJS/`;
+- nessuna modifica a Desktop, Termodel.Core, WebService o `definizionedati.json`;
+- nessuna chiamata reale a CENED+2 Motore;
+- usare dati demo fittizi, senza dati personali reali;
+- UI originale, non copia del Client CENED né di Blumatica;
+- riferimento strutturale: `BLUMATICA-XML-001`;
+- riferimento di anteprima APE: `BLUMATICA-APE-PREVIEW-001`;
+- riferimento tecnico non vincolante: `TERMODEL-GESTXML-001`.
+
+**Funzioni della bozza:**
+1. navigazione fra dati generali, zone/locali, involucro, serramenti, ponti termici, impianti, risultati;
+2. indicatori di completezza/validazione;
+3. modello dati JavaScript separato dalla UI;
+4. anteprima XML nazionale dimostrativa;
+5. anteprima APE marcata `ANTEPRIMA APE — NON UFFICIALE`;
+6. nessun tentativo di calcolo energetico ufficiale;
+7. versione visibile in caption/interfaccia.
