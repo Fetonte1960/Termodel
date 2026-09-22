@@ -147,6 +147,8 @@ jobs:
             $forcedUnlock = Invoke-RestMethod -Uri "$base/api/projects/$($allocA.projectId)/unlock?force=true" -Method Post
             if ($forcedUnlock.status -ne "unlocked") { throw "Sblocco forzato fallito." }
 
+            Invoke-RestMethod -Uri "$base/api/projects/$($allocB.projectId)/close" -Method Post -Headers $headersB | Out-Null
+
             $openA = Invoke-RestMethod -Uri "$base/api/projects/$($allocA.projectId)/open" -Method Post
             $headersA = LockHeaders ([string]$openA.projectLockToken)
             Start-Sleep -Seconds 16
@@ -155,8 +157,6 @@ jobs:
 
             $list = Invoke-RestMethod -Uri "$base/api/projects" -Method Get
             if (@($list.projects).Count -ne 2) { throw "Elenco progetti non contiene A e B." }
-
-            Invoke-RestMethod -Uri "$base/api/projects/$($allocB.projectId)/close" -Method Post -Headers $headersB | Out-Null
 
             # Simula crash: lascia A aperto, termina il Service senza close e riavvia.
             Stop-ServiceProcess $service
