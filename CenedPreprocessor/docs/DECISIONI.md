@@ -234,3 +234,21 @@ Regole:
 - il viewer serve anche come gate umano per verificare che il parser abbia interpretato correttamente le cause geometriche dell'ombreggiamento.
 
 Il riuso da Termodel Web è limitato ai concetti generici del renderer browser: Three.js, OrbitControls, camera, fit scena, spigoli e raycasting.
+
+
+## 2026-09-22 — D-0016 — Fixture di prova consolidate e autocaricate
+
+La WebJS deve essere immediatamente verificabile senza richiedere all'utente di ricaricare ogni volta i file di prova.
+
+Vengono quindi consolidate due fixture runtime:
+- `GBXML-SHADING-001.xml` come sorgente geometrica;
+- `BLUMATICA-XML-001-SANITIZED.xml` come sorgente nazionale complementare.
+
+La fixture XML nazionale è derivata dal Golden Reference BLUMATICA-XML-001 ma **non è il file originale**:
+- i dati personali/identificativi sono rimossi o sostituiti;
+- i valori tecnici e i conteggi necessari ai test sono preservati;
+- lo stato resta `DERIVATO-NON-VALIDATO` finché non venga sottoposta a una nuova validazione esterna.
+
+All'avvio della modalità prova la WebJS carica automaticamente entrambe le fixture e apre il Viewer 3D.
+
+Gli import manuali restano disponibili per sostituire una singola sorgente durante prove specifiche.
