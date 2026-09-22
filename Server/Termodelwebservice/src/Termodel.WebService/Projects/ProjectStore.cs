@@ -1,12 +1,18 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 
 namespace Termodel.WebService.Projects;
 
 public sealed class ProjectStore
 {
     private static readonly UTF8Encoding Utf8WithoutBom = new(false);
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true
+    };
+
     private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _projectLocks = new();
     private readonly string _reservationsDirectory;
 
@@ -77,6 +83,128 @@ public sealed class ProjectStore
         File.Exists(GetReservationPath(projectId)) ||
         Directory.Exists(GetProjectDirectory(projectId));
 
+    public async Task<IReadOnlyList<ProjectListEntry>> ListProjectsAsync(
+        CancellationToken cancellationToken)
+    {
+        if (!Directory.Exists(RootDirectory))
+            return [];
+
+        var result = new List<ProjectListEntry>();
+
+        foreach (string directory in Directory.EnumerateDirectories(RootDirectory))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            string directoryName = Path.GetFileName(directory);
+            if (!Guid.TryParse(directoryName, out Guid projectId))
+                continue;
+
+            string projectPath = Path.Combine(directory, "project.tmdl");
+            if (!File.Exists(projectPath))
+                continue;
+
+            string projectText = await File.ReadAllTextAsync(
+                projectPath,
+                Encoding.UTF8,
+                cancellationToken);
+
+            string projectName;
+            try
+            {
+                projectName = ProjectRequestIdentity.ReadProjectName(projectText);
+            }
+            catch
+            {
+                projectName = projectId.ToString("D");
+            }
+
+            ProjectState state = await ReadStateUnlockedAsync(
+                projectId,
+                cancellationToken);
+
+            result.Add(new ProjectListEntry(
+                projectId,
+                projectName,
+                File.GetLastWriteTimeUtc(projectPath),
+                state.ArtifactsStale));
+        }
+
+        return result
+            .OrderBy(entry => entry.ProjectName, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(entry => entry.ProjectId)
+            .ToArray();
+    }
+
+    public async Task<string?> ReadProjectAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        SemaphoreSlim gate = GetGate(projectId);
+        await gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            string projectPath = GetProjectPath(projectId);
+            if (!File.Exists(projectPath))
+                return null;
+
+            return await File.ReadAllTextAsync(
+                projectPath,
+                Encoding.UTF8,
+                cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task SaveProjectAsync(
+        Guid projectId,
+        string projectText,
+        CancellationToken cancellationToken)
+    {
+        if (!IsReserved(projectId))
+        {
+            throw new InvalidDataException(
+                $"Il projectId '{projectId:D}' non è stato allocato dal Service.");
+        }
+
+        SemaphoreSlim gate = GetGate(projectId);
+        await gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            string projectDirectory = GetProjectDirectory(projectId);
+            Directory.CreateDirectory(projectDirectory);
+
+            await WriteTextAtomicallyAsync(
+                GetProjectPath(projectId),
+                projectText,
+                cancellationToken);
+
+            ProjectState previous = await ReadStateUnlockedAsync(
+                projectId,
+                cancellationToken);
+
+            var state = new ProjectState(
+                ArtifactsStale: true,
+                LastSavedAtUtc: DateTimeOffset.UtcNow,
+                LastCalculatedAtUtc: previous.LastCalculatedAtUtc);
+
+            await WriteJsonAtomicallyAsync(
+                GetStatePath(projectId),
+                state,
+                cancellationToken);
+
+            TryDeleteReservation(projectId);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public async Task<ProjectCalculationData> UpdateCurrentAsync(
         Guid projectId,
         string projectText,
@@ -89,13 +217,14 @@ public sealed class ProjectStore
                 $"Il projectId '{projectId:D}' non è stato allocato dal Service.");
         }
 
-        SemaphoreSlim gate = _projectLocks.GetOrAdd(projectId, static _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim gate = GetGate(projectId);
         await gate.WaitAsync(cancellationToken);
 
         try
         {
             ProjectCalculationData data = await calculate(cancellationToken);
             await PublishCurrentAsync(projectId, projectText, data, cancellationToken);
+            TryDeleteReservation(projectId);
             return data;
         }
         finally
@@ -108,7 +237,7 @@ public sealed class ProjectStore
         Guid projectId,
         CancellationToken cancellationToken)
     {
-        SemaphoreSlim gate = _projectLocks.GetOrAdd(projectId, static _ => new SemaphoreSlim(1, 1));
+        SemaphoreSlim gate = GetGate(projectId);
         await gate.WaitAsync(cancellationToken);
 
         try
@@ -122,6 +251,27 @@ public sealed class ProjectStore
                 return null;
 
             return await File.ReadAllBytesAsync(modelPath, cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<bool> AreArtifactsStaleAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        SemaphoreSlim gate = GetGate(projectId);
+        await gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            ProjectState state = await ReadStateUnlockedAsync(
+                projectId,
+                cancellationToken);
+
+            return state.ArtifactsStale;
         }
         finally
         {
@@ -154,6 +304,8 @@ public sealed class ProjectStore
             Directory.CreateDirectory(artifactsDirectory);
             Directory.CreateDirectory(logsDirectory);
 
+            DateTimeOffset completedAtUtc = DateTimeOffset.UtcNow;
+
             await File.WriteAllTextAsync(
                 Path.Combine(stagingDirectory, "project.tmdl"),
                 projectText,
@@ -173,7 +325,7 @@ public sealed class ProjectStore
 
             string calculationLog =
                 $"projectId={projectId:D}{Environment.NewLine}" +
-                $"completedAtUtc={DateTimeOffset.UtcNow:O}{Environment.NewLine}" +
+                $"completedAtUtc={completedAtUtc:O}{Environment.NewLine}" +
                 $"status=completed{Environment.NewLine}" +
                 $"primitiveCount={data.PrimitiveCount}{Environment.NewLine}" +
                 $"diagnosticCount={data.Diagnostics.Count}{Environment.NewLine}";
@@ -181,6 +333,17 @@ public sealed class ProjectStore
             await File.WriteAllTextAsync(
                 Path.Combine(logsDirectory, "calculation.log"),
                 calculationLog,
+                Utf8WithoutBom,
+                cancellationToken);
+
+            var state = new ProjectState(
+                ArtifactsStale: false,
+                LastSavedAtUtc: completedAtUtc,
+                LastCalculatedAtUtc: completedAtUtc);
+
+            await File.WriteAllTextAsync(
+                Path.Combine(stagingDirectory, "project-state.json"),
+                JsonSerializer.Serialize(state, JsonOptions),
                 Utf8WithoutBom,
                 cancellationToken);
 
@@ -215,8 +378,6 @@ public sealed class ProjectStore
             if (Directory.Exists(stagingDirectory))
                 Directory.Delete(stagingDirectory, recursive: true);
 
-            // Il backup non è uno storico: se il nuovo stato è già stato
-            // pubblicato, tenta sempre di eliminarlo.
             if (Directory.Exists(projectDirectory) && Directory.Exists(backupDirectory))
             {
                 try
@@ -232,14 +393,137 @@ public sealed class ProjectStore
         }
     }
 
+    private async Task<ProjectState> ReadStateUnlockedAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        string statePath = GetStatePath(projectId);
+        if (!File.Exists(statePath))
+        {
+            string projectPath = GetProjectPath(projectId);
+            string modelPath = Path.Combine(
+                GetProjectDirectory(projectId),
+                "artifacts",
+                "model3d.json");
+
+            bool stale = File.Exists(projectPath) &&
+                (!File.Exists(modelPath) ||
+                 File.GetLastWriteTimeUtc(projectPath) > File.GetLastWriteTimeUtc(modelPath));
+
+            return new ProjectState(stale, null, null);
+        }
+
+        try
+        {
+            await using var stream = new FileStream(
+                statePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+
+            ProjectState? state = await JsonSerializer.DeserializeAsync<ProjectState>(
+                stream,
+                JsonOptions,
+                cancellationToken);
+
+            return state ?? new ProjectState(true, null, null);
+        }
+        catch
+        {
+            return new ProjectState(true, null, null);
+        }
+    }
+
+    private static async Task WriteTextAtomicallyAsync(
+        string path,
+        string content,
+        CancellationToken cancellationToken)
+    {
+        string tempPath = path + $".tmp-{Guid.NewGuid():N}";
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                tempPath,
+                content,
+                Utf8WithoutBom,
+                cancellationToken);
+
+            File.Move(tempPath, path, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
+    }
+
+    private static async Task WriteJsonAtomicallyAsync<T>(
+        string path,
+        T value,
+        CancellationToken cancellationToken)
+    {
+        string tempPath = path + $".tmp-{Guid.NewGuid():N}";
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                tempPath,
+                JsonSerializer.Serialize(value, JsonOptions),
+                Utf8WithoutBom,
+                cancellationToken);
+
+            File.Move(tempPath, path, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
+    }
+
+    private SemaphoreSlim GetGate(Guid projectId) =>
+        _projectLocks.GetOrAdd(projectId, static _ => new SemaphoreSlim(1, 1));
+
     private string GetProjectDirectory(Guid projectId) =>
         Path.Combine(RootDirectory, projectId.ToString("D"));
 
+    private string GetProjectPath(Guid projectId) =>
+        Path.Combine(GetProjectDirectory(projectId), "project.tmdl");
+
+    private string GetStatePath(Guid projectId) =>
+        Path.Combine(GetProjectDirectory(projectId), "project-state.json");
+
     private string GetReservationPath(Guid projectId) =>
         Path.Combine(_reservationsDirectory, $"{projectId:D}.reserve");
+
+    private void TryDeleteReservation(Guid projectId)
+    {
+        string reservationPath = GetReservationPath(projectId);
+        try
+        {
+            if (File.Exists(reservationPath))
+                File.Delete(reservationPath);
+        }
+        catch
+        {
+            // La directory progetto ormai garantisce l'unicità del projectId.
+        }
+    }
 }
 
 public sealed record ProjectCalculationData(
     byte[] Model3DJson,
     IReadOnlyList<string> Diagnostics,
     int PrimitiveCount);
+
+public sealed record ProjectListEntry(
+    Guid ProjectId,
+    string ProjectName,
+    DateTime LastWriteTimeUtc,
+    bool ArtifactsStale);
+
+public sealed record ProjectState(
+    bool ArtifactsStale,
+    DateTimeOffset? LastSavedAtUtc,
+    DateTimeOffset? LastCalculatedAtUtc);
