@@ -775,6 +775,84 @@ consolidamento autorevole del primo esempio finché il calcolo non termina con
 successo.
 
 
+### Decisione — projectId persistente e consolidamento per progetto
+
+Decisione architetturale registrata il **2026-09-22**.
+
+Per evitare una crescita permanente del filesystem con una directory per ogni
+`Aggiorna Modello`, viene introdotto un identificatore persistente del progetto:
+
+```text
+projectId
+```
+
+`projectId` e `calculationId` hanno responsabilità diverse:
+
+```text
+projectId
+    → identità stabile del progetto
+    → resta uguale fra elaborazioni successive
+
+calculationId
+    → identità della singola elaborazione/snapshot
+    → cambia a ogni Aggiorna Modello
+```
+
+Il `projectId` deve essere assegnato dal WebService e consolidato nel progetto
+come proprietà top-level di `manifest.json`. Il frontend non deve inventarlo.
+
+Nuovo flusso concordato alla prima comunicazione con il Service:
+
+```text
+progetto aperto/creato
+        ↓
+manifest.projectId presente?
+   ├── sì → usa quello esistente
+   └── no
+        ↓
+POST /api/projects/allocate-id
+        ↓
+riceve projectId univoco
+        ↓
+frontend consolida projectId in manifest.json
+        ↓
+ricostruisce TERMODEL-PROJECT-TEXT-V1
+        ↓
+POST /api/calculations
+```
+
+Il Service deve garantire che l'ID assegnato non confligga con projectId già
+presenti e deve riservarlo in modo sicuro anche in caso di richieste
+contemporanee.
+
+La persistenza operativa passa quindi da una ipotesi per-elaborazione a una
+struttura per-progetto:
+
+```text
+SavedProjects/
+└── {projectId}/
+    ├── project.tmdl
+    ├── artifacts/
+    │   ├── model3d.json
+    │   └── ... altri artifact
+    └── logs/
+        └── ... diagnostica/log correnti
+```
+
+Ogni successivo `Aggiorna Modello` dello stesso progetto aggiorna il contenuto
+della stessa cartella con il più recente risultato riuscito. Non si conserva
+automaticamente una directory permanente per ogni `calculationId`.
+
+Questa scelta è particolarmente importante per gli esempi consolidati
+ProjectBrowser/MyHome3D: il progetto può essere riconosciuto stabilmente dal
+`projectId`, mentre gli artifact pubblicati rappresentano l'ultima elaborazione
+scelta come valida per il consolidamento.
+
+Stato: **decisione registrata, implementazione server commissionata ma non
+ancora dichiarata eseguita**. Il frontend dovrà essere adeguato successivamente
+per chiamare `POST /api/projects/allocate-id` solo quando il progetto non
+contiene ancora `manifest.projectId`.
+
 ## 3. Responsabilità e confini
 
 La divisione operativa corrente è esplicita:
