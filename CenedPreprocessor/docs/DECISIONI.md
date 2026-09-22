@@ -104,3 +104,19 @@ Ordine di autorità:
 4. `GestXml.cs` come riferimento concettuale.
 
 Sono riutilizzabili concettualmente gerarchie, mapping, classificazione dei confini, calcoli geometrici e principi di serializzazione. Non devono essere trasferiti automaticamente coupling Desktop/WPF/Xbim, stato globale, valori hard-coded, fallback o formule non verificate.
+
+
+## 2026-09-22 — D-0011 — Anteprima APE Blumatica come Golden Reference di presentazione
+
+Il documento RTF fornito dall'utente e prodotto da Blumatica viene assunto come **Golden Reference di presentazione e contenuto** per la futura funzione WebJS di anteprima APE.
+
+Identificativo: `BLUMATICA-APE-PREVIEW-001`.
+
+SHA-256 del file originale: `59e0300d1210a92cd31d5fe4e1e730797fa6d9ff0df6aabb61b41872de982e5f`.
+
+Regole:
+- usare il documento per sezioni, ordine logico, completezza e leggibilità;
+- non copiarne automaticamente grafica, loghi, font o impaginazione proprietaria;
+- la futura stampa WebJS deve essere chiaramente marcata come **ANTEPRIMA APE — NON UFFICIALE**;
+- il file originale non viene pubblicato nel repository pubblico perché contiene dati personali;
+- l'anteprima deve derivare dallo stesso modello dati normalizzato usato per l'XML, evitando mapping duplicati e divergenti.
