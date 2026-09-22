@@ -47,7 +47,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.85';
+const APP_VERSION = '0.86';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -598,11 +598,41 @@ function installAndroidExploreStyles() {
     }
     .android-project-plane {
       height: 38px;
-      min-width: 108px;
-      max-width: min(42vw, 190px);
+      width: 100%;
+      min-width: 130px;
+      max-width: none;
       padding: 0 28px 0 9px;
       background: rgba(250,250,250,.96);
       font-weight: 600;
+    }
+    .android-cad-browser-box .android-explore-menu {
+      min-width: 230px;
+    }
+    .android-explore-field {
+      display: grid;
+      gap: 4px;
+      padding: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #39434d;
+    }
+    .android-explore-check {
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 8px;
+      border: 1px solid #c5cbd0;
+      border-radius: 4px;
+      background: #fff;
+      color: #111;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .android-explore-check input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
     }
     .android-explore-main.active {
       background: #dff1ff;
@@ -702,8 +732,10 @@ function createAndroidExploreBox() {
 }
 
 let androidCadPlaneSelect = null;
+let androidCadShowBackground = null;
+let androidCadShowInput = null;
 
-function refreshAndroidCadPlaneSelect() {
+function refreshAndroidCadExploreControls() {
   if (!TERMODEL_ANDROID_DEVICE || !androidCadPlaneSelect) return;
 
   const planes = [];
@@ -728,6 +760,15 @@ function refreshAndroidCadPlaneSelect() {
   androidCadPlaneSelect.disabled = planes.length === 0;
   if (current) androidCadPlaneSelect.value = current;
   else if (planes.length) androidCadPlaneSelect.value = planes[0];
+
+  if (androidCadShowBackground && cadShowBackground) {
+    androidCadShowBackground.checked = cadShowBackground.checked;
+    androidCadShowBackground.disabled = cadShowBackground.disabled;
+  }
+  if (androidCadShowInput && cadShowInput) {
+    androidCadShowInput.checked = cadShowInput.checked;
+    androidCadShowInput.disabled = !cadWorkingDoc;
+  }
 }
 
 function createAndroidCadBrowserBox() {
@@ -737,7 +778,9 @@ function createAndroidCadBrowserBox() {
   const existing = document.getElementById('androidCadBrowserBox');
   if (existing) {
     androidCadPlaneSelect = existing.querySelector('#androidCadPlane');
-    refreshAndroidCadPlaneSelect();
+    androidCadShowBackground = existing.querySelector('#androidCadShowBackground');
+    androidCadShowInput = existing.querySelector('#androidCadShowInput');
+    refreshAndroidCadExploreControls();
     return existing;
   }
 
@@ -749,23 +792,55 @@ function createAndroidCadBrowserBox() {
   box.innerHTML = `
     <button id="androidCadHome" class="android-explore-main" type="button"
       aria-label="Torna al modello 3D">Home</button>
-    <select id="androidCadPlane" class="android-project-plane"
-      aria-label="Piano visualizzato" title="Piano visualizzato"></select>
+    <button id="androidCadExploreToggle" class="android-explore-main" type="button"
+      aria-expanded="false">Esplora</button>
     <button id="androidCadHelp" class="android-explore-help" type="button"
       aria-label="Apri help CAD · versione ${APP_VERSION}" title="Help · Termodel Web v${APP_VERSION}">? ${APP_VERSION_SHORT}</button>
+    <div id="androidCadExploreMenu" class="android-explore-menu" hidden>
+      <label class="android-explore-field">
+        <span>Piano</span>
+        <select id="androidCadPlane" class="android-project-plane"
+          aria-label="Piano visualizzato" title="Piano visualizzato"></select>
+      </label>
+      <label class="android-explore-check">
+        <input id="androidCadShowBackground" type="checkbox" />
+        <span>Sfondo</span>
+      </label>
+      <label class="android-explore-check">
+        <input id="androidCadShowInput" type="checkbox" />
+        <span>Unifilare input</span>
+      </label>
+    </div>
   `;
 
   cadPage.appendChild(box);
 
   const home = box.querySelector('#androidCadHome');
+  const explore = box.querySelector('#androidCadExploreToggle');
   const help = box.querySelector('#androidCadHelp');
+  const menu = box.querySelector('#androidCadExploreMenu');
   androidCadPlaneSelect = box.querySelector('#androidCadPlane');
+  androidCadShowBackground = box.querySelector('#androidCadShowBackground');
+  androidCadShowInput = box.querySelector('#androidCadShowInput');
+
+  const setOpen = open => {
+    const next = Boolean(open);
+    menu.hidden = !next;
+    explore.classList.toggle('active', next);
+    explore.setAttribute('aria-expanded', next ? 'true' : 'false');
+  };
 
   home.addEventListener('click', event => {
     event.stopPropagation();
+    setOpen(false);
     androidHelpEnabled = false;
     if (demoHelpPanel) demoHelpPanel.hidden = true;
     cadReturnToModel();
+  });
+
+  explore.addEventListener('click', event => {
+    event.stopPropagation();
+    setOpen(menu.hidden);
   });
 
   androidCadPlaneSelect.addEventListener('change', event => {
@@ -774,16 +849,38 @@ function createAndroidCadBrowserBox() {
     if (!requested || !cadPropPiano) return;
     cadPropPiano.value = requested;
     cadCurrentPlaneChanged();
-    refreshAndroidCadPlaneSelect();
+    refreshAndroidCadExploreControls();
+  });
+
+  androidCadShowBackground.addEventListener('change', event => {
+    event.stopPropagation();
+    if (!cadShowBackground) return;
+    cadShowBackground.checked = androidCadShowBackground.checked;
+    cadShowBackground.dispatchEvent(new Event('change', { bubbles: true }));
+    refreshAndroidCadExploreControls();
+  });
+
+  androidCadShowInput.addEventListener('change', event => {
+    event.stopPropagation();
+    if (!cadShowInput) return;
+    cadShowInput.checked = androidCadShowInput.checked;
+    cadShowInput.dispatchEvent(new Event('change', { bubbles: true }));
+    refreshAndroidCadExploreControls();
   });
 
   help.addEventListener('click', event => {
     event.stopPropagation();
+    setOpen(false);
     androidHelpEnabled = true;
     showDemoHelp('Edita nel Cad', { force: true });
   });
 
-  refreshAndroidCadPlaneSelect();
+  document.addEventListener('click', event => {
+    if (!box.contains(event.target))
+      setOpen(false);
+  });
+
+  refreshAndroidCadExploreControls();
   return box;
 }
 
@@ -3135,7 +3232,7 @@ function cadRefreshToolbarControls() {
   if (cadPropColorSwatch)
     cadPropColorSwatch.style.background = derived.colorCss || '#ccc';
 
-  refreshAndroidCadPlaneSelect();
+  refreshAndroidCadExploreControls();
   return derived;
 }
 
@@ -7047,7 +7144,7 @@ function activateCadPage() {
   cadRestorePlanePreview();
   renderCadComparison();
   cadUpdatePropertiesPanel();
-  refreshAndroidCadPlaneSelect();
+  refreshAndroidCadExploreControls();
 }
 
 function processSvgText(text) {
