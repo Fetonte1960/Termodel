@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-22**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`3457bb1661c6d549a144a62e5156e962b87299fb` — `Publish Termodel Web v0.88 MyHome3D mobile branding`  
+`342b5767e446cdb0e9589b21c14399534002f370` — `Publish Termodel Web v0.89 Android CAD contextual help`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -866,7 +866,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.88
+Termodel Web v0.89
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -978,6 +978,71 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### ProjectBrowser Android — help contestuale CAD 2D v0.89
+
+Stato: **IMPLEMENTATO SU main** — 22 settembre 2026.
+
+La v0.89 estende al CAD 2D mobile il comportamento di help contestuale già
+adottato nel viewer 3D.
+
+Il controllo `MyHome3D v. 89` nel CAD apre inizialmente l'help generale del
+ProjectBrowser 2D:
+
+- uso di un dito per il pan;
+- pinch a due dita per lo zoom;
+- funzione di `Home`;
+- funzione del pannello `Esplora`;
+- ruolo consultivo del CAD mobile rispetto alla toolbar completa desktop.
+
+Dopo che l'utente ha attivato l'help, il contenuto segue il contesto delle
+azioni CAD mobile:
+
+```text
+Esplora aperto/chiuso
+    → help CAD Esplora / CAD generale
+
+Cambio Piano
+    → help Piano
+
+Sfondo on/off
+    → help Sfondo
+
+Unifilare input on/off
+    → help Unifilare input
+```
+
+La logica usa lo stesso meccanismo `androidHelpEnabled` già esistente:
+l'help non interrompe normalmente l'esplorazione, ma una volta richiesto
+dall'utente si aggiorna in funzione del comando utilizzato. Chiudendo il
+pannello help, il comportamento contestuale torna disattivato.
+
+La home 3D conserva il proprio help `Benvenuto` invariato.
+
+Commit frontend v0.89:
+
+```text
+485726d0c4ffef26e88c8af864a27f7164167e77
+Add contextual help to Android CAD v0.89
+
+342b5767e446cdb0e9589b21c14399534002f370
+Publish Termodel Web v0.89 Android CAD contextual help
+```
+
+Verifiche statiche:
+
+- sintassi JavaScript: OK;
+- help generale CAD: OK;
+- help contestuale Esplora: OK;
+- help contestuale Piano: OK;
+- help contestuale Sfondo: OK;
+- help contestuale Unifilare input: OK;
+- gating tramite `androidHelpEnabled`: invariato;
+- help 3D `Benvenuto`: invariato;
+- pan/pinch touch v0.87: ancora presenti;
+- cache-busting `app.js?v=0.89`: OK.
+
+Resta il collaudo visivo/interattivo sul dispositivo reale.
 
 ### Risultato mobile conseguito + branding MyHome3D v0.88
 
