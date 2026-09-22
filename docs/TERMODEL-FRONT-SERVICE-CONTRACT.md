@@ -294,7 +294,7 @@ Regole di consumo frontend:
   l'intero artifact;
 - questo JSON è un risultato derivato dello snapshot: non deve essere usato per
   ricostruire o sostituire il `TERMODEL-PROJECT-TEXT-V1`;
-- leggere nuovamente `model3d` per lo stesso `calculationId` non deve
+- leggere nuovamente `model3d` per lo stesso `projectId` non deve
   provocare una nuova elaborazione.
 
 Le fonti implementative correnti del formato sono
@@ -307,58 +307,53 @@ riferimento comune fra frontend e server.
 
 ## 2.5 projectId persistente del progetto
 
-Decisione architetturale registrata il **2026-09-22**.
+Decisione architetturale aggiornata il **2026-09-22**.
 
-`calculationId` identifica una singola elaborazione e non deve essere usato come
-identificatore permanente del progetto. Per la persistenza degli artifact e
-per il consolidamento dei progetti viene introdotto un identificatore distinto:
+Il contratto corrente usa un solo identificatore operativo e persistente:
 
 ```text
 projectId
 ```
 
+Il precedente concetto di identificatore separato per la singola elaborazione è
+**superato** e non deve essere usato nelle nuove implementazioni. Eventuali
+riferimenti storici a `calculationId` presenti in sezioni che descrivono
+versioni precedenti del software non fanno più parte dell'architettura target.
+
 Il `projectId`:
 
-- identifica stabilmente il progetto fra elaborazioni successive;
-- è assegnato dal **Termodel.WebService**, non inventato dal frontend;
-- deve essere un identificatore opaco e univoco rispetto ai progetti già
-  registrati nel workspace del Service;
-- viene consolidato nel `TERMODEL-PROJECT-TEXT-V1` come proprietà top-level di
-  `manifest.json`, accanto ai metadati di progetto esistenti;
-- una volta presente nel progetto viene conservato nei successivi Salva,
-  Salva con nome e `AggiornaCalcolo`;
-- non cambia ad ogni calcolo.
+- identifica stabilmente il progetto;
+- è assegnato dal **Termodel.WebService**;
+- è opaco per il frontend;
+- deve essere univoco rispetto ai progetti già registrati dal Service;
+- viene consolidato nel `TERMODEL-PROJECT-TEXT-V1` come proprietà top-level
+  di `manifest.json`;
+- non cambia tra elaborazioni successive dello stesso progetto;
+- è la chiave dominante per salvataggio, artifact, log e lettura dei risultati.
 
-Esempio indicativo:
+Esempio:
 
 ```json
 {
   "format": "TERMODEL-PROJECT-TEXT-V1",
   "formatVersion": 1,
   "projectId": "7b30f4f4-...",
-  "projectName": "Appartamento",
-  ...
+  "projectName": "Appartamento"
 }
 ```
 
-I progetti storici privi di `projectId` restano riconoscibili come progetti
-legacy. Il nuovo frontend, alla **prima istanza verso il Service** per un
-progetto che non contiene ancora un `projectId`, deve richiedere un nuovo ID,
-consolidarlo nel manifest e solo dopo usare quel progetto nel normale flusso
-server.
-
 ### Assegnazione di un nuovo projectId
 
-Nuova operazione prevista:
+Operazione:
 
 ```http
 POST /api/projects/allocate-id
 ```
 
-La richiesta non crea un nuovo `TERMODEL-PROJECT-TEXT-V1`: assegna e riserva
-soltanto un identificatore di progetto.
+La richiesta assegna e riserva soltanto un nuovo identificatore. Non crea un
+progetto Termodel e non modifica implicitamente un file progetto.
 
-Risposta prevista, compatibile con `TERMODEL-FRONT-SERVICE-V1`:
+Risposta:
 
 ```json
 {
@@ -367,44 +362,35 @@ Risposta prevista, compatibile con `TERMODEL-FRONT-SERVICE-V1`:
 }
 ```
 
-Prima di restituirlo il Service deve garantire che l'identificatore non sia già
-in uso da un altro progetto persistito. L'allocazione deve essere sicura anche
-in presenza di richieste contemporanee.
+Il Service deve verificare/riservare l'unicità rispetto ai projectId già
+presenti e deve gestire correttamente richieste concorrenti.
 
-Il Service **non deve modificare implicitamente** il file progetto ricevuto per
-aggiungervi un ID. Il flusso corretto è:
+Flusso frontend:
 
 ```text
-frontend apre/crea progetto
+apri/crea progetto
         ↓
-legge manifest.projectId
+manifest.projectId presente?
+   ├── sì → usa quello esistente
+   └── no
         ↓
-presente
-   └── usa quello esistente
-
-assente
-   ↓
 POST /api/projects/allocate-id
-   ↓
+        ↓
 riceve projectId
-   ↓
-frontend inserisce projectId in manifest.json
-   ↓
-ricostruisce/consolida TERMODEL-PROJECT-TEXT-V1
-   ↓
+        ↓
+consolida projectId in manifest.json
+        ↓
+ricostruisce TERMODEL-PROJECT-TEXT-V1
+        ↓
 POST /api/calculations
 ```
 
-Questo mantiene il progetto come fonte autorevole e rende il `projectId`
-visibile anche quando il file viene spostato, salvato o successivamente
-ricaricato.
+Il Service non deve assegnare silenziosamente un nuovo projectId dentro
+`POST /api/calculations`.
 
-### Persistenza fisica per progetto
+### Persistenza fisica
 
-La persistenza operativa del Service deve essere organizzata per `projectId`,
-non creando una nuova directory permanente per ogni `calculationId`.
-
-Direzione:
+La persistenza permanente è per progetto:
 
 ```text
 SavedProjects/
@@ -414,35 +400,23 @@ SavedProjects/
     │   ├── model3d.json
     │   └── ... artifact disponibili
     └── logs/
-        └── ... log/diagnostica dell'ultima elaborazione
+        └── ... diagnostica/log correnti
 ```
 
-Ogni successivo `AggiornaCalcolo` dello stesso `projectId` aggiorna il
-workspace dello stesso progetto con il **più recente risultato riuscito**.
-Non è prevista, salvo futura decisione esplicita, la conservazione permanente
-di una cartella per ogni elaborazione.
+Ogni nuova elaborazione riuscita dello stesso progetto **sovrascrive
+atomicamente** i valori persistiti dalla precedente elaborazione. Non viene
+mantenuto automaticamente uno storico per-elaborazione.
 
-Il `calculationId` continua comunque a essere generato a ogni
-`POST /api/calculations` e identifica lo snapshot immutabile usato dal
-contratto HTTP. Il workspace per `projectId` è invece la persistenza corrente
-del progetto e dei suoi ultimi artifact consolidabili.
+Il progetto persistito, gli artifact e i log della cartella devono quindi
+rappresentare sempre l'ultima elaborazione riuscita del `projectId`.
 
-La lettura di un artifact tramite `calculationId` continua a rispettare la
-regola:
-
-> leggere un artifact non deve rieseguire il calcolo.
-
-Gli artifact futuri (pianta pulita, XML nazionale, dispersioni, pannelli,
-spirali, DXF e altri output) devono poter essere materializzati nello stesso
-workspace del `projectId` senza introdurre sistemi di persistenza concorrenti.
-
-Durante la transizione i client legacy possono ancora presentare progetti senza
-`projectId`; il nuovo flusso frontend deve però allocare e consolidare
-l'identificatore prima della prima elaborazione destinata alla persistenza per
-progetto. Il Service non deve assegnare silenziosamente un nuovo `projectId`
-dentro `POST /api/calculations`.
+Un'elaborazione fallita non deve distruggere l'ultimo stato valido. Può
+aggiornare una diagnostica di errore separata, ma non deve sostituire
+`project.tmdl` e artifact validi con output parziali.
 
 ---
+
+> **Regola di prevalenza 2026-09-22:** qualunque riferimento storico a `calculationId` nelle note di implementazioni precedenti è superato. La nuova implementazione deve usare `projectId` come unico riferimento pubblico e persistente.
 
 ## 3. Operazione principale: AggiornaCalcolo
 
@@ -731,98 +705,76 @@ Le view leggono successivamente gli elaborati già prodotti.
 
 ---
 
-## 4. calculationId e snapshot
+## 4. projectId come riferimento unico del progetto
 
-Ogni chiamata ad `AggiornaCalcolo` genera un identificativo opaco:
+Il `projectId` è il riferimento dominante sia per la persistenza sia per la
+lettura degli artifact.
 
-```text
-calculationId
-```
+Non esiste nel contratto corrente un identificatore separato per la singola
+elaborazione.
 
-Esempio:
-
-```text
-7d2d09e6-...
-```
-
-Il `calculationId` identifica uno **snapshot immutabile degli elaborati**
-ottenuti da uno specifico file unico.
-
-Questo evita l'uso del concetto pericoloso di:
+Ogni `AggiornaCalcolo` dello stesso progetto sostituisce il risultato
+precedente:
 
 ```text
-"ultimo calcolo globale del server"
+projectId P123
+    ↓
+AggiornaCalcolo #1
+    ↓
+SavedProjects/P123/ = risultato 1
+
+projectId P123
+    ↓
+AggiornaCalcolo #2
+    ↓
+SavedProjects/P123/ = risultato 2
 ```
 
-che non funzionerebbe correttamente con:
+Il risultato 2 sostituisce il risultato 1 come stato corrente del progetto.
 
-- due schede browser;
-- due progetti;
-- due utenti;
-- richieste contemporanee.
-
-Regola:
-
-> Ogni richiesta di un artifact deve indicare il `calculationId` a cui
-> appartiene.
-
-Il frontend non deve usare il `calculationId` come identificatore permanente
-del progetto. È l'identificatore di una **elaborazione**, non del progetto
-autorevole.
+Se in futuro sarà necessaria una cronologia dei calcoli, dovrà essere
+introdotta come funzione esplicita separata.
 
 ---
 
 ## 5. Risposta di AggiornaCalcolo
 
-La prima versione può essere sincrona: il server risponde quando lo snapshot è
-pronto.
+Il server risponde quando il nuovo stato del progetto è stato elaborato e
+persistito con successo.
 
 Risposta indicativa:
 
 ```json
 {
   "contractVersion": "TERMODEL-FRONT-SERVICE-V1",
-  "calculationId": "7d2d09e6-...",
+  "projectId": "7b30f4f4-...",
   "status": "completed",
   "savedProject": {
-    "fileName": "TermodelProject-20260922-143501000-7d2d09e6-....tmdl"
+    "fileName": "project.tmdl"
   },
   "artifacts": [
     {
       "name": "model3d",
       "contentType": "application/json",
-      "href": "/api/calculations/7d2d09e6-.../artifacts/model3d"
-    },
-    {
-      "name": "xml-nazionale",
-      "contentType": "application/xml",
-      "href": "/api/calculations/7d2d09e6-.../artifacts/xml-nazionale"
+      "href": "/api/projects/7b30f4f4-.../artifacts/model3d"
     }
   ],
   "diagnostics": []
 }
 ```
 
-Su una risposta `completed` il Service corrente include anche
-`savedProject.fileName`. È il solo nome logico della copia persistente del
-`TERMODEL-PROJECT-TEXT-V1` realmente ricevuto ed elaborato con successo.
-Non contiene il path fisico del server e non introduce un nuovo formato.
-La copia viene scritta direttamente dal `projectText` del body in UTF-8,
-senza rigenerare manifest/geometria e senza aggiungere gli sfondi esclusivamente
-frontend. Il file è associato allo stesso `calculationId` tramite il nome.
+La risposta non deve introdurre un identificatore per-elaborazione.
 
-`savedProject` non è un artifact di calcolo e, in questa fase, non dispone di
-un endpoint di download. Il frontend può ignorare il campo senza cambiare il
-workflow esistente.
+Il Service legge `manifest.projectId` dal `TERMODEL-PROJECT-TEXT-V1`.
+Se manca, il nuovo flusso frontend deve prima usare
+`POST /api/projects/allocate-id` e consolidare l'ID nel manifest.
 
 Stati previsti:
 
-- `completed`: elaborazione conclusa;
-- `completed_with_warnings`: artifact prodotti ma con diagnostica;
-- `failed`: elaborazione non valida e nessuno snapshot utilizzabile.
-
-Uno stato `processing` potrà essere introdotto in futuro se il calcolo diventerà
-asincrono. Non è necessario nella prima versione.
+- `completed`: nuova elaborazione completata e workspace aggiornato;
+- `completed_with_warnings`: workspace aggiornato con diagnostica non bloccante;
+- errore HTTP: elaborazione non consolidata; l'ultimo workspace valido resta
+  disponibile.
 
 ---
 
@@ -852,34 +804,34 @@ il server potrebbe teoricamente produrre.
 
 ## 7. Lettura degli artifact
 
-Stato implementazione corrente:
+Gli artifact correnti sono letti tramite `projectId`.
+
+Endpoint di riferimento:
 
 ```http
-GET /api/calculations/{calculationId}/artifacts/model3d
+GET /api/projects/{projectId}/artifacts/model3d
 ```
 
-Questo endpoint legge il JSON già serializzato nello snapshot in memoria e non
-richiama `GeneraModello`. Letture ripetute dello stesso `calculationId`
-restituiscono quindi lo stesso artifact finché lo snapshot esiste.
-
-Schema API complessivo previsto nelle fasi successive:
+Schema previsto:
 
 ```http
-GET /api/calculations/{calculationId}/artifacts/model3d
-GET /api/calculations/{calculationId}/artifacts/xml-nazionale
-GET /api/calculations/{calculationId}/artifacts/report-dispersioni
-GET /api/calculations/{calculationId}/artifacts/pannelli
-GET /api/calculations/{calculationId}/artifacts/spirali/{piano}
-GET /api/calculations/{calculationId}/artifacts/pianta-pulita/{piano}
+GET /api/projects/{projectId}/artifacts/model3d
+GET /api/projects/{projectId}/artifacts/xml-nazionale
+GET /api/projects/{projectId}/artifacts/report-dispersioni
+GET /api/projects/{projectId}/artifacts/pannelli
+GET /api/projects/{projectId}/artifacts/spirali/{piano}
+GET /api/projects/{projectId}/artifacts/pianta-pulita/{piano}
 ```
 
-Nomi e dettagli possono essere affinati durante l'implementazione, ma deve
-restare stabile il principio:
+Regola fondamentale:
 
 > leggere un artifact non deve rieseguire il calcolo.
 
-Quando possibile, il manifest deve fornire direttamente l'`href` corretto,
-così il frontend non deve costruire URL sulla base di convenzioni implicite.
+Dopo un nuovo `AggiornaCalcolo` riuscito, lo stesso URL del progetto restituisce
+il nuovo artifact corrente perché la precedente elaborazione è stata
+sostituita.
+
+Il manifest della risposta deve fornire gli `href` correnti.
 
 ---
 
@@ -926,132 +878,101 @@ rappresentano elaborati grafici 2D come pianta pulita o spirali.
 Flusso previsto:
 
 ```text
+utente apre/crea progetto
+        ↓
+projectId presente nel manifest?
+   ├── no → POST /api/projects/allocate-id
+   │        ↓
+   │      consolida projectId nel progetto
+   └── sì
+        ↓
 utente modifica il progetto
-        |
-        v
-frontend aggiorna il proprio stato
-        |
-        v
-il precedente calculationId diventa STALE
-        |
-        v
-utente/comando richiede AggiornaCalcolo
-        |
-        v
+        ↓
+frontend marca i risultati server come STALE
+        ↓
+AggiornaCalcolo
+        ↓
 frontend costruisce TERMODEL-PROJECT-TEXT-V1 corrente
-        |
-        v
-filtra le sole risorse locali/frontend (es. sfondi)
-        |
-        v
+        ↓
+filtra le sole risorse locali/frontend
+        ↓
 POST /api/calculations
-        |
-        v
-riceve calculationId + manifest
-        |
-        +--> aggiorna viewer 3D
-        +--> abilita view dispersioni
-        +--> abilita XML nazionale
-        +--> abilita pannelli
-        +--> abilita spirali
+        ↓
+Service aggiorna SavedProjects/{projectId}/
+        ↓
+riceve projectId + manifest artifact
+        ↓
+segue href degli artifact correnti
+        ↓
+aggiorna viewer e view
 ```
 
-Una modifica del progetto dopo il calcolo **non modifica** lo snapshot precedente:
-semplicemente lo rende non più rappresentativo dello stato corrente.
-
-Il frontend può continuare a mostrarlo temporaneamente, ma deve sapere che è
-`stale` finché non viene eseguito un nuovo `AggiornaCalcolo`.
+Il `projectId` resta invariato quando il progetto viene salvato o ricalcolato.
 
 ---
 
 ## 10. Orchestrazione interna lato server
 
-La pipeline concettuale è:
+Pipeline concettuale:
 
 ```text
 1. ricezione file unico
 2. parsing TERMODEL-PROJECT-TEXT-V1
-3. validazione manifest e sezioni
-4. caricamento archivi
-5. ricostruzione geometrica/modello
-6. produzione degli artifact geometrici
-7. produzione XML termico/nazionale
-8. calcolo dispersioni
-9. calcolo pannelli
-10. generazione spirali/esecutivi
-11. raccolta diagnostica
-12. creazione manifest artifact
-13. pubblicazione snapshot tramite calculationId
+3. lettura e validazione manifest.projectId
+4. validazione manifest e sezioni
+5. caricamento archivi
+6. ricostruzione geometrica/modello
+7. produzione model3d
+8. produzione progressiva degli altri artifact
+9. raccolta diagnostica/log
+10. preparazione workspace temporaneo
+11. sostituzione atomica di SavedProjects/{projectId}/
+12. risposta con projectId + manifest artifact
 ```
 
-L'ordine interno potrà evolvere in base alle dipendenze reali del Desktop.
+Tutti gli artifact devono derivare dalla stessa elaborazione corrente.
 
-Il requisito fondamentale è che tutti gli artifact dello snapshot derivino
-dalla **stessa elaborazione del progetto**.
+Se un passaggio fallisce, il Service non deve pubblicare output parziali come
+nuovo stato valido del progetto.
 
 ---
 
-## 11. Workspace temporaneo
+## 11. Workspace persistente per progetto
 
-Nella prima versione è ammesso un workspace temporaneo per ogni
-`calculationId`.
-
-**Implementazione iniziale attuale:** per il solo artifact `model3d` lo
-snapshot è mantenuto in memoria dal WebService come byte JSON immutabili
-indicizzati per `calculationId`. Si perde quindi al riavvio del processo.
-
-Separatamente dallo snapshot, dopo una elaborazione riuscita il WebService salva
-anche la copia persistente del payload tecnico ricevuto nella directory
-`SavedProjects/` del proprio content root, oppure nella directory indicata
-dalla variabile operativa `TERMODEL_SAVED_PROJECTS_DIR`. Il nome contiene
-timestamp UTC e lo stesso `calculationId`. Questa persistenza serve al recupero
-del progetto tecnico ricevuto e non cambia il lifecycle degli artifact dello
-snapshot.
-
-Esempio concettuale:
+Il workspace permanente è unico per `projectId`.
 
 ```text
-calculations/
-└── {calculationId}/
-    ├── model/
-    │   └── model3d.json
-    ├── plans/
-    │   └── PianoTerra.svg
-    ├── xml/
-    │   ├── output.xml
-    │   └── output.json
-    ├── reports/
-    │   ├── dispersioni.json
-    │   └── pannelli.json
-    └── panels/
-        └── PianoTerra.svg
+SavedProjects/
+└── {projectId}/
+    ├── project.tmdl
+    ├── artifacts/
+    └── logs/
 ```
 
-Questa scelta facilita il riuso delle classi Desktop storicamente file-based.
+La variabile operativa `TERMODEL_SAVED_PROJECTS_DIR` può continuare a
+configurare la root.
 
-Non è un vincolo permanente. In futuro gli artifact potranno essere conservati
-in memoria, database, object storage o cache, purché il contratto HTTP non
-dipenda dalla posizione fisica dei file.
+Per aggiornare in sicurezza il progetto è ammesso usare una directory
+temporanea durante l'elaborazione, ma al termine deve restare una sola
+directory corrente per il `projectId`.
+
+Dopo il successo, il nuovo workspace sostituisce atomicamente il precedente.
+Dopo un fallimento, il precedente resta integro.
+
+Non creare automaticamente cartelle storiche per ogni elaborazione.
 
 ---
 
-## 12. Durata dello snapshot
+## 12. Durata dei risultati
 
-Nella prima fase gli snapshot sono temporanei.
+Il workspace di un progetto è persistente finché non viene esplicitamente
+rimosso da una futura politica di gestione progetti.
 
-Il frontend non deve assumere che un `calculationId` continui a essere valido
-dopo:
+Un riavvio del WebService non deve rendere indisponibili gli artifact già
+persistiti per il `projectId`.
 
-- riavvio del server;
-- pulizia del workspace;
-- scadenza futura della cache.
-
-Se uno snapshot non esiste più, il server restituisce `404 Not Found` e il
-frontend deve poter eseguire nuovamente `AggiornaCalcolo` usando il file unico
-corrente.
-
-Una politica definitiva di retention sarà definita quando verranno affrontati
-persistenza, autenticazione e multiutente.
+Non è prevista una retention automatica delle singole elaborazioni, perché
+ogni nuova elaborazione riuscita sostituisce la precedente.
 
 ---
 
@@ -1059,24 +980,21 @@ persistenza, autenticazione e multiutente.
 
 Gli errori HTTP devono essere strutturati e leggibili dal frontend.
 
-Indicativamente:
-
 | HTTP | Significato |
 |---|---|
 | 400 | richiesta malformata |
-| 404 | calculationId o artifact non disponibile |
+| 404 | projectId o artifact non disponibile |
+| 409 | conflitto nella registrazione/allocazione del projectId |
 | 415 | Content-Type non supportato |
 | 422 | progetto valido come richiesta HTTP ma non elaborabile da Termodel |
 | 500 | errore interno inatteso |
 | 503 | risorsa o dipendenza necessaria non disponibile |
 
-Per gli errori strutturati usare, dove appropriato, Problem Details.
+Warning e diagnostica dell'ultima elaborazione riuscita devono essere associati
+al workspace del `projectId`.
 
-Il frontend non deve fare fallback silenziosi che nascondano errori di
-compatibilità o di calcolo.
-
-Warning e diagnostica non bloccante devono essere associati allo snapshot e
-restituiti nel manifest.
+Un errore durante un nuovo calcolo non deve distruggere gli artifact validi
+precedenti.
 
 ---
 
@@ -1107,60 +1025,63 @@ grafica dell'applicazione Web.
 
 ## 15. Compatibilità con le API esistenti
 
-Attualmente esistono già:
+La nuova architettura stabilisce come riferimento pubblico:
 
-```text
-GET  /
-GET  /health
-GET  /api/model/capabilities
-GET  /api/model/clean-floor/{floorName}
-POST /api/projects/new
-POST /api/model/3d
+```http
+POST /api/projects/allocate-id
+POST /api/calculations
+GET  /api/projects/{projectId}/artifacts/model3d
 ```
 
-Durante l'introduzione del nuovo workflow non devono essere rimossi
-immediatamente:
+e progressivamente gli altri artifact sotto:
 
-```text
-POST /api/model/3d
-GET  /api/model/clean-floor/{floorName}
+```http
+GET /api/projects/{projectId}/artifacts/...
 ```
 
-Il nuovo flusso `/api/calculations` deve essere introdotto in modo additivo.
+Le route basate su un identificatore per-elaborazione sono superate dal
+contratto corrente e devono essere rimosse durante questa migrazione.
 
-Gli endpoint precedenti potranno essere deprecati soltanto dopo che il frontend
-avrà adottato e collaudato il nuovo contratto.
+Gli endpoint legacy non correlati a questo cambio, come
+`POST /api/model/3d` e `GET /api/model/clean-floor/{floorName}`, restano
+compatibili finché non verranno deprecati esplicitamente.
 
 ---
 
 ## 16. Nuovo progetto
 
-`NuovoProgetto` resta concettualmente distinto da `AggiornaCalcolo`.
+`NuovoProgetto` resta distinto da `AggiornaCalcolo`.
 
-```text
+La creazione del contenuto base può continuare tramite:
+
+```http
 POST /api/projects/new
-        |
-        v
-crea TERMODEL-PROJECT-TEXT-V1
 ```
 
-Successivamente:
+ma l'identità persistente è gestita tramite:
+
+```http
+POST /api/projects/allocate-id
+```
+
+Flusso previsto:
 
 ```text
-TERMODEL-PROJECT-TEXT-V1
-        |
-        v
+crea/apri TERMODEL-PROJECT-TEXT-V1
+        ↓
+projectId mancante?
+        ↓
+allocate-id
+        ↓
+consolida projectId nel manifest
+        ↓
 POST /api/calculations
-        |
-        v
-artifact derivati
+        ↓
+SavedProjects/{projectId}/ aggiornato
 ```
 
-Quindi:
-
-- `NuovoProgetto` crea uno stato di progetto;
-- `AggiornaCalcolo` elabora uno stato di progetto;
-- le API artifact leggono i risultati dell'elaborazione.
+`Salva con nome` conserva il projectId. Un eventuale futuro comando
+`Duplica come nuovo progetto` dovrà richiederne esplicitamente uno nuovo.
 
 ---
 
@@ -1218,9 +1139,16 @@ serve a trasferire progressivamente la logica condivisibile nel Core.
 
 ## 18. Concorrenza e isolamento
 
-Ogni `calculationId` deve avere il proprio stato.
+Ogni `projectId` deve avere il proprio workspace e il proprio aggiornamento
+isolato.
 
-Non devono esistere nuovi endpoint basati su variabili statiche equivalenti a:
+Due progetti distinti possono essere elaborati contemporaneamente.
+
+Due elaborazioni concorrenti dello stesso `projectId` devono essere
+serializzate o coordinate dal Service in modo deterministico, evitando
+scritture parziali o corruzione.
+
+Non devono esistere endpoint basati su variabili globali equivalenti a:
 
 ```text
 LatestModel
@@ -1228,13 +1156,13 @@ LatestPlan
 LatestReport
 ```
 
-come contratto pubblico definitivo.
+Il concetto corretto è:
 
-Durante la migrazione possono esistere internamente componenti legacy con stato
-globale, ma il WebService deve serializzarne/proteggerne l'uso e catturarne gli
-output nello snapshot corretto.
+```text
+SavedProjects/{projectId}/artifacts/...
+```
 
-L'obiettivo è eliminare progressivamente queste dipendenze.
+dove il contenuto rappresenta l'ultimo risultato riuscito di quel progetto.
 
 ---
 
@@ -1271,45 +1199,42 @@ prima dell'uso multiutente su server pubblico.
 
 ## 20. Sequenza di implementazione concordata
 
-### Fase 1 — snapshot base
+### Fase corrente — identità e persistenza per progetto
 
 Implementare:
 
-- `POST /api/calculations`;
-- `calculationId`;
-- manifest artifact;
-- storage temporaneo;
-- modello 3D;
+- `POST /api/projects/allocate-id`;
+- `manifest.projectId`;
+- validazione projectId in `POST /api/calculations`;
+- workspace `SavedProjects/{projectId}/`;
+- persistenza `project.tmdl`;
+- persistenza `artifacts/model3d.json`;
+- persistenza log/diagnostica;
+- lettura artifact tramite `projectId`;
+- aggiornamento atomico che sostituisce la precedente elaborazione;
+- eliminazione del precedente modello pubblico basato su identificatore
+  per-elaborazione.
+
+### Fase successiva — artifact aggiuntivi
+
+Integrare nello stesso workspace:
+
 - piante pulite;
-- lettura degli artifact;
-- mantenimento degli endpoint legacy.
-
-### Fase 2 — termico
-
-Integrare:
-
 - XML nazionale;
 - report dispersioni;
-- diagnostica relativa.
-
-### Fase 3 — pannelli radianti
-
-Integrare:
-
-- calcolo pannelli;
-- report pannelli;
+- pannelli;
 - spirali SVG;
-- eventuali esecutivi DXF.
+- esecutivi DXF;
+- altri elaborati.
 
 ### Fasi successive
 
 - regression test automatici;
 - Golden Results;
-- persistenza;
 - autenticazione;
 - multiutente;
-- EnergyPlus / gbXML / IDF;
-- gestione asincrona se realmente necessaria.
+- eventuale storico versionato dei calcoli solo se richiesto esplicitamente;
+- EnergyPlus / gbXML / IDF.
 
 ---
 
@@ -1369,14 +1294,14 @@ I Summary devono soltanto indicare:
 Da definire durante l'implementazione:
 
 - formato definitivo del manifest artifact;
-- nomi definitivi degli endpoint;
-- retention degli snapshot;
-- eventuale endpoint per leggere solo il manifest;
-- eventuale cancellazione esplicita di uno snapshot;
-- strategia futura asincrona;
-- autenticazione e associazione snapshot/utente;
-- persistenza server;
-- eventuale export esplicito di un progetto con risultati incorporati.
+- politica di cancellazione/archiviazione dei workspace per projectId;
+- autenticazione e associazione projectId/utente;
+- eventuale endpoint per leggere il manifest degli artifact correnti;
+- eventuale comando esplicito di duplicazione progetto con nuovo projectId;
+- eventuale storico versionato delle elaborazioni, non attivo di default;
+- persistenza multiutente/server pubblico.
 
-Queste questioni non devono bloccare la Fase 1 se possono essere aggiunte in
-modo retrocompatibile.
+Il principio non aperto è già deciso:
+
+> il `projectId` è l'unico riferimento operativo del progetto e ogni nuova
+> elaborazione riuscita sostituisce i risultati precedenti di quel progetto.
