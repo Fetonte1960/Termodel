@@ -252,3 +252,36 @@ La fixture XML nazionale è derivata dal Golden Reference BLUMATICA-XML-001 ma *
 All'avvio della modalità prova la WebJS carica automaticamente entrambe le fixture e apre il Viewer 3D.
 
 Gli import manuali restano disponibili per sostituire una singola sorgente durante prove specifiche.
+
+
+## 2026-09-22 — D-0017 — Terzo file Bridge Completion XML
+
+Il contratto del Bridge evolve da “due file” a **due formati pubblici principali + un sidecar opzionale di completamento**.
+
+Il sidecar si chiama **Bridge Completion XML** e usa la specifica versionata `1.0`.
+
+Scopo esclusivo:
+- dati necessari al target CENED non presenti in gbXML/XML nazionale;
+- dati CENED-specifici;
+- binding fra entità non determinabili automaticamente.
+
+Il file non può diventare un formato proprietario onnivoro e non può duplicare o correggere silenziosamente le sorgenti principali.
+
+Autorità:
+1. gbXML → geometria/cause fisiche;
+2. XML nazionale → dati nazionali ed energetici;
+3. Completion XML → soltanto lacune residue.
+
+Il sidecar è opzionale se non esistono lacune e diventa obbligatorio per il singolo progetto se la validazione rileva campi target non coperti.
+
+Ogni campo/binding ha stato `Provisional` o `Confirmed`.
+Un valore `Provisional` non può alimentare un output Motore di produzione.
+
+Schema:
+`spec/bridge-completion-1.0.xsd`
+
+Documentazione:
+`spec/BRIDGE-COMPLETION.md`
+
+Sample:
+`samples/BRIDGE-COMPLETION-001.xml`
