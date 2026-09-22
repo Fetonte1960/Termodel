@@ -892,6 +892,35 @@ Questa è una decisione di contratto; i nuovi endpoint Apri/Salva non sono
 ancora dichiarati implementati. Il contratto condiviso autorevole è
 `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` v1.1.
 
+### Decisione 22/09/2026 — apertura esclusiva del progetto e recupero lock impropri
+
+Per il profilo Web/PC con Termodel.WebService:
+- i file persistenti del progetto restano reperibili nella cartella
+  `SavedProjects/{projectId}/`; eventuali staging/workspace sono temporanei e
+  non sono copie autorevoli;
+- uno stesso progetto può essere aperto in modifica da una sola pagina alla
+  volta;
+- una seconda apertura dello stesso `projectId` deve essere bloccata dal
+  Service con HTTP `423 Locked` e messaggio `Il progetto è già in uso.`;
+- progetti diversi possono invece essere aperti contemporaneamente;
+- l'apertura usa un lock/lease temporaneo del Service; l'eventuale
+  `projectLockToken` non entra nel manifest e non è un nuovo identificatore
+  persistente del progetto;
+- Salva, Salva con nome e Aggiorna Modello devono essere accettati soltanto
+  dalla pagina che possiede il lock valido;
+- chiusura normale del progetto rilascia il lock;
+- browser/scheda/PC/rete/Service interrotti non devono lasciare un blocco
+  permanente: il lock deve avere heartbeat/ultima attività e diventare stale
+  dopo timeout configurabile;
+- al riavvio il Service deve recuperare i lock non più validi senza toccare
+  `project.tmdl`, artifact o log correnti;
+- per casi dubbi è prevista una funzione server `Sblocca progetto`; se il lock
+  è ancora recente/vivo, lo sblocco forzato richiede conferma esplicita;
+- il frontend non deve cancellare direttamente file di lock.
+
+Questa è una decisione di contratto, registrata in
+`docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` v1.2; API e UI relative al lock non
+sono ancora dichiarate implementate.
 ## 3. Responsabilità e confini
 
 La divisione operativa corrente è esplicita:
