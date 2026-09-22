@@ -16,12 +16,16 @@ Realizzare un **Software Bridge per modelli termici** con identità propria, cap
 
 Dal punto di vista ARIA/CENED, la versione che utilizza realmente CENED+2 Motore è un **Client di terze parti integrato con CENED+2 Motore** e deve seguire il relativo percorso di autorizzazione.
 
-Il prodotto viene sviluppato in parallelo in due versioni:
+### Fase attiva dal 2026-09-22
 
-1. **WebJS**, online e sperimentale, pubblicabile su termodel.it;
-2. **Desktop**, destinata al reale percorso di autorizzazione ARIA.
+Da questa data **si sviluppa e si discute esclusivamente la versione WebJS**.
 
-L'obiettivo architetturale è mantenere le due versioni semanticamente equivalenti mediante specifiche, casi prova e Golden Results condivisi.
+- **WebJS** è l'unica linea attiva di implementazione, studio e prototipazione.
+- **Desktop** resta sospesa e non deve essere modificata o sviluppata fino a nuova decisione esplicita.
+- Il percorso Desktop/autorizzazione ARIA resta documentato come obiettivo futuro.
+- Specifiche, modelli dati, test e Golden Results continuano a essere progettati in modo riutilizzabile, ma senza sviluppo parallelo obbligatorio della versione Desktop.
+
+Questa fase sospende operativamente la precedente impostazione a due implementazioni parallele senza cancellarla dallo storico decisioni.
 
 ## 2. Flusso prodotto
 
@@ -116,6 +120,8 @@ Il versionamento è anche rilevante per il percorso ARIA: le major release richi
 
 ## 7. Stato corrente
 
+**Fase attiva:** sviluppo e discussione esclusivamente WebJS. La linea Desktop è sospesa.
+
 Completati:
 - struttura Git iniziale;
 - definizione del prodotto come Software Bridge;
@@ -157,7 +163,18 @@ Regola: per future analisi funzionali del Client partire da questo file prima di
 
 ## 10. Prossimo passo
 
-Studiare e documentare con precisione le **specifiche tecniche riservate agli Utenti Motore CENED+**, con priorità a:
+Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
+
+Priorità:
+- struttura dell'interfaccia WebJS;
+- mapping dei dati importati verso le sezioni funzionali CENED;
+- modello intermedio comune;
+- utilizzo del Manuale CENED+2 come riferimento operativo;
+- prototipi Web per import, verifica dati, anteprima del flusso di calcolo/XML/APE.
+
+Lo studio delle **specifiche tecniche riservate agli Utenti Motore CENED+** resta importante, ma non autorizza ancora sviluppo Desktop, runner Java o modifiche al Service.
+
+Quando verrà riattivata la linea certificabile, le priorità tecniche saranno:
 - invocazione del Motore;
 - schema e campi richiesti;
 - validazioni;
