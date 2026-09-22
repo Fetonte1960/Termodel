@@ -846,9 +846,51 @@ GET /api/projects/{projectId}/artifacts/model3d
 
 e non dovranno rieseguire il calcolo.
 
-Stato: **decisione registrata e implementazione Server/Core commissionata,
-non ancora dichiarata eseguita**. Il frontend dovrà essere adeguato per
-allocare il projectId soltanto quando manca nel manifest.
+Stato server al 2026-09-22: **implementato e testato** il workflow
+projectId-only per allocazione ID, `POST /api/calculations`, persistenza
+`SavedProjects/{projectId}/` e lettura `model3d` corrente. Il frontend deve
+ancora essere adeguato separatamente per allocare il projectId soltanto quando
+manca nel manifest.
+
+### Decisione 22/09/2026 — Apri/Salva tramite Service; mobile solo Apri
+
+Per il profilo Web/PC collegato a Termodel.WebService, le operazioni:
+
+```text
+Apri progetto
+Salva progetto
+Salva progetto con nome
+```
+
+devono essere realizzate tramite funzioni/API del **Service**, non tramite
+accesso diretto del frontend al filesystem e non usando il download browser
+come storage operativo.
+
+Regole:
+- `Apri progetto`: il frontend chiede al Service l'elenco/selezione e riceve
+  il `TERMODEL-PROJECT-TEXT-V1`; il path fisico resta responsabilità server;
+- `Salva progetto`: aggiorna il progetto persistente mantenendo lo stesso
+  `projectId`;
+- `Salva progetto con nome`: conserva lo stesso `projectId` e cambia il
+  nome leggibile/collocazione logica; non crea una copia indipendente;
+- una futura `Duplica come nuovo progetto` dovrà invece ottenere un nuovo
+  `projectId`;
+- `Salva` e `Aggiorna Modello` sono distinti: se il progetto viene salvato
+  dopo l'ultimo calcolo, gli artifact precedenti sono **stale** fino al nuovo
+  `Aggiorna Modello`.
+
+Per la versione **mobile senza WebService**, in questa fase resta soltanto:
+
+```text
+Apri progetto
+```
+
+tramite host/app mobile e selettore file locale. Non vengono esposti
+`Salva progetto`, `Salva con nome` o gestione catalogo/cartelle server.
+
+Questa è una decisione di contratto; i nuovi endpoint Apri/Salva non sono
+ancora dichiarati implementati. Il contratto condiviso autorevole è
+`docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` v1.1.
 
 ## 3. Responsabilità e confini
 
