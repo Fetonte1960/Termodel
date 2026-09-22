@@ -121,7 +121,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0005 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** registrare il cambio di fase del progetto: da questo momento si sviluppa e si discute esclusivamente la versione WebJS del Software Bridge.
 
@@ -131,3 +131,11 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - documentazione, specifiche e casi prova possono continuare a essere preparati in funzione della futura versione certificabile, ma ogni implementazione corrente deve riguardare soltanto WebJS;
 - nessun lavoro sul runner Java Desktop/Service o sul percorso di certificazione operativo viene avviato senza nuova autorizzazione;
 - la sospensione Desktop non annulla le decisioni architetturali già prese: le conserva per una futura riattivazione.
+
+
+**Risultato CENED-0005:**
+- registrata la decisione D-0008 in `docs/DECISIONI.md`;
+- aggiornato `PROJECT-SUMMARY-CENED.md` indicando WebJS come unica linea attiva;
+- la linea Desktop è sospesa fino a nuova decisione esplicita;
+- nessuna implementazione Desktop, runner Java, Termodel.Core o WebService è stata avviata;
+- nessun codice applicativo modificato in questa commissione.
