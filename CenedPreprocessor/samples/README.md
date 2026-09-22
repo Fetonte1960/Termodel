@@ -62,3 +62,18 @@ Elementi ombreggianti, tutti rappresentati con `Surface surfaceType="Shade"`:
 Scopo: verificare che il Bridge possa leggere dal formato pubblico gbXML le **cause geometriche** dell'ombreggiamento, mantenendole distinte dai fattori/risultati derivati presenti nell'XML nazionale.
 
 Caso di test associato: `../tests/GBXML-SHADING-001.md`.
+
+
+## BRIDGE-COMPLETION-001
+
+File: `BRIDGE-COMPLETION-001.xml`
+
+Sample del terzo file opzionale di completamento, validato contro:
+
+`../spec/bridge-completion-1.0.xsd`
+
+Il sample è collegato alle fixture:
+- `GBXML-SHADING-001.xml`;
+- `BLUMATICA-XML-001-SANITIZED.xml`.
+
+Contiene volutamente un binding e un campo `PROVISIONAL.*` dimostrativi: non sono requisiti CENED ufficiali.
