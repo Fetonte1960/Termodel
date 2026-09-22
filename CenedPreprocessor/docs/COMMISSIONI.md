@@ -415,3 +415,28 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 - confrontato il principio con i test pubblici ASHRAE/gbXML Balcony e Roof With Extended Overhang, che richiedono la traduzione dell'aggetto come `Shade`;
 - la validazione completa tramite validator ufficiale gbXML resta un gate futuro automatizzato;
 - nessun codice applicativo e nessuna versione software modificati.
+
+
+## CENED-0015 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** integrare nella WebJS del Software Bridge un viewer 3D read-only derivato dal renderer Three.js di Termodel Web e provarlo con il sample gbXML degli ombreggiamenti e con il Golden XML nazionale fornito dall'utente.
+
+**Perimetro:**
+- solo `CenedPreprocessor/src/WebJS/`, test e documentazione CENED;
+- riuso selettivo del renderer/browser 3D di Termodel Web, senza CAD, editing, snap o archivi Termodel;
+- viewer esclusivamente di controllo;
+- parsing geometrico del gbXML;
+- visualizzazione di involucro, finestre e superfici `Shade`;
+- classificazione preliminare delle Shade in aggetto orizzontale, setto verticale e ostacolo remoto;
+- selezione 3D con proprietà/provenienza;
+- mantenere separati gbXML (geometria) e XML nazionale (dati complementari);
+- incrementare versione WebJS e aggiornare caption;
+- non modificare Desktop, Core, Service o `definizionedati.json`.
+
+**Prove obbligatorie:**
+1. `samples/GBXML-SHADING-001.xml`: devono risultare 6 superfici involucro, 2 finestre, 4 Shade e riconoscimento delle tre classi di ombreggiamento;
+2. Golden XML nazionale fornito dall'utente, identificato in progetto come `BLUMATICA-XML-001`: deve continuare a essere importato senza regressioni dal parser nazionale e deve fornire i dati complementari già verificati; il file grezzo non va committato perché contiene dati personali;
+3. verificare che l'XML nazionale da solo non venga usato per inventare geometria 3D mancante;
+4. testare sintassi JavaScript e comportamento del parser in browser/headless dove disponibile.
