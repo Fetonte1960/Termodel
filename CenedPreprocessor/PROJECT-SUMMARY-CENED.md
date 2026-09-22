@@ -77,6 +77,7 @@ CenedPreprocessor/
 │   ├── ARCHITETTURA.md
 │   ├── CERTIFICAZIONE.md
 │   ├── RIFERIMENTI-CENED.md
+│   ├── RIFERIMENTO-GESTXML-TERMODEL.md
 │   └── STUDIO-FATTIBILITA-MOTORE-CENED.md
 ├── spec/
 │   └── README.md
@@ -176,7 +177,22 @@ Caratteristiche:
 
 Regola: la compatibilità con Blumatica e la struttura XML nazionale restano concetti distinti dalla futura integrazione specifica con CENED+2 Motore.
 
-## 11. Prossimo passo
+## 11. Riferimento GestXml Termodel
+
+Acquisito come riferimento non vincolante **TERMODEL-GESTXML-001** il sorgente `SorgentiTermodel/Library/GestXml.cs`.
+
+Snapshot fornito dall'utente:
+- SHA-256 `906cde73c919fa90359daae0df0c00a1a088e318e3c2b9130b293ab1e51c0736`;
+- circa 2069 righe;
+- sorgente usato da Termodel per costruire l'XML nazionale.
+
+Uso consentito: fonte di ispirazione per gerarchie, mapping, classificazione confini, superfici opache/vetrate, ponti termici, orientamento/inclinazione e serializzazione.
+
+Uso non consentito come automatismo: il file non è specifica normativa e non vincola l'architettura WebJS. Dipendenze Desktop/WPF/Xbim, stato globale e valori hard-coded non devono essere trasferiti senza verifica.
+
+Dettagli: `docs/RIFERIMENTO-GESTXML-TERMODEL.md`.
+
+## 12. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
