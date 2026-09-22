@@ -17,10 +17,11 @@ Nessun campo deve essere introdotto soltanto perché comodo a una singola UI: We
 
 ## Contratto di ingresso — decisione corrente
 
-Il modello intermedio del Bridge viene costruito a partire da una **coppia obbligatoria di file**:
+Il modello intermedio del Bridge viene costruito a partire da **due sorgenti pubbliche principali** e, quando necessario, da un sidecar di completamento:
 
 1. `gbXML` — fonte primaria del modello geometrico/termico;
-2. XML nazionale — fonte complementare per i dati mancanti o specifici del flusso nazionale.
+2. XML nazionale — fonte complementare per i dati mancanti o specifici del flusso nazionale;
+3. `Bridge Completion XML` — sidecar opzionale/condizionale per i residui non determinabili dalle prime due sorgenti.
 
 La fase di import deve:
 - associare i due file allo stesso edificio/progetto;
@@ -58,3 +59,22 @@ La prima coppia supportata è:
 - XML nazionale APE/calcolo.
 
 L'obiettivo è poter aggiungere altri formati pubblici riconosciuti senza cambiare il contratto interno del Bridge.
+
+
+## Bridge Completion XML 1.0
+
+Specifiche:
+- `bridge-completion-1.0.xsd`;
+- `BRIDGE-COMPLETION.md`.
+
+Regola fondamentale: il sidecar non deve duplicare né sovrascrivere dati già autorevoli in gbXML o XML nazionale.
+
+Ogni campo residuo dichiara:
+- ambito e riferimento entità;
+- `targetKey`;
+- tipo e unità;
+- motivo del completamento;
+- provenienza;
+- stato `Provisional` o `Confirmed`.
+
+Un campo `Provisional` è utilizzabile nello studio/test ma non per un output Motore qualificato come produzione.
