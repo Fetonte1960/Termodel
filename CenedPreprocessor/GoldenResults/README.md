@@ -27,3 +27,16 @@ Metadati autorevoli e SHA-256 sono registrati in:
 `GoldenResults/BLUMATICA-XML-001.md`
 
 Questo riferimento deve essere utilizzato per confrontare la struttura dell'XML nazionale prodotto dalla WebJS, mantenendo distinta la compatibilità nazionale/intersoftware dalla futura compatibilità specifica con CENED+2 Motore.
+
+
+### BLUMATICA-APE-PREVIEW-001
+
+Riferimento esterno di presentazione/stampa APE prodotto da Blumatica.
+
+Il file RTF originale non è pubblicato perché contiene dati personali reali.
+
+Metadati, SHA-256, struttura e regole d'uso sono registrati in:
+
+`GoldenResults/BLUMATICA-APE-PREVIEW-001.md`
+
+Questo riferimento affianca `BLUMATICA-XML-001`: il primo guida la presentazione APE, il secondo la struttura XML nazionale.
