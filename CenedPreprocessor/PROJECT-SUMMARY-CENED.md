@@ -281,7 +281,39 @@ Il modello intermedio resta interno al Bridge e non viene imposto come formato d
 
 L'architettura deve usare adapter per consentire in futuro l'aggiunta di altri formati pubblici riconosciuti senza cambiare il nucleo del Bridge.
 
-## 17. Prossimo passo
+## 17. Primo sample gbXML di regressione
+
+Creato:
+
+`samples/GBXML-ROOM-2WINDOWS-001.xml`
+
+Caso minimo:
+- gbXML 8.01;
+- una stanza 4,00 × 4,00 × 3,00 m;
+- area 16,00 m²;
+- volume 48,00 m³;
+- 6 superfici di involucro;
+- due finestre da 1,00 × 1,20 m sulla parete Sud;
+- area vetrata totale 2,40 m²;
+- parete Sud opaca netta attesa 9,60 m²;
+- una zona termica;
+- costruzioni schematiche e dati interamente fittizi.
+
+Specifiche del test:
+
+`tests/GBXML-ROOM-2WINDOWS-001.md`
+
+Controlli iniziali:
+- 1 Space;
+- 6 Surface;
+- 2 Opening;
+- 3 Construction;
+- 1 Zone;
+- nessun riferimento ID interno irrisolto.
+
+La fixture è costruita usando elementi ed enumerazioni verificati contro lo schema pubblico gbXML 8.01. La validazione completa con il validator ufficiale gbXML verrà aggiunta alla pipeline di test.
+
+## 18. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
