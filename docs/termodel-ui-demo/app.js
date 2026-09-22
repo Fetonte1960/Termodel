@@ -47,7 +47,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.83';
+const APP_VERSION = '0.84';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -77,16 +77,10 @@ function syncAndroidViewportLayout() {
   appRoot.style.height = height + 'px';
   appRoot.style.minHeight = height + 'px';
 
-  if (appRoot.classList.contains('cad-layout-mode')) {
-    // In CAD toolbar/titlebar sono gestite dal layout CAD; nessuna riga fantasma.
-    appRoot.style.gridTemplateRows = 'minmax(0, 1fr)';
-  } else if (width <= 760) {
-    // titlebar nascosta: menu, tab, viewer elastico, barra comandi.
-    appRoot.style.gridTemplateRows = '42px 40px minmax(0, 1fr) 48px';
-  } else {
-    // Torna alle media query responsive normali in landscape/tablet.
-    appRoot.style.removeProperty('grid-template-rows');
-  }
+  // Android v0.84: la home è una viewport 3D immersiva. Le barre
+  // desktop vengono nascoste via CSS; anche in landscape il viewer occupa
+  // l'unica riga disponibile. Il CAD mantiene la propria UI dedicata.
+  appRoot.style.gridTemplateRows = 'minmax(0, 1fr)';
 
   requestAnimationFrame(() => {
     if (typeof resize === 'function') resize();
@@ -570,11 +564,11 @@ function installAndroidExploreStyles() {
   style.textContent = `
     .android-explore-box {
       position: absolute;
-      top: 8px;
       right: 8px;
+      bottom: 8px;
       z-index: 32;
       display: flex;
-      align-items: flex-start;
+      align-items: flex-end;
       gap: 5px;
       font-family: "Segoe UI", Arial, sans-serif;
     }
@@ -607,8 +601,8 @@ function installAndroidExploreStyles() {
     }
     .android-explore-menu {
       position: absolute;
-      top: 44px;
       right: 0;
+      bottom: 44px;
       min-width: 190px;
       display: grid;
       gap: 5px;
