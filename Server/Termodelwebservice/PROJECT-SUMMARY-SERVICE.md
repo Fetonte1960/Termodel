@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-22 — projectId unico, persistenza corrente e rimozione calculationId
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Questa commissione **sostituisce integralmente** le due precedenti proposte
 2026-09-22 sulla persistenza per elaborazione e sulla coesistenza
@@ -176,8 +176,74 @@ Criteri di completamento:
   risultato reale e commit.
 
 Risultato:
-- non ancora implementato; nuova architettura definitiva registrata e
-  commissionata.
+- **implementato:** aggiunti
+  `src/Termodel.WebService/Projects/ProjectStore.cs` e
+  `ProjectRequestIdentity.cs`; il WebService legge
+  `manifest.projectId` dal file unico tramite `ProjectTextDocument` senza
+  modificare Termodel.Core;
+- implementato `POST /api/projects/allocate-id`: genera GUID, ne riserva
+  l'unicità su filesystem e usa `FileMode.CreateNew` per rendere la
+  prenotazione sicura anche fra richieste concorrenti; gli ID già persistiti o
+  già riservati vengono esclusi;
+- `POST /api/calculations` rifiuta con HTTP 422 un progetto senza
+  `manifest.projectId` o con ID non allocato dal Service; non assegna ID
+  implicitamente;
+- la response di `POST /api/calculations` contiene `projectId`,
+  `status`, `savedProject.fileName = project.tmdl`, artifact e diagnostica;
+  **non contiene più `calculationId`**;
+- il workspace corrente è
+  `SavedProjects/{projectId}/` con
+  `project.tmdl`, `artifacts/model3d.json`,
+  `logs/calculation.log` e `logs/diagnostics.txt`;
+- ogni aggiornamento riuscito prepara una directory staging e poi sostituisce
+  la directory corrente con swap staging/backup; il backup non è storico e
+  viene eliminato dopo il commit;
+- due elaborazioni dello stesso projectId sono serializzate nel processo
+  Service tramite lock per-project, evitando scritture concorrenti sullo
+  stesso workspace;
+- se `GeneraModello` fallisce, il publish non parte e l'ultimo workspace
+  valido resta intatto; lo smoke ha verificato hash invariati di progetto,
+  model3d e log dopo un calcolo volutamente fallito;
+- implementato
+  `GET /api/projects/{projectId}/artifacts/model3d`: legge esclusivamente
+  `artifacts/model3d.json` dal disco e non richiama `GeneraModello`;
+- rimossi `CalculationSnapshotStore.cs` e il precedente
+  `SavedProjectStore.cs`; rimossa la route
+  `/api/calculations/{id}/artifacts/model3d`;
+- gli endpoint legacy indipendenti dal nuovo modello
+  `POST /api/model/3d` e `GET /api/model/clean-floor/{floorName}`
+  restano disponibili;
+- nessuna modifica a frontend, Termodel.Core, Library o
+  `definizionedati.json`;
+- **compilato:** GitHub Actions TermodelService Build run **#50**, commit
+  `8e29e9a2f988a7d0ff24f111727f89f2aee75c07`: build Release riuscita,
+  **154 warning, 0 errori**;
+- **eseguito/testato:** nello stesso run il WebService è stato avviato
+  realmente e lo smoke `PROJECTID_SMOKE_OK` ha verificato:
+  12 `allocate-id` concorrenti tutti distinti, rifiuto di ID non riservato,
+  progetto A V1 → A V2 nella stessa singola cartella, sostituzione effettiva
+  di `project.tmdl`, `model3d.json` e `calculation.log`, assenza di
+  directory staging/backup residue, protezione dell'ultimo stato valido su
+  elaborazione fallita, isolamento del progetto B, rimozione della vecchia
+  route per-elaborazione e lettura identica degli artifact A/B dopo riavvio
+  del Service;
+- projectId reali esercitati nello smoke run #50:
+  `ceb9463f-3635-4f22-8fb1-aa7902eac931` e
+  `4b2a336c-a00f-4dd2-ab3e-115168a4a36c`;
+- **confronto con riferimento Desktop:** non applicabile alla persistenza;
+  il motore `GeneraModello` non è stato modificato e il confronto golden
+  geometrico resta un'attività separata;
+- contratto condiviso aggiornato a versione documento **1.0** nel commit
+  `9c70c2b8b454b0d6ebe9a8276eff7cc6dacd6400`;
+- commit tecnici principali:
+  `f26de11c61ba2815a6ae9e7609e942ff6fb771b2`,
+  `039f228039e85f79315b6126f84fe770f5c1f501`,
+  `20a86414b690b0f76014a3d14f5c5f8483f8ac9b`,
+  `c3c448505ce662a54ff36f3128e9105ad0ffad74`,
+  `5700a7c9f1bd02bb74cbc0c67ca94e5bf1aaff68`,
+  `211c47b4e00a8dacc1ea851d0425f51f564cafcf`,
+  `fe1dc32909d7124b31bec7247084724b8cb49d5f`,
+  `8e29e9a2f988a7d0ff24f111727f89f2aee75c07`.
 
 ### INCARICO 2026-09-21 — Invarianza Polig3D e TermodelWebModel v3 completo
 Stato: ESEGUITO
@@ -740,74 +806,77 @@ GET  /health
 GET  /api/model/capabilities
 GET  /api/model/clean-floor/{floorName}
 POST /api/projects/new
+POST /api/projects/allocate-id
 POST /api/model/3d
 POST /api/calculations
-GET  /api/calculations/{legacy-id}/artifacts/model3d   # legacy, da sostituire
+GET  /api/projects/{projectId}/artifacts/model3d
 ```
 
-`POST /api/projects/new` accetta JSON/DTO e restituisce il file unico come testo
-UTF-8 con HTTP 201. `POST /api/model/3d` resta l'endpoint legacy che accetta il
-file unico testuale e restituisce direttamente `TermodelWebModel` v3.
+`POST /api/projects/new` continua a creare il file unico base e non assegna
+silenziosamente un'identità persistente. Il frontend richiede il projectId una
+sola volta con `POST /api/projects/allocate-id` e lo consolida come proprietà
+top-level `manifest.projectId`.
 
-`POST /api/calculations` è attualmente ancora implementato secondo il vecchio
-workflow per-elaborazione; la commissione 2026-09-22 richiede di migrarlo al
-modello **projectId-only**, con persistenza in `SavedProjects/{projectId}/`.
-`GET
-/api/calculations/{calculationId}/artifacts/model3d` restituisce l'artifact
-già serializzato senza ricalcolo. Lo snapshot `model3d` resta in memoria e
-viene perso al riavvio del Service. Separatamente, dopo un'elaborazione
-riuscita, il payload tecnico ricevuto viene salvato in UTF-8 come file
-`.tmdl` sotto `<ContentRootPath>/SavedProjects/` (o nella directory
-`TERMODEL_SAVED_PROJECTS_DIR`) con timestamp e lo stesso `calculationId`.
-La risposta include `savedProject.fileName`; il path fisico non è esposto.
+`POST /api/calculations` usa esclusivamente quel `projectId`, ricostruisce il
+modello una sola volta e, solo a elaborazione riuscita, sostituisce il workspace
+corrente:
 
-Errori di progetto o funzioni non supportate sono restituiti come Problem
-Details; Content-Type non valido produce 415 e calculationId non disponibile
-produce 404.
+```text
+SavedProjects/{projectId}/
+├── project.tmdl
+├── artifacts/
+│   └── model3d.json
+└── logs/
+    ├── calculation.log
+    └── diagnostics.txt
+```
+
+La root resta configurabile tramite `TERMODEL_SAVED_PROJECTS_DIR`.
+`project.tmdl` è la copia UTF-8 del projectText realmente ricevuto; non viene
+rigenerato dal Service e non acquisisce gli sfondi esclusivamente frontend.
+
+`GET /api/projects/{projectId}/artifacts/model3d` legge il JSON persistito e
+non esegue un nuovo calcolo. Gli artifact restano quindi leggibili dopo il
+riavvio del Service.
+
+Il precedente modello per-elaborazione è stato rimosso dal runtime:
+non esistono più `CalculationSnapshotStore`, response `calculationId` o
+route `/api/calculations/{id}/artifacts/model3d`.
+
+Errori di progetto, projectId mancante/non riservato o funzioni non supportate
+sono restituiti come Problem Details; Content-Type non valido produce 415.
+Un calcolo fallito non sostituisce l'ultimo workspace valido.
 
 ### Workflow server concordato: AggiornaCalcolo
 
-Decisione architetturale consolidata del 21 settembre 2026. **La prima parte è
-ora implementata per l'artifact `model3d`; gli altri artifact della Fase 1 e
-le fasi termico/pannelli restano da completare.**
-
-Il frontend dovrà inviare il file unico `TERMODEL-PROJECT-TEXT-V1` con una sola
-operazione di aggiornamento generale, concettualmente `AggiornaCalcolo`. Il
-server dovrà eseguire una sola ricostruzione coerente del progetto e produrre
-gli elaborati derivati, replicando progressivamente il flusso del Desktop senza
-duplicarne il motore.
-
-Contratto previsto:
+Decisione consolidata del 22 settembre 2026: **un progetto, un projectId, una
+cartella corrente**.
 
 ```text
 Frontend
+  -> TERMODEL-PROJECT-TEXT-V1 con manifest.projectId
   -> POST /api/calculations
-       body: file unico TERMODEL-PROJECT-TEXT-V1
   -> Termodel.Core ricostruisce il progetto una sola volta
   -> genera gli elaborati disponibili
-  -> restituisce calculationId + manifest degli artifact
+  -> WebService sostituisce SavedProjects/{projectId}/
+  -> restituisce projectId + manifest degli artifact correnti
 ```
 
-Ogni elaborazione deve essere identificata da un `calculationId`. Non bisogna
-basare le nuove API sul concetto di "ultimo calcolo globale", perché due
-browser, due progetti o più utenti potrebbero altrimenti leggere risultati
-incrociati.
-
-Le view del frontend non devono rilanciare i calcoli. Devono leggere gli
-elaborati dello snapshot già prodotto, mediante richieste specifiche del tipo:
+Le view non devono rilanciare i calcoli. Devono leggere gli elaborati correnti
+dello stesso progetto tramite route del tipo:
 
 ```text
-GET /api/calculations/{id}/artifacts/model3d
-GET /api/calculations/{id}/artifacts/xml-nazionale
-GET /api/calculations/{id}/artifacts/report-dispersioni
-GET /api/calculations/{id}/artifacts/pannelli
-GET /api/calculations/{id}/artifacts/spirali/{piano}
-GET /api/calculations/{id}/artifacts/pianta-pulita/{piano}
+GET /api/projects/{projectId}/artifacts/model3d
+GET /api/projects/{projectId}/artifacts/xml-nazionale
+GET /api/projects/{projectId}/artifacts/report-dispersioni
+GET /api/projects/{projectId}/artifacts/pannelli
+GET /api/projects/{projectId}/artifacts/spirali/{piano}
+GET /api/projects/{projectId}/artifacts/pianta-pulita/{piano}
 ```
 
-Nomi e dettagli definitivi degli endpoint potranno essere affinati durante
-l'implementazione, ma il principio è consolidato: **una elaborazione produce
-uno snapshot coerente; le view leggono gli artifact dello snapshot**.
+Al momento è implementato e persistito `model3d`; gli altri artifact sono le
+estensioni successive dello stesso workspace e non devono introdurre storage
+paralleli o identificatori per-elaborazione.
 
 Formati indicativi degli artifact:
 
@@ -819,29 +888,13 @@ Formati indicativi degli artifact:
 - pianta pulita: SVG per piano;
 - eventuali esecutivi DXF: `application/dxf`.
 
-Per la prima implementazione è ammesso un workspace temporaneo per
-`calculationId`, vicino al comportamento file-based del Desktop. Questo
-consente di migrare con modifiche minime `GestXml`, `IoPannelli` e le altre
-classi storiche; in seguito gli artifact potranno essere gestiti con uno storage
-più evoluto senza cambiare il contratto concettuale.
+Compatibilità: gli endpoint legacy `POST /api/model/3d` e
+`GET /api/model/clean-floor/{floorName}` restano disponibili finché non
+saranno deprecati esplicitamente.
 
-Compatibilità: gli endpoint correnti `POST /api/model/3d` e
-`GET /api/model/clean-floor/{floorName}` non vanno eliminati nella prima fase.
-La migrazione al nuovo workflow deve essere progressiva e retrocompatibile.
+Regola di efficienza: `AggiornaCalcolo` ricostruisce il modello **una sola
+volta**. Leggere un artifact non deve provocare una nuova elaborazione completa.
 
-Sequenza di implementazione concordata:
-
-1. **Fase 1:** `POST /api/calculations`, `calculationId`, storage snapshot
-   e artifact `model3d` **implementati**; resta da spostare nello snapshot la
-   pianta pulita ed esporla per `calculationId`;
-2. **Fase 2:** XML nazionale e report dispersioni;
-3. **Fase 3:** calcolo pannelli radianti e spirali SVG;
-4. estensioni successive: ulteriori elaborati Desktop, regression test e
-   persistenza/multiutente.
-
-Regola di efficienza: `AggiornaCalcolo` deve ricostruire il modello **una sola
-volta**. Richiedere XML, spirali, report o 3D non deve provocare una nuova
-elaborazione completa del progetto.
 
 ## 6. EnergyPlus, gbXML e IDF
 
@@ -995,8 +1048,8 @@ Incompleto:
 - file unico/golden test del progetto mansardato e confronto delle 546
   primitive;
 - regression test automatici e Golden Results versionati;
-- completamento della Fase 1 con `pianta-pulita/{piano}` nello snapshot e successivi artifact per le view;
-- API CRUD archivi, persistenza e concorrenza multiutente;
+- completamento del workspace projectId con `pianta-pulita/{piano}` e successivi artifact per le view;
+- API CRUD archivi e concorrenza multiutente/autenticata;
 - autenticazione e autorizzazione;
 - EnergyPlus, gbXML e IDF;
 - eliminazione progressiva delle copie `TERMODEL-SYNC`;
@@ -1005,19 +1058,21 @@ Incompleto:
 
 ## 11. Prossimi passi consigliati
 
-1. implementare la Fase 1 del workflow `AggiornaCalcolo`: `calculationId`,
-   snapshot, modello 3D e piante pulite, mantenendo gli endpoint esistenti;
-2. generare lo SVG multipiano e il file unico del progetto mansardato;
-3. eseguire `POST /api/model/3d` e confrontare il risultato con le 546 primitive
-   del JSON desktop, definendo tolleranze e report;
-4. creare una suite automatica di regression test e `GoldenResults/`;
-5. integrare progressivamente XML nazionale/dispersioni e poi pannelli/spirali
-   nel nuovo workflow;
-6. definire API autorevoli per schema, archivi, validazione e CRUD;
-7. progettare il contratto energetico prima di scegliere gbXML o IDF;
-8. provare build e runtime in Docker locale;
-9. ridurre gradualmente `CopiedFromTermodel` spostando la logica condivisibile
-   in un unico Core compatibile anche col desktop.
+1. adeguare separatamente il frontend al flusso
+   `allocate-id -> manifest.projectId -> POST /api/calculations`;
+2. aggiungere `pianta-pulita/{piano}` e gli artifact successivi nello stesso
+   workspace `SavedProjects/{projectId}/`;
+3. generare lo SVG multipiano e il file unico del progetto mansardato;
+4. confrontare il risultato con le 546 primitive del JSON desktop, definendo
+   tolleranze e report;
+5. creare una suite automatica di regression test e `GoldenResults/`;
+6. integrare progressivamente XML nazionale/dispersioni e poi pannelli/spirali
+   nel nuovo workflow projectId-only;
+7. definire API autorevoli per schema, archivi, validazione e CRUD;
+8. progettare il contratto energetico prima di scegliere gbXML o IDF;
+9. provare build e runtime in Docker locale;
+10. ridurre gradualmente `CopiedFromTermodel` spostando la logica condivisibile
+    in un unico Core compatibile anche col desktop.
 
 ## 12. Vincoli permanenti
 
