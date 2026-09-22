@@ -30,15 +30,26 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0002 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** verificare la definizione del prodotto rispetto alle condizioni e regole ARIA/CENED correnti e consolidarne la formulazione nel progetto.
 
-**Definizione proposta dall'utente:** software bridge tra formati standard di modelli termici e CENED+2 Motore; dopo l'importazione presenta/organizza i dati, avvia il calcolo, prepara l'XML e produce un'anteprima APE.
+**Definizione consolidata:** software bridge tra formati standard di modelli termici e CENED+2 Motore; importa e normalizza i dati, li presenta mediante UI originale, avvia il calcolo attraverso il Motore, produce XML conforme per CEER e genera un'anteprima APE chiaramente non ufficiale.
 
-**Ambito:**
-1. verificare la compatibilità concettuale con le Condizioni d'uso ARIA/CENED vigenti;
-2. distinguere il posizionamento commerciale "bridge" dalla qualificazione regolatoria di Client di terze parti;
-3. chiarire i limiti relativi alla riproduzione dell'interfaccia grafica CENED+2 Client;
-4. chiarire il ruolo dell'anteprima APE rispetto all'APE ufficiale/CEER;
-5. aggiornare lo storico decisioni e l'architettura senza implementare codice.
+**Esito della verifica ARIA:**
+- il posizionamento commerciale come `Software Bridge` è compatibile;
+- quando integra realmente CENED+2 Motore, per ARIA il prodotto è un **Client di terze parti** e deve seguire il relativo percorso di autorizzazione;
+- la riproduzione grafica del CENED+2 Client non viene adottata, poiché le Condizioni d'uso vigenti la consentono esclusivamente a fini didattici;
+- l'interfaccia sarà originale ma potrà organizzare i dati in modo funzionalmente familiare al certificatore;
+- l'anteprima APE è distinta dall'APE ufficiale del flusso CEER;
+- il versionamento deve tenere conto degli obblighi ARIA sulle major release e degli aggiornamenti del Motore.
+
+**Documenti aggiornati:**
+- `docs/DECISIONI.md`;
+- `docs/ARCHITETTURA.md`;
+- `docs/CERTIFICAZIONE.md`;
+- `PROJECT-SUMMARY-CENED.md`.
+
+**Fonti ufficiali verificate:** Condizioni d'uso CENED revisione 01/09/2026 e pagine ufficiali ARIA/CENED relative a CENED+2 Motore e ai Client di terze parti.
+
+**Codice applicativo:** nessuna modifica.
