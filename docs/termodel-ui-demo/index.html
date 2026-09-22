@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.84 — Android immersive 3D viewer</title>
+  <title>Termodel Web v0.85 — Android ProjectBrowser CAD palette</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -1660,6 +1660,32 @@
       display: none !important;
     }
 
+    /* Termodel Web v0.85 — ProjectBrowser CAD Android.
+       Il CAD mobile/tablet diventa una tavola 2D immersiva con la sola
+       palette Home / Piano / ? NN sovrapposta. */
+    html.termodel-android #cadPage {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    html.termodel-android #cadPage > .cad-toolbar,
+    html.termodel-android #cadPage > .cad-properties,
+    html.termodel-android #cadPage > .cad-context-menu {
+      display: none !important;
+    }
+
+    html.termodel-android #cadPage > .cad-canvas {
+      top: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      left: 0 !important;
+    }
+
+    html.termodel-android #cadPage .cad-legend {
+      display: none !important;
+    }
+
   </style>
   <script type="importmap">
   {
@@ -1674,7 +1700,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.84</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.85</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -2184,6 +2210,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.84"></script>
+  <script type="module" src="./app.js?v=0.85"></script>
 </body>
 </html>
