@@ -1049,7 +1049,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.90
+Termodel Web v0.91
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -1161,6 +1161,71 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### ProjectBrowser Android — selettore esempi esplorabili v0.91
+
+Stato: **IMPLEMENTATO SU main** — 22 settembre 2026.
+
+La palette `Esplora` della home mobile/MyHome3D contiene ora una combo
+`Esempio` alimentata da un catalogo statico separato:
+
+```text
+docs/termodel-ui-demo/examples/catalog.json
+```
+
+Formato catalogo corrente:
+
+```text
+TERMODEL-PROJECT-BROWSER-CATALOG-V1
+```
+
+Comportamento:
+
+- all'apertura della palette mobile il frontend carica l'elenco degli esempi
+  effettivamente disponibili;
+- la selezione di un esempio carica il relativo `TermodelWebModel` e lo rende
+  immediatamente visibile nel viewer 3D;
+- il catalogo può indicare anche un futuro file progetto completo: quando
+  presente, il frontend è già predisposto a caricare il
+  `TERMODEL-PROJECT-TEXT-V1` insieme al modello 3D, così CAD 2D e archivi
+  possono appartenere allo stesso esempio consolidato;
+- se un esempio dispone soltanto del 3D, il comando `Disegno unifilare` viene
+  disabilitato per evitare di presentare un CAD vuoto come parte dell'esempio;
+- il primo elemento del catalogo usa il `TermodelWebModel.json` dimostrativo
+  già pubblicato; non viene presentato come il futuro `Appartamento semplice`
+  consolidato, che verrà aggiunto soltanto dopo il completamento del relativo
+  progetto e dei suoi artifact;
+- il catalogo è indipendente dalla logica del viewer: aggiungere futuri
+  esempi consolidati richiederà principalmente l'aggiunta dei relativi asset e
+  di una voce nel catalogo.
+
+Versione visibile:
+
+```text
+Termodel Web v0.91
+MyHome3D v. 91
+```
+
+File modificati/aggiunti:
+
+```text
+docs/termodel-ui-demo/app.js
+docs/termodel-ui-demo/index.html
+docs/termodel-ui-demo/examples/catalog.json
+```
+
+Verifica statica eseguita:
+
+- sintassi JavaScript del corpo modulo: OK;
+- JSON catalogo: valido e con almeno un esempio;
+- `APP_VERSION = 0.91`: presente;
+- combo `androidExploreExample`: presente;
+- loader `loadProjectBrowserExample`: presente;
+- cache-busting `app.js?v=0.91`: presente.
+
+Resta da eseguire il collaudo visivo/interattivo sul dispositivo Android
+reale. La pubblicazione GitHub Pages della v0.91 è stata avviata dal commit
+`9ee7c380f077d4b8a64c2458c74ab00db2b4e96a`.
 
 ### MyHome3D Android — icona brand colorata v0.90
 
