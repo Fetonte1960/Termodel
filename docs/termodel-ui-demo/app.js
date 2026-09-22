@@ -47,7 +47,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.89';
+const APP_VERSION = '0.90';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -626,9 +626,32 @@ function installAndroidExploreStyles() {
     .android-explore-help {
       min-width: 48px;
       width: auto;
-      padding: 0 7px;
+      padding: 0 8px 0 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       font-size: 14px;
       font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .android-myhome-icon {
+      width: 25px;
+      height: 25px;
+      flex: 0 0 25px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #12bff4 0%, #6b63ff 52%, #f34ca7 100%);
+      color: #fff;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.42),
+        0 1px 4px rgba(40,45,90,.34);
+      font-size: 19px;
+      font-weight: 800;
+      line-height: 1;
+      text-shadow: 0 1px 2px rgba(0,0,0,.28);
     }
     .android-project-plane {
       height: 38px;
@@ -715,7 +738,7 @@ function createAndroidExploreBox() {
     <button id="androidExploreToggle" class="android-explore-main" type="button"
       aria-expanded="false">Esplora</button>
     <button id="androidExploreHelp" class="android-explore-help" type="button"
-      aria-label="Apri help Termodel · versione ${APP_VERSION}" title="Help · MyHome3D v. ${APP_VERSION_SHORT}">MyHome3D v. ${APP_VERSION_SHORT}</button>
+      aria-label="Apri help Termodel · versione ${APP_VERSION}" title="Help · MyHome3D v. ${APP_VERSION_SHORT}"><span class="android-myhome-icon" aria-hidden="true">⌂</span><span>MyHome3D v. ${APP_VERSION_SHORT}</span></button>
     <div id="androidExploreMenu" class="android-explore-menu" hidden>
       <button id="androidExploreSingleLine" class="android-explore-action" type="button">
         Disegno unifilare
@@ -829,7 +852,7 @@ function createAndroidCadBrowserBox() {
     <button id="androidCadExploreToggle" class="android-explore-main" type="button"
       aria-expanded="false">Esplora</button>
     <button id="androidCadHelp" class="android-explore-help" type="button"
-      aria-label="Apri help CAD · versione ${APP_VERSION}" title="Help · MyHome3D v. ${APP_VERSION_SHORT}">MyHome3D v. ${APP_VERSION_SHORT}</button>
+      aria-label="Apri help CAD · versione ${APP_VERSION}" title="Help · MyHome3D v. ${APP_VERSION_SHORT}"><span class="android-myhome-icon" aria-hidden="true">⌂</span><span>MyHome3D v. ${APP_VERSION_SHORT}</span></button>
     <div id="androidCadExploreMenu" class="android-explore-menu" hidden>
       <label class="android-explore-field">
         <span>Piano</span>
