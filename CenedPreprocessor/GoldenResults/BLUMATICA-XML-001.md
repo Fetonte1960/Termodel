@@ -120,3 +120,14 @@ Per il primo XML generato dalla WebJS:
 - mantenere distinto ciò che deriva direttamente dal modello importato da ciò che è risultato di calcolo;
 - non replicare valori specifici del campione;
 - documentare tutte le differenze deliberate.
+
+
+## Uso nel test WebJS dual input
+
+Da WebJS 0.1.2-dev questo Golden Reference è anche l'input nazionale del caso:
+
+`tests/WEBJS-DUAL-INPUT-001.md`
+
+Nel test viene affiancato a `samples/GBXML-SHADING-001.xml`.
+
+La geometria 3D deve provenire esclusivamente dal gbXML; BLUMATICA-XML-001 continua a fornire dati complementari e risultati di confronto, senza essere interpretato come sorgente di coordinate tridimensionali.
