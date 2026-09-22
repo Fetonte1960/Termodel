@@ -45,3 +45,17 @@ Usa insieme:
 - `BLUMATICA-XML-001` come Golden Reference esterno per l'XML nazionale.
 
 Il test verifica che le due sorgenti restino separate, che il viewer usi soltanto la geometria gbXML e che l'import dell'una non distrugga i dati dell'altra.
+
+
+## Autoload fixture consolidate
+
+La WebJS 0.1.3-dev deve avviarsi caricando automaticamente:
+- `src/WebJS/fixtures/GBXML-SHADING-001.xml`;
+- `src/WebJS/fixtures/BLUMATICA-XML-001-SANITIZED.xml`.
+
+Attese:
+- apertura automatica del Viewer 3D dopo il caricamento;
+- nessuna richiesta di upload per il caso prova predefinito;
+- 6 superfici involucro, 2 aperture e 4 Shade dal gbXML;
+- 5 locali, 39 opache, 25 vetrate, 184 ponti termici e 2 impianti dalla fixture XML nazionale;
+- i pulsanti di import manuale devono continuare a sostituire solo la rispettiva sorgente.
