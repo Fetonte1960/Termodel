@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`8e27a0281156787ef7521fe2088b750210caa3da` — `Publish Termodel Web v0.83 Android version badge`  
+`8e27a0281156787ef7521fe2088b750210caa3da` — `Publish Termodel Web v0.84 Android version badge`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -804,14 +804,33 @@ Il test manuale reale su smartphone resta necessario.
 
 ### Commissione Android — viewer 3D immersivo v0.84
 
-Stato: **COMMISSIONATO** — 22 settembre 2026.
+Stato: **ESEGUITO** — 22 settembre 2026.
 
-Direzione richiesta: sulla schermata principale Android deve restare soltanto
-il viewer 3D a tutto schermo. Titolo, menu, tab, barra inferiore, status,
-badge origine rendering, assi e cubo devono scomparire. La palette
-`Esplora / ? NN` resta come unico controllo sovrapposto e viene spostata
-nell'angolo in basso a destra. Il CAD continua ad aprirsi tramite
-`Esplora` con la propria interfaccia dedicata.
+La schermata principale Android è ora volutamente immersiva:
+
+- resta visibile soltanto il viewer 3D a tutta viewport;
+- titlebar, menu, tab, barra inferiore, status, badge origine rendering,
+  assi, cubo e pannello filtri sono nascosti;
+- la palette `Esplora / ? NN` è l'unico controllo permanente sopra il 3D;
+- la palette è nell'angolo in basso a destra;
+- il menu `Esplora` si apre verso l'alto per non uscire dalla viewport;
+- il numero versione resta visibile nel pulsante help, per esempio `? 84`;
+- il layout runtime Android usa una sola riga elastica a piena altezza;
+- il CAD resta raggiungibile tramite `Esplora` e conserva la propria UI
+  dedicata quando viene aperto;
+- desktop e sistemi non Android restano invariati.
+
+Commit v0.84:
+
+```text
+921f09120ec5aa3c5465295933211f8f798c21d8  Make Android viewer immersive v0.84
+4d061f0991ef79c823dd5917844dbccbfeb8dd88  Publish Termodel Web v0.84 immersive Android UI
+```
+
+Verifica eseguita: sintassi JavaScript valida e controlli statici positivi
+per nascondimento chrome Android, viewer full-screen, palette in basso a
+destra e apertura menu verso l'alto. Resta da verificare visivamente sul
+telefono reale.
 
 La v0.83 rende immediatamente visibile su Android la versione caricata:
 il pulsante help della palette `Esplora`, prima mostrato come `?`, visualizza
