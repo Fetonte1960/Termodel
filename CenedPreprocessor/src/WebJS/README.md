@@ -2,7 +2,7 @@
 
 Versione browser attiva del Software Bridge CENED.
 
-Versione corrente: **0.1.1-dev**
+Versione corrente: **0.1.2-dev**
 
 ## Stato
 
@@ -14,7 +14,7 @@ La prima bozza navigabile è:
 
 È volutamente realizzata come pagina HTML/CSS/JavaScript autonoma, senza framework e senza build, per rendere immediata la discussione del prodotto.
 
-## Funzioni presenti nella bozza 0.1.1-dev
+## Funzioni presenti nella bozza 0.1.2-dev
 
 - progetto demo con dati fittizi;
 - navigazione fra:
@@ -62,3 +62,24 @@ python -m http.server 8080
 ```
 
 La WebJS resta un prototipo di studio: la fonte normativa delle regole dovrà essere la specifica in `../../spec/`.
+
+
+## Viewer 3D read-only
+
+La 0.1.2-dev introduce un viewer Three.js derivato selettivamente dal renderer di Termodel Web.
+
+Funzioni riutilizzate concettualmente:
+- camera prospettica;
+- OrbitControls;
+- fit scena;
+- raycasting/selezione;
+- spigoli.
+
+Non vengono riutilizzati CAD, editing, snap o archivi Termodel.
+
+Il viewer:
+- importa geometria da gbXML;
+- visualizza superfici, aperture e `Shade`;
+- classifica preliminarmente le `Shade` in aggetto/balcone, setto verticale e ostacolo remoto;
+- mostra proprietà e provenienza dell'entità selezionata;
+- non costruisce geometria a partire dall'XML nazionale.
