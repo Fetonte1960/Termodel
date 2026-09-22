@@ -29,6 +29,9 @@ public sealed class CalculationSnapshotStore
 
     public bool TryGet(Guid calculationId, out CalculationSnapshot? snapshot) =>
         _snapshots.TryGetValue(calculationId, out snapshot);
+
+    public bool Remove(Guid calculationId) =>
+        _snapshots.TryRemove(calculationId, out _);
 }
 
 public sealed class CalculationSnapshot
