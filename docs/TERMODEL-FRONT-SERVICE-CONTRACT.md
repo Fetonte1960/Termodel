@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **0.9**  
+Versione documento: **1.0**  
 Aggiornamento: **22 settembre 2026**  
-Stato: **architettura concordata; implementazione progressiva**
+Stato: **projectId-only implementato lato Service per progetto, model3d e persistenza corrente; frontend in adeguamento separato**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -292,7 +292,7 @@ Regole di consumo frontend:
   conoscono;
 - un `kind` non ancora supportato dal viewer non deve rendere inutilizzabile
   l'intero artifact;
-- questo JSON è un risultato derivato dello snapshot: non deve essere usato per
+- questo JSON è un risultato derivato del workspace corrente del progetto: non deve essere usato per
   ricostruire o sostituire il `TERMODEL-PROJECT-TEXT-V1`;
 - leggere nuovamente `model3d` per lo stesso `projectId` non deve
   provocare una nuova elaborazione.
@@ -433,11 +433,14 @@ POST /api/calculations
 Content-Type: text/plain; charset=utf-8
 ```
 
-**Stato storico 21 settembre 2026:** la prima implementazione usava uno snapshot
-in memoria e un identificatore per-elaborazione. Questa impostazione è ora
-superata dalla decisione projectId-only del 22 settembre 2026. La migrazione
-deve portare il `model3d` e gli artifact successivi nel workspace persistente
-del `projectId`.
+**Stato implementazione 22 settembre 2026:** il Service usa ora il modello
+projectId-only. `POST /api/projects/allocate-id` assegna e riserva il
+`projectId`; `POST /api/calculations` legge `manifest.projectId`, aggiorna
+`SavedProjects/{projectId}/` e restituisce `projectId` senza un secondo
+identificatore per-elaborazione. `model3d` viene persistito su disco e letto
+tramite `GET /api/projects/{projectId}/artifacts/model3d` senza ricalcolo.
+Il precedente snapshot RAM per-elaborazione e la relativa route artifact sono
+stati rimossi dal WebService.
 
 ### Commissione frontend — modalità Copertura e simbolo Colmo
 
@@ -796,8 +799,8 @@ Esempi:
 | `spirali/{piano}` | SVG | view pannelli radianti |
 | `esecutivo-dxf/{piano}` | DXF | eventuale download/esecutivo futuro |
 
-Il manifest deve descrivere ciò che è stato prodotto dallo snapshot, non ciò che
-il server potrebbe teoricamente produrre.
+Il manifest deve descrivere ciò che è presente nel workspace corrente del progetto,
+non ciò che il server potrebbe teoricamente produrre.
 
 ---
 
@@ -1200,19 +1203,26 @@ prima dell'uso multiutente su server pubblico.
 
 ### Fase corrente — identità e persistenza per progetto
 
-Implementare:
+**Implementata lato Service il 22 settembre 2026** per il progetto tecnico,
+`model3d` e i log correnti:
 
 - `POST /api/projects/allocate-id`;
-- `manifest.projectId`;
-- validazione projectId in `POST /api/calculations`;
+- lettura e validazione di `manifest.projectId` in `POST /api/calculations`;
 - workspace `SavedProjects/{projectId}/`;
 - persistenza `project.tmdl`;
 - persistenza `artifacts/model3d.json`;
-- persistenza log/diagnostica;
+- persistenza `logs/calculation.log` e `logs/diagnostics.txt`;
 - lettura artifact tramite `projectId`;
-- aggiornamento atomico che sostituisce la precedente elaborazione;
-- eliminazione del precedente modello pubblico basato su identificatore
-  per-elaborazione.
+- sostituzione transazionale del workspace corrente mediante directory
+  staging/backup, con conservazione dell'ultimo stato valido se il calcolo
+  fallisce;
+- serializzazione delle elaborazioni concorrenti dello stesso projectId nel
+  processo Service;
+- eliminazione del precedente storage RAM e delle route pubbliche basate su
+  identificatore per-elaborazione.
+
+La fase frontend che richiede l'ID una sola volta e lo consolida nel manifest
+resta un adeguamento separato.
 
 ### Fase successiva — artifact aggiuntivi
 
