@@ -283,3 +283,19 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - nessuna modifica a Core, Service, Desktop o `definizionedati.json`;
 - il contenuto del deploy è stato verificato nel repository;
 - la sessione non ha potuto verificare la raggiungibilità HTTP esterna di `www.termodel.it` per limite di accesso/rete degli strumenti.
+
+
+## CENED-0011 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** consolidare il nuovo contratto di ingresso del Software Bridge come coppia obbligatoria di file complementari: **gbXML + XML nazionale**.
+
+**Decisione richiesta:**
+- il Bridge puro non riceve un solo file onnipotente;
+- il **gbXML** è la fonte primaria del modello geometrico/termico e deve descrivere quanto possibile delle cause fisiche: spazi, superfici, aperture, orientamenti, relazioni e geometrie rilevanti, inclusi gli elementi di ombreggiamento quando disponibili;
+- l'**XML nazionale** è la seconda fonte obbligatoria e integra i dati che il gbXML non contiene o non rappresenta con sufficiente specificità per il flusso italiano/CENED;
+- i due file vengono importati insieme e fusi in un modello intermedio unico;
+- il Bridge resta di controllo/normalizzazione: non corregge manualmente il modello;
+- in presenza di dati duplicati discordanti il Bridge non deve scegliere silenziosamente, ma deve applicare autorità per dominio e segnalare la discordanza;
+- gli eventuali risultati energetici già presenti nell'XML nazionale sono dati di confronto/riferimento, non devono sostituire le cause fisiche mancanti nel gbXML.
