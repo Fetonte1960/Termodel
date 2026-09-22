@@ -311,3 +311,20 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - confermato che i risultati energetici dell'XML nazionale sono dati di confronto e non sostituiscono informazioni causali;
 - confermato il Bridge come componente di import/fusione/normalizzazione/controllo, non come editor tecnico;
 - nessun codice applicativo modificato.
+
+
+## CENED-0012 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** consolidare come principio di prodotto che il Software Bridge accetta **formati pubblici riconosciuti, separati per dominio**, evitando un formato proprietario unico e onnivoro.
+
+**Decisione richiesta:**
+- mantenere separati i file quando rappresentano domini diversi;
+- usare formati pubblici, documentati e riconosciuti dal mercato/settore;
+- prima applicazione concreta: `gbXML + XML nazionale`;
+- il gbXML rappresenta il dominio geometrico/termico fisico;
+- l'XML nazionale rappresenta il dominio nazionale/APE e integra i dati mancanti;
+- il modello interno del Bridge può essere proprietario come struttura software, ma non deve essere imposto come formato di scambio esterno;
+- futuri formati pubblici riconosciuti potranno essere aggiunti tramite adapter, senza cambiare il principio del Bridge;
+- ogni formato importato deve avere schema/versione/provenienza verificabili e un mapping documentato verso il modello intermedio.
