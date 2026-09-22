@@ -581,3 +581,21 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 - creato `docs/ARCHIVIO-MOTORE-CENED-1.1.14.10.md` con manifest, hash ed esito della verifica;
 - nessun software, JAR o binario proprietario è stato inserito nel repository;
 - CENED+2 non è stato avviato e nessun aggiornamento alla versione 1.1.15 è stato eseguito.
+
+
+## CENED-0019 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** scaricare dall'area riservata CENED e installare CENED+2 Motore versione 1.1.15, conservando intatto l'archivio verificato della versione 1.1.14.10.
+
+**Perimetro e vincoli:**
+- usare esclusivamente il pacchetto ufficiale indicato nell'area riservata CENED;
+- registrare nome, dimensione e SHA-256 del pacchetto scaricato prima dell'esecuzione;
+- non pubblicare nel repository installer, JAR, binari o componenti proprietari/licenziati;
+- non alterare `C:\CENED-Archive\CenedPlus2-1.1.14.10` né il relativo manifest;
+- verificare al termine versione installata, percorso, Motore JAR e runtime Java distribuito;
+- registrare nel repository soltanto metadati, hash, esito e anomalie;
+- impostare lo stato `ESEGUITO` soltanto dopo la verifica dell'installazione.
+
+**Risultato:** in attesa del download, dell'installazione e della verifica.
