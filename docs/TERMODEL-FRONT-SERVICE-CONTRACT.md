@@ -305,6 +305,145 @@ riferimento comune fra frontend e server.
 
 ---
 
+## 2.5 projectId persistente del progetto
+
+Decisione architetturale registrata il **2026-09-22**.
+
+`calculationId` identifica una singola elaborazione e non deve essere usato come
+identificatore permanente del progetto. Per la persistenza degli artifact e
+per il consolidamento dei progetti viene introdotto un identificatore distinto:
+
+```text
+projectId
+```
+
+Il `projectId`:
+
+- identifica stabilmente il progetto fra elaborazioni successive;
+- è assegnato dal **Termodel.WebService**, non inventato dal frontend;
+- deve essere un identificatore opaco e univoco rispetto ai progetti già
+  registrati nel workspace del Service;
+- viene consolidato nel `TERMODEL-PROJECT-TEXT-V1` come proprietà top-level di
+  `manifest.json`, accanto ai metadati di progetto esistenti;
+- una volta presente nel progetto viene conservato nei successivi Salva,
+  Salva con nome e `AggiornaCalcolo`;
+- non cambia ad ogni calcolo.
+
+Esempio indicativo:
+
+```json
+{
+  "format": "TERMODEL-PROJECT-TEXT-V1",
+  "formatVersion": 1,
+  "projectId": "7b30f4f4-...",
+  "projectName": "Appartamento",
+  ...
+}
+```
+
+I progetti storici privi di `projectId` restano riconoscibili come progetti
+legacy. Il nuovo frontend, alla **prima istanza verso il Service** per un
+progetto che non contiene ancora un `projectId`, deve richiedere un nuovo ID,
+consolidarlo nel manifest e solo dopo usare quel progetto nel normale flusso
+server.
+
+### Assegnazione di un nuovo projectId
+
+Nuova operazione prevista:
+
+```http
+POST /api/projects/allocate-id
+```
+
+La richiesta non crea un nuovo `TERMODEL-PROJECT-TEXT-V1`: assegna e riserva
+soltanto un identificatore di progetto.
+
+Risposta prevista, compatibile con `TERMODEL-FRONT-SERVICE-V1`:
+
+```json
+{
+  "contractVersion": "TERMODEL-FRONT-SERVICE-V1",
+  "projectId": "7b30f4f4-..."
+}
+```
+
+Prima di restituirlo il Service deve garantire che l'identificatore non sia già
+in uso da un altro progetto persistito. L'allocazione deve essere sicura anche
+in presenza di richieste contemporanee.
+
+Il Service **non deve modificare implicitamente** il file progetto ricevuto per
+aggiungervi un ID. Il flusso corretto è:
+
+```text
+frontend apre/crea progetto
+        ↓
+legge manifest.projectId
+        ↓
+presente
+   └── usa quello esistente
+
+assente
+   ↓
+POST /api/projects/allocate-id
+   ↓
+riceve projectId
+   ↓
+frontend inserisce projectId in manifest.json
+   ↓
+ricostruisce/consolida TERMODEL-PROJECT-TEXT-V1
+   ↓
+POST /api/calculations
+```
+
+Questo mantiene il progetto come fonte autorevole e rende il `projectId`
+visibile anche quando il file viene spostato, salvato o successivamente
+ricaricato.
+
+### Persistenza fisica per progetto
+
+La persistenza operativa del Service deve essere organizzata per `projectId`,
+non creando una nuova directory permanente per ogni `calculationId`.
+
+Direzione:
+
+```text
+SavedProjects/
+└── {projectId}/
+    ├── project.tmdl
+    ├── artifacts/
+    │   ├── model3d.json
+    │   └── ... artifact disponibili
+    └── logs/
+        └── ... log/diagnostica dell'ultima elaborazione
+```
+
+Ogni successivo `AggiornaCalcolo` dello stesso `projectId` aggiorna il
+workspace dello stesso progetto con il **più recente risultato riuscito**.
+Non è prevista, salvo futura decisione esplicita, la conservazione permanente
+di una cartella per ogni elaborazione.
+
+Il `calculationId` continua comunque a essere generato a ogni
+`POST /api/calculations` e identifica lo snapshot immutabile usato dal
+contratto HTTP. Il workspace per `projectId` è invece la persistenza corrente
+del progetto e dei suoi ultimi artifact consolidabili.
+
+La lettura di un artifact tramite `calculationId` continua a rispettare la
+regola:
+
+> leggere un artifact non deve rieseguire il calcolo.
+
+Gli artifact futuri (pianta pulita, XML nazionale, dispersioni, pannelli,
+spirali, DXF e altri output) devono poter essere materializzati nello stesso
+workspace del `projectId` senza introdurre sistemi di persistenza concorrenti.
+
+Durante la transizione i client legacy possono ancora presentare progetti senza
+`projectId`; il nuovo flusso frontend deve però allocare e consolidare
+l'identificatore prima della prima elaborazione destinata alla persistenza per
+progetto. Il Service non deve assegnare silenziosamente un nuovo `projectId`
+dentro `POST /api/calculations`.
+
+---
+
 ## 3. Operazione principale: AggiornaCalcolo
 
 L'azione concettuale principale fra frontend e server è:
