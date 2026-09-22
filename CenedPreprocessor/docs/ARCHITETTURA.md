@@ -79,3 +79,24 @@ L'anteprima APE non viene qualificata come APE ufficiale. La produzione/deposito
 ## Vincolo
 
 Non copiare alla cieca il comportamento del preprocessore Cened esistente. Prima va rilevato, documentato e trasformato in una specifica verificabile.
+
+
+## Principio di interoperabilità
+
+Il Bridge accetta formati di scambio **pubblici, documentati e riconosciuti**.
+
+Quando due formati descrivono domini diversi, vengono mantenuti come file separati e fusi soltanto all'interno del modello intermedio.
+
+Prima applicazione:
+- `gbXML` → geometria e modello termico fisico;
+- XML nazionale → dati nazionali/APE e completamento dei campi mancanti.
+
+L'architettura deve quindi essere basata su adapter:
+
+```text
+gbXML adapter ───────┐
+                     ├─→ modello intermedio unico
+XML nazionale adapter┘
+```
+
+Futuri formati pubblici potranno essere aggiunti con nuovi adapter, senza imporre un formato proprietario esterno del Bridge.
