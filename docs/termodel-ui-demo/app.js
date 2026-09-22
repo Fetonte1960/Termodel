@@ -47,7 +47,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.86';
+const APP_VERSION = '0.87';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -246,6 +246,8 @@ let cadDragState = null;
 let cadViewportBase = null;
 let cadViewport = null;
 let cadPanState = null;
+let cadTouchPointers = new Map();
+let cadTouchGesture = null;
 let cadCalibrationLineId = '';
 let cadToolMode = 'select';
 let cadNewLineState = null;
@@ -6507,6 +6509,156 @@ function cadFinishPan(svg, event) {
   return true;
 }
 
+function cadTouchCenter(points) {
+  if (!points.length) return null;
+  const sum = points.reduce(
+    (acc, point) => [acc[0] + point.clientX, acc[1] + point.clientY],
+    [0, 0]
+  );
+  return [sum[0] / points.length, sum[1] / points.length];
+}
+
+function cadTouchDistance(points) {
+  if (points.length < 2) return 0;
+  return Math.hypot(
+    points[1].clientX - points[0].clientX,
+    points[1].clientY - points[0].clientY
+  );
+}
+
+function cadPanViewportByClientDelta(svg, dxClient, dyClient) {
+  if (!svg || (!dxClient && !dyClient)) return;
+
+  const matrix = svg.getScreenCTM();
+  if (!matrix) return;
+  const inverse = matrix.inverse();
+  const dxWorld = inverse.a * dxClient + inverse.c * dyClient;
+  const dyWorld = inverse.b * dxClient + inverse.d * dyClient;
+  const current = cadViewport?.slice() || cadParseViewBox(svg.getAttribute('viewBox'));
+  if (!current) return;
+
+  current[0] -= dxWorld;
+  current[1] -= dyWorld;
+  cadApplyViewport(svg, current);
+}
+
+function cadZoomViewportAtClient(svg, clientX, clientY, requestedFactor) {
+  const current = cadViewport?.slice() || cadParseViewBox(svg.getAttribute('viewBox'));
+  const base = cadViewportBase?.slice() || current?.slice();
+  if (!current || !base || current[2] <= 0 || current[3] <= 0 || base[2] <= 0) return;
+
+  const currentRatio = current[2] / base[2];
+  const targetRatio = Math.max(0.02, Math.min(50, currentRatio * requestedFactor));
+  const factor = targetRatio / currentRatio;
+  if (Math.abs(factor - 1) < 1e-9) return;
+
+  const world = cadClientPoint(svg, { clientX, clientY });
+  const nextWidth = current[2] * factor;
+  const nextHeight = current[3] * factor;
+  const relX = (world[0] - current[0]) / current[2];
+  const relY = (world[1] - current[1]) / current[3];
+
+  cadApplyViewport(svg, [
+    world[0] - relX * nextWidth,
+    world[1] - relY * nextHeight,
+    nextWidth,
+    nextHeight
+  ]);
+}
+
+function cadResetTouchGesture() {
+  cadTouchPointers.clear();
+  cadTouchGesture = null;
+  cadCanvas?.classList.remove('pan-mode');
+}
+
+function cadRefreshTouchGesture() {
+  const points = Array.from(cadTouchPointers.values()).slice(0, 2);
+  if (!points.length) {
+    cadTouchGesture = null;
+    cadCanvas?.classList.remove('pan-mode');
+    return;
+  }
+
+  cadTouchGesture = {
+    center: cadTouchCenter(points),
+    distance: cadTouchDistance(points)
+  };
+  cadCanvas?.classList.add('pan-mode');
+}
+
+function cadStartTouchNavigation(svg, event) {
+  if (!TERMODEL_ANDROID_DEVICE || event.pointerType !== 'touch') return false;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  cadTouchPointers.set(event.pointerId, {
+    pointerId: event.pointerId,
+    clientX: event.clientX,
+    clientY: event.clientY
+  });
+
+  if (svg.setPointerCapture) {
+    try { svg.setPointerCapture(event.pointerId); } catch (_) {}
+  }
+
+  cadRefreshTouchGesture();
+  return true;
+}
+
+function cadMoveTouchNavigation(svg, event) {
+  if (!TERMODEL_ANDROID_DEVICE || event.pointerType !== 'touch') return false;
+  if (!cadTouchPointers.has(event.pointerId)) return false;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  cadTouchPointers.set(event.pointerId, {
+    pointerId: event.pointerId,
+    clientX: event.clientX,
+    clientY: event.clientY
+  });
+
+  const points = Array.from(cadTouchPointers.values()).slice(0, 2);
+  const center = cadTouchCenter(points);
+  if (!center) return true;
+
+  const previous = cadTouchGesture;
+  if (previous?.center) {
+    cadPanViewportByClientDelta(
+      svg,
+      center[0] - previous.center[0],
+      center[1] - previous.center[1]
+    );
+  }
+
+  const distance = cadTouchDistance(points);
+  if (points.length >= 2 && previous?.distance > 0 && distance > 0) {
+    const factor = Math.max(0.5, Math.min(2, previous.distance / distance));
+    cadZoomViewportAtClient(svg, center[0], center[1], factor);
+  }
+
+  cadTouchGesture = { center, distance };
+  return true;
+}
+
+function cadFinishTouchNavigation(svg, event) {
+  if (!TERMODEL_ANDROID_DEVICE || event.pointerType !== 'touch') return false;
+  if (!cadTouchPointers.has(event.pointerId)) return false;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  cadTouchPointers.delete(event.pointerId);
+
+  if (svg?.releasePointerCapture) {
+    try { svg.releasePointerCapture(event.pointerId); } catch (_) {}
+  }
+
+  cadRefreshTouchGesture();
+  return true;
+}
+
 function cadClientPoint(svg, event) {
   const point = svg.createSVGPoint();
   point.x = event.clientX;
@@ -6628,8 +6780,24 @@ function cadSyncOverlay(svg) {
 }
 
 function cadInstallPointerEditing(svg) {
-  // Navigazione CAD senza pulsanti UI:
-  // rotella = zoom sul cursore, tasto centrale + drag = pan.
+  cadResetTouchGesture();
+
+  // Navigazione CAD:
+  // desktop: rotella = zoom sul cursore, tasto centrale + drag = pan;
+  // ProjectBrowser Android: un dito = pan, due dita = pinch zoom.
+  // I gesti touch hanno priorità sull'editing per evitare spostamenti accidentali.
+  svg.addEventListener('pointerdown', event => {
+    cadStartTouchNavigation(svg, event);
+  }, true);
+  svg.addEventListener('pointermove', event => {
+    cadMoveTouchNavigation(svg, event);
+  }, true);
+  const finishTouch = event => {
+    cadFinishTouchNavigation(svg, event);
+  };
+  svg.addEventListener('pointerup', finishTouch, true);
+  svg.addEventListener('pointercancel', finishTouch, true);
+
   svg.addEventListener('wheel', event => cadZoomAtPointer(svg, event), { passive: false });
 
   // Impedisce l'autoscroll del browser sul clic della rotella.
