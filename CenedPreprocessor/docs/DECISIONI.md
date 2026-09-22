@@ -173,3 +173,23 @@ Il Bridge è un componente di **fusione, normalizzazione e controllo**, non un e
 Le correzioni devono essere eseguite nel software sorgente che ha prodotto uno dei due file e poi riesportate.
 
 Questa decisione supera l'idea di usare l'XML nazionale come input unico: l'XML nazionale rimane indispensabile, ma viene affiancato dal gbXML per conservare il modello fisico necessario alle trasformazioni successive.
+
+
+## 2026-09-22 — D-0013 — Formati pubblici riconosciuti separati per dominio
+
+Il Software Bridge adotta come principio di interoperabilità l'uso di **formati pubblici, documentati e riconosciuti**, mantenuti separati quando descrivono domini differenti.
+
+Il Bridge non introduce un unico formato proprietario esterno destinato a sostituire gli standard esistenti.
+
+Applicazione iniziale:
+- `gbXML` per il modello geometrico/termico fisico;
+- XML nazionale per i dati specifici nazionali/APE e per integrare quanto non rappresentato dal gbXML.
+
+Principi:
+- ogni formato importato deve avere schema/versione/provenienza identificabili;
+- ogni adapter deve documentare il mapping verso il modello intermedio;
+- i file restano separati fino alla fase di import/fusione;
+- la fusione avviene solo nel modello interno del Bridge;
+- il modello intermedio può avere una struttura proprietaria interna, ma non viene imposto come formato di scambio esterno;
+- nuovi formati pubblici riconosciuti potranno essere aggiunti in futuro tramite adapter dedicati senza cambiare l'architettura generale;
+- la presenza di più formati non autorizza correzioni silenziose delle incongruenze tra sorgenti.
