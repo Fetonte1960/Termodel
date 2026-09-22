@@ -260,6 +260,47 @@ Risultato:
   ancora superata la validazione HTTP finché l'utente non ripete il test.
 
 
+
+### INCARICO 2026-09-22 — Salvataggio automatico progetto ricevuto da Aggiorna Modello
+Stato: COMMISSIONATO
+
+Commissionato:
+- a ogni `POST /api/calculations` elaborato con successo salvare su disco una
+  copia UTF-8 del `projectText` `TERMODEL-PROJECT-TEXT-V1` ricevuto,
+  senza rigenerarlo e senza aggiungere sfondi frontend;
+- associare senza ambiguità il file allo stesso `calculationId` dello
+  snapshot, usando un nome con data/ora e GUID;
+- usare una directory dedicata e determinabile `SavedProjects/` del
+  WebService, mantenendo distinta questa persistenza operativa dallo
+  `CalculationSnapshotStore` in memoria;
+- preferire un piccolo servizio dedicato `SavedProjectStore` e non modificare
+  frontend, Termodel.Core, Library o `definizionedati.json`;
+- mantenere invariati gli endpoint legacy e il formato
+  `TERMODEL-PROJECT-TEXT-V1`;
+- aggiungere alla risposta di `POST /api/calculations`, se resta
+  retrocompatibile e minimale, il solo nome logico del file salvato, senza
+  esporre il path fisico; in tal caso aggiornare il contratto condiviso;
+- estendere lo smoke HTTP per verificare file realmente creato, contenuto
+  letto, corrispondenza del `calculationId`, due richieste → due file distinti
+  e nessun file presentato come successo per una richiesta non valida.
+
+Criteri di completamento:
+- build Service con 0 errori;
+- `POST /api/calculations` e artifact `model3d` ancora funzionanti;
+- file fisico `.tmdl` creato in `SavedProjects/` dopo elaborazione riuscita;
+- contenuto del file equivalente al `projectText` ricevuto;
+- nome contenente data/ora e lo stesso `calculationId`;
+- due richieste riuscite producono due file distinti;
+- richiesta non valida non produce un progetto consolidabile;
+- endpoint legacy invariati;
+- diff finale limitato al WebService, test e documentazione pertinente;
+- questa stessa voce aggiornata a `ESEGUITO` riportando separatamente
+  implementazione, compilazione, esecuzione, test, confronto e commit.
+
+Risultato:
+- in corso; non dichiarare ancora compilato/eseguito/testato.
+
+
 ### PROSSIMA PROVA — tetti e locali mansardati da Termodel Web v0.75
 
 Il frontend dispone ora di uno strumento di test multipiano: `＋ Copertura`
