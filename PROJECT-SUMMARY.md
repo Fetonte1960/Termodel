@@ -605,6 +605,68 @@ La schermata Android immersiva introdotta in **v0.84** — viewer 3D a tutta vie
 Non è più soltanto un adattamento responsive del Termodel desktop: è l'inizio di una UX mobile con un ruolo differente e deliberatamente più orientato a consultazione, esplorazione e uso sul campo.
 
 
+
+### Direzione ProjectBrowser — batteria esempi e progetto completo esplorabile
+
+Decisione di prodotto registrata il **2026-09-22**.
+
+Il ProjectBrowser non dovrà basarsi su un unico progetto dimostrativo.
+
+È prevista una **batteria di progetti esempio selezionabili**, pensati per mostrare
+casi edilizi e funzionali differenti e per permettere al tecnico di esplorare
+Termodel senza dover prima costruire o caricare un proprio progetto.
+
+Principio:
+
+```text
+ProjectBrowser
+      ↓
+selezione progetto esempio
+      ↓
+progetto Termodel completo
+      ├── modello 3D avanzato
+      ├── dati progetto
+      ├── piani
+      ├── CAD 2D / unifilare
+      ├── pianta pulita
+      └── elaborati 2D SVG
+```
+
+Non deve quindi essere consolidato e distribuito soltanto il risultato 3D
+avanzato. Ogni esempio dovrà essere un **progetto Termodel completo e coerente**
+nelle parti necessarie alla consultazione.
+
+Conseguenza importante:
+
+> entrando nel CAD 2D di un progetto esempio, la vista non deve risultare vuota.
+
+Il ProjectBrowser deve poter mostrare la geometria 2D appartenente allo stesso
+progetto già esplorabile nel viewer 3D.
+
+Nel CAD 2D dovranno inoltre essere consultabili anche gli **elaborati 2D in
+formato SVG** prodotti o conservati dal progetto.
+
+Per questi elaborati la **pianta pulita** costituisce il contesto grafico di
+riferimento: gli elaborati possono essere visualizzati sopra o insieme alla
+pianta pulita, mantenendo leggibile la relazione tra elaborato tecnico e
+geometria dell'edificio.
+
+Direzione prevista della vista CAD ProjectBrowser:
+
+```text
+CAD 2D ProjectBrowser
+      ↓
+Piano corrente
+      ├── Unifilare input
+      ├── Sfondo locale, se previsto
+      ├── Pianta pulita
+      └── Elaborati 2D SVG selezionabili
+```
+
+Questa è per ora una **direzione di sviluppo** e non una funzione dichiarata
+implementata. Non sono richieste modifiche al codice in questa registrazione.
+
+
 ## 3. Responsabilità e confini
 
 La divisione operativa corrente è esplicita:
