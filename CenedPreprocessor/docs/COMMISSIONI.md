@@ -287,7 +287,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0011 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** consolidare il nuovo contratto di ingresso del Software Bridge come coppia obbligatoria di file complementari: **gbXML + XML nazionale**.
 
@@ -299,3 +299,15 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - il Bridge resta di controllo/normalizzazione: non corregge manualmente il modello;
 - in presenza di dati duplicati discordanti il Bridge non deve scegliere silenziosamente, ma deve applicare autorità per dominio e segnalare la discordanza;
 - gli eventuali risultati energetici già presenti nell'XML nazionale sono dati di confronto/riferimento, non devono sostituire le cause fisiche mancanti nel gbXML.
+
+
+**Risultato CENED-0011:**
+- registrata la decisione D-0012: ingresso duale obbligatorio `gbXML + XML nazionale`;
+- aggiornato `docs/ARCHITETTURA.md`;
+- aggiornato `spec/README.md`;
+- aggiornato `PROJECT-SUMMARY-CENED.md`;
+- definita l'autorità per dominio: gbXML per geometria/cause fisiche, XML nazionale per dati specifici nazionali mancanti;
+- definita la gestione delle discordanti: segnalazione senza correzione silenziosa;
+- confermato che i risultati energetici dell'XML nazionale sono dati di confronto e non sostituiscono informazioni causali;
+- confermato il Bridge come componente di import/fusione/normalizzazione/controllo, non come editor tecnico;
+- nessun codice applicativo modificato.
