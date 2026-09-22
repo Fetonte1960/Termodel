@@ -1,6 +1,6 @@
 # Archivio preventivo CENED+2 Motore 1.1.14.10
 
-Data verifica e archiviazione: **2026-09-22**  
+Data verifica e archiviazione: **2026-09-22**
 Commissione: **CENED-0018**
 
 ## Identificazione
