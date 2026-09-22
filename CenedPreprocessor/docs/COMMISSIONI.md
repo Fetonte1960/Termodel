@@ -143,7 +143,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0006 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** acquisire come riferimento di progetto l'XML `output.xml` fornito dall'utente, dichiarato testato con la funzione di import di Blumatica e analogo al documento XML nazionale che il Software Bridge dovrà sviluppare in output.
 
@@ -154,3 +154,15 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - registrare hash, struttura, provenienza funzionale e valore come Golden Reference;
 - distinguere sempre il fatto che il test di import Blumatica è un'evidenza fornita dall'utente e non una validazione rieseguita da questa sessione;
 - usare il documento come riferimento per la struttura dell'output XML WebJS, senza assumere automaticamente che ogni campo sia richiesto da CENED Lombardia.
+
+
+**Risultato CENED-0006:**
+- verificato che il file fornito è XML ben formato;
+- identificato il documento originale con SHA-256 `4988a0700ad1aeb60ef6906235411a176baee514f7a902533dfcc1ad86980647`;
+- registrato come Golden Reference `BLUMATICA-XML-001`;
+- creato `GoldenResults/BLUMATICA-XML-001.md`;
+- aggiornati `GoldenResults/README.md`, `docs/DECISIONI.md` e `PROJECT-SUMMARY-CENED.md`;
+- registrata la struttura principale `ape2015 + datiCalcolo` e i principali contenuti osservati;
+- il file grezzo non è stato pubblicato perché contiene dati personali reali e il repository è pubblico;
+- nessuna modifica a codice WebJS, Desktop, Core, Service, frontend o `definizionedati.json`;
+- versione software invariata: `0.1.0-dev`, trattandosi di acquisizione documentale/riferimento.
