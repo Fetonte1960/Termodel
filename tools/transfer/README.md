@@ -68,8 +68,14 @@ tools\transfer\TermodelTransfer.ps1 -Action import -Name TermodelWebService
 
 Eseguire sempre `status` prima di una copia. `export` rende la copia GitHub
 speculare al sorgente locale; `import` non cancella file locali e crea prima un
-backup sotto `_backups`. `SERVICE_A_GITHUB.cmd` mantiene il flusso assistito dal
-Service locale verso GitHub. Per aggiornare il PC nella direzione opposta usare
-il comando unico `AGGIORNA_TERMODEL_SERVICE.cmd` nella radice del repository:
-controlla che Git sia pulito, aggiorna `main` soltanto in fast-forward e avvia
-l'importazione con backup senza domande interattive.
+backup sotto `_backups`.
+
+- `COPIA_TERMODEL_SERVICE_LOCALE_NEL_CLONE_GITHUB.cmd` copia il Service locale
+  nella cartella versionata del clone, ma non crea commit e non esegue push;
+- `SCARICA_GITHUB_E_PREPARA_TERMODEL_SERVICE_LOCALE.cmd`, nella radice del
+  repository, controlla che Git sia pulito, scarica `origin/main` soltanto in
+  fast-forward e copia con backup i sorgenti del Service nel workspace locale,
+  pronti per essere ricompilati manualmente con Visual Studio;
+- `PUBBLICA_MODIFICHE_LOCALI_NEL_GITHUB_REMOTO.cmd`, nella radice, crea il
+  commit delle modifiche locali autorizzate e le pubblica sul remoto, escludendo
+  `SorgentiTermodel/Work`.
