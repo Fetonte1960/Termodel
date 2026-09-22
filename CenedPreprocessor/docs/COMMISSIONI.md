@@ -117,3 +117,17 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - annotato che i moduli del manuale risultano datati 15/10/2019, mentre la versione software corrente verificata è Client/Motore 1.1.15 del 03/06/2026;
 - per Appendice I è stato conservato il collegamento tramite la pagina indice ufficiale, evitando di inventare un URL diretto non verificato;
 - nessun PDF ARIA è stato copiato nel repository.
+
+
+## CENED-0005 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** registrare il cambio di fase del progetto: da questo momento si sviluppa e si discute esclusivamente la versione WebJS del Software Bridge.
+
+**Decisione:**
+- la versione WebJS diventa l'unica linea attiva di sviluppo e discussione;
+- la versione Desktop viene sospesa e non deve essere modificata né sviluppata fino a nuova decisione esplicita;
+- documentazione, specifiche e casi prova possono continuare a essere preparati in funzione della futura versione certificabile, ma ogni implementazione corrente deve riguardare soltanto WebJS;
+- nessun lavoro sul runner Java Desktop/Service o sul percorso di certificazione operativo viene avviato senza nuova autorizzazione;
+- la sospensione Desktop non annulla le decisioni architetturali già prese: le conserva per una futura riattivazione.
