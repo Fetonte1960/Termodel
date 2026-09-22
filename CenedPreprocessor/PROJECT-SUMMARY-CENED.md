@@ -447,7 +447,57 @@ Deploy:
 
 La verifica HTTP esterna dell'URL non è riuscita dagli strumenti della sessione; il contenuto su GitHub è stato verificato.
 
-## 21. Prossimo passo
+## 21. Bridge Completion XML 1.0
+
+Definito il terzo file opzionale/condizionale del contratto Bridge.
+
+Architettura consolidata:
+
+```text
+gbXML ------------------------┐
+                             │
+XML nazionale ---------------┼──> modello intermedio unico
+                             │
+Bridge Completion XML -------┘
+```
+
+Ruoli:
+- gbXML → geometria e cause fisiche;
+- XML nazionale → dati nazionali/energetici;
+- Bridge Completion XML → soltanto dati residui CENED-specifici o associazioni non determinabili automaticamente.
+
+Il sidecar è opzionale se le prime due sorgenti coprono tutto il target; diventa obbligatorio per il singolo progetto quando restano lacune.
+
+File creati:
+- `spec/bridge-completion-1.0.xsd`;
+- `spec/BRIDGE-COMPLETION.md`;
+- `samples/BRIDGE-COMPLETION-001.xml`;
+- `tests/BRIDGE-COMPLETION-001.md`.
+
+Namespace:
+`urn:termodel:cened-bridge:completion:1.0`
+
+Ogni campo di completamento dichiara:
+- scope/entità;
+- target logico;
+- tipo;
+- eventuale unità;
+- valore;
+- motivo del completamento;
+- provenienza;
+- stato `Provisional` o `Confirmed`.
+
+Regole:
+- divieto di duplicare/sovrascrivere dati autorevoli già presenti in gbXML/XML nazionale;
+- binding espliciti soltanto quando l'associazione automatica non è certa;
+- valori `Provisional` ammessi nei test/studio ma non in output Motore di produzione;
+- obiettivo progettuale: ridurre progressivamente il sidecar al minimo.
+
+Il sample è stato validato contro lo XSD 1.0 con esito positivo.
+
+Nessun codice applicativo modificato; versione WebJS resta `0.1.3-dev`.
+
+## 22. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
