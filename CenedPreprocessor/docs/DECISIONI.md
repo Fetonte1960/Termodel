@@ -76,3 +76,16 @@ Regole:
 - la WebJS è usata come ambiente di studio, prototipazione, verifica dell'interfaccia, discussione del mapping dati e consolidamento del prodotto.
 
 Questa decisione sospende operativamente la precedente D-0002 relativa allo sviluppo parallelo di WebJS e Desktop, senza cancellarla dallo storico.
+
+
+## 2026-09-22 — D-0009 — XML Blumatica come Golden Reference nazionale
+
+Il file XML `output.xml` fornito dall'utente e dichiarato importato con successo in Blumatica viene assunto come **Golden Reference strutturale** dell'XML nazionale/interoperabile che la WebJS dovrà essere in grado di produrre.
+
+Regole:
+- identificativo del riferimento: `BLUMATICA-XML-001`;
+- il file originale è identificato dal digest SHA-256 `4988a0700ad1aeb60ef6906235411a176baee514f7a902533dfcc1ad86980647`;
+- il file grezzo non viene pubblicato nel repository perché contiene dati personali reali e il repository è pubblico;
+- il riferimento viene usato per struttura, gerarchie, mapping e test di serializzazione dell'output XML WebJS;
+- il fatto che Blumatica lo importi non dimostra automaticamente conformità con CENED+2 Motore;
+- ogni futura copia anonimizzata o modificata non può essere chiamata "testata con Blumatica" finché non venga nuovamente verificata con un'importazione reale.
