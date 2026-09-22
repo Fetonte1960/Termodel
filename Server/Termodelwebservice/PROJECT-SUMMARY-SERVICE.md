@@ -84,6 +84,85 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-22 — Workspace persistente per calculationId e artifact completi
+Stato: COMMISSIONATO
+
+Commissionato:
+- armonizzare la persistenza fisica di ogni elaborazione di `POST /api/calculations`
+  creando una cartella dedicata allo snapshot identificato dal
+  **`calculationId`**; nel contratto corrente non esiste un `projectId`
+  persistente distinto, quindi non introdurre un nuovo identificatore
+  arbitrario in questo intervento;
+- sostituire l'attuale salvataggio piatto del solo `.tmdl` e lo storage
+  esclusivamente in memoria di `model3d` con un workspace persistente per
+  elaborazione, ad esempio:
+  ```text
+  SavedProjects/
+  └── {calculationId}/
+      ├── project.tmdl
+      ├── artifacts/
+      │   ├── model3d.json
+      │   └── ... altri artifact prodotti
+      └── logs/
+          └── ... log/diagnostica della stessa elaborazione
+  ```
+  Il nome esatto della directory radice può restare configurabile tramite
+  `TERMODEL_SAVED_PROJECTS_DIR`;
+- il file `project.tmdl` deve continuare a essere la copia esatta UTF-8 del
+  `TERMODEL-PROJECT-TEXT-V1` realmente ricevuto ed elaborato con successo,
+  senza rigenerazione e senza sfondi esclusivamente frontend;
+- materializzare su disco anche l'artifact `model3d` già prodotto oggi, nello
+  stesso workspace e senza rieseguire `GeneraModello` quando viene richiesto
+  successivamente;
+- predisporre lo stesso workspace come destinazione comune per gli artifact
+  futuri prodotti dalla medesima elaborazione: piante pulite SVG, XML
+  nazionale, report dispersioni, pannelli, spirali SVG, esecutivi DXF e ogni
+  altro output previsto dal contratto; ogni artifact deve derivare dalla stessa
+  elaborazione identificata dal `calculationId`;
+- salvare nello stesso workspace anche i log e la diagnostica pertinenti a
+  quella elaborazione, in forma leggibile e associabile senza ambiguità allo
+  snapshot; evitare dipendenze da log globali non riconducibili alla specifica
+  richiesta;
+- lo snapshot in memoria può restare come cache/ottimizzazione iniziale, ma non
+  deve essere l'unico luogo in cui esiste un artifact già prodotto se
+  l'obiettivo dell'intervento è conservarlo nel workspace;
+- le letture degli artifact devono continuare a rispettare il principio
+  fondamentale del contratto: **GET artifact non ricalcola** il progetto;
+- mantenere compatibili gli endpoint esistenti. Non introdurre un nuovo
+  `projectId` pubblico in questo incarico. Se in futuro si vorrà distinguere
+  un ID permanente di progetto dal `calculationId` dello snapshot, servirà
+  una decisione architetturale separata e un eventuale aggiornamento del
+  contratto;
+- non includere gli sfondi locali/frontend nel payload tecnico salvato dal
+  Service;
+- non modificare `definizionedati.json` e non spostare nel WebService logica
+  appartenente al Core.
+
+Criteri di completamento:
+- build della soluzione riuscita;
+- due chiamate valide consecutive a `POST /api/calculations` producono due
+  workspace distinti, ciascuno denominato/riconducibile al proprio
+  `calculationId`;
+- ciascun workspace contiene almeno il progetto tecnico ricevuto,
+  `artifacts/model3d.json` e la diagnostica/log della stessa elaborazione;
+- il contenuto di `model3d.json` coincide con quello restituito
+  dall'endpoint artifact per lo stesso `calculationId`;
+- leggere `model3d` più volte non richiama il calcolo;
+- il file progetto persistito resta logicamente identico al body ricevuto;
+- richieste non valide non vengono presentate come snapshot completati;
+- la struttura è già estendibile agli artifact successivi senza creare
+  cartelle o meccanismi concorrenti per ogni funzione;
+- verificare e documentare separatamente compilazione, smoke HTTP, file creati,
+  log salvati e lettura artifact;
+- aggiornare il contratto condiviso soltanto se cambia effettivamente una
+  response, un endpoint o la semantica pubblica; la sola organizzazione fisica
+  interna del workspace resta responsabilità Service;
+- a lavoro concluso aggiornare questa stessa voce a `Stato: ESEGUITO` con
+  risultato reale, test e commit.
+
+Risultato:
+- non ancora implementato; incarico registrato e affidato.
+
 ### INCARICO 2026-09-21 — Invarianza Polig3D e TermodelWebModel v3 completo
 Stato: ESEGUITO
 
