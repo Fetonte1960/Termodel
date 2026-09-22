@@ -433,12 +433,11 @@ POST /api/calculations
 Content-Type: text/plain; charset=utf-8
 ```
 
-**Stato implementazione 21 settembre 2026:** il primo ciclo è operativo lato
-Service. La chiamata esegue il motore una sola volta, genera un
-`calculationId`, serializza il `TermodelWebModel v3` e lo conserva nello
-snapshot. In questa prima implementazione il manifest contiene soltanto
-l'artifact `model3d`; XML nazionale, dispersioni, pannelli, spirali e piante
-pulite nello snapshot restano fasi successive.
+**Stato storico 21 settembre 2026:** la prima implementazione usava uno snapshot
+in memoria e un identificatore per-elaborazione. Questa impostazione è ora
+superata dalla decisione projectId-only del 22 settembre 2026. La migrazione
+deve portare il `model3d` e gli artifact successivi nel workspace persistente
+del `projectId`.
 
 ### Commissione frontend — modalità Copertura e simbolo Colmo
 
@@ -561,8 +560,8 @@ Termodel Web v0.74 prepara automaticamente negli appunti, dopo
 contenente le risposte effettivamente ricevute dal Service:
 
 - status HTTP e corpo della risposta di `POST /api/calculations`;
-- `calculationId`, manifest e diagnostica presenti nella risposta POST;
-- URL, status HTTP e corpo di `GET .../artifacts/model3d`;
+- `projectId`, manifest e diagnostica presenti nella risposta POST;
+- URL, status HTTP e corpo del GET artifact corrente;
 - in caso di errore, la risposta disponibile e il messaggio client.
 
 Il testo copiato contiene le risposte del server, non il payload progetto
@@ -582,11 +581,11 @@ modello visualizzato:
 
 - `ANTEPRIMA LOCALE · nessuna elaborazione server` per JSON demo e preview
   prodotte nel browser;
-- `RENDERING ELABORATO DA TERMODEL SERVICE · calculationId ...` per
-  l'artifact `model3d` recuperato dallo snapshot server.
+- `RENDERING ELABORATO DA TERMODEL SERVICE · projectId ...` per
+  l'artifact `model3d` corrente del progetto.
 
 Per il rendering server viene mostrata una forma abbreviata del
-`calculationId` e l'identificativo completo resta disponibile nel tooltip.
+`projectId` e l'identificativo completo resta disponibile nel tooltip.
 L'indicatore descrive il modello attualmente visualizzato e non viene usato come
 prova autonoma della correttezza del calcolo.
 
@@ -655,7 +654,7 @@ progetto strutturato corrente
     -> costruisce TERMODEL-PROJECT-TEXT-V1 corrente
     -> deriva il payload tecnico senza sfondi locali/frontend
     -> POST /api/calculations
-    -> riceve calculationId + manifest
+    -> riceve projectId + manifest
     -> segue l'href dell'artifact model3d
     -> GET artifact model3d
     -> renderizza TermodelWebModel v3 nel viewer
@@ -1108,10 +1107,10 @@ Responsabile di:
 - Content-Type;
 - CORS;
 - validazione di trasporto;
-- creazione e gestione `calculationId`;
+- allocazione e validazione `projectId`;
+- persistenza del workspace corrente per progetto;
 - esposizione degli artifact;
-- mapping errori HTTP;
-- gestione lifecycle dello snapshot.
+- mapping errori HTTP.
 
 ### Termodel.Core
 
