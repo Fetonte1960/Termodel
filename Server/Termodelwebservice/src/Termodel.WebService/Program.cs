@@ -3,12 +3,11 @@ using System.Text.Json;
 using Termodel.Core;
 using Termodel.Core.ProjectFiles;
 using Termodel.Leggidxf;
-using Termodel.WebService.Calculations;
+using Termodel.WebService.Projects;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<CalculationSnapshotStore>();
-builder.Services.AddSingleton<SavedProjectStore>();
+builder.Services.AddSingleton<ProjectStore>();
 
 const string TermodelWebCorsPolicy = "TermodelWeb";
 
@@ -74,10 +73,23 @@ app.MapGet("/health", () => Results.Ok(new
 app.MapGet("/api/model/capabilities", () => Results.Ok(CoreInformation.GetCapabilities()));
 
 // Funzione realizzata da Codex in autonomia
+app.MapPost("/api/projects/allocate-id", async (
+    ProjectStore projects,
+    CancellationToken cancellationToken) =>
+{
+    Guid projectId = await projects.AllocateProjectIdAsync(cancellationToken);
+
+    return Results.Ok(new
+    {
+        contractVersion = "TERMODEL-FRONT-SERVICE-V1",
+        projectId
+    });
+});
+
+// Funzione realizzata da Codex in autonomia
 app.MapPost("/api/calculations", async (
     HttpRequest request,
-    CalculationSnapshotStore snapshots,
-    SavedProjectStore savedProjects,
+    ProjectStore projects,
     CancellationToken cancellationToken) =>
 {
     if (request.ContentType is null ||
@@ -97,39 +109,34 @@ app.MapPost("/api/calculations", async (
             detectEncodingFromByteOrderMarks: true);
 
         string projectText = await reader.ReadToEndAsync(cancellationToken);
+        Guid projectId = ProjectRequestIdentity.ReadProjectId(projectText);
 
-        Model3DGenerationResult result =
-            await new GeneraModello().GeneraAsync(projectText, cancellationToken);
+        ProjectCalculationData data = await projects.UpdateCurrentAsync(
+            projectId,
+            projectText,
+            async token =>
+            {
+                Model3DGenerationResult result =
+                    await new GeneraModello().GeneraAsync(projectText, token);
 
-        byte[] model3DJson = JsonSerializer.SerializeToUtf8Bytes(result.Model);
-        CalculationSnapshot snapshot = snapshots.Create(model3DJson, result.Diagnostics);
-
-        string savedProjectFileName;
-        try
-        {
-            savedProjectFileName = await savedProjects.SaveAsync(
-                snapshot.Id,
-                snapshot.CreatedAtUtc,
-                projectText,
-                cancellationToken);
-        }
-        catch
-        {
-            snapshots.Remove(snapshot.Id);
-            throw;
-        }
+                return new ProjectCalculationData(
+                    JsonSerializer.SerializeToUtf8Bytes(result.Model),
+                    result.Diagnostics,
+                    result.Model.PrimitiveCount);
+            },
+            cancellationToken);
 
         string model3DHref =
-            $"/api/calculations/{snapshot.Id:D}/artifacts/model3d";
+            $"/api/projects/{projectId:D}/artifacts/model3d";
 
         return Results.Json(new
         {
             contractVersion = "TERMODEL-FRONT-SERVICE-V1",
-            calculationId = snapshot.Id,
+            projectId,
             status = "completed",
             savedProject = new
             {
-                fileName = savedProjectFileName
+                fileName = "project.tmdl"
             },
             artifacts = new[]
             {
@@ -140,13 +147,13 @@ app.MapPost("/api/calculations", async (
                     href = model3DHref
                 }
             },
-            diagnostics = snapshot.Diagnostics
+            diagnostics = data.Diagnostics
         });
     }
     catch (InvalidDataException exception)
     {
         return Results.Problem(
-            title: "File unico o geometria non validi",
+            title: "File unico, projectId o geometria non validi",
             detail: exception.Message,
             statusCode: StatusCodes.Status422UnprocessableEntity);
     }
@@ -161,20 +168,22 @@ app.MapPost("/api/calculations", async (
 
 // Funzione realizzata da Codex in autonomia
 app.MapGet(
-    "/api/calculations/{calculationId:guid}/artifacts/model3d",
-    (Guid calculationId, CalculationSnapshotStore snapshots) =>
+    "/api/projects/{projectId:guid}/artifacts/model3d",
+    async (Guid projectId, ProjectStore projects, CancellationToken cancellationToken) =>
 {
-    if (!snapshots.TryGet(calculationId, out CalculationSnapshot? snapshot) ||
-        snapshot is null)
+    byte[]? model3DJson =
+        await projects.ReadModel3DAsync(projectId, cancellationToken);
+
+    if (model3DJson is null)
     {
         return Results.Problem(
-            title: "Snapshot di calcolo non disponibile",
-            detail: $"Il calculationId '{calculationId:D}' non esiste o non è più disponibile.",
+            title: "Artifact model3d non disponibile",
+            detail: $"Il projectId '{projectId:D}' non esiste o non dispone ancora di model3d.",
             statusCode: StatusCodes.Status404NotFound);
     }
 
     return Results.Bytes(
-        snapshot.CopyModel3DJson(),
+        model3DJson,
         contentType: "application/json; charset=utf-8");
 });
 
