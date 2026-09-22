@@ -34,19 +34,22 @@ ANTEPRIMA APE
 
 Dal 22/09/2026 l'unica implementazione attiva è **WebJS**. La linea Desktop resta sospesa fino a nuova decisione esplicita.
 
-## Contratto di ingresso duale
+## Contratto di ingresso: due standard + sidecar opzionale
 
-Il Bridge richiede due file complementari:
+Il Bridge usa due formati pubblici principali e un sidecar Bridge opzionale:
 
 - **gbXML**: fonte primaria per geometria, spazi, superfici, aperture, orientamenti, relazioni termiche e geometrie/ostruzioni di ombreggiamento quando disponibili;
-- **XML nazionale**: fonte complementare per dati generali/APE, codifiche e dati italiani specifici, dati impianto o altri campi che il gbXML non rappresenta con sufficiente completezza.
+- **XML nazionale**: fonte complementare per dati generali/APE, codifiche e dati italiani specifici, dati impianto o altri campi che il gbXML non rappresenta con sufficiente completezza;
+- **Bridge Completion XML**: sidecar condizionalmente obbligatorio solo quando restano dati CENED-specifici mancanti o associazioni non determinabili con certezza.
 
-I due file vengono letti insieme e fusi nel modello intermedio.
+Le sorgenti vengono lette insieme e fuse nel modello intermedio.
 
 Regole:
 - geometria e cause fisiche → autorità gbXML;
 - dati specifici nazionali non presenti nel gbXML → autorità XML nazionale;
+- Bridge Completion XML → autorità soltanto sui residui non coperti dalle due sorgenti principali;
 - dati duplicati discordanti → segnalazione, nessuna correzione silenziosa;
+- il sidecar non può sovrascrivere una sorgente autorevole;
 - risultati già presenti nell'XML nazionale → confronto, non sostituzione delle cause fisiche;
 - nessun editing tecnico nel Bridge: le correzioni si eseguono nel software sorgente e si riesportano i file.
 
@@ -94,9 +97,27 @@ Prima applicazione:
 L'architettura deve quindi essere basata su adapter:
 
 ```text
-gbXML adapter ───────┐
-                     ├─→ modello intermedio unico
-XML nazionale adapter┘
+gbXML adapter ───────────────┐
+                             │
+XML nazionale adapter ───────┼─→ modello intermedio unico
+                             │
+Completion XML adapter ──────┘
 ```
 
 Futuri formati pubblici potranno essere aggiunti con nuovi adapter, senza imporre un formato proprietario esterno del Bridge.
+
+
+## Bridge Completion XML
+
+Il sidecar è specificato in:
+- `spec/bridge-completion-1.0.xsd`;
+- `spec/BRIDGE-COMPLETION.md`.
+
+È opzionale a livello di protocollo e diventa necessario solo quando la validazione individua lacune residue.
+
+Il sidecar non è un terzo modello energetico completo: contiene soltanto:
+- binding non determinabili automaticamente;
+- campi mancanti;
+- dati CENED-specifici non rappresentati nei due formati pubblici.
+
+I campi sono tracciati con scope, destinazione logica, tipo, valore, motivo, provenienza e stato `Provisional/Confirmed`.
