@@ -511,7 +511,7 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 
 ## CENED-0017 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** definire il terzo file opzionale di completamento del Software Bridge per i dati non disponibili o non determinabili con certezza da gbXML + XML nazionale.
 
@@ -529,3 +529,21 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 - aggiornare architettura, specifica, decisioni e Project Summary;
 - nessuna modifica a WebJS/Desktop/Core/Service o `definizionedati.json`;
 - nessun incremento versione software se non viene modificato codice applicativo.
+
+
+**Risultato CENED-0017:**
+- definito il terzo file come `Bridge Completion XML 1.0`;
+- confermato il modello “due formati pubblici + sidecar Bridge opzionale/condizionale”;
+- creato `spec/bridge-completion-1.0.xsd`;
+- creato `spec/BRIDGE-COMPLETION.md`;
+- creato `samples/BRIDGE-COMPLETION-001.xml`;
+- creato `tests/BRIDGE-COMPLETION-001.md`;
+- sample validato con esito positivo contro lo XSD 1.0;
+- introdotti Header, riferimenti ai due input, Bindings e CompletionFields;
+- definiti scope, tipi, motivi del completamento, provenienza e stato Provisional/Confirmed;
+- stabilito che il sidecar non può duplicare o sovrascrivere dati già autorevoli in gbXML/XML nazionale;
+- stabilito che i binding vengono usati solo quando il matching automatico non è certo;
+- stabilito che i campi Provisional non possono alimentare output Motore di produzione;
+- registrata D-0017;
+- aggiornati `docs/ARCHITETTURA.md`, `spec/README.md`, `samples/README.md`, `tests/README.md` e Project Summary;
+- nessun codice applicativo modificato e nessun incremento versione software.
