@@ -93,3 +93,17 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - nessuna modifica a Termodel.Core, Termodel.WebService, frontend, Library operativa o `definizionedati.json`;
 - nessun JAR proprietario copiato nel repository;
 - nessuna compilazione o test runtime eseguiti, coerentemente con il perimetro di studio.
+
+
+## CENED-0004 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** acquisire e consolidare nel repository i link ufficiali ARIA/CENED al Manuale d'uso Software CENED+2.0 e ai relativi moduli, per evitare future ricerche ripetitive.
+
+**Ambito:**
+1. registrare la pagina indice ufficiale del manuale;
+2. registrare i link diretti ai PDF disponibili per Copertina/Indice e Moduli A-F;
+3. registrare la pagina ufficiale Software CENED+2.0 come riferimento di versione corrente;
+4. non copiare i PDF nel repository;
+5. annotare data/versione riportata dalla documentazione e distinzione tra manuale storico e versione software corrente.
