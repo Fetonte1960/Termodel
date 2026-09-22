@@ -84,98 +84,100 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
-### INCARICO 2026-09-22 — projectId persistente e workspace per progetto
+### INCARICO 2026-09-22 — projectId unico, persistenza corrente e rimozione calculationId
 Stato: COMMISSIONATO
 
-Questa commissione **sostituisce integralmente**, prima dell'implementazione,
-la precedente proposta di una cartella permanente per ogni `calculationId`.
-Non creare quindi una directory persistente per ogni elaborazione.
+Questa commissione **sostituisce integralmente** le due precedenti proposte
+2026-09-22 sulla persistenza per elaborazione e sulla coesistenza
+`projectId`/`calculationId`.
+
+Decisione definitiva:
+- `projectId` è l'unico identificatore operativo e persistente del progetto;
+- il concetto `calculationId` deve essere eliminato dal nuovo contratto, dalla
+  response di `AggiornaCalcolo`, dalle route artifact e dalla persistenza;
+- ogni nuova elaborazione riuscita dello stesso `projectId` ricopre i dati
+  prodotti dall'elaborazione precedente;
+- non viene mantenuto automaticamente uno storico delle elaborazioni.
 
 Commissionato:
-- introdurre un identificatore persistente `projectId`, distinto dal
-  `calculationId`: il primo identifica il progetto, il secondo continua a
-  identificare una singola elaborazione/snapshot;
-- aggiungere l'operazione condivisa prevista dal contratto:
-  `POST /api/projects/allocate-id`, che assegna e riserva un nuovo `projectId`
-  senza creare o modificare implicitamente un `TERMODEL-PROJECT-TEXT-V1`;
-- generare il nuovo ID lato Service e verificarne/reservarne l'unicità rispetto
-  ai projectId già presenti sul filesystem, gestendo correttamente anche
-  richieste concorrenti; in caso di collisione non restituire mai un ID già
-  assegnato;
-- il `projectId` deve essere restituito al frontend come identificatore opaco;
-- il nuovo frontend consoliderà il valore come proprietà top-level
-  `manifest.projectId` del `TERMODEL-PROJECT-TEXT-V1`; il Service non deve
-  modificare di nascosto il progetto ricevuto per inserirlo;
-- quando il frontend possiede già `manifest.projectId`, non deve richiedere
-  un nuovo ID: tutte le elaborazioni successive dello stesso progetto usano
-  quello esistente;
-- adeguare la persistenza operativa in modo che un progetto con `projectId`
-  usi un solo workspace permanente, ad esempio:
+- implementare `POST /api/projects/allocate-id` per generare e riservare un
+  nuovo `projectId` univoco rispetto ai progetti già presenti, con sicurezza
+  anche in caso di richieste concorrenti;
+- il Service restituisce il nuovo ID ma non modifica implicitamente il file
+  progetto; il frontend lo consoliderà come `manifest.projectId` top-level del
+  `TERMODEL-PROJECT-TEXT-V1`;
+- `POST /api/calculations` deve leggere e validare `manifest.projectId`; nel
+  nuovo flusso un progetto senza ID deve essere prima consolidato dal
+  frontend tramite `allocate-id`; non assegnare ID silenziosamente durante il
+  calcolo;
+- eliminare dalla response di `POST /api/calculations` il riferimento
+  `calculationId`; restituire `projectId`, stato, artifact disponibili e
+  diagnostica;
+- eliminare il modello pubblico di artifact basato su
+  `/api/calculations/{calculationId}/artifacts/...` e introdurre le route
+  correnti basate sul progetto, a partire da
+  `GET /api/projects/{projectId}/artifacts/model3d`;
+- il GET artifact deve leggere il file/risultato già prodotto e non deve
+  rieseguire `GeneraModello`;
+- sostituire o rimuovere `CalculationSnapshotStore` e gli altri componenti
+  introdotti esclusivamente per la gestione del `calculationId`, salvo
+  eventuali dettagli interni temporanei che non espongano né mantengano il
+  concetto nel contratto e che risultino realmente necessari durante la
+  migrazione; l'obiettivo finale è non avere un secondo identificatore;
+- usare una sola directory persistente per progetto:
   ```text
   SavedProjects/
   └── {projectId}/
       ├── project.tmdl
       ├── artifacts/
       │   ├── model3d.json
-      │   └── ... altri artifact prodotti
+      │   └── ... artifact correnti
       └── logs/
-          └── ... log/diagnostica dell'ultima elaborazione
+          └── ... diagnostica/log correnti
   ```
-- a ogni `POST /api/calculations` riuscito dello stesso `projectId`, aggiornare
-  in modo sicuro il contenuto corrente di quella stessa cartella invece di
-  creare una nuova cartella permanente per ogni `calculationId`;
-- il `project.tmdl` persistito deve essere la copia UTF-8 del projectText
-  realmente ricevuto ed elaborato con successo; gli sfondi esclusivamente
-  frontend restano esclusi dal payload server;
-- materializzare nel workspace almeno `artifacts/model3d.json`, mantenendo la
-  regola che la successiva lettura dell'artifact non deve rieseguire il calcolo;
-- salvare nello stesso workspace anche diagnostica/log della più recente
-  elaborazione pertinente al progetto, evitando crescita illimitata dovuta a
-  una directory storica per ogni calcolo;
-- predisporre lo stesso workspace per gli artifact futuri della stessa
-  elaborazione: piante pulite SVG, XML nazionale, report dispersioni, pannelli,
-  spirali SVG, esecutivi DXF e altri output previsti dal contratto;
-- il `calculationId` continua a essere generato a ogni `AggiornaCalcolo` e può
-  restare usato dallo snapshot/cache e dagli endpoint artifact; non diventa
-  il nome della cartella permanente del progetto;
-- mantenere compatibili gli endpoint esistenti durante la migrazione. I client
-  legacy possono ancora presentare progetti privi di `projectId`; il nuovo
-  flusso frontend deve però chiamare `allocate-id` prima della prima
-  elaborazione destinata alla persistenza per progetto. Non assegnare
-  silenziosamente un nuovo projectId dentro `POST /api/calculations`;
+- ogni `AggiornaCalcolo` riuscito dello stesso projectId deve aggiornare
+  atomicamente quella stessa cartella, sostituendo progetto, artifact e log
+  precedenti con i nuovi valori;
+- l'elaborazione fallita non deve distruggere l'ultimo stato valido. Può
+  aggiornare un log di ultimo errore separato, ma non deve pubblicare output
+  parziali come stato corrente;
+- materializzare almeno `artifacts/model3d.json` e predisporre la stessa
+  struttura per piante pulite, XML nazionale, dispersioni, pannelli, spirali,
+  DXF e altri artifact futuri;
+- `project.tmdl` deve restare la copia UTF-8 del projectText tecnico realmente
+  ricevuto ed elaborato con successo, senza sfondi esclusivamente frontend;
+- mantenere la root configurabile tramite `TERMODEL_SAVED_PROJECTS_DIR`;
 - non modificare `definizionedati.json` e non spostare nel WebService logica
   appartenente al Core.
 
 Criteri di completamento:
-- build della soluzione riuscita;
-- due chiamate anche concorrenti a `POST /api/projects/allocate-id` restituiscono
-  due `projectId` differenti e già riservati, mai in conflitto con workspace
-  esistenti;
-- un progetto che presenta un `manifest.projectId` valido viene persistito
-  sotto `SavedProjects/{projectId}/` o root configurata equivalente;
-- due `POST /api/calculations` successivi dello stesso progetto producono due
-  `calculationId` distinti ma **una sola cartella permanente di progetto**;
-- la seconda elaborazione aggiorna `project.tmdl`, `artifacts/model3d.json` e
-  log/diagnostica correnti senza creare una directory storica per il nuovo
-  `calculationId`;
-- il contenuto di `artifacts/model3d.json` coincide con l'artifact prodotto
-  dalla più recente elaborazione riuscita dello stesso progetto;
-- leggere `model3d` tramite l'endpoint dello snapshot non richiama il calcolo;
-- una elaborazione fallita non deve sostituire come risultato consolidato
-  l'ultimo workspace riuscito; eventuali log di errore devono essere gestiti
-  senza presentare il progetto come `completed`; 
-- il progetto persistito resta logicamente identico al body tecnico ricevuto;
-- la struttura è estendibile agli artifact successivi senza creare un secondo
-  sistema di persistenza;
-- aggiornare il contratto comune se l'implementazione richiede variazioni
-  della response o dell'endpoint rispetto a quanto già registrato;
-- documentare separatamente build, test automatici, smoke HTTP, allocazione
-  ID, verifica cartella fisica, artifact e log;
+- build completa della soluzione riuscita;
+- due richieste anche concorrenti a `POST /api/projects/allocate-id` producono
+  due projectId differenti e già riservati;
+- un progetto con `manifest.projectId=A` produce/aggiorna soltanto
+  `SavedProjects/A/`;
+- due `POST /api/calculations` successivi con lo stesso projectId non creano
+  alcun secondo identificatore e non creano cartelle storiche: la seconda
+  elaborazione ricopre i valori persistiti dalla prima;
+- la response di `POST /api/calculations` non contiene `calculationId`;
+- `GET /api/projects/A/artifacts/model3d` restituisce il `model3d.json`
+  corrente senza ricalcolo;
+- un secondo progetto con `projectId=B` resta isolato in `SavedProjects/B/`;
+- riavviando il WebService gli artifact persistiti restano leggibili tramite
+  projectId;
+- una elaborazione fallita non sostituisce `project.tmdl` e artifact
+  dell'ultima elaborazione riuscita;
+- verificare che non restino dipendenze funzionali necessarie dal precedente
+  `calculationId` nei nuovi endpoint/DTO/manifest di risposta;
+- aggiornare/adeguare i test HTTP e automatici al contratto projectId;
+- documentare separatamente compilazione, test, endpoint realmente eseguiti,
+  filesystem verificato, artifact e log;
 - a lavoro concluso aggiornare questa stessa voce a `Stato: ESEGUITO` con
   risultato reale e commit.
 
 Risultato:
-- non ancora implementato; nuova architettura registrata e commissionata.
+- non ancora implementato; nuova architettura definitiva registrata e
+  commissionata.
 
 ### INCARICO 2026-09-21 — Invarianza Polig3D e TermodelWebModel v3 completo
 Stato: ESEGUITO
