@@ -6,7 +6,7 @@
 
 Ultimo aggiornamento: **2026-09-22**  
 Branch di riferimento: **TermodelCened**  
-Versione iniziale di progetto: **0.1.0-dev**
+Versione corrente: **0.1.1-dev**
 
 ---
 
@@ -133,7 +133,9 @@ Completati:
 - distinzione tra anteprima APE e APE ufficiale CEER;
 - dossier iniziale di autorizzazione.
 
-Non è ancora implementata alcuna trasformazione verso input CENED+2 Motore.
+È disponibile la prima bozza WebJS navigabile in `src/WebJS/index.html`.
+
+La bozza non integra CENED+2 Motore e non esegue calcoli ufficiali.
 
 ## 8. Studio fattibilità Motore CENED
 
@@ -207,7 +209,30 @@ Caratteristiche:
 
 Dettagli: `GoldenResults/BLUMATICA-APE-PREVIEW-001.md`.
 
-## 13. Prossimo passo
+## 13. Prima bozza WebJS 0.1.1-dev
+
+Realizzata la prima bozza navigabile in `src/WebJS/index.html`.
+
+Funzioni presenti:
+- progetto demo con dati fittizi;
+- navigazione Panoramica / Dati generali / Zone e locali / Involucro / Serramenti / Ponti termici / Impianti / Risultati / Anteprima APE / XML;
+- validazione preliminare di completezza;
+- import locale XML nazionale;
+- lettura preliminare di `ape2015` e `datiCalcolo`;
+- lettura di zone, locali, superfici opache, vetrate, ponti termici e impianti;
+- lettura dei risultati APE già presenti nell'XML;
+- anteprima marcata `ANTEPRIMA APE — NON UFFICIALE`;
+- XML dimostrativo scaricabile, esplicitamente non dichiarato conforme a CENED+2 Motore/CEER.
+
+Verifiche:
+- JavaScript della pagina compilato sintatticamente senza errori;
+- parser XML provato in Chromium headless sul Golden XML fornito dall'utente;
+- letti correttamente: comune Reggio di Calabria, zona B, superficie 43,3 m², volume 148,41 m³, classe F, EPgl,nren 217,04;
+- rilevati 1 subEdificio, 5 locali, 39 superfici opache, 25 superfici vetrate, 184 ponti termici e 2 impianti.
+
+Questa versione è esclusivamente una base di discussione del prodotto.
+
+## 14. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
