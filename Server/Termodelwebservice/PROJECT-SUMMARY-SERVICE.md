@@ -659,14 +659,14 @@ La facciata `GestProg` espone ora `PathProg`, `PathProgDB`,
 corrente. Il workspace viene eliminato al termine della generazione corrente.
 
 Questa è la base per i moduli Desktop file-based (`GestXml`, `CalcoloAPE`,
-`Cened`, `IoPannelli` e successivi). Non è ancora lo storage persistente
-degli snapshot `calculationId`: quel lifecycle verrà introdotto con
-`POST /api/calculations`.
+`Cened`, `IoPannelli` e successivi). Non è lo storage persistente pubblico:
+la nuova commissione 2026-09-22 introduce invece il workspace stabile
+`SavedProjects/{projectId}/`, aggiornato ad ogni elaborazione riuscita.
 
-Il workspace è un adattatore interno, non il formato autorevole del progetto.
-Il file unico resta l'input autorevole; gli output del workspace diventeranno
-artifact dello snapshot e non devono essere reinseriti implicitamente nel
-progetto.
+Il workspace temporaneo Core resta un adattatore interno, non il formato
+autorevole del progetto. Il file unico resta l'input autorevole; gli output
+dell'elaborazione diventano artifact correnti del `projectId` e non devono
+essere reinseriti implicitamente nel progetto.
 
 ## 4. Storia consolidata dello sviluppo Service
 
@@ -726,12 +726,11 @@ seriale.
 /api/model/clean-floor/{floorName}` restituisce lo SVG architettonico pulito
 dell'ultima generazione.
 
-La verifica corrente del 21 settembre 2026 usa GitHub Actions: build Release
-con 0 errori e 154 warning. Lo smoke HTTP esegue sia il percorso legacy sia il
-nuovo percorso snapshot sul `ProgettoVuoto`; `POST /api/calculations`
-restituisce un `calculationId` e due letture successive dell'artifact
-`model3d` risultano identiche. La prova con geometria reale e il confronto
-golden restano aperti.
+Verifica storica del 21 settembre 2026: GitHub Actions aveva build Release
+con 0 errori e 154 warning e lo smoke HTTP verificava il precedente percorso
+snapshot per-elaborazione. Questa implementazione è ora **legacy e destinata
+alla sostituzione** dalla commissione projectId-only del 22 settembre 2026.
+La prova con geometria reale e il confronto golden restano aperti.
 
 ## 5. API implementate
 
@@ -743,16 +742,17 @@ GET  /api/model/clean-floor/{floorName}
 POST /api/projects/new
 POST /api/model/3d
 POST /api/calculations
-GET  /api/calculations/{calculationId}/artifacts/model3d
+GET  /api/calculations/{legacy-id}/artifacts/model3d   # legacy, da sostituire
 ```
 
 `POST /api/projects/new` accetta JSON/DTO e restituisce il file unico come testo
 UTF-8 con HTTP 201. `POST /api/model/3d` resta l'endpoint legacy che accetta il
 file unico testuale e restituisce direttamente `TermodelWebModel` v3.
 
-`POST /api/calculations` è il primo endpoint del nuovo workflow:
-esegue una sola generazione, assegna un `calculationId` e conserva
-`model3d` nello snapshot. `GET
+`POST /api/calculations` è attualmente ancora implementato secondo il vecchio
+workflow per-elaborazione; la commissione 2026-09-22 richiede di migrarlo al
+modello **projectId-only**, con persistenza in `SavedProjects/{projectId}/`.
+`GET
 /api/calculations/{calculationId}/artifacts/model3d` restituisce l'artifact
 già serializzato senza ricalcolo. Lo snapshot `model3d` resta in memoria e
 viene perso al riavvio del Service. Separatamente, dopo un'elaborazione
