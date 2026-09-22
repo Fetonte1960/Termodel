@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-22**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`4d061f0991ef79c823dd5917844dbccbfeb8dd88` — `Publish Termodel Web v0.84 immersive Android UI`  
+`c9f40cfab3df6993991c5df252cc9f13c88d083f` — `Publish Termodel Web v0.85 Android ProjectBrowser CAD UI`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -804,7 +804,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.84
+Termodel Web v0.85
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -916,6 +916,70 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### ProjectBrowser Android — CAD 2D immersivo v0.85
+
+Stato: **IMPLEMENTATO SU main** — 22 settembre 2026.
+
+La v0.85 estende al CAD 2D la filosofia ProjectBrowser introdotta nella home
+Android v0.84.
+
+Home / viewer 3D:
+
+- resta la palette permanente `Esplora / ? NN`;
+- `Esplora → Disegno unifilare` continua a usare direttamente
+  `activateCadPage()`, cioè **la stessa funzione canonica** richiamata dal
+  comando principale `Edita nel Cad`;
+- non esiste quindi un secondo percorso Android divergente per entrare nel CAD.
+
+CAD 2D su Android, compresi tablet Android di grande formato:
+
+```text
+tavola CAD 2D a tutta viewport
+        +
+palette minima sovrapposta
+Home | Piano ▼ | ? NN
+```
+
+Comportamento:
+
+- toolbar completa di progettazione nascosta;
+- pannello proprietà nascosto;
+- menu contestuale CAD nascosto;
+- canvas CAD esteso a tutta la viewport;
+- `Home` usa `cadReturnToModel()`, quindi torna attraverso il normale
+  percorso del CAD;
+- il combo `Piano` legge `Piani.Nome` e riflette il piano corrente;
+- cambiando il combo mobile viene aggiornato il vero `cadPropPiano` e viene
+  richiamato `cadCurrentPlaneChanged()`: il cambio piano usa quindi la
+  stessa logica multipiano del Termodel Web desktop e rifiltra realmente il
+  disegno visualizzato;
+- il pulsante help/versione mostra sempre le ultime due cifre di
+  `APP_VERSION`, quindi in questa revisione `? 85`;
+- desktop/non Android conserva l'interfaccia CAD completa.
+
+Commit frontend v0.85:
+
+```text
+bb3da1cba89620943d6601979c16210b12de14ca
+Add minimal Android CAD ProjectBrowser palette v0.85
+
+c9f40cfab3df6993991c5df252cc9f13c88d083f
+Publish Termodel Web v0.85 Android ProjectBrowser CAD UI
+```
+
+Verifiche statiche eseguite:
+
+- sintassi JavaScript di `app.js`: OK;
+- `Esplora` → funzione canonica `activateCadPage()`: OK;
+- `Home` → funzione canonica `cadReturnToModel()`: OK;
+- combo Piano mobile → `cadPropPiano` + `cadCurrentPlaneChanged()`: OK;
+- numero versione breve `? 85`: OK;
+- toolbar/proprietà CAD Android nascoste e canvas full-screen: OK;
+- cache-busting `app.js?v=0.85`: OK.
+
+Resta da verificare visivamente sul dispositivo reale la v0.85, in particolare
+su smartphone e, quando disponibile, su tablet di grande formato.
 
 ### Commissione Android — viewer 3D immersivo v0.84
 
