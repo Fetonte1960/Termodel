@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.83 — Android visible version badge</title>
+  <title>Termodel Web v0.84 — Android immersive 3D viewer</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -1617,13 +1617,47 @@
       html.termodel-android #app {
         height: 100dvh;
         min-height: 100dvh;
-        grid-template-rows: 42px 40px minmax(0, 1fr) 48px;
+        grid-template-rows: minmax(0, 1fr);
       }
 
       html.termodel-android .workspace {
         min-height: 0;
-        height: auto;
+        height: 100%;
       }
+    }
+
+    /* Termodel Web v0.84 — Android immersivo.
+       Home Android = solo viewer 3D + palette Esplora/Help sovrapposta. */
+    html.termodel-android #app {
+      grid-template-rows: minmax(0, 1fr);
+    }
+
+    html.termodel-android .titlebar,
+    html.termodel-android .menubar,
+    html.termodel-android .tabs,
+    html.termodel-android .bottom-bar {
+      display: none !important;
+    }
+
+    html.termodel-android .workspace {
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    html.termodel-android #modelPage {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    html.termodel-android #modelPage > .viewport-status,
+    html.termodel-android #modelPage > .render-origin-badge,
+    html.termodel-android #modelPage > .axis,
+    html.termodel-android #modelPage > .view-cube,
+    html.termodel-android #modelPage > .web-filter-panel {
+      display: none !important;
     }
 
   </style>
@@ -1640,7 +1674,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.83</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.84</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -2150,6 +2184,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.83"></script>
+  <script type="module" src="./app.js?v=0.84"></script>
 </body>
 </html>
