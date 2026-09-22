@@ -23,3 +23,14 @@ Input associato:
 `../samples/GBXML-ROOM-2WINDOWS-001.xml`
 
 Il caso fissa già conteggi, riferimenti, superfici, volume e aree delle due finestre che il futuro adapter gbXML dovrà restituire.
+
+
+## Caso ombreggiamenti gbXML
+
+`GBXML-SHADING-001.md`
+
+Input:
+
+`../samples/GBXML-SHADING-001.xml`
+
+Questo caso è il gate dello studio di fattibilità per dimostrare che il Bridge può conservare e interpretare balconi/aggetti, setti verticali e ostruzioni esterne remote come geometrie gbXML, prima di qualunque conversione verso parametri CENED.
