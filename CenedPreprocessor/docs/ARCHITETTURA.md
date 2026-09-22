@@ -8,9 +8,11 @@ Dal punto di vista ARIA/CENED, la versione che integra realmente CENED+2 Motore 
 
 ```text
 Sorgenti dati
-(Termodel, formati standard, compilazione manuale)
         ↓
-IMPORT / NORMALIZZAZIONE
+coppia obbligatoria di ingresso
+gbXML + XML nazionale
+        ↓
+IMPORT / FUSIONE / NORMALIZZAZIONE
         ↓
 SPECIFICA INTERMEDIA CENED
 (tabellare, documentata, indipendente dalla UI)
@@ -28,21 +30,25 @@ ANTEPRIMA APE
 (non sostitutiva dell'APE ufficiale)
 ```
 
-## Due implementazioni
+## Fase implementativa corrente
 
-```text
-Specifica comune
-├── WebJS
-└── Desktop
-```
+Dal 22/09/2026 l'unica implementazione attiva è **WebJS**. La linea Desktop resta sospesa fino a nuova decisione esplicita.
 
-La versione Desktop è quella destinata al percorso di autorizzazione/certificazione. La versione WebJS resta parallela per sviluppo, verifica e dimostrazione salvo successive decisioni sul suo perimetro.
+## Contratto di ingresso duale
 
-## Regola di equivalenza
+Il Bridge richiede due file complementari:
 
-WebJS e Desktop non devono evolvere come due programmi indipendenti.
+- **gbXML**: fonte primaria per geometria, spazi, superfici, aperture, orientamenti, relazioni termiche e geometrie/ostruzioni di ombreggiamento quando disponibili;
+- **XML nazionale**: fonte complementare per dati generali/APE, codifiche e dati italiani specifici, dati impianto o altri campi che il gbXML non rappresenta con sufficiente completezza.
 
-Ogni funzione che trasforma dati deve essere descritta prima nella specifica comune e verificata con gli stessi casi prova e gli stessi risultati attesi.
+I due file vengono letti insieme e fusi nel modello intermedio.
+
+Regole:
+- geometria e cause fisiche → autorità gbXML;
+- dati specifici nazionali non presenti nel gbXML → autorità XML nazionale;
+- dati duplicati discordanti → segnalazione, nessuna correzione silenziosa;
+- risultati già presenti nell'XML nazionale → confronto, non sostituzione delle cause fisiche;
+- nessun editing tecnico nel Bridge: le correzioni si eseguono nel software sorgente e si riesportano i file.
 
 ## Interfaccia
 
