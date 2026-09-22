@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.0**  
+Versione documento: **1.1**  
 Aggiornamento: **22 settembre 2026**  
-Stato: **projectId-only implementato lato Service per progetto, model3d e persistenza corrente; frontend in adeguamento separato**
+Stato: **projectId-only implementato lato Service; operazioni Apri/Salva/Salva con nome assegnate al Service; frontend/mobile in adeguamento separato**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -417,6 +417,127 @@ aggiornare una diagnostica di errore separata, ma non deve sostituire
 ---
 
 > **Regola di prevalenza 2026-09-22:** qualunque riferimento storico a `calculationId` nelle note di implementazioni precedenti è superato. La nuova implementazione deve usare `projectId` come unico riferimento pubblico e persistente.
+
+## 2.6 Operazioni progetto: Apri, Salva, Salva con nome
+
+Decisione architetturale del **22 settembre 2026**.
+
+Nel funzionamento con Termodel.WebService, le operazioni di persistenza del
+progetto non devono essere realizzate dal frontend mediante accesso diretto al
+filesystem o download/upload usati come storage operativo.
+
+Le tre operazioni utente:
+
+```text
+Apri progetto
+Salva progetto
+Salva progetto con nome
+```
+
+sono responsabilità del **WebService**.
+
+Il frontend deve limitarsi a:
+- mostrare la UI di selezione/nome;
+- inviare al Service la richiesta;
+- ricevere il `TERMODEL-PROJECT-TEXT-V1` o l'esito dell'operazione;
+- mantenere in memoria lo stato della pagina.
+
+Il Service è responsabile di:
+- enumerare/selezionare i progetti disponibili sul proprio storage;
+- leggere il progetto richiesto;
+- scrivere il progetto corrente;
+- gestire nome e collocazione logica;
+- applicare controlli sul `projectId`;
+- impedire che due progetti indipendenti condividano accidentalmente la stessa
+  identità.
+
+### Apri progetto
+
+Nel profilo con Service, il progetto viene scelto tramite dati forniti dal
+Service e il file viene letto dal filesystem dal Service stesso.
+
+Il frontend non deve dipendere dal path fisico del server.
+
+Concettualmente:
+
+```text
+Frontend
+   ↓
+Apri progetto(projectId)
+   ↓
+WebService
+   ↓
+SavedProjects/{projectId}/project.tmdl
+   ↓
+TERMODEL-PROJECT-TEXT-V1
+   ↓
+Frontend
+```
+
+### Salva progetto
+
+`Salva progetto` mantiene lo stesso `projectId` e aggiorna il
+`TERMODEL-PROJECT-TEXT-V1` persistente del progetto.
+
+Il salvataggio del sorgente progetto e il calcolo degli artifact restano due
+operazioni distinte:
+
+```text
+Salva progetto
+    → aggiorna il progetto persistente
+
+Aggiorna Modello
+    → esegue Termodel.Core e aggiorna gli artifact
+```
+
+Se il progetto viene salvato dopo l'ultimo calcolo, gli artifact esistenti
+devono essere considerati **stale** fino al successivo `Aggiorna Modello`.
+Non devono essere presentati come corrispondenti al nuovo contenuto solo perché
+sono ancora presenti sul filesystem.
+
+### Salva progetto con nome
+
+`Salva progetto con nome` **conserva il projectId**.
+
+Serve a cambiare il nome leggibile e, quando verrà introdotta la gestione di
+cartelle logiche, eventualmente la collocazione mostrata nel ProjectBrowser.
+Non crea automaticamente una seconda identità di progetto.
+
+Un'eventuale futura operazione:
+
+```text
+Duplica come nuovo progetto
+```
+
+sarà distinta e dovrà richiedere un nuovo `projectId`.
+
+### Mobile senza WebService
+
+Per la versione mobile/serverless viene mantenuta, per questa fase, soltanto:
+
+```text
+Apri progetto
+```
+
+L'apertura locale è responsabilità dell'host/app mobile (ad esempio tramite
+file picker nativo) e non del JavaScript mediante accesso libero al filesystem.
+
+Nel profilo mobile senza Service non vengono esposte, per ora:
+
+```text
+Salva progetto
+Salva progetto con nome
+gestione catalogo/cartelle server
+```
+
+Questa limitazione riguarda la persistenza dei progetti e non implica che il
+motore locale o le altre funzioni mobile debbano usare il WebService.
+
+I nomi definitivi delle route HTTP per Apri/Salva/Salva con nome verranno
+fissati al momento dell'implementazione; il principio di responsabilità
+Service-vs-frontend definito qui è già vincolante.
+
+---
 
 ## 3. Operazione principale: AggiornaCalcolo
 
