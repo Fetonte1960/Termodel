@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns="urn:termodel:cened-bridge:completion:1.0"
+    targetNamespace="urn:termodel:cened-bridge:completion:1.0"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified"
+    version="1.0">
+
+  <xs:annotation>
+    <xs:documentation>
+      Termodel CENED Bridge Completion XML 1.0.
+      Sidecar opzionale destinato esclusivamente a dati mancanti o mapping
+      non determinabili con certezza da gbXML + XML nazionale.
+      Non sostituisce i formati sorgente e non autorizza duplicazioni.
+    </xs:documentation>
+  </xs:annotation>
+
+  <xs:simpleType name="SourceRoleType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="gbXML"/>
+      <xs:enumeration value="NationalXML"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ScopeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Project"/>
+      <xs:enumeration value="Building"/>
+      <xs:enumeration value="Zone"/>
+      <xs:enumeration value="Space"/>
+      <xs:enumeration value="Surface"/>
+      <xs:enumeration value="Opening"/>
+      <xs:enumeration value="ThermalBridge"/>
+      <xs:enumeration value="System"/>
+      <xs:enumeration value="Generator"/>
+      <xs:enumeration value="Other"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DataType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="string"/>
+      <xs:enumeration value="decimal"/>
+      <xs:enumeration value="integer"/>
+      <xs:enumeration value="boolean"/>
+      <xs:enumeration value="date"/>
+      <xs:enumeration value="code"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CompletionReasonType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="MissingInGbXML"/>
+      <xs:enumeration value="MissingInNationalXML"/>
+      <xs:enumeration value="MissingInBoth"/>
+      <xs:enumeration value="AmbiguousMapping"/>
+      <xs:enumeration value="CenedSpecific"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ProvenanceType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SourceSoftware"/>
+      <xs:enumeration value="ProjectMetadata"/>
+      <xs:enumeration value="UserDeclared"/>
+      <xs:enumeration value="OfficialSpecification"/>
+      <xs:enumeration value="ExternalDocument"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="MappingStatusType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Provisional"/>
+      <xs:enumeration value="Confirmed"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="BindingRelationType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SameEntity"/>
+      <xs:enumeration value="Hosts"/>
+      <xs:enumeration value="CorrespondsTo"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="InputReferenceType">
+    <xs:sequence>
+      <xs:element name="FileName" type="xs:string"/>
+      <xs:element name="Sha256" type="xs:string" minOccurs="0"/>
+      <xs:element name="FormatVersion" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BindingType">
+    <xs:sequence>
+      <xs:element name="Note" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+    <xs:attribute name="fromSource" type="SourceRoleType" use="required"/>
+    <xs:attribute name="fromRef" type="xs:string" use="required"/>
+    <xs:attribute name="toSource" type="SourceRoleType" use="required"/>
+    <xs:attribute name="toRef" type="xs:string" use="required"/>
+    <xs:attribute name="relation" type="BindingRelationType" use="required"/>
+    <xs:attribute name="status" type="MappingStatusType" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="CompletionFieldType">
+    <xs:sequence>
+      <xs:element name="Value" type="xs:string"/>
+      <xs:element name="Note" type="xs:string" minOccurs="0"/>
+      <xs:element name="Evidence" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+    <xs:attribute name="scopeType" type="ScopeType" use="required"/>
+    <xs:attribute name="scopeRef" type="xs:string" use="required"/>
+    <xs:attribute name="targetKey" type="xs:string" use="required"/>
+    <xs:attribute name="dataType" type="DataType" use="required"/>
+    <xs:attribute name="unit" type="xs:string" use="optional"/>
+    <xs:attribute name="reason" type="CompletionReasonType" use="required"/>
+    <xs:attribute name="provenance" type="ProvenanceType" use="required"/>
+    <xs:attribute name="status" type="MappingStatusType" use="required"/>
+  </xs:complexType>
+
+  <xs:element name="BridgeCompletion">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Header">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="ProjectKey" type="xs:string"/>
+              <xs:element name="TargetProfile" type="xs:string"/>
+              <xs:element name="TargetVersion" type="xs:string" minOccurs="0"/>
+              <xs:element name="Description" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="Inputs">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="GbXML" type="InputReferenceType"/>
+              <xs:element name="NationalXML" type="InputReferenceType"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="Bindings" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Binding" type="BindingType" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="CompletionFields" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Field" type="CompletionFieldType" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+
+      <xs:attribute name="version" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="1.0"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
