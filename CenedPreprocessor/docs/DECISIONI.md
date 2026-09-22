@@ -215,3 +215,22 @@ La fattibilità sarà considerata dimostrata sul dominio ombreggiamenti soltanto
 - estrarre distanze, profondità e quote necessarie al mapping CENED.
 
 Non è sufficiente leggere un fattore di ombreggiamento già calcolato dall'XML nazionale.
+
+
+## 2026-09-22 — D-0015 — Viewer 3D read-only come strumento di validazione
+
+La WebJS integra un viewer 3D derivato selettivamente dal renderer Three.js di Termodel Web.
+
+Il viewer ha funzione esclusivamente di **controllo e validazione** del modello importato e non modifica il principio di Bridge puro.
+
+Regole:
+- nessun CAD o editing geometrico;
+- nessuno snap o comando di disegno;
+- geometria 3D esclusivamente dal gbXML;
+- l'XML nazionale non viene usato per inventare coordinate, forme o ostruzioni mancanti;
+- superfici `Shade` visualizzate e classificabili come aggetti/balconi, setti verticali o ostruzioni remote;
+- selezione degli oggetti con visualizzazione di proprietà, associazioni e provenienza;
+- import gbXML e import XML nazionale sono indipendenti e non si sovrascrivono;
+- il viewer serve anche come gate umano per verificare che il parser abbia interpretato correttamente le cause geometriche dell'ombreggiamento.
+
+Il riuso da Termodel Web è limitato ai concetti generici del renderer browser: Three.js, OrbitControls, camera, fit scena, spigoli e raycasting.
