@@ -53,3 +53,29 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 **Fonti ufficiali verificate:** Condizioni d'uso CENED revisione 01/09/2026 e pagine ufficiali ARIA/CENED relative a CENED+2 Motore e ai Client di terze parti.
 
 **Codice applicativo:** nessuna modifica.
+
+
+## CENED-0003 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** studio di fattibilità in sola lettura per l'integrazione headless di CENED+2 Motore con Termodel.Core / Termodel.WebService mediante runner Java separato.
+
+**Vincoli:**
+- nessuna modifica a Termodel.Core, Termodel.WebService, frontend o `definizionedati.json`;
+- nessun JAR proprietario copiato o pubblicato nel repository;
+- nessuna decompilazione o riscrittura del motore proprietario;
+- nessuna dichiarazione di funzionamento headless senza prova reale;
+- runner Java, se successivamente autorizzato, separato dal Core C#;
+- percorsi locali del software CENED configurati esternamente;
+- distinguere evidenze documentali, analisi statica, prototipo, compilazione, esecuzione e validazione.
+
+**Studio richiesto:**
+1. dipendenze del motore;
+2. configurazione Spring richiesta;
+3. classi/API pubbliche utili;
+4. struttura XML input/output;
+5. schema del runner Java headless minimo;
+6. rischi tecnici e di licenza;
+7. modifiche minime future a Core/WebService;
+8. piano di prova reale successivo, non eseguito in questa commissione.
