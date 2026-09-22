@@ -235,7 +235,7 @@ Risultato:
   geometrico resta un'attività separata;
 - contratto projectId-only aggiornato a versione documento **1.0** nel commit
   `9c70c2b8b454b0d6ebe9a8276eff7cc6dacd6400`; le successive regole
-  Apri/Salva server-owned e mobile open-only sono registrate nel contratto **1.1**;
+  Apri/Salva server-owned e mobile open-only sono registrate nel contratto **1.1**; la successiva apertura esclusiva e il recovery dei lock impropri sono registrati nel contratto **1.2**;
 - commit tecnici principali:
   `f26de11c61ba2815a6ae9e7609e942ff6fb771b2`,
   `039f228039e85f79315b6126f84fe770f5c1f501`,
@@ -272,6 +272,33 @@ Registrato nel contratto condiviso v1.1:
 - nessuna modifica a frontend, Core, Library o `definizionedati.json` in
   questa registrazione.
 
+### DECISIONE 2026-09-22 — cartella progetto, apertura esclusiva e recovery lock
+
+Registrato nel contratto condiviso v1.2:
+- tutti i file persistenti del progetto restano reperibili sotto
+  `SavedProjects/{projectId}/`; eventuali workspace/staging sono tecnici,
+  temporanei e non costituiscono una seconda copia autorevole;
+- nel profilo Web/PC con Service, lo stesso `projectId` può essere aperto in
+  modifica da una sola pagina/sessione alla volta;
+- una seconda apertura concorrente dello stesso progetto deve essere rifiutata
+  con HTTP `423 Locked` e messaggio utente `Il progetto è già in uso.`;
+- progetti diversi possono restare aperti contemporaneamente;
+- l'apertura può restituire un `projectLockToken` opaco e temporaneo, che non
+  entra nel manifest e non costituisce un secondo identificatore persistente;
+- Salva, Salva con nome, Aggiorna Modello e Chiudi progetto dovranno essere
+  autorizzati soltanto dalla sessione che possiede il lock valido;
+- il lock deve essere una lease rinnovabile con heartbeat/ultima attività,
+  non un flag permanente senza scadenza;
+- lock scaduti o abbandonati devono essere recuperabili automaticamente dal
+  Service; un riavvio del Service deve poter riconoscere lock non più validi
+  senza alterare i file del progetto;
+- nei casi dubbi è prevista una futura funzione controllata `Sblocca progetto`;
+  se il lock appare ancora vivo/recente, lo sblocco forzato richiede conferma
+  esplicita;
+- lo sblocco può rimuovere soltanto lock e workspace temporanei abbandonati,
+  mai `project.tmdl`, artifact validi o log correnti;
+- questa è una decisione di contratto; le API di apertura/heartbeat/chiusura
+  e sblocco non sono ancora dichiarate implementate.
 ### INCARICO 2026-09-21 — Invarianza Polig3D e TermodelWebModel v3 completo
 Stato: ESEGUITO
 
