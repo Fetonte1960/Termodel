@@ -88,7 +88,8 @@ CenedPreprocessor/
 ├── tests/
 │   └── README.md
 ├── GoldenResults/
-│   └── README.md
+│   ├── README.md
+│   └── BLUMATICA-XML-001.md
 └── samples/
     └── README.md
 ```
@@ -161,7 +162,21 @@ Contiene:
 
 Regola: per future analisi funzionali del Client partire da questo file prima di eseguire nuove ricerche Web.
 
-## 10. Prossimo passo
+## 10. Golden Reference XML nazionale
+
+Acquisito come riferimento di progetto **BLUMATICA-XML-001**, derivato dal file `output.xml` fornito dall'utente e dichiarato importato con successo in Blumatica.
+
+Caratteristiche:
+- XML ben formato;
+- struttura principale `<documento><ape2015>...<datiCalcolo>...`;
+- riferimento per l'output XML nazionale/interoperabile della WebJS;
+- SHA-256 originale: `4988a0700ad1aeb60ef6906235411a176baee514f7a902533dfcc1ad86980647`;
+- file grezzo non pubblicato nel repository perché contiene dati personali reali e il repository è pubblico;
+- metadati e struttura registrati in `GoldenResults/BLUMATICA-XML-001.md`.
+
+Regola: la compatibilità con Blumatica e la struttura XML nazionale restano concetti distinti dalla futura integrazione specifica con CENED+2 Motore.
+
+## 11. Prossimo passo
 
 Proseguire esclusivamente sulla **versione WebJS** come ambiente di studio e discussione del Software Bridge.
 
