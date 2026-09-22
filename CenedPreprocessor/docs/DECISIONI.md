@@ -61,3 +61,18 @@ L'anteprima APE prodotta dal Bridge è uno strumento di controllo e stampa preli
 Prima del rilascio dell'autorizzazione ARIA/O.d.A. il prodotto può essere descritto come **progettato per l'integrazione con CENED+2 Motore** o **in fase di autorizzazione** quando tale fase sarà effettivamente avviata.
 
 Non deve essere presentato come Client CENED+2 autorizzato/accreditato né come integrazione già autorizzata fino al rilascio formale dell'autorizzazione.
+
+
+## 2026-09-22 — D-0008 — Fase attiva esclusivamente WebJS
+
+Da questa data il progetto entra in una fase di sviluppo e discussione **esclusivamente WebJS**.
+
+Regole:
+- `src/WebJS/` è l'unica implementazione attiva;
+- `src/Desktop/` resta sospesa e non deve essere modificata o sviluppata fino a nuova decisione esplicita;
+- il percorso Desktop/certificazione resta documentato come obiettivo futuro, ma non guida le attività implementative correnti;
+- specifiche, modelli dati, riferimenti CENED, test e Golden Results devono essere progettati in modo riutilizzabile, senza obbligare a implementare contemporaneamente una versione Desktop;
+- nessuna integrazione operativa con runner Java, Termodel.Core o Termodel.WebService viene avviata nell'ambito di questa fase salvo nuova autorizzazione esplicita;
+- la WebJS è usata come ambiente di studio, prototipazione, verifica dell'interfaccia, discussione del mapping dati e consolidamento del prodotto.
+
+Questa decisione sospende operativamente la precedente D-0002 relativa allo sviluppo parallelo di WebJS e Desktop, senza cancellarla dallo storico.
