@@ -465,3 +465,23 @@ dimostrare che il formato gbXML può trasportare le cause geometriche dell'ombre
 - URL previsto: `https://www.termodel.it/cened-bridge/?v=0.1.2`;
 - verifica HTTP esterna non disponibile dagli strumenti della sessione;
 - nessuna modifica a Desktop, Core, Service o `definizionedati.json`.
+
+
+## CENED-0016 — 2026-09-22
+
+**Stato:** COMMISSIONATO
+
+**Oggetto:** consolidare nel progetto i file di prova e caricarli automaticamente nella WebJS, senza richiedere ogni volta il caricamento manuale.
+
+**Requisiti:**
+- usare come fixture geometrica consolidata `samples/GBXML-SHADING-001.xml`;
+- derivare dal Golden Reference esterno `BLUMATICA-XML-001` una fixture XML nazionale sanificata, mantenendo i dati tecnici necessari ai test ma rimuovendo/sostituendo dati personali e identificativi;
+- non pubblicare il file originale con dati personali;
+- caricare automaticamente entrambe le fixture all'avvio della WebJS quando è disponibile la modalità prova;
+- il viewer 3D deve aprirsi con geometria già disponibile, senza messaggio “Importa un file gbXML”;
+- mantenere disponibili i pulsanti di import manuale per prove con file diversi;
+- distinguere chiaramente in UI i file `fixture consolidata` dagli eventuali file importati manualmente;
+- incrementare versione WebJS e aggiornare caption;
+- aggiornare test, Summary e documentazione;
+- deploy su `main/docs/cened-bridge/`;
+- nessuna modifica a Desktop, Core, Service o `definizionedati.json`.
