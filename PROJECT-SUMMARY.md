@@ -1049,7 +1049,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.89
+Termodel Web v0.90
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -1161,6 +1161,52 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### MyHome3D Android — icona brand colorata v0.90
+
+Stato: **IMPLEMENTATO SU main** — 22 settembre 2026.
+
+La v0.90 migliora il branding della versione Android/ProjectBrowser senza
+modificare il comportamento desktop o la logica CAD/Service.
+
+Nelle due palette mobili:
+
+```text
+viewer 3D
+CAD 2D ProjectBrowser
+```
+
+il pulsante/help che mostra `MyHome3D v. 90` presenta ora, immediatamente
+accanto al nome, una piccola icona casa bianca su riquadro arrotondato a
+gradiente azzurro → viola → fucsia.
+
+L'icona:
+
+- è realizzata interamente con HTML/CSS;
+- non usa immagini o asset esterni;
+- mantiene nitidezza sui display ad alta densità;
+- non modifica la funzione del pulsante help;
+- è presente sia nella home 3D sia nel CAD mobile, mantenendo identità
+  visiva coerente fra le due viste.
+
+File modificati:
+
+```text
+docs/termodel-ui-demo/app.js
+docs/termodel-ui-demo/index.html
+```
+
+Commit frontend v0.90:
+
+```text
+70910536be4120fb15ea68c28172146eabdab601  Add colorful MyHome3D mobile icon v0.90
+99dea263b73e34daf17c6cc76b747c46aff42786  Bump Termodel Web mobile branding to v0.90
+c52d439aa82a56960bc74a8babe0e629dcd35413  Publish Termodel Web v0.90 mobile brand icon
+```
+
+Verifica statica: versione `APP_VERSION=0.90`, markup icona presente nelle
+palette Android 3D e CAD, cache-busting `app.js?v=0.90` e titolo pagina v0.90.
+Resta il collaudo visivo sul dispositivo Android reale.
 
 ### ProjectBrowser Android — help contestuale CAD 2D v0.89
 
