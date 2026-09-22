@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BridgeCompletion
+    xmlns="urn:termodel:cened-bridge:completion:1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:termodel:cened-bridge:completion:1.0 ../spec/bridge-completion-1.0.xsd"
+    version="1.0">
+
+  <Header>
+    <ProjectKey>CENED-BRIDGE-DEMO-001</ProjectKey>
+    <TargetProfile>CENED+2 Motore</TargetProfile>
+    <Description>Sample del sidecar di completamento. I targetKey PROVISIONAL.* non rappresentano campi ufficiali CENED.</Description>
+  </Header>
+
+  <Inputs>
+    <GbXML>
+      <FileName>GBXML-SHADING-001.xml</FileName>
+      <FormatVersion>8.01</FormatVersion>
+    </GbXML>
+    <NationalXML>
+      <FileName>BLUMATICA-XML-001-SANITIZED.xml</FileName>
+      <FormatVersion>APE 12.00 / datiCalcolo 5.00</FormatVersion>
+    </NationalXML>
+  </Inputs>
+
+  <Bindings>
+    <Binding
+        id="BIND-001"
+        fromSource="gbXML"
+        fromRef="Window-South-01"
+        toSource="NationalXML"
+        toRef="FN0001"
+        relation="SameEntity"
+        status="Provisional">
+      <Note>Associazione dimostrativa: deve essere confermata dal futuro algoritmo/mapping del caso reale.</Note>
+    </Binding>
+  </Bindings>
+
+  <CompletionFields>
+    <Field
+        id="FIELD-001"
+        scopeType="Project"
+        scopeRef="CENED-BRIDGE-DEMO-001"
+        targetKey="PROVISIONAL.CENED.Project.CompletionExample"
+        dataType="code"
+        reason="CenedSpecific"
+        provenance="ProjectMetadata"
+        status="Provisional">
+      <Value>DEMO-NOT-FOR-MOTORE</Value>
+      <Note>Campo dimostrativo per validare lo schema. Non corrisponde a un requisito ufficiale CENED finché non viene mappato dalla specifica Motore.</Note>
+    </Field>
+  </CompletionFields>
+</BridgeCompletion>
