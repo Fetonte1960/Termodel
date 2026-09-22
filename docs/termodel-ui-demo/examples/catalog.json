@@ -5,7 +5,7 @@
       "id": "appartamento",
       "name": "Appartamento",
       "description": "Primo esempio esplorabile MyHome3D",
-      "model3d": "./TermodelWebModel.json",
+      "geometry": "./examples/appartamento.svg",
       "default": true
     }
   ]
