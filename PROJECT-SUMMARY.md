@@ -1049,7 +1049,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.91
+Termodel Web v0.92
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -1161,6 +1161,55 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### ProjectBrowser Android — correzione attivazione esempio v0.92
+
+Stato: **IMPLEMENTATO SU main** — 22 settembre 2026.
+
+Corretto il primo comportamento reale della combo `Esempio` su Android.
+
+Problema osservato sul dispositivo:
+
+```text
+combo visibile
+un solo esempio già preselezionato
+tap su esempio
+→ nessun evento change
+→ nessun caricamento esplicito
+```
+
+Correzione:
+
+- la combo parte ora da `Scegli esempio…`, così la selezione dell'utente
+  genera sempre l'attivazione del loader;
+- il primo esempio è rinominato **Appartamento**;
+- il catalogo usa ora `id: appartamento`;
+- selezionando `Appartamento` viene caricato il relativo `model3d`, il menu
+  viene chiuso e la vista viene ricentrata;
+- finché non è selezionato un esempio completo, `Disegno unifilare` resta
+  disabilitato; l'esempio corrente dispone per ora del solo 3D;
+- se il viewer è ancora impegnato nel caricamento iniziale, il frontend
+  segnala esplicitamente di riprovare invece di ignorare silenziosamente il
+  comando.
+
+Versione visibile:
+
+```text
+Termodel Web v0.92
+MyHome3D v. 92
+```
+
+Verifica statica:
+
+- sintassi JavaScript: OK;
+- catalogo JSON: valido;
+- voce `Appartamento`: presente;
+- placeholder `Scegli esempio…`: presente;
+- cache-busting `app.js?v=0.92`: presente.
+
+Resta da verificare sul dispositivo Android reale che la selezione
+`Scegli esempio… → Appartamento` provochi il caricamento/ricentratura del
+modello.
 
 ### ProjectBrowser Android — selettore esempi esplorabili v0.91
 
