@@ -588,7 +588,7 @@ Principio architetturale:
 ```text
 stesso progetto Termodel
 stesso TERMODEL-PROJECT-TEXT-V1
-stessi snapshot calculationId / artifact
+stesso projectId / artifact correnti
             ↓
       modalità di fruizione
        /              \
@@ -687,7 +687,7 @@ POST /api/calculations
         ↓
 elaborazione Core riuscita
         ↓
-calculationId + artifact dello stesso snapshot
+workspace corrente del projectId aggiornato
         ↓
 copia tecnica TERMODEL-PROJECT-TEXT-V1
 salvata dal WebService come .tmdl
@@ -709,11 +709,9 @@ Regole:
   `TERMODEL-PROJECT-TEXT-V1`;
 - la copia `.tmdl` salvata dal WebService deve provenire da una
   **elaborazione riuscita** di `POST /api/calculations`;
-- il `calculationId` serve a garantire la provenienza comune degli artifact
-  durante la produzione/verifica dell'esempio, ma **non** è l'identificatore
-  permanente del progetto pubblicato;
-- `model3d` e gli altri elaborati devono derivare dallo **stesso snapshot**
-  del progetto e non devono essere ricostruiti da una demo precedente;
+- il `projectId` identifica stabilmente il progetto e il relativo workspace;
+- `model3d` e gli altri elaborati devono derivare dall'**ultima elaborazione
+  riuscita dello stesso projectId** e non devono essere ricostruiti da una demo precedente;
 - gli sfondi locali restano risorse frontend: non devono essere inviati al
   Service. Possono essere caricati separatamente nella chat AI e reinseriti
   durante il consolidamento; se il progetto locale consegnato all'AI contiene
@@ -758,7 +756,7 @@ Prima di consolidarlo come esempio definitivo deve superare realmente:
 ```text
 Aggiorna Modello
 → HTTP 200
-→ calculationId
+→ projectId confermato
 → model3d ricevuto
 → .tmdl tecnico salvato dal Service
 → verifica CAD 2D / sfondo / pianta pulita
@@ -775,33 +773,33 @@ consolidamento autorevole del primo esempio finché il calcolo non termina con
 successo.
 
 
-### Decisione — projectId persistente e consolidamento per progetto
+### Decisione definitiva — projectId unico e risultati sovrascritti
 
-Decisione architetturale registrata il **2026-09-22**.
+Decisione architetturale aggiornata il **2026-09-22**.
 
-Per evitare una crescita permanente del filesystem con una directory per ogni
-`Aggiorna Modello`, viene introdotto un identificatore persistente del progetto:
+Il precedente modello che distingueva `projectId` e `calculationId` è stato
+abbandonato prima dell'implementazione definitiva.
+
+Da questo momento il riferimento operativo unico è:
 
 ```text
 projectId
 ```
 
-`projectId` e `calculationId` hanno responsabilità diverse:
+Il `projectId`:
 
-```text
-projectId
-    → identità stabile del progetto
-    → resta uguale fra elaborazioni successive
+- identifica stabilmente il progetto;
+- viene assegnato dal WebService tramite `POST /api/projects/allocate-id`;
+- viene consolidato come proprietà top-level di `manifest.json`;
+- è usato per salvataggio del progetto, artifact, log e lettura dei risultati;
+- non cambia a ogni `Aggiorna Modello`.
 
-calculationId
-    → identità della singola elaborazione/snapshot
-    → cambia a ogni Aggiorna Modello
-```
+Il concetto `calculationId` è **superato** e non deve guidare nuove
+implementazioni. Eventuali riferimenti ancora presenti nelle parti storiche
+del Summary descrivono versioni precedenti e sono da considerare sostituiti
+da questa decisione.
 
-Il `projectId` deve essere assegnato dal WebService e consolidato nel progetto
-come proprietà top-level di `manifest.json`. Il frontend non deve inventarlo.
-
-Nuovo flusso concordato alla prima comunicazione con il Service:
+Flusso:
 
 ```text
 progetto aperto/creato
@@ -812,21 +810,20 @@ manifest.projectId presente?
         ↓
 POST /api/projects/allocate-id
         ↓
-riceve projectId univoco
-        ↓
-frontend consolida projectId in manifest.json
-        ↓
-ricostruisce TERMODEL-PROJECT-TEXT-V1
+frontend consolida projectId nel manifest
         ↓
 POST /api/calculations
+        ↓
+SavedProjects/{projectId}/
+        ↓
+project.tmdl + artifact + log correnti
 ```
 
-Il Service deve garantire che l'ID assegnato non confligga con projectId già
-presenti e deve riservarlo in modo sicuro anche in caso di richieste
-contemporanee.
+Ogni nuova elaborazione riuscita dello stesso progetto **ricopre i valori
+precedenti** nella stessa cartella. Non viene creato automaticamente uno
+storico per ogni elaborazione.
 
-La persistenza operativa passa quindi da una ipotesi per-elaborazione a una
-struttura per-progetto:
+Struttura prevista:
 
 ```text
 SavedProjects/
@@ -834,24 +831,24 @@ SavedProjects/
     ├── project.tmdl
     ├── artifacts/
     │   ├── model3d.json
-    │   └── ... altri artifact
+    │   └── ... altri artifact correnti
     └── logs/
         └── ... diagnostica/log correnti
 ```
 
-Ogni successivo `Aggiorna Modello` dello stesso progetto aggiorna il contenuto
-della stessa cartella con il più recente risultato riuscito. Non si conserva
-automaticamente una directory permanente per ogni `calculationId`.
+Un'elaborazione fallita non deve distruggere l'ultimo stato valido.
 
-Questa scelta è particolarmente importante per gli esempi consolidati
-ProjectBrowser/MyHome3D: il progetto può essere riconosciuto stabilmente dal
-`projectId`, mentre gli artifact pubblicati rappresentano l'ultima elaborazione
-scelta come valida per il consolidamento.
+Le letture degli artifact useranno il `projectId`, per esempio:
 
-Stato: **decisione registrata, implementazione server commissionata ma non
-ancora dichiarata eseguita**. Il frontend dovrà essere adeguato successivamente
-per chiamare `POST /api/projects/allocate-id` solo quando il progetto non
-contiene ancora `manifest.projectId`.
+```http
+GET /api/projects/{projectId}/artifacts/model3d
+```
+
+e non dovranno rieseguire il calcolo.
+
+Stato: **decisione registrata e implementazione Server/Core commissionata,
+non ancora dichiarata eseguita**. Il frontend dovrà essere adeguato per
+allocare il projectId soltanto quando manca nel manifest.
 
 ## 3. Responsabilità e confini
 
