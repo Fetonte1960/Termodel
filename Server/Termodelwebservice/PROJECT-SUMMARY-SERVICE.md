@@ -84,6 +84,47 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-22 — gestione progetti server e apertura esclusiva
+Stato: COMMISSIONATO
+
+Commissionato:
+- implementare lato Termodel.WebService le operazioni server per elenco/apertura,
+  Salva, Salva con nome, heartbeat, chiusura e sblocco controllato dei progetti;
+- i file persistenti del progetto devono restare sotto
+  `SavedProjects/{projectId}/`; il frontend non deve conoscere il path fisico;
+- impedire la doppia apertura in modifica dello stesso projectId con lock
+  esclusivo e risposta HTTP 423 `Il progetto è già in uso.`;
+- consentire contemporaneamente l'apertura di projectId differenti;
+- usare un token di lock temporaneo, non persistente nel manifest e non
+  assimilabile a calculationId;
+- implementare lease/heartbeat e recovery dei lock impropri dovuti a chiusura
+  browser, crash, rete o riavvio Service;
+- prevedere sblocco controllato: automatico per lock stale, esplicito/forzato
+  solo su richiesta confermata per lock ancora vivo;
+- proteggere Salva, Salva con nome e Aggiorna Modello con il lock del progetto;
+- `Salva con nome` conserva projectId e modifica soltanto il nome leggibile;
+- mantenere separati Salva e Aggiorna Modello, marcando gli artifact come
+  stale dopo un salvataggio non seguito da ricalcolo;
+- non modificare frontend, Termodel.Core, Library o `definizionedati.json`
+  durante questo incarico server.
+
+Criteri di completamento:
+- build Release della soluzione con 0 errori;
+- test HTTP reale di due aperture concorrenti dello stesso progetto con una
+  sola riuscita e seconda risposta 423;
+- test di apertura simultanea di due projectId differenti;
+- test Salva e Salva con nome con verifica del file `project.tmdl` su disco;
+- test che Salva con nome conservi il projectId;
+- test heartbeat e chiusura/rilascio lock;
+- test recovery di lock stale/improprio e riapertura successiva;
+- test sblocco controllato e protezione dei file validi;
+- test che `POST /api/calculations` rifiuti un token non valido e accetti il
+  possessore del lock;
+- aggiornare contratto condiviso con endpoint definitivi e questa stessa voce
+  a `Stato: ESEGUITO` soltanto dopo i test reali.
+
+Risultato:
+- non ancora implementato.
 ### INCARICO 2026-09-22 — projectId unico, persistenza corrente e rimozione calculationId
 Stato: ESEGUITO
 
