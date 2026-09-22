@@ -233,8 +233,9 @@ Risultato:
 - **confronto con riferimento Desktop:** non applicabile alla persistenza;
   il motore `GeneraModello` non è stato modificato e il confronto golden
   geometrico resta un'attività separata;
-- contratto condiviso aggiornato a versione documento **1.0** nel commit
-  `9c70c2b8b454b0d6ebe9a8276eff7cc6dacd6400`;
+- contratto projectId-only aggiornato a versione documento **1.0** nel commit
+  `9c70c2b8b454b0d6ebe9a8276eff7cc6dacd6400`; le successive regole
+  Apri/Salva server-owned e mobile open-only sono registrate nel contratto **1.1**;
 - commit tecnici principali:
   `f26de11c61ba2815a6ae9e7609e942ff6fb771b2`,
   `039f228039e85f79315b6126f84fe770f5c1f501`,
@@ -244,6 +245,32 @@ Risultato:
   `211c47b4e00a8dacc1ea851d0425f51f564cafcf`,
   `fe1dc32909d7124b31bec7247084724b8cb49d5f`,
   `8e29e9a2f988a7d0ff24f111727f89f2aee75c07`.
+
+### DECISIONE 2026-09-22 — Apri/Salva progetto gestiti dal Service; mobile open-only
+
+Registrato nel contratto condiviso v1.1:
+- nel profilo Web/PC con Termodel.WebService, `Apri progetto`,
+  `Salva progetto` e `Salva progetto con nome` sono operazioni di
+  persistenza del **Service**, non accessi diretti al filesystem dal frontend;
+- il frontend presenta selezione/nome e scambia il
+  `TERMODEL-PROJECT-TEXT-V1`, mentre il Service enumera, legge e scrive i
+  progetti sul proprio storage;
+- `Salva progetto` conserva il `projectId`;
+- `Salva progetto con nome` conserva anch'esso il `projectId` e modifica il
+  nome/collocazione logica; non equivale a duplicare un progetto;
+- una futura `Duplica come nuovo progetto` dovrà ottenere un nuovo
+  `projectId`;
+- salvataggio del progetto e `Aggiorna Modello` restano operazioni distinte:
+  dopo un salvataggio successivo all'ultimo calcolo gli artifact precedenti
+  devono essere considerati **stale** finché non vengono rigenerati;
+- nella versione mobile/serverless, per questa fase, resta soltanto
+  `Apri progetto` tramite host/app e file picker locale; `Salva progetto`,
+  `Salva con nome` e catalogo/cartelle server non sono esposti;
+- i nomi definitivi delle nuove route HTTP Apri/Salva/Salva con nome non sono
+  ancora fissati: questa voce registra il contratto di responsabilità, non
+  dichiara tali API implementate;
+- nessuna modifica a frontend, Core, Library o `definizionedati.json` in
+  questa registrazione.
 
 ### INCARICO 2026-09-21 — Invarianza Polig3D e TermodelWebModel v3 completo
 Stato: ESEGUITO
