@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-21**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`bd4dccaf4c19671674d3f7a01cd56ba3c1e7934d` — `Use overlay filters on smartphones`  
+`8e27a0281156787ef7521fe2088b750210caa3da` — `Publish Termodel Web v0.83 Android version badge`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -689,7 +689,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.82
+Termodel Web v0.83
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -801,6 +801,21 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+La v0.83 rende immediatamente visibile su Android la versione caricata:
+il pulsante help della palette `Esplora`, prima mostrato come `?`, visualizza
+ora `? NN`, dove `NN` sono le ultime due cifre della versione Web
+(esempio: `? 83`). Il valore deriva automaticamente dalla costante
+`APP_VERSION`, quindi continuerà ad aggiornarsi con i successivi bump di
+versione finché questa convenzione resterà attiva. Nessuna funzione help o
+Service viene modificata.
+
+Commit v0.83:
+
+```text
+3c31219f537706c31ebd9eea7bdd19ac912c5760  Show Android version beside help button
+8e27a0281156787ef7521fe2088b750210caa3da  Publish Termodel Web v0.83 Android version badge
+```
 
 La v0.82 sostituisce per Android la dipendenza dall'altezza CSS con una
 correzione runtime basata sulla viewport reale:
