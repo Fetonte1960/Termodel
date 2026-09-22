@@ -195,7 +195,7 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 
 ## CENED-0008 — 2026-09-22
 
-**Stato:** COMMISSIONATO
+**Stato:** ESEGUITO
 
 **Oggetto:** acquisire come riferimento di progetto l'anteprima APE prodotta da Blumatica, fornita in formato RTF, da usare come esempio di stampa/fac-simile per la futura WebJS.
 
@@ -207,3 +207,14 @@ Regola: ogni incarico viene registrato prima dell'esecuzione come `COMMISSIONATO
 - considerare il documento come riferimento di presentazione e contenuto, non come specifica grafica vincolante;
 - mantenere distinta l'anteprima APE non ufficiale dall'APE ufficiale depositato;
 - non copiare automaticamente grafica, loghi o layout proprietari di Blumatica.
+
+
+**Risultato CENED-0008:**
+- acquisito il file RTF di anteprima APE prodotto da Blumatica;
+- SHA-256 registrato: `59e0300d1210a92cd31d5fe4e1e730797fa6d9ff0df6aabb61b41872de982e5f`;
+- creato `GoldenResults/BLUMATICA-APE-PREVIEW-001.md`;
+- registrata la decisione D-0011;
+- documentate sezioni, ordine logico e ruolo del riferimento;
+- stabilito che la futura WebJS userà una grafica originale e la dicitura `ANTEPRIMA APE — NON UFFICIALE`;
+- il file originale non è stato pubblicato perché contiene dati personali reali;
+- nessun codice WebJS, Desktop, Core, Service o `definizionedati.json` modificato.
