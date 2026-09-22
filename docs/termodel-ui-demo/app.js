@@ -48,7 +48,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.93';
+const APP_VERSION = '0.94';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -626,6 +626,26 @@ async function loadProjectBrowserExamples() {
           model3d: String(item.model3d || '').trim(),
           project: String(item.project || '').trim(),
           geometry: String(item.geometry || '').trim(),
+          background:
+            item.background && typeof item.background === 'object'
+              ? {
+                  url: String(item.background.url || '').trim(),
+                  id: String(item.background.id || 'BG001').trim(),
+                  plane: String(item.background.plane || '').trim(),
+                  layer: String(item.background.layer || '').trim(),
+                  fileName: String(item.background.fileName || '').trim(),
+                  kind: String(item.background.kind || 'raster').trim(),
+                  mimeType: String(item.background.mimeType || 'image/jpeg').trim(),
+                  x: Number(item.background.x),
+                  y: Number(item.background.y),
+                  width: Number(item.background.width),
+                  height: Number(item.background.height),
+                  opacity: Number(item.background.opacity),
+                  preserveAspectRatio: String(item.background.preserveAspectRatio || 'xMidYMid meet').trim(),
+                  coverageReference: item.background.coverageReference === true,
+                  grayscale: item.background.grayscale === true
+                }
+              : null,
           default: item.default === true
         }))
         .filter(item =>
@@ -711,6 +731,86 @@ async function populateAndroidExploreExamples(select, singleLineButton) {
     select.appendChild(failed);
     select.disabled = true;
   }
+}
+
+async function projectBrowserFetchDataUrl(path) {
+  const url = projectBrowserResourceUrl(path);
+  if (!url) throw new Error('Risorsa sfondo esempio non definita.');
+
+  const response = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
+  if (!response.ok)
+    throw new Error('Sfondo esempio HTTP ' + response.status);
+
+  const blob = await response.blob();
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Impossibile leggere lo sfondo dell’esempio.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function attachProjectBrowserBackground(svgText, background) {
+  if (!background?.url) return String(svgText || '');
+
+  const dataUrl = await projectBrowserFetchDataUrl(background.url);
+  if (!/^data:image\//i.test(dataUrl))
+    throw new Error('Lo sfondo dell’esempio non è un’immagine valida.');
+
+  const doc = new DOMParser().parseFromString(String(svgText || ''), 'image/svg+xml');
+  if (doc.querySelector('parsererror'))
+    throw new Error('Geometria esempio non valida durante l’associazione dello sfondo.');
+
+  const root = doc.documentElement;
+  let group = Array.from(root.children).find(
+    element => element.localName === 'g' && element.id === 'termodel-backgrounds'
+  );
+
+  if (!group) {
+    group = doc.createElementNS(SVG_NS, 'g');
+    group.setAttribute('id', 'termodel-backgrounds');
+    group.setAttribute('data-termodel-accessorio', 'SFONDI');
+    root.insertBefore(group, root.firstChild);
+  }
+
+  Array.from(group.children)
+    .filter(element =>
+      element.localName === 'image' &&
+      cadText(element.getAttribute('data-termodel-piano')) === background.plane
+    )
+    .forEach(element => element.remove());
+
+  const image = doc.createElementNS(SVG_NS, 'image');
+  image.setAttribute('data-termodel-sfondo', '1');
+  image.setAttribute('data-termodel-background-id', background.id || 'BG001');
+  image.setAttribute('data-termodel-piano', background.plane || 'Unico');
+  image.setAttribute('data-termodel-layer', background.layer || background.plane || 'Unico');
+  image.setAttribute('data-termodel-sfondo-tipo', background.kind || 'raster');
+  image.setAttribute('data-termodel-nome-file', background.fileName || 'sfondo.jpg');
+
+  const numeric = (name, value) => {
+    if (Number.isFinite(value)) image.setAttribute(name, String(value));
+  };
+  numeric('x', background.x);
+  numeric('y', background.y);
+  numeric('width', background.width);
+  numeric('height', background.height);
+  numeric('opacity', Number.isFinite(background.opacity) ? background.opacity : 0.72);
+
+  image.setAttribute(
+    'preserveAspectRatio',
+    background.preserveAspectRatio || 'xMidYMid meet'
+  );
+  if (background.coverageReference)
+    image.setAttribute('data-termodel-copertura-riferimento', '1');
+  if (background.grayscale) {
+    const opacity = Number.isFinite(background.opacity) ? background.opacity : 0.72;
+    image.setAttribute('style', 'filter:grayscale(1);opacity:' + opacity);
+  }
+  image.setAttribute('href', dataUrl);
+  group.appendChild(image);
+
+  return new XMLSerializer().serializeToString(root);
 }
 
 function ensureAndroidExampleProgress() {
@@ -811,13 +911,21 @@ async function loadProjectBrowserExample(exampleId, singleLineButton) {
       if (!geometryResponse.ok)
         throw new Error('Geometria esempio HTTP ' + geometryResponse.status);
 
-      const svgText = await geometryResponse.text();
+      let svgText = await geometryResponse.text();
 
-      setAndroidExampleProgress('Sto preparando il progetto esplorabile…', 48);
+      if (example.background?.url) {
+        setAndroidExampleProgress('Sto caricando lo sfondo del piano…', 38);
+        svgText = await attachProjectBrowserBackground(svgText, example.background);
+      }
+
+      setAndroidExampleProgress('Sto preparando il progetto esplorabile…', 50);
       await createStructuredProjectFromSvg(svgText);
       currentProjectFileName = example.name + '.termodel.txt';
 
-      setAndroidExampleProgress('Sto generando il 3D dall’unifilare…', 68);
+      if (cadShowBackground)
+        cadShowBackground.checked = true;
+
+      setAndroidExampleProgress('Sto generando il 3D dall’unifilare…', 70);
       if (!processSvgText(svgText))
         throw new Error('Impossibile generare l’anteprima 3D dell’esempio.');
 
