@@ -32,126 +32,184 @@ jobs:
 
       - name: Build
         run: dotnet build Termodel.WebService.sln --configuration Release --no-restore
-      - name: Smoke test HTTP legacy and calculation snapshot
+      - name: Smoke test HTTP projectId persistence
         shell: pwsh
         run: |
-          $env:ASPNETCORE_URLS = "http://127.0.0.1:5080"
+          $ErrorActionPreference = "Stop"
+          $base = "http://127.0.0.1:5080"
+          $env:ASPNETCORE_URLS = $base
           $env:TERMODEL_SAVED_PROJECTS_DIR = Join-Path $env:RUNNER_TEMP ("TermodelSavedProjects-" + [guid]::NewGuid().ToString("N"))
           New-Item -ItemType Directory -Path $env:TERMODEL_SAVED_PROJECTS_DIR -Force | Out-Null
 
-          $service = Start-Process dotnet -ArgumentList @(
-            "run",
-            "--project", "src/Termodel.WebService/Termodel.WebService.csproj",
-            "--configuration", "Release",
-            "--no-build",
-            "--no-launch-profile"
-          ) -PassThru
-
-          try {
+          function Start-ServiceProcess {
+            $p = Start-Process dotnet -ArgumentList @("run","--project","src/Termodel.WebService/Termodel.WebService.csproj","--configuration","Release","--no-build","--no-launch-profile") -PassThru
             $ready = $false
-            for ($attempt = 0; $attempt -lt 30; $attempt++) {
+            for ($attempt = 0; $attempt -lt 40; $attempt++) {
               try {
-                $health = Invoke-RestMethod -Uri "http://127.0.0.1:5080/health" -Method Get
-                if ($health.status -eq "ok") {
-                  $ready = $true
-                  break
-                }
+                $health = Invoke-RestMethod -Uri "$base/health" -Method Get
+                if ($health.status -eq "ok") { $ready = $true; break }
               } catch {
-                Start-Sleep -Seconds 1
+                Start-Sleep -Milliseconds 500
               }
             }
-
             if (-not $ready) {
+              if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force }
               throw "Termodel.WebService non ha risposto a /health."
             }
+            return $p
+          }
 
-            $project = Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/projects/new" -Method Post -ContentType "application/json" -Body "{}"
-
-            # Endpoint legacy mantenuto compatibile.
-            $legacyModel = Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/model/3d" -Method Post -ContentType "text/plain; charset=utf-8" -Body $project
-            if ($legacyModel.format -ne "TermodelWebModel") { throw "Formato legacy model3d inatteso: $($legacyModel.format)" }
-            if ($legacyModel.version -ne 3) { throw "Versione legacy model3d inattesa: $($legacyModel.version)" }
-            if ($legacyModel.coordinateSystem -ne "Z-up") { throw "Sistema coordinate legacy inatteso: $($legacyModel.coordinateSystem)" }
-            if ($legacyModel.primitiveCount -ne 0) { throw "Il ProgettoVuoto legacy deve produrre 0 primitive, ottenute: $($legacyModel.primitiveCount)" }
-
-            # Nuovo ciclo AggiornaCalcolo.
-            $calculation = Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body $project
-            if ($calculation.contractVersion -ne "TERMODEL-FRONT-SERVICE-V1") { throw "Contract version inattesa: $($calculation.contractVersion)" }
-            if ($calculation.status -ne "completed") { throw "Stato calcolo inatteso: $($calculation.status)" }
-            if (-not $calculation.calculationId) { throw "calculationId mancante." }
-            if (-not $calculation.savedProject.fileName) { throw "savedProject.fileName mancante." }
-            if ($calculation.savedProject.fileName -notlike "*$($calculation.calculationId)*") {
-              throw "Il nome del progetto salvato non contiene calculationId."
-            }
-
-            $savedProjectPath = Join-Path $env:TERMODEL_SAVED_PROJECTS_DIR $calculation.savedProject.fileName
-            if (-not (Test-Path -LiteralPath $savedProjectPath -PathType Leaf)) {
-              throw "Il progetto salvato non esiste su disco: $savedProjectPath"
-            }
-
-            $savedProjectText = [System.IO.File]::ReadAllText(
-              $savedProjectPath,
-              [System.Text.UTF8Encoding]::new($false)
-            )
-            if ($savedProjectText -cne [string]$project) {
-              throw "Il contenuto del progetto salvato differisce dal projectText ricevuto."
-            }
-            if (-not $savedProjectText.StartsWith("[TERMODEL-PROJECT-TEXT-V1]")) {
-              throw "Il progetto salvato non contiene TERMODEL-PROJECT-TEXT-V1."
-            }
-
-            $artifact = @($calculation.artifacts | Where-Object { $_.name -eq "model3d" })
-            if ($artifact.Count -ne 1) { throw "Manifest model3d non valido." }
-            if ($artifact[0].contentType -ne "application/json") { throw "Content-Type manifest model3d inatteso: $($artifact[0].contentType)" }
-
-            $artifactUrl = "http://127.0.0.1:5080$($artifact[0].href)"
-            $firstResponse = Invoke-WebRequest -Uri $artifactUrl -Method Get
-            $secondResponse = Invoke-WebRequest -Uri $artifactUrl -Method Get
-
-            if ($firstResponse.Content -ne $secondResponse.Content) {
-              throw "Lo stesso calculationId non ha restituito lo stesso snapshot model3d."
-            }
-
-            $snapshotModel = $firstResponse.Content | ConvertFrom-Json
-            if ($snapshotModel.format -ne "TermodelWebModel") { throw "Formato snapshot model3d inatteso: $($snapshotModel.format)" }
-            if ($snapshotModel.version -ne 3) { throw "Versione snapshot model3d inattesa: $($snapshotModel.version)" }
-            if ($snapshotModel.coordinateSystem -ne "Z-up") { throw "Sistema coordinate snapshot inatteso: $($snapshotModel.coordinateSystem)" }
-            if ($snapshotModel.primitiveCount -ne 0) { throw "Il ProgettoVuoto snapshot deve produrre 0 primitive, ottenute: $($snapshotModel.primitiveCount)" }
-
-            # Due richieste riuscite devono produrre due calculationId e due file distinti.
-            $calculation2 = Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body $project
-            if (-not $calculation2.calculationId) { throw "Secondo calculationId mancante." }
-            if ($calculation2.calculationId -eq $calculation.calculationId) { throw "Due calcoli hanno restituito lo stesso calculationId." }
-            if (-not $calculation2.savedProject.fileName) { throw "Secondo savedProject.fileName mancante." }
-            if ($calculation2.savedProject.fileName -eq $calculation.savedProject.fileName) { throw "Due calcoli hanno prodotto lo stesso file progetto." }
-            if ($calculation2.savedProject.fileName -notlike "*$($calculation2.calculationId)*") {
-              throw "Il secondo nome progetto non contiene calculationId."
-            }
-
-            $savedProjectPath2 = Join-Path $env:TERMODEL_SAVED_PROJECTS_DIR $calculation2.savedProject.fileName
-            if (-not (Test-Path -LiteralPath $savedProjectPath2 -PathType Leaf)) {
-              throw "Il secondo progetto salvato non esiste su disco."
-            }
-            if ([System.IO.File]::ReadAllText($savedProjectPath2, [System.Text.UTF8Encoding]::new($false)) -cne [string]$project) {
-              throw "Il contenuto del secondo progetto salvato differisce dal projectText."
-            }
-
-            # Una richiesta non valida non deve creare un progetto consolidabile.
-            $countBeforeInvalid = @(Get-ChildItem -LiteralPath $env:TERMODEL_SAVED_PROJECTS_DIR -Filter "*.tmdl" -File).Count
-            $invalidResponse = Invoke-WebRequest -Uri "http://127.0.0.1:5080/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body "not-a-termodel-project" -SkipHttpErrorCheck
-            if ($invalidResponse.StatusCode -ne 422) {
-              throw "Una richiesta non valida deve restituire 422, ottenuto: $($invalidResponse.StatusCode)"
-            }
-            $countAfterInvalid = @(Get-ChildItem -LiteralPath $env:TERMODEL_SAVED_PROJECTS_DIR -Filter "*.tmdl" -File).Count
-            if ($countAfterInvalid -ne $countBeforeInvalid) {
-              throw "La richiesta non valida ha creato un file progetto."
+          function Stop-ServiceProcess($p) {
+            if ($p -and -not $p.HasExited) {
+              Stop-Process -Id $p.Id -Force
+              $p.WaitForExit(5000) | Out-Null
             }
           }
+
+          function Set-ProjectManifest([string]$projectText, [string]$projectId, [string]$projectName) {
+            $normalized = $projectText.Replace([char]13 + [char]10, [char]10).Replace([char]13, [char]10)
+            $begin = "---BEGIN:manifest.json---"
+            $end = "---END:manifest.json---"
+            $beginIndex = $normalized.IndexOf($begin, [System.StringComparison]::Ordinal)
+            if ($beginIndex -lt 0) { throw "manifest.json BEGIN non trovato." }
+            $contentStart = $beginIndex + $begin.Length
+            if ($contentStart -lt $normalized.Length -and $normalized[$contentStart] -eq [char]10) { $contentStart++ }
+            $endIndex = $normalized.IndexOf($end, $contentStart, [System.StringComparison]::Ordinal)
+            if ($endIndex -lt 0) { throw "manifest.json END non trovato." }
+            $manifestText = $normalized.Substring($contentStart, $endIndex - $contentStart).TrimEnd([char]10)
+            $manifest = $manifestText | ConvertFrom-Json
+            $manifest | Add-Member -NotePropertyName projectId -NotePropertyValue $projectId -Force
+            $manifest.projectName = $projectName
+            $newManifest = $manifest | ConvertTo-Json -Depth 100
+            return $normalized.Substring(0, $contentStart) + $newManifest + [char]10 + $normalized.Substring($endIndex)
+          }
+
+          function Post-Calculation([string]$projectText) {
+            return Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body $projectText
+          }
+
+          function Get-ProjectDirectories {
+            return @(Get-ChildItem -LiteralPath $env:TERMODEL_SAVED_PROJECTS_DIR -Directory | Where-Object { $_.Name -match "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" })
+          }
+
+          $service = $null
+          try {
+            $service = Start-ServiceProcess
+
+            $projectBase = Invoke-RestMethod -Uri "$base/api/projects/new" -Method Post -ContentType "application/json" -Body "{}"
+            if (-not ([string]$projectBase).StartsWith("[TERMODEL-PROJECT-TEXT-V1]")) { throw "Nuovo progetto non valido." }
+
+            $legacyModel = Invoke-RestMethod -Uri "$base/api/model/3d" -Method Post -ContentType "text/plain; charset=utf-8" -Body $projectBase
+            if ($legacyModel.format -ne "TermodelWebModel" -or $legacyModel.version -ne 3 -or $legacyModel.coordinateSystem -ne "Z-up") { throw "Endpoint legacy model3d non compatibile." }
+
+            $missingId = Invoke-WebRequest -Uri "$base/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body $projectBase -SkipHttpErrorCheck
+            if ($missingId.StatusCode -ne 422) { throw "Un progetto senza projectId deve restituire 422." }
+
+            $allocatedIds = @(1..12 | ForEach-Object -Parallel { (Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/projects/allocate-id" -Method Post).projectId } -ThrottleLimit 12)
+            if ($allocatedIds.Count -ne 12) { throw "Numero projectId allocati inatteso." }
+            if (@($allocatedIds | Sort-Object -Unique).Count -ne 12) { throw "allocate-id ha prodotto duplicati." }
+            foreach ($id in $allocatedIds) {
+              $parsed = [guid]::Empty
+              if (-not [guid]::TryParse([string]$id, [ref]$parsed)) { throw "projectId non GUID: $id" }
+            }
+
+            $projectIdA = [string]$allocatedIds[0]
+            $projectIdB = [string]$allocatedIds[1]
+
+            $unreservedId = [guid]::NewGuid().ToString("D")
+            $unreservedProject = Set-ProjectManifest $projectBase $unreservedId "Non riservato"
+            $unreservedResponse = Invoke-WebRequest -Uri "$base/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body $unreservedProject -SkipHttpErrorCheck
+            if ($unreservedResponse.StatusCode -ne 422) { throw "Un projectId non riservato deve restituire 422." }
+
+            $projectA1 = Set-ProjectManifest $projectBase $projectIdA "Progetto A V1"
+            $calcA1 = Post-Calculation $projectA1
+            if ($calcA1.projectId -ne $projectIdA -or $calcA1.status -ne "completed") { throw "Calcolo A V1 non valido." }
+            if ($calcA1.PSObject.Properties["calculationId"]) { throw "La response contiene ancora calculationId." }
+            if ($calcA1.savedProject.fileName -ne "project.tmdl") { throw "savedProject.fileName inatteso." }
+
+            $hrefA = "/api/projects/$projectIdA/artifacts/model3d"
+            $artifactA = @($calcA1.artifacts | Where-Object { $_.name -eq "model3d" })
+            if ($artifactA.Count -ne 1 -or $artifactA[0].href -ne $hrefA) { throw "Manifest model3d A non valido." }
+
+            $dirA = Join-Path $env:TERMODEL_SAVED_PROJECTS_DIR $projectIdA
+            $projectPathA = Join-Path $dirA "project.tmdl"
+            $modelPathA = Join-Path $dirA "artifacts/model3d.json"
+            $diagnosticsPathA = Join-Path $dirA "logs/diagnostics.txt"
+            $logPathA = Join-Path $dirA "logs/calculation.log"
+            foreach ($file in @($projectPathA,$modelPathA,$diagnosticsPathA,$logPathA)) { if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "File A V1 mancante: $file" } }
+            if ([System.IO.File]::ReadAllText($projectPathA, [System.Text.UTF8Encoding]::new($false)) -cne $projectA1) { throw "project.tmdl A V1 differisce dal payload." }
+
+            $modelA1 = (Invoke-WebRequest -Uri "$base$hrefA" -Method Get).Content
+            if (($modelA1 | ConvertFrom-Json).format -ne "TermodelWebModel") { throw "GET model3d A V1 non valido." }
+
+            $projectHashA1 = (Get-FileHash -LiteralPath $projectPathA -Algorithm SHA256).Hash
+            $modelHashA1 = (Get-FileHash -LiteralPath $modelPathA -Algorithm SHA256).Hash
+            $logHashA1 = (Get-FileHash -LiteralPath $logPathA -Algorithm SHA256).Hash
+
+            Start-Sleep -Milliseconds 20
+            $projectA2 = Set-ProjectManifest $projectBase $projectIdA "Progetto A V2"
+            $calcA2 = Post-Calculation $projectA2
+            if ($calcA2.projectId -ne $projectIdA -or $calcA2.PSObject.Properties["calculationId"]) { throw "Calcolo A V2 ha cambiato identità." }
+
+            $dirsAfterA2 = Get-ProjectDirectories
+            if ($dirsAfterA2.Count -ne 1 -or $dirsAfterA2[0].Name -ne $projectIdA) { throw "A deve avere una sola cartella corrente." }
+
+            $savedA2 = [System.IO.File]::ReadAllText($projectPathA, [System.Text.UTF8Encoding]::new($false))
+            if ($savedA2 -cne $projectA2 -or $savedA2 -notmatch [regex]::Escape($projectIdA)) { throw "project.tmdl A V2 non consolidato." }
+
+            $projectHashA2 = (Get-FileHash -LiteralPath $projectPathA -Algorithm SHA256).Hash
+            $modelHashA2 = (Get-FileHash -LiteralPath $modelPathA -Algorithm SHA256).Hash
+            $logHashA2 = (Get-FileHash -LiteralPath $logPathA -Algorithm SHA256).Hash
+            if ($projectHashA2 -eq $projectHashA1) { throw "project.tmdl A non sostituito." }
+            if ($modelHashA2 -eq $modelHashA1) { throw "model3d.json A non sostituito." }
+            if ($logHashA2 -eq $logHashA1) { throw "calculation.log A non sostituito." }
+
+            $stale = @(Get-ChildItem -LiteralPath $env:TERMODEL_SAVED_PROJECTS_DIR -Directory | Where-Object { $_.Name -like ".staging-*" -or $_.Name -like ".backup-*" })
+            if ($stale.Count -ne 0) { throw "Sono rimaste directory staging/backup." }
+
+            $beforeFailure = @{}
+            foreach ($pair in @(@("project",$projectPathA),@("model",$modelPathA),@("diagnostics",$diagnosticsPathA),@("log",$logPathA))) { $beforeFailure[$pair[0]] = (Get-FileHash -LiteralPath $pair[1] -Algorithm SHA256).Hash }
+            $projectAFailed = $projectA2.Replace('data-termodel-units="cm"', 'data-termodel-units="mm"')
+            if ($projectAFailed -ceq $projectA2) { throw "Caso fallito A non costruito." }
+            $failed = Invoke-WebRequest -Uri "$base/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body $projectAFailed -SkipHttpErrorCheck
+            if ($failed.StatusCode -ne 422) { throw "Il caso fallito A deve restituire 422." }
+            $afterFailure = @{}
+            foreach ($pair in @(@("project",$projectPathA),@("model",$modelPathA),@("diagnostics",$diagnosticsPathA),@("log",$logPathA))) { $afterFailure[$pair[0]] = (Get-FileHash -LiteralPath $pair[1] -Algorithm SHA256).Hash }
+            foreach ($key in $beforeFailure.Keys) { if ($beforeFailure[$key] -ne $afterFailure[$key]) { throw "Il fallimento ha modificato lo stato valido A: $key" } }
+
+            $projectB1 = Set-ProjectManifest $projectBase $projectIdB "Progetto B V1"
+            $calcB1 = Post-Calculation $projectB1
+            if ($calcB1.projectId -ne $projectIdB) { throw "Calcolo B non valido." }
+            $dirB = Join-Path $env:TERMODEL_SAVED_PROJECTS_DIR $projectIdB
+            $projectPathB = Join-Path $dirB "project.tmdl"
+            $modelPathB = Join-Path $dirB "artifacts/model3d.json"
+            if (-not (Test-Path -LiteralPath $projectPathB) -or -not (Test-Path -LiteralPath $modelPathB)) { throw "Workspace B incompleto." }
+
+            $dirsAfterB = @(Get-ProjectDirectories | Sort-Object Name)
+            $expected = @($projectIdA,$projectIdB) | Sort-Object
+            if ($dirsAfterB.Count -ne 2 -or $dirsAfterB[0].Name -ne $expected[0] -or $dirsAfterB[1].Name -ne $expected[1]) { throw "Isolamento A/B non valido." }
+
+            $modelA2BeforeRestart = (Invoke-WebRequest -Uri "$base$hrefA" -Method Get).Content
+            $hrefB = "/api/projects/$projectIdB/artifacts/model3d"
+            $modelB1BeforeRestart = (Invoke-WebRequest -Uri "$base$hrefB" -Method Get).Content
+
+            $oldRoute = Invoke-WebRequest -Uri "$base/api/calculations/$projectIdA/artifacts/model3d" -Method Get -SkipHttpErrorCheck
+            if ($oldRoute.StatusCode -ne 404) { throw "La vecchia route per calculationId è ancora attiva." }
+
+            Stop-ServiceProcess $service
+            $service = $null
+            $service = Start-ServiceProcess
+
+            $modelA2AfterRestart = (Invoke-WebRequest -Uri "$base$hrefA" -Method Get).Content
+            $modelB1AfterRestart = (Invoke-WebRequest -Uri "$base$hrefB" -Method Get).Content
+            if ($modelA2AfterRestart -cne $modelA2BeforeRestart) { throw "Artifact A non persistito dopo restart." }
+            if ($modelB1AfterRestart -cne $modelB1BeforeRestart) { throw "Artifact B non persistito dopo restart." }
+
+            Write-Host "PROJECTID_SMOKE_OK"
+            Write-Host "projectIdA=$projectIdA"
+            Write-Host "projectIdB=$projectIdB"
+          }
           finally {
-            if ($service -and -not $service.HasExited) {
-              Stop-Process -Id $service.Id -Force
-            }
-            if ($env:TERMODEL_SAVED_PROJECTS_DIR -and (Test-Path -LiteralPath $env:TERMODEL_SAVED_PROJECTS_DIR)) {
-              Remove-Item -LiteralPath $env:TERMODEL_SAVED_PROJECTS_DIR -Recurse -Force
-            }
+            Stop-ServiceProcess $service
+            if ($env:TERMODEL_SAVED_PROJECTS_DIR -and (Test-Path -LiteralPath $env:TERMODEL_SAVED_PROJECTS_DIR)) { Remove-Item -LiteralPath $env:TERMODEL_SAVED_PROJECTS_DIR -Recurse -Force }
           }
