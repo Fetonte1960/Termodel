@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-22**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`062b1b50e5de1edb837b62b9daf709a9a7b8361c` — `Publish Termodel Web v0.86 Android CAD Explore panel`  
+`0ffc26d31ace94da729f2c1c10bfa4b4ac1e88f8` — `Publish Termodel Web v0.87 Android CAD touch navigation`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -866,7 +866,7 @@ Questo è l'indirizzo Web di riferimento da usare per aprire e provare Termodel 
 Versione corrente su `main`:
 
 ```text
-Termodel Web v0.86
+Termodel Web v0.87
 ```
 
 Commit frontend di riferimento per la v0.80:
@@ -978,6 +978,67 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### ProjectBrowser Android — pan e pinch touch CAD v0.87
+
+Stato: **IMPLEMENTATO SU main** — 22 settembre 2026.
+
+Verifica effettuata sul CAD 2D esistente:
+
+- desktop disponeva già di navigazione corretta con rotella = zoom sul cursore;
+- desktop disponeva già di tasto centrale + trascinamento = pan;
+- non esisteva invece una navigazione touch dedicata;
+- su touch i `pointerdown` potevano arrivare agli handler di editing, quindi
+  un gesto sul disegno poteva essere interpretato come selezione/spostamento
+  di geometria invece che come navigazione.
+
+La v0.87 introduce per il ProjectBrowser Android:
+
+```text
+1 dito   → pan
+2 dita   → pinch zoom
+```
+
+Dettagli:
+
+- i gesture handler touch sono installati in fase capture e hanno precedenza
+  sugli handler CAD di editing;
+- il pan modifica il `viewBox` SVG in coordinate CAD;
+- il pinch mantiene il centro del gesto come punto di riferimento e modifica
+  lo stesso `viewBox`;
+- il rapporto di zoom resta limitato agli stessi estremi già usati dal CAD
+  desktop;
+- il canvas SVG Android usa `touch-action: none` per evitare che il browser
+  trasformi il gesto in scroll/zoom pagina;
+- gli eventi touch sono confinati ad Android;
+- mouse, rotella, tasto centrale e comportamento desktop restano invariati;
+- la priorità touch evita spostamenti accidentali delle pareti durante
+  l'esplorazione ProjectBrowser.
+
+Versione visualizzata: `? 87`.
+
+Commit frontend v0.87:
+
+```text
+c0c881c1adbcfc897dd35c134efd748b0e0a7bf3
+Add touch pan and pinch zoom to Android CAD v0.87
+
+0ffc26d31ace94da729f2c1c10bfa4b4ac1e88f8
+Publish Termodel Web v0.87 Android CAD touch navigation
+```
+
+Verifiche statiche:
+
+- sintassi JavaScript: OK;
+- touch state e gestione multi-pointer: presenti;
+- pan a un dito: presente;
+- pinch a due dita: presente;
+- handler installati in capture prima dell'editing: OK;
+- `touch-action: none` sul canvas SVG Android: OK;
+- desktop non modificato;
+- cache-busting `app.js?v=0.87`: OK.
+
+Resta il collaudo gestuale su dispositivo reale Android.
 
 ### ProjectBrowser Android — pannello Esplora CAD v0.86
 
