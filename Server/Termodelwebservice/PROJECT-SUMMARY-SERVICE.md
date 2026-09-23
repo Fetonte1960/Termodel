@@ -140,7 +140,7 @@ Risultato:
   `Fix FIN numeric validation in Termodel Core`.
 
 ### INCARICO 2026-09-23 — esposizione TermodelLog per progetto
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - verificare il comportamento del logging del Desktop attraverso i sorgenti disponibili in `SorgentiTermodel/Library` e confrontarlo con l'adattatore headless corrente;
@@ -160,7 +160,64 @@ Criteri di completamento:
 - aggiornare contratto condiviso, README e questa voce a `Stato: ESEGUITO` soltanto dopo build e smoke riusciti.
 
 Risultato:
-- non ancora implementato.
+- **verifica Desktop:** `SorgentiTermodel/Library/MainWindow.xaml.cs` chiama
+  `TermodelLog.InitializeLog()` all'avvio e nuovamente prima di
+  `Genera_modello()`; i sorgenti del motore usano diffusamente
+  `WriteLog`, `LogOperation`, `LogError`, `LogContesto` e categorie
+  specifiche. La documentazione Desktop identifica inoltre il file
+  `Documenti\\Termodel\\TermodelLog.md` come log da analizzare;
+- **limite di confronto:** l'implementazione sorgente Desktop della classe
+  `TermodelLog` non è presente in `SorgentiTermodel/Library`: sono presenti
+  i chiamanti, ma non il file che definisce persistenza e configurazione delle
+  categorie. Non è quindi corretto dichiarare ancora equivalenza completa
+  delle categorie verbose;
+- **Core headless:** aggiunto `TermodelLog.InitializeLog()` come equivalente
+  per-request di `Reset()`; `GeneraModello` lo chiama all'inizio di ogni
+  elaborazione. `WriteLog`, `LogOperation` e `LogError` confluiscono
+  nello stesso buffer `AsyncLocal`, isolato dalla richiesta corrente;
+- `IsEnabled(...)` resta intenzionalmente `false` per i blocchi di debug
+  condizionati (`colmi`, `spezza`, ecc.) finché non viene acquisita la
+  configurazione Desktop autorevole; le normali chiamate di log restano attive;
+- **persistenza:** `ProjectStore` scrive ora
+  `SavedProjects/{projectId}/logs/TermodelLog.md` durante il publish
+  transazionale dello stesso workspace; `diagnostics.txt` conserva lo stesso
+  contenuto per retrocompatibilità, mentre `calculation.log` resta il log
+  sintetico con projectId, data, stato e conteggi;
+- **endpoint implementato:**
+  `GET /api/projects/{projectId}/logs/termodel`; restituisce
+  `text/markdown; charset=utf-8`, nome logico `TermodelLog.md` e header
+  `X-Termodel-Artifact-Stale`; 404 se il progetto non dispone ancora del log;
+- il GET legge esclusivamente il file persistito e non rilancia
+  `GeneraModello`;
+- un Salva/Salva con nome successivo mantiene il log dell'ultimo calcolo valido
+  ma lo espone come stale; un nuovo calcolo riuscito lo sostituisce insieme al
+  workspace corrente;
+- una elaborazione fallita non pubblica lo staging e quindi conserva il
+  `TermodelLog.md` dell'ultimo calcolo riuscito;
+- README, contratto condiviso **v1.5** e `TERMODEL-SYNC.md` aggiornati;
+- **compilato:** GitHub Actions `TermodelService Build` run **#91**, commit
+  `72910f25ed86e6aeacb09b69bc88aa2f25768302`: step Build completato con
+  successo;
+- **eseguito/testato:** nello stesso run #91 lo smoke HTTP
+  `Smoke test HTTP project storage and exclusive locks` è completato con
+  successo e verifica: file fisico `TermodelLog.md` presente e non vuoto,
+  uguaglianza con `diagnostics.txt`, GET 200 con contenuto identico,
+  Content-Type markdown, stale=false subito dopo calcolo, 404 su log
+  inesistente, calcolo volutamente invalido HTTP 422 senza modifica SHA-256 del
+  log, stale=true dopo Salva con nome e lettura identica dopo riavvio del
+  Service; anche lo smoke feedback GitHub è rimasto verde;
+- **frontend:** non modificato;
+- **Library Desktop:** non modificata;
+- **definizionedati.json:** non modificato;
+- commit principali:
+  `3804348899c9af20448570532fd88ee8fb25f6d8`,
+  `437e0d5e70c2292e7fdabe1b50994a3f58266e1f`,
+  `deca7c459d3c4b0b6c1a9f724f58cf0477f14194`,
+  `3f5f9a45bf69158895cb10bd817930bc03f7938a`,
+  `c486e6d25db71e87b75fa6ca9eac09aad5371fa7`,
+  `72910f25ed86e6aeacb09b69bc88aa2f25768302`,
+  `9f1db6bf227549d699fc89e4234e735955b0ddd6`,
+  `3e45258f546d48bfa00aacabddd060f3d2d51ec9`.
 
 ### INCARICO 2026-09-23 — inoltro suggerimenti utenti a GitHub
 Stato: ESEGUITO
@@ -1203,6 +1260,7 @@ POST /api/projects/{projectId}/unlock
 POST /api/model/3d
 POST /api/calculations
 GET  /api/projects/{projectId}/artifacts/model3d
+GET  /api/projects/{projectId}/logs/termodel
 POST /api/feedback
 ```
 
