@@ -1402,16 +1402,87 @@ modulo Tubi universale.
 Questa scelta evita di introdurre ora un grafo specifico pannelli che sarebbe
 poi duplicato o sostituito dal motore generalista.
 
-### Limite intenzionale della milestone
+### Limite intenzionale della milestone 15.3 — aggiornato dalla 15.4
 
-Non viene dichiarato integrato il generatore grafico storico delle spirali.
-Il motore Desktop/GPT corrente espone ancora `PassoTubi=0,30 m` come costante
-compile-time e usa `locale.xml/locale.svg` tramite working directory. Usarlo
-direttamente nel Service renderebbe non autorevole
-`Reti.PassoSelezionatoMm` e introdurrebbe dipendenze file-based globali.
+La milestone 15.3 non aveva ancora integrato il generatore grafico. La
+milestone 15.4 lo attiva **esclusivamente con il default corrente
+`PassoTubi=0,30 m`**, coerente con `RAD-DEFAULT`.
 
-La direzione corretta è rendere parametrico/headless il **motore condiviso**
-prima di collegarlo al Service, senza copiarlo in un secondo motore.
+La generalizzazione del passo resta distinta: il motore condiviso dovrà
+diventare parametrico/headless prima di considerare autorevoli nell'esecutivo
+passi diversi da 300 mm.
+
+## 15.4 Milestone — esecutivo pannelli SVG/DXF
+
+Aggiornamento 23 settembre 2026 — **IMPLEMENTATO E TESTATO**.
+
+È stato attivato il percorso grafico pannelli usando il motore Desktop
+`SpiraliGPT` corrente con il default storico:
+
+```text
+PassoTubi = 0,30 m
+```
+
+coerente con la rete precompilata `RAD-DEFAULT`.
+
+Per ridurre la duplicazione funzionale:
+
+- i cinque sorgenti `SpiraliGPT` necessari sono copie temporanee
+  **byte-identical** della Library Desktop;
+- sono tracciati in
+  `Termodel.Core/CopiedFromTermodel/TERMODEL-SYNC.md`;
+- il generatore costruisce un solo
+  `RadiantExecutiveDrawing` neutro;
+- lo stesso modello viene serializzato in SVG e DXF.
+
+Artifact:
+
+```text
+artifacts/pannelli-esecutivo.svg
+artifacts/pannelli-esecutivo.dxf
+```
+
+Endpoint:
+
+```http
+GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-svg
+GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
+```
+
+Contenuto grafico equivalente della milestone:
+
+```text
+<Piano>_Edificio_Output
+<Piano>_PannelliMandata_Output
+<Piano>_PannelliRitorno_Output
+<Piano>_NumeriCircuiti_Output
+```
+
+L'esecutivo segue il comportamento di `IoPannelli.EsecutivoPannelli` nel
+perimetro corrente. Il grafo non viene ricreato: in assenza di
+`retePannelli.xml`, disposizione sul collettore e disegno del collettore
+restano no-op, come previsto dalla decisione Tubi universale.
+
+Il documento pannelli generato da `LeggiDxf` viene trasferito
+esplicitamente nel `Model3DGenerationResult`; l'esecutivo non dipende quindi
+dalla propagazione di stato AsyncLocal oltre il confine async.
+
+Verifica automatica: `TermodelService Build` run **#195**
+(run id `35878924866`) ha completato con successo:
+
+- Build Release;
+- smoke storico projectId/lock;
+- smoke GitHub feedback;
+- smoke dedicato `RADIANT_EXECUTIVE_SVG_DXF_SMOKE_OK`;
+- generazione di un locale sintetico 4×4 m con un ingresso Tubo;
+- presenza di entrambi gli artifact persistiti;
+- GET senza ricalcolo e `X-Termodel-Artifact-Stale=false`;
+- presenza dei layer edificio/mandata/ritorno;
+- uguaglianza del numero di primitive tecniche fra SVG e DXF.
+
+L'equivalenza richiesta è grafica/strutturale: i due formati derivano dallo
+stesso insieme di primitive, pur usando convenzioni di rappresentazione
+diverse (per esempio asse Y SVG).
 
 ## 16. Decisioni consolidate
 
@@ -1431,7 +1502,7 @@ prima di collegarlo al Service, senza copiarlo in un secondo motore.
 - Nessuna dipendenza necessaria da AutoCAD.
 - Il solver deve lavorare su grafo/rete neutri, non direttamente su DXF.
 - I risultati grafici sono derivati e separati dall'algoritmo idraulico.
-- `Aggiorna Modello` pubblica già il primo artifact idraulico `pannelli.json`; sizing, collettori, perdite concentrate e spirali restano estensioni successive.
+- `Aggiorna Modello` pubblica `pannelli.json` e, con il default corrente, anche l'esecutivo pannelli SVG/DXF; sizing, collettori e perdite concentrate restano alla fase Tubi universale.
 
 ## 17. Questioni aperte
 
@@ -1465,12 +1536,11 @@ test sintetico Darcy:            SI — golden numerico con tolleranze
 validazione passo archivio:      SI — 333 mm non ammesso -> HTTP 422
 regression test Pascal:          NO
 confronto Golden storico:        NO
-spirali grafiche Service:        NO, motore condiviso da rendere parametrico
+spirali grafiche Service:        SI — default corrente 0,30 m, esecutivo SVG/DXF
+esecutivo SVG/DXF equivalente:   SI — smoke run #195
 ```
 
-Il prossimo salto funzionale del ramo pannelli non è il grafo: è rendere il
-generatore spirali condiviso parametrico/headless, così che
-`Reti.PassoSelezionatoMm` governi realmente anche la geometria generata.
+Il prossimo salto funzionale del ramo pannelli non è il grafo: l'esecutivo con default 0,30 m è attivo; resta da rendere il generatore spirali condiviso parametrico/headless affinché anche passi diversi da 300 mm possano governare autorevolmente la geometria generata.
 Il **grafo, i collettori, il percorso sfavorito, le perdite concentrate e
 l'equilibratura sono esplicitamente rimandati alla fase Tubi universale**.
 Il kernel Darcy per singolo circuito è già verificato e resta riusabile.
