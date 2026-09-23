@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — modalità Edificio/Rete nel pannello CAD 2D
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - modificare esplicitamente il frontend `docs/termodel-ui-demo` nel pannello
@@ -108,17 +108,44 @@ Commissionato:
 - non modificare Service API, `TERMODEL-PROJECT-TEXT-V1`,
   `definizionedati.json`, Termodel.Core o Library Desktop.
 
-Criteri di completamento:
-- toolbar CAD 2D con combo Modalità visibile;
-- modalità Rete mostra il combo Rete popolato dall'archivio `Reti`;
-- modalità Edificio conserva il comportamento CAD corrente;
-- combo Piano resta utilizzabile in entrambe le modalità;
-- cambio progetto/archivio riallinea la selezione Rete senza errori;
-- verifica sintassi JavaScript e deploy GitHub Pages;
-- Summary aggiornato allo stato reale.
-
 Risultato:
-- implementazione in corso.
+- frontend portato a **v1.03**;
+- aggiunto nella toolbar principale del CAD 2D il combo
+  `Modalità = Edificio | Rete`, con `Edificio` come default;
+- in modalità `Rete` compare il combo `Rete`, alimentato direttamente da
+  `getArchivioWebRecords('Reti')`;
+- il valore selezionato è `Reti.Codice`; la voce mostrata è
+  `Codice — Descrizione` e le righe con `Attivo=NO` sono marcate
+  `non attiva`;
+- la scelta iniziale privilegia la prima rete attiva; se la rete precedentemente
+  selezionata viene rimossa dall'archivio, la selezione viene riallineata alla
+  prima rete attiva disponibile oppure alla prima riga;
+- archivio `Reti` vuoto: il combo mostra `Nessuna rete in archivio` ed è
+  disabilitato senza generare errori;
+- tornando a `Edificio`, etichetta e combo Rete vengono nascosti e
+  disabilitati;
+- il combo `Piano` resta sempre visibile e attivo: il cambio piano modifica
+  soltanto `cadToolbarState.piano` e conserva `modalita` e
+  `rete`, quindi la stessa rete resta selezionata passando da un piano
+  all'altro;
+- l'evento esistente `termodel:archives-updated` richiama
+  `cadRefreshToolbarControls()`, quindi il combo Rete viene riallineato dopo
+  le modifiche tramite ArchivioWeb;
+- la selezione Modalità/Rete è per ora **solo stato operativo del frontend**:
+  non viene ancora scritta sulle entità SVG e non modifica il formato progetto;
+- nessuna modifica a Service API, contratto Front↔Service,
+  `TERMODEL-PROJECT-TEXT-V1`, `definizionedati.json`, Core o Library;
+- verifica sintattica completa di `app.js` con parser V8:
+  `APP_JS_SYNTAX_OK`; verifica statica dei nuovi elementi:
+  `CAD_NETWORK_SELECTOR_STATIC_OK`;
+- GitHub Pages run **#762**, run id `35863001579`, head
+  `39760155b14ff4b3e0857faa453efedcef74a6cf`:
+  **completed / success**;
+- prova manuale dei combo nel browser dell'utente: non ancora eseguita;
+- commit principali:
+  `c00069fc6597225a4f7dcb7bb7935b6db2645158`,
+  `a50e5a98c0b1403a0695d41275983dc05e26bb38`,
+  `39760155b14ff4b3e0857faa453efedcef74a6cf`.
 
 ### INCARICO 2026-09-23 — revisione archivi pannelli radianti: Reti + TipologiePannelli
 Stato: ESEGUITO
