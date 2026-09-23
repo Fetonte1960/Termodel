@@ -238,6 +238,16 @@ Risultato:
 - commit frontend principali:
   `4c9f9e2e591d78f6fd8073096bf734b224409e85` e
   `92664a593846456bcf89065b0001de2807392227`.
+- **completamento frontend v0.96:** aggiunto preflight
+  `GET /health → GET /api/model/capabilities` prima delle operazioni server,
+  con progress di wake-up Render, timeout 90 s e cache readiness 60 s;
+- il messaggio di cold start è comune a PC/mobile e scompare al completamento;
+- un projectId presente nel file ma non più disponibile sul filesystem
+  effimero Render genera un errore esplicito e non viene sostituito
+  automaticamente;
+- verifica statica JavaScript superata; il round-trip pubblico/mobile e il
+  vero sleep/wakeup restano prove runtime da eseguire e non sono dichiarati
+  verificati.
 ### INCARICO 2026-09-22 — projectId unico, persistenza corrente e rimozione calculationId
 Stato: ESEGUITO
 

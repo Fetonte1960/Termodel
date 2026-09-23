@@ -8,8 +8,8 @@
 
 Ultimo aggiornamento: **2026-09-23**  
 Branch di riferimento: **main**  
-Ultimo commit di codice verificato:  
-`92664a593846456bcf89065b0001de2807392227` — `Publish Termodel Web v0.95 remote Service client`  
+Ultimo commit di codice verificato prima della v0.96:  
+`19411fe6b739f3a7103b5236780a62def3273c38` — `Align contract with implemented project lock APIs`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -1233,6 +1233,50 @@ La v0.79 completa l'esperienza smartphone soprattutto nel CAD e negli archivi:
 Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
+
+### Termodel Web v0.96 — readiness Render health/capabilities
+
+Stato: **IMPLEMENTATO SU main; verifica statica completata; collaudo manuale remoto/mobile da eseguire** — 23 settembre 2026.
+
+La v0.96 completa il collegamento remoto introdotto nella v0.95 senza modificare
+WebService/Core.
+
+Prima della prima operazione server il frontend esegue:
+
+```text
+GET https://termodel.onrender.com/health
+        ↓
+GET https://termodel.onrender.com/api/model/capabilities
+        ↓
+API progetto / Aggiorna Modello
+```
+
+Comportamento:
+- default Service invariato su `https://termodel.onrender.com`;
+- override locale invariato tramite `globalThis.TERMODEL_SERVICE_BASE_URL`;
+- progress overlay comune PC/mobile durante il cold start;
+- messaggio `Sto avviando Termodel Service…` mentre Render Free si risveglia;
+- timeout wake-up 90 s, compatibile con il ritardo atteso del piano Free;
+- capabilities verificate dopo health con timeout 30 s;
+- readiness positiva riutilizzata per 60 s;
+- barra/messaggio scompaiono dopo il completamento;
+- Apri progetto e tutte le operazioni che richiedono un lock passano dalla
+  readiness prima delle API operative;
+- se un progetto contiene un projectId che non esiste più sul filesystem
+  effimero Render, il frontend segnala esplicitamente la possibile perdita per
+  redeploy e **non assegna silenziosamente un nuovo projectId**;
+- nessun riferimento `calculationId` resta nel workflow frontend corrente.
+
+Verifica statica effettuata prima del commit:
+- sintassi JavaScript del corpo modulo: OK;
+- presenza `/health` e `/api/model/capabilities`: OK;
+- default Render + override configurabile: OK;
+- projectId/lock/heartbeat già presenti dalla v0.95 e preservati;
+- nessuna modifica a Core, WebService, Library o `definizionedati.json`.
+
+Resta da verificare realmente:
+`www.termodel.it → cold start → health → capabilities → Nuovo/Apri →
+Aggiorna Modello → model3d → Android/mobile → heartbeat/sleep-wakeup`.
 
 ### Termodel Web v0.95 — Service remoto Render
 

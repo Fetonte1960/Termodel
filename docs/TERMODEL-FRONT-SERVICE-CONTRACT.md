@@ -2,7 +2,7 @@
 
 Versione documento: **1.3**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati lato Service; pretest remoto Render attivo; frontend in adeguamento al Service HTTPS pubblico**
+Stato: **projectId-only e lock progetto implementati; frontend Web v0.96 collegato al Service HTTPS Render con readiness health/capabilities; collaudo manuale pubblico/mobile in corso**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -816,6 +816,27 @@ Dopo inattività l'istanza Free può essere sospesa. La prima richiesta successi
 può richiedere circa 50 secondi o più. Nel pretest il frontend deve presentare
 uno stato di attesa/connessione e non trattare automaticamente questa latenza
 come errore Termodel.
+
+**Implementazione frontend v0.96:** prima della prima operazione server il
+browser verifica nell'ordine:
+
+```text
+GET /health
+    ↓
+GET /api/model/capabilities
+    ↓
+operazione progetto / Aggiorna Modello
+```
+
+Durante l'attesa mostra una barra di avanzamento con la descrizione
+`Sto avviando Termodel Service…`. Per il wake-up del piano Free il client usa
+un timeout di **90 secondi**; la verifica capabilities successiva usa 30
+secondi. Dopo una verifica riuscita il risultato viene riutilizzato per una
+breve finestra (60 secondi), evitando richieste di readiness ripetitive.
+
+La base URL predefinita è `https://termodel.onrender.com`; resta configurabile
+tramite `globalThis.TERMODEL_SERVICE_BASE_URL`, quindi localhost e altri
+ambienti non richiedono modifiche al contratto.
 
 ### Client desktop e mobile
 

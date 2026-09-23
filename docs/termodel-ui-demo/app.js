@@ -36,6 +36,8 @@ const PROJECT_BROWSER_EXAMPLES_URL = './examples/catalog.json';
 const TERMODEL_SERVICE_BASE_URL = String(
   globalThis.TERMODEL_SERVICE_BASE_URL || 'https://termodel.onrender.com'
 ).replace(/\/+$/, '');
+const TERMODEL_SERVICE_READY_TTL_MS = 60 * 1000;
+const TERMODEL_SERVICE_WAKE_TIMEOUT_MS = 90 * 1000;
 const EMPTY_PROJECT_MODULE_URL = './progetto-vuoto.js?v=0.70';
 const PDFJS_MODULE_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.mjs';
 const PDFJS_WORKER_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.worker.mjs';
@@ -50,7 +52,7 @@ const openProjectButton = document.getElementById('openProjectButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.95';
+const APP_VERSION = '0.96';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -233,7 +235,10 @@ let currentProjectId = '';
 let currentProjectLockToken = '';
 let currentProjectLeaseExpiresAtUtc = '';
 let projectLockHeartbeatTimer = null;
-let currentCalculationManifest = null;
+let currentServiceManifest = null;
+let termodelServiceReadyAt = 0;
+let termodelServiceCapabilities = null;
+let termodelServiceProgressHideTimer = null;
 let projectBrowserExamples = [];
 let projectBrowserExamplesPromise = null;
 let activeProjectBrowserExampleId = '';
@@ -2089,6 +2094,7 @@ async function saveCurrentProject(saveAs = false) {
 
 async function openProjectFromService() {
   setMainAiStatus('Connessione al Termodel Service remoto… il primo avvio Render può richiedere circa 50 secondi.');
+  await ensureTermodelServiceReady();
 
   const listResponse = await fetch(termodelServiceUrl('/api/projects'), {
     cache: 'no-store'
@@ -2251,6 +2257,196 @@ function termodelServiceUrl(path) {
   return TERMODEL_SERVICE_BASE_URL + (value.startsWith('/') ? value : '/' + value);
 }
 
+function ensureTermodelServiceProgress() {
+  let panel = document.getElementById('termodelServiceProgress');
+  if (panel) return panel;
+
+  if (!document.getElementById('termodelServiceProgressStyles')) {
+    const style = document.createElement('style');
+    style.id = 'termodelServiceProgressStyles';
+    style.textContent = `
+      .termodel-service-progress {
+        position: fixed;
+        left: 50%;
+        bottom: 58px;
+        z-index: 90;
+        width: min(84vw, 430px);
+        transform: translateX(-50%);
+        padding: 9px 11px;
+        border: 1px solid #7f8790;
+        border-radius: 7px;
+        background: rgba(250,250,250,.97);
+        box-shadow: 0 3px 14px rgba(0,0,0,.30);
+        font-family: "Segoe UI", Arial, sans-serif;
+        pointer-events: none;
+      }
+      .termodel-service-progress[hidden] { display: none; }
+      .termodel-service-progress-text {
+        margin-bottom: 6px;
+        color: #20262c;
+        font-size: 12px;
+        font-weight: 700;
+        text-align: center;
+      }
+      .termodel-service-progress-track {
+        height: 7px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #d7dce1;
+      }
+      .termodel-service-progress-fill {
+        width: 0%;
+        height: 100%;
+        border-radius: inherit;
+        background: #3d7fb1;
+        transition: width .2s ease;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  panel = document.createElement('div');
+  panel.id = 'termodelServiceProgress';
+  panel.className = 'termodel-service-progress';
+  panel.hidden = true;
+  panel.innerHTML = `
+    <div class="termodel-service-progress-text"></div>
+    <div class="termodel-service-progress-track" aria-hidden="true">
+      <div class="termodel-service-progress-fill"></div>
+    </div>
+  `;
+  document.body.appendChild(panel);
+  return panel;
+}
+
+function setTermodelServiceProgress(text, percent) {
+  const panel = ensureTermodelServiceProgress();
+
+  if (termodelServiceProgressHideTimer) {
+    clearTimeout(termodelServiceProgressHideTimer);
+    termodelServiceProgressHideTimer = null;
+  }
+
+  const label = panel.querySelector('.termodel-service-progress-text');
+  const fill = panel.querySelector('.termodel-service-progress-fill');
+
+  if (label) label.textContent = String(text || '');
+  if (fill)
+    fill.style.width = Math.max(0, Math.min(100, Number(percent) || 0)) + '%';
+
+  panel.hidden = false;
+}
+
+function hideTermodelServiceProgress(delay = 420) {
+  const panel = document.getElementById('termodelServiceProgress');
+  if (!panel) return;
+
+  if (termodelServiceProgressHideTimer)
+    clearTimeout(termodelServiceProgressHideTimer);
+
+  termodelServiceProgressHideTimer = setTimeout(() => {
+    panel.hidden = true;
+    const fill = panel.querySelector('.termodel-service-progress-fill');
+    if (fill) fill.style.width = '0%';
+    termodelServiceProgressHideTimer = null;
+  }, Math.max(0, delay));
+}
+
+async function fetchTermodelServiceWithTimeout(
+  path,
+  options = {},
+  timeoutMs = TERMODEL_SERVICE_WAKE_TIMEOUT_MS
+) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(termodelServiceUrl(path), {
+      ...options,
+      signal: controller.signal,
+      cache: options.cache || 'no-store'
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(
+        'Termodel Service non ha risposto entro ' +
+        Math.round(timeoutMs / 1000) +
+        ' secondi.'
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function ensureTermodelServiceReady(force = false) {
+  const now = Date.now();
+  if (!force &&
+      termodelServiceCapabilities &&
+      now - termodelServiceReadyAt < TERMODEL_SERVICE_READY_TTL_MS) {
+    return termodelServiceCapabilities;
+  }
+
+  setTermodelServiceProgress('Contatto Termodel Service…', 8);
+  status.textContent = 'Connessione al Termodel Service remoto…';
+
+  let progress = 12;
+  const wakeTimer = setInterval(() => {
+    progress = Math.min(58, progress + 3);
+    setTermodelServiceProgress(
+      'Sto avviando Termodel Service… il piano Render Free può richiedere circa 50 secondi',
+      progress
+    );
+  }, 3000);
+
+  try {
+    const healthResponse = await fetchTermodelServiceWithTimeout(
+      '/health',
+      { method: 'GET' },
+      TERMODEL_SERVICE_WAKE_TIMEOUT_MS
+    );
+
+    if (!healthResponse.ok)
+      throw new Error('Health Service: HTTP ' + healthResponse.status);
+
+    const health = await healthResponse.json();
+    if (String(health?.status || '').toLowerCase() !== 'ok')
+      throw new Error('Health Service non valido.');
+
+    clearInterval(wakeTimer);
+    setTermodelServiceProgress('Service attivo · verifico le capacità…', 72);
+
+    const capabilitiesResponse = await fetchTermodelServiceWithTimeout(
+      '/api/model/capabilities',
+      { method: 'GET' },
+      30000
+    );
+
+    if (!capabilitiesResponse.ok)
+      throw new Error('Capabilities Service: HTTP ' + capabilitiesResponse.status);
+
+    termodelServiceCapabilities = await capabilitiesResponse.json();
+    termodelServiceReadyAt = Date.now();
+
+    setTermodelServiceProgress('Termodel Service pronto', 100);
+    status.textContent = 'Termodel Service pronto · ' + TERMODEL_SERVICE_BASE_URL;
+    hideTermodelServiceProgress(520);
+
+    return termodelServiceCapabilities;
+  } catch (error) {
+    clearInterval(wakeTimer);
+    termodelServiceReadyAt = 0;
+    termodelServiceCapabilities = null;
+    setTermodelServiceProgress(
+      'Service non disponibile: ' + (error?.message || error),
+      100
+    );
+    hideTermodelServiceProgress(2600);
+    throw error;
+  }
+}
+
 function readProjectManifest(projectText) {
   const raw = getTermodelProjectSection(projectText, 'manifest.json');
   if (!raw) throw new Error('Il progetto non contiene manifest.json.');
@@ -2368,6 +2564,8 @@ async function ensureCurrentProjectLock() {
   if (!structuredProjectActive || !currentProjectText)
     throw new Error('Nessun progetto strutturato aperto.');
 
+  await ensureTermodelServiceReady();
+
   const manifest = readProjectManifest(currentProjectText);
   const manifestProjectId = String(manifest.projectId || '').trim();
 
@@ -2409,8 +2607,16 @@ async function ensureCurrentProjectLock() {
     { method: 'POST', cache: 'no-store' }
   );
 
-  if (!response.ok)
-    throw new Error(await readTermodelServiceError(response));
+  if (!response.ok) {
+    const detail = await readTermodelServiceError(response);
+    if (response.status === 404) {
+      throw new Error(
+        'Il projectId ' + manifestProjectId +
+        ' non è presente sul Service corrente. Nel pretest Render Free il filesystem può essere stato azzerato da un redeploy.'
+      );
+    }
+    throw new Error(detail);
+  }
 
   const opened = await response.json();
   setCurrentProjectLease(
@@ -2608,7 +2814,7 @@ async function loadCalculatedModelFromService() {
     }
 
     const data = await modelResponse.json();
-    currentCalculationManifest = calculation;
+    currentServiceManifest = calculation;
     currentProjectLeaseExpiresAtUtc = String(
       calculation.leaseExpiresAtUtc || currentProjectLeaseExpiresAtUtc
     );
@@ -2633,7 +2839,7 @@ async function loadCalculatedModelFromService() {
       (copied ? ' · risposta copiata negli appunti' : ' · copia appunti non riuscita');
   } catch (error) {
     console.error(error);
-    currentCalculationManifest = null;
+    currentServiceManifest = null;
     exchange.error = error?.message || String(error);
     const copied = await copyTermodelServerExchange(exchange);
     status.textContent =
