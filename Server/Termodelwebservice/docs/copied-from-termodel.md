@@ -99,26 +99,37 @@ Entrambe le implementazioni espongono il nucleo usato dalle classi migrate:
 ### Adattamento headless preservato
 
 - nessun file globale e nessuna dipendenza WPF/UI;
-- `InitializeLog()` delega a `Reset()` e crea un buffer nuovo per
-  elaborazione;
-- `AsyncLocal<List<string>?>` isola i messaggi della richiesta corrente;
-- `WriteLog`, `LogOperation` e `LogError` producono rispettivamente prefissi
-  `info`, `operation` ed `error` e confluiscono nella diagnostica restituita da
-  `GeneraModello`;
+- `InitializeLog(...)` crea un buffer nuovo per elaborazione e può ricevere
+  una configurazione diagnostica della singola richiesta;
+- `AsyncLocal<List<string>?>` isola i messaggi e un secondo `AsyncLocal`
+  isola la configurazione log della richiesta corrente;
+- i nomi di `LogCategory` dell'adattatore coincidono ora con quelli
+  autorevoli Desktop: `Sempre`, `colmi`, `spezza`, `Error`, `Svg`,
+  `RedrawHelix`, `GeneraModello`, `Performance`, `PontiAutomatici`;
+- senza configurazione esplicita viene mantenuta la compatibilità Service già
+  verificata: le scritture dirette vengono raccolte, mentre
+  `IsEnabled(...)` resta falso;
+- quando `POST /api/calculations` riceve `logCategories`, la selezione vale
+  sia per `IsEnabled(...)` sia per le scritture dirette; `LogOperation`
+  appartiene a `Sempre` e `LogError` a `Error`;
+- `logEnabled=false` disabilita la raccolta soltanto per quella elaborazione;
+- `WriteLog`, `LogOperation` e `LogError` mantengono rispettivamente i
+  prefissi `info`, `operation` ed `error` e confluiscono nella diagnostica
+  restituita da `GeneraModello`;
 - `ProjectStore` persiste il risultato valido in
   `SavedProjects/{projectId}/logs/TermodelLog.md`; l'endpoint
   `GET /api/projects/{projectId}/logs/termodel` legge quel file senza
   rieseguire il calcolo;
-- `IsEnabled(...)` resta `false` per i blocchi condizionati di debug. Il
-  parametro categoria delle chiamate dirette non filtra il buffer headless:
-  questa scelta conserva la diagnostica utile al server e non replica i flag
-  compile-time del Desktop;
-- il buffer per-request e il publish transazionale sono requisiti server e non
-  devono essere sostituiti dalla persistenza globale Desktop.
+- la configurazione applicata è registrata in `logs/calculation.log`, ma non
+  viene inserita nel `TERMODEL-PROJECT-TEXT-V1`;
+- il buffer per-request, la configurazione per-request e il publish
+  transazionale sono requisiti server e non devono essere sostituiti dalla
+  persistenza globale Desktop.
 
 Conclusione: il riferimento acquisito chiude la lacuna documentale, ma non
 giustifica la sostituzione dell'adattatore. L'equivalenza richiesta è di
-contratto per i chiamanti, non di filesystem, UI o configurazione diagnostica.
+contratto per i chiamanti; la configurazione runtime per richiesta è una
+responsabilità specifica del Service.
 
 `GeneraPianta` conserva temporaneamente il nome storico `SalvaDXF` per ridurre
 il delta con il desktop, ma nel percorso Web non legge né scrive DXF: pubblica
