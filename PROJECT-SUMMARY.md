@@ -6,10 +6,10 @@
 >
 > Questo documento serve a evitare la perdita di contesto quando una chat diventa troppo lunga. Deve essere mantenuto breve, operativo e aggiornato dopo ogni intervento che cambia architettura, stato, file importanti, contratti o prossimi passi.
 
-Ultimo aggiornamento: **2026-09-22**  
+Ultimo aggiornamento: **2026-09-23**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`102880645d7f38011e7b5e5bb60f8f89098c121b` — `Publish Termodel Web v0.94 CAD background`  
+`92664a593846456bcf89065b0001de2807392227` — `Publish Termodel Web v0.95 remote Service client`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -888,9 +888,9 @@ Apri progetto
 tramite host/app mobile e selettore file locale. Non vengono esposti
 `Salva progetto`, `Salva con nome` o gestione catalogo/cartelle server.
 
-Questa è una decisione di contratto; i nuovi endpoint Apri/Salva non sono
-ancora dichiarati implementati. Il contratto condiviso autorevole è
-`docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` v1.1.
+Stato al 23/09/2026: le API server Apri/Salva/Salva con nome sono implementate;
+il frontend v0.95 le usa nel profilo remoto. Il contratto condiviso autorevole
+è `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` v1.3.
 
 ### Decisione 22/09/2026 — apertura esclusiva del progetto e recupero lock impropri
 
@@ -918,9 +918,10 @@ Per il profilo Web/PC con Termodel.WebService:
   è ancora recente/vivo, lo sblocco forzato richiede conferma esplicita;
 - il frontend non deve cancellare direttamente file di lock.
 
-Questa è una decisione di contratto, registrata in
-`docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` v1.2; API e UI relative al lock non
-sono ancora dichiarate implementate.
+Stato al 23/09/2026: API lock/lease, heartbeat, close e unlock sono implementate
+e coperte dallo smoke HTTP del Service; il frontend v0.95 invia il lock token,
+rinnova la lease e tenta il rilascio alla chiusura pagina. La verifica manuale
+su browser pubblico/mobile resta da eseguire.
 ## 3. Responsabilità e confini
 
 La divisione operativa corrente è esplicita:
@@ -1233,6 +1234,63 @@ Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
 
+### Termodel Web v0.95 — Service remoto Render
+
+Stato: **IMPLEMENTATO SU main; GitHub Pages deploy riuscito; test manuale remoto da completare** — 23 settembre 2026.
+
+Nuovo Service di pretest:
+
+```text
+https://termodel.onrender.com
+```
+
+Il frontend v0.95:
+- usa Render HTTPS come `TERMODEL_SERVICE_BASE_URL` predefinito;
+- conserva `globalThis.TERMODEL_SERVICE_BASE_URL` come override per sviluppo
+  locale/ambienti alternativi;
+- non usa più `calculationId` nel workflow corrente;
+- usa `projectId` come riferimento dominante;
+- alloca l'ID con `POST /api/projects/allocate-id` quando manca;
+- conserva il `projectLockToken` solo nello stato della pagina;
+- invia `X-Termodel-Project-Lock` a Salva e `POST /api/calculations`;
+- esegue heartbeat ogni 45 secondi mentre possiede il lock;
+- tenta `POST /close` con `keepalive` alla chiusura/pagehide;
+- `File → Apri` elenca i progetti con `GET /api/projects` e li apre tramite
+  `POST /api/projects/{projectId}/open`; per il pretest la selezione usa un
+  prompt numerico minimale;
+- `Salva` usa il Service e non genera più un download browser come storage
+  operativo;
+- `Salva con nome` mantiene lo stesso projectId e usa l'endpoint `save-as`;
+- `Nuovo` registra immediatamente il progetto sul Service tramite allocazione
+  projectId + Salva;
+- `Aggiorna Modello` usa il contratto projectId/lock e recupera `model3d`
+  tramite l'href restituito dal Service;
+- il badge 3D mostra `projectId`, non `calculationId`;
+- durante il cold-start Render mostra uno stato di connessione e lascia che la
+  prima richiesta attenda senza trasformare automaticamente la latenza in
+  errore applicativo.
+
+Render Free è **solo pretest**:
+- filesystem effimero;
+- `SavedProjects` non è archivio definitivo;
+- sleep/wakeup può introdurre ~50 secondi o più sulla prima richiesta;
+- nessuna modifica architetturale viene introdotta per aggirare questi limiti.
+
+Verifiche automatiche:
+- GitHub Pages run #629: **success** per la pubblicazione v0.95;
+- GitHub Actions Service run #64: **success**, inclusa
+  `PROJECT_LOCK_SMOKE_OK`;
+- Service Docker/Render era già stato pubblicato dal commit
+  `a6aada8df28347cc3d753be86c3a26bf8146638c`.
+
+Da verificare manualmente sul sito pubblico:
+1. cold start `/health`;
+2. capabilities;
+3. Nuovo/Apri/Salva/Salva con nome;
+4. Aggiorna Modello + model3d;
+5. Android/mobile;
+6. doppia apertura 423 e heartbeat;
+7. sleep/wakeup Render.
 ### ProjectBrowser Android — sfondo reale Appartamento v0.94
 
 Stato: **IMPLEMENTATO SU main** — 22 settembre 2026.
