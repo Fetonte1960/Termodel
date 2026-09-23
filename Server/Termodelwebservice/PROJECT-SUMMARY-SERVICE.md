@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — specifica perdite di carico pannelli radianti
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - definire e registrare le specifiche della prima funzione operativa della nuova
@@ -133,7 +133,56 @@ Criteri di completamento:
 - Summary aggiornato con lo stato reale.
 
 Risultato:
-- specifica in corso.
+- aggiornato
+  `docs/TUBAZIONI-DEVELOPMENT-REGISTER.md` con la specifica completa della
+  prima funzione operativa;
+- la lunghezza grafica della spirale è stata esplicitamente esclusa dagli input
+  autorevoli del calcolo idraulico;
+- adottata la relazione
+  `L_spirale = AreaServita * F_passo * K_layout`, con fattori Uponor
+  verificati: 100 mm -> 10.0 m/m², 150 mm -> 6.7 m/m²,
+  200 mm -> 5.0 m/m², oltre alla tabella 50/125/175/300 mm;
+- `K_layout` registrato a 1.000 di default e modificabile soltanto dopo
+  regression test; esclusa qualunque maggiorazione commerciale 5-10% dalla
+  lunghezza idraulica;
+- i collegamenti mandata+ritorno fra collettore e spirale sono sommati usando
+  la loro lunghezza geometrica reale;
+- confine prima versione definito da uscita collettore a ingresso collettore;
+  collettore, flussimetri, valvole e altre perdite concentrate sono rinviati al
+  programma generalista;
+- definito il set minimo input:
+  superficie, passo, lunghezza collegamenti, portata, codice tubo, codice
+  fluido e temperatura media;
+- formula default registrata: Darcy-Weisbach; velocità e Reynolds in SI,
+  `f=64/Re` in laminare, Colebrook-White in turbolento; transizione da
+  trattare con diagnostica e regola numerica da fissare nel kernel;
+- definito output minimo comprendente lunghezze stimate/reali, velocità,
+  Reynolds, fattore Darcy, perdita lineare e perdita circuito Pa/kPa;
+- progettati gli archivi minimi `Tubazioni`/`DiametriTubazioni` e
+  `Fluidi`/`ProprietaFluidi`;
+- la richiesta iniziale "PVC" è stata verificata contro documentazione
+  produttori: per pannelli radianti il default corretto è PE-X/PEX o PE-RT;
+  registrato come prima famiglia `PEXA-O2`, PE-Xa con barriera ossigeno,
+  16x2 mm, diametro interno 12 mm;
+- il PPI 2024 indica per PEX rugosità assoluta 0.0005-0.0007 mm:
+  registrato 0.0007 mm come valore iniziale conservativo/modificabile;
+- primo fluido registrato: `H2O / Acqua`, liquido Newtoniano con proprietà
+  tabellate/interpolate in funzione della temperatura; riportati riferimenti
+  30/35/40 °C per densità e viscosità;
+- futura UI registrata:
+  `Tubazioni -> Archivio tubazioni / Archivio fluidi`;
+  **stato UI: IN SOSPESO**;
+- T1 resta IN CORSO: è definito il nucleo minimo per pannelli, mentre il
+  mapping generalista completo di `base.dat` resta successivo;
+- nessun solver, archivio runtime, menu, frontend o integrazione
+  `Aggiorna Modello` implementati;
+- `definizionedati.json`, Library Pascal e protocollo progetto non modificati;
+- **compilazione:** non eseguita/non applicabile, modifica documentale;
+- **esecuzione:** non eseguita;
+- **test numerici:** non eseguiti; specifiche da validare nella futura
+  implementazione con casi sintetici e regression test;
+- commit specifica:
+  `fe12046b4d1f193399b1d73bba640d48187594df`.
 
 ### INCARICO 2026-09-23 — registro sviluppo autonomo Calcolo Tubazioni
 Stato: ESEGUITO
