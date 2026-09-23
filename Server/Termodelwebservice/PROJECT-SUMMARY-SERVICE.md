@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — correzione validazione attributi numerici FIN
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - correggere in `Termodel.Core` la routine `CaricaDatiFinestra(...)` che valida
@@ -104,17 +104,40 @@ Commissionato:
 - non modificare frontend, contratto Frontend↔Service o
   `definizionedati.json`.
 
-Criteri di completamento:
-- i controlli numerici FIN ricevono il vero `valore` dell'attributo;
-- commento di porting Desktop presente nel Core;
-- build Release con 0 errori;
-- smoke Service esistente riuscito;
-- se possibile, verifica runtime dell'esempio Appartamento fino oltre il
-  precedente errore HTTP 422 su `LARGHEZZA`;
-- aggiornamento di questa voce con risultato e commit.
-
 Risultato:
-- non ancora implementato.
+- corretto
+  `src/Termodel.Core/CopiedFromTermodel/Leggidxf/LeggiDxf.cs`: i cinque
+  attributi numerici FIN `ALTEZZA`, `LARGHEZZA`, `NUMEROANTE`,
+  `SOTTOFINESTRA` e `SOPRALUCE` passano ora il vero `valore` a
+  `Utigen.VerificaAttributoNumero(...)`;
+- `NUMEROANTE` viene validato prima della conversione con
+  `int.TryParse(..., CultureInfo.InvariantCulture)` e produce
+  `InvalidDataException` leggibile se non è un intero;
+- inserito nel punto della correzione il commento
+  `TERMODEL-WEB FIX — DA RIPORTARE NEL DESKTOP`, con riferimento esplicito a
+  `SorgentiTermodel/Library/leggidxf/LeggiDxf.cs`;
+- la Library Desktop **non è stata modificata**: conserva intenzionalmente il
+  difetto come riferimento storico finché la correzione non verrà riportata
+  nella versione Desktop;
+- verifica statica: 0 chiamate FIN residue che passano
+  `DatiFinestra.Tipo`; 5 chiamate corrette che passano `valore`;
+- **compilazione:** GitHub Actions `TermodelService Build` run **#69** sul
+  commit `fa71bd4cee4968a7f57ad3458ba883f0d6c4e262`: Build Release
+  completata con successo;
+- **smoke HTTP:** nello stesso run #69 lo step
+  `Smoke test HTTP project storage and exclusive locks` è completato con
+  successo;
+- l'SVG consolidato dell'esempio `Appartamento` è stato verificato: i FIN
+  contengono valori numerici reali (ad es. `LARGHEZZA,207.55`,
+  `LARGHEZZA,209.22`, ecc.); il precedente HTTP 422 dipendeva quindi dal
+  bug Core e non dal dato dell'esempio;
+- **test pubblico Appartamento:** non ancora dichiarato verificato dopo il fix;
+  va rifatto dal frontend dopo il deploy Render;
+- frontend, contratto Frontend↔Service e `definizionedati.json` non sono stati
+  modificati in questo incarico;
+- commit di codice:
+  `fa71bd4cee4968a7f57ad3458ba883f0d6c4e262` —
+  `Fix FIN numeric validation in Termodel Core`.
 
 ### INCARICO 2026-09-23 — inoltro suggerimenti utenti a GitHub
 Stato: COMMISSIONATO
