@@ -33,4 +33,4 @@ Rigenerare il file soltanto quando cambia intenzionalmente il progetto base o
 la definizione dati autorizzata. Dopo ogni rigenerazione verificare marcatori,
 sezioni, impronte e coerenza fra archivi XML e JSON.
 
-Aggiornamento 23 settembre 2026: il progetto vuoto consolidato contiene anche `TipologiePannelli`, `Tubazioni` e `Fluidi`, con metadata separati in `definition/pannelli-tubazioni-definizionedati.json`. Queste sezioni preparano il completamento del calcolo pannelli radianti e devono essere conservate dal frontend anche se il relativo menu di gestione è ancora sospeso.
+Aggiornamento 23 settembre 2026: la struttura pannelli radianti è stata revisionata. Il progetto vuoto consolidato contiene ora i due archivi estesi `Reti` e `TipologiePannelli`, con metadata separati in `definition/reti-pannelli-definizionedati.json`. `Reti` contiene tipo rete e parametri di esercizio/progetto indipendenti dal costruttore; `TipologiePannelli` contiene dati del prodotto, caratteristiche della tubazione e passi ammessi. Le precedenti sezioni separate `Tubazioni` e `Fluidi` non fanno più parte del template autorevole.
