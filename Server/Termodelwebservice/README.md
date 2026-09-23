@@ -150,6 +150,36 @@ per retrocompatibilità.
 Il canale è destinato ai futuri disegni, report, CSV, PDF, SVG/DXF, JSON e
 log prodotti dai calcoli.
 
+## Procedura fondamentale per la diagnostica AI
+
+Quando una chat deve controllare una sessione realmente eseguita dal Service,
+il flusso operativo standard è:
+
+```text
+UTENTE:
+Aggiorna Modello
+→ Pubblica snapshot
+→ scrive: "esamina l'ultimo snapshot"
+
+CHAT:
+branch service-snapshots
+→ service-snapshots/LATEST.json
+→ manifest.json
+→ artifact/log reali
+```
+
+La pubblicazione non è automatica ad ogni calcolo. L'utente la richiede solo
+quando serve conservare e far analizzare una sessione.
+
+Documento operativo autorevole:
+
+```text
+Server/Termodelwebservice/docs/SERVICE-SNAPSHOT-DIAGNOSTIC.md
+```
+
+Una nuova chat deve leggere quel documento prima di chiedere copie manuali di
+file già presenti nello snapshot.
+
 ## Snapshot diagnostico verso GitHub
 
 Il Service può pubblicare **su richiesta esplicita** i file generati
@@ -209,7 +239,40 @@ sono quindi indispensabili soltanto `TERMODEL_SNAPSHOT_GITHUB_TOKEN` e
 Il token snapshot è volutamente separato dal token feedback: il token feedback
 può avere permessi Issues, mentre questo richiede accesso `Contents: write`.
 Non memorizzare né token né chiave amministrativa nel repository o nel
-frontend.
+frontend e non incollarli nelle chat.
+
+### Persistenza e retention snapshot
+
+Il filesystem Render Free è effimero, mentre gli snapshot GitHub sono
+persistenti.
+
+Stato corrente:
+
+```text
+pubblicazione automatica ad ogni calcolo: NO
+pulizia automatica snapshot GitHub:       NO
+LATEST.json:                              punta solo all'ultimo
+snapshot precedenti:                      conservati
+```
+
+Non introdurre cancellazione automatica senza una decisione esplicita sulla
+retention.
+
+### Verifica reale
+
+Il 23 settembre 2026 è stata eseguita con successo una pubblicazione reale:
+
+```text
+Render
+→ POST publish-session-snapshot
+→ branch GitHub service-snapshots
+→ LATEST.json
+→ manifest.json
+→ lettura degli artifact/log da parte della chat
+```
+
+Il progetto usato nella prima prova reale era
+`b38f622b-6411-48ea-ba57-0b07862f4046`.
 
 ## TermodelLog del progetto
 
