@@ -84,6 +84,38 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — correzione validazione attributi numerici FIN
+Stato: COMMISSIONATO
+
+Commissionato:
+- correggere in `Termodel.Core` la routine `CaricaDatiFinestra(...)` che valida
+  gli attributi numerici dei blocchi FIN usando erroneamente
+  `DatiFinestra.Tipo` invece del valore corrente dell'attributo;
+- applicare la correzione a `ALTEZZA`, `LARGHEZZA`, `NUMEROANTE`,
+  `SOTTOFINESTRA` e `SOPRALUCE`;
+- per `NUMEROANTE` validare il testo prima della conversione intera, evitando
+  eccezioni generiche su input non numerico;
+- inserire nel sorgente Core un commento esplicito **DA RIPORTARE NEL DESKTOP**,
+  indicando l'originale
+  `SorgentiTermodel/Library/leggidxf/LeggiDxf.cs`, dove è presente lo stesso
+  difetto storico;
+- non modificare la Library Desktop in questo incarico: resta sorgente di
+  riferimento in sola lettura;
+- non modificare frontend, contratto Frontend↔Service o
+  `definizionedati.json`.
+
+Criteri di completamento:
+- i controlli numerici FIN ricevono il vero `valore` dell'attributo;
+- commento di porting Desktop presente nel Core;
+- build Release con 0 errori;
+- smoke Service esistente riuscito;
+- se possibile, verifica runtime dell'esempio Appartamento fino oltre il
+  precedente errore HTTP 422 su `LARGHEZZA`;
+- aggiornamento di questa voce con risultato e commit.
+
+Risultato:
+- non ancora implementato.
+
 ### INCARICO 2026-09-23 — inoltro suggerimenti utenti a GitHub
 Stato: COMMISSIONATO
 
