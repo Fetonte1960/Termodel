@@ -1795,6 +1795,16 @@
             </div>
           </details>
 
+          <span class="cad-toolbar-plane" title="Modalità operativa CAD: edificio oppure rete impiantistica">
+            <span class="cad-toolbar-plane-label">Modalità</span>
+            <select id="cadModeSelect" aria-label="Modalità CAD">
+              <option value="edificio">Edificio</option>
+              <option value="rete">Rete</option>
+            </select>
+            <span id="cadNetworkLabel" class="cad-toolbar-plane-label" hidden>Rete</span>
+            <select id="cadNetworkSelect" aria-label="Rete corrente" title="Rete corrente dall'archivio Reti" hidden></select>
+          </span>
+
           <span class="cad-toolbar-plane" title="Piano corrente e archivio Piani">
             <span class="cad-toolbar-plane-label">Piano</span>
             <select id="cadPropPiano" aria-label="Piano corrente"></select>
@@ -2232,6 +2242,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=1.02"></script>
+  <script type="module" src="./app.js?v=1.03"></script>
 </body>
 </html>
