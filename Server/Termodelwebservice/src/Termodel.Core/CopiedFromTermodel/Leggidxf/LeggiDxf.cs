@@ -798,35 +798,34 @@ namespace Termodel.Leggidxf
                             utiDb.VerificaAttributoArchivio("Finestra (FIN) ", TagAttributo, finestra, DatiFinestra.Tipo, "Finestre", "DescBreve", Quota_Piano);
 
                             break;
+                        // TERMODEL-WEB FIX — DA RIPORTARE NEL DESKTOP:
+                        // anche SorgentiTermodel/Library/leggidxf/LeggiDxf.cs passa
+                        // erroneamente DatiFinestra.Tipo a VerificaAttributoNumero.
+                        // Gli attributi numerici FIN devono validare il loro "valore"
+                        // corrente, non la descrizione testuale del tipo finestra.
                         case "ALTEZZA":
-                            //DatiFinestra.Altezza = attributo["Valore"];
-                            Utigen.VerificaAttributoNumero("Finestra (FIN) ", TagAttributo, finestra, DatiFinestra.Tipo, Quota_Piano);
+                            Utigen.VerificaAttributoNumero("Finestra (FIN) ", TagAttributo, finestra, valore, Quota_Piano);
                             DatiFinestra.Altezza = Utigen.CVStrToDouble_attrib(valore);
-
                             break;
                         case "LARGHEZZA":
-                            //DatiFinestra.Larghezza = attributo["Valore"];
-                            Utigen.VerificaAttributoNumero("Finestra (FIN) ", TagAttributo, finestra, DatiFinestra.Tipo, Quota_Piano);
-
+                            Utigen.VerificaAttributoNumero("Finestra (FIN) ", TagAttributo, finestra, valore, Quota_Piano);
                             DatiFinestra.Larghezza = Utigen.CVStrToDouble_attrib(valore);
                             break;
                         case "NUMEROANTE":
-                            //DatiFinestra.Larghezza = attributo["Valore"];
-                            DatiFinestra.NumeroAnte = int.Parse(valore);
-                            Utigen.VerificaAttributoNumero("Finestra (FIN) ", TagAttributo, finestra, DatiFinestra.Tipo, Quota_Piano);
-
+                            Utigen.VerificaAttributoNumero("Finestra (FIN) ", TagAttributo, finestra, valore, Quota_Piano);
+                            if (!int.TryParse(valore, NumberStyles.Integer, CultureInfo.InvariantCulture, out int numeroAnte))
+                                throw new InvalidDataException(
+                                    $"Blocco 'Finestra (FIN) ', attributo '{TagAttributo}' non intero al piano " +
+                                    $"{Quota_Piano.ToString(CultureInfo.InvariantCulture)}.");
+                            DatiFinestra.NumeroAnte = numeroAnte;
                             if (DatiFinestra.NumeroAnte < 1) DatiFinestra.NumeroAnte = 1;
                             break;
                         case "SOTTOFINESTRA":
-                            //DatiFinestra.Larghezza = attributo["Valore"];
-                            Utigen.VerificaAttributoNumero("Finestra (FIN) ", TagAttributo, finestra, DatiFinestra.Tipo, Quota_Piano);
-
+                            Utigen.VerificaAttributoNumero("Finestra (FIN) ", TagAttributo, finestra, valore, Quota_Piano);
                             DatiFinestra.Sottofinestra = Utigen.CVStrToDouble_attrib(valore);
                             break;
                         case "SOPRALUCE":
-                            //DatiFinestra.Larghezza = attributo["Valore"];
-                            Utigen.VerificaAttributoNumero("Finestra (FIN) ", TagAttributo, finestra, DatiFinestra.Tipo, Quota_Piano);
-
+                            Utigen.VerificaAttributoNumero("Finestra (FIN) ", TagAttributo, finestra, valore, Quota_Piano);
                             DatiFinestra.Sopraluce = Utigen.CVStrToDouble_attrib(valore);
                             break;
 
