@@ -1,3 +1,4 @@
+# AI debug canonical payload v2
 param(
   [Parameter(Mandatory = $true)]
   [string]$OutputDirectory
