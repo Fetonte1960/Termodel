@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.02';
+const APP_VERSION = '1.03';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -171,6 +171,9 @@ const cadEditStatus = document.getElementById('cadEditStatus');
 const cadPropertiesHead = document.getElementById('cadPropertiesHead');
 const cadPropertiesEmpty = document.getElementById('cadPropertiesEmpty');
 const cadPropertiesBody = document.getElementById('cadPropertiesBody');
+const cadModeSelect = document.getElementById('cadModeSelect');
+const cadNetworkLabel = document.getElementById('cadNetworkLabel');
+const cadNetworkSelect = document.getElementById('cadNetworkSelect');
 const cadPropPiano = document.getElementById('cadPropPiano');
 const cadPropTipoParete = document.getElementById('cadPropTipoParete');
 const cadPropConfineParete = document.getElementById('cadPropConfineParete');
@@ -281,6 +284,8 @@ let cadSymbolInsertType = '';
 let cadWindowTwoPointState = null;
 let cadLastRepeatableCommand = '';
 let cadToolbarState = {
+  modalita: 'edificio',
+  rete: '',
   piano: '',
   tipoParete: '',
   confineParete: ''
@@ -4135,6 +4140,7 @@ function cadDefaultToolbarState() {
   const piani = cadArchiveRecords('Piani');
   const pareti = cadArchiveRecords('Pareti');
   const confini = cadArchiveRecords('Confini');
+  const reti = cadArchiveRecords('Reti');
 
   const valid = value => {
     const text = cadText(value);
@@ -4143,6 +4149,8 @@ function cadDefaultToolbarState() {
 
   const piano = valid(datiCad.Piano) || cadText(piani[0]?.Nome);
   const tipoParete = valid(datiCad.TipoParete) || cadText(pareti[0]?.DescBreve);
+  const rete = cadText(reti.find(record => cadText(record?.Attivo).toUpperCase() !== 'NO')?.Codice) ||
+    cadText(reti[0]?.Codice);
 
   let confineParete = valid(datiCad.ConfineParete);
   if (!confineParete) {
@@ -4151,11 +4159,20 @@ function cadDefaultToolbarState() {
       : cadText(confini[0]?.Codice);
   }
 
-  return { piano, tipoParete, confineParete };
+  return {
+    modalita: 'edificio',
+    rete,
+    piano,
+    tipoParete,
+    confineParete
+  };
 }
 
 function cadEnsureToolbarState() {
   const defaults = cadDefaultToolbarState();
+  if (cadToolbarState.modalita !== 'rete' && cadToolbarState.modalita !== 'edificio')
+    cadToolbarState.modalita = 'edificio';
+  if (!cadText(cadToolbarState.rete)) cadToolbarState.rete = defaults.rete;
   if (!cadText(cadToolbarState.piano)) cadToolbarState.piano = defaults.piano;
   if (!cadText(cadToolbarState.tipoParete)) cadToolbarState.tipoParete = defaults.tipoParete;
   if (!cadText(cadToolbarState.confineParete)) cadToolbarState.confineParete = defaults.confineParete;
@@ -4225,8 +4242,69 @@ function cadFillSelect(select, values, preferred) {
   return value;
 }
 
+function cadFillNetworkSelect(select, records, preferred) {
+  if (!select) return '';
+
+  const rows = [];
+  const seen = new Set();
+  for (const record of records || []) {
+    const codice = cadText(record?.Codice);
+    if (!codice || seen.has(codice)) continue;
+    seen.add(codice);
+    rows.push({
+      codice,
+      descrizione: cadText(record?.Descrizione),
+      attivo: cadText(record?.Attivo).toUpperCase() !== 'NO'
+    });
+  }
+
+  select.replaceChildren();
+
+  if (!rows.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Nessuna rete in archivio';
+    option.selected = true;
+    select.appendChild(option);
+    return '';
+  }
+
+  rows.forEach(row => {
+    const option = document.createElement('option');
+    option.value = row.codice;
+    option.textContent =
+      row.codice +
+      (row.descrizione ? ' — ' + row.descrizione : '') +
+      (row.attivo ? '' : ' · non attiva');
+    select.appendChild(option);
+  });
+
+  const wanted = cadText(preferred);
+  const selected =
+    rows.find(row => row.codice === wanted)?.codice ||
+    rows.find(row => row.attivo)?.codice ||
+    rows[0].codice;
+  select.value = selected;
+  return selected;
+}
+
 function cadRefreshToolbarControls() {
   cadEnsureToolbarState();
+
+  if (cadModeSelect)
+    cadModeSelect.value = cadToolbarState.modalita;
+
+  const networkMode = cadToolbarState.modalita === 'rete';
+  if (cadNetworkLabel) cadNetworkLabel.hidden = !networkMode;
+  if (cadNetworkSelect) cadNetworkSelect.hidden = !networkMode;
+
+  cadToolbarState.rete = cadFillNetworkSelect(
+    cadNetworkSelect,
+    cadArchiveRecords('Reti'),
+    cadToolbarState.rete
+  );
+  if (cadNetworkSelect)
+    cadNetworkSelect.disabled = !networkMode || !cadToolbarState.rete;
 
   cadToolbarState.piano = cadFillSelect(
     cadPropPiano,
@@ -6676,6 +6754,43 @@ function cadCreateCoveragePlane() {
   );
 }
 
+function cadCurrentNetworkLabel() {
+  const record = cadFindRecord(cadArchiveRecords('Reti'), 'Codice', cadToolbarState.rete);
+  if (!record) return cadText(cadToolbarState.rete);
+  const codice = cadText(record.Codice);
+  const descrizione = cadText(record.Descrizione);
+  return descrizione ? codice + ' — ' + descrizione : codice;
+}
+
+function cadModeChanged() {
+  cadToolbarState.modalita = cadModeSelect?.value === 'rete' ? 'rete' : 'edificio';
+  cadRefreshToolbarControls();
+
+  if (cadToolbarState.modalita === 'rete') {
+    const rete = cadCurrentNetworkLabel();
+    cadSetStatus(
+      rete
+        ? 'Modalità Rete · ' + rete + ' · Piano ' + cadCurrentPlane()
+        : 'Modalità Rete · nessuna rete definita · Piano ' + cadCurrentPlane(),
+      rete ? '' : 'error'
+    );
+  } else {
+    cadSetStatus('Modalità Edificio · Piano ' + cadCurrentPlane());
+  }
+}
+
+function cadNetworkChanged() {
+  cadToolbarState.rete = cadText(cadNetworkSelect?.value);
+  cadRefreshToolbarControls();
+  const rete = cadCurrentNetworkLabel();
+  cadSetStatus(
+    rete
+      ? 'Rete corrente: ' + rete + ' · Piano ' + cadCurrentPlane()
+      : 'Modalità Rete · nessuna rete definita · Piano ' + cadCurrentPlane(),
+    rete ? '' : 'error'
+  );
+}
+
 function cadCurrentPlaneChanged() {
   const requested = cadText(cadPropPiano?.value);
   if (!requested || requested === cadCurrentPlane()) {
@@ -8627,6 +8742,8 @@ cadNorthAngle?.addEventListener('change', () => {
   if (cadNorthDefined?.checked)
     cadSetNorthOrientation(cadNorthAngle.value);
 });
+cadModeSelect?.addEventListener('change', cadModeChanged);
+cadNetworkSelect?.addEventListener('change', cadNetworkChanged);
 cadPropPiano?.addEventListener('change', cadCurrentPlaneChanged);
 [cadPropTipoParete, cadPropConfineParete].forEach(control => {
   control?.addEventListener('change', cadWallPropertySelectionChanged);
