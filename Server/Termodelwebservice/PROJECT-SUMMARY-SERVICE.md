@@ -84,6 +84,47 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — attivazione esecutivo pannelli SVG/DXF
+Stato: COMMISSIONATO
+
+Commissionato:
+- attivare il disegno esecutivo pannelli usando i **default attuali** già
+  consolidati nel ramo Desktop/pannelli;
+- produrre nel Service sia l'esecutivo DXF sia un esecutivo SVG
+  **graficamente equivalente al DXF OUT**;
+- DXF e SVG devono derivare dallo **stesso modello grafico esecutivo** nel
+  Core: non creare due algoritmi di disegno indipendenti;
+- consultare e riusare come riferimento funzionale
+  `SorgentiTermodel/Library/Impianti/Pannelli/IoPannelli.cs` e
+  `IoTubi.cs`, in particolare `EsecutivoPannelli`;
+- mantenere fuori scope il grafo universale, il percorso sfavorito,
+  l'equilibratura e le perdite concentrate, già rimandati alla fase
+  **Tubi universale**;
+- per questa milestone è ammesso il comportamento grafico con i default
+  correnti; non rendere ancora parametrico il motore spirali se ciò
+  richiederebbe duplicazione o modifica della Library Desktop;
+- persistire gli artifact esecutivi nello stesso
+  `SavedProjects/{projectId}/artifacts/` dell'ultima elaborazione valida e
+  renderli leggibili senza nuovo calcolo;
+- aggiornare il manifest artifact di `POST /api/calculations`, gli endpoint
+  GET, il contratto Front↔Service e la documentazione;
+- aggiungere smoke automatico che verifichi presenza e coerenza strutturale
+  DXF/SVG;
+- non modificare `definizionedati.json`, `TERMODEL-PROJECT-TEXT-V1` o
+  la Library Desktop.
+
+Criteri di completamento:
+- un solo modello grafico esecutivo nel Core;
+- artifact DXF e SVG generati dallo stesso modello;
+- SVG con le stesse primitive tecniche prodotte nel DXF OUT per il caso
+  pannelli supportato dalla milestone;
+- persistenza e GET senza ricalcolo;
+- build Release e smoke verdi;
+- Summary aggiornato allo stato reale.
+
+Risultato:
+- implementazione in corso.
+
 ### INCARICO 2026-09-23 — rinvio grafo alla fase Tubi universale
 Stato: ESEGUITO
 
