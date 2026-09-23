@@ -587,6 +587,38 @@ app.MapGet(
 });
 
 // Funzione realizzata da Codex in autonomia
+app.MapGet(
+    "/api/projects/{projectId:guid}/logs/termodel",
+    async (
+        Guid projectId,
+        HttpResponse response,
+        ProjectStore projects,
+        CancellationToken cancellationToken) =>
+{
+    byte[]? termodelLog =
+        await projects.ReadTermodelLogAsync(projectId, cancellationToken);
+
+    if (termodelLog is null)
+    {
+        return Results.Problem(
+            title: "TermodelLog non disponibile",
+            detail: $"Il projectId '{projectId:D}' non esiste o non dispone ancora di TermodelLog.md.",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    bool stale = await projects.AreArtifactsStaleAsync(
+        projectId,
+        cancellationToken);
+
+    response.Headers["X-Termodel-Artifact-Stale"] = stale ? "true" : "false";
+    response.Headers["Content-Disposition"] = "inline; filename=\"TermodelLog.md\"";
+
+    return Results.Bytes(
+        termodelLog,
+        contentType: "text/markdown; charset=utf-8");
+});
+
+// Funzione realizzata da Codex in autonomia
 app.MapPost("/api/model/3d", async (
     HttpRequest request,
     CancellationToken cancellationToken) =>
