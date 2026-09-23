@@ -527,9 +527,11 @@ app.MapPost("/api/calculations", async (
 
                 string logMode = GetLogMode(logConfiguration);
                 string[] logCategories = GetLogCategoryNames(logConfiguration);
-                string[] combinedDiagnostics = result.Diagnostics
-                    .Concat(panels.Diagnostics)
-                    .ToArray();
+
+                // Le diagnostiche idrauliche appartengono all'artifact pannelli.
+                // Il campo top-level diagnostics continua a seguire esattamente
+                // la configurazione TermodelLog, inclusa logEnabled=false.
+                IReadOnlyList<string> combinedDiagnostics = result.Diagnostics;
 
                 var artifactJsonOptions =
                     new JsonSerializerOptions(JsonSerializerDefaults.Web)
