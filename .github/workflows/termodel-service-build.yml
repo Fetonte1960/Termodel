@@ -592,3 +592,7 @@ jobs:
               if ($logPath -and (Test-Path -LiteralPath $logPath)) { Remove-Item -LiteralPath $logPath -Force }
             }
           }
+
+      - name: Smoke radiant executive SVG DXF
+        shell: pwsh
+        run: ./tools/smoke-radiant-executive.ps1
