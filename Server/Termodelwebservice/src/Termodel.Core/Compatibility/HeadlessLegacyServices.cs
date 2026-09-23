@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Xml.Linq;
 using NetTopologySuite.Geometries;
 using netDxf;
 using Termodel.Core.Model3D;
@@ -195,36 +197,265 @@ namespace Termodel.Impianti.Pannelli
     // al normale GeneraModello di acquisire l'input senza rifiutare il progetto.
     internal static class IoPannelli
     {
-        public static void AddParalleloLocale(Geometry polygon, string localeId, string floorName)
+        private const string Versione = "1.0";
+        private static readonly AsyncLocal<XDocument?> CurrentDocument = new();
+
+        public static void InitClass()
         {
-            // Il modello 3D usa direttamente il poligono del locale; nessun duplicato globale.
+            CurrentDocument.Value = new XDocument(
+                new XDeclaration("1.0", "utf-8", "yes"),
+                new XElement(
+                    "Locali",
+                    new XAttribute("Versione", Versione)));
         }
 
-        public static void LeggiTubiDXF(DxfDocument document, string floorName, double elevation, double originX, double originY)
+        public static XDocument? GetDocumentSnapshot()
+        {
+            XDocument? document = CurrentDocument.Value;
+            return document is null ? null : new XDocument(document);
+        }
+
+        public static void AddParalleloLocale(
+            Geometry polygon,
+            string localeId,
+            string floorName,
+            bool versoEsterno = true)
+        {
+            XDocument? document = CurrentDocument.Value;
+            if (document is null)
+                throw new InvalidOperationException("IoPannelli.InitClass() non è stato chiamato.");
+
+            if (string.IsNullOrWhiteSpace(localeId) ||
+                polygon is null ||
+                polygon.IsEmpty)
+            {
+                return;
+            }
+
+            Polygon? parallelo = CalcolaParalleloSafe(
+                polygon as Polygon,
+                versoEsterno);
+            if (parallelo is null || parallelo.IsEmpty)
+                return;
+
+            XElement? root = document.Root;
+            if (root is null)
+                return;
+
+            var xLocale = new XElement(
+                "Locale",
+                new XAttribute("Id", localeId));
+
+            if (!string.IsNullOrWhiteSpace(floorName))
+                xLocale.SetAttributeValue("Piano", floorName);
+
+            var xPerimetro = new XElement("PerimetroInterno");
+            Coordinate[] coordinates = parallelo.ExteriorRing.Coordinates;
+            int count = coordinates.Length;
+            int last =
+                count > 1 && coordinates[0].Equals2D(coordinates[count - 1])
+                    ? count - 1
+                    : count;
+
+            for (int index = 0; index < last; index++)
+            {
+                xPerimetro.Add(new XElement(
+                    "Punto",
+                    new XAttribute(
+                        "X",
+                        coordinates[index].X.ToString(CultureInfo.InvariantCulture)),
+                    new XAttribute(
+                        "Y",
+                        coordinates[index].Y.ToString(CultureInfo.InvariantCulture))));
+            }
+
+            if (last > 0)
+            {
+                xPerimetro.Add(new XElement(
+                    "Punto",
+                    new XAttribute(
+                        "X",
+                        coordinates[0].X.ToString(CultureInfo.InvariantCulture)),
+                    new XAttribute(
+                        "Y",
+                        coordinates[0].Y.ToString(CultureInfo.InvariantCulture))));
+            }
+
+            xLocale.Add(xPerimetro);
+            root.Add(xLocale);
+        }
+
+        private static Polygon? CalcolaParalleloSafe(
+            Polygon? polygon,
+            bool versoEsterno)
+        {
+            if (polygon is null)
+                return null;
+
+            Geometry geometry;
+            try
+            {
+                geometry = GeometriaHelper.ParalleloPoligono(
+                    polygon,
+                    versoEsterno);
+            }
+            catch
+            {
+                return null;
+            }
+
+            if (geometry is null || geometry.IsEmpty)
+                return null;
+
+            if (geometry is Polygon direct)
+                return new Polygon((LinearRing)direct.ExteriorRing);
+
+            Polygon? best = null;
+            for (int index = 0; index < geometry.NumGeometries; index++)
+            {
+                if (geometry.GetGeometryN(index) is Polygon candidate &&
+                    (best is null || candidate.Area > best.Area))
+                {
+                    best = candidate;
+                }
+            }
+
+            return best is null
+                ? null
+                : new Polygon((LinearRing)best.ExteriorRing);
+        }
+
+        private static void EsportaTubiPannelli(
+            string floorName,
+            double elevation,
+            IList<LineString> lines)
+        {
+            XDocument? document = CurrentDocument.Value;
+            if (document is null)
+                throw new InvalidOperationException("IoPannelli.InitClass() non è stato chiamato.");
+
+            if (string.IsNullOrWhiteSpace(floorName) ||
+                lines is null ||
+                lines.Count == 0)
+            {
+                return;
+            }
+
+            XElement? root = document.Root;
+            if (root is null)
+                return;
+
+            XElement? xFloor = root
+                .Elements("Piano")
+                .FirstOrDefault(element => string.Equals(
+                    (string?)element.Attribute("Nome"),
+                    floorName,
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (xFloor is null)
+            {
+                xFloor = new XElement(
+                    "Piano",
+                    new XAttribute("Nome", floorName),
+                    new XAttribute(
+                        "Quota",
+                        elevation.ToString(CultureInfo.InvariantCulture)));
+                root.Add(xFloor);
+            }
+            else
+            {
+                xFloor.SetAttributeValue(
+                    "Quota",
+                    elevation.ToString(CultureInfo.InvariantCulture));
+            }
+
+            xFloor.Element("Tubi")?.Remove();
+            var xTubes = new XElement("Tubi");
+            xFloor.Add(xTubes);
+
+            int id = 1;
+            foreach (LineString line in lines)
+            {
+                if (line is null ||
+                    line.IsEmpty ||
+                    line.NumPoints < 2)
+                {
+                    continue;
+                }
+
+                Coordinate p0 = line.GetCoordinateN(0);
+                Coordinate p1 = line.GetCoordinateN(line.NumPoints - 1);
+
+                xTubes.Add(new XElement(
+                    "Linea",
+                    new XAttribute("Id", $"T{id}"),
+                    new XElement(
+                        "P0",
+                        new XAttribute("X", p0.X.ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Y", p0.Y.ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Z", elevation.ToString(CultureInfo.InvariantCulture))),
+                    new XElement(
+                        "P1",
+                        new XAttribute("X", p1.X.ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Y", p1.Y.ToString(CultureInfo.InvariantCulture)),
+                        new XAttribute("Z", elevation.ToString(CultureInfo.InvariantCulture)))));
+                id++;
+            }
+        }
+
+        public static void LeggiTubiDXF(
+            DxfDocument document,
+            string floorName,
+            double elevation,
+            double originX,
+            double originY)
         {
             ArgumentNullException.ThrowIfNull(document);
             if (string.IsNullOrWhiteSpace(floorName))
                 return;
 
-            // Riferimento Desktop:
-            // SorgentiTermodel/Library/Impianti/Pannelli/IoPannelli.cs
-            // cerca esclusivamente "<NomePiano>_tubipannelli".
             string layerTubi = $"{floorName}_tubipannelli";
-            int count = document.Lines.Count(line =>
-                line.Layer is not null &&
-                line.Layer.Name.Equals(layerTubi, StringComparison.OrdinalIgnoreCase));
+            List<LineString> lines = document.Lines
+                .Where(line =>
+                    line.Layer is not null &&
+                    line.Layer.Name.Equals(
+                        layerTubi,
+                        StringComparison.OrdinalIgnoreCase))
+                .Select(line =>
+                    new LineString(
+                    [
+                        new Coordinate(
+                            line.StartPoint.X - originX,
+                            line.StartPoint.Y - originY),
+                        new Coordinate(
+                            line.EndPoint.X - originX,
+                            line.EndPoint.Y - originY)
+                    ]))
+                .ToList();
 
-            if (count > 0)
+            if (lines.Count == 0)
             {
                 TermodelLog.WriteLog(
-                    $"Letti {count} tubi dal layer {layerTubi}. " +
-                    "Input CAD acquisito; solver pannelli Web non ancora integrato.");
+                    $"Nessuna linea trovata su layer {layerTubi}.");
+                return;
             }
+
+            EsportaTubiPannelli(
+                floorName,
+                elevation,
+                lines);
+
+            TermodelLog.WriteLog(
+                $"Letti {lines.Count} tubi dal layer {layerTubi}. " +
+                "Input CAD acquisito per calcolo ed esecutivo pannelli.");
         }
 
-        public static void DisegnaSvgSpirali(object? viewport, string svgPath, double quotaPiano = 0)
+        public static void DisegnaSvgSpirali(
+            object? viewport,
+            string svgPath,
+            double quotaPiano = 0)
         {
-            // Il relativo artifact SVG sarà gestito separatamente dallo snapshot.
+            // Nel Service l'esecutivo SVG è un artifact headless separato.
         }
     }
 }
