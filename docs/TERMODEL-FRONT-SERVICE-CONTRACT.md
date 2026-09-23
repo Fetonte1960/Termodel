@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.9**  
+Versione documento: **1.10**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; configurazione log per Aggiorna Modello implementata; archivi progetto Reti/TipologiePannelli implementati**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; configurazione log per Aggiorna Modello implementata; archivi Reti/TipologiePannelli e trasporto CAD Tubo implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -260,20 +260,69 @@ hard-coded `PassoTubi = 0,30 m`.
   essere filtrati dal payload inviato a `POST /api/calculations`;
 - il contenitore resta `TERMODEL-PROJECT-TEXT-V1`.
 
-### Selezione rete nel CAD 2D — decisione registrata, non ancora implementata
+### Selezione rete e primitive Tubo nel CAD 2D
 
-Il CAD 2D avrà una combo che seleziona una riga di `Reti`. La selezione
-determinerà il **tipo di rete che si sta disegnando** e le proprietà di
-progetto associate.
+Implementazione del 23 settembre 2026.
 
-In questa fase non vengono ancora definiti:
+Il pannello principale del CAD 2D espone:
 
-- posizione e comportamento della combo;
-- campo/attributo con cui le primitive CAD saranno associate alla rete;
-- comandi grafici specifici per PannelliRadianti/Tubazioni/Canali;
-- regole di cambio rete durante una sequenza di disegno.
+```text
+Modalità = Edificio | Rete
+Rete     = Reti.Codice
+Piano    = Piani.Nome
+```
 
-Questi aspetti richiederanno un incarico separato.
+Il piano resta sempre selezionabile anche in modalità `Rete`: una stessa rete
+può quindi svilupparsi su più piani. In modalità `Rete` la sola entità
+disegnabile corrente è `Tubo`.
+
+Per `TipoRete=PannelliRadianti` il frontend segue la convenzione già usata
+dal Desktop in `ScriptCad.TipoComandoEnum.Tubo` e letta da
+`IoPannelli.LeggiTubiDXF`:
+
+```text
+layer    = <Piani.Nome>_tubipannelli
+colore   = ACI 1 (rosso)
+linetype = Continuous
+```
+
+Ogni segmento Tubo nello SVG operativo deve essere una `line` tecnica e
+conservare almeno:
+
+```xml
+<line
+  id="T001"
+  ...
+  data-termodel-piano="<Piani.Nome>"
+  data-termodel-layer="<Piani.Nome>_tubipannelli"
+  data-termodel-entity="Tubo"
+  data-termodel-rete="<Reti.Codice>"
+  data-termodel-linetype="Continuous"
+  data-termodel-color="1" />
+```
+
+Regole:
+
+- gli ID `T001`, `T002`, ... sono identificatori frontend stabili della
+  primitiva e non sostituiscono il codice rete;
+- `data-termodel-rete` associa la geometria alla riga `Reti` selezionata;
+- il layer resta quello storico Desktop perché il codice di riferimento cerca
+  esattamente `<NomePiano>_tubipannelli`;
+- la trasformazione in `TERMODEL-PROJECT-SVG-V1` conserva la linea e i suoi
+  metadata tecnici; `SvgDxfReader` usa
+  `data-termodel-layer/data-termodel-linetype/data-termodel-color` per
+  ricostruire la corrispondente linea nel `DxfDocument` virtuale;
+- `data-termodel-rete` resta nel file unico come associazione di progetto ma
+  non viene ancora usato dal solver pannelli storico;
+- il disegno Tubo è sequenziale/multiplo come quello Parete; `Chiudi` diretto
+  è ammesso, mentre `Chiudi ortogonale` non è disponibile in modalità Rete;
+- `GeneraPianta.js` deve ignorare le linee Tubo nella polygonizzazione
+  architettonica: solo le linee E/W partecipano alla ricostruzione dei locali.
+
+Il Core headless accetta ora il layer tubi al confine
+`LeggiDxf -> IoPannelli.LeggiTubiDXF` e non rifiuta più il progetto. Questo
+stato significa **input CAD tubi acquisito dal calcolo**, non che il solver
+pannelli/spirali e il relativo artifact siano già integrati nel WebService.
 
 ## 2.1 Standard del payload Frontend → Service
 
