@@ -89,14 +89,44 @@ stato del progetto. Se il progetto è stato salvato dopo l'ultimo calcolo il log
 resta quello dell'ultima elaborazione valida ed è marcato stale.
 
 Nel Core headless l'inizio di ogni elaborazione chiama
-`TermodelLog.InitializeLog()`, equivalente al reset per-request. I metodi
-`WriteLog`, `LogOperation` e `LogError` confluiscono nello stesso log.
-La Library Desktop contiene numerosi chiamanti e mostra che il Desktop
-inizializza il log prima della generazione; l'implementazione sorgente
-`TermodelLog.cs` non è però attualmente presente in
-`SorgentiTermodel/Library`. Per questo le categorie verbose condizionate da
-`IsEnabled(...)` restano disabilitate nel Service finché non sarà disponibile
-il riferimento autorevole, invece di inventarne il comportamento.
+`TermodelLog.InitializeLog(...)`, equivalente al reset per-request. Il
+riferimento Desktop autorevole è ora disponibile in
+`SorgentiTermodel/Library/utilities/TermodelLog.cs`; le sue categorie sono
+`Sempre`, `colmi`, `spezza`, `Error`, `Svg`, `RedrawHelix`,
+`GeneraModello`, `Performance` e `PontiAutomatici`.
+
+`POST /api/calculations` accetta opzioni di log per la singola elaborazione:
+
+```http
+POST /api/calculations?logCategories=colmi,spezza
+POST /api/calculations?logCategories=all
+POST /api/calculations?logEnabled=false
+```
+
+Se i parametri sono omessi resta il comportamento Service precedente:
+`WriteLog`, `LogOperation` e `LogError` vengono raccolti, mentre i blocchi
+condizionati da `IsEnabled(...)` restano spenti. Se `logCategories` è
+presente, il filtro vale sia per le scritture dirette sia per
+`IsEnabled(...)`; `LogOperation` usa `Sempre` e `LogError` usa
+`Error`. Sono accettati i nomi categoria senza distinzione maiuscole/minuscole
+e gli alias `all` e `none`. Una categoria sconosciuta restituisce HTTP 400
+e non avvia il calcolo.
+
+La risposta del calcolo include inoltre:
+
+```json
+{
+  "logging": {
+    "enabled": true,
+    "mode": "filtered",
+    "categories": ["colmi", "spezza"]
+  }
+}
+```
+
+La configurazione effettiva viene registrata anche in
+`logs/calculation.log`. Le opzioni non vengono salvate nel
+`TERMODEL-PROJECT-TEXT-V1`: sono parametri temporanei di esecuzione.
 
 ## Suggerimenti utenti → GitHub Issues
 
