@@ -138,8 +138,15 @@ try {
     throw "Artifact esecutivo appena calcolato marcato stale."
   }
 
-  $svgText = $svgResponse.Content
-  $dxfText = $dxfResponse.Content
+  $projectDir = Join-Path $env:TERMODEL_SAVED_PROJECTS_DIR ([string]$allocation.projectId)
+  $svgPath = Join-Path $projectDir "artifacts\pannelli-esecutivo.svg"
+  $dxfPath = Join-Path $projectDir "artifacts\pannelli-esecutivo.dxf"
+  if (-not (Test-Path $svgPath) -or -not (Test-Path $dxfPath)) {
+    throw "Artifact esecutivo non persistiti nel workspace del progetto."
+  }
+
+  $svgText = [System.IO.File]::ReadAllText($svgPath,[System.Text.UTF8Encoding]::new($false))
+  $dxfText = [System.IO.File]::ReadAllText($dxfPath,[System.Text.UTF8Encoding]::new($false))
   if ($svgText -notmatch "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1") {
     throw "Formato SVG esecutivo non riconosciuto."
   }
@@ -170,7 +177,6 @@ try {
     throw "Primitive SVG/DXF differenti: SVG=$svgPrimitiveCount DXF=$dxfPrimitiveCount."
   }
 
-  $projectDir = Join-Path $env:TERMODEL_SAVED_PROJECTS_DIR ([string]$allocation.projectId)
   $log = Get-Content -LiteralPath (Join-Path $projectDir "logs\calculation.log") -Raw
   if ($log -notmatch "radiantExecutivePrimitiveCount=$svgPrimitiveCount" -or
       $log -notmatch "radiantExecutiveFloorCount=1") {
