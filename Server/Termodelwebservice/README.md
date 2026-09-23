@@ -24,6 +24,7 @@ POST /api/projects/{projectId}/close
 POST /api/projects/{projectId}/unlock
 POST /api/calculations
 GET  /api/projects/{projectId}/artifacts/model3d
+GET  /api/projects/{projectId}/logs/termodel
 POST /api/model/3d
 POST /api/feedback
 ```
@@ -62,6 +63,40 @@ Richiesta minima:
 ```
 
 Se `piani` è omesso viene creato il piano calpestabile predefinito. Gli altri archivi sono clonati dal progetto base incorporato; eventuali archivi forniti nella richiesta sostituiscono quelli omonimi dopo validazione. Il contenitore comprende anche `project/DisegnoInput.dxf`, `thermal/input.xml` e `thermal/input.json`.
+
+## TermodelLog del progetto
+
+Dopo un `POST /api/calculations` riuscito il Service conserva il log
+applicativo prodotto dal `TermodelLog` del Core in:
+
+```text
+SavedProjects/{projectId}/logs/TermodelLog.md
+```
+
+Lo stesso contenuto resta duplicato in `logs/diagnostics.txt` per
+retrocompatibilità; `logs/calculation.log` contiene invece soltanto metadati
+tecnici del calcolo.
+
+Il log corrente si legge senza rilanciare il motore:
+
+```http
+GET /api/projects/{projectId}/logs/termodel
+```
+
+La risposta usa `text/markdown; charset=utf-8`, nome logico
+`TermodelLog.md` e l'header `X-Termodel-Artifact-Stale`, coerente con lo
+stato del progetto. Se il progetto è stato salvato dopo l'ultimo calcolo il log
+resta quello dell'ultima elaborazione valida ed è marcato stale.
+
+Nel Core headless l'inizio di ogni elaborazione chiama
+`TermodelLog.InitializeLog()`, equivalente al reset per-request. I metodi
+`WriteLog`, `LogOperation` e `LogError` confluiscono nello stesso log.
+La Library Desktop contiene numerosi chiamanti e mostra che il Desktop
+inizializza il log prima della generazione; l'implementazione sorgente
+`TermodelLog.cs` non è però attualmente presente in
+`SorgentiTermodel/Library`. Per questo le categorie verbose condizionate da
+`IsEnabled(...)` restano disabilitate nel Service finché non sarà disponibile
+il riferimento autorevole, invece di inventarne il comportamento.
 
 ## Suggerimenti utenti → GitHub Issues
 
