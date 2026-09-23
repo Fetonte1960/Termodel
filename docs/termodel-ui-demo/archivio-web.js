@@ -1038,7 +1038,13 @@ export async function openArchivioWeb(name = 'Piani') {
   await loadSchema();
   const ui = createUi();
 
-  if (name && archiveState.schema?.[name]) {
+  if (name && !archiveState.schema?.[name])
+    throw new Error(`Archivio '${name}' non definito nel progetto corrente.`);
+
+  if (name && archiveState.project && !archiveState.project.archives?.[name])
+    throw new Error(`Archivio '${name}' non presente nel progetto corrente.`);
+
+  if (name) {
     commitFormToRecord();
     archiveState.currentArchive = name;
     archiveState.currentIndex = 0;
