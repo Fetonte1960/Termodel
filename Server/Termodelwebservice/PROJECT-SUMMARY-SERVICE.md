@@ -1,6 +1,6 @@
 # TERMODEL CORE + WEBSERVICE — PROJECT SUMMARY
 
-Ultimo aggiornamento: **2026-09-22**  
+Ultimo aggiornamento: **2026-09-23**  
 Branch GitHub di riferimento: **main**  
 Repository: `https://github.com/Fetonte1960/Termodel`
 
@@ -162,7 +162,7 @@ Risultato:
   algoritmico Core non è stato modificato.
 
 ### INCARICO 2026-09-23 — pretest remoto Render e collegamento frontend
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - registrare il nuovo Termodel.WebService pubblico di pretest su
@@ -199,7 +199,45 @@ Criteri di completamento:
   realmente sul frontend pubblico/mobile.
 
 Risultato:
-- non ancora completato.
+- **deploy Service:** aggiunto `Server/Termodelwebservice/Dockerfile` nel commit
+  `a6aada8df28347cc3d753be86c3a26bf8146638c`; usa immagini .NET 8 Linux,
+  publish Release e `ASPNETCORE_URLS=http://0.0.0.0:${PORT:-10000}`, quindi
+  non fissa una porta incompatibile con Render;
+- **pretest remoto:** l'utente ha verificato il deploy Render pubblico
+  `https://termodel.onrender.com`, con `/` e `/health` rispondenti; region
+  Frankfurt, piano Free. Questa istanza resta esplicitamente non produttiva;
+- filesystem Render Free registrato come effimero: `SavedProjects` serve solo
+  al collaudo e non è archivio definitivo dei progetti clienti;
+- contratto condiviso aggiornato a **v1.3** con base URL remota, endpoint di
+  progetto/lock, vincoli Linux/container, `PORT`, CORS e cold-start Render;
+- **frontend implementato:** Termodel Web **v0.95** usa
+  `https://termodel.onrender.com` come base URL predefinita mantenendo
+  `globalThis.TERMODEL_SERVICE_BASE_URL` come override;
+- rimosso `calculationId` dal workflow frontend corrente; il redraw Service
+  usa `projectId` e l'href `model3d` restituito da `POST /api/calculations`;
+- Nuovo progetto alloca `projectId`/lock e salva il progetto sul Service;
+- `File → Apri` usa `GET /api/projects` + `POST /api/projects/{projectId}/open`;
+- `Salva` e `Salva con nome` usano le API server e non il download browser come
+  storage operativo; Save As conserva lo stesso projectId;
+- il frontend mantiene `projectLockToken` solo in memoria, invia
+  `X-Termodel-Project-Lock`, esegue heartbeat ogni 45 s e tenta close con
+  `keepalive` su `pagehide`;
+- `Aggiorna Modello` richiede/riusa il lock, invia il payload tecnico filtrato
+  e recupera l'artifact `model3d` corrente;
+- il badge 3D mostra `projectId` invece del vecchio calculationId;
+- **GitHub Actions Service run #64:** build + smoke completi riusciti, con
+  `PROJECT_LOCK_SMOKE_OK`; conferma che le modifiche documentali/frontend non
+  hanno rotto il Service;
+- **GitHub Pages run #629:** deploy del frontend v0.95 riuscito;
+- **non ancora verificato manualmente:** intero round-trip sul sito pubblico,
+  Android/mobile reale, doppia apertura da due pagine reali e comportamento
+  sleep/wakeup Render. Questi restano test di collaudo utente, non condizioni
+  già dichiarate superate;
+- nessuna dipendenza da percorsi Windows introdotta; Core, Library e
+  `definizionedati.json` non sono stati modificati;
+- commit frontend principali:
+  `4c9f9e2e591d78f6fd8073096bf734b224409e85` e
+  `92664a593846456bcf89065b0001de2807392227`.
 ### INCARICO 2026-09-22 — projectId unico, persistenza corrente e rimozione calculationId
 Stato: ESEGUITO
 
