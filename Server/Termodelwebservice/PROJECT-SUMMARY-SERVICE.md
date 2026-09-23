@@ -100,6 +100,22 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — collaudo generico protocollo "Debug avanzato"
+Stato: COMMISSIONATO
+
+Commissionato:
+- verificare la fattibilità pratica del protocollo permanente di debug avanzato senza inseguire alcun bug applicativo specifico;
+- eseguire il collaudo su branch diagnostico separato;
+- far compilare e avviare realmente Termodel.WebService in GitHub Actions;
+- eseguire soltanto sonde innocue (/health e /api/model/capabilities);
+- produrre un artifact diagnostico di ritorno contenente risposta delle sonde e log stdout/stderr del Service;
+- leggere e analizzare l'artifact dalla chat;
+- rimuovere dal branch la strumentazione temporanea a collaudo concluso;
+- non modificare Core, runtime WebService, frontend, definizionedati.json o Library Desktop.
+
+Risultato:
+- in corso.
+
 ### INCARICO 2026-09-23 — contratto permanente "Debug avanzato"
 Stato: ESEGUITO
 
