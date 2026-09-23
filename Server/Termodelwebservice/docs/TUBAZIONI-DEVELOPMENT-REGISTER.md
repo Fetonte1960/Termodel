@@ -1262,6 +1262,13 @@ le linee del layer Desktop corretto senza interrompere `GeneraModello`.
 Non genera ancora `retePannelli.xml`, non calcola spirali/perdite e non
 sostituisce il futuro adapter Pannelli/Tubazioni.
 
+Verifica automatica: GitHub Actions `TermodelService Build` run **#153**
+(run id `35867097104`) ha completato Build Release con **0 errori** e lo
+smoke ha prodotto `RADIANT_PIPE_FILE_UNIQUE_SMOKE_OK`: una linea `T001`
+è stata inserita nel `geometry/project.svg`, inviata a
+`POST /api/calculations`, letta dal Core sul layer
+`<NomePiano>_tubipannelli` e conservata nel `project.tmdl` corrente.
+
 ## 16. Decisioni consolidate
 
 - Nome linea: **Calcolo Tubazioni**.
@@ -1310,8 +1317,8 @@ solver idraulico implementato:   NO
 adapter Pannelli implementato:   NO
 input Tubo accettato da Aggiorna Modello: SI, senza solver pannelli
 integrazione solver Aggiorna Modello: NO
-compilato:                       IN VERIFICA GitHub Actions per questa milestone
-eseguito:                        IN VERIFICA smoke HTTP Tubo
+compilato:                       SI — GitHub Actions Service run #153, 0 errori
+eseguito:                        SI — smoke HTTP file unico Tubo riuscito
 regression test Pascal:          NO
 confronto Golden:                NO
 ```
