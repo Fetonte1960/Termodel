@@ -441,7 +441,7 @@ const COMMAND_HELP = {
   },
   'Crea piano da raster con AI': {
     title: 'Crea piano da raster con AI',
-    body: '<p>Comando attivo nella WebApp: selezioni una pianta, copi le istruzioni Termodel, apri il tuo ChatGPT e alleghi la stessa immagine. Al ritorno puoi incollare il blocco <code>TERMODEL-SVG-TEXT-V1</code>: la demo lo decodifica, valida lo SVG, genera un <strong>TermodelWebModel JSON 3D provvisorio</strong> e lo visualizza nel viewer.</p>'
+    body: '<p>Comando attivo nella WebApp: selezioni una pianta, copi le istruzioni Termodel, apri il tuo ChatGPT e alleghi la stessa immagine. Al ritorno puoi incollare il blocco <code>TERMODEL-SVG-TEXT-V1</code>: la WebApp lo decodifica, valida lo SVG, genera un <strong>TermodelWebModel JSON 3D provvisorio</strong> e lo visualizza nel viewer.</p>'
   },
   'Edita nel Cad': {
     title: 'Edita nel CAD — viewer Web',
