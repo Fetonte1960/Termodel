@@ -263,7 +263,7 @@ public sealed class GitHubFeedbackPublisher(
             "2022-11-28");
 
         using HttpResponseMessage response =
-            await httpClient.SendAsync(request, cancellationToken);
+            await SendAsync(request, cancellationToken);
 
         string responseText =
             await response.Content.ReadAsStringAsync(cancellationToken);
@@ -304,6 +304,27 @@ public sealed class GitHubFeedbackPublisher(
 
             throw new FeedbackPublishException(
                 "GitHub ha creato una risposta non riconosciuta.");
+        }
+    }
+
+    private async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await httpClient.SendAsync(request, cancellationToken);
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or
+            TaskCanceledException)
+        {
+            logger.LogWarning(
+                exception,
+                "GitHub feedback endpoint could not be reached.");
+
+            throw new FeedbackPublishException(
+                "Impossibile raggiungere GitHub in questo momento.");
         }
     }
 
