@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — canale universale file generati + test SVG spirali al frontend
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - verificare end-to-end il disegno esecutivo spirali SVG già prodotto dal
@@ -112,17 +112,102 @@ Commissionato:
 - aggiornare contratto Front↔Service, README e Summary;
 - non modificare `definizionedati.json` né la Library Desktop.
 
-Criteri di completamento:
-- catalogo universale file generati funzionante;
-- GET generico sicuro funzionante almeno per SVG, DXF, JSON e log;
-- SVG esecutivo pannelli recuperato tramite il canale universale;
-- frontend capace di mostrare/nascondere l'SVG esecutivo come sfondo CAD2D;
-- build/smoke Service verdi e verifica sintattica frontend;
-- retrocompatibilità degli endpoint specifici;
-- Summary aggiornato allo stato reale.
-
 Risultato:
-- implementazione in corso.
+- non esisteva un canale universale: erano presenti soltanto endpoint
+  specifici per `model3d`, `pannelli`, esecutivo SVG/DXF e TermodelLog;
+- implementato in `ProjectStore` il catalogo read-only ricorsivo dei soli
+  alberi:
+  ```text
+  artifacts/**
+  logs/**
+  ```
+  con normalizzazione del path e rifiuto di traversal/file esterni;
+- introdotto il contratto:
+  ```text
+  TERMODEL-GENERATED-FILES-V1
+  ```
+- nuovi endpoint:
+  ```http
+  GET /api/projects/{projectId}/generated-files
+  GET /api/projects/{projectId}/generated-files/{relativePath}
+  ```
+- ogni record del catalogo espone:
+  `path`, `fileName`, `category`, `contentType`, `size`,
+  `lastWriteTimeUtc`, `inline`, `stale`, `href`;
+- il GET generico riconosce già JSON, SVG, DXF, PDF, CSV, TXT, Markdown,
+  XML, immagini e ZIP; mantiene `X-Termodel-Artifact-Stale`, usa
+  `X-Content-Type-Options: nosniff` e sandbox CSP per SVG/HTML;
+- `project.tmdl` non è pubblicabile tramite questo canale;
+- `POST /api/calculations` espone anche `generatedFilesHref`;
+- gli endpoint specifici esistenti sono rimasti invariati per
+  retrocompatibilità;
+- l'SVG esecutivo pannelli dichiara ora metadata metrici:
+  ```text
+  data-coordinate-unit="m"
+  data-termodel-max-y="..."
+  data-termodel-min-y="..."
+  ```
+  per consentire al CAD2D di riallineare correttamente le coordinate;
+- frontend portato a **v1.05**;
+- nel menu CAD2D `Sfondo` sono stati aggiunti:
+  ```text
+  ↻ Esecutivo pannelli SVG
+  Mostra esecutivo calcolato
+  ```
+- il frontend recupera il catalogo universale, individua
+  `artifacts/pannelli-esecutivo.svg` e lo legge tramite il relativo
+  `href`;
+- l'esecutivo viene visualizzato in un layer runtime separato
+  `cadGeneratedExecutiveLayer`, filtrato per `data-piano`, convertendo
+  metri→centimetri e annullando la sola inversione Y del writer SVG;
+- l'overlay non entra in `cadWorkingDoc`, non modifica
+  `TERMODEL-PROJECT-TEXT-V1`, non entra in Undo/Redo e non viene reinviato
+  al Service;
+- lo stesso overlay può essere mostrato/nascosto indipendentemente dagli
+  sfondi importati tradizionali;
+- **test SVG spirali reale:** lo smoke crea un locale sintetico 4×4 m con
+  ingresso Tubo e verifica nell'SVG:
+  - formato `TERMODEL-PANNELLI-ESECUTIVO-SVG-V1`;
+  - metadata metrici;
+  - layer edificio/mandata/ritorno;
+  - presenza effettiva di geometria mandata e ritorno;
+  - bounding box dell'edificio 0..4 m × 0..4 m;
+  - equivalenza del numero di primitive tecniche SVG/DXF;
+- **test canale universale:** lo smoke verifica catalogo, content type di
+  SVG/DXF/JSON/Markdown, GET dell'SVG tramite `href`, stale=false e
+  rifiuto di `project.tmdl`;
+- marker automatici verificati:
+  ```text
+  GENERATED_FILES_CHANNEL_SMOKE_OK
+  RADIANT_EXECUTIVE_SVG_GEOMETRY_SMOKE_OK
+  RADIANT_EXECUTIVE_SVG_DXF_SMOKE_OK
+  ```
+- **compilato/eseguito/testato:** SI — GitHub Actions
+  `TermodelService Build` run **#206** (run id `35881202382`) completato
+  con successo, inclusi build Release, smoke project/lock, feedback e smoke
+  esecutivo;
+- **frontend verificato staticamente:** `APP_JS_SYNTAX_OK` e
+  `GENERATED_EXECUTIVE_FRONT_STATIC_OK`;
+- **frontend pubblicato:** GitHub Pages run **#834**
+  (run id `35881201564`) completato con **success**;
+- contratto Front↔Service aggiornato alla **v1.14**;
+- README Service aggiornato con il canale universale;
+- non sono stati modificati `definizionedati.json`,
+  `TERMODEL-PROJECT-TEXT-V1` o la Library Desktop;
+- prova browser manuale del nuovo pulsante CAD non ancora eseguita
+  dall'utente: build, deploy e percorso HTTP/geometry sono verificati, ma
+  l'interazione visuale finale nel browser resta da confermare sul front
+  pubblico;
+- commit principali:
+  `15ccc03845bcc27e86ad65a393defc3211114cad`,
+  `39be9e54e17e4593fd3c970ce859e08007246ae7`,
+  `8b84672234453a1fa1344472b7700393585fe6ac`,
+  `5e91b257c26a8bf80931013e86f9e23d43ac4b46`,
+  `6bbaa3a7081adef0335d3a3c7740d34a6c05392e`,
+  `7bbea9dcc8b5cb0ea4abf380588202baf3572b16`,
+  `bf5d65915c1659748485bd92a5881424aa0b5231`,
+  `2337aaef7264eef941bd1cf817d27b2934d9276b`,
+  `095ab077b6727323f86ead5da194372cf08d4e58`.
 
 ### INCARICO 2026-09-23 — attivazione esecutivo pannelli SVG/DXF
 Stato: ESEGUITO
