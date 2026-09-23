@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — attivazione esecutivo pannelli SVG/DXF
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - attivare il disegno esecutivo pannelli usando i **default attuali** già
@@ -113,17 +113,61 @@ Commissionato:
 - non modificare `definizionedati.json`, `TERMODEL-PROJECT-TEXT-V1` o
   la Library Desktop.
 
-Criteri di completamento:
-- un solo modello grafico esecutivo nel Core;
-- artifact DXF e SVG generati dallo stesso modello;
-- SVG con le stesse primitive tecniche prodotte nel DXF OUT per il caso
-  pannelli supportato dalla milestone;
-- persistenza e GET senza ricalcolo;
-- build Release e smoke verdi;
-- Summary aggiornato allo stato reale.
-
 Risultato:
-- implementazione in corso.
+- implementato `RadiantExecutiveGenerator` nel Core;
+- il motore grafico usa il `SpiraliGPT` Desktop corrente con default
+  `PassoTubi=0,30 m`, coerente con `RAD-DEFAULT`;
+- i cinque sorgenti `SpiraliGPT` necessari sono copie temporanee
+  byte-identical della Library e sono tracciati in
+  `Termodel.Core/CopiedFromTermodel/TERMODEL-SYNC.md`;
+- DXF e SVG derivano dallo stesso modello neutro
+  `RadiantExecutiveDrawing`;
+- artifact persistiti:
+  ```text
+  artifacts/pannelli-esecutivo.svg
+  artifacts/pannelli-esecutivo.dxf
+  ```
+- endpoint disponibili senza ricalcolo:
+  ```http
+  GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-svg
+  GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
+  ```
+- contenuto equivalente verificato per i layer:
+  `<Piano>_Edificio_Output`,
+  `<Piano>_PannelliMandata_Output`,
+  `<Piano>_PannelliRitorno_Output`,
+  `<Piano>_NumeriCircuiti_Output` quando presente;
+- il grafo/collettore resta intenzionalmente fuori scope e rimandato a
+  **Tubi universale**;
+- contratto Front↔Service aggiornato alla **v1.13**;
+- README e registro Tubazioni aggiornati;
+- **compilato:** SI — GitHub Actions `TermodelService Build` run **#195**
+  (run id `35878924866`), Build completata con successo;
+- **eseguito/testato:** SI — smoke dedicato
+  `RADIANT_EXECUTIVE_SVG_DXF_SMOKE_OK`, locale sintetico 4×4 m con
+  ingresso Tubo, persistenza di entrambi gli artifact, GET senza ricalcolo
+  con `X-Termodel-Artifact-Stale=false` e uguaglianza del numero di
+  primitive tecniche fra SVG e DXF;
+- **confrontato con riferimento:** SI per il comportamento grafico
+  `IoPannelli.EsecutivoPannelli` nel perimetro supportato dalla milestone;
+  non viene dichiarata equivalenza per il futuro grafo universale;
+- commit principali:
+  `41998b8c63a7c06b10818320ab9e5323ca3c3746`,
+  `2e2b711f733f925aa5c04f8b6b4516575259d68a`,
+  `f346ded263dffef95e7c9588379573643c218efc`,
+  `51c0ca3cc288d00284983b08990424a1d1dc64de`,
+  `b9ac3c2ed83a2b8c35adc6c4e1b6bb40da1df38c`,
+  `502da9f5cf63264c7ab39fe4373f771ea4fe5d25`,
+  `a412bd5d5cdd79e28e9e8c18fd8eea2c024ea9fe`,
+  `0b5472e538b962311d791c452bf9df964ec521e6`,
+  `d30493eb28e76afb6357afe92dfe567003cdbbb5`,
+  `c9a584d6254493552672b19e24b1fb400500639a`,
+  `5680af2d093e604509e01820d1edffc80aadd57b`,
+  `ca9f6c39a1b4bd755dc42e8d6eca79c32797349a`,
+  `4cb2349ebaf0d102875c521b305af05aa55f9d48`,
+  `10e87f688cc0a3f0d0b4009e44a3a6df24c780ea`,
+  `bc6c2cc5b3966c5acaf820def1aa450a9bda3c23`,
+  `8f929a1709677cff126c45f3c220185a2313e68c`.
 
 ### INCARICO 2026-09-23 — rinvio grafo alla fase Tubi universale
 Stato: ESEGUITO
