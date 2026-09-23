@@ -17,6 +17,17 @@ restare minima, commentata e confrontabile con il riferimento indicato.
 | `Model/Polig3D.cs` | `SorgentiTermodel/Library/leggidxf/Polig3D.cs` | PENDING — BYTE-IDENTICAL, Git blob `d7d835a8a39febb3c3b26bcb88a8cc5cebb19411` |
 | `Model/Modello.cs` | `SorgentiTermodel/Library/Modello.cs` | PENDING |
 
+Il sorgente autorevole Desktop di `TermodelLog` non è attualmente presente
+in `SorgentiTermodel/Library`: nella Library sono presenti i chiamanti
+(`InitializeLog`, `WriteLog`, `LogOperation`, `LogError`,
+`IsEnabled`) ma non la classe che ne definisce persistenza e categorie.
+Il Service usa quindi temporaneamente
+`Compatibility/LegacyCoreAdapters.cs::TermodelLog`: il lifecycle è
+allineato al Desktop con `InitializeLog()` a inizio elaborazione e raccolta
+per-request tramite `AsyncLocal`; le categorie verbose condizionate da
+`IsEnabled(...)` restano disabilitate finché non sarà disponibile il
+riferimento Desktop, per evitare di inventarne la configurazione.
+
 Il supporto desktop `SorgentiTermodel/Library/utilities/ErrorManager.cs` è
 sostituito nel Service da un sink diagnostico headless in
 `Compatibility/LegacyUiDummies.cs`.
