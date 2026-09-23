@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.4**  
+Versione documento: **1.5**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; definito endpoint server per feedback utenti verso GitHub Issues**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; definito endpoint server per feedback utenti verso GitHub Issues; commissionato artifact TermodelLog per progetto**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -341,6 +341,38 @@ Esempio:
   "projectName": "Appartamento"
 }
 ```
+
+### Log Termodel corrente del progetto
+
+Decisione del **2026-09-23**: il log applicativo prodotto dal motore Termodel
+durante `Aggiorna Modello` è un risultato derivato del progetto corrente e
+deve essere conservato nello stesso workspace del `projectId`.
+
+Percorso logico:
+
+```text
+SavedProjects/{projectId}/logs/TermodelLog.md
+```
+
+Endpoint previsto:
+
+```http
+GET /api/projects/{projectId}/logs/termodel
+```
+
+Regole:
+
+- il contenuto deriva dal `TermodelLog` usato dal Core e non da un secondo
+  logger indipendente nel WebService;
+- ogni elaborazione riuscita sostituisce il log corrente insieme agli altri
+  output del workspace;
+- una elaborazione fallita non deve sostituire il log dell'ultimo calcolo
+  riuscito;
+- la lettura del log non deve rilanciare il calcolo;
+- `diagnostics.txt` e `calculation.log` restano disponibili internamente
+  per retrocompatibilità e metadati tecnici;
+- il frontend potrà consumare l'endpoint in una fase successiva, ma non è
+  richiesto modificarlo per l'implementazione server.
 
 ### Assegnazione di un nuovo projectId
 
