@@ -1,7 +1,7 @@
 # CALCOLO TUBAZIONI — REGISTRO DI SVILUPPO AUTONOMO
 
 Aggiornamento: **23 settembre 2026**  
-Stato: **STUDIO E ARCHITETTURA REGISTRATI — MOTORE NON IMPLEMENTATO**  
+Stato: **PRIMO KERNEL DARCY E ADAPTER PANNELLI IMPLEMENTATI — SOLVER GENERALISTA/ SPIRALI ANCORA PARZIALI**  
 Linea: **TermodelService / libreria di supporto ai pannelli radianti**
 
 Questo documento è il registro autonomo della futura libreria **Calcolo
@@ -471,9 +471,30 @@ TemperaturaMediaFluido_C
 (T_mandata + T_ritorno) / 2
 ```
 
-La portata è un input autorevole proveniente dal calcolo pannelli. Una futura
-funzione potrà ricavarla da potenza e salto termico, ma non fa parte di questa
-prima specifica.
+La portata resta, come obiettivo finale, un input autorevole proveniente dal
+calcolo pannelli completo.
+
+**Prima implementazione operativa del 23 settembre 2026:** finché il generatore
+spirali/dispersioni non fornisce ancora una portata circuito autorevole al
+Service, l'adapter pannelli calcola una portata **preliminare derivata** da:
+
+```text
+PotenzaSpecifica =
+    CoefficienteResaWm2K * (TemperaturaMediaAcqua - TemperaturaAmbiente)
+
+PotenzaCircuito =
+    AreaServitaStimata * PotenzaSpecifica
+
+m_dot =
+    PotenzaCircuito / (cp_acqua * (T_mandata - T_ritorno))
+
+Q = m_dot / rho
+```
+
+con `cp_acqua = 4180 J/(kg K)`. Questa portata è marcata esplicitamente come
+derivata nelle diagnostiche dell'artifact e dovrà essere sostituita dalla
+portata autorevole non appena il calcolo pannelli completo la renderà
+disponibile.
 
 #### 6.1.6 Formula predefinita: Darcy-Weisbach
 
@@ -1153,14 +1174,14 @@ motore produce un valore differente.
 | Fase | Contenuto | Stato |
 |---|---|---|
 | T0 | studio sorgenti Pascal, `base.dat`, generatore form/DB, DXF e Pannelli C# | **ESEGUITO** |
-| T1 | specifica metadata/database reti e mapping progressivo `base.dat` | **IN CORSO** — modello pannelli revisionato in `Reti` + `TipologiePannelli` |
-| T2 | dominio neutro `TubazioniNetwork` + validazione topologica | DA FARE |
-| T3 | kernel idraulico puro: portate, attrito, perdite, sizing, percorso sfavorito | DA FARE |
+| T1 | specifica metadata/database reti e mapping progressivo `base.dat` | **ESEGUITO PER PANNELLI** — `Reti` + `TipologiePannelli` operativi |
+| T2 | dominio neutro `TubazioniNetwork` + validazione topologica | **PARZIALE** — componenti CAD connessi/ramificati riconosciuti, dominio generalista ancora da fare |
+| T3 | kernel idraulico puro: portate, attrito, perdite, sizing, percorso sfavorito | **PARZIALE** — Darcy/Re/Colebrook e perdita distribuita implementati; sizing/percorso sfavorito da fare |
 | T4 | equilibratura / valvole / portate effettive selezionate | DA FARE |
-| T5 | adapter Pannelli radianti usando il grafo C# corrente | DA FARE |
-| T6 | regression test Pascal/golden | DA FARE |
+| T5 | adapter Pannelli radianti usando il grafo C# corrente | **PARZIALE** — CAD Tubo + archivi -> circuiti idraulici; grafo spirali/collettori da completare |
+| T6 | regression test Pascal/golden | **PARZIALE** — golden numerico sintetico; confronto Pascal/GoldenResults da fare |
 | T7 | drawing result neutro e adapter DXF/SVG | DA FARE |
-| T8 | integrazione controllata in `Aggiorna Modello` | DA FARE |
+| T8 | integrazione controllata in `Aggiorna Modello` | **IMPLEMENTATA PER `pannelli.json`** |
 | T9 | eventuale UI Web/Desktop guidata dai metadata | DA FARE |
 
 ## 15.1 Milestone — completamento dati di base pannelli radianti
@@ -1233,9 +1254,11 @@ compatibilità metadata legacy:  PRESERVATA IN LETTURA
 combo Rete CAD 2D:              IMPLEMENTATA
 entità Tubo CAD 2D:             IMPLEMENTATA
 trasporto Tubo nel file unico:  IMPLEMENTATO
-acquisizione layer nel Core:    IMPLEMENTATA, senza solver pannelli
-lettura archivi dal solver:     DA FARE
-perdita Darcy circuito:         DA FARE
+acquisizione layer nel Core:    IMPLEMENTATA
+lettura archivi dal solver:     IMPLEMENTATA
+validazione passo tipologia:    IMPLEMENTATA
+perdita Darcy circuito:         IMPLEMENTATA
+artifact pannelli JSON:         IMPLEMENTATO
 ```
 
 ## 15.2 Milestone — CAD Rete / entità Tubo
@@ -1269,6 +1292,97 @@ smoke ha prodotto `RADIANT_PIPE_FILE_UNIQUE_SMOKE_OK`: una linea `T001`
 `POST /api/calculations`, letta dal Core sul layer
 `<NomePiano>_tubipannelli` e conservata nel `project.tmdl` corrente.
 
+## 15.3 Milestone — primo solver idraulico pannelli / artifact
+
+Aggiornamento 23 settembre 2026 — **IMPLEMENTATO E TESTATO**.
+
+È stato aggiunto in `Termodel.Core`:
+
+```text
+RadiantPanels/RadiantPanelCalculator.cs
+```
+
+Il solver:
+
+1. legge gli archivi runtime `Reti` e `TipologiePannelli` dal file unico;
+2. seleziona le reti attive `TipoRete=PannelliRadianti`;
+3. risolve `CodiceTipologiaPannello`;
+4. valida il passo scelto contro `PassiDisponibiliMm`;
+5. usa il Virtual CAD e `data-termodel-rete` per associare le linee
+   `<Piano>_tubipannelli` alla rete;
+6. raggruppa per connettività geometrica i segmenti in circuiti;
+7. calcola acqua, velocità, Reynolds, fattore Darcy e perdita distribuita;
+8. confronta lunghezza/perdita con i limiti della rete;
+9. restituisce diagnostiche per circuito.
+
+`SvgDxfReader` conserva ora su `Line.UserData` un
+`SvgDxfLineMetadata` con id, piano, entità, rete e layer. Il codice Desktop
+continua a vedere le normali proprietà netDxf; i nuovi adapter Core non devono
+riparsare lo SVG per recuperare la semantica della rete.
+
+L'elaborazione autorevole `POST /api/calculations` produce e persiste:
+
+```text
+SavedProjects/{projectId}/artifacts/pannelli.json
+```
+
+Formato:
+
+```text
+TermodelRadiantPanels v1
+```
+
+Lettura senza ricalcolo:
+
+```http
+GET /api/projects/{projectId}/artifacts/pannelli
+```
+
+Il salvataggio successivo del progetto marca l'artifact stale insieme agli
+altri elaborati.
+
+### Caso sintetico verificato
+
+Smoke automatico con un unico `T001` lungo **1,000 m**, rete
+`RAD-DEFAULT`, passo 300 mm, PE-Xa diametro interno 12 mm, acqua 35/30 °C.
+
+Golden numerico usato con tolleranze:
+
+```text
+Portata derivata  ~= 3,1826793 L/h
+Reynolds          ~= 123,4017
+DeltaP distribuita~= 1,313675 Pa per 1 m
+```
+
+Lo stesso smoke verifica:
+
+- `networkCode=RAD-DEFAULT`;
+- `panelCode=GEN-DEFAULT`;
+- passo 300 mm e diametro interno 12 mm letti dagli archivi;
+- fattore passo 3,4 m/m²;
+- lunghezza geometrica/idraulica 1,0 m;
+- persistenza di `pannelli.json`;
+- GET dell'artifact con `X-Termodel-Artifact-Stale=false`;
+- modifica del solo passo runtime a 333 mm -> HTTP 422;
+- un calcolo fallito per passo non ammesso non sostituisce l'ultimo artifact
+  pannelli valido.
+
+Verifica GitHub Actions: `TermodelService Build` run **#165**
+(run id `35871205144`) — Build Release **0 errori**, smoke HTTP project/lock
+success, marker `RADIANT_PANEL_DARCY_SMOKE_OK`, validazione passo 422,
+`RADIANT_PIPE_FILE_UNIQUE_SMOKE_OK`, test logging e feedback tutti verdi.
+
+### Limite intenzionale della milestone
+
+Non viene dichiarato integrato il generatore grafico storico delle spirali.
+Il motore Desktop/GPT corrente espone ancora `PassoTubi=0,30 m` come costante
+compile-time e usa `locale.xml/locale.svg` tramite working directory. Usarlo
+direttamente nel Service renderebbe non autorevole
+`Reti.PassoSelezionatoMm` e introdurrebbe dipendenze file-based globali.
+
+La direzione corretta è rendere parametrico/headless il **motore condiviso**
+prima di collegarlo al Service, senza copiarlo in un secondo motore.
+
 ## 16. Decisioni consolidate
 
 - Nome linea: **Calcolo Tubazioni**.
@@ -1286,25 +1400,22 @@ smoke ha prodotto `RADIANT_PIPE_FILE_UNIQUE_SMOKE_OK`: una linea `T001`
 - Nessuna dipendenza necessaria da AutoCAD.
 - Il solver deve lavorare su grafo/rete neutri, non direttamente su DXF.
 - I risultati grafici sono derivati e separati dall'algoritmo idraulico.
-- Il collegamento con `Aggiorna Modello` verrà fatto solo dopo test autonomi.
+- `Aggiorna Modello` pubblica già il primo artifact idraulico `pannelli.json`; sizing, collettori, perdite concentrate e spirali restano estensioni successive.
 
 ## 17. Questioni aperte
 
 - estendere in futuro `Reti.TipoRete` oltre `PannelliRadianti` verso
   Tubazioni/Canali senza creare archivi concorrenti;
 - estendere in futuro i comandi CAD di rete oltre l'entità `Tubo` quando saranno introdotti altri `TipoRete`;
-- implementare la validazione del passo selezionato rispetto ai passi ammessi
-  dalla tipologia pannello;
 - verificare quali dati storici siano ancora tecnicamente/normativamente
   appropriati;
-- definire nel kernel le proprietà dell'acqua in funzione della temperatura
-  media e l'eventuale futura estensione ad altri fluidi;
+- validare/raffinare le proprietà termofisiche dell'acqua e l'eventuale futura estensione ad altri fluidi;
 - identificare progetti Pascal ancora eseguibili per produrre Golden Results;
 - formalizzare la relazione circuiti Pannelli ↔ terminali Tubazioni;
 - decidere il formato finale del drawing result;
 - decidere se introdurre una categoria log `Tubazioni`;
-- definire in un incarico futuro il contratto di integrazione con
-  `POST /api/calculations`.
+- rendere parametrico e headless il generatore spirali condiviso, eliminando la costante compile-time del passo e il protocollo basato sulla working directory;
+- sostituire la portata preliminare derivata con la portata autorevole del calcolo pannelli completo quando disponibile.
 
 ## 18. Stato di verifica
 
@@ -1313,18 +1424,22 @@ studiato sorgenti storici:       SI, prima mappatura
 architettura progettata:         SI, livello registro
 metadata JSON Reti/Pannelli:     SI
 dati progetto Reti/Pannelli:     SI
-solver idraulico implementato:   NO
-adapter Pannelli implementato:   NO
-input Tubo accettato da Aggiorna Modello: SI, senza solver pannelli
-integrazione solver Aggiorna Modello: NO
-compilato:                       SI — GitHub Actions Service run #153, 0 errori
-eseguito:                        SI — smoke HTTP file unico Tubo riuscito
+solver idraulico implementato:   SI, primo kernel Darcy distribuito
+adapter Pannelli implementato:   SI, prima versione CAD Tubo + archivi
+input Tubo accettato da Aggiorna Modello: SI
+integrazione solver Aggiorna Modello: SI, artifact pannelli JSON
+compilato:                       SI — GitHub Actions Service run #165, 0 errori
+eseguito:                        SI — smoke HTTP artifact pannelli riuscito
+test sintetico Darcy:            SI — golden numerico con tolleranze
+validazione passo archivio:      SI — 333 mm non ammesso -> HTTP 422
 regression test Pascal:          NO
-confronto Golden:                NO
+confronto Golden storico:        NO
+spirali grafiche Service:        NO, motore condiviso da rendere parametrico
 ```
 
-La prossima attività corretta per il ramo pannelli è collegare il calcolo
-pannelli ai due archivi `Reti`/`TipologiePannelli` e implementare il primo
-caso Darcy-Weisbach su un circuito sintetico. La geometria Tubo è già
-trasportabile dal CAD al Core e costituisce ora un input disponibile, ma non
-è ancora un risultato idraulico né un artifact pannelli.
+Il prossimo salto funzionale del ramo pannelli non è più Darcy: è rendere il
+generatore spirali condiviso parametrico/headless, così che
+`Reti.PassoSelezionatoMm` governi realmente anche la geometria generata.
+Successivamente l'artifact potrà usare superficie/spirale/collegamenti reali,
+portata autorevole, collettori e perdite concentrate, mantenendo il kernel
+Darcy già verificato.
