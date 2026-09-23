@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.11**  
+Versione documento: **1.12**  
 Aggiornamento: **23 settembre 2026**  
 Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; archivi Reti/TipologiePannelli, CAD Tubo e primo artifact idraulico pannelli implementati**
 
@@ -394,6 +394,29 @@ Non sono ancora inclusi nella perdita:
 - valvole e flussimetri;
 - perdite concentrate;
 - distribuzione primaria.
+
+### Confine attuale: perdita per circuito, senza grafo di rete
+
+Decisione consolidata del 23 settembre 2026: il grafo generalista non è un
+requisito della fase PannelliRadianti corrente. Viene rimandato alla futura
+fase **Tubi universale**, insieme a collettore topologico, scomposizione dei
+rami, percorso sfavorito, sizing, equilibratura e perdite concentrate.
+
+Per il contratto corrente:
+
+```text
+1 componente geometrica connessa = 1 circuito da verificare idraulicamente
+```
+
+Di conseguenza, per ottenere risultati distinti, circuiti diversi devono
+essere disegnati come componenti indipendenti e non devono condividere
+l'estremo del collettore. Una componente ramificata viene diagnosticata ma
+non viene automaticamente scomposta in più circuiti.
+
+Questo comportamento è intenzionale e transitorio: evita un grafo
+PannelliRadianti dedicato che duplichererebbe il futuro motore Tubi
+universale. Il kernel Darcy per circuito resta invece parte stabile e
+riusabile del Core.
 
 Il generatore grafico storico delle **spirali** non viene dichiarato integrato
 in questo contratto: il suo motore corrente usa ancora un passo compile-time
