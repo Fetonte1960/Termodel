@@ -84,6 +84,50 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — procedura permanente snapshot per diagnostica AI
+Stato: COMMISSIONATO
+
+Decisione:
+- la procedura `Aggiorna Modello -> pubblica snapshot -> esamina l'ultimo snapshot`
+  diventa una **procedura operativa fondamentale e permanente** del progetto;
+- qualsiasi nuova chat Service deve conoscere il meccanismo prima di chiedere
+  all'utente copie manuali di SVG, DXF, JSON, report o log già prodotti dal
+  Service;
+- quando serve analizzare una sessione reale Render, la chat deve cercare sul
+  branch `service-snapshots` il file
+  `service-snapshots/LATEST.json`, quindi leggere il relativo
+  `manifest.json` e gli artifact/log dello snapshot;
+- lo snapshot viene creato **solo su richiesta**, non ad ogni
+  `Aggiorna Modello`;
+- istruzione utente corrente:
+  1. eseguire `Aggiorna Modello`;
+  2. pubblicare la sessione con
+     `POST /api/projects/{projectId}/publish-session-snapshot`;
+  3. dire alla chat `esamina l'ultimo snapshot`;
+- fino a quando non esisterà un comando locale/pulsante sicuro che automatizzi
+  il punto 2, l'utente usa PowerShell con la propria
+  `TERMODEL_SNAPSHOT_ADMIN_KEY`; la chiave e il token GitHub non devono
+  essere incollati in chat;
+- la chat deve distinguere chiaramente lo snapshot da GitHub dal workspace
+  effimero Render: GitHub è la copia diagnostica persistente;
+- gli snapshot non vengono puliti automaticamente allo stato attuale;
+  `LATEST.json` indica soltanto l'ultimo. Una futura policy di retention
+  dovrà essere deliberata prima di cancellare snapshot storici;
+- registrare questa procedura nel Summary Service, nel contratto
+  Front↔Service, nel README Service e nella nota frontend sul WebService;
+- non modificare il `PROJECT-SUMMARY.md` Web JS alla radice.
+
+Criteri di completamento:
+- tutti i documenti sopra indicati descrivono lo stesso flusso utente e la
+  stessa regola per le nuove chat;
+- è presente il riferimento a `service-snapshots/LATEST.json`;
+- sono esplicitati pubblicazione manuale, persistenza GitHub, assenza di
+  retention automatica e segreti da non condividere;
+- nessuna modifica funzionale al Service o al frontend.
+
+Risultato:
+- registrazione documentale in corso.
+
 ### INCARICO 2026-09-23 — pubblicazione snapshot diagnostico Service → GitHub
 Stato: ESEGUITO
 
