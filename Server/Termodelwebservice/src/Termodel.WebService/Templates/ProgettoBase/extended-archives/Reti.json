@@ -13,6 +13,7 @@
     "LunghezzaMassimaCircuitoM": 100,
     "PerditaCaricoMassimaCircuitoPa": 25000,
     "KLayout": 1,
-    "Attivo": "SI"
+    "Attivo": "SI",
+    "FormulaPerdita": "Darcy-Weisbach"
   }
 ]
