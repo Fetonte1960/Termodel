@@ -620,41 +620,16 @@ Il codice generato `CompilaForm.pas` usa infatti primitive come
 Il nuovo sistema deve conservare **questa idea**, non il generatore Pascal:
 i metadati JSON devono essere interpretati direttamente a runtime.
 
-### 7.3 Nuovo schema JSON
+### 7.3 Metadata JSON corrente
 
-Nome di lavoro:
-
-```text
-tubazioni-definizionedati.json
-```
-
-Deve essere separato da:
+Per il ramo pannelli il metadata operativo è:
 
 ```text
-SorgentiTermodel/Library/definizionedati/definizionedati.json
-Server/.../Definitions/definizionedati.json
+definition/reti-pannelli-definizionedati.json
 ```
 
-e usare la stessa forma concettuale del metadata Termodel corrente:
-
-```json
-{
-  "Tubazioni": {
-    "Codice": {
-      "LunghezzaMassima": 50,
-      "Descr": "Codice",
-      "Ini": "",
-      "Grid": ["Archivio"]
-    },
-    "Materiale": {
-      "Descr": "Materiale",
-      "Combo": ["auto_combo", "MaterialiTubi", "Codice", ""]
-    }
-  }
-}
-```
-
-Le proprietà Termodel da mantenere compatibili dove applicabili sono:
+È separato da `definizionedati.json` storico ma usa le stesse convenzioni
+AutoForm dove applicabili:
 
 - `LunghezzaMassima`;
 - `NumeroCifre`;
@@ -666,57 +641,43 @@ Le proprietà Termodel da mantenere compatibili dove applicabili sono:
 - `Grid`;
 - `Form`.
 
-In particolare va mantenuta la convenzione:
+Resta valida la convenzione lookup:
 
 ```json
 ["auto_combo", "NomeArchivio", "Campo", "ValoreInizialeOpzionale"]
 ```
 
-per i lookup dinamici.
+Nella struttura corrente `Reti.CodiceTipologiaPannello` usa un
+`auto_combo` verso `TipologiePannelli.Codice`.
 
-### 7.4 Dati operativi JSON
+La precedente denominazione di lavoro `tubazioni-definizionedati.json` non è
+più il metadata del ramo pannelli. Potrà essere rivalutata soltanto se il
+programma generalista richiederà in futuro un dominio archivistico separato.
 
-Tubazioni avrà anche un archivio dati indipendente JSON. Nome di lavoro:
+### 7.4 Dati operativi correnti
+
+I dati pannelli sono archivi del **progetto Termodel**, non un database
+parallelo:
 
 ```text
-tubazioni-database.json
+archives/json/Reti.json
+archives/json/TipologiePannelli.json
 ```
 
-La struttura logica deve mantenere la semantica già usata da Termodel in
-memoria: **archivio -> elenco righe -> campi valore**, ad esempio:
+con corrispondenti sezioni XML per compatibilità col modello archivio
+esistente.
 
-```json
-{
-  "format": "TERMODEL-TUBAZIONI-DATABASE",
-  "version": 1,
-  "archives": {
-    "MaterialiTubi": [
-      {
-        "Codice": "PEX",
-        "Descrizione": "Polietilene reticolato",
-        "RugositaMm": "..."
-      }
-    ],
-    "Tubazioni": [],
-    "Diametri": [],
-    "PerditeLocalizzate": []
-  }
-}
-```
+Quindi, per questa fase, non viene creato un
+`tubazioni-database.json` separato.
 
-I nomi definitivi, i tipi e i dati iniziali devono essere approvati dopo il
-mapping completo di `base.dat` e degli archivi storici.
+Il futuro programma generalista dovrà prima verificare se può estendere
+`Reti` e i relativi archivi tipologici nello stesso contenitore progetto.
+Un database separato verrà introdotto solo se esiste una reale esigenza di dati
+globali condivisi fra progetti.
 
-**Nota importante:** il Termodel Desktop corrente usa
-`definizionedati.json` come metadata e persiste molti archivi operativi in
-XML. Per Tubazioni la decisione è invece di usare JSON anche per il database
-operativo, mantenendo però la stessa filosofia di collection di record e lo
-stesso metadata/AutoForm. Non va dichiarato che l'attuale archivio Termodel
-sia già persistito interamente in JSON.
+### 7.5 Relazione con il vecchio `base.dat`
 
-### 7.5 Archivi candidati della prima versione
-
-Da verificare nel mapping di dettaglio:
+Il `base.dat` storico resta una fonte importante per comprendere:
 
 ```text
 Reti
@@ -733,8 +694,19 @@ ValvoleTaratura
 Collettori
 ```
 
-Le relazioni master/slave del vecchio `base.dat` devono diventare lookup e
-chiavi esplicite, senza puntatori o dipendenza dall'ordine fisico delle righe.
+ma questo elenco **non corrisponde agli archivi che dobbiamo creare subito**.
+
+Per i pannelli radianti la normalizzazione corrente concentra:
+
+- dati di esercizio e scelta progettuale in `Reti`;
+- dati costruttivi del sistema/tubo in `TipologiePannelli`.
+
+Quando verranno implementate reti generaliste di tubazioni o canali, il
+`base.dat` verrà rimappato progressivamente evitando di ricreare
+automaticamente la frammentazione storica.
+
+Le relazioni master/slave storiche devono comunque diventare lookup e chiavi
+esplicite, senza puntatori o dipendenza dall'ordine fisico delle righe.
 
 ### 7.6 Revisione archivi pannelli radianti — modello autorevole
 
