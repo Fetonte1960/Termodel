@@ -1234,6 +1234,29 @@ Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
 
+### INCARICO 2026-09-23 — rimozione modalità informazioni comandi
+Stato: **COMMISSIONATO**
+
+Decisione di prodotto:
+- Termodel Web non va più trattato come una demo esplorabile ma come una **WebApp funzionante**;
+- la modalità corrente di informazioni/help contestuale sui comandi è invasiva e deve essere rimossa;
+- l'help verrà reintrodotto in futuro con una modalità separata e non interferente con l'uso operativo.
+
+Commissionato:
+- rimuovere dal frontend la modalità `DEMO_HELP` e il relativo pannello/modalità informativa;
+- eliminare le chiamate automatiche a `showDemoHelp(...)` su menu, tab, filtri, Aggiorna Modello, CAD e bottom-bar;
+- rimuovere i pulsanti/help Android legati esclusivamente a questa modalità;
+- preservare intatti i comandi operativi, il ProjectBrowser, il CAD, il Service/projectId e la logica applicativa;
+- aggiornare versione/cache-busting frontend e questo Summary;
+- nessuna modifica a WebService/Core/Library/definizionedati.json né al contratto Frontend↔Service.
+
+Criteri di completamento:
+- nessun pannello/modal help corrente viene creato o aperto;
+- nessun comando operativo viene intercettato per mostrare informazioni;
+- nessun riferimento runtime a `DEMO_HELP`, `showDemoHelp`, `demoHelpPanel`, `helpKeyFromElement` o `androidHelpEnabled`;
+- sintassi JavaScript verificata;
+- frontend versionato e pubblicabile.
+
 ### INCARICO 2026-09-23 — File → Apri esempio da catalogo consolidato
 Stato: **ESEGUITO**
 
