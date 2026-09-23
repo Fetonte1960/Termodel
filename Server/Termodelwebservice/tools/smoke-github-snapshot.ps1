@@ -125,16 +125,29 @@ try {
   }
 
   $treeEntries = @($captured.tree.tree)
-  if ($treeEntries.Count -ne 5) { throw "Tree snapshot deve contenere 4 file generati + manifest." }
+  if ($treeEntries.Count -ne 6) { throw "Tree snapshot deve contenere 4 file generati + manifest + LATEST." }
 
   $paths = @($treeEntries | ForEach-Object { [string]$_.path })
   if (@($paths | Where-Object { $_ -match "project\.tmdl$" }).Count -ne 0) { throw "project.tmdl non deve essere pubblicato nello snapshot." }
 
-  foreach ($requiredSuffix in @("/artifacts/model3d.json","/artifacts/diagnostic.svg","/artifacts/report.csv","/logs/TermodelLog.md","/manifest.json")) {
+  foreach ($requiredSuffix in @("/artifacts/model3d.json","/artifacts/diagnostic.svg","/artifacts/report.csv","/logs/TermodelLog.md","/manifest.json","/LATEST.json")) {
     if (@($paths | Where-Object { $_.EndsWith($requiredSuffix) }).Count -ne 1) { throw "Tree snapshot privo di $requiredSuffix." }
   }
 
   if (@($paths | Where-Object { $_ -notmatch "^service-snapshots/" }).Count -ne 0) { throw "Tree snapshot contiene path fuori dalla radice service-snapshots." }
+
+  $latestEntry = @($treeEntries | Where-Object { $_.path -eq "service-snapshots/LATEST.json" })[0]
+  $latestBlobProperty = $captured.blobs.PSObject.Properties[$latestEntry.sha]
+  if (-not $latestBlobProperty) { throw "Blob LATEST non trovato nel capture." }
+  $latestBytes = [Convert]::FromBase64String([string]$latestBlobProperty.Value.base64)
+  $latestText = [System.Text.Encoding]::UTF8.GetString($latestBytes)
+  $latest = $latestText | ConvertFrom-Json
+  if ($latest.format -ne "TERMODEL-SERVICE-SNAPSHOT-LATEST-V1" -or
+      $latest.snapshotId -ne $created.snapshotId -or
+      [string]$latest.projectId -ne $projectId.ToString("D") -or
+      $latest.rootPath -ne $created.rootPath) {
+    throw "LATEST.json non punta allo snapshot appena pubblicato."
+  }
 
   $manifestEntry = @($treeEntries | Where-Object { $_.path -match "/manifest\.json$" })[0]
   $manifestBlobProperty = $captured.blobs.PSObject.Properties[$manifestEntry.sha]
