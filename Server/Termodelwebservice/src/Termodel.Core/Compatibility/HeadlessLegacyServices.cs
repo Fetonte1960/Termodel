@@ -189,8 +189,10 @@ namespace Termodel.Impianti.Pannelli
 {
     using Termodel.utilities;
 
-    // Modificato da Codex per realizzare: conserva il confine semantico dei locali;
-    // i circuiti radianti restano esclusi e vengono rifiutati se presenti nel CAD.
+    // Modificato da Codex per realizzare: conserva il confine semantico dei locali
+    // e accetta dal Virtual CAD le linee Tubo secondo la convenzione Desktop.
+    // Il solver pannelli Web non viene eseguito qui: questo adattatore consente
+    // al normale GeneraModello di acquisire l'input senza rifiutare il progetto.
     internal static class IoPannelli
     {
         public static void AddParalleloLocale(Geometry polygon, string localeId, string floorName)
@@ -200,8 +202,24 @@ namespace Termodel.Impianti.Pannelli
 
         public static void LeggiTubiDXF(DxfDocument document, string floorName, double elevation, double originX, double originY)
         {
-            if (document.Layers.Any(layer => layer.Name.Contains("TUB", StringComparison.OrdinalIgnoreCase)))
-                throw new NotSupportedException("Il file unico contiene circuiti radianti CAD non ancora supportati dal Core 3D Web.");
+            ArgumentNullException.ThrowIfNull(document);
+            if (string.IsNullOrWhiteSpace(floorName))
+                return;
+
+            // Riferimento Desktop:
+            // SorgentiTermodel/Library/Impianti/Pannelli/IoPannelli.cs
+            // cerca esclusivamente "<NomePiano>_tubipannelli".
+            string layerTubi = $"{floorName}_tubipannelli";
+            int count = document.Lines.Count(line =>
+                line.Layer is not null &&
+                line.Layer.Name.Equals(layerTubi, StringComparison.OrdinalIgnoreCase));
+
+            if (count > 0)
+            {
+                TermodelLog.WriteLog(
+                    $"Letti {count} tubi dal layer {layerTubi}. " +
+                    "Input CAD acquisito; solver pannelli Web non ancora integrato.");
+            }
         }
 
         public static void DisegnaSvgSpirali(object? viewport, string svgPath, double quotaPiano = 0)
