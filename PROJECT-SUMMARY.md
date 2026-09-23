@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-23**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`8d0db8d21efafdab86ed7578ed2c0e906a3e2fd4` — `Expose File open-example menu in v0.97`  
+`928c7f39dabc0f93b1b41e52a48a24d5a96ba12b` — `Clean legacy demo-help remnants from v0.98`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -1235,27 +1235,32 @@ non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
 
 ### INCARICO 2026-09-23 — rimozione modalità informazioni comandi
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO**
 
 Decisione di prodotto:
 - Termodel Web non va più trattato come una demo esplorabile ma come una **WebApp funzionante**;
-- la modalità corrente di informazioni/help contestuale sui comandi è invasiva e deve essere rimossa;
+- la modalità corrente di informazioni/help contestuale sui comandi era invasiva ed è stata rimossa;
 - l'help verrà reintrodotto in futuro con una modalità separata e non interferente con l'uso operativo.
 
-Commissionato:
-- rimuovere dal frontend la modalità `DEMO_HELP` e il relativo pannello/modalità informativa;
-- eliminare le chiamate automatiche a `showDemoHelp(...)` su menu, tab, filtri, Aggiorna Modello, CAD e bottom-bar;
-- rimuovere i pulsanti/help Android legati esclusivamente a questa modalità;
-- preservare intatti i comandi operativi, il ProjectBrowser, il CAD, il Service/projectId e la logica applicativa;
-- aggiornare versione/cache-busting frontend e questo Summary;
-- nessuna modifica a WebService/Core/Library/definizionedati.json né al contratto Frontend↔Service.
+Risultato:
+- frontend portato a **v0.98**;
+- rimosso integralmente il sottosistema `DEMO_HELP`, inclusi pannello dinamico, stili e funzioni di apertura;
+- eliminate le chiamate automatiche di help da menu, tab, filtri, `Aggiorna Modello`, CAD e bottom-bar;
+- rimossi i pulsanti Help dalle palette Android 3D/CAD e il relativo stato `androidHelpEnabled`;
+- mantenuti operativi ProjectBrowser, CAD, filtri, menu, `Aggiorna Modello`, Service/projectId e comandi reali;
+- le diciture visibili `Demo interattiva Web Termodel` / `Il modello iniziale è una demo` sono state sostituite con formulazioni coerenti con WebApp + esempio iniziale;
+- il titolo pagina è `Termodel Web v0.98 — WebApp operativa`;
+- cache-busting aggiornato a `app.js?v=0.98`;
+- verifica statica: **0 riferimenti runtime** a `DEMO_HELP`, `showDemoHelp`, `demoHelpPanel`, `helpKeyFromElement`, `androidHelpEnabled`, `androidExploreHelp`, `androidCadHelp`;
+- sintassi JavaScript del corpo modulo: **OK**;
+- l'unica stringa residua contenente `demo` è il percorso storico pubblico `/termodel-ui-demo/`, che non definisce il comportamento della WebApp e non è stato rinominato;
+- GitHub Pages run #641 avviato sul commit finale di codice; al momento dell'aggiornamento Summary risultava in esecuzione;
+- nessuna modifica a WebService/Core/Library/definizionedati.json e nessuna modifica al contratto Frontend↔Service.
 
-Criteri di completamento:
-- nessun pannello/modal help corrente viene creato o aperto;
-- nessun comando operativo viene intercettato per mostrare informazioni;
-- nessun riferimento runtime a `DEMO_HELP`, `showDemoHelp`, `demoHelpPanel`, `helpKeyFromElement` o `androidHelpEnabled`;
-- sintassi JavaScript verificata;
-- frontend versionato e pubblicabile.
+Commit principali:
+- `c5139c954dcfcccbe501e6e22cd3feea3aeafc81` — `Remove intrusive command help mode in v0.98`;
+- `67e9f827357498e7c253c00c9e4a1c7ce1b3edd5` — `Present Termodel Web as operational app v0.98`;
+- `928c7f39dabc0f93b1b41e52a48a24d5a96ba12b` — `Clean legacy demo-help remnants from v0.98`.
 
 ### INCARICO 2026-09-23 — File → Apri esempio da catalogo consolidato
 Stato: **ESEGUITO**
