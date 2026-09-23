@@ -8,8 +8,8 @@
 
 Ultimo aggiornamento: **2026-09-23**  
 Branch di riferimento: **main**  
-Ultimo commit di codice verificato prima della v0.96:  
-`19411fe6b739f3a7103b5236780a62def3273c38` — `Align contract with implemented project lock APIs`  
+Ultimo commit di codice verificato:  
+`8d0db8d21efafdab86ed7578ed2c0e906a3e2fd4` — `Expose File open-example menu in v0.97`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -1235,7 +1235,7 @@ non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
 
 ### INCARICO 2026-09-23 — File → Apri esempio da catalogo consolidato
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO**
 
 Commissionato:
 - aggiungere nel menu **File** la voce `Apri esempio...`;
@@ -1245,13 +1245,21 @@ Commissionato:
 - preservare il workflow Service/projectId e, se necessario, rilasciare il lock del progetto corrente prima di sostituirlo con un esempio locale;
 - limitare l'intervento al frontend e alla documentazione di continuità; nessuna modifica a WebService/Core/Library/definizionedati.json.
 
-Criteri di completamento:
-- voce File presente e collegata;
-- elenco derivato dal catalogo corrente;
-- selezione valida carica l'esempio;
-- sintassi JavaScript verificata;
-- cache-busting/versione frontend aggiornati;
-- Summary aggiornato con esito reale e commit.
+Risultato:
+- Termodel Web portato a **v0.97**;
+- aggiunta in **File** la voce `Apri esempio...`;
+- la voce legge `examples/catalog.json`, mostra un elenco numerato con nome e descrizione e carica l'esempio scelto;
+- riusati `loadProjectBrowserExamples()` e `loadProjectBrowserExample(...)`; nessun catalogo o loader concorrente introdotto;
+- se è attivo un lock Service, il menu rilascia il progetto corrente prima di sostituirlo con l'esempio locale;
+- catalogo verificato valido `TERMODEL-PROJECT-BROWSER-CATALOG-V1`; al momento contiene l'esempio consolidato `Appartamento`;
+- sintassi del corpo modulo JavaScript verificata: OK;
+- presenza button/handler/catalog loader/example loader e cache-busting `app.js?v=0.97` verificata;
+- GitHub Pages run #636 avviato sul commit frontend; al momento dell'aggiornamento Summary risultava ancora in esecuzione;
+- nessuna modifica a WebService/Core/Library/definizionedati.json e nessuna modifica al contratto Frontend↔Service.
+
+Commit dell'intervento:
+- `7ebfee5c20fab975eac11d630989263c3b0100c1` — `Add File open-example catalog action`;
+- `8d0db8d21efafdab86ed7578ed2c0e906a3e2fd4` — `Expose File open-example menu in v0.97`.
 
 ### Termodel Web v0.96 — readiness Render health/capabilities
 
