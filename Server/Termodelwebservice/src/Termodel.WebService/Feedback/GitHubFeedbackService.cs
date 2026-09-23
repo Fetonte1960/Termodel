@@ -231,12 +231,12 @@ public sealed class GitHubFeedbackPublisher(
             options.Repository.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
         string requestUrl =
-            $"\${options.GitHubApiBaseUrl.TrimEnd('/')}/repos/" +
-            $"\${Uri.EscapeDataString(repositoryParts[0])}/" +
-            $"\${Uri.EscapeDataString(repositoryParts[1])}/issues";
+            $"${options.GitHubApiBaseUrl.TrimEnd('/')}/repos/" +
+            $"${Uri.EscapeDataString(repositoryParts[0])}/" +
+            $"${Uri.EscapeDataString(repositoryParts[1])}/issues";
 
         string issueTitle =
-            $"[Termodel Feedback/\${CategoryLabel(feedback.Category)}] \${feedback.Title}";
+            $"[Termodel Feedback/${CategoryLabel(feedback.Category)}] ${feedback.Title}";
 
         var issueRequest = new
         {
@@ -271,7 +271,7 @@ public sealed class GitHubFeedbackPublisher(
                 Truncate(responseText, 800));
 
             throw new FeedbackPublishException(
-                $"GitHub non ha accettato il feedback (HTTP \${(int)response.StatusCode}).");
+                $"GitHub non ha accettato il feedback (HTTP ${(int)response.StatusCode}).");
         }
 
         try
@@ -310,15 +310,15 @@ public sealed class GitHubFeedbackPublisher(
             string.Empty,
             "### Contesto client",
             string.Empty,
-            $"- Categoria: \`\${feedback.Category}\`",
-            $"- Ricevuto UTC: \`\${DateTimeOffset.UtcNow:O}\`"
+            $"- Categoria: `${feedback.Category}`",
+            $"- Ricevuto UTC: `${DateTimeOffset.UtcNow:O}`"
         };
 
         if (feedback.Page.Length > 0)
-            lines.Add($"- Pagina: \`\${EscapeInlineCode(feedback.Page)}\`");
+            lines.Add($"- Pagina: `${EscapeInlineCode(feedback.Page)}`");
 
         if (feedback.AppVersion.Length > 0)
-            lines.Add($"- Versione app: \`\${EscapeInlineCode(feedback.AppVersion)}\`");
+            lines.Add($"- Versione app: `${EscapeInlineCode(feedback.AppVersion)}`");
 
         lines.Add(string.Empty);
         lines.Add(
@@ -338,7 +338,7 @@ public sealed class GitHubFeedbackPublisher(
         };
 
     private static string EscapeInlineCode(string value) =>
-        value.Replace("\`", "'", StringComparison.Ordinal);
+        value.Replace("`", "'", StringComparison.Ordinal);
 
     private static string Truncate(string value, int maxLength) =>
         value.Length <= maxLength ? value : value[..maxLength];
