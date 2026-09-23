@@ -3,6 +3,7 @@ using System.Text.Json;
 using Termodel.Core;
 using Termodel.Core.ProjectFiles;
 using Termodel.Leggidxf;
+using Termodel.utilities;
 using Termodel.WebService.Projects;
 using Termodel.WebService.Feedback;
 
@@ -487,6 +488,17 @@ app.MapPost("/api/calculations", async (
     if (!IsTextProjectRequest(request))
         return UnsupportedProjectContentType();
 
+    if (!TryReadCalculationLogConfiguration(
+            request,
+            out TermodelLog.LogConfiguration logConfiguration,
+            out string? logConfigurationError))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["log"] = [logConfigurationError ?? "Configurazione log non valida."]
+        });
+    }
+
     try
     {
         string projectText = await ReadProjectTextAsync(request, cancellationToken);
@@ -504,12 +516,21 @@ app.MapPost("/api/calculations", async (
             async token =>
             {
                 Model3DGenerationResult result =
-                    await new GeneraModello().GeneraAsync(projectText, token);
+                    await new GeneraModello().GeneraAsync(
+                        projectText,
+                        token,
+                        logConfiguration);
+
+                string logMode = GetLogMode(logConfiguration);
+                string[] logCategories = GetLogCategoryNames(logConfiguration);
 
                 return new ProjectCalculationData(
                     JsonSerializer.SerializeToUtf8Bytes(result.Model),
                     result.Diagnostics,
-                    result.Model.PrimitiveCount);
+                    result.Model.PrimitiveCount,
+                    logConfiguration.Enabled,
+                    logMode,
+                    logCategories);
             },
             cancellationToken);
 
@@ -535,6 +556,12 @@ app.MapPost("/api/calculations", async (
                 }
             },
             diagnostics = data.Diagnostics,
+            logging = new
+            {
+                enabled = data.LogEnabled,
+                mode = data.LogMode,
+                categories = data.LogCategories
+            },
             leaseExpiresAtUtc = lease.ExpiresAtUtc
         });
     }
@@ -712,6 +739,106 @@ app.MapPost("/api/projects/new", (NuovoProgettoRequest request) =>
 });
 
 app.Run();
+
+static bool TryReadCalculationLogConfiguration(
+    HttpRequest request,
+    out TermodelLog.LogConfiguration configuration,
+    out string? error)
+{
+    bool enabled = true;
+    error = null;
+
+    if (request.Query.TryGetValue("logEnabled", out var enabledValues))
+    {
+        string rawEnabled = enabledValues.ToString().Trim();
+        if (!bool.TryParse(rawEnabled, out enabled))
+        {
+            configuration = new TermodelLog.LogConfiguration(true, null);
+            error = "logEnabled deve essere true oppure false.";
+            return false;
+        }
+    }
+
+    if (!request.Query.TryGetValue("logCategories", out var categoryValues))
+    {
+        configuration = new TermodelLog.LogConfiguration(enabled, null);
+        return true;
+    }
+
+    string rawCategories = categoryValues.ToString();
+    string[] tokens = rawCategories
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    if (tokens.Length == 0)
+    {
+        configuration = new TermodelLog.LogConfiguration(enabled, new HashSet<TermodelLog.LogCategory>());
+        error = "logCategories non può essere vuoto; usare 'none' per disabilitare tutte le categorie.";
+        return false;
+    }
+
+    if (tokens.Any(token => token.Equals("all", StringComparison.OrdinalIgnoreCase)))
+    {
+        if (tokens.Length != 1)
+        {
+            configuration = new TermodelLog.LogConfiguration(enabled, new HashSet<TermodelLog.LogCategory>());
+            error = "L'alias 'all' deve essere usato da solo.";
+            return false;
+        }
+
+        configuration = new TermodelLog.LogConfiguration(
+            enabled,
+            Enum.GetValues<TermodelLog.LogCategory>().ToHashSet());
+        return true;
+    }
+
+    if (tokens.Any(token => token.Equals("none", StringComparison.OrdinalIgnoreCase)))
+    {
+        if (tokens.Length != 1)
+        {
+            configuration = new TermodelLog.LogConfiguration(enabled, new HashSet<TermodelLog.LogCategory>());
+            error = "L'alias 'none' deve essere usato da solo.";
+            return false;
+        }
+
+        configuration = new TermodelLog.LogConfiguration(
+            enabled,
+            new HashSet<TermodelLog.LogCategory>());
+        return true;
+    }
+
+    var categories = new HashSet<TermodelLog.LogCategory>();
+    foreach (string token in tokens)
+    {
+        if (!Enum.TryParse(token, ignoreCase: true, out TermodelLog.LogCategory category) ||
+            !Enum.IsDefined(category))
+        {
+            configuration = new TermodelLog.LogConfiguration(enabled, categories);
+            error =
+                $"Categoria log sconosciuta '{token}'. Valori ammessi: " +
+                string.Join(", ", Enum.GetNames<TermodelLog.LogCategory>()) +
+                ", all, none.";
+            return false;
+        }
+
+        categories.Add(category);
+    }
+
+    configuration = new TermodelLog.LogConfiguration(enabled, categories);
+    return true;
+}
+
+static string GetLogMode(TermodelLog.LogConfiguration configuration) =>
+    !configuration.Enabled
+        ? "disabled"
+        : configuration.UsesCategoryFilter
+            ? "filtered"
+            : "service-default";
+
+static string[] GetLogCategoryNames(TermodelLog.LogConfiguration configuration) =>
+    configuration.EnabledCategories?
+        .OrderBy(category => (int)category)
+        .Select(category => category.ToString())
+        .ToArray() ?? [];
 
 static bool IsTextProjectRequest(HttpRequest request) =>
     request.ContentType is not null &&
