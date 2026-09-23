@@ -84,6 +84,32 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — voci archivi pannelli nel menu frontend
+Stato: COMMISSIONATO
+
+Commissionato:
+- aggiungere al menu frontend le voci per gli archivi progetto
+  `TipologiePannelli`, `Tubazioni` e `Fluidi`;
+- collegare le voci al motore unico `ArchivioWeb` esistente tramite
+  `data-archive`;
+- rendere effettivamente apribili i tre archivi usando i metadata estesi già
+  trasportati nel `TERMODEL-PROJECT-TEXT-V1`, senza modificare o duplicare
+  `definizionedati.json`;
+- aggiungere i tre archivi alle tab interne della finestra Archivi;
+- non modificare algoritmi pannelli, Service API o formato progetto.
+
+Criteri di completamento:
+- tre voci visibili nel menu frontend;
+- apertura corretta di griglia/form per i tre archivi nel progetto vuoto;
+- metadata caricati dalla sezione progetto
+  `definition/pannelli-tubazioni-definizionedati.json`;
+- progetti precedenti senza i nuovi archivi restano caricabili;
+- verifica sintattica/runtime frontend e pubblicazione GitHub Pages;
+- Summary aggiornato allo stato reale.
+
+Risultato:
+- implementazione in corso.
+
 ### INCARICO 2026-09-23 — completamento calcolo pannelli radianti: archivi progetto
 Stato: ESEGUITO
 
