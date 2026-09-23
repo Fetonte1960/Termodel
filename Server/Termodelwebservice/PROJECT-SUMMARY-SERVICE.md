@@ -84,6 +84,46 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — canale universale file generati + test SVG spirali al frontend
+Stato: COMMISSIONATO
+
+Commissionato:
+- verificare end-to-end il disegno esecutivo spirali SVG già prodotto dal
+  Service e renderlo realmente raggiungibile dal frontend;
+- verificare se esiste già un servizio universale per trasmettere file
+  generati (disegni, report, JSON, CSV, PDF, DXF, SVG, log); se manca,
+  introdurre un canale generico **read-only** e sicuro;
+- il canale universale deve pubblicare soltanto file generati autorizzati
+  del workspace progetto, senza esporre `project.tmdl`, file arbitrari o
+  path traversal;
+- aggiungere un catalogo/manifest dei file generati con nome, percorso
+  logico, categoria, content type, dimensione, stale e href;
+- aggiungere un endpoint generico di lettura che rispetti content type e
+  disposizione inline/attachment;
+- mantenere gli endpoint specifici esistenti per retrocompatibilità;
+- collegare il frontend operativo `docs/termodel-ui-demo` al catalogo
+  generico e aggiungere un comando per caricare l'esecutivo pannelli SVG
+  come **sfondo/overlay di riferimento del CAD2D**, senza alterare la
+  geometria tecnica del progetto;
+- lo sfondo esecutivo deve poter essere rimosso/ripristinato senza
+  modificare `TERMODEL-PROJECT-TEXT-V1`;
+- aggiungere smoke automatico del catalogo, del GET generico e del contenuto
+  SVG spirali;
+- aggiornare contratto Front↔Service, README e Summary;
+- non modificare `definizionedati.json` né la Library Desktop.
+
+Criteri di completamento:
+- catalogo universale file generati funzionante;
+- GET generico sicuro funzionante almeno per SVG, DXF, JSON e log;
+- SVG esecutivo pannelli recuperato tramite il canale universale;
+- frontend capace di mostrare/nascondere l'SVG esecutivo come sfondo CAD2D;
+- build/smoke Service verdi e verifica sintattica frontend;
+- retrocompatibilità degli endpoint specifici;
+- Summary aggiornato allo stato reale.
+
+Risultato:
+- implementazione in corso.
+
 ### INCARICO 2026-09-23 — attivazione esecutivo pannelli SVG/DXF
 Stato: ESEGUITO
 
