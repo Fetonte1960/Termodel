@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — registro sviluppo autonomo Calcolo Tubazioni
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - studiare i sorgenti Pascal storici presenti in
@@ -125,7 +125,62 @@ Criteri di completamento:
   dell'analisi.
 
 Risultato:
-- analisi e registro in corso.
+- creato il registro autonomo
+  `docs/TUBAZIONI-DEVELOPMENT-REGISTER.md`;
+- studiato il nucleo storico
+  `SorgentiPascal/Pascal/02_Sottosistemi_Completi/.../versione_10/Tubi/`,
+  con particolare attenzione a `Calcolo_Tubi.pas`, `PERDCONC.PAS`,
+  `EQUIL.PAS`, `UGrafoDXF.pas`, `RITORNO.PAS`, `collettori.pas`,
+  `iotubi.pas`, `DATITUBI.PAS`, `OutDXFBM.pas`,
+  `UMain_CalcTubi.pas` e `CalcTubiDll.dpr`;
+- ricostruito il flusso storico: entità CAD → grafo → controllo topologico →
+  propagazione portate → dimensionamento → perdite distribuite/concentrate →
+  percorso sfavorito → eventuale equilibratura/valvole/portate effettive →
+  risultati e output grafico;
+- identificato nel Pascal il nucleo fisico da reimplementare come funzioni
+  pure: propagazione portate, Darcy/Colebrook, perdite concentrate,
+  dimensionamento per limiti di velocità/perdita, percorso critico ed
+  equilibratura;
+- studiato il `base.dat` Tubazioni storico: tre copie della versione 10
+  risultano sullo stesso Git blob
+  `a643c307657969b756d53cbeca484a20463596dc`; mappati i principali
+  archivi `Reti`, `Tubazioni`, `Diametri`, `MatTubi`, `Perdite`,
+  `TipiRete`, terminali e perdite concentrate;
+- studiato il generatore storico `GENERA`: i token `INI`, `CMB`,
+  `LKK`, `GRD`, `DEC` e le relazioni master/slave pilotavano
+  generazione di record, DB, form, combo, lookup e griglie;
+- confrontato il precedente con l'attuale automazione Termodel
+  `AutoForm.cs` / `FormArchivio.xaml.cs` e
+  `definizionedati.json`: registrata la decisione di creare un
+  `tubazioni-definizionedati.json` indipendente ma compatibile nelle
+  convenzioni metadata e un database operativo JSON autonomo;
+- chiarito che il Desktop Termodel corrente usa il JSON soprattutto come
+  metadata mentre molti dati archivio sono persistiti in XML; il nuovo
+  database Tubazioni sarà invece esplicitamente JSON senza modificare il
+  formato degli archivi Termodel esistenti;
+- studiata la vecchia gestione DXF/AutoCAD: le convenzioni geometriche,
+  terminali, valvole, collettori, curve e diramazioni restano riferimenti,
+  mentre script AutoCAD, `WinExec` e file temporanei non entreranno nel
+  nuovo Core;
+- verificato il collegamento moderno con i pannelli:
+  `CalcoloPannelli.cs` possiede già DTO di circuiti/lunghezze/potenze,
+  `IoPannelli` genera `retePannelli.xml` con nodi/tratti e `IoTubi`
+  usa il grafo per collettore e collegamenti; il nuovo solver riceverà quindi
+  un `TubazioniNetwork` neutro tramite adapter Pannelli, senza dipendere
+  direttamente dal DXF;
+- definita roadmap T0–T9: dati/schema, dominio grafo, kernel idraulico,
+  equilibratura, adapter Pannelli, regression Pascal/golden, drawing result,
+  integrazione `Aggiorna Modello`, UI metadata-driven;
+- **compilazione:** non eseguita e non richiesta, perché questo incarico ha
+  modificato soltanto documentazione/registro;
+- **esecuzione/test:** non applicabili in questa fase; nessun motore Tubazioni
+  è stato dichiarato implementato;
+- **confronto riferimento:** studio statico Pascal/C# completato a livello
+  architetturale; regression test numerici Pascal ancora da creare;
+- frontend, Library Pascal, `TERMODEL-PROJECT-TEXT-V1` e
+  `definizionedati.json` non modificati;
+- commit registro:
+  `c40b6b5f264a49c94df3dff6b97185b83764c178`.
 
 ### INCARICO 2026-09-23 — configurazione log per Aggiorna Modello
 Stato: ESEGUITO
