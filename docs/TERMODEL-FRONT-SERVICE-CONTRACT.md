@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.13**  
+Versione documento: **1.14**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito ed esecutivo pannelli SVG/DXF implementati**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF e canale universale read-only dei file generati implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -471,6 +471,109 @@ Limitazione intenzionale: il motore condiviso usa ancora
 default corrente richiesto. La futura generalizzazione dei passi dovrà
 rendere parametrico/headless lo stesso motore condiviso; non va creata una
 seconda implementazione nel WebService.
+
+### Canale universale dei file generati
+
+Dal 23 settembre 2026 gli elaborati derivati non devono richiedere un nuovo
+endpoint specifico per ogni futuro disegno o report. Il Service espone un
+catalogo read-only del workspace di calcolo:
+
+```http
+GET /api/projects/{projectId}/generated-files
+```
+
+Contratto catalogo:
+
+```text
+TERMODEL-GENERATED-FILES-V1
+```
+
+Ogni voce contiene almeno:
+
+```text
+path
+fileName
+category
+contentType
+size
+lastWriteTimeUtc
+inline
+stale
+href
+```
+
+Il file si legge tramite l'`href` restituito, che usa la forma:
+
+```http
+GET /api/projects/{projectId}/generated-files/{relativePath}
+```
+
+Il canale è intenzionalmente limitato a:
+
+```text
+artifacts/**
+logs/**
+```
+
+e **non** può esporre `project.tmdl`, file di configurazione del server o
+percorsi arbitrari. Il Service normalizza il path, rifiuta traversal e invia
+`X-Content-Type-Options: nosniff`. SVG/HTML sono inoltre serviti con una
+Content-Security-Policy sandbox.
+
+Content type già riconosciuti comprendono JSON, SVG, DXF, PDF, CSV, TXT,
+Markdown, XML e i principali formati immagine. Gli endpoint specifici
+esistenti restano validi per retrocompatibilità.
+
+`POST /api/calculations` restituisce anche:
+
+```json
+{
+  "generatedFilesHref": "/api/projects/{projectId}/generated-files"
+}
+```
+
+Questo è il canale previsto per futuri:
+
+- disegni;
+- report;
+- tabelle CSV;
+- PDF;
+- elaborati DXF/SVG;
+- risultati JSON;
+- log diagnostici.
+
+### Esecutivo pannelli SVG come sfondo runtime CAD2D
+
+Il frontend v1.05 usa il catalogo universale per recuperare
+`artifacts/pannelli-esecutivo.svg`.
+
+Nel menu **Sfondo** del CAD2D sono disponibili:
+
+```text
+↻ Esecutivo pannelli SVG
+Mostra esecutivo calcolato
+```
+
+L'esecutivo è un **overlay runtime di verifica**:
+
+- non viene inserito in `cadWorkingDoc`;
+- non entra nello stack Undo/Redo;
+- non modifica `TERMODEL-PROJECT-TEXT-V1`;
+- non viene reinviato al Service con il calcolo successivo;
+- può essere mostrato/nascosto indipendentemente dagli sfondi importati;
+- in un progetto multipiano vengono visualizzate soltanto le primitive con
+  `data-piano` corrispondente al piano CAD corrente.
+
+Per consentire l'allineamento metrico con il CAD, l'SVG esecutivo dichiara:
+
+```text
+data-coordinate-unit="m"
+data-termodel-max-y="..."
+```
+
+Il frontend converte le coordinate del modello esecutivo in centimetri e
+annulla la sola trasformazione dell'asse Y usata dal writer SVG. I testi
+vengono ricostruiti senza specchiatura.
 
 ## 2.1 Standard del payload Frontend → Service
 
