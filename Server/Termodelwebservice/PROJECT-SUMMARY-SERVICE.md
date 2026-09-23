@@ -84,6 +84,53 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — entità Tubo in modalità Rete CAD 2D
+Stato: COMMISSIONATO
+
+Commissionato:
+- in modalità `Rete` il CAD 2D deve esporre una sola entità disegnabile:
+  `Tubo`;
+- il comando `Tubo` deve usare una modalità di disegno sequenziale analoga
+  alla parete: ogni segmento termina dove inizia il successivo e il comando
+  resta attivo fino a interruzione;
+- per `Tubo` non devono essere disponibili le chiusure automatiche
+  `Chiudi` e `Chiudi ortogonale`; resta disponibile l'interruzione della
+  sequenza e, se compatibile, la ripetizione dell'ultimo comando;
+- la modalità `Edificio` deve conservare integralmente i comandi correnti;
+- consultare il riferimento Desktop in
+  `SorgentiTermodel/Library/leggidxf/LeggiDxf.cs` e
+  `SorgentiTermodel/Library/Impianti/Pannelli/IoPannelli.cs`, oltre agli
+  adattatori Virtual CAD del Core, per determinare la formattazione corretta
+  delle linee tubo, il layer atteso e il percorso di ingresso al calcolo;
+- le linee tubo devono essere incluse nello SVG tecnico
+  `geometry/project.svg` del `TERMODEL-PROJECT-TEXT-V1` con metadati tali
+  da permettere al Virtual CAD di ricostruire il layer DXF atteso dal codice
+  Desktop, senza introdurre un formato parallelo;
+- la rete selezionata nel combo `Reti` deve essere associata alle nuove
+  entità tubo con metadato tecnico, mantenendo il piano corrente;
+- preservare il supporto multipiano: una stessa rete può avere segmenti tubo
+  su più piani;
+- non modificare `definizionedati.json` né la Library Desktop;
+- modificare Core/Virtual CAD soltanto se l'analisi dimostra che il formato
+  frontend corretto non è già trasportabile dal lettore SVG corrente;
+- aggiornare contratto Front↔Service se vengono formalizzati nuovi metadati
+  tecnici nello SVG del file unico.
+
+Criteri di completamento:
+- in modalità Rete compare solo il comando Tubo fra le entità disegnabili;
+- disegno Tubo multiplo/sequenziale funzionante, senza Chiudi e Chiudi
+  ortogonale;
+- ogni segmento conserva piano, rete selezionata e layer tubo corretto;
+- il file unico trasporta realmente le entità tubo nel
+  `geometry/project.svg`;
+- verifica statica/sintattica frontend e, se toccato il Core, build/smoke
+  Service;
+- deploy GitHub Pages riuscito;
+- Summary aggiornato allo stato reale.
+
+Risultato:
+- implementazione in corso.
+
 ### INCARICO 2026-09-23 — modalità Edificio/Rete nel pannello CAD 2D
 Stato: ESEGUITO
 
