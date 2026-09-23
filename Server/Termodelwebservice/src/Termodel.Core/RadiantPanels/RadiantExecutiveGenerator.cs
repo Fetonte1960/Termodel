@@ -705,10 +705,11 @@ internal static class RadiantExecutiveDxfWriter
                 primitive => primitive.Layer,
                 StringComparer.OrdinalIgnoreCase)
             .Select(group => (
-                group.Key,
-                group.First().AciColor))
-            .OrderBy(layer => layer.Key, StringComparer.OrdinalIgnoreCase)
-            .Select(layer => (layer.Key, layer.AciColor))
+                Name: group.Key,
+                Color: group.First().AciColor))
+            .OrderBy(
+                layer => layer.Name,
+                StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         Pair(0, "SECTION");
