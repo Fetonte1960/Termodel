@@ -16,6 +16,13 @@ public sealed record SvgDxfFloor(
     int Order,
     DxfDocument Document);
 
+public sealed record SvgDxfLineMetadata(
+    string Id,
+    string FloorName,
+    string Entity,
+    string NetworkCode,
+    string LayerName);
+
 public static class SvgDxfReader
 {
     private const double CentimetersToMeters = 0.01;
@@ -119,7 +126,7 @@ public static class SvgDxfReader
 
     private static Line ParseLine(XElement element, Layer layer)
     {
-        return new Line(
+        var line = new Line(
             new Vector3(
                 ParseNumber(element, "x1") * CentimetersToMeters,
                 ParseNumber(element, "y1") * CentimetersToMeters,
@@ -133,6 +140,19 @@ public static class SvgDxfReader
             Linetype = new Linetype(element.Attribute("data-termodel-linetype")?.Value?.Trim() ?? "Continuous"),
             Color = new AciColor(ParseOptionalInt(element, "data-termodel-color", 1))
         };
+
+        // Conserva nel Virtual CAD anche i metadati di progetto che netDxf
+        // storico non conosce. I chiamanti Desktop continuano a vedere layer,
+        // colore e linetype; i nuovi adapter Core possono inoltre recuperare
+        // rete, piano ed entità senza riparsare lo SVG.
+        line.UserData = new SvgDxfLineMetadata(
+            element.Attribute("id")?.Value?.Trim() ?? string.Empty,
+            element.Attribute("data-termodel-piano")?.Value?.Trim() ?? string.Empty,
+            element.Attribute("data-termodel-entity")?.Value?.Trim() ?? string.Empty,
+            element.Attribute("data-termodel-rete")?.Value?.Trim() ?? string.Empty,
+            layer.Name);
+
+        return line;
     }
 
     private static Insert ParseBlock(XElement element, Layer layer, DxfDocument document)
