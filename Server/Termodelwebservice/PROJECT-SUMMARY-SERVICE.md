@@ -91,7 +91,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — comando Help "Copia progetto negli appunti"
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - aggiungere nel menu `Help` del frontend operativo
@@ -109,15 +109,33 @@ Commissionato:
 - non inserire secret o credenziali negli appunti;
 - non modificare `definizionedati.json`, Core, WebService o Library Desktop.
 
-Criteri di completamento:
-- voce visibile nel menu Help;
-- copia del file unico corrente negli appunti;
-- riuso della serializzazione canonica del progetto;
-- controllo sintattico JavaScript eseguito;
-- Summary aggiornato con risultato reale e commit.
-
 Risultato:
-- implementazione in corso.
+- frontend portato a **v1.06**;
+- aggiunta nel menu `Help` la voce
+  `Copia progetto negli appunti`, disabilitata quando non esiste un progetto
+  strutturato aperto;
+- il comando richiama `buildCurrentProjectText()`, quindi usa la stessa
+  serializzazione canonica già usata da salvataggio/calcolo e copia il
+  `TERMODEL-PROJECT-TEXT-V1` completo corrente;
+- nessuna chiamata a Render e nessuna pubblicazione snapshot vengono eseguite;
+- introdotto un helper clipboard comune riusato anche dalla diagnostica
+  Service, con fallback `document.execCommand('copy')`;
+- feedback utente:
+  `✓ Progetto TERMODEL-PROJECT-TEXT-V1 copiato negli appunti.`;
+- aggiunto help contestuale del nuovo comando;
+- **controllo sintattico JavaScript:** ESEGUITO con parser V8 sul contenuto
+  corrente di `app.js` (rimosso soltanto il blocco import per il parse):
+  ```text
+  APP_JS_SYNTAX_OK
+  HELP_COPY_PROJECT_STATIC_OK
+  ```;
+- **esecuzione browser reale:** NON ancora verificata manualmente;
+- nessuna modifica a `definizionedati.json`, Core, WebService,
+  `SorgentiTermodel/Library/` o `PROJECT-SUMMARY.md` Web JS;
+- commit:
+  `e73c6acce2ba1e538a44fed4ddf9593f68a68444` (commissione),
+  `f32f078053d85d56595ed913ec092805c6a2b618` (menu/versione),
+  `2c08c89a10e3a4a1940d288ab2af2caa0ef965bc` (logica clipboard).
 
 ### INCARICO 2026-09-23 — procedura permanente snapshot per diagnostica AI
 Stato: ESEGUITO
