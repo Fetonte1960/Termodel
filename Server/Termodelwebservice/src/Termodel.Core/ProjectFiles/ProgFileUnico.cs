@@ -44,13 +44,13 @@ public static class ProgFileUnico
 
         string extendedDefinitionPath = Path.Combine(
             Path.GetDirectoryName(definitionPath) ?? string.Empty,
-            "pannelli-tubazioni-definizionedati.json");
+            "reti-pannelli-definizionedati.json");
 
         var sections = new List<ProjectSection>
         {
             CreateSection("definition/definizionedati.json", "application/json", definition.RawText),
             CreateSection(
-                "definition/pannelli-tubazioni-definizionedati.json",
+                "definition/reti-pannelli-definizionedati.json",
                 "application/json",
                 ReadRequiredText(extendedDefinitionPath)),
             CreateSection("geometry/project.svg", "image/svg+xml", svg),
@@ -81,7 +81,7 @@ public static class ProgFileUnico
         }
 
         diagnostics.Add(
-            "Il progetto include gli archivi estesi TipologiePannelli, Tubazioni e Fluidi per il completamento del calcolo pannelli radianti.");
+            "Il progetto include gli archivi estesi Reti e TipologiePannelli per il completamento del calcolo pannelli radianti.");
 
         var manifest = new
         {
@@ -266,7 +266,7 @@ public static class ProgFileUnico
         ICollection<string> errors)
     {
         string directory = Path.Combine(baseProjectPath, "extended-archives");
-        string[] requiredArchives = ["TipologiePannelli", "Tubazioni", "Fluidi"];
+        string[] requiredArchives = ["Reti", "TipologiePannelli"];
         var result = new Dictionary<string, List<Dictionary<string, object?>>>(StringComparer.Ordinal);
 
         foreach (string archiveName in requiredArchives)
