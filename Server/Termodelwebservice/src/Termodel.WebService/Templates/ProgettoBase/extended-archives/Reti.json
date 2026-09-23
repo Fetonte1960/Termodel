@@ -1,0 +1,18 @@
+[
+  {
+    "Codice": "RAD-DEFAULT",
+    "Descrizione": "Pannelli radianti - rete standard",
+    "TipoRete": "PannelliRadianti",
+    "CodiceTipologiaPannello": "GEN-DEFAULT",
+    "PassoSelezionatoMm": 300,
+    "Fluido": "Acqua",
+    "TemperaturaMandataC": 35,
+    "TemperaturaRitornoC": 30,
+    "TemperaturaAmbienteC": 20,
+    "TemperaturaEsternaProgettoC": 5,
+    "LunghezzaMassimaCircuitoM": 100,
+    "PerditaCaricoMassimaCircuitoPa": 25000,
+    "KLayout": 1,
+    "Attivo": "SI"
+  }
+]
