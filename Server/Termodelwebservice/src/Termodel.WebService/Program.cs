@@ -525,6 +525,9 @@ app.MapPost("/api/calculations", async (
                 RadiantPanelsArtifact panels =
                     RadiantPanelCalculator.Calculate(projectText);
 
+                RadiantExecutiveArtifacts? executive =
+                    RadiantExecutiveGenerator.Generate(projectText);
+
                 string logMode = GetLogMode(logConfiguration);
                 string[] logCategories = GetLogCategoryNames(logConfiguration);
 
@@ -542,9 +545,13 @@ app.MapPost("/api/calculations", async (
                 return new ProjectCalculationData(
                     JsonSerializer.SerializeToUtf8Bytes(result.Model),
                     JsonSerializer.SerializeToUtf8Bytes(panels, artifactJsonOptions),
+                    executive?.Svg,
+                    executive?.Dxf,
                     combinedDiagnostics,
                     result.Model.PrimitiveCount,
                     panels.CircuitCount,
+                    executive?.PrimitiveCount ?? 0,
+                    executive?.FloorCount ?? 0,
                     logConfiguration.Enabled,
                     logMode,
                     logCategories);
@@ -555,6 +562,43 @@ app.MapPost("/api/calculations", async (
             $"/api/projects/{projectId:D}/artifacts/model3d";
         string panelsHref =
             $"/api/projects/{projectId:D}/artifacts/pannelli";
+        string executiveSvgHref =
+            $"/api/projects/{projectId:D}/artifacts/pannelli-esecutivo-svg";
+        string executiveDxfHref =
+            $"/api/projects/{projectId:D}/artifacts/pannelli-esecutivo-dxf";
+
+        var artifacts = new List<object>
+        {
+            new
+            {
+                name = "model3d",
+                contentType = "application/json",
+                href = model3DHref
+            },
+            new
+            {
+                name = "pannelli",
+                contentType = "application/json",
+                href = panelsHref
+            }
+        };
+
+        if (data.RadiantExecutiveSvg is not null &&
+            data.RadiantExecutiveDxf is not null)
+        {
+            artifacts.Add(new
+            {
+                name = "pannelli-esecutivo-svg",
+                contentType = "image/svg+xml",
+                href = executiveSvgHref
+            });
+            artifacts.Add(new
+            {
+                name = "pannelli-esecutivo-dxf",
+                contentType = "application/dxf",
+                href = executiveDxfHref
+            });
+        }
 
         return Results.Json(new
         {
@@ -565,21 +609,7 @@ app.MapPost("/api/calculations", async (
             {
                 fileName = "project.tmdl"
             },
-            artifacts = new[]
-            {
-                new
-                {
-                    name = "model3d",
-                    contentType = "application/json",
-                    href = model3DHref
-                },
-                new
-                {
-                    name = "pannelli",
-                    contentType = "application/json",
-                    href = panelsHref
-                }
-            },
+            artifacts,
             diagnostics = data.Diagnostics,
             logging = new
             {
@@ -636,6 +666,76 @@ app.MapGet(
     return Results.Bytes(
         model3DJson,
         contentType: "application/json; charset=utf-8");
+});
+
+// Funzione realizzata da Codex in autonomia
+app.MapGet(
+    "/api/projects/{projectId:guid}/artifacts/pannelli-esecutivo-svg",
+    async (
+        Guid projectId,
+        HttpResponse response,
+        ProjectStore projects,
+        CancellationToken cancellationToken) =>
+{
+    byte[]? svg =
+        await projects.ReadRadiantExecutiveSvgAsync(
+            projectId,
+            cancellationToken);
+
+    if (svg is null)
+    {
+        return Results.Problem(
+            title: "Esecutivo pannelli SVG non disponibile",
+            detail: $"Il projectId '{projectId:D}' non dispone ancora di pannelli-esecutivo.svg.",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    bool stale = await projects.AreArtifactsStaleAsync(
+        projectId,
+        cancellationToken);
+
+    response.Headers["X-Termodel-Artifact-Stale"] = stale ? "true" : "false";
+    response.Headers["Content-Disposition"] =
+        "inline; filename=\"pannelli-esecutivo.svg\"";
+
+    return Results.Bytes(
+        svg,
+        contentType: "image/svg+xml; charset=utf-8");
+});
+
+// Funzione realizzata da Codex in autonomia
+app.MapGet(
+    "/api/projects/{projectId:guid}/artifacts/pannelli-esecutivo-dxf",
+    async (
+        Guid projectId,
+        HttpResponse response,
+        ProjectStore projects,
+        CancellationToken cancellationToken) =>
+{
+    byte[]? dxf =
+        await projects.ReadRadiantExecutiveDxfAsync(
+            projectId,
+            cancellationToken);
+
+    if (dxf is null)
+    {
+        return Results.Problem(
+            title: "Esecutivo pannelli DXF non disponibile",
+            detail: $"Il projectId '{projectId:D}' non dispone ancora di pannelli-esecutivo.dxf.",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    bool stale = await projects.AreArtifactsStaleAsync(
+        projectId,
+        cancellationToken);
+
+    response.Headers["X-Termodel-Artifact-Stale"] = stale ? "true" : "false";
+    response.Headers["Content-Disposition"] =
+        "attachment; filename=\"pannelli-esecutivo.dxf\"";
+
+    return Results.Bytes(
+        dxf,
+        contentType: "application/dxf");
 });
 
 // Funzione realizzata da Codex in autonomia
