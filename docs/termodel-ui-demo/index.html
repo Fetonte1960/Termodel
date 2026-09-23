@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v0.98 — WebApp operativa</title>
+  <title>Termodel Web v0.99 — Help e log configurabili</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; background: #d3d3d3; color: #111; }
@@ -33,6 +33,10 @@
     .menu.open .dropdown { display: block; }
     .dropdown button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 5px 22px 5px 24px; }
     .dropdown button:hover { background: #dcecff; }
+    .dropdown-heading { padding: 5px 10px 3px 10px; color: #555; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .menu-check { display: flex; align-items: center; gap: 7px; min-height: 26px; padding: 3px 12px 3px 8px; white-space: nowrap; cursor: pointer; }
+    .menu-check:hover { background: #dcecff; }
+    .menu-check input { margin: 0; }
     .sep { height: 1px; background: #ccc; margin: 3px 4px; }
 
     .tabs { display: flex; align-items: end; gap: 1px; padding: 2px 4px 0; background: #ededed; border-bottom: 1px solid #aaa; }
@@ -1704,7 +1708,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.98</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v0.99</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -1720,6 +1724,20 @@
         <button type="button">Modello</button><button type="button" data-archive="Piani">Archivi</button><button type="button">Plugin Autocad</button><button type="button">Visualizza tutor</button><button type="button">Genera il modello all'avvio</button>
       </div></div>
       <div class="menu"><button type="button">Calcoli</button><div class="dropdown"><button type="button">Visualizza risultati dell'ultimo calcolo</button></div></div>
+      <div class="menu" id="helpMenu"><button type="button">Help</button><div class="dropdown">
+        <label class="menu-check"><input id="helpExplorationMode" type="checkbox" /> Modalità esplorazione</label>
+        <div class="sep"></div>
+        <div class="dropdown-heading">Log Aggiorna Modello</div>
+        <label class="menu-check"><input type="checkbox" data-log-category="Sempre" /> Sempre</label>
+        <label class="menu-check"><input type="checkbox" data-log-category="colmi" /> colmi</label>
+        <label class="menu-check"><input type="checkbox" data-log-category="spezza" /> spezza</label>
+        <label class="menu-check"><input type="checkbox" data-log-category="Error" /> Error</label>
+        <label class="menu-check"><input type="checkbox" data-log-category="Svg" /> Svg</label>
+        <label class="menu-check"><input type="checkbox" data-log-category="RedrawHelix" /> RedrawHelix</label>
+        <label class="menu-check"><input type="checkbox" data-log-category="GeneraModello" /> GeneraModello</label>
+        <label class="menu-check"><input type="checkbox" data-log-category="Performance" /> Performance</label>
+        <label class="menu-check"><input type="checkbox" data-log-category="PontiAutomatici" /> PontiAutomatici</label>
+      </div></div>
     </nav>
 
     <div class="tabs" role="tablist">
@@ -2214,6 +2232,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=0.98"></script>
+  <script type="module" src="./app.js?v=0.99"></script>
 </body>
 </html>
