@@ -26,12 +26,13 @@ public sealed class GeneraModello
     // Funzione realizzata da Codex in autonomia
     public async Task<Model3DGenerationResult> GeneraAsync(
         string projectText,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        TermodelLog.LogConfiguration? logConfiguration = null)
     {
         await GenerationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            return GeneraSerializzato(projectText);
+            return GeneraSerializzato(projectText, logConfiguration);
         }
         finally
         {
@@ -42,7 +43,9 @@ public sealed class GeneraModello
         }
     }
 
-    private static Model3DGenerationResult GeneraSerializzato(string projectText)
+    private static Model3DGenerationResult GeneraSerializzato(
+        string projectText,
+        TermodelLog.LogConfiguration? logConfiguration)
     {
         ProjectTextDocument project = ProjectTextDocument.Parse(projectText);
         using ProjectWorkspace workspace = ProjectWorkspace.Create(project);
@@ -51,7 +54,7 @@ public sealed class GeneraModello
         ProjectArchiveDatabase archiveDatabase = ProjectArchiveDatabase.Load(project);
         var utiDb = new UtiDb(archiveDatabase);
         Database.DB.Use(utiDb);
-        TermodelLog.InitializeLog();
+        TermodelLog.InitializeLog(logConfiguration);
         GeneraPianta.IniziaGenerazione();
 
         IReadOnlyList<SvgDxfFloor> svgFloors = SvgDxfReader.ParseProjectSvg(
