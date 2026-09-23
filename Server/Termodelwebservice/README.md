@@ -13,8 +13,19 @@ Soluzione sperimentale e autonoma per estrarre progressivamente il motore Termod
 GET  /
 GET  /health
 GET  /api/model/capabilities
-POST /api/model/3d
+GET  /api/projects
 POST /api/projects/new
+POST /api/projects/allocate-id
+POST /api/projects/{projectId}/open
+PUT  /api/projects/{projectId}/save
+PUT  /api/projects/{projectId}/save-as
+POST /api/projects/{projectId}/heartbeat
+POST /api/projects/{projectId}/close
+POST /api/projects/{projectId}/unlock
+POST /api/calculations
+GET  /api/projects/{projectId}/artifacts/model3d
+POST /api/model/3d
+POST /api/feedback
 ```
 
 `POST /api/model/3d` riceve nel body il file unico completo
