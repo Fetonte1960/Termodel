@@ -49,6 +49,16 @@ Prima di intervenire:
    `service-snapshots/LATEST.json -> manifest.json -> artifact/log reali`.
    L'utente deve normalmente fare soltanto `Aggiorna Modello`, pubblicare
    lo snapshot e dire `esamina l'ultimo snapshot`.
+13. **Debug avanzato permanente con GitHub Actions:** per problemi complessi che richiedono riproduzione reale leggere
+   `Server/Termodelwebservice/docs/ADVANCED-GITHUB-ACTIONS-DEBUG.md`.
+   Se la natura del problema non è già nota, chiedere quale anomalia va
+   riprodotta; se serve un progetto reale e non è già disponibile, chiedere
+   il `TERMODEL-PROJECT-TEXT-V1`. Usare GitHub Actions per compilare e
+   avviare il Service, inviare il progetto, raccogliere response/artifact/log,
+   aggiungere se necessario strumentazione diagnostica temporanea e ripetere
+   il ciclo test -> analisi -> correzione -> nuovo test fino alla soluzione
+   o a un impedimento concreto. Al termine rimuovere la strumentazione
+   occasionale e lasciare solo correzioni/regression test utili.
 
 ## 1.1 Registro incarichi autorizzati
 
@@ -91,7 +101,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — contratto permanente "Debug avanzato"
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - registrare una procedura permanente per la risoluzione dei problemi complessi del TermodelService tramite GitHub Actions;
@@ -106,7 +116,20 @@ Commissionato:
 - non modificare `definizionedati.json`, Library Desktop o frontend salvo che il problema richieda esplicitamente tali componenti.
 
 Risultato:
-- registrazione della procedura permanente in corso.
+- creata la specifica permanente
+  `Server/Termodelwebservice/docs/ADVANCED-GITHUB-ACTIONS-DEBUG.md`;
+- aggiunta alle regole iniziali del Summary la regola permanente n. 13;
+- formalizzato il ciclo:
+  `problema -> progetto -> strumentazione -> GitHub Action -> file di ritorno -> analisi -> correzione -> nuova Action`;
+- formalizzato l'uso di branch diagnostici separati per script/log/fixture temporanei;
+- formalizzato che i log speciali possono essere aggiunti durante il debug ma devono essere rimossi alla chiusura, salvo promozione esplicita a diagnostica permanente;
+- formalizzato che il ciclo continua fino a soluzione verificata oppure a impedimento concreto documentato;
+- nessuna modifica a Core, WebService runtime, frontend, `definizionedati.json` o Library Desktop;
+- **compilazione:** non richiesta, modifica esclusivamente documentale;
+- **esecuzione/test:** non richiesti per la registrazione della procedura;
+- commit:
+  `7eecab0f95b3e26bd5def072a6ac8bfdc9f50c74` (commissione),
+  `34df28d14a35374cdb041867fa301187d173d736` (specifica operativa).
 
 ### INCARICO 2026-09-23 — comando Help "Copia progetto negli appunti"
 Stato: ESEGUITO
