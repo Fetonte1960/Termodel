@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — completamento calcolo pannelli radianti: archivi progetto
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - classificare l'intervento come **completamento calcolo pannelli radianti**;
@@ -129,7 +129,89 @@ Criteri di completamento:
   stato reale.
 
 Risultato:
-- implementazione in corso.
+- creato metadata separato
+  `Server/Termodelwebservice/src/Termodel.WebService/Definitions/pannelli-tubazioni-definizionedati.json`;
+  `definizionedati.json` storico non modificato;
+- creati nel template Service gli archivi precompilati
+  `extended-archives/TipologiePannelli.json`,
+  `Tubazioni.json`, `Fluidi.json`;
+- `TipologiePannelli` contiene la riga `GEN-DEFAULT`,
+  `CasaProduttrice=Generico`, `Modello=Default Termodel`, con tutti gli
+  11 valori precedentemente hard-coded in `DatiProgettoPannelli`:
+  passo 0,30 m, tubo 16x2, temperature 35/30/20/5 °C, matassa 600 m,
+  lunghezza massima circuito 100 m, perdita massima 25.000 Pa e coefficiente
+  resa 5 W/m²K;
+- la tipologia default referenzia inoltre
+  `CodiceTubazione=PEXA-O2-16X2` e `CodiceFluido=H2O`;
+- `Tubazioni` contiene PE-Xa 16x2 mm, D interno 12 mm, rugosità
+  0,0007 mm, barriera ossigeno e Darcy-Weisbach;
+- `Fluidi` contiene acqua H2O con punti proprietà 30/35/40 °C;
+- `ProgFileUnico` carica automaticamente gli archivi estesi dal template e
+  li inserisce nel progetto nuovo sia come `archives/json/*.json` sia come
+  `archives/xml/*.xml`; aggiunge anche
+  `definition/pannelli-tubazioni-definizionedati.json`;
+- corretta la normalizzazione dei valori JSON estesi in tipi CLR primitivi
+  prima della serializzazione XML, evitando `JsonElement` nel
+  `DataContractSerializer`;
+- il nuovo metadata viene copiato in output/publish dal
+  `Termodel.WebService.csproj`;
+- aggiornato il progetto vuoto consolidato
+  `SorgentiTermodel/Library/projects/ProgettoVuoto/ProgettoVuoto.termodel.txt`
+  con metadata e sezioni XML/JSON dei tre archivi;
+- rigenerato
+  `docs/termodel-ui-demo/progetto-vuoto.js` dalla risorsa consolidata;
+- verificato il percorso frontend esistente: `archivio-web.js` acquisisce
+  tutte le sezioni `archives/json/*`, `getArchivioWebState()` espone tutte
+  le chiavi archivio e `app.js` ricostruisce il file unico passando tutte le
+  collection a `buildTermodelProjectText`; pertanto i tre archivi vengono
+  conservati anche se non sono ancora esposti in `ARCHIVE_ORDER`;
+- il futuro menu/sottomenu `Tubazioni` resta **SOSPESO** e non è stato
+  implementato;
+- contratto Front↔Service aggiornato alla **v1.7**, sezione
+  `2.0.1 Archivi di progetto per completamento pannelli radianti`;
+- registro autonomo Tubazioni aggiornato con la milestone
+  `completamento dati di base pannelli radianti`;
+- README template Service e ProgettoVuoto aggiornati;
+- GitHub Pages relativo al commit frontend
+  `dd2ed57029bbfbe672840e2dfa78c8c972532582`: run
+  **#711**, completato con successo;
+- GitHub Actions Service run **#121** ha dato:
+  Build Release **153 warning, 0 errori** e smoke progetto/log riuscito,
+  incluso `RADIANT_PROJECT_ARCHIVES_SMOKE_OK`; lo smoke feedback separato è
+  fallito per una race preesistente all'avvio dello stub locale (porta 5099
+  non ancora in ascolto);
+- stabilizzato lo smoke feedback sostituendo il ritardo fisso con retry
+  esplicito fino a disponibilità dello stub;
+- GitHub Actions Service run **#123**, commit
+  `2c6f477287744131dec381b9ee26666716222299`: **successo completo**;
+  Build Release 0 errori, smoke progetto/lock/log success, nuovo marker
+  `RADIANT_PROJECT_ARCHIVES_SMOKE_OK`, e smoke feedback
+  `GITHUB_FEEDBACK_SMOKE_OK`;
+- **compilato:** SI, GitHub Actions Release;
+- **eseguito:** SI, generazione reale via `POST /api/projects/new` nello
+  smoke HTTP;
+- **testato:** SI per presenza/sezioni/contenuto iniziale dei tre archivi nel
+  progetto Service, presenza nel ProgettoVuoto statico, regressioni project
+  lock/log e feedback;
+- **confrontato con riferimento:** valori della tipologia default confrontati
+  con gli hard-coded correnti di `CalcoloPannelli.cs`; la lettura runtime di
+  tali archivi da parte del solver pannelli è predisposta ma resta il prossimo
+  intervento;
+- non modificati algoritmi geometrici delle spirali;
+- commit principali:
+  `bf12ba9d3c58ac7c198e4787867074d0e4e31b54`,
+  `615cfbea94159bf9faa6a17f30af43d0792ee165`,
+  `94c23c28bde49167bf04dd9efef78340789f49ff`,
+  `30ef99605037b81f732c0d808b458f046fab0a52`,
+  `beeaf415422ad909d97d1c6d6682ed74af596d84`,
+  `f87f1cd160cd9329fb1ba1471666a0e7e2eeced6`,
+  `09ea1f8794ef2baa8c520a2d7a993c7f7ac14601`,
+  `47bc4d314ef9ab8314048a45833e248b871a5f21`,
+  `dd2ed57029bbfbe672840e2dfa78c8c972532582`,
+  `439cb7215323812b4295245c15ca787e6a12dcbb`,
+  `2e155845fca706a2373894ff6db46c43fcae8297`,
+  `6ce39bba2db38a89d8b6771d627e56e63566519c`,
+  `2c6f477287744131dec381b9ee26666716222299`.
 
 ### INCARICO 2026-09-23 — specifica perdite di carico pannelli radianti
 Stato: ESEGUITO
