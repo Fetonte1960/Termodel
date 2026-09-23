@@ -84,6 +84,50 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — pubblicazione snapshot diagnostico Service → GitHub
+Stato: COMMISSIONATO
+
+Commissionato:
+- aggiungere un servizio amministrativo che, **solo su richiesta esplicita**,
+  pubblichi su GitHub uno snapshot diagnostico dell'ultima elaborazione valida
+  del progetto;
+- riusare il catalogo universale `generated-files` come sorgente dei file
+  pubblicabili, senza accesso arbitrario al filesystem;
+- pubblicare per default soltanto `artifacts/**` e `logs/**`;
+- non pubblicare `project.tmdl`, credenziali, configurazioni server o altri
+  file interni;
+- usare un token GitHub distinto dal token feedback:
+  `TERMODEL_SNAPSHOT_GITHUB_TOKEN`;
+- proteggere l'endpoint con una chiave amministrativa separata:
+  `TERMODEL_SNAPSHOT_ADMIN_KEY`, inviata tramite header
+  `X-Termodel-Snapshot-Key`;
+- usare per default il repository `Fetonte1960/Termodel` e un branch
+  dedicato `service-snapshots`, configurabili via environment;
+- creare per ogni pubblicazione una cartella autonoma sotto
+  `service-snapshots/<snapshotId>/`;
+- includere un `manifest.json` con projectId, timestamp UTC, commit Service
+  quando disponibile, elenco file, dimensioni, content type e SHA-256;
+- creare **un solo commit GitHub atomico** per snapshot tramite Git Data API;
+- aggiungere endpoint:
+  `POST /api/projects/{projectId}/publish-session-snapshot`;
+- aggiungere smoke test con stub GitHub API che verifichi autenticazione,
+  branch/commit/tree/blob, esclusione di `project.tmdl` e manifest;
+- documentare la configurazione Render necessaria;
+- non modificare `definizionedati.json`, protocollo progetto o Library
+  Desktop.
+
+Criteri di completamento:
+- build Release verde;
+- endpoint non configurato -> 503;
+- chiave amministrativa errata -> 403;
+- snapshot valido -> 201 con branch, snapshotId, commitSha e URL;
+- file pubblicati provenienti esclusivamente da `generated-files`;
+- smoke GitHub stub verde;
+- Summary e README aggiornati.
+
+Risultato:
+- implementazione in corso.
+
 ### INCARICO 2026-09-23 — canale universale file generati + test SVG spirali al frontend
 Stato: ESEGUITO
 
