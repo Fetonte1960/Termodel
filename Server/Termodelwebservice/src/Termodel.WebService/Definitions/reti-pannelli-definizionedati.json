@@ -47,6 +47,9 @@
     "Fluido": {
       "LunghezzaMassima": 60,
       "Descr": "Fluido",
+      "Combo": [
+        "Acqua"
+      ],
       "Ini": "Acqua"
     },
     "TemperaturaMandataC": {
@@ -103,6 +106,9 @@
     "FormulaPerdita": {
       "LunghezzaMassima": 80,
       "Descr": "Formula perdita",
+      "Combo": [
+        "Darcy-Weisbach"
+      ],
       "Ini": "Darcy-Weisbach"
     }
   },
