@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — rinvio grafo alla fase Tubi universale
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Decisione:
 - il grafo generale della rete, il riconoscimento/scomposizione
@@ -104,15 +104,33 @@ Decisione:
   per evitare che il grafo venga indicato come requisito pendente della fase
   pannelli attuale.
 
-Criterio di completamento:
-- documentazione coerente nel dichiarare che il perimetro attuale termina al
-  calcolo perdite per circuito;
-- grafo/collettore/percorso sfavorito classificati come lavoro futuro del
-  modulo Tubi universale;
-- nessuna modifica al codice di calcolo corrente.
-
 Risultato:
-- registrazione in corso.
+- decisione registrata nel
+  `Server/Termodelwebservice/docs/TUBAZIONI-DEVELOPMENT-REGISTER.md`;
+- roadmap T2/T4 e le parti di T3/T5 relative a grafo, sizing, percorso
+  sfavorito ed equilibratura sono state classificate come lavoro futuro della
+  fase **Tubi universale**;
+- il perimetro della fase pannelli corrente termina al calcolo della perdita
+  distribuita del singolo circuito già identificato;
+- convenzione operativa fino al grafo universale:
+  ```text
+  un circuito = una componente geometrica connessa indipendente
+  ```
+- circuiti diversi non devono quindi condividere un nodo geometrico comune
+  nel disegno destinato al calcolo corrente; se condividono un punto vengono
+  riconosciuti come un unico componente ramificato e diagnosticati, senza
+  scomposizione automatica;
+- il collettore topologico non viene introdotto in questa fase e sarà
+  responsabilità del modulo Tubi universale;
+- contratto Front↔Service aggiornato alla **v1.12** con questo confine
+  funzionale;
+- nessuna modifica al codice di calcolo, al frontend operativo, al protocollo
+  `TERMODEL-PROJECT-TEXT-V1`, a `definizionedati.json` o alla Library
+  Desktop;
+- commit:
+  `7d56df6d70df0b4daeb28bcb7fc77166891c7933`,
+  `122977c9959e1d9aff389bec43db4ae636dbe798`,
+  `74cc540fc71bb3cee400e8583ef94010a53ffa1f`.
 
 ### INCARICO 2026-09-23 — completamento ramo pannelli radianti Service
 Stato: ESEGUITO
@@ -234,6 +252,9 @@ Risultato:
   parametrico/headless il motore condiviso, senza copiarlo;
 - non sono ancora incluse perdita collettore, valvole, flussimetri, perdite
   concentrate, distribuzione primaria, sizing automatico o equilibratura;
+  per decisione del 23/09/2026 questi aspetti, insieme al grafo generale e al
+  percorso sfavorito, sono **fuori dal completamento pannelli corrente** e
+  appartengono alla futura fase Tubi universale;
 - contratto Front↔Service aggiornato alla **v1.11**;
 - registro
   `Server/Termodelwebservice/docs/TUBAZIONI-DEVELOPMENT-REGISTER.md`
