@@ -42,7 +42,7 @@
     },
     {
       "name": "geometry/project.svg",
-      "contentType": "image/svg\u002Bxml",
+      "contentType": "image/svg+xml",
       "sha256": "91741310d2bffae11d2fd2cca8bb906ec27bc7565c51c9db70d7a5b7b38d6c5c"
     },
     {
@@ -159,11 +159,47 @@
       "name": "archives/json/DatiCad.json",
       "contentType": "application/json",
       "sha256": "9d0055c358f57fa7700b9c3bc7dc1b8e6593e2154d2de4e422d72d721bc3f2a2"
+    },
+    {
+      "name": "definition/pannelli-tubazioni-definizionedati.json",
+      "contentType": "application/json",
+      "sha256": "662796b4d41cce94808ac2ffe0407827d6eabbad996171aea570cd4568b9f2c8"
+    },
+    {
+      "name": "archives/xml/TipologiePannelli.xml",
+      "contentType": "application/xml",
+      "sha256": "fd4db5c910373d7e75c9d0c99182e0cd6d505f71d72101393f1b15881d712dcc"
+    },
+    {
+      "name": "archives/json/TipologiePannelli.json",
+      "contentType": "application/json",
+      "sha256": "532c826700698945a9d214b3d9a7d74bf92adb05ba924ba1b06f608c841676ad"
+    },
+    {
+      "name": "archives/xml/Tubazioni.xml",
+      "contentType": "application/xml",
+      "sha256": "ba52af23c1b79334ac356ef9b2861170fe9ce2cb3cdb4fc6c5310aeb714d9b30"
+    },
+    {
+      "name": "archives/json/Tubazioni.json",
+      "contentType": "application/json",
+      "sha256": "47ed1ba65da317348b695f769094a664874bd64b93d3aa61a3351d7b88c28a49"
+    },
+    {
+      "name": "archives/xml/Fluidi.xml",
+      "contentType": "application/xml",
+      "sha256": "1dd92fa6f374dc96c93fda8009b97ca4fa7768ea1b6b0eacfbc18ddda19534c0"
+    },
+    {
+      "name": "archives/json/Fluidi.json",
+      "contentType": "application/json",
+      "sha256": "efded4e24309b5139e1c3f7cbc1a4752ac11851617ba02cc7e48154de35719cf"
     }
   ],
   "diagnostics": [
     "Gli archivi iniziali sono clonati dal progetto base realmente proposto da Termodel desktop.",
-    "L\u0027archivio Piani \u00E8 rigenerato dalla richiesta; gli eventuali archivi forniti sostituiscono quelli omonimi del progetto base."
+    "L'archivio Piani è rigenerato dalla richiesta; gli eventuali archivi forniti sostituiscono quelli omonimi del progetto base.",
+    "Il progetto include gli archivi estesi TipologiePannelli, Tubazioni e Fluidi per il completamento del calcolo pannelli radianti."
   ]
 }
 ---END:manifest.json---
@@ -33663,5 +33699,560 @@ EOF
   }
 ]
 ---END:archives/json/DatiCad.json---
+
+
+---BEGIN:definition/pannelli-tubazioni-definizionedati.json---
+{
+  "TipologiePannelli": {
+    "Codice": {
+      "LunghezzaMassima": 80,
+      "Descr": "Codice",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "CasaProduttrice": {
+      "LunghezzaMassima": 120,
+      "Descr": "Casa produttrice",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Modello": {
+      "LunghezzaMassima": 160,
+      "Descr": "Modello",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "PassoTubiM": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 3,
+      "Descr": "Passo tubi (m)",
+      "Ini": "0.30"
+    },
+    "DiametroEsternoTuboMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Diametro esterno tubo (mm)",
+      "Ini": "16"
+    },
+    "SpessoreTuboMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Spessore tubo (mm)",
+      "Ini": "2"
+    },
+    "TemperaturaMandataC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura mandata (°C)",
+      "Ini": "35"
+    },
+    "TemperaturaRitornoC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura ritorno (°C)",
+      "Ini": "30"
+    },
+    "TemperaturaAmbienteC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura ambiente (°C)",
+      "Ini": "20"
+    },
+    "TemperaturaEsternaProgettoC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura esterna progetto (°C)",
+      "Ini": "5"
+    },
+    "LunghezzaMatassaM": {
+      "NumeroCifre": 10,
+      "NumeroDecimali": 2,
+      "Descr": "Lunghezza matassa (m)",
+      "Ini": "600"
+    },
+    "LunghezzaMassimaCircuitoM": {
+      "NumeroCifre": 10,
+      "NumeroDecimali": 2,
+      "Descr": "Lunghezza massima circuito (m)",
+      "Ini": "100"
+    },
+    "PerditaCaricoMassimaCircuitoPa": {
+      "NumeroCifre": 12,
+      "NumeroDecimali": 0,
+      "Descr": "Perdita carico massima circuito (Pa)",
+      "Ini": "25000"
+    },
+    "CoefficienteResaWm2K": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 3,
+      "Descr": "Coefficiente resa (W/m²K)",
+      "Ini": "5"
+    },
+    "CodiceTubazione": {
+      "LunghezzaMassima": 80,
+      "Descr": "Tubazione",
+      "Combo": [
+        "auto_combo",
+        "Tubazioni",
+        "Codice",
+        "PEXA-O2-16X2"
+      ]
+    },
+    "CodiceFluido": {
+      "LunghezzaMassima": 40,
+      "Descr": "Fluido",
+      "Ini": "H2O"
+    }
+  },
+  "Tubazioni": {
+    "Codice": {
+      "LunghezzaMassima": 80,
+      "Descr": "Codice",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Descrizione": {
+      "LunghezzaMassima": 250,
+      "Descr": "Descrizione",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Materiale": {
+      "LunghezzaMassima": 80,
+      "Descr": "Materiale"
+    },
+    "Applicazione": {
+      "LunghezzaMassima": 120,
+      "Descr": "Applicazione"
+    },
+    "DiametroEsternoMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Diametro esterno (mm)"
+    },
+    "SpessoreMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Spessore (mm)"
+    },
+    "DiametroInternoMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Diametro interno (mm)"
+    },
+    "RugositaAssolutaMm": {
+      "NumeroCifre": 12,
+      "NumeroDecimali": 6,
+      "Descr": "Rugosità assoluta (mm)"
+    },
+    "FormulaPerditaDefault": {
+      "LunghezzaMassima": 80,
+      "Descr": "Formula perdita",
+      "Ini": "Darcy-Weisbach"
+    },
+    "BarrieraOssigeno": {
+      "LunghezzaMassima": 10,
+      "Descr": "Barriera ossigeno",
+      "Combo": [
+        "SI",
+        "NO"
+      ]
+    },
+    "Attivo": {
+      "LunghezzaMassima": 10,
+      "Descr": "Attivo",
+      "Combo": [
+        "SI",
+        "NO"
+      ]
+    }
+  },
+  "Fluidi": {
+    "Codice": {
+      "LunghezzaMassima": 40,
+      "Descr": "Codice fluido",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Descrizione": {
+      "LunghezzaMassima": 120,
+      "Descr": "Descrizione",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "TemperaturaC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura (°C)",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "DensitaKgM3": {
+      "NumeroCifre": 10,
+      "NumeroDecimali": 3,
+      "Descr": "Densità (kg/m³)"
+    },
+    "ViscositaDinamicaPaS": {
+      "NumeroCifre": 12,
+      "NumeroDecimali": 9,
+      "Descr": "Viscosità dinamica (Pa·s)"
+    },
+    "CaloreSpecificoJKgK": {
+      "NumeroCifre": 10,
+      "NumeroDecimali": 1,
+      "Descr": "Calore specifico (J/kgK)"
+    },
+    "Tipo": {
+      "LunghezzaMassima": 80,
+      "Descr": "Tipo",
+      "Ini": "LiquidoNewtoniano"
+    },
+    "ModelloProprieta": {
+      "LunghezzaMassima": 80,
+      "Descr": "Modello proprietà",
+      "Ini": "TabellaTemperatura"
+    },
+    "Attivo": {
+      "LunghezzaMassima": 10,
+      "Descr": "Attivo",
+      "Combo": [
+        "SI",
+        "NO"
+      ]
+    }
+  }
+}
+---END:definition/pannelli-tubazioni-definizionedati.json---
+
+---BEGIN:archives/xml/TipologiePannelli.xml---
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfArrayOfKeyValueOfstringanyType xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Codice</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">GEN-DEFAULT</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>CasaProduttrice</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Generico</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Modello</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Default Termodel</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>PassoTubiM</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:double">0.3</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DiametroEsternoTuboMm</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">16</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>SpessoreTuboMm</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">2</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TemperaturaMandataC</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">35</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TemperaturaRitornoC</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">30</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TemperaturaAmbienteC</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">20</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TemperaturaEsternaProgettoC</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">5</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>LunghezzaMatassaM</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">600</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>LunghezzaMassimaCircuitoM</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">100</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>PerditaCaricoMassimaCircuitoPa</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">25000</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>CoefficienteResaWm2K</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">5</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>CodiceTubazione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">PEXA-O2-16X2</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>CodiceFluido</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">H2O</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+</ArrayOfArrayOfKeyValueOfstringanyType>
+---END:archives/xml/TipologiePannelli.xml---
+
+---BEGIN:archives/json/TipologiePannelli.json---
+[
+  {
+    "Codice": "GEN-DEFAULT",
+    "CasaProduttrice": "Generico",
+    "Modello": "Default Termodel",
+    "PassoTubiM": 0.3,
+    "DiametroEsternoTuboMm": 16,
+    "SpessoreTuboMm": 2,
+    "TemperaturaMandataC": 35,
+    "TemperaturaRitornoC": 30,
+    "TemperaturaAmbienteC": 20,
+    "TemperaturaEsternaProgettoC": 5,
+    "LunghezzaMatassaM": 600,
+    "LunghezzaMassimaCircuitoM": 100,
+    "PerditaCaricoMassimaCircuitoPa": 25000,
+    "CoefficienteResaWm2K": 5,
+    "CodiceTubazione": "PEXA-O2-16X2",
+    "CodiceFluido": "H2O"
+  }
+]
+---END:archives/json/TipologiePannelli.json---
+
+---BEGIN:archives/xml/Tubazioni.xml---
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfArrayOfKeyValueOfstringanyType xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Codice</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">PEXA-O2-16X2</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">PE-Xa 16x2 mm con barriera ossigeno</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Materiale</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">PE-Xa</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Applicazione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">PannelliRadianti</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DiametroEsternoMm</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">16</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>SpessoreMm</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">2</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DiametroInternoMm</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">12</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>RugositaAssolutaMm</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:double">0.0007</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>FormulaPerditaDefault</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Darcy-Weisbach</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>BarrieraOssigeno</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">SI</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Attivo</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">SI</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+</ArrayOfArrayOfKeyValueOfstringanyType>
+---END:archives/xml/Tubazioni.xml---
+
+---BEGIN:archives/json/Tubazioni.json---
+[
+  {
+    "Codice": "PEXA-O2-16X2",
+    "Descrizione": "PE-Xa 16x2 mm con barriera ossigeno",
+    "Materiale": "PE-Xa",
+    "Applicazione": "PannelliRadianti",
+    "DiametroEsternoMm": 16,
+    "SpessoreMm": 2,
+    "DiametroInternoMm": 12,
+    "RugositaAssolutaMm": 0.0007,
+    "FormulaPerditaDefault": "Darcy-Weisbach",
+    "BarrieraOssigeno": "SI",
+    "Attivo": "SI"
+  }
+]
+---END:archives/json/Tubazioni.json---
+
+---BEGIN:archives/xml/Fluidi.xml---
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfArrayOfKeyValueOfstringanyType xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Codice</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">H2O</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Acqua</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TemperaturaC</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">30</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DensitaKgM3</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:double">995.6</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ViscositaDinamicaPaS</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:double">0.000797</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>CaloreSpecificoJKgK</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">4178</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Tipo</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">LiquidoNewtoniano</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ModelloProprieta</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">TabellaTemperatura</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Attivo</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">SI</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Codice</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">H2O</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Acqua</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TemperaturaC</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">35</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DensitaKgM3</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:double">994.1</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ViscositaDinamicaPaS</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:double">0.00072</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>CaloreSpecificoJKgK</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">4178</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Tipo</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">LiquidoNewtoniano</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ModelloProprieta</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">TabellaTemperatura</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Attivo</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">SI</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+  <ArrayOfKeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Codice</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">H2O</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Descrizione</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Acqua</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>TemperaturaC</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">40</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>DensitaKgM3</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:double">992.2</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ViscositaDinamicaPaS</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:double">0.000653</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>CaloreSpecificoJKgK</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">4179</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Tipo</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">LiquidoNewtoniano</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>ModelloProprieta</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">TabellaTemperatura</Value>
+    </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>Attivo</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">SI</Value>
+    </KeyValueOfstringanyType>
+  </ArrayOfKeyValueOfstringanyType>
+</ArrayOfArrayOfKeyValueOfstringanyType>
+---END:archives/xml/Fluidi.xml---
+
+---BEGIN:archives/json/Fluidi.json---
+[
+  {
+    "Codice": "H2O",
+    "Descrizione": "Acqua",
+    "TemperaturaC": 30,
+    "DensitaKgM3": 995.6,
+    "ViscositaDinamicaPaS": 0.000797,
+    "CaloreSpecificoJKgK": 4178,
+    "Tipo": "LiquidoNewtoniano",
+    "ModelloProprieta": "TabellaTemperatura",
+    "Attivo": "SI"
+  },
+  {
+    "Codice": "H2O",
+    "Descrizione": "Acqua",
+    "TemperaturaC": 35,
+    "DensitaKgM3": 994.1,
+    "ViscositaDinamicaPaS": 0.00072,
+    "CaloreSpecificoJKgK": 4178,
+    "Tipo": "LiquidoNewtoniano",
+    "ModelloProprieta": "TabellaTemperatura",
+    "Attivo": "SI"
+  },
+  {
+    "Codice": "H2O",
+    "Descrizione": "Acqua",
+    "TemperaturaC": 40,
+    "DensitaKgM3": 992.2,
+    "ViscositaDinamicaPaS": 0.000653,
+    "CaloreSpecificoJKgK": 4179,
+    "Tipo": "LiquidoNewtoniano",
+    "ModelloProprieta": "TabellaTemperatura",
+    "Attivo": "SI"
+  }
+]
+---END:archives/json/Fluidi.json---
 
 [END-TERMODEL-PROJECT-TEXT-V1]
