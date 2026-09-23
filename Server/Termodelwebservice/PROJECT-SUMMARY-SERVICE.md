@@ -84,6 +84,53 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — completamento calcolo pannelli radianti: archivi progetto
+Stato: COMMISSIONATO
+
+Commissionato:
+- classificare l'intervento come **completamento calcolo pannelli radianti**;
+- creare tre archivi progetto indipendenti e precompilati:
+  `TipologiePannelli`, `Tubazioni`, `Fluidi`;
+- `TipologiePannelli` deve essere identificato per casa produttrice/modello e
+  contenere inizialmente tutti i parametri oggi hard-coded come default in
+  `SorgentiTermodel/Library/Impianti/Pannelli/CalcoloPannelli.cs`;
+- `Tubazioni` deve contenere almeno il tubo radiante default già specificato
+  per il primo calcolo idraulico;
+- `Fluidi` deve contenere almeno acqua con proprietà necessarie al calcolo
+  Darcy in funzione della temperatura;
+- i tre archivi devono essere dati di progetto reali e devono comparire nel
+  `TERMODEL-PROJECT-TEXT-V1` consolidato;
+- il `ProgettoVuoto` usato dal frontend deve contenerli già precompilati;
+- il Service e il frontend devono leggere/conservare gli archivi senza creare
+  formati concorrenti;
+- mantenere separato `definizionedati.json` Termodel esistente: introdurre
+  metadata Tubazioni/Pannelli separati se necessario;
+- preparare la struttura perché il successivo calcolo pannelli legga i default
+  dall'archivio `TipologiePannelli` invece che da costanti C#;
+- non implementare in questo incarico il futuro sottomenu generale
+  `Tubazioni`, che resta sospeso salvo quanto strettamente necessario a
+  conservare/mostrare i dati progetto;
+- non alterare algoritmi geometrici delle spirali.
+
+Criteri di completamento:
+- tre archivi presenti nel template autorevole e nel progetto vuoto consolidato;
+- frontend conserva i tre archivi in apertura/modifica/ricostruzione del file
+  unico;
+- schema di `TipologiePannelli` copre tutti gli attuali default
+  `DatiProgettoPannelli`;
+- almeno una riga default coerente con gli attuali valori C#;
+- `Tubazioni` precaricato con PE-Xa 16x2 per pannelli;
+- `Fluidi` precaricato con acqua e proprietà sufficienti al futuro Darcy;
+- contratto Front↔Service aggiornato se il contenuto obbligatorio del progetto
+  cambia;
+- build Release e smoke del progetto nuovo;
+- verifica che il progetto vuoto frontend contenga realmente le tre sezioni;
+- registro `TUBAZIONI-DEVELOPMENT-REGISTER.md` e Summary aggiornati allo
+  stato reale.
+
+Risultato:
+- implementazione in corso.
+
 ### INCARICO 2026-09-23 — specifica perdite di carico pannelli radianti
 Stato: ESEGUITO
 
