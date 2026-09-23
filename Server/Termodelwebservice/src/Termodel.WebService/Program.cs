@@ -721,13 +721,13 @@ app.MapGet(
     response.Headers["X-Termodel-Generated-File"] =
         file.RelativePath;
     response.Headers["X-Content-Type-Options"] = "nosniff";
-    response.Headers.CacheControl = "no-store";
-    response.Headers.LastModified =
+    response.Headers["Cache-Control"] = "no-store";
+    response.Headers["Last-Modified"] =
         file.LastWriteTimeUtc.ToUniversalTime().ToString("R");
 
-    string safeFileName = file.FileName.Replace(""", string.Empty);
+    string safeFileName = file.FileName.Replace("\"", string.Empty);
     string disposition = file.Inline ? "inline" : "attachment";
-    response.Headers.ContentDisposition =
+    response.Headers["Content-Disposition"] =
         $"{disposition}; filename=\"{safeFileName}\"; " +
         $"filename*=UTF-8''{Uri.EscapeDataString(file.FileName)}";
 
@@ -738,7 +738,7 @@ app.MapGet(
             "text/html",
             StringComparison.OrdinalIgnoreCase))
     {
-        response.Headers.ContentSecurityPolicy =
+        response.Headers["Content-Security-Policy"] =
             "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:";
     }
 
