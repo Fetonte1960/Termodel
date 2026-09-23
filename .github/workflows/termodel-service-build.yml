@@ -342,18 +342,26 @@ jobs:
 
           try {
             $stub = Start-Process python -ArgumentList @("tests/github_feedback_stub.py",$capture) -RedirectStandardOutput $stubOut -RedirectStandardError $stubErr -PassThru
-            Start-Sleep -Milliseconds 500
-
-            if ($stub.HasExited) {
-              if (Test-Path $stubErr) { Get-Content $stubErr | Write-Host }
-              throw "Stub GitHub non avviato."
-            }
 
             $probeBody = '{"title":"probe","body":"probe"}'
-            $probe = Invoke-WebRequest -Uri "http://127.0.0.1:5099/repos/Fetonte1960/Termodel/issues" -Method Post -Headers @{ Authorization = "Bearer test-token" } -ContentType "application/json" -Body $probeBody -SkipHttpErrorCheck
-            if ($probe.StatusCode -ne 201) {
+            $probe = $null
+            for ($attempt = 0; $attempt -lt 20; $attempt++) {
+              if ($stub.HasExited) {
+                if (Test-Path $stubErr) { Get-Content $stubErr | Write-Host }
+                throw "Stub GitHub non avviato."
+              }
+
+              try {
+                $probe = Invoke-WebRequest -Uri "http://127.0.0.1:5099/repos/Fetonte1960/Termodel/issues" -Method Post -Headers @{ Authorization = "Bearer test-token" } -ContentType "application/json" -Body $probeBody -SkipHttpErrorCheck
+                if ($probe.StatusCode -eq 201) { break }
+              } catch {
+                Start-Sleep -Milliseconds 250
+              }
+            }
+
+            if (-not $probe -or $probe.StatusCode -ne 201) {
               if (Test-Path $stubErr) { Get-Content $stubErr | Write-Host }
-              throw "Stub GitHub non raggiungibile: HTTP $($probe.StatusCode)."
+              throw "Stub GitHub non raggiungibile entro il timeout di avvio."
             }
             Remove-Item -LiteralPath $capture -Force -ErrorAction SilentlyContinue
 
