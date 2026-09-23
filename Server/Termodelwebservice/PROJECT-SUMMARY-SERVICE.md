@@ -140,11 +140,14 @@ Risultato:
 - **verifica statica:** `LegacyCoreAdapters.cs` è invariato rispetto a
   `origin/main`; frontend, `PROJECT-SUMMARY.md` radice e
   `definizionedati.json` non sono stati modificati;
-- **compilazione:** non eseguita, perché non è cambiato alcun progetto o
-  sorgente compilato dal Service e il nuovo file è una copia consultiva fuori
-  dalla soluzione;
-- **esecuzione/test HTTP:** non eseguiti; resta valido il run #91 per il sistema
-  headless non modificato;
+- **compilazione:** GitHub Actions `TermodelService Build` run **#94**, commit
+  `62797e05ad109b957200f8097310daf0ba04a453`: restore e Build completati con
+  successo; nessuna build locale eseguita;
+- **esecuzione/test HTTP:** nello stesso run #94 sono completati con successo
+  `Smoke test HTTP project storage and exclusive locks` e
+  `Smoke test GitHub feedback bridge`; il runtime headless e il contratto log
+  già verificato dal run #91 restano quindi operativi dopo l'integrazione
+  consultiva;
 - **commit di integrazione:**
   `d080b8c96657f5fa564f008d967a337c46dae1a1` —
   `Add authoritative desktop TermodelLog reference`.
