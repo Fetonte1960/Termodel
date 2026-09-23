@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.8**  
+Versione documento: **1.9**  
 Aggiornamento: **23 settembre 2026**  
 Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; configurazione log per Aggiorna Modello implementata; archivi progetto pannelli/tubazioni/fluidi implementati**
 
@@ -114,7 +114,7 @@ Esempi di sezioni già previste nel file unico:
 ```text
 manifest.json
 definition/definizionedati.json
-definition/pannelli-tubazioni-definizionedati.json
+definition/reti-pannelli-definizionedati.json
 geometry/project.svg
 archives/xml/*.xml
 archives/json/*.json
@@ -129,66 +129,151 @@ definito come operazione esplicita e separata.
 
 ## 2.0.1 Archivi di progetto per completamento pannelli radianti
 
-Dal 23 settembre 2026 il progetto nuovo consolidato include, oltre agli archivi
-storici Termodel, tre archivi tecnici estesi:
+Revisione del 23 settembre 2026: il modello dati autorevole per il
+completamento pannelli radianti usa **due archivi estesi**, non tre:
 
 ```text
+archives/json/Reti.json
 archives/json/TipologiePannelli.json
-archives/json/Tubazioni.json
-archives/json/Fluidi.json
 ```
 
-e le corrispondenti sezioni XML:
+con le corrispondenti sezioni XML:
 
 ```text
+archives/xml/Reti.xml
 archives/xml/TipologiePannelli.xml
-archives/xml/Tubazioni.xml
-archives/xml/Fluidi.xml
 ```
 
-I metadata di questi archivi sono separati dalla definizione Desktop storica e
-sono contenuti in:
+I metadata sono separati dalla definizione Desktop storica:
 
 ```text
-definition/pannelli-tubazioni-definizionedati.json
+definition/reti-pannelli-definizionedati.json
 ```
 
-Regole di contratto:
+### Responsabilità di `Reti`
 
-- `definizionedati.json` storico non viene esteso o modificato per questi
+`Reti` descrive la rete che il progettista sta definendo e raccoglie dati
+**indipendenti dal costruttore del pannello**.
+
+La struttura è predisposta per distinguere in futuro tipi di rete quali:
+
+```text
+PannelliRadianti
+Tubazioni
+Canali
+...
+```
+
+ma nella fase corrente è implementato e precompilato soltanto
+`PannelliRadianti`.
+
+La prima riga è:
+
+```text
+Codice = RAD-DEFAULT
+TipoRete = PannelliRadianti
+CodiceTipologiaPannello = GEN-DEFAULT
+```
+
+Per la rete pannelli contiene almeno:
+
+- tipologia pannello selezionata;
+- passo scelto per quella rete;
+- fluido, attualmente `Acqua`;
+- temperatura mandata;
+- temperatura ritorno;
+- temperatura ambiente;
+- temperatura esterna di progetto;
+- lunghezza massima circuito;
+- perdita di carico massima circuito;
+- coefficiente `KLayout` per la stima lunghezza spirale;
+- formula di perdita, inizialmente `Darcy-Weisbach`;
+- stato attivo.
+
+Il passo scelto è un **dato della rete/progetto**. Deve appartenere ai passi
+ammessi dalla tipologia pannello selezionata. La validazione/combo dipendente
+dei passi sarà completata quando verrà definita la gestione CAD della rete.
+
+Le proprietà fisiche dell'acqua non vengono più replicate in un archivio
+`Fluidi`: per il primo solver saranno derivate dalla temperatura media
+dell'acqua. Eventuali fluidi diversi dall'acqua saranno una futura estensione
+del programma generalista.
+
+### Responsabilità di `TipologiePannelli`
+
+`TipologiePannelli` è codificato per:
+
+```text
+CasaProduttrice + Modello
+```
+
+e contiene dati dipendenti dal prodotto/sistema:
+
+- codice;
+- casa produttrice;
+- modello e descrizione;
+- materiale tubo;
+- diametro esterno;
+- spessore;
+- diametro interno;
+- rugosità assoluta;
+- presenza barriera ossigeno;
+- elenco dei passi disponibili;
+- lunghezza matassa;
+- coefficiente di resa usato dal modello pannelli corrente;
+- stato attivo.
+
+L'elenco dei passi è necessario in particolare per sistemi con geometria
+vincolata, per esempio pannelli a funghetti. Nella prima riga
+`Generico / Default Termodel` è memorizzato come elenco separato da `;`:
+
+```text
+50;100;150;200;250;300
+```
+
+Il progetto default seleziona 300 mm per mantenere il precedente valore
+hard-coded `PassoTubi = 0,30 m`.
+
+### Regole di contratto
+
+- `definizionedati.json` storico non viene modificato;
+- `POST /api/projects/new` deve creare `Reti` e
+  `TipologiePannelli` già precompilati;
+- il `ProgettoVuoto` consolidato del frontend deve contenere gli stessi due
   archivi;
-- `POST /api/projects/new` deve creare i tre archivi già precompilati;
-- il `ProgettoVuoto` consolidato distribuito al frontend deve contenere gli
-  stessi tre archivi;
-- apertura, modifica e ricostruzione del file unico nel frontend devono
-  conservare queste sezioni;
-- il menu frontend `Modifica` espone le voci `Archivio Tipologie pannelli`,
-  `Archivio Tubazioni` e `Archivio Fluidi`, collegate al motore unico
-  `ArchivioWeb`;
-- `ArchivioWeb` deve leggere i metadata estesi dalla sezione progetto
-  `definition/pannelli-tubazioni-definizionedati.json`, mantenendo separato
-  `definizionedati.json` storico;
-- il futuro sottomenu generalista `Tubazioni` con funzioni di calcolo dedicate
-  resta distinto da queste semplici voci archivio e rimane fuori dal contratto
-  finché non verrà esplicitamente implementato;
-- `TipologiePannelli` è codificato almeno per `CasaProduttrice` +
-  `Modello`; la riga iniziale `Generico / Default Termodel` replica tutti
-  i parametri attualmente hard-coded nel calcolo pannelli:
-  passo, diametro esterno, spessore, temperature mandata/ritorno/ambiente/
-  esterna di progetto, lunghezza matassa, lunghezza massima circuito,
-  perdita massima circuito e coefficiente di resa;
-- la tipologia pannello contiene inoltre i riferimenti al codice tubazione e
-  al codice fluido;
-- `Tubazioni` contiene inizialmente il tubo radiante PE-Xa 16x2 mm con
-  barriera ossigeno, diametro interno 12 mm, rugosità e formula
-  `Darcy-Weisbach`;
-- `Fluidi` contiene inizialmente acqua (`H2O`) con proprietà tabellate a
-  30, 35 e 40 °C, predisposte per interpolazione;
-- questi tre archivi sono **dati tecnici del progetto** e quindi non devono
-  essere filtrati dal payload inviato a `POST /api/calculations`.
+- i nuovi progetti **non devono più generare** gli archivi separati
+  `Tubazioni` e `Fluidi`;
+- apertura, modifica e ricostruzione del file unico devono conservare i due
+  archivi;
+- il frontend espone nel menu `Modifica`:
+  `Archivio Reti` e `Archivio Tipologie pannelli`;
+- `ArchivioWeb` legge i metadata da
+  `definition/reti-pannelli-definizionedati.json`;
+- per compatibilità transitoria, il caricatore frontend può ancora leggere la
+  precedente sezione
+  `definition/pannelli-tubazioni-definizionedati.json` se presente in un
+  progetto già creato, senza però rigenerarla nei nuovi progetti;
+- le vecchie sezioni `Tubazioni` e `Fluidi` presenti in un progetto
+  precedente non vanno eliminate automaticamente al solo caricamento/salvataggio:
+  sono dati legacy da preservare finché non viene definita una migrazione;
+- `Reti` e `TipologiePannelli` sono dati tecnici del progetto e non devono
+  essere filtrati dal payload inviato a `POST /api/calculations`;
+- il contenitore resta `TERMODEL-PROJECT-TEXT-V1`.
 
-Questa estensione non cambia il marcatore o la versione del contenitore:
-il formato resta `TERMODEL-PROJECT-TEXT-V1`.
+### Selezione rete nel CAD 2D — decisione registrata, non ancora implementata
+
+Il CAD 2D avrà una combo che seleziona una riga di `Reti`. La selezione
+determinerà il **tipo di rete che si sta disegnando** e le proprietà di
+progetto associate.
+
+In questa fase non vengono ancora definiti:
+
+- posizione e comportamento della combo;
+- campo/attributo con cui le primitive CAD saranno associate alla rete;
+- comandi grafici specifici per PannelliRadianti/Tubazioni/Canali;
+- regole di cambio rete durante una sequenza di disegno.
+
+Questi aspetti richiederanno un incarico separato.
 
 ## 2.1 Standard del payload Frontend → Service
 
