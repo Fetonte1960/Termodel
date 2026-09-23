@@ -1,0 +1,15 @@
+[
+  {
+    "Codice": "PEXA-O2-16X2",
+    "Descrizione": "PE-Xa 16x2 mm con barriera ossigeno",
+    "Materiale": "PE-Xa",
+    "Applicazione": "PannelliRadianti",
+    "DiametroEsternoMm": 16,
+    "SpessoreMm": 2,
+    "DiametroInternoMm": 12,
+    "RugositaAssolutaMm": 0.0007,
+    "FormulaPerditaDefault": "Darcy-Weisbach",
+    "BarrieraOssigeno": "SI",
+    "Attivo": "SI"
+  }
+]
