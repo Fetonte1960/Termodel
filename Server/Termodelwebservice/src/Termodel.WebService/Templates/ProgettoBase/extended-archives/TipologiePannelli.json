@@ -3,18 +3,17 @@
     "Codice": "GEN-DEFAULT",
     "CasaProduttrice": "Generico",
     "Modello": "Default Termodel",
-    "PassoTubiM": 0.3,
+    "Descrizione": "Tipologia generica per completamento calcolo pannelli radianti",
+    "MaterialeTubo": "PE-Xa",
     "DiametroEsternoTuboMm": 16,
     "SpessoreTuboMm": 2,
-    "TemperaturaMandataC": 35,
-    "TemperaturaRitornoC": 30,
-    "TemperaturaAmbienteC": 20,
-    "TemperaturaEsternaProgettoC": 5,
+    "DiametroInternoTuboMm": 12,
+    "RugositaAssolutaMm": 0.0007,
+    "BarrieraOssigeno": "SI",
+    "PassiDisponibiliMm": "50;100;150;200;250;300",
     "LunghezzaMatassaM": 600,
-    "LunghezzaMassimaCircuitoM": 100,
-    "PerditaCaricoMassimaCircuitoPa": 25000,
     "CoefficienteResaWm2K": 5,
-    "CodiceTubazione": "PEXA-O2-16X2",
-    "CodiceFluido": "H2O"
+    "FormulaPerdita": "Darcy-Weisbach",
+    "Attivo": "SI"
   }
 ]
