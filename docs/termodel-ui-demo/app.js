@@ -53,7 +53,19 @@ const openExampleButton = document.getElementById('openExampleButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.98';
+const helpExplorationMode = document.getElementById('helpExplorationMode');
+const TERMODEL_LOG_CATEGORIES = [
+  'Sempre',
+  'colmi',
+  'spezza',
+  'Error',
+  'Svg',
+  'RedrawHelix',
+  'GeneraModello',
+  'Performance',
+  'PontiAutomatici'
+];
+const APP_VERSION = '0.99';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -305,6 +317,328 @@ const SEPARAZIONE = [
   ['NonSeparatori', true],
   ['Fittizie', false]
 ];
+
+const COMMAND_HELP = {
+  'Benvenuto': {
+    title: 'Termodel — modalità esplorazione',
+    body: `
+      <p><strong>Esplora liberamente:</strong> questa pagina riproduce l'interfaccia di Termodel e visualizza un vero modello generato dal programma.</p>
+      <p>Termodel parte da un disegno schematico CAD, ricostruisce il modello termico 3D, rileva automaticamente molti confini tra ambienti, gestisce locali mansardati e genera ponti termici; il risultato può essere esportato nel formato XML Nazionale.</p>
+      <p class="command-help-note">Nella WebApp i comandi non modificano il tuo computer e non avviano AutoCAD: cliccandoli scopri cosa fanno nel programma reale.</p>
+    `
+  },
+  'File': {
+    title: 'Menu File',
+    body: '<p>Raccoglie le operazioni sul progetto: creazione, apertura, trasferimento ZIP, importazione/esportazione XML e uscita verso formati BIM.</p>'
+  },
+  'Nuovo': {
+    title: 'File → Nuovo',
+    body: '<p>Crea un nuovo progetto Termodel scegliendo cartella, nome e dati/modelli di partenza. Nel normale flusso, dopo la creazione si prepara o si disegna il DXF del progetto e poi si genera il modello.</p>'
+  },
+  'Apri...': {
+    title: 'File → Apri',
+    body: '<p>Apre una cartella che contiene un progetto Termodel esistente, la rende progetto corrente e ne aggiorna dati e modello.</p>'
+  },
+  'Apri esempio...': {
+    title: 'File → Apri esempio',
+    body: '<p>Mostra gli esempi Termodel consolidati nel catalogo pubblico e apre quello selezionato usando lo stesso loader del ProjectBrowser.</p>'
+  },
+  'Carica progetto ZIP': {
+    title: 'File → Carica progetto ZIP',
+    body: '<p>Importa un progetto Termodel impacchettato in ZIP, lo estrae, lo imposta come progetto corrente e lo aggiorna. È utile per trasferire un progetto completo tra computer o utenti.</p>'
+  },
+  'Salva': {
+    title: 'File → Salva',
+    body: '<p>Nel programma desktop il disegno CAD viene salvato in DXF tramite il comando della toolbar CAD. Gli archivi alfanumerici del progetto dispongono invece dei propri comandi di salvataggio.</p>'
+  },
+  'Salva progetto ZIP': {
+    title: 'File → Salva progetto ZIP',
+    body: '<p>Raccoglie la cartella del progetto corrente in un archivio ZIP, utile per backup, trasferimento o assistenza.</p>'
+  },
+  'Salva con nome': {
+    title: 'File → Salva con nome',
+    body: '<p>Copia il progetto corrente in una nuova cartella/nome, imposta la copia come progetto attivo e rigenera il modello.</p>'
+  },
+  'Importa XML nazionale': {
+    title: 'File → Importa XML nazionale',
+    body: '<p>Seleziona un XML Nazionale, lo copia come <code>xml/input.xml</code> del progetto e aggiorna i dati Termodel a partire dal file importato.</p>'
+  },
+  'Esporta XML nazionale': {
+    title: 'File → Esporta XML nazionale',
+    body: '<p>Produce il file XML Nazionale completo del modello termico. Il file può poi essere importato nei programmi di calcolo energetico compatibili con questo standard.</p>'
+  },
+  'Esporta BIM (ifc)': {
+    title: 'File → Esporta BIM (IFC)',
+    body: '<p>Esporta il modello in formato IFC per l\'interscambio BIM e l\'uso del modello geometrico in altri strumenti compatibili.</p>'
+  },
+  'Modifica': {
+    title: 'Menu Modifica',
+    body: '<p>Da qui si raggiungono il disegno CAD del progetto e gli archivi tecnici che descrivono pareti, finestre, ponti termici, confini, zone e dati climatici.</p>'
+  },
+  'Visualizza/Edita disegni di input nel CAD': {
+    title: 'Visualizza / Edita disegni di input nel CAD',
+    body: '<p>Apre il disegno del progetto in AutoCAD/AutoCAD LT. Termodel rimane aperto: dopo le modifiche si salva il DXF dal CAD e si torna in Termodel con <strong>Aggiorna Modello</strong>.</p>'
+  },
+  'Archivio dati climatici': {
+    title: 'Archivio dati climatici',
+    body: '<p>Apre l\'archivio dedicato ai dati climatici utilizzati dal progetto. La pagina “Info Termodel GPT” non descrive i singoli campi di questo archivio.</p>'
+  },
+  'Archivio Pareti': {
+    title: 'Archivio Pareti',
+    body: '<p>Gestisce le tipologie di parete e i relativi dati alfanumerici usati nel modello e nell\'XML.</p>'
+  },
+  'Archivio Finestre': {
+    title: 'Archivio Finestre',
+    body: '<p>Gestisce le tipologie di finestra associate ai blocchi FIN inseriti sulle pareti del disegno CAD.</p>'
+  },
+  'Archivio Ponti termici': {
+    title: 'Archivio Ponti termici',
+    body: '<p>Gestisce i dati dei ponti termici. Termodel può inoltre generarne automaticamente lungo spigoli orizzontali, verticali e contorni delle finestre.</p>'
+  },
+  'Archivio Confini': {
+    title: 'Archivio Confini',
+    body: '<p>Gestisce i tipi di confine. Termodel è in grado di rilevare automaticamente confini verticali tra ambienti e orizzontali tra piani.</p>'
+  },
+  'Archivio Zone': {
+    title: 'Archivio Zone',
+    body: '<p>Gestisce le zone termiche a cui appartengono i locali del modello.</p>'
+  },
+  'Visualizza': {
+    title: 'Menu Visualizza',
+    body: '<p>Permette di passare tra modello, archivi e modalità Plugin CAD, oltre alle opzioni di tutor e generazione automatica.</p>'
+  },
+  'Modello': {
+    title: 'Visualizza → Modello',
+    body: '<p>Mostra il modello 3D prodotto da Termodel. La generazione comprende analisi DXF, poligonizzazione, estrusione, allineamento dei piani, orientamento, finestre, ponti termici e analisi dei confini.</p>'
+  },
+  'Archivi': {
+    title: 'Visualizza → Archivi',
+    body: '<p>Mostra gli archivi alfanumerici del progetto. Qui si configurano e si salvano le proprietà tecniche usate per completare il modello e l\'XML.</p>'
+  },
+  'Plugin Autocad': {
+    title: 'Visualizza → Plugin AutoCAD',
+    body: '<p>Riduce Termodel a una finestra compatta, sempre in primo piano, da affiancare al CAD. Serve per impostare e confermare i parametri prima di inserire Pareti, Finestre, Locali, Ponti termici e altri blocchi tramite la toolbar.</p>'
+  },
+  'Visualizza tutor': {
+    title: 'Visualizza tutor',
+    body: '<p>Apre l\'area di supporto/tutor. Le istruzioni ufficiali rimandano anche al canale YouTube di Termodel per guide operative e progetti commentati.</p>'
+  },
+  'Genera il modello all\'avvio': {
+    title: 'Genera il modello all’avvio',
+    body: '<p>Abilita la rigenerazione automatica del modello quando viene aperto o aggiornato il progetto.</p>'
+  },
+  'Calcoli': {
+    title: 'Menu Calcoli',
+    body: '<p>Raccoglie le funzioni collegate ai risultati di calcolo. La documentazione AI pubblica è concentrata soprattutto sul flusso CAD → modello → XML.</p>'
+  },
+  'Visualizza risultati dell\'ultimo calcolo': {
+    title: 'Risultati dell’ultimo calcolo',
+    body: '<p>Richiama i risultati disponibili dell\'ultima elaborazione. Nella WebApp la sezione è illustrativa e non esegue il motore di calcolo desktop.</p>'
+  },
+  'Gestione Piani': {
+    title: 'Gestione Piani',
+    body: '<p>Configura i piani del progetto: ogni piano è associato a un layer CAD e può avere quota, altezza e proprietà specifiche. I blocchi ALLINEA permettono di ricostruire correttamente la posizione dei piani nello spazio.</p>'
+  },
+  'Crea piano da raster con AI': {
+    title: 'Crea piano da raster con AI',
+    body: '<p>Comando attivo nella WebApp: selezioni una pianta, copi le istruzioni Termodel, apri il tuo ChatGPT e alleghi la stessa immagine. Al ritorno puoi incollare il blocco <code>TERMODEL-SVG-TEXT-V1</code>: la demo lo decodifica, valida lo SVG, genera un <strong>TermodelWebModel JSON 3D provvisorio</strong> e lo visualizza nel viewer.</p>'
+  },
+  'Edita nel Cad': {
+    title: 'Edita nel CAD — viewer Web',
+    body: '<p>Nella WebApp Web apre il confronto 2D: la <strong>pianta pulita</strong> prodotta da GeneraPianta/JSTS viene mostrata in grigio e il <strong>DisegnoInput.svg</strong> viene sovrapposto con linee colorate e più spesse. Il pulsante <strong>Esporta pianta CAD (.DXF)</strong> scarica la geometria ripulita in DXF AutoCAD 2013, in millimetri.</p>'
+  },
+  'CAD ProjectBrowser': {
+    title: 'MyHome3D — CAD 2D',
+    body: `
+      <p>Stai esplorando la rappresentazione 2D del progetto. Sul dispositivo touch usa <strong>un dito per spostare la tavola</strong> e <strong>due dita per zoomare</strong>.</p>
+      <p><strong>Home</strong> torna al modello 3D. <strong>Esplora</strong> apre i controlli del piano e delle rappresentazioni grafiche disponibili.</p>
+      <p class="command-help-note">Il CAD del ProjectBrowser è pensato per consultare il progetto in modo semplice e leggibile, senza mostrare la toolbar completa di progettazione desktop.</p>
+    `
+  },
+  'CAD Esplora': {
+    title: 'CAD 2D — Esplora',
+    body: `
+      <p>Il pannello <strong>Esplora</strong> raccoglie i controlli essenziali della tavola 2D.</p>
+      <ol>
+        <li><strong>Piano</strong>: cambia il piano del progetto visualizzato.</li>
+        <li><strong>Sfondo</strong>: mostra o nasconde lo sfondo associato al piano.</li>
+        <li><strong>Unifilare input</strong>: mostra o nasconde il disegno tecnico di input.</li>
+      </ol>
+      <p>Le scelte agiscono sugli stessi dati e controlli usati dal CAD completo.</p>
+    `
+  },
+  'CAD Piano': {
+    title: 'CAD 2D — Piano',
+    body: '<p>Il selettore <strong>Piano</strong> cambia realmente il piano corrente del progetto e rifiltra la geometria 2D visualizzata. La sorgente è l\'archivio <strong>Piani</strong> del progetto Termodel.</p>'
+  },
+  'CAD Sfondo': {
+    title: 'CAD 2D — Sfondo',
+    body: '<p><strong>Sfondo</strong> mostra o nasconde l\'eventuale riferimento grafico locale del piano corrente. È un aiuto alla lettura e non sostituisce la geometria tecnica del progetto.</p>'
+  },
+  'CAD Unifilare input': {
+    title: 'CAD 2D — Unifilare input',
+    body: '<p><strong>Unifilare input</strong> mostra o nasconde la geometria SVG tecnica del piano corrente, cioè il disegno di input da cui Termodel ricava la rappresentazione del progetto.</p>'
+  },
+  'Aggiorna Modello': {
+    title: 'Aggiorna Modello',
+    body: `
+      <p>È il cuore del flusso Termodel. Dopo aver salvato il DXF, il programma:</p>
+      <ol>
+        <li>analizza il disegno e poligonizza i locali;</li>
+        <li>estrude pareti, pavimenti, soffitti e locali mansardati;</li>
+        <li>allinea e orienta i piani;</li>
+        <li>genera finestre e ponti termici, compresi quelli automatici;</li>
+        <li>analizza i confini tra volumi;</li>
+        <li>prepara l\'output XML.</li>
+      </ol>
+      <p class="command-help-note">Nella WebApp il pulsante ricarica il modello Web già esportato, così puoi vedere il risultato senza installare Termodel.</p>
+    `
+  },
+  'Mostra Filtri Grafici': {
+    title: 'Mostra Filtri Grafici',
+    body: '<p>Mostra o nasconde il pannello di filtraggio del modello. Puoi isolare piani, componenti, confini e separazione tra vani direttamente nel viewer 3D.</p>'
+  },
+  'Informazioni sul modello': {
+    title: 'Informazioni sul modello',
+    body: '<p>Raccoglie le informazioni generali sul progetto e sul modello caricato. Nella WebApp mostra anche il numero di primitive 3D lette dal JSON Termodel.</p>'
+  }
+};
+
+
+COMMAND_HELP['Aggiorna Modello'] = {
+  title: 'Aggiorna Modello',
+  body: `
+    <p>Invia lo stato tecnico corrente del progetto al Termodel Service, esegue il calcolo completo e visualizza l'artifact <strong>model3d</strong> restituito dal server.</p>
+    <p>Le categorie selezionate nel menu <strong>Help → Log Aggiorna Modello</strong> controllano il log della singola elaborazione.</p>
+  `
+};
+
+let explorationModeEnabled = false;
+let commandHelpPanel = null;
+
+function installCommandHelpStyles() {
+  if (document.getElementById('commandHelpStyles')) return;
+  const style = document.createElement('style');
+  style.id = 'commandHelpStyles';
+  style.textContent = `
+    .command-help-panel {
+      position: absolute;
+      left: 18px;
+      top: 42px;
+      width: min(420px, calc(100% - 285px));
+      max-height: calc(100% - 70px);
+      overflow: auto;
+      z-index: 20;
+      background: rgba(250,250,250,.97);
+      border: 1px solid #888;
+      box-shadow: 3px 4px 14px rgba(0,0,0,.24);
+      color: #111;
+    }
+    .command-help-panel[hidden] { display: none; }
+    .command-help-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 9px;
+      background: #e7e7e7;
+      border-bottom: 1px solid #aaa;
+    }
+    .command-help-head strong { font-size: 13px; }
+    .command-help-close {
+      border: 1px solid #999;
+      background: #f7f7f7;
+      width: 23px;
+      height: 22px;
+      line-height: 18px;
+      padding: 0;
+      cursor: pointer;
+    }
+    .command-help-body {
+      padding: 10px 12px 8px;
+      font-size: 12px;
+      line-height: 1.42;
+    }
+    .command-help-body p { margin: 0 0 8px; }
+    .command-help-body ol { margin: 5px 0 9px 20px; padding: 0; }
+    .command-help-note {
+      background: #fff8cf;
+      border: 1px solid #d7c46b;
+      padding: 6px 7px;
+    }
+    .command-help-links {
+      padding: 7px 12px 9px;
+      border-top: 1px solid #ccc;
+      background: #f4f4f4;
+      font-size: 11px;
+    }
+    .command-help-links a { margin-right: 12px; }
+  `;
+  document.head.appendChild(style);
+}
+
+function createCommandHelpPanel() {
+  installCommandHelpStyles();
+  const panel = document.createElement('section');
+  panel.id = 'commandHelpPanel';
+  panel.className = 'command-help-panel';
+  panel.hidden = true;
+  panel.innerHTML = `
+    <div class="command-help-head">
+      <strong id="commandHelpTitle">Termodel</strong>
+      <button class="command-help-close" id="commandHelpClose" type="button" aria-label="Chiudi">×</button>
+    </div>
+    <div class="command-help-body" id="commandHelpBody"></div>
+    <div class="command-help-links">
+      <a href="../infotermodelGPT.html" target="_blank" rel="noopener">Info Termodel GPT</a>
+      <a href="https://www.youtube.com/@Termodel" target="_blank" rel="noopener">Video tutorial</a>
+    </div>
+  `;
+  document.querySelector('.workspace').appendChild(panel);
+  panel.querySelector('#commandHelpClose')?.addEventListener('click', () => {
+    panel.hidden = true;
+  });
+  return panel;
+}
+
+function hideCommandHelp() {
+  if (commandHelpPanel) commandHelpPanel.hidden = true;
+}
+
+function showCommandHelp(key) {
+  if (!explorationModeEnabled) return;
+  const info = COMMAND_HELP[key];
+  if (!info) return;
+
+  if (!commandHelpPanel) commandHelpPanel = createCommandHelpPanel();
+  commandHelpPanel.querySelector('#commandHelpTitle').textContent = info.title;
+  commandHelpPanel.querySelector('#commandHelpBody').innerHTML = info.body;
+  commandHelpPanel.hidden = false;
+}
+
+function helpKeyFromElement(element) {
+  if (!element) return '';
+  return element.dataset.helpKey || element.textContent.trim();
+}
+
+function selectedTermodelLogCategories() {
+  return TERMODEL_LOG_CATEGORIES.filter(category => {
+    const checkbox = document.querySelector('[data-log-category="' + category + '"]');
+    return checkbox?.checked === true;
+  });
+}
+
+function buildTermodelCalculationPath() {
+  const categories = selectedTermodelLogCategories();
+  const query = new URLSearchParams();
+  if (!categories.length) {
+    query.set('logEnabled', 'false');
+  } else {
+    query.set('logEnabled', 'true');
+    query.set('logCategories', categories.join(','));
+  }
+  return '/api/calculations?' + query.toString();
+}
 
 function projectBrowserResourceUrl(path) {
   const value = String(path || '').trim();
@@ -2330,7 +2664,7 @@ function buildTermodelServerExchangeReport(exchange = {}) {
   if (exchange.postStatus !== undefined && exchange.postStatus !== null) {
     lines.push(
       '',
-      'POST /api/calculations',
+      'POST ' + (exchange.postUrl || '/api/calculations'),
       'HTTP ' + exchange.postStatus,
       '---BEGIN:POST_RESPONSE---',
       String(exchange.postBody || ''),
@@ -2424,6 +2758,7 @@ async function loadCalculatedModelFromService() {
   status.textContent = 'Connessione al Termodel Service remoto…';
 
   const exchange = {
+    postUrl: '',
     postStatus: null,
     postBody: '',
     modelUrl: '',
@@ -2437,9 +2772,11 @@ async function loadCalculatedModelFromService() {
     const completeProjectText = await buildCurrentProjectText();
     const serverPayload = await buildTermodelServerPayload(completeProjectText);
 
+    const calculationPath = buildTermodelCalculationPath();
+    exchange.postUrl = calculationPath;
     status.textContent = 'AggiornaCalcolo: elaborazione TermodelService...';
     const calculationResponse = await fetch(
-      termodelServiceUrl('/api/calculations'),
+      termodelServiceUrl(calculationPath),
       {
         method: 'POST',
         headers: projectLockHeaders({
@@ -2539,6 +2876,7 @@ ro.observe(viewer);
 window.addEventListener('resize', resize);
 
 document.getElementById('resetView').addEventListener('click', async () => {
+  showCommandHelp('Aggiorna Modello');
   if (!structuredProjectActive || !currentProjectText) {
     await loadModel();
     resetView();
@@ -2573,6 +2911,7 @@ function setFilterPanelVisibility(visible) {
 
 filtersCheck.addEventListener('change', (event) => {
   setFilterPanelVisibility(event.target.checked);
+  showCommandHelp('Mostra Filtri Grafici');
 });
 
 filterPanel.querySelector('.web-filter-mobile-close')?.addEventListener('click', () => {
@@ -2604,6 +2943,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById(tab.dataset.page).classList.add('active');
+    showCommandHelp(helpKeyFromElement(tab));
     if (tab.dataset.page === 'modelPage') requestAnimationFrame(resize);
   });
 });
@@ -2640,15 +2980,29 @@ document.querySelectorAll('.menu > button').forEach(button => {
       if (m !== menu) m.classList.remove('open');
     });
     menu.classList.toggle('open');
+    if (button.textContent.trim() !== 'Help')
+      showCommandHelp(helpKeyFromElement(button));
   });
 });
 
 document.querySelectorAll('.dropdown button').forEach(button => {
   button.addEventListener('click', (event) => {
     event.stopPropagation();
-    if (!button.dataset.archive)
+    if (!button.dataset.archive) {
+      showCommandHelp(helpKeyFromElement(button));
       button.closest('.menu')?.classList.remove('open');
+    }
   });
+});
+
+document.querySelectorAll('.dropdown .menu-check').forEach(label => {
+  label.addEventListener('click', event => event.stopPropagation());
+});
+
+helpExplorationMode?.addEventListener('change', () => {
+  explorationModeEnabled = helpExplorationMode.checked === true;
+  if (!explorationModeEnabled)
+    hideCommandHelp();
 });
 
 document.addEventListener('click', () => {
@@ -8340,8 +8694,11 @@ initArchivioWeb({ schemaUrl: './definizionedati.json?v=0.70' })
 
 document.querySelectorAll('[data-action]').forEach(button => {
   button.addEventListener('click', () => {
-    if (button.dataset.action === 'Edita nel Cad')
+    if (button.dataset.action === 'Edita nel Cad') {
       activateCadPage();
+      return;
+    }
+    showCommandHelp(button.dataset.action);
   });
 });
 
