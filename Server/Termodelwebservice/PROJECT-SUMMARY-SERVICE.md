@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — pubblicazione snapshot diagnostico Service → GitHub
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - aggiungere un servizio amministrativo che, **solo su richiesta esplicita**,
@@ -116,17 +116,99 @@ Commissionato:
 - non modificare `definizionedati.json`, protocollo progetto o Library
   Desktop.
 
-Criteri di completamento:
-- build Release verde;
-- endpoint non configurato -> 503;
-- chiave amministrativa errata -> 403;
-- snapshot valido -> 201 con branch, snapshotId, commitSha e URL;
-- file pubblicati provenienti esclusivamente da `generated-files`;
-- smoke GitHub stub verde;
-- Summary e README aggiornati.
-
 Risultato:
-- implementazione in corso.
+- aggiunto
+  `src/Termodel.WebService/Snapshots/GitHubSnapshotPublisher.cs`;
+- introdotte opzioni server separate:
+  ```text
+  TERMODEL_SNAPSHOT_GITHUB_TOKEN
+  TERMODEL_SNAPSHOT_ADMIN_KEY
+  TERMODEL_SNAPSHOT_REPOSITORY=Fetonte1960/Termodel
+  TERMODEL_SNAPSHOT_BRANCH=service-snapshots
+  TERMODEL_SNAPSHOT_BASE_BRANCH=main
+  TERMODEL_SNAPSHOT_GITHUB_API_BASE_URL=https://api.github.com
+  TERMODEL_SNAPSHOT_ROOT=service-snapshots
+  ```
+- il token snapshot è volutamente distinto da
+  `TERMODEL_FEEDBACK_GITHUB_TOKEN`; il primo richiede
+  `Contents: read/write`, mentre il feedback può restare limitato alle
+  Issues;
+- aggiunto endpoint amministrativo:
+  ```http
+  POST /api/projects/{projectId}/publish-session-snapshot
+  X-Termodel-Snapshot-Key: <secret>
+  ```
+- endpoint non configurato -> HTTP 503;
+- chiave amministrativa errata -> HTTP 403;
+- progetto inesistente -> HTTP 404;
+- workspace senza file generati -> HTTP 409;
+- `ProjectStore.ReadGeneratedFilesSnapshotAsync` legge atomicamente,
+  sotto lo stesso gate progetto, esclusivamente i file di
+  `artifacts/**` e `logs/**`;
+- limite corrente per sicurezza:
+  - 20 MiB per singolo file;
+  - 50 MiB complessivi per snapshot;
+- pubblicazione GitHub realizzata con Git Data API:
+  1. verifica/creazione branch `service-snapshots`;
+  2. creazione blob;
+  3. creazione tree con base tree del branch;
+  4. creazione commit;
+  5. aggiornamento non-forzato della ref;
+  quindi ogni snapshot corrisponde a **un solo commit atomico**;
+- ogni snapshot viene scritto sotto:
+  ```text
+  service-snapshots/<timestamp>_<project-prefix>/
+    manifest.json
+    artifacts/...
+    logs/...
+  ```
+- `manifest.json` usa il formato
+  `TERMODEL-SERVICE-SNAPSHOT-V1` e registra:
+  projectId, timestamp UTC, eventuale commit Service
+  (`RENDER_GIT_COMMIT`/`GITHUB_SHA`/`SOURCE_VERSION`), stale,
+  content type, dimensione, data file e SHA-256;
+- `project.tmdl` non è incluso e il publisher rifiuta qualsiasi path non
+  appartenente ad `artifacts/` o `logs/`;
+- aggiunti:
+  `tests/github_snapshot_stub.py` e
+  `tools/smoke-github-snapshot.ps1`;
+- lo smoke verifica:
+  - 503 senza configurazione;
+  - 403 con chiave errata;
+  - 201 con configurazione valida;
+  - header Bearer e User-Agent verso GitHub;
+  - creazione branch, blob, tree, commit e update ref non forzato;
+  - quattro file generati + manifest;
+  - esclusione reale di un `project.tmdl` presente nel workspace;
+  - manifest con SHA-256 validi;
+- **compilato/eseguito/testato:** SI — GitHub Actions
+  `TermodelService Build` run **#215**
+  (run id `35883512397`) completato con **success**;
+- marker verificato:
+  ```text
+  GITHUB_SESSION_SNAPSHOT_SMOKE_OK
+  ```
+  insieme agli smoke preesistenti project/lock, feedback ed esecutivo
+  pannelli;
+- README Service aggiornato con endpoint, formato snapshot e configurazione
+  Render;
+- **GitHub reale da Render:** NON ancora attivato/testato perché i due secret
+  `TERMODEL_SNAPSHOT_GITHUB_TOKEN` e
+  `TERMODEL_SNAPSHOT_ADMIN_KEY` devono essere configurati dall'utente
+  nell'ambiente Render; fino a quel momento l'endpoint pubblico restituisce
+  correttamente 503;
+- non sono stati modificati `definizionedati.json`,
+  `TERMODEL-PROJECT-TEXT-V1` o la Library Desktop;
+- commit principali:
+  `ea602424cecaf6af075c4a46ff7dc273c85e2a68`,
+  `53c5b822aeabf16d9bbb7bb8770b325065d115b6`,
+  `6ccb94de5553a53e301f597ba9bb8e7d0601ca44`,
+  `c7c39917e8062a96ffa01d3b955681c53ed33b1d`,
+  `4456c69817332d83fc211cbff9d0260e65e5fbfa`,
+  `6809503da66566b53a8ddd4d0020fa0f22f17add`,
+  `2b07cba1cae7ecad3992e8dbe38dd12b195df432`,
+  `d3f8586af2aed9d8f391ea50ab1d11d3625dda3f`,
+  `4f18e69fa6ee98c990d68d59eecf7b51bd0788c0`.
 
 ### INCARICO 2026-09-23 — canale universale file generati + test SVG spirali al frontend
 Stato: ESEGUITO
