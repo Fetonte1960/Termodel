@@ -1234,6 +1234,45 @@ Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
 
+### INCARICO 2026-09-23 — Help desktop, modalità esplorazione e livelli log
+Stato: **COMMISSIONATO**
+
+Decisione/obiettivo:
+- Termodel Web resta una **WebApp operativa**;
+- aggiungere nella versione PC/Desktop un menu **Help**;
+- la voce **Modalità esplorazione** deve essere disattivata di default;
+- quando la modalità esplorazione è attiva, menu/pulsanti/tab tornano a mostrare
+  la spiegazione contestuale come nel comportamento precedente;
+- quando è disattivata, nessun help deve interferire con i comandi operativi;
+- nello stesso menu Help aggiungere le categorie di log definite dal contratto
+  Frontend↔Service, tutte non selezionate di default;
+- con nessuna categoria selezionata, `Aggiorna Modello` deve inviare
+  `logEnabled=false`;
+- con una o più categorie selezionate, `Aggiorna Modello` deve inviare
+  `logEnabled=true&logCategories=<categorie>`;
+- categorie ammesse, senza inventarne altre:
+  `Sempre`, `colmi`, `spezza`, `Error`, `Svg`, `RedrawHelix`,
+  `GeneraModello`, `Performance`, `PontiAutomatici`;
+- il body `TERMODEL-PROJECT-TEXT-V1` deve restare invariato;
+- nessuna modifica a WebService/Core/Library/definizionedati.json.
+
+File previsti:
+- `docs/termodel-ui-demo/index.html`;
+- `docs/termodel-ui-demo/app.js`;
+- `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` per registrare il consumo frontend
+  della configurazione log già implementata;
+- questo Summary.
+
+Criteri di completamento:
+- Help visibile nel menu desktop;
+- esplorazione OFF di default e help automatico assente;
+- esplorazione ON ripristina le spiegazioni contestuali;
+- tutte le categorie log OFF di default;
+- URL di `POST /api/calculations` costruito esclusivamente secondo contratto;
+- sintassi JavaScript verificata;
+- versione/cache-busting aggiornati;
+- Summary/contratto aggiornati con esito reale.
+
 ### INCARICO 2026-09-23 — rimozione modalità informazioni comandi
 Stato: **ESEGUITO**
 
