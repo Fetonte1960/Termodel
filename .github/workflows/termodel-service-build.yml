@@ -125,6 +125,34 @@ jobs:
             $calcA = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -Headers $headersA -ContentType "text/plain; charset=utf-8" -Body $projectA
             if ($calcA.projectId -ne $allocA.projectId -or $calcA.PSObject.Properties["calculationId"]) { throw "Response calcolo A non valida." }
 
+            $termodelLogPathA = Join-Path $dirA "logs\TermodelLog.md"
+            $diagnosticsPathA = Join-Path $dirA "logs\diagnostics.txt"
+            if (-not (Test-Path $termodelLogPathA)) { throw "TermodelLog.md non persistito nel workspace del progetto." }
+            if (-not (Test-Path $diagnosticsPathA)) { throw "diagnostics.txt non persistito." }
+
+            $termodelLogFileA = [System.IO.File]::ReadAllText($termodelLogPathA,[System.Text.UTF8Encoding]::new($false))
+            $diagnosticsFileA = [System.IO.File]::ReadAllText($diagnosticsPathA,[System.Text.UTF8Encoding]::new($false))
+            if ([string]::IsNullOrWhiteSpace($termodelLogFileA)) { throw "TermodelLog.md esiste ma non contiene messaggi: logging Core non attivo." }
+            if ($termodelLogFileA -ne $diagnosticsFileA) { throw "TermodelLog.md e diagnostics.txt devono rappresentare lo stesso log Core corrente." }
+
+            $termodelLogResponse = Invoke-WebRequest -Uri "$base/api/projects/$($allocA.projectId)/logs/termodel" -Method Get
+            if ($termodelLogResponse.StatusCode -ne 200) { throw "GET TermodelLog deve restituire 200." }
+            if ($termodelLogResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false") { throw "TermodelLog appena calcolato marcato stale." }
+            if ($termodelLogResponse.Headers["Content-Type"] -notmatch "^text/markdown") { throw "Content-Type TermodelLog inatteso." }
+            if ($termodelLogResponse.Content -ne $termodelLogFileA) { throw "GET TermodelLog non restituisce il file persistito byte/logicamente identico." }
+
+            $missingLogId = [guid]::NewGuid().ToString("D")
+            $missingLogResponse = Invoke-WebRequest -Uri "$base/api/projects/$missingLogId/logs/termodel" -Method Get -SkipHttpErrorCheck
+            if ($missingLogResponse.StatusCode -ne 404) { throw "TermodelLog inesistente deve restituire 404." }
+
+            $logHashBeforeFailure = (Get-FileHash -LiteralPath $termodelLogPathA -Algorithm SHA256).Hash
+            $invalidProjectA = $projectA.Replace('data-termodel-units="cm"', 'data-termodel-units="invalid"')
+            if ($invalidProjectA -eq $projectA) { throw "Smoke non ha trovato l'attributo SVG da invalidare." }
+            $failedCalc = Invoke-WebRequest -Uri "$base/api/calculations" -Method Post -Headers $headersA -ContentType "text/plain; charset=utf-8" -Body $invalidProjectA -SkipHttpErrorCheck
+            if ($failedCalc.StatusCode -ne 422) { throw "Calcolo volutamente non valido deve restituire 422." }
+            $logHashAfterFailure = (Get-FileHash -LiteralPath $termodelLogPathA -Algorithm SHA256).Hash
+            if ($logHashBeforeFailure -ne $logHashAfterFailure) { throw "Un calcolo fallito ha sostituito il TermodelLog dell'ultimo calcolo valido." }
+
             $modelResponse = Invoke-WebRequest -Uri "$base/api/projects/$($allocA.projectId)/artifacts/model3d" -Method Get
             if ($modelResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false") { throw "Artifact appena calcolato marcato stale." }
 
@@ -138,6 +166,9 @@ jobs:
 
             $staleResponse = Invoke-WebRequest -Uri "$base/api/projects/$($allocA.projectId)/artifacts/model3d" -Method Get
             if ($staleResponse.Headers["X-Termodel-Artifact-Stale"] -ne "true") { throw "Salva con nome deve rendere stale gli artifact." }
+
+            $staleLogResponse = Invoke-WebRequest -Uri "$base/api/projects/$($allocA.projectId)/logs/termodel" -Method Get
+            if ($staleLogResponse.Headers["X-Termodel-Artifact-Stale"] -ne "true") { throw "Salva con nome deve rendere stale anche il TermodelLog corrente." }
 
             $heartbeat = Invoke-RestMethod -Uri "$base/api/projects/$($allocA.projectId)/heartbeat" -Method Post -Headers $headersA
             if ($heartbeat.status -ne "locked") { throw "Heartbeat lock fallito." }
@@ -167,8 +198,14 @@ jobs:
             $headersA = LockHeaders ([string]$recoveredA.projectLockToken)
             if ($recoveredA.projectName -ne $renamed) { throw "Recovery dopo restart non ha riaperto il progetto rinominato." }
 
+            $restartedLogResponse = Invoke-WebRequest -Uri "$base/api/projects/$($allocA.projectId)/logs/termodel" -Method Get
+            if ($restartedLogResponse.StatusCode -ne 200) { throw "TermodelLog non leggibile dopo restart Service." }
+            if ($restartedLogResponse.Content -ne $termodelLogFileA) { throw "TermodelLog cambiato dopo restart Service." }
+            if ($restartedLogResponse.Headers["X-Termodel-Artifact-Stale"] -ne "true") { throw "Dopo Salva con nome/restart il TermodelLog deve restare stale." }
+
             Invoke-RestMethod -Uri "$base/api/projects/$($allocA.projectId)/close" -Method Post -Headers $headersA | Out-Null
 
+            Write-Host "TERMODEL_LOG_SMOKE_OK"
             Write-Host "PROJECT_LOCK_SMOKE_OK"
             Write-Host "projectIdA=$($allocA.projectId)"
             Write-Host "projectIdB=$($allocB.projectId)"
