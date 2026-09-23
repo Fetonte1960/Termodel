@@ -2,7 +2,7 @@
 
 Versione documento: **1.6**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; commissionata configurazione log per Aggiorna Modello**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; configurazione log per Aggiorna Modello implementata**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -383,7 +383,7 @@ Regole:
 `TERMODEL-PROJECT-TEXT-V1` invariato. Le opzioni di log sono parametri di
 esecuzione della singola elaborazione e non vengono inserite nel progetto.
 
-Parametri query previsti:
+Parametri query implementati:
 
 ```text
 logEnabled=true|false
@@ -419,8 +419,8 @@ POST /api/calculations?logCategories=all
 POST /api/calculations?logEnabled=false
 ```
 
-La risposta di `POST /api/calculations` dovrà riportare in modo additivo la
-configurazione log effettivamente applicata; la stessa configurazione sarà
+La risposta di `POST /api/calculations` riporta in modo additivo la
+configurazione log effettivamente applicata; la stessa configurazione viene
 registrata in `logs/calculation.log`.
 
 ### Assegnazione di un nuovo projectId
