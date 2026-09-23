@@ -163,7 +163,7 @@
     {
       "name": "definition/reti-pannelli-definizionedati.json",
       "contentType": "application/json",
-      "sha256": "62e15565def12071ea497f90ce9a631c49235e9b813374f1e35a451b2bbe84ca"
+      "sha256": "683845b7cb00a69f06defeaf5fdffeb8c727014f89f3f79dc6ea845143e599ab"
     },
     {
       "name": "archives/xml/Reti.xml",
@@ -33755,6 +33755,9 @@ EOF
     "Fluido": {
       "LunghezzaMassima": 60,
       "Descr": "Fluido",
+      "Combo": [
+        "Acqua"
+      ],
       "Ini": "Acqua"
     },
     "TemperaturaMandataC": {
@@ -33811,6 +33814,9 @@ EOF
     "FormulaPerdita": {
       "LunghezzaMassima": 80,
       "Descr": "Formula perdita",
+      "Combo": [
+        "Darcy-Weisbach"
+      ],
       "Ini": "Darcy-Weisbach"
     }
   },
