@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — configurazione log per Aggiorna Modello
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - estendere `POST /api/calculations` (Aggiorna Modello) con parametri opzionali
@@ -127,7 +127,67 @@ Criteri di completamento:
   soltanto dopo build e smoke riusciti.
 
 Risultato:
-- non ancora implementato.
+- **API implementata:** `POST /api/calculations` accetta
+  `logEnabled=true|false` e `logCategories=<elenco>` come query parameter;
+  il body resta il normale `TERMODEL-PROJECT-TEXT-V1`;
+- **categorie:** l'adattatore headless usa ora gli stessi nomi del riferimento
+  Desktop: `Sempre`, `colmi`, `spezza`, `Error`, `Svg`,
+  `RedrawHelix`, `GeneraModello`, `Performance`,
+  `PontiAutomatici`;
+- **retrocompatibilità:** senza parametri resta la modalità
+  `service-default`: tutte le scritture dirette già raccolte dal Service
+  continuano a essere raccolte, mentre i blocchi protetti da
+  `IsEnabled(...)` restano disattivati;
+- **modalità filtrata:** se `logCategories` è presente,
+  `IsEnabled(category)` e le scritture dirette rispettano esclusivamente le
+  categorie selezionate; `LogOperation` è associato a `Sempre` e
+  `LogError` a `Error`;
+- supportati alias `all` e `none`; i nomi categoria sono
+  case-insensitive; categoria sconosciuta o lista vuota → HTTP 400 con
+  validation problem e calcolo non avviato;
+- `logEnabled=false` produce modalità `disabled` e nessuna diagnostica
+  raccolta per quella elaborazione;
+- configurazione e messaggi sono isolati per elaborazione con `AsyncLocal`;
+  `GeneraModello.GeneraAsync` riceve la configurazione senza introdurre
+  stato persistente nel progetto;
+- la risposta di `POST /api/calculations` include il nuovo oggetto additivo
+  `logging { enabled, mode, categories }`;
+- `logs/calculation.log` registra ora anche `logEnabled`, `logMode` e
+  `logCategories`; `TermodelLog.md` e `diagnostics.txt` continuano a
+  contenere i messaggi effettivamente raccolti;
+- preservati publish transazionale, ultimo log valido su errore, endpoint
+  `GET /api/projects/{projectId}/logs/termodel` e header stale;
+- README, contratto condiviso **v1.6**, `TERMODEL-SYNC.md` e
+  `docs/copied-from-termodel.md` aggiornati;
+- **compilazione:** GitHub Actions `TermodelService Build` run **#101**,
+  commit `d3ee3afa7d40dd30c2235c5729f882090d20ced4`: Build Release riuscita
+  con **153 warning, 0 errori**;
+- **smoke HTTP:** nello stesso run #101 lo step
+  `Smoke test HTTP project storage and exclusive locks` è riuscito e i log
+  del job riportano esplicitamente `TERMODEL_LOG_OPTIONS_SMOKE_OK`,
+  `TERMODEL_LOG_SMOKE_OK` e `PROJECT_LOCK_SMOKE_OK`;
+- lo smoke verifica realmente: comportamento predefinito non vuoto,
+  `logEnabled=false` con zero diagnostiche e file log vuoto, filtro
+  `Error` senza messaggi `info/operation`, `logCategories=all` con tutte
+  le 9 categorie, categoria sconosciuta → HTTP 400 senza sostituire il log
+  precedente e assenza di contaminazione del log del progetto A durante le
+  elaborazioni configurate del progetto B;
+- **verifica tree documentato:** GitHub Actions run **#104**, commit
+  `e5438f8155b16ae3ce6f780f3e7b48f3c94c50c7`, completato con successo
+  per Build, smoke project/log e smoke feedback;
+- **frontend:** non modificato;
+- **Library Desktop:** non modificata;
+- **definizionedati.json:** non modificato;
+- commit principali:
+  `dc71fd329ea1eb00a09d20e7d185b8f814b02585`,
+  `a367321570ef2abdc7871463977ffce2ac679955`,
+  `b8fc9a4ec3477fce068963c365ce02894b8380ff`,
+  `0d5fe4f33ee92d885c4363160a9d6a89745cfcb7`,
+  `d3ee3afa7d40dd30c2235c5729f882090d20ced4`,
+  `8023cbf6e0af0b562cf0c553afa034eb91f68a06`,
+  `8fa3d1c935e5baa419b0b51144f6b1e1d774fc33`,
+  `e5438f8155b16ae3ce6f780f3e7b48f3c94c50c7`,
+  `dcdbdd4b37d021d3b131375444a75d9dfe6cba87`.
 
 ### INCARICO 2026-09-23 — acquisizione sorgente Desktop autorevole TermodelLog
 Stato: ESEGUITO
