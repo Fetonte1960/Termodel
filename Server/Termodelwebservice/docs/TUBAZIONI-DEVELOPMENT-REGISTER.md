@@ -1217,7 +1217,9 @@ Archivio Reti
 Archivio Tipologie pannelli
 ```
 
-La futura combo Rete del CAD 2D è registrata ma non ancora implementata.
+Il CAD 2D implementa ora la combo `Modalità = Edificio/Rete` e la combo
+`Rete -> Reti.Codice`. In modalità Rete la prima entità tecnica implementata
+è `Tubo`, disegnata in sequenza e associata sia al piano sia alla rete.
 
 Stato della milestone:
 
@@ -1228,10 +1230,37 @@ integrazione progetto nuovo:    IMPLEMENTATA
 ProgettoVuoto frontend:         IMPLEMENTATO
 voci archivio frontend:         IMPLEMENTATE
 compatibilità metadata legacy:  PRESERVATA IN LETTURA
-combo Rete CAD 2D:              DA DEFINIRE
+combo Rete CAD 2D:              IMPLEMENTATA
+entità Tubo CAD 2D:             IMPLEMENTATA
+trasporto Tubo nel file unico:  IMPLEMENTATO
+acquisizione layer nel Core:    IMPLEMENTATA, senza solver pannelli
 lettura archivi dal solver:     DA FARE
 perdita Darcy circuito:         DA FARE
 ```
+
+## 15.2 Milestone — CAD Rete / entità Tubo
+
+Aggiornamento 23 settembre 2026.
+
+Il riferimento Desktop è stato verificato in
+`leggidxf/ScriptCad.cs` e `Impianti/Pannelli/IoPannelli.cs`:
+
+```text
+layer    <NomePiano>_tubipannelli
+colore   ACI 1
+linetype Continuous
+```
+
+Il frontend Web v1.04 applica la stessa convenzione alle linee `T001...`,
+aggiungendo `data-termodel-rete=Reti.Codice` per conservare l'associazione
+progettuale. Il Virtual CAD traduce layer/linetype/colore nel `DxfDocument`
+in memoria.
+
+Il precedente adattatore headless rifiutava qualsiasi layer tubi. È stato
+limitato al comportamento necessario di questa milestone: acquisisce e conta
+le linee del layer Desktop corretto senza interrompere `GeneraModello`.
+Non genera ancora `retePannelli.xml`, non calcola spirali/perdite e non
+sostituisce il futuro adapter Pannelli/Tubazioni.
 
 ## 16. Decisioni consolidate
 
@@ -1256,7 +1285,7 @@ perdita Darcy circuito:         DA FARE
 
 - estendere in futuro `Reti.TipoRete` oltre `PannelliRadianti` verso
   Tubazioni/Canali senza creare archivi concorrenti;
-- definire la combo `Reti` nel CAD 2D e l'associazione delle primitive alla rete;
+- estendere in futuro i comandi CAD di rete oltre l'entità `Tubo` quando saranno introdotti altri `TipoRete`;
 - implementare la validazione del passo selezionato rispetto ai passi ammessi
   dalla tipologia pannello;
 - verificare quali dati storici siano ancora tecnicamente/normativamente
@@ -1279,14 +1308,16 @@ metadata JSON Reti/Pannelli:     SI
 dati progetto Reti/Pannelli:     SI
 solver idraulico implementato:   NO
 adapter Pannelli implementato:   NO
-integrazione Aggiorna Modello:   NO
-compilato:                       NON APPLICABILE in questa fase documentale
-eseguito:                        NO
+input Tubo accettato da Aggiorna Modello: SI, senza solver pannelli
+integrazione solver Aggiorna Modello: NO
+compilato:                       IN VERIFICA GitHub Actions per questa milestone
+eseguito:                        IN VERIFICA smoke HTTP Tubo
 regression test Pascal:          NO
 confronto Golden:                NO
 ```
 
 La prossima attività corretta per il ramo pannelli è collegare il calcolo
 pannelli ai due archivi `Reti`/`TipologiePannelli` e implementare il primo
-caso Darcy-Weisbach su un circuito sintetico. La combo Rete del CAD 2D verrà
-progettata separatamente.
+caso Darcy-Weisbach su un circuito sintetico. La geometria Tubo è già
+trasportabile dal CAD al Core e costituisce ora un input disponibile, ma non
+è ancora un risultato idraulico né un artifact pannelli.
