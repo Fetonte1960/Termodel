@@ -180,25 +180,27 @@ jobs:
               $groupClose = $geometry.IndexOf("</g>",[System.StringComparison]::OrdinalIgnoreCase)
               if ($groupClose -lt 0) { throw "Gruppo piano non aperto nello smoke esecutivo." }
 
-              $room = @'
-            <line id="E001" x1="0" y1="0" x2="400" y2="0" data-termodel-piano="__FLOOR__" data-termodel-color="1" data-termodel-linetype="Continuous" />
-            <line id="E002" x1="400" y1="0" x2="400" y2="400" data-termodel-piano="__FLOOR__" data-termodel-color="1" data-termodel-linetype="Continuous" />
-            <line id="E003" x1="400" y1="400" x2="0" y2="400" data-termodel-piano="__FLOOR__" data-termodel-color="1" data-termodel-linetype="Continuous" />
-            <line id="E004" x1="0" y1="400" x2="0" y2="0" data-termodel-piano="__FLOOR__" data-termodel-color="1" data-termodel-linetype="Continuous" />
-            <text id="R001" x="200" y="200" font-size="1" data-termodel-piano="__FLOOR__">
-              <tspan x="200" dy="0">BLOCCO,LOC</tspan>
-              <tspan x="200" dy="1.2em">DESCR.,Locale R001</tspan>
-              <tspan x="200" dy="1.2em">ZONA,Zona climatizzata</tspan>
-              <tspan x="200" dy="1.2em">CPAV,Automatico</tspan>
-              <tspan x="200" dy="1.2em">CSOF,Automatico</tspan>
-              <tspan x="200" dy="1.2em">CCOPERTURA,Solaio piano</tspan>
-              <tspan x="200" dy="1.2em">TPAV,Pavimento su terreno</tspan>
-              <tspan x="200" dy="1.2em">TSOF,Solaio Esterno in laterocemento</tspan>
-              <tspan x="200" dy="1.2em">ALTEZZALORDA,Da piano</tspan>
-              <tspan x="200" dy="1.2em">ALTEZZANETTA,Da piano</tspan>
-              <tspan x="200" dy="1.2em">QUOTAPAVIMENTO,Da piano</tspan>
-            </text>
-            '@.Replace("__FLOOR__",$floorName)
+              $roomLines = @(
+                '<line id="E001" x1="0" y1="0" x2="400" y2="0" data-termodel-piano="__FLOOR__" data-termodel-color="1" data-termodel-linetype="Continuous" />',
+                '<line id="E002" x1="400" y1="0" x2="400" y2="400" data-termodel-piano="__FLOOR__" data-termodel-color="1" data-termodel-linetype="Continuous" />',
+                '<line id="E003" x1="400" y1="400" x2="0" y2="400" data-termodel-piano="__FLOOR__" data-termodel-color="1" data-termodel-linetype="Continuous" />',
+                '<line id="E004" x1="0" y1="400" x2="0" y2="0" data-termodel-piano="__FLOOR__" data-termodel-color="1" data-termodel-linetype="Continuous" />',
+                '<text id="R001" x="200" y="200" font-size="1" data-termodel-piano="__FLOOR__">',
+                '  <tspan x="200" dy="0">BLOCCO,LOC</tspan>',
+                '  <tspan x="200" dy="1.2em">DESCR.,Locale R001</tspan>',
+                '  <tspan x="200" dy="1.2em">ZONA,Zona climatizzata</tspan>',
+                '  <tspan x="200" dy="1.2em">CPAV,Automatico</tspan>',
+                '  <tspan x="200" dy="1.2em">CSOF,Automatico</tspan>',
+                '  <tspan x="200" dy="1.2em">CCOPERTURA,Solaio piano</tspan>',
+                '  <tspan x="200" dy="1.2em">TPAV,Pavimento su terreno</tspan>',
+                '  <tspan x="200" dy="1.2em">TSOF,Solaio Esterno in laterocemento</tspan>',
+                '  <tspan x="200" dy="1.2em">ALTEZZALORDA,Da piano</tspan>',
+                '  <tspan x="200" dy="1.2em">ALTEZZANETTA,Da piano</tspan>',
+                '  <tspan x="200" dy="1.2em">QUOTAPAVIMENTO,Da piano</tspan>',
+                '</text>'
+              )
+              $room = (($roomLines -join [Environment]::NewLine).Replace("__FLOOR__",$floorName))
+
 
               $geometry = $geometry.Insert($groupClose,$room + [Environment]::NewLine)
               return $projectText.Substring(0,$cs) + $geometry + $projectText.Substring($ei)
