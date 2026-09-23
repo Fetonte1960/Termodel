@@ -84,6 +84,57 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — specifica perdite di carico pannelli radianti
+Stato: COMMISSIONATO
+
+Commissionato:
+- definire e registrare le specifiche della prima funzione operativa della nuova
+  linea Calcolo Tubazioni: calcolo delle perdite di carico dei circuiti dei
+  pannelli radianti;
+- NON usare come sorgente autorevole la lunghezza delle spirali già generata,
+  perché può risultare corrotta;
+- ricavare una lunghezza idraulica della spirale da superficie servita e passo
+  tubo mediante una relazione empirica/documentata, da verificare su fonti
+  tecniche esterne;
+- sommare alla lunghezza stimata della spirale la lunghezza reale dei tubi di
+  collegamento fra collettore e circuito;
+- usare portata, lunghezza totale, diametro/proprietà della tubazione e fluido
+  per il calcolo delle perdite di carico tramite la nuova libreria Tubazioni;
+- usare come formula predefinita Darcy-Weisbach, con fattore d'attrito
+  determinato in modo coerente col regime di moto e con la rugosità;
+- progettare contestualmente gli archivi indipendenti Tubazioni e Fluidi,
+  predisposti per il futuro programma generalista;
+- caricare almeno una famiglia di tubazione idonea ai pannelli radianti e il
+  fluido acqua, dopo verifica tecnica del materiale/nomenclatura corretta;
+- prevedere una futura gestione UI tramite sottomenu "Tubazioni", ma lasciarla
+  esplicitamente IN SOSPESO in questa fase;
+- mantenere l'obiettivo di questa fase limitato alla produzione del dato
+  "perdita di carico del circuito"; il completamento del programma generalista
+  verrà affrontato successivamente.
+
+Vincoli:
+- aggiornare il registro autonomo
+  `Server/Termodelwebservice/docs/TUBAZIONI-DEVELOPMENT-REGISTER.md`;
+- non implementare ancora solver, archivi runtime, menu, frontend o integrazione
+  in `Aggiorna Modello`;
+- non modificare `definizionedati.json`, Library Pascal o protocollo progetto;
+- distinguere chiaramente dati derivati empiricamente, dati geometrici reali e
+  parametri idraulici di archivio.
+
+Criteri di completamento:
+- relazione superficie/passo -> lunghezza registrata con ipotesi e coefficiente
+  di correzione separato/configurabile;
+- definito il contributo dei tubi di collegamento;
+- definito il set minimo di input/output del calcolo Darcy;
+- definiti gli archivi minimi Tubazioni e Fluidi e i dati iniziali da
+  precaricare;
+- annotato il materiale corretto per tubi radianti sulla base delle fonti;
+- sottomenu Tubazioni registrato come sospeso;
+- Summary aggiornato con lo stato reale.
+
+Risultato:
+- specifica in corso.
+
 ### INCARICO 2026-09-23 — registro sviluppo autonomo Calcolo Tubazioni
 Stato: ESEGUITO
 
