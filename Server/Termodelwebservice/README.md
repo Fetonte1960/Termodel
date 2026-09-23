@@ -52,6 +52,53 @@ Richiesta minima:
 
 Se `piani` è omesso viene creato il piano calpestabile predefinito. Gli altri archivi sono clonati dal progetto base incorporato; eventuali archivi forniti nella richiesta sostituiscono quelli omonimi dopo validazione. Il contenitore comprende anche `project/DisegnoInput.dxf`, `thermal/input.xml` e `thermal/input.json`.
 
+## Suggerimenti utenti → GitHub Issues
+
+Il WebService espone:
+
+```http
+POST /api/feedback
+Content-Type: application/json
+Origin: https://www.termodel.it
+```
+
+Esempio:
+
+```json
+{
+  "message": "Vorrei poter confrontare due varianti del progetto.",
+  "category": "suggestion",
+  "title": "Confronto varianti",
+  "page": "/termodel-ui-demo/",
+  "appVersion": "0.98"
+}
+```
+
+Il Service crea una Issue nel repository GitHub configurato. Il token GitHub
+non deve mai essere inserito nel frontend o versionato nel repository.
+
+Configurazione:
+
+```text
+TERMODEL_FEEDBACK_GITHUB_TOKEN=<secret fine-grained PAT>
+TERMODEL_FEEDBACK_REPOSITORY=Fetonte1960/Termodel
+TERMODEL_FEEDBACK_ALLOWED_ORIGIN=https://www.termodel.it
+TERMODEL_FEEDBACK_GITHUB_API_BASE_URL=https://api.github.com
+```
+
+Per il token usare il permesso minimo **Issues: Read and write** limitato al
+solo repository Termodel. Su Render il token va configurato come secret
+environment variable.
+
+L'endpoint:
+- non esegue `git push` e non crea commit automatici;
+- non richiede un clone Git nel container;
+- non allega automaticamente progetto, projectId, email o IP alla Issue;
+- elimina query string e fragment dal campo `page`;
+- applica validazione e rate-limit in memoria;
+- rifiuta origini diverse da quella configurata;
+- restituisce `503` se il token/configurazione non è disponibile.
+
 ## Regole iniziali
 
 - Termodel desktop resta il riferimento funzionale e algoritmico.
