@@ -27,6 +27,8 @@ GET  /api/projects/{projectId}/artifacts/model3d
 GET  /api/projects/{projectId}/artifacts/pannelli
 GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-svg
 GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
+GET  /api/projects/{projectId}/generated-files
+GET  /api/projects/{projectId}/generated-files/{relativePath}
 GET  /api/projects/{projectId}/logs/termodel
 POST /api/model/3d
 POST /api/feedback
@@ -118,6 +120,34 @@ DXF e SVG derivano dallo **stesso modello grafico esecutivo** del Core. Il
 motore geometrico è il `SpiraliGPT` Desktop corrente, usato con il default
 storico `PassoTubi=0,30 m`. Il grafo/collettore resta fuori scope e viene
 rimandato a Tubi universale.
+
+## Canale universale file generati
+
+Per evitare un endpoint dedicato per ogni futuro elaborato, il Service espone:
+
+```http
+GET /api/projects/{projectId}/generated-files
+GET /api/projects/{projectId}/generated-files/{relativePath}
+```
+
+Il primo endpoint restituisce il catalogo `TERMODEL-GENERATED-FILES-V1`
+con nome, path logico, categoria, content type, dimensione, stale e `href`.
+Il secondo restituisce il contenuto.
+
+Il perimetro è volutamente read-only e limitato a:
+
+```text
+artifacts/**
+logs/**
+```
+
+`project.tmdl` e altri file del workspace non sono pubblicabili tramite
+questo canale. Il path viene normalizzato e controllato contro traversal.
+Gli endpoint specifici `artifacts/*` e `logs/termodel` restano disponibili
+per retrocompatibilità.
+
+Il canale è destinato ai futuri disegni, report, CSV, PDF, SVG/DXF, JSON e
+log prodotti dai calcoli.
 
 ## TermodelLog del progetto
 
