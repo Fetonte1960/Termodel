@@ -90,6 +90,24 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — contratto permanente "Debug avanzato"
+Stato: COMMISSIONATO
+
+Commissionato:
+- registrare una procedura permanente per la risoluzione dei problemi complessi del TermodelService tramite GitHub Actions;
+- se la natura del problema non è già nota, chiedere prima all'utente quale anomalia deve essere riprodotta;
+- chiedere il progetto reale necessario alla riproduzione quando non è già disponibile;
+- avviare il ciclo di test sul Service in GitHub Actions, preferibilmente su branch diagnostico separato quando servono modifiche temporanee;
+- quando necessario, inserire log/strumentazione diagnostica speciale esclusivamente per il problema corrente;
+- raccogliere e analizzare output, log, artifact e file di ritorno dell'Action;
+- ripetere autonomamente il ciclo modifica temporanea -> Action -> analisi fino alla risoluzione del problema o fino a quando emerga un impedimento concreto che renda impossibile proseguire;
+- al termine rimuovere log e strumentazione temporanei non destinati al prodotto;
+- lasciare nel codice solo le correzioni realmente necessarie e documentare separatamente progettato, implementato, compilato, eseguito e testato;
+- non modificare `definizionedati.json`, Library Desktop o frontend salvo che il problema richieda esplicitamente tali componenti.
+
+Risultato:
+- registrazione della procedura permanente in corso.
+
 ### INCARICO 2026-09-23 — comando Help "Copia progetto negli appunti"
 Stato: ESEGUITO
 
