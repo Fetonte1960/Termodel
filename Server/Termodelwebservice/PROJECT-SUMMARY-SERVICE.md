@@ -93,9 +93,10 @@ Commissionato:
 - il comando `Tubo` deve usare una modalità di disegno sequenziale analoga
   alla parete: ogni segmento termina dove inizia il successivo e il comando
   resta attivo fino a interruzione;
-- per `Tubo` non devono essere disponibili le chiusure automatiche
-  `Chiudi` e `Chiudi ortogonale`; resta disponibile l'interruzione della
-  sequenza e, se compatibile, la ripetizione dell'ultimo comando;
+- per `Tubo` resta disponibile la chiusura diretta `Chiudi` della
+  sequenza multipla, mentre **non** deve essere disponibile
+  `Chiudi ortogonale`; resta disponibile l'interruzione della sequenza e,
+  se compatibile, la ripetizione dell'ultimo comando;
 - la modalità `Edificio` deve conservare integralmente i comandi correnti;
 - consultare il riferimento Desktop in
   `SorgentiTermodel/Library/leggidxf/LeggiDxf.cs` e
@@ -118,8 +119,8 @@ Commissionato:
 
 Criteri di completamento:
 - in modalità Rete compare solo il comando Tubo fra le entità disegnabili;
-- disegno Tubo multiplo/sequenziale funzionante, senza Chiudi e Chiudi
-  ortogonale;
+- disegno Tubo multiplo/sequenziale funzionante, con `Chiudi` diretto ma
+  senza `Chiudi ortogonale`;
 - ogni segmento conserva piano, rete selezionata e layer tubo corretto;
 - il file unico trasporta realmente le entità tubo nel
   `geometry/project.svg`;
