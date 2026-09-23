@@ -34,15 +34,25 @@ public static class ProgFileUnico
 
         Dictionary<string, List<Dictionary<string, object?>>> archives =
             CreateArchives(request, floors, definition, baseProjectPath, errors, diagnostics);
+        Dictionary<string, List<Dictionary<string, object?>>> extendedArchives =
+            LoadExtendedTemplateArchives(baseProjectPath, errors);
 
         string svg = CreateMultiFloorSvg(floors, errors);
 
         if (errors.Count > 0)
             throw new ProgFileUnicoValidationException(errors);
 
+        string extendedDefinitionPath = Path.Combine(
+            Path.GetDirectoryName(definitionPath) ?? string.Empty,
+            "pannelli-tubazioni-definizionedati.json");
+
         var sections = new List<ProjectSection>
         {
             CreateSection("definition/definizionedati.json", "application/json", definition.RawText),
+            CreateSection(
+                "definition/pannelli-tubazioni-definizionedati.json",
+                "application/json",
+                ReadRequiredText(extendedDefinitionPath)),
             CreateSection("geometry/project.svg", "image/svg+xml", svg),
             CreateSection(
                 "project/DisegnoInput.dxf",
@@ -60,15 +70,18 @@ public static class ProgFileUnico
 
         foreach ((string archiveName, List<Dictionary<string, object?>> rows) in archives)
         {
-            sections.Add(CreateSection(
-                $"archives/xml/{archiveName}.xml",
-                "application/xml",
-                SerializeArchiveXml(rows)));
-            sections.Add(CreateSection(
-                $"archives/json/{archiveName}.json",
-                "application/json",
-                JsonSerializer.Serialize(rows, JsonOptions)));
+            AddArchiveSections(sections, archiveName, rows);
         }
+
+        foreach ((string archiveName, List<Dictionary<string, object?>> rows) in extendedArchives)
+        {
+            if (archives.ContainsKey(archiveName))
+                throw new InvalidDataException($"Archivio esteso duplicato: {archiveName}.");
+            AddArchiveSections(sections, archiveName, rows);
+        }
+
+        diagnostics.Add(
+            "Il progetto include gli archivi estesi TipologiePannelli, Tubazioni e Fluidi per il completamento del calcolo pannelli radianti.");
 
         var manifest = new
         {
@@ -246,6 +259,64 @@ public static class ProgFileUnico
         }
 
         return archives;
+    }
+
+    private static Dictionary<string, List<Dictionary<string, object?>>> LoadExtendedTemplateArchives(
+        string baseProjectPath,
+        ICollection<string> errors)
+    {
+        string directory = Path.Combine(baseProjectPath, "extended-archives");
+        string[] requiredArchives = ["TipologiePannelli", "Tubazioni", "Fluidi"];
+        var result = new Dictionary<string, List<Dictionary<string, object?>>>(StringComparer.Ordinal);
+
+        foreach (string archiveName in requiredArchives)
+        {
+            string path = Path.Combine(directory, $"{archiveName}.json");
+            if (!File.Exists(path))
+            {
+                errors.Add($"Il progetto base non contiene l'archivio esteso obbligatorio '{archiveName}.json'.");
+                result[archiveName] = [];
+                continue;
+            }
+
+            try
+            {
+                List<Dictionary<string, object?>>? rows =
+                    JsonSerializer.Deserialize<List<Dictionary<string, object?>>>(
+                        File.ReadAllText(path, Encoding.UTF8),
+                        JsonOptions);
+                result[archiveName] = rows ?? [];
+            }
+            catch (JsonException exception)
+            {
+                errors.Add($"Archivio esteso '{archiveName}.json' non valido: {exception.Message}");
+                result[archiveName] = [];
+            }
+        }
+
+        return result;
+    }
+
+    private static void AddArchiveSections(
+        ICollection<ProjectSection> sections,
+        string archiveName,
+        List<Dictionary<string, object?>> rows)
+    {
+        sections.Add(CreateSection(
+            $"archives/xml/{archiveName}.xml",
+            "application/xml",
+            SerializeArchiveXml(rows)));
+        sections.Add(CreateSection(
+            $"archives/json/{archiveName}.json",
+            "application/json",
+            JsonSerializer.Serialize(rows, JsonOptions)));
+    }
+
+    private static string ReadRequiredText(string path)
+    {
+        if (!File.Exists(path))
+            throw new FileNotFoundException("Definizione estesa pannelli/tubazioni non disponibile.", path);
+        return File.ReadAllText(path, Encoding.UTF8);
     }
 
     // Funzione realizzata da Codex in autonomia
