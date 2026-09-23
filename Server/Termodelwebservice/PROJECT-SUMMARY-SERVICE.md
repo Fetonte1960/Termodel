@@ -119,7 +119,9 @@ Risultato:
   `79C4143C34407575C70DD22E8279F1FFE0F078B55CA095549A31A4E6174B4218`;
 - **Library integrata:** aggiunto
   `SorgentiTermodel/Library/utilities/TermodelLog.cs` come copia non adattata;
-  SHA-256 e confronto byte-per-byte coincidono con l'originale locale;
+  SHA-256 e confronto byte-per-byte coincidono con l'originale locale; la
+  regola `.gitattributes` specifica `-text` impedisce a Git di normalizzare i
+  fine riga del solo file copiato e conserva identico anche il blob versionato;
 - **confronto Desktop:** il logger Desktop usa file globali
   `TermodelLog.md`/`LogError.md` sotto `GestProg.ProgramPath`, categorie a
   costanti (solo `PontiAutomatici=true`), presentazione errori WPF e funzioni
@@ -143,7 +145,9 @@ Risultato:
   dalla soluzione;
 - **esecuzione/test HTTP:** non eseguiti; resta valido il run #91 per il sistema
   headless non modificato;
-- **commit finale:** da registrare dopo il commit di questo incarico.
+- **commit di integrazione:**
+  `d080b8c96657f5fa564f008d967a337c46dae1a1` —
+  `Add authoritative desktop TermodelLog reference`.
 
 ### INCARICO 2026-09-23 — correzione validazione attributi numerici FIN
 Stato: ESEGUITO
