@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — entità Tubo in modalità Rete CAD 2D
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - in modalità `Rete` il CAD 2D deve esporre una sola entità disegnabile:
@@ -117,20 +117,104 @@ Commissionato:
 - aggiornare contratto Front↔Service se vengono formalizzati nuovi metadati
   tecnici nello SVG del file unico.
 
-Criteri di completamento:
-- in modalità Rete compare solo il comando Tubo fra le entità disegnabili;
-- disegno Tubo multiplo/sequenziale funzionante, con `Chiudi` diretto ma
-  senza `Chiudi ortogonale`;
-- ogni segmento conserva piano, rete selezionata e layer tubo corretto;
-- il file unico trasporta realmente le entità tubo nel
-  `geometry/project.svg`;
-- verifica statica/sintattica frontend e, se toccato il Core, build/smoke
-  Service;
-- deploy GitHub Pages riuscito;
-- Summary aggiornato allo stato reale.
-
 Risultato:
-- implementazione in corso.
+- frontend portato a **v1.04**;
+- in `Modalità=Rete` il menu Disegna nasconde Parete E/W, Allinea,
+  Finestra 1/2 punti, Ponte, Locale e Colmo: la sola entità nuova disponibile
+  è **Tubo**;
+- `Tubo` riusa il motore sequenziale della parete: il punto finale di un
+  segmento diventa il punto iniziale del successivo; `Interrompi sequenza`
+  resta disponibile;
+- dopo almeno tre segmenti il menu contestuale permette `Chiudi` diretto;
+  `Chiudi ortogonale` è nascosto e comunque rifiutato dalla routine quando
+  la sequenza è di tipo pipe;
+- il cambio di Rete o Modalità interrompe una sequenza in corso, evitando che
+  una stessa multilinea venga accidentalmente divisa fra due reti;
+- gli ID delle primitive sono `T001`, `T002`, ... e vengono calcolati
+  sull'intero SVG per evitare collisioni;
+- ogni Tubo conserva:
+  ```text
+  data-termodel-piano    = Piani.Nome
+  data-termodel-layer    = <Piani.Nome>_tubipannelli
+  data-termodel-entity   = Tubo
+  data-termodel-rete     = Reti.Codice
+  data-termodel-linetype = Continuous
+  data-termodel-color    = 1
+  stroke                 = #ff0000
+  ```
+- la convenzione è stata ricavata dal riferimento Desktop:
+  `ScriptCad.TipoComandoEnum.Tubo` imposta layer `*_tubipannelli`,
+  colore ACI 1 e `Continuous`; `IoPannelli.LeggiTubiDXF` cerca
+  esattamente `<NomePiano>_tubipannelli`;
+- il piano resta indipendente dalla rete: la stessa `Reti.Codice` può
+  quindi avere Tubi su più `Piani.Nome`;
+- `GeneraPianta.js` considera ora esclusivamente le linee E/W nella
+  polygonizzazione architettonica, quindi le linee T non alterano locali,
+  pareti o anteprima edificio;
+- il comando `Rigenera pianta` diventa `Consolida rete` in modalità Rete:
+  consolida lo SVG tecnico senza passarlo a GeneraPianta locale;
+- il normale `buildTermodelProjectText/buildTermodelServerPayload` conserva
+  le linee Tubo nel `geometry/project.svg` del file unico; non è stato
+  introdotto alcun nuovo formato progetto;
+- `SvgDxfReader` era già in grado di conservare il layer ausiliario e
+  tradurre `data-termodel-linetype/data-termodel-color` nel
+  `DxfDocument` virtuale: non è stato necessario modificarlo;
+- corretto il solo adattatore headless
+  `Compatibility/HeadlessLegacyServices.cs`: in precedenza rifiutava
+  qualsiasi layer tubi; ora acquisisce e conta le linee del layer
+  `<NomePiano>_tubipannelli` al confine
+  `LeggiDxf -> IoPannelli.LeggiTubiDXF`;
+- questa modifica **non implementa ancora il solver pannelli**, non genera
+  `retePannelli.xml`, spirali o perdite di carico e non sostituisce
+  l'adapter Pannelli futuro;
+- contratto Front↔Service aggiornato alla **v1.10** con la convenzione
+  normativa dell'entità Tubo;
+- registro `docs/TUBAZIONI-DEVELOPMENT-REGISTER.md` aggiornato con la
+  milestone CAD Rete/Tubo;
+- verifica sintattica frontend:
+  `APP_JS_SYNTAX_OK`, `PIPE_FRONT_STATIC_OK`,
+  `GENERA_PIANTA_SYNTAX_OK`,
+  `GENERA_PIANTA_NETWORK_FILTER_OK`;
+- durante la verifica è stata individuata e corretta una duplicazione
+  accidentale del tail di `app.js`; la versione finale contiene una sola
+  definizione delle routine CAD interessate;
+- **compilato:** SI — GitHub Actions `TermodelService Build` run **#153**
+  (run id `35867097104`), Build Release riuscita con **0 Error(s)**;
+- **eseguito/testato:** SI — nello stesso run #153 uno smoke end-to-end ha
+  inserito `T001` nel file unico, lo ha inviato a
+  `POST /api/calculations`, verificato nel log
+  `Letti 1 tubi dal layer <Piano>_tubipannelli` e verificato che
+  `project.tmdl` persistesse layer, `entity=Tubo` e
+  `rete=RAD-DEFAULT`; marker
+  `RADIANT_PIPE_FILE_UNIQUE_SMOKE_OK`;
+- nello stesso run sono rimasti verdi
+  `RADIANT_NETWORK_ARCHIVES_SMOKE_OK`,
+  `TERMODEL_LOG_OPTIONS_SMOKE_OK`, `PROJECT_LOCK_SMOKE_OK` e
+  `GITHUB_FEEDBACK_SMOKE_OK`;
+- il primo smoke dedicato, run #151, era fallito soltanto perché il test
+  presumeva un gruppo SVG `<g>...</g>`; il ProgettoVuoto usa correttamente
+  `<g ... />`. Il test è stato corretto per entrambe le forme e il run #153
+  ha superato l'intero percorso;
+- **frontend pubblicato:** GitHub Pages run **#776**
+  (run id `35867394600`) completato con **success** dopo build, deploy e
+  report build status;
+- **confrontato con riferimento:** SI per formato CAD/layer/colore/linetype e
+  punto di ingresso `LeggiDxf/IoPannelli`; NO per equivalenza del solver
+  pannelli, che non è ancora implementato nel Service;
+- `definizionedati.json`, `TERMODEL-PROJECT-TEXT-V1` e Library Desktop
+  non sono stati modificati;
+- commit principali:
+  `e30ce3a5d2fe5922e73d03b358d992715a54ed7d`,
+  `fffc48e3df745479dcc7aea4a85a9cfb5a82437b`,
+  `22aa7f9156812db8754f8dc64deb381bcbca6ef5`,
+  `dc31494825f6e284b37dd966a8d30d8a100e8d45`,
+  `5534d9112b4ad598d7f55ca46bd24279373fff7e`,
+  `e02fdc678b51a02c076407a9240c14a78da9e5a9`,
+  `8991dc475f960e4b077f63c7ae633b6def27331c`,
+  `6a11a381a73c42db5919d5029803f4a01d2b81b6`,
+  `237bfa37cdc9aba24d76b095a3cdee6953c44848`,
+  `abed0c44ccdecc6d931d63d1579be984b0a31ce2`,
+  `31db33473429660afdb7489b9fe17601043ead4f`.
 
 ### INCARICO 2026-09-23 — modalità Edificio/Rete nel pannello CAD 2D
 Stato: ESEGUITO
@@ -1936,10 +2020,13 @@ metodo storico `LeggiFileDxf(...)`. Di conseguenza `LeggiDxf` continua a
 passare da `File.Exists` e `DxfDocument.Load` come nel Desktop senza sapere
 che geometria e layer provengono dallo SVG.
 
-Il supporto geometrico dei layer ausiliari è predisposto; i circuiti pannelli
-restano però intenzionalmente non supportati dal percorso 3D corrente e
-`IoPannelli.LeggiTubiDXF` continua a segnalarli come funzione non ancora
-integrata.
+Il supporto geometrico dei layer ausiliari è operativo anche per l'input
+`Tubo` dei pannelli: il Virtual CAD ricostruisce
+`<NomePiano>_tubipannelli` e l'adattatore headless
+`IoPannelli.LeggiTubiDXF` acquisisce tali linee senza interrompere il
+percorso 3D. Il solver pannelli/spirali resta però non integrato: in questa
+fase le linee vengono riconosciute e trasportate, non ancora trasformate in
+un artifact pannelli o in risultati idraulici.
 
 ### Virtual DB
 
