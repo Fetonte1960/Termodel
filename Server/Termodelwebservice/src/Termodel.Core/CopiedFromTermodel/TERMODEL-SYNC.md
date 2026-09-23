@@ -16,6 +16,11 @@ restare minima, commentata e confrontabile con il riferimento indicato.
 | `Leggidxf/Tetti.cs` | `SorgentiTermodel/Library/leggidxf/Tetti.cs` | PENDING |
 | `Model/Polig3D.cs` | `SorgentiTermodel/Library/leggidxf/Polig3D.cs` | PENDING — BYTE-IDENTICAL, Git blob `d7d835a8a39febb3c3b26bcb88a8cc5cebb19411` |
 | `Model/Modello.cs` | `SorgentiTermodel/Library/Modello.cs` | PENDING |
+| `SpiraliGPT/ChiudiSpirale.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/ChiudiSpirale.cs` | PENDING — BYTE-IDENTICAL, Git blob `e7e02e07fc5a5c6c1271a565e4dca115ed4ad9c4` |
+| `SpiraliGPT/Program.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/Program.cs` | PENDING — BYTE-IDENTICAL, Git blob `60bb4ff3ed9d323fd3437a107c0c0e7db3d07f79` |
+| `SpiraliGPT/SpiralDiagnostics.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/SpiralDiagnostics.cs` | PENDING — BYTE-IDENTICAL, Git blob `a26424a41bd42e516c086678e8e1c1d460afeb1f` |
+| `SpiraliGPT/Spiralgenerator.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/Spiralgenerator.cs` | PENDING — BYTE-IDENTICAL, Git blob `1c890127b32591bf33c253f0135222313be6dab3` |
+| `SpiraliGPT/Utilityfunctions.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/Utilityfunctions.cs` | PENDING — BYTE-IDENTICAL, Git blob `99c4d2487e7fe590736a39eb3e824300d0ed1b92` |
 
 Il sorgente autorevole Desktop di `TermodelLog` è ora disponibile come copia
 non adattata in `SorgentiTermodel/Library/utilities/TermodelLog.cs`:
@@ -69,6 +74,9 @@ Riferimenti integrati il 21 settembre 2026:
 Riferimento integrato il 23 settembre 2026:
 
 - `utilities/TermodelLog.cs`: `79C4143C34407575C70DD22E8279F1FFE0F078B55CA095549A31A4E6174B4218`.
+
+Copie temporanee integrate il 23 settembre 2026 per attivare l'esecutivo pannelli con il motore GPT Desktop corrente:
+- `SpiraliGPT/*.cs`: copie byte-identical dei cinque sorgenti elencati nella tabella; nessuna modifica al motore in questa milestone. Il Service li usa con il default Desktop corrente `PassoTubi=0,30 m`. La duplicazione resta `PENDING` e dovrà essere eliminata quando il motore condiviso avrà un ingresso headless stabile.
 
 Obiettivo progressivo: eliminare le copie quando il codice cruciale potrà essere
 condiviso realmente fra desktop e Service senza dipendenze WPF, Helix o IFC.
