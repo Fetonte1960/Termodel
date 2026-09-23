@@ -84,6 +84,57 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — revisione archivi pannelli radianti: Reti + TipologiePannelli
+Stato: COMMISSIONATO
+
+Commissionato:
+- correggere la struttura dati introdotta negli incarichi precedenti:
+  per il completamento pannelli radianti gli archivi autorevoli diventano due,
+  `Reti` e `TipologiePannelli`;
+- `Reti` descrive la tipologia di rete e i parametri di esercizio indipendenti
+  dal costruttore; deve essere pensato anche per future reti
+  `PannelliRadianti`, `Tubazioni`, `Canali`, pur precompilando ora solo
+  il caso pannelli radianti;
+- `Reti` contiene, per il caso pannelli, le temperature acqua e gli altri
+  parametri di progetto/esercizio che non dipendono dalla casa produttrice;
+- `TipologiePannelli` è codificato per casa produttrice/modello e contiene le
+  caratteristiche costruttive dipendenti dal prodotto, comprese tubazione,
+  diametri/materiale/rugosità e l'elenco dei passi/interassi disponibili
+  (necessario in particolare per sistemi a funghetti);
+- eliminare dal nuovo template/progetto vuoto la necessità di archivi separati
+  `Tubazioni` e `Fluidi` per questa prima fase; i dati necessari al
+  calcolo pannelli devono confluire nei due archivi sopra secondo la loro
+  responsabilità;
+- aggiornare metadata estesi, template Service, ProgettoVuoto frontend,
+  ArchivioWeb/menu e contratto Front↔Service coerentemente;
+- mantenere `TERMODEL-PROJECT-TEXT-V1` invariato e non modificare
+  `definizionedati.json`;
+- registrare che in futuro il CAD 2D avrà una combo che seleziona una riga
+  dell'archivio `Reti` e quindi determina il tipo di rete che si sta
+  disegnando; **la combo CAD non viene implementata in questo incarico**,
+  perché campo grafico, semantica e workflow verranno definiti in seguito;
+- non modificare ancora gli algoritmi del calcolo pannelli o Darcy.
+
+Criteri di completamento:
+- nuovo progetto e ProgettoVuoto contengono `Reti` e
+  `TipologiePannelli` precompilati;
+- `Reti` contiene una prima riga pannelli radianti con dati di esercizio non
+  legati al produttore;
+- `TipologiePannelli` contiene il default Generico/Default Termodel con
+  caratteristiche tubo e lista passi disponibili;
+- menu frontend espone soltanto le due voci coerenti con la nuova struttura;
+- ArchivioWeb carica i nuovi metadata estesi senza duplicare
+  `definizionedati.json`;
+- gli archivi separati `Tubazioni` e `Fluidi` non sono più generati dal
+  template autorevole;
+- compatibilità di lettura dei progetti creati nella breve fase precedente
+  documentata e, per quanto ragionevole, preservata;
+- build/smoke Service e deploy GitHub Pages verificati;
+- registro Tubazioni, contratto e Summary aggiornati allo stato reale.
+
+Risultato:
+- implementazione in corso.
+
 ### INCARICO 2026-09-23 — voci archivi pannelli nel menu frontend
 Stato: ESEGUITO
 
