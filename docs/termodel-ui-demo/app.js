@@ -49,10 +49,11 @@ const appRoot = document.getElementById('app');
 const appTitleText = document.getElementById('appTitleText');
 const renderOriginBadge = document.getElementById('renderOriginBadge');
 const openProjectButton = document.getElementById('openProjectButton');
+const openExampleButton = document.getElementById('openExampleButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
-const APP_VERSION = '0.96';
+const APP_VERSION = '0.97';
 const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
@@ -327,6 +328,10 @@ const DEMO_HELP = {
   'Apri...': {
     title: 'File → Apri',
     body: '<p>Apre una cartella che contiene un progetto Termodel esistente, la rende progetto corrente e ne aggiorna dati e modello.</p>'
+  },
+  'Apri esempio...': {
+    title: 'File → Apri esempio',
+    body: '<p>Mostra gli esempi Termodel consolidati nel catalogo pubblico e apre quello selezionato usando lo stesso loader del ProjectBrowser.</p>'
   },
   'Carica progetto ZIP': {
     title: 'File → Carica progetto ZIP',
@@ -673,6 +678,40 @@ async function loadProjectBrowserExamples() {
     });
 
   return projectBrowserExamplesPromise;
+}
+
+async function openProjectBrowserExampleFromMenu() {
+  const examples = await loadProjectBrowserExamples();
+  if (!examples.length) {
+    window.alert('Nessun esempio consolidato disponibile.');
+    return null;
+  }
+
+  const lines = examples.map((example, index) => {
+    const description = example.description ? ' — ' + example.description : '';
+    return (index + 1) + '. ' + example.name + description;
+  });
+
+  const selected = window.prompt(
+    'Apri esempio Termodel:\n\n' +
+    lines.join('\n') +
+    '\n\nNumero esempio:',
+    '1'
+  );
+  if (selected === null) return null;
+
+  const index = Number.parseInt(String(selected).trim(), 10) - 1;
+  if (!Number.isInteger(index) || index < 0 || index >= examples.length)
+    throw new Error('Selezione esempio non valida.');
+
+  const chosen = examples[index];
+
+  if (currentProjectLockToken)
+    await releaseCurrentProjectLock();
+
+  await loadProjectBrowserExample(chosen.id, null);
+  setMainAiStatus('✓ Esempio aperto: ' + chosen.name);
+  return chosen;
 }
 
 function syncAndroidExampleCadAvailability(singleLineButton) {
@@ -8714,6 +8753,18 @@ openProjectButton?.addEventListener('click', async event => {
   } catch (error) {
     console.error('Apertura progetto non riuscita:', error);
     window.alert('Impossibile aprire il progetto Termodel dal Service.\n\n' + error.message);
+  }
+});
+
+openExampleButton?.addEventListener('click', async event => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  try {
+    await openProjectBrowserExampleFromMenu();
+  } catch (error) {
+    console.error('Apertura esempio non riuscita:', error);
+    window.alert('Impossibile aprire l’esempio Termodel.\n\n' + error.message);
   }
 });
 
