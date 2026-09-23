@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — revisione archivi pannelli radianti: Reti + TipologiePannelli
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - correggere la struttura dati introdotta negli incarichi precedenti:
@@ -102,41 +102,104 @@ Commissionato:
   diametri/materiale/rugosità e l'elenco dei passi/interassi disponibili
   (necessario in particolare per sistemi a funghetti);
 - eliminare dal nuovo template/progetto vuoto la necessità di archivi separati
-  `Tubazioni` e `Fluidi` per questa prima fase; i dati necessari al
-  calcolo pannelli devono confluire nei due archivi sopra secondo la loro
-  responsabilità;
+  `Tubazioni` e `Fluidi` per questa prima fase;
 - aggiornare metadata estesi, template Service, ProgettoVuoto frontend,
   ArchivioWeb/menu e contratto Front↔Service coerentemente;
 - mantenere `TERMODEL-PROJECT-TEXT-V1` invariato e non modificare
   `definizionedati.json`;
 - registrare che in futuro il CAD 2D avrà una combo che seleziona una riga
-  dell'archivio `Reti` e quindi determina il tipo di rete che si sta
-  disegnando; **la combo CAD non viene implementata in questo incarico**,
-  perché campo grafico, semantica e workflow verranno definiti in seguito;
+  dell'archivio `Reti` e determina il tipo di rete che si sta disegnando;
+  la combo CAD non viene implementata in questo incarico;
 - non modificare ancora gli algoritmi del calcolo pannelli o Darcy.
 
-Criteri di completamento:
-- nuovo progetto e ProgettoVuoto contengono `Reti` e
-  `TipologiePannelli` precompilati;
-- `Reti` contiene una prima riga pannelli radianti con dati di esercizio non
-  legati al produttore;
-- `TipologiePannelli` contiene il default Generico/Default Termodel con
-  caratteristiche tubo e lista passi disponibili;
-- menu frontend espone soltanto le due voci coerenti con la nuova struttura;
-- ArchivioWeb carica i nuovi metadata estesi senza duplicare
-  `definizionedati.json`;
-- gli archivi separati `Tubazioni` e `Fluidi` non sono più generati dal
-  template autorevole;
-- compatibilità di lettura dei progetti creati nella breve fase precedente
-  documentata e, per quanto ragionevole, preservata;
-- build/smoke Service e deploy GitHub Pages verificati;
-- registro Tubazioni, contratto e Summary aggiornati allo stato reale.
-
 Risultato:
-- implementazione in corso.
+- la precedente struttura
+  `TipologiePannelli / Tubazioni / Fluidi` è dichiarata **SUPERATA**;
+- nuovo modello autorevole:
+  ```text
+  Reti
+  TipologiePannelli
+  ```
+- creato metadata:
+  `Server/Termodelwebservice/src/Termodel.WebService/Definitions/reti-pannelli-definizionedati.json`;
+- eliminato dal Service il precedente
+  `pannelli-tubazioni-definizionedati.json`;
+- `Reti` è predisposto per futuri tipi rete, ma oggi ammette soltanto
+  `PannelliRadianti`;
+- prima riga `Reti`:
+  `RAD-DEFAULT`, tipologia `GEN-DEFAULT`, passo 300 mm, acqua,
+  35/30 °C, ambiente 20 °C, esterna progetto 5 °C, limite circuito 100 m,
+  perdita massima 25.000 Pa, `KLayout=1`,
+  `FormulaPerdita=Darcy-Weisbach`;
+- `Fluido` e `FormulaPerdita` sono vincolati nel metadata corrente alle
+  sole scelte implementate `Acqua` e `Darcy-Weisbach`;
+- le proprietà fisiche dell'acqua non sono più archiviate in un archivio
+  `Fluidi`: il futuro kernel dovrà ricavarle dalla temperatura media;
+- `TipologiePannelli` contiene esclusivamente dati del prodotto/sistema:
+  casa produttrice, modello, descrizione, PE-Xa 16x2, D interno 12 mm,
+  rugosità 0.0007 mm, barriera ossigeno, matassa 600 m,
+  coefficiente resa 5 W/m²K e passi ammessi
+  `50;100;150;200;250;300` mm;
+- il passo **scelto** appartiene a `Reti`; l'elenco dei passi **ammessi**
+  appartiene alla tipologia pannello. La validazione dinamica fra i due è
+  registrata ma non ancora implementata;
+- i nuovi progetti Service generano soltanto:
+  `archives/json|xml/Reti` e
+  `archives/json|xml/TipologiePannelli`;
+- i template estesi `Tubazioni.json` e `Fluidi.json` sono stati rimossi;
+- `ProgFileUnico` usa il nuovo metadata e i due archivi estesi;
+- `Termodel.WebService.csproj` distribuisce il nuovo metadata;
+- `ProgettoVuoto.termodel.txt` è stato rigenerato:
+  contiene `Reti` e `TipologiePannelli`, non contiene
+  `Tubazioni` o `Fluidi`, e il manifest contiene hash aggiornati;
+- `docs/termodel-ui-demo/progetto-vuoto.js` è stato rigenerato dalla
+  stessa risorsa; verifica diretta:
+  metadata embedded = metadata Service, `Reti=true`,
+  `TipologiePannelli=true`, `Tubazioni=false`, `Fluidi=false`;
+- frontend portato a **v1.02**:
+  menu `Modifica -> Archivio Reti / Archivio Tipologie pannelli`;
+- `ArchivioWeb` mostra i due archivi nelle tab e legge prioritariamente
+  `definition/reti-pannelli-definizionedati.json`;
+- compatibilità transitoria: se un vecchio progetto contiene
+  `definition/pannelli-tubazioni-definizionedati.json`, ArchivioWeb può
+  ancora leggerlo; eventuali sezioni legacy `Tubazioni`/`Fluidi` non
+  vengono cancellate automaticamente al semplice caricamento/salvataggio;
+- contratto Front↔Service aggiornato alla **v1.9**;
+- registro
+  `Server/Termodelwebservice/docs/TUBAZIONI-DEVELOPMENT-REGISTER.md`
+  revisionato: niente database `Tubazioni/Fluidi` separato per il ramo
+  pannelli; il vecchio `base.dat` resta fonte di studio per il futuro
+  programma generalista;
+- decisione CAD registrata:
+  futura combo `Rete` -> `Reti.Codice` -> `TipoRete` determina il
+  tipo di rete disegnata; **NON IMPLEMENTATA** in questa fase;
+- algoritmi pannelli, Darcy, geometria spirali, `definizionedati.json` e
+  `TERMODEL-PROJECT-TEXT-V1` non modificati;
+- **compilato:** SI, GitHub Actions Service run **#144**
+  (run id `35854123945`), Build Release con **0 Error(s)**;
+- **eseguito/testato:** SI per generazione progetto nuovo e smoke HTTP;
+  marker `RADIANT_NETWORK_ARCHIVES_SMOKE_OK`,
+  `TERMODEL_LOG_OPTIONS_SMOKE_OK`,
+  `PROJECT_LOCK_SMOKE_OK`, `GITHUB_FEEDBACK_SMOKE_OK`;
+- **frontend pubblicato:** GitHub Pages run **#758**
+  (run id `35854209496`) completato con successo;
+- **confrontato con riferimento:** i valori iniziali sono stati ricollocati
+  rispetto agli hard-coded correnti di `DatiProgettoPannelli` senza
+  modificare gli algoritmi; la lettura runtime da parte del solver resta il
+  prossimo passo;
+- commit chiave:
+  `bedc754e51f02f4468283e77a4671e24db26617e`,
+  `f1a522aeb275e775631ac91c68863bbffc13005d`,
+  `2835851dacb46e02a30da9827af5c8eecf005afd`,
+  `fc5f4b3ae09b1a29a140e4fe3e2d33ed0980723e`,
+  `90cc9cd8cd3b074ef5e5fa574ae19fced62287dd`,
+  `06910829a433bf5d935af8c3ba6bd42d95fc6bd2`,
+  `66aac096b985048b8f0e7c302cff7c69701e98f3`,
+  `a57f8805e4dff0c91c0b8fdc4fb7dcf825fc3445`,
+  `9491b89a10dcad8a00a4fc7f3d63e698ace03366`.
 
 ### INCARICO 2026-09-23 — voci archivi pannelli nel menu frontend
-Stato: ESEGUITO
+Stato: ESEGUITO — **SUPERATO dalla successiva revisione Reti + TipologiePannelli**
 
 Commissionato:
 - aggiungere al menu frontend le voci per gli archivi progetto
@@ -215,7 +278,7 @@ Risultato:
   `838926d57b5a48f3178ddc4be88c61cbebeafc95`.
 
 ### INCARICO 2026-09-23 — completamento calcolo pannelli radianti: archivi progetto
-Stato: ESEGUITO
+Stato: ESEGUITO — **SUPERATO dalla successiva revisione Reti + TipologiePannelli**
 
 Commissionato:
 - classificare l'intervento come **completamento calcolo pannelli radianti**;
