@@ -84,6 +84,45 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — inoltro suggerimenti utenti a GitHub
+Stato: COMMISSIONATO
+
+Commissionato:
+- progettare e implementare in `Termodel.WebService` un servizio pubblico
+  minimale che riceva suggerimenti/bug degli utenti e li inoltri a GitHub;
+- usare **GitHub Issues** del repository `Fetonte1960/Termodel` come
+  destinazione, evitando commit automatici nel branch `main` e senza
+  richiedere un clone Git nel container Render;
+- aggiungere `POST /api/feedback` con payload JSON limitato a testo, categoria,
+  titolo opzionale e metadati client non sensibili;
+- mantenere il token GitHub esclusivamente lato server tramite variabile
+  d'ambiente/secret; il browser non deve mai ricevere credenziali GitHub;
+- usare un token fine-grained con permesso minimo `Issues: Read and write`
+  sul solo repository Termodel;
+- accettare feedback soltanto dall'origine Web Termodel configurata, con
+  validazione lunghezze/categorie e nessun invio automatico del file progetto,
+  projectId, email, IP o altri dati personali nel corpo dell'Issue;
+- prevedere protezione antispam/rate-limit in memoria adatta al pretest;
+- rendere repository, API base GitHub e origine consentita configurabili per
+  test/deploy, mantenendo default `Fetonte1960/Termodel` e
+  `https://www.termodel.it`;
+- il Service deve restare Linux/container compatible e non dipendere dal
+  filesystem persistente Render;
+- non modificare frontend in questo incarico: l'endpoint sarà pronto per una
+  successiva UI `Invia suggerimento`.
+
+Criteri di completamento:
+- build Release con 0 errori;
+- test HTTP reale dell'endpoint con GitHub API stub, verificando request issue
+  e response `201 Created` senza usare credenziali reali;
+- verifica rifiuto origine non autorizzata e payload non valido;
+- verifica configurazione mancante → errore strutturato senza crash;
+- documentare variabili ambiente e configurazione Render;
+- aggiornare contratto condiviso e questa voce a `Stato: ESEGUITO` solo dopo
+  build e smoke riusciti.
+
+Risultato:
+- non ancora implementato.
 ### INCARICO 2026-09-22 — gestione progetti server e apertura esclusiva
 Stato: ESEGUITO
 
