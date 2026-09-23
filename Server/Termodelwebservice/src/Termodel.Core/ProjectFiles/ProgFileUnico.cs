@@ -281,11 +281,15 @@ public static class ProgFileUnico
 
             try
             {
-                List<Dictionary<string, object?>>? rows =
-                    JsonSerializer.Deserialize<List<Dictionary<string, object?>>>(
-                        File.ReadAllText(path, Encoding.UTF8),
-                        JsonOptions);
-                result[archiveName] = rows ?? [];
+                using JsonDocument document = JsonDocument.Parse(
+                    File.ReadAllText(path, Encoding.UTF8));
+                if (document.RootElement.ValueKind != JsonValueKind.Array)
+                    throw new JsonException("La radice deve essere un array di record.");
+
+                result[archiveName] = document.RootElement
+                    .EnumerateArray()
+                    .Select(element => ConvertJsonRecord(element, archiveName))
+                    .ToList();
             }
             catch (JsonException exception)
             {
@@ -295,6 +299,32 @@ public static class ProgFileUnico
         }
 
         return result;
+    }
+
+    private static Dictionary<string, object?> ConvertJsonRecord(
+        JsonElement element,
+        string archiveName)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+            throw new JsonException($"L'archivio '{archiveName}' contiene una riga che non è un oggetto.");
+
+        var row = new Dictionary<string, object?>(StringComparer.Ordinal);
+        foreach (JsonProperty property in element.EnumerateObject())
+        {
+            row[property.Name] = property.Value.ValueKind switch
+            {
+                JsonValueKind.String => property.Value.GetString(),
+                JsonValueKind.Number when property.Value.TryGetInt32(out int integer) => integer,
+                JsonValueKind.Number => property.Value.GetDouble(),
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Null => null,
+                _ => throw new JsonException(
+                    $"Campo '{property.Name}' dell'archivio '{archiveName}' usa un tipo JSON non supportato.")
+            };
+        }
+
+        return row;
     }
 
     private static void AddArchiveSections(
