@@ -156,6 +156,43 @@ jobs:
             $modelResponse = Invoke-WebRequest -Uri "$base/api/projects/$($allocA.projectId)/artifacts/model3d" -Method Get
             if ($modelResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false") { throw "Artifact appena calcolato marcato stale." }
 
+            # Configurazione logging per singola elaborazione sul progetto B.
+            $logAHashBeforeB = (Get-FileHash -LiteralPath $termodelLogPathA -Algorithm SHA256).Hash
+
+            $calcBDisabled = Invoke-RestMethod -Uri "$base/api/calculations?logEnabled=false" -Method Post -Headers $headersB -ContentType "text/plain; charset=utf-8" -Body $projectB
+            if ($calcBDisabled.logging.enabled -ne $false -or $calcBDisabled.logging.mode -ne "disabled") { throw "logEnabled=false non applicato." }
+            if (@($calcBDisabled.diagnostics).Count -ne 0) { throw "Logging disabilitato deve produrre zero diagnostiche." }
+
+            $termodelLogPathB = Join-Path $dirB "logs\TermodelLog.md"
+            $calculationLogPathB = Join-Path $dirB "logs\calculation.log"
+            if (-not (Test-Path $termodelLogPathB)) { throw "TermodelLog B non persistito con logging disabilitato." }
+            if ((Get-Content -LiteralPath $termodelLogPathB -Raw).Length -ne 0) { throw "TermodelLog B deve essere vuoto con logEnabled=false." }
+            $calcMetaDisabled = Get-Content -LiteralPath $calculationLogPathB -Raw
+            if ($calcMetaDisabled -notmatch "logEnabled=false" -or $calcMetaDisabled -notmatch "logMode=disabled") { throw "calculation.log non registra logging disabilitato." }
+
+            $calcBError = Invoke-RestMethod -Uri "$base/api/calculations?logCategories=Error" -Method Post -Headers $headersB -ContentType "text/plain; charset=utf-8" -Body $projectB
+            if ($calcBError.logging.enabled -ne $true -or $calcBError.logging.mode -ne "filtered") { throw "Filtro log Error non applicato." }
+            if (@($calcBError.logging.categories).Count -ne 1 -or $calcBError.logging.categories[0] -ne "Error") { throw "Categoria Error non riportata correttamente." }
+            $errorOnlyLog = Get-Content -LiteralPath $termodelLogPathB -Raw
+            if ($errorOnlyLog -notmatch "(?m)^error:") { throw "Filtro Error non ha conservato il messaggio di errore atteso." }
+            if ($errorOnlyLog -match "(?m)^operation:" -or $errorOnlyLog -match "(?m)^info:") { throw "Filtro Error ha lasciato passare categorie non richieste." }
+
+            $calcBAll = Invoke-RestMethod -Uri "$base/api/calculations?logCategories=all" -Method Post -Headers $headersB -ContentType "text/plain; charset=utf-8" -Body $projectB
+            if ($calcBAll.logging.mode -ne "filtered" -or @($calcBAll.logging.categories).Count -ne 9) { throw "logCategories=all non abilita tutte le 9 categorie Desktop." }
+            $allLog = Get-Content -LiteralPath $termodelLogPathB -Raw
+            if ([string]::IsNullOrWhiteSpace($allLog)) { throw "logCategories=all deve produrre un log non vuoto." }
+            $calcMetaAll = Get-Content -LiteralPath $calculationLogPathB -Raw
+            if ($calcMetaAll -notmatch "logMode=filtered" -or $calcMetaAll -notmatch "PontiAutomatici") { throw "calculation.log non registra le categorie abilitate." }
+
+            $logBHashBeforeInvalid = (Get-FileHash -LiteralPath $termodelLogPathB -Algorithm SHA256).Hash
+            $invalidLogConfig = Invoke-WebRequest -Uri "$base/api/calculations?logCategories=colmi,inesistente" -Method Post -Headers $headersB -ContentType "text/plain; charset=utf-8" -Body $projectB -SkipHttpErrorCheck
+            if ($invalidLogConfig.StatusCode -ne 400) { throw "Categoria log sconosciuta deve restituire 400." }
+            $logBHashAfterInvalid = (Get-FileHash -LiteralPath $termodelLogPathB -Algorithm SHA256).Hash
+            if ($logBHashBeforeInvalid -ne $logBHashAfterInvalid) { throw "Configurazione log invalida ha modificato il log valido precedente." }
+
+            $logAHashAfterB = (Get-FileHash -LiteralPath $termodelLogPathA -Algorithm SHA256).Hash
+            if ($logAHashBeforeB -ne $logAHashAfterB) { throw "Le configurazioni log del progetto B hanno contaminato il log del progetto A." }
+
             $renamed = "Progetto A Rinominato"
             $saveAsUrl = "$base/api/projects/$($allocA.projectId)/save-as?projectName=$([uri]::EscapeDataString($renamed))"
             $saveAs = Invoke-RestMethod -Uri $saveAsUrl -Method Put -Headers $headersA -ContentType "text/plain; charset=utf-8" -Body $projectA
@@ -205,6 +242,7 @@ jobs:
 
             Invoke-RestMethod -Uri "$base/api/projects/$($allocA.projectId)/close" -Method Post -Headers $headersA | Out-Null
 
+            Write-Host "TERMODEL_LOG_OPTIONS_SMOKE_OK"
             Write-Host "TERMODEL_LOG_SMOKE_OK"
             Write-Host "PROJECT_LOCK_SMOKE_OK"
             Write-Host "projectIdA=$($allocA.projectId)"
