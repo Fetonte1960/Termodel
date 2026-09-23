@@ -1,4 +1,4 @@
-# AI debug canonical payload v2
+# AI debug canonical payload v3 north bridge
 param(
   [Parameter(Mandatory = $true)]
   [string]$OutputDirectory
@@ -141,6 +141,36 @@ function Build-CanonicalServerGeometry([string]$projectText,[string]$localGeomet
     [void]$group.AppendChild($clone)
   }
 
+  # Il frontend conserva il Nord come accessorio di progetto a livello radice.
+  # Per il Virtual CAD del Core lo traduciamo nel blocco NORD storico:
+  # RilevaNord = (Insert.Rotation + 90) % 360.
+  $north = $source.SelectSingleNode("/*[local-name()='svg']/*[local-name()='g' and @data-termodel-accessorio='NORD']")
+  if ($north) {
+    $rawOrientation = $north.GetAttribute("data-termodel-orientamento")
+    $orientation = 0.0
+    if ([double]::TryParse(
+      $rawOrientation,
+      [System.Globalization.NumberStyles]::Float,
+      [System.Globalization.CultureInfo]::InvariantCulture,
+      [ref]$orientation
+    )) {
+      $rotation = (($orientation - 90.0) % 360.0 + 360.0) % 360.0
+      $northText = $out.CreateElement("text","http://www.w3.org/2000/svg")
+      $northText.SetAttribute("id","NORD-TECH")
+      $northText.SetAttribute("x","0")
+      $northText.SetAttribute("y","0")
+      $northText.SetAttribute("data-termodel-layer",$floorLayer)
+      $northText.SetAttribute(
+        "data-termodel-rotation",
+        $rotation.ToString([System.Globalization.CultureInfo]::InvariantCulture)
+      )
+      $northTspan = $out.CreateElement("tspan","http://www.w3.org/2000/svg")
+      $northTspan.InnerText = "BLOCCO,NORD"
+      [void]$northText.AppendChild($northTspan)
+      [void]$group.AppendChild($northText)
+    }
+  }
+
   [void]$root.AppendChild($group)
   return $out.OuterXml
 }
@@ -219,6 +249,7 @@ $checks = @(
   "serverGeometrySha256=$serverGeometrySha",
   "serverGeometryHasUnits=$($serverGeometry.Contains('data-termodel-units=\"cm\"'))",
   "serverGeometryHasFormat=$($serverGeometry.Contains('data-termodel-format=\"TERMODEL-PROJECT-SVG-V1\"'))",
+  "serverGeometryHasNorthTechnical=$($serverGeometry.Contains('BLOCCO,NORD'))",
   "projectId=$($manifest.projectId)",
   "generatedAtUtc=$($manifest.generatedAtUtc)",
   "sectionCount=$(@($manifest.sections).Count)"
