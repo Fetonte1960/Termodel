@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.3**  
+Versione documento: **1.4**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; frontend Web v0.96 collegato al Service HTTPS Render con readiness health/capabilities; collaudo manuale pubblico/mobile in corso**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; definito endpoint server per feedback utenti verso GitHub Issues**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -845,6 +845,84 @@ devono poter utilizzare la stessa base URL HTTPS pubblica. La precedente variant
 mobile completamente serverless può restare una modalità separata, ma il
 ProjectBrowser Web mobile del pretest non deve dipendere dalla presenza di un
 PC locale per raggiungere Termodel.WebService.
+
+---
+## 2.9 Feedback utenti verso GitHub
+
+Decisione architetturale del **23 settembre 2026**.
+
+I suggerimenti/bug inviati dagli utenti non devono produrre commit automatici
+nel branch `main` e il container Render non deve eseguire `git push`.
+
+La destinazione scelta è **GitHub Issues** del repository:
+
+```text
+Fetonte1960/Termodel
+```
+
+Il browser invia il feedback esclusivamente al Termodel.WebService:
+
+```http
+POST /api/feedback
+Content-Type: application/json
+Origin: https://www.termodel.it
+```
+
+Payload previsto:
+
+```json
+{
+  "message": "Testo del suggerimento o problema",
+  "category": "suggestion",
+  "title": "Titolo opzionale",
+  "page": "/termodel-ui-demo/",
+  "appVersion": "0.98"
+}
+```
+
+Campi:
+- `message`: obbligatorio;
+- `category`: `suggestion`, `bug`, `question` oppure `other`;
+- `title`: opzionale;
+- `page`: opzionale, percorso/pagina applicativa senza dati personali;
+- `appVersion`: opzionale.
+
+Il Service crea una GitHub Issue e restituisce, a creazione riuscita:
+
+```json
+{
+  "status": "created",
+  "issueNumber": 123,
+  "issueUrl": "https://github.com/Fetonte1960/Termodel/issues/123"
+}
+```
+
+Regole di sicurezza/privacy:
+- il token GitHub resta **solo sul server** e non viene mai inviato al frontend;
+- usare un fine-grained token con accesso al solo repository Termodel e
+  permesso minimo `Issues: Read and write`;
+- il Service non allega automaticamente file progetto, `projectId`, email, IP,
+  cookie o contenuti tecnici del progetto alla Issue;
+- il body utente è validato per lunghezza e categoria;
+- l'endpoint accetta soltanto l'origine Web Termodel configurata;
+- è previsto un rate-limit server-side per limitare abusi/spam;
+- se la configurazione GitHub non è disponibile l'endpoint restituisce un
+  errore strutturato e non salva il feedback nel filesystem effimero Render.
+
+Configurazione prevista lato Service/Render:
+
+```text
+TERMODEL_FEEDBACK_GITHUB_TOKEN=<secret>
+TERMODEL_FEEDBACK_REPOSITORY=Fetonte1960/Termodel
+TERMODEL_FEEDBACK_ALLOWED_ORIGIN=https://www.termodel.it
+TERMODEL_FEEDBACK_GITHUB_API_BASE_URL=https://api.github.com
+```
+
+`TERMODEL_FEEDBACK_GITHUB_TOKEN` deve essere configurato come secret
+dell'hosting, mai nel repository.
+
+Il frontend `Invia suggerimento` sarà un intervento separato; questa sezione
+definisce il contratto dell'endpoint server.
 
 ---
 ## 3. Operazione principale: AggiornaCalcolo
