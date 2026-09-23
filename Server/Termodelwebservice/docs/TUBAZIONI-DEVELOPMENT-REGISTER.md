@@ -1144,6 +1144,97 @@ motore produce un valore differente.
 | T8 | integrazione controllata in `Aggiorna Modello` | DA FARE |
 | T9 | eventuale UI Web/Desktop guidata dai metadata | DA FARE |
 
+## 15.1 Milestone — completamento dati di base pannelli radianti
+
+Aggiornamento 23 settembre 2026.
+
+È stata implementata la prima parte classificata come **completamento calcolo
+pannelli radianti**: i parametri di progetto non devono più essere considerati
+soltanto costanti nascoste nel codice, ma dispongono ora di archivi tecnici
+consolidati nel progetto.
+
+Archivi introdotti:
+
+```text
+TipologiePannelli
+Tubazioni
+Fluidi
+```
+
+Metadata separati:
+
+```text
+definition/pannelli-tubazioni-definizionedati.json
+```
+
+### TipologiePannelli
+
+La chiave funzionale è costituita almeno da:
+
+```text
+CasaProduttrice + Modello
+```
+
+La prima riga `Generico / Default Termodel` riproduce tutti i valori
+provvisori precedentemente hard-coded in `DatiProgettoPannelli`:
+
+- passo tubo 0,30 m;
+- diametro esterno 16 mm;
+- spessore 2 mm;
+- mandata 35 °C;
+- ritorno 30 °C;
+- ambiente 20 °C;
+- temperatura esterna di progetto 5 °C;
+- matassa 600 m;
+- lunghezza massima circuito 100 m;
+- perdita massima circuito 25.000 Pa;
+- coefficiente resa 5 W/m²K.
+
+La riga contiene inoltre i riferimenti:
+
+```text
+CodiceTubazione = PEXA-O2-16X2
+CodiceFluido = H2O
+```
+
+### Tubazioni
+
+Prima riga precompilata:
+
+```text
+PEXA-O2-16X2
+PE-Xa 16 x 2 mm con barriera ossigeno
+D interno 12 mm
+rugosità 0,0007 mm
+formula Darcy-Weisbach
+```
+
+### Fluidi
+
+Primo fluido precompilato: acqua `H2O`, con punti proprietà a 30, 35 e
+40 °C per la futura interpolazione della densità e della viscosità.
+
+### Consolidamento progetto
+
+`ProgFileUnico` include gli archivi estesi nei nuovi
+`TERMODEL-PROJECT-TEXT-V1` sia come JSON sia come XML. Il progetto vuoto
+statico del frontend è stato aggiornato con le medesime sezioni.
+
+Il vecchio `definizionedati.json` non è stato modificato. Il futuro menu
+`Tubazioni` resta sospeso.
+
+Stato della milestone:
+
+```text
+metadata archivi:               IMPLEMENTATO
+dati iniziali archivi:          IMPLEMENTATO
+integrazione progetto nuovo:    IMPLEMENTATA
+ProgettoVuoto frontend:         IMPLEMENTATO
+menu Tubazioni:                 SOSPESO
+lettura archivi dal solver:     DA FARE
+perdita Darcy circuito:         DA FARE
+```
+
 ## 16. Decisioni consolidate
 
 - Nome linea: **Calcolo Tubazioni**.
