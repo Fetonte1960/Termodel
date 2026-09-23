@@ -600,3 +600,37 @@ jobs:
       - name: Smoke GitHub session snapshot publisher
         shell: pwsh
         run: ./tools/smoke-github-snapshot.ps1
+  ai_real_project_debug:
+    if: ${{ github.ref == 'refs/heads/ai-debug-action-20260923' && contains(github.event.head_commit.message, 'Run real-project debug') }}
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Server/Termodelwebservice
+
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore Termodel.WebService.sln
+
+      - name: Build
+        run: dotnet build Termodel.WebService.sln --configuration Release --no-restore
+
+      - name: Run real project debug
+        shell: pwsh
+        run: ./tools/ai-debug-real-project.ps1 -OutputDirectory "${{ runner.temp }}/termodel-ai-debug"
+
+      - name: Upload real project debug files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: termodel-ai-real-project-debug
+          path: ${{ runner.temp }}/termodel-ai-debug
+          if-no-files-found: warn
+          retention-days: 7
