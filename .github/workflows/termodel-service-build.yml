@@ -84,6 +84,51 @@ jobs:
             $service = Start-ServiceProcess
 
             $baseProject = Invoke-RestMethod -Uri "$base/api/projects/new" -Method Post -ContentType "application/json" -Body "{}"
+
+            foreach ($requiredSection in @(
+              "definition/pannelli-tubazioni-definizionedati.json",
+              "archives/json/TipologiePannelli.json",
+              "archives/json/Tubazioni.json",
+              "archives/json/Fluidi.json",
+              "archives/xml/TipologiePannelli.xml",
+              "archives/xml/Tubazioni.xml",
+              "archives/xml/Fluidi.xml"
+            )) {
+              if ($baseProject -notmatch [regex]::Escape("---BEGIN:$requiredSection---")) {
+                throw "Progetto nuovo privo della sezione pannelli/tubazioni obbligatoria: $requiredSection"
+              }
+            }
+
+            function Read-ProjectJsonSection([string]$projectText,[string]$sectionName) {
+              $begin = "---BEGIN:$sectionName---"
+              $end = "---END:$sectionName---"
+              $bi = $projectText.IndexOf($begin,[System.StringComparison]::Ordinal)
+              if ($bi -lt 0) { throw "Sezione $sectionName non trovata." }
+              $cs = $bi + $begin.Length
+              while ($cs -lt $projectText.Length -and ($projectText[$cs] -eq [char]13 -or $projectText[$cs] -eq [char]10)) { $cs++ }
+              $ei = $projectText.IndexOf($end,$cs,[System.StringComparison]::Ordinal)
+              if ($ei -lt 0) { throw "Sezione $sectionName non chiusa." }
+              return $projectText.Substring($cs,$ei-$cs).Trim() | ConvertFrom-Json
+            }
+
+            $tipologiePannelli = @(Read-ProjectJsonSection $baseProject "archives/json/TipologiePannelli.json")
+            $tubazioni = @(Read-ProjectJsonSection $baseProject "archives/json/Tubazioni.json")
+            $fluidi = @(Read-ProjectJsonSection $baseProject "archives/json/Fluidi.json")
+            if ($tipologiePannelli.Count -lt 1) { throw "TipologiePannelli non precompilato." }
+            if ($tipologiePannelli[0].CasaProduttrice -ne "Generico" -or $tipologiePannelli[0].Modello -ne "Default Termodel") { throw "Tipologia pannello default inattesa." }
+            if ($tipologiePannelli[0].PassoTubiM -ne 0.3 -or $tipologiePannelli[0].PerditaCaricoMassimaCircuitoPa -ne 25000) { throw "Default pannelli non coerenti con CalcoloPannelli." }
+            if ($tubazioni.Count -lt 1 -or $tubazioni[0].Codice -ne "PEXA-O2-16X2" -or $tubazioni[0].DiametroInternoMm -ne 12) { throw "Tubazione radiante default inattesa." }
+            if ($fluidi.Count -ne 3 -or @($fluidi | Where-Object { $_.Codice -eq "H2O" }).Count -ne 3) { throw "Archivio acqua non contiene i tre punti temperatura attesi." }
+
+            $frontEmptyProjectPath = Join-Path $PWD "..\..\SorgentiTermodel\Library\projects\ProgettoVuoto\ProgettoVuoto.termodel.txt"
+            $frontEmptyProject = [System.IO.File]::ReadAllText($frontEmptyProjectPath,[System.Text.UTF8Encoding]::new($false))
+            foreach ($archiveName in @("TipologiePannelli","Tubazioni","Fluidi")) {
+              if ($frontEmptyProject -notmatch [regex]::Escape("---BEGIN:archives/json/$archiveName.json---")) {
+                throw "ProgettoVuoto frontend privo dell'archivio $archiveName."
+              }
+            }
+            Write-Host "RADIANT_PROJECT_ARCHIVES_SMOKE_OK"
+
             $legacy = Invoke-RestMethod -Uri "$base/api/model/3d" -Method Post -ContentType "text/plain; charset=utf-8" -Body $baseProject
             if ($legacy.format -ne "TermodelWebModel" -or $legacy.version -ne 3) { throw "Endpoint legacy model3d non compatibile." }
 
