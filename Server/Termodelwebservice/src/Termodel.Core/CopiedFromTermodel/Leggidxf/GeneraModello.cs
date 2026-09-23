@@ -137,10 +137,16 @@ public sealed class GeneraModello
         if (double.IsNaN(model.direzNord))
             TermodelLog.LogError("Il simbolo NORD non è stato trovato in nessun piano.");
 
+        string? radiantPanelInputXml =
+            Termodel.Impianti.Pannelli.IoPannelli
+                .GetDocumentSnapshot()?
+                .ToString(System.Xml.Linq.SaveOptions.DisableFormatting);
+
         return new Model3DGenerationResult(
             model.WebModel,
             TermodelLog.Messages.ToArray(),
-            GeneraPianta.PianteDisponibili());
+            GeneraPianta.PianteDisponibili(),
+            radiantPanelInputXml);
     }
 
     // Modificato da Codex per realizzare: equivalente headless di Numeropiani.
@@ -255,7 +261,8 @@ public sealed class GeneraModello
 public sealed record Model3DGenerationResult(
     TermodelWebModel Model,
     IReadOnlyList<string> Diagnostics,
-    IReadOnlyDictionary<string, string> CleanFloorPlans);
+    IReadOnlyDictionary<string, string> CleanFloorPlans,
+    string? RadiantPanelInputXml);
 
 internal static class FloorWorkItemListExtensions
 {
