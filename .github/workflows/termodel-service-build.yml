@@ -596,3 +596,7 @@ jobs:
       - name: Smoke radiant executive SVG DXF
         shell: pwsh
         run: ./tools/smoke-radiant-executive.ps1
+
+      - name: Smoke GitHub session snapshot publisher
+        shell: pwsh
+        run: ./tools/smoke-github-snapshot.ps1
