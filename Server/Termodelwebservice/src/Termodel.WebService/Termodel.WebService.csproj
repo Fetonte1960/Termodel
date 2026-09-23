@@ -7,6 +7,9 @@
     <Content Update="Definitions\definizionedati.json"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
+    <Content Update="Definitions\pannelli-tubazioni-definizionedati.json"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <!-- Modificato da Codex per realizzare: distribuire il progetto base realmente proposto da Termodel insieme al WebService. -->
