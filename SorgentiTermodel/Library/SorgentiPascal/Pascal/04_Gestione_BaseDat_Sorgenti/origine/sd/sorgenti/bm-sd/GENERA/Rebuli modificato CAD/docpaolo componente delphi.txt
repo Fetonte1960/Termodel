@@ -1,0 +1,57 @@
+TIPO RIGA
+1 gruppo
+2 articolo
+3 scheda
+4 testo
+5 text box (Riga1: def)
+6 sfondo page articolo
+7 check box (Riga1: def)
+8 spin (Riga1: min:max:incr:n. dec:def)
+9 combo
+10 elemento del combo
+11 
+
+INTERFACCIA COMPONENTE
+
+** Gruppo: String; (Gruppo dove deve posizionarsi, da settare prima dello show())
+** Articolo: String; (Articolo dove deve posizionarsi, da settare prima dello show())
+** Variazione: String; (Contiene il nome della variabile che ha subito una variazione)
+
+procedure Show(); (Esegue il componente)
+procedure Refr(); (Esegue un rinfresco dei valori delle variabili e degli stati a video)
+procedure Uscita(); (Simula l' uscita dal campo corrente memorizzando la variazione, da usare quando si termina la form)
+procedure SetValore(Nome: String; Valore: String); (Carica un valore in una variabile, bisogna fare un 'Refr' affinche' le variazioni abbiano effetto a video) - va invocata DOPO lo Show()
+procedure SetInvisibile(Nome: String; Valore: String); (Setta l' invisibilità di una variabile, bisogna fare un 'Refr' affinche' le variazioni abbiano effetto a video)
+procedure SetDisabilitato(Nome: String; Valore: String); (Setta la disabilitazione di una variabile, bisogna fare un 'Refr' affinche' le variazioni abbiano effetto a video)
+procedure SetArticolo(Gru: String; Art: String); (L' articolo da proporre, prima dello show())
+procedure SetInput(Campo: String);(Si posiziona su una variabile specifica)
+function GetValore(Nome: String): String; (Ritorna un valore di una variabile)
+function GetInvisibile(Nome: String): String; (Ritorna lo stato di invisibile)
+function GetDisabilitato(Nome: String): String; (Ritorna lo stato di disabilitato)
+function GetArticolo(): String; (Ritorna l' ultimo articolo selezionato)
+function GetVariazione(): String; (Ritorna il nome della variabile che ha subito una variazione)
+
+Il componente mette in oltre a disposizione un evento 'ONSHOW' che viene eseguito ogni volta che una variabile subisce una variazione da parte dell' utente :
+
+Nel mask dei numeri bisogna mettere il punto come separatore dei decimali es. :'##.##' e la virgola per il separatore delle migliaia es.: '#,###.##'
+
+
+Non so cosa sia successo al mio indirizzo di posta hotmail… Nel dubbio ti rimando il messaggio che ho appena cercato di mandarti.
+
+Catformproj1.zip contiene il componente (da salvare in Windows\System32);
+
+DATI COMPONENTE.zip contiene il file di configurazione e la directory con le immagini (devono venire salvati nella directory in cui opera il programma che utilizza il componente);
+
+istruzione.doc contiene la sintassi per l’utilizzo di proprietà e metodi.
+
+ 
+
+Per  qualunque necessità, chiama Erme allo 333/33.79.880 (è l’autore del componente).
+
+ 
+
+Fammi sapere
+
+ 
+
+Paolo

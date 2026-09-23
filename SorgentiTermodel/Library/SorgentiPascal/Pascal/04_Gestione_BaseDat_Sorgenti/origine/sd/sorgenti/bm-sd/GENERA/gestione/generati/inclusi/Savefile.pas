@@ -1,0 +1,69 @@
+{*************************************************************}
+Procedure SaveTxt_Campi(var Tabella1:TTable);
+Begin
+Tabella1.first;
+While not Tabella1.eof do
+  Begin
+  Writecampo('#RIGATABASSOCIATA#');
+    Begin
+    WriteCampo('1:'+tabella1.fields[2].asstring);
+    WriteCampo('2:'+tabella1.fields[3].asstring);
+    WriteCampo('3:'+tabella1.fields[4].asstring);
+    WriteCampo('4:'+tabella1.fields[5].asstring);
+    WriteCampo('5:'+tabella1.fields[6].asstring);
+    WriteCampo('6:'+tabella1.fields[7].asstring);
+    WriteCampo('7:'+tabella1.fields[8].asstring);
+    WriteCampo('8:'+tabella1.fields[9].asstring);
+    WriteCampo('9:'+tabella1.fields[10].asstring);
+    WriteCampo('10:'+tabella1.fields[11].asstring);
+    WriteCampo('11:'+tabella1.fields[12].asstring);
+    WriteCampo('12:'+tabella1.fields[13].asstring);
+    WriteCampo('13:'+tabella1.fields[14].asstring);
+    WriteCampo('14:'+tabella1.fields[15].asstring);
+    WriteCampo('15:'+tabella1.fields[16].asstring);
+    WriteCampo('16:'+tabella1.fields[17].asstring);
+    WriteCampo('17:'+tabella1.fields[18].asstring);
+    WriteCampo('18:'+tabella1.fields[19].asstring);
+    WriteCampo('19:'+tabella1.fields[20].asstring);
+    Writecampo('#FINECAMPI#');
+    end;
+  Tabella1.Next;
+  end;
+Writecampo('#FINETABASSOCIATA#');
+end;
+{*************************************************************}
+Procedure SaveTxt_Rec(var Tabella1:TTable;var Tabella3:TTable;DataS1:Tdatasource);
+Begin
+Tabella1.close;
+Tabella1.tablename:='Rec.DB';
+Tabella1.open;
+Tabella3.close;
+Tabella3.tablename:='Campi.DB';
+Tabella3.Masterfields:='Numero';
+Tabella3.IndexName:='PerNumero';
+Tabella3.MasterSource:=DataS1;
+Tabella3.open;
+Tabella1.first;
+Writecampo('--------------------------------------->REC');
+While not Tabella1.eof do
+  Begin
+  Writecampo('#RIGATABELLA#');
+    Begin
+    WriteCampo('1:'+tabella1.fields[1].asstring);
+    WriteCampo('2:'+tabella1.fields[2].asstring);
+    WriteCampo('3:'+tabella1.fields[3].asstring);
+    WriteCampo('4:'+tabella1.fields[4].asstring);
+    WriteCampo('5:'+tabella1.fields[5].asstring);
+    WriteCampo('6:'+tabella1.fields[6].asstring);
+    WriteCampo('7:'+tabella1.fields[7].asstring);
+    Writecampo('#FINECAMPI#');
+    SaveTxt_Campi(Tabella3);
+    end;
+  Tabella1.Next;
+  end;
+If not tabT then
+  begin
+  Tabella3.Masterfields:='';
+  Tabella3.IndexName:='';
+  end;
+end;

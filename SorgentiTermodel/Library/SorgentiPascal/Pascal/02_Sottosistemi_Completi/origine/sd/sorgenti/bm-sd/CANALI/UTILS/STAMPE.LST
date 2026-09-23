@@ -1,0 +1,17 @@
+begin
+  inherited init(aparent,Thetitle);
+  Attr.Menu := LoadMenu(HInstance, 'Menu_1');
+  nomeprogetto:='Mc4-software - esecuzione stampa [stampe.lst]';
+end;
+procedure ThvacWindow.stampa;
+begin
+  eseguistampa;
+end;
+procedure TGestHvacApp.InitMainWindow;
+var sm:string[20];
+    pc:array[0..20] of char;
+begin
+  sm:='';
+  strpcopy(pc,sm);
+  MainWindow := New(PhvacWindow, Init(nil, pc));
+end;

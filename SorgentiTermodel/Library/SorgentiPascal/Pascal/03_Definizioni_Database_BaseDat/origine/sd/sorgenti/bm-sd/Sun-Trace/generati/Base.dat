@@ -1,0 +1,44 @@
+Rilievi:RecRilievi:Rilievi:1:
+array:Rilievi_D:MaxRilievi:200:NRilievi:
+#1:Data::String[10]:GRD#0:
+#2:Ora::String[10]:GRD#0:
+#3:W::Real:GRD#0:
+#4:kW_h::Real:GRD#0:
+#5:Irragg::Real:GRD#0:DEC#2:
+#6:Copertura::Real:INI#0:GRD#0:
+#7:Irragg_pan_dir::Real:GRD#90:DEC#2:
+#8:Irragg_pan_rif::Real:GRD#90:DEC#2:
+#9:Irragg_pan_tot::Real:GRD#90:DEC#2:
+#10:W_calc::Real:GRD#60:DEC#2:
+#11:kW_h_Giorno_calc::Real:GRD#120:DEC#2:
+#12:Risparmio_Giorno_calc::Real:GRD#120:DEC#2:
+*
+:RecLoc:Localita:1:
+record:Localita_D:
+#1:Nome:Località:String[64]:INI#'Reggio calabria':
+#2:NomeComune:Comune:real:
+#3:HMare:Altitudine:real:
+#4:Lat:Latitudine:real:INI#38.06:
+#5:Lon:Longitudine:real:INI#-15.38:
+#6:MeriDRifOra::real:INI#-15:
+#7:OraLegInizio::Integer:INI#7:
+#8:OraLegFine::Integer:INI#10:
+#9:TIestBS:T esterna BS:real:
+#10:TInvEsternaBS:T invernale esterna BS:real:
+TInvEsternaBU:#2-:real:
+TEstEsternaBS:#34-:real:
+TEstEsternaBU:#29-:real:
+#13:UInvEsterna:Umidità relativa esterna:real:
+UEstEsterna:#60-:real:
+ET:#9-:real:
+FattFoschia:#1-:real:
+#11:Riflettivita::real:INI#0.2:
+*
+:RecProg:Progetto:1:
+record:Progetto_D:
+#1:Orient::real:INI#180:
+#2:Inclin::real:INI#45:
+#3:potPiccoPan::real:INI#5:
+#4:RendInverter::real:INI#98:
+#5:CostoEnerg::real:INI#0.315:DEC#4:
+**

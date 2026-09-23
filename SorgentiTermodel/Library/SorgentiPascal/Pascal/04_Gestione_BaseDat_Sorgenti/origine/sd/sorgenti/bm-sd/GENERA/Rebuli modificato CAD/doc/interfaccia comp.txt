@@ -1,0 +1,614 @@
+CString CSRadView::TipoPan(int ttt)
+{
+	if (ttt>8 || ttt<1)
+		return "";
+
+	switch (ttt)
+	{
+		case 1:
+			return "Proter QF";
+		case 2:
+			return "Proter QM";
+		case 3:
+			return "Proter FLY";
+		case 4:
+			return "Proter alfa-PARALLEL";
+		case 5:
+			return "Proter alfa-CROSS";
+		case 6:
+			return "Doghe passo 200 mm";
+		case 7:
+			return "Proter GKM";
+		case 8:
+			return "Proter GP";
+	}
+}
+
+
+BOOL Dialog5::OnInitDialog() 
+{
+	CDialog::OnInitDialog();
+	
+	switch (tp)
+	{
+		case 1:  //  QF
+		{
+		ShowArt("gruppo1","art1_1");	
+				m_CatForm.SetValore("xxx","200");
+			if (dpx==600)
+				m_CatForm.SetValore("dim1_1","2");
+			else
+			{
+				if (dpy==600)
+					m_CatForm.SetValore("dim1_1","0");
+				else
+					m_CatForm.SetValore("dim1_1","1");
+			}
+		break;
+		}
+		case 2:  //  QM
+		{
+		ShowArt("gruppo1","art1_2");	
+		m_CatForm.SetValore("sc1_2",Str(ts-3,0));
+		break;
+		}
+		case 3:  //  Fly
+		{
+		ShowArt("gruppo2","art2");	
+		m_CatForm.SetValore("h2",Str(dpx,0));
+		m_CatForm.SetValore("l2",Str(dpy,0));
+		m_CatForm.SetValore("sc2",Str(ts-3,0));
+		break;
+		}
+		case 4:  //  alfa-parallel
+		{
+		ShowArt("gruppo3","art3_1");	
+		m_CatForm.SetValore("h3_1",Str(dpx,0));
+		m_CatForm.SetValore("l3_1",Str(dpy,0));
+		m_CatForm.SetValore("sc3_1",Str(ts-3,0));
+		break;
+		}
+		case 5:  //  alfa-cross
+		{
+		ShowArt("gruppo3","art3_2");	
+		m_CatForm.SetValore("h3_2",Str(dpx,0));
+		m_CatForm.SetValore("l3_2",Str(dpy,0));
+		m_CatForm.SetValore("sc3_2",Str(ts-3,0));
+		break;
+		}
+		case 6:  //  doghe
+		{
+		ShowArt("gruppo4","art4");	
+		m_CatForm.SetValore("l4",Str(dpy,0));
+		m_CatForm.SetValore("sc4",Str(ts-3,0));
+		break;
+		}
+		case 7:  //  GKM
+		{
+		ShowArt("gruppo5","art5_1");	
+		break;
+		}
+		case 8:  //  GP
+		{
+		ShowArt("gruppo5","art5_2");	
+		break;
+		}
+	}
+		
+	m_CatForm.Refr();
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+	              // EXCEPTION: OCX Property Pages should return FALSE
+}
+
+void Dialog5::OnOK() 
+{
+	
+
+	CString art=m_CatForm.GetArticolo ();
+	int vi;
+	
+	m_CatForm.Uscita();
+
+	if (art=="art1_1")
+	{
+		tp=1;
+		vi=atof(m_CatForm.GetValore ("dim1_1"));
+		if (vi<2)
+			dpx=300;
+		else
+			dpx=600;
+		if (vi==1)
+			dpy=1200;
+		else
+			dpy=600;
+	}
+	if (art=="art1_2")
+	{
+		tp=2;
+		vi=atof(m_CatForm.GetValore("dim1_2"));
+		if (vi==0)
+		{
+			dpx=300;
+			dpy=1200;
+		}
+		else
+		{
+			dpx=600;
+			dpy=600;
+		}
+	ts=atof(m_CatForm.GetValore("sc1_2"))+3;
+	}
+	if (art=="art2")
+	{
+		tp=3;
+		dpx=atof(m_CatForm.GetValore("h2"));
+		dpy=atof(m_CatForm.GetValore("l2"));
+		ts=atof(m_CatForm.GetValore("sc2"))+3;
+	}
+	if (art=="art3_1")
+	{
+		tp=4;
+		dpx=atof(m_CatForm.GetValore("h3_1"));
+		dpy=atof(m_CatForm.GetValore("l3_1"));
+		ts=atof(m_CatForm.GetValore("sc3_1"))+3;
+	}
+	if (art=="art3_2")
+	{
+		tp=5;
+		dpx=atof(m_CatForm.GetValore("h3_2"));
+		dpy=atof(m_CatForm.GetValore("l3_2"));
+		ts=atof(m_CatForm.GetValore("sc3_2"))+3;
+	}
+	if (art=="art4")
+	{
+		tp=6;
+		dpx=200;
+		dpy=atof(m_CatForm.GetValore("l4"));
+		ts=atof(m_CatForm.GetValore("sc4"))+3;
+	}
+	if (art=="art5_1")
+		tp=7;
+	if (art=="art5_2")
+		tp=8;
+	
+	CDialog::OnOK();
+}
+
+void Dialog5::ShowArt(CString gruppo, CString art)
+{
+	m_CatForm.SetArticolo (gruppo,art);	
+	m_CatForm.Show();
+
+}
+
+ EMBED Word.Picture.8  
+DOCVARIABLE  "V_Committente" \* MERGEFORMAT 
+DOCVARIABLE  "V_Codice" \* MERGEFORMAT 
+DOCVARIABLE  "V_Documento" \* MERGEFORMAT 
+DOCVARIABLE  "V_Edizione" \* MERGEFORMAT 
+ FILENAME \p 
+C:\Documents and Settings\Paolo\Dati applicazioni\Microsoft\Modelli\Normal.dot
+ PAGE 
+4ÿìŒz6;Gı_> 	
+4ÿìŒz6;Gı_> 	
+Tn
+"£÷iAÅ5ùiQRS\
+FE}jP^!.
+aô¸šçcmLLLs
+fD$2Ån5Ûèñ4gFÆd4
+8ÑˆJ±[Í6zœyw{C%"Å
+bÇç4-ôèšéiVD#*Ån5
+l£G×¼Oµ7Oe#*Ån5
+R=So"9©%êDêQuMp›
+tS
+ƒlU wK*n]lÓo
+~1:y"}[MF'SÑÉLt²
+lC'sÑÉ(tr9:i‚N¢
+w
+Root Entry
+Root Entry
+WordDocument
+WordDocument
+ObjectPool
+ObjectPool
+_1088715830
+_1088715830
+1Table
+1Table
+CompObj
+CompObj
+ObjInfo
+ObjInfo
+Normale
+Normale
+Titolo 1
+Titolo 1
+Titolo 2
+Titolo 2
+Titolo 3
+Titolo 3
+Titolo 4
+Titolo 4
+Titolo 5
+Titolo 5
+Titolo 6
+Titolo 6
+Titolo 7
+Titolo 7
+Titolo 8
+Titolo 8
+Titolo 9
+Titolo 9
+Carattere predefinito paragrafo
+Carattere predefinito paragrafo
+Didascalia
+Didascalia
+Indice 1
+Indice 1
+Indice 2
+Indice 2
+Indice 3
+Indice 3
+Indice 4
+Indice 4
+Indice 5
+Indice 5
+Indice 6
+Indice 6
+Indice 7
+Indice 7
+Intestazione
+Intestazione
+Numero elenco
+Numero elenco
+Numero riga
+Numero riga
+Piè di pagina
+Piè di pagina
+Punto elenco
+Punto elenco
+Rimando nota a piè di pagina
+Rimando nota a piè di pagina
+Rimando nota di chiusura
+Rimando nota di chiusura
+Sommario 1
+Sommario 1
+Sommario 2
+Sommario 2
+Sommario 3
+Sommario 3
+Sommario 4
+Sommario 4
+Sommario 5
+Sommario 5
+Sommario 6
+Sommario 6
+Sommario 7
+Sommario 7
+Sommario 8
+Sommario 8
+Sommario 9
+Sommario 9
+Testo macro
+Testo macro
+Testo nota a piè di pagina
+Testo nota a piè di pagina
+Titolo indice
+Titolo indice
+Numero pagina
+Numero pagina
+NormaleNR
+NormaleNR
+( 3
+)Ï;X)ùCş(øKş'¤S`&
+Z*$oah!Jg'
+%‹#[(?+&*J3R+†;Û+ÌCÀ+øKÿ*äSœ)l[ 'ob
+-%Ø#u&'-O(
+7/)ìA
+)òKæ'ÈPö&uUÈ%ğY`$.^Á"*bï Úeë
+bZ<	qVH
+7R‹
+NZ8	^VF
+%Rˆ
+(k¨)&lÅ&²lØ#Êlç nl
+;Z6	KVD
+
+(Z3	:VC
+
+%À#I&t-#('7
+Uo%oY
+$Ğ]l"
+a
+ re™
+&H-Ş'`7"('A™(Kt'	UX%~Yó#¸]V"®a… Ye…
+Uo%oY
+$Ğ]l"
+a
+ re™
+$#í%:-Æ'O7¤(€A€(zK\'óTA%gYİ#¡]@"oao ?eo
+jy)ğk›&{l³#'lÆ 7lÜ
+jb)Ôk†&^l #vl· 
+jI)¸ko&Al#Yl¦ şkÀ
+j2)›k[&%lz#<lo ák²
+Times New Roman
+Times New Roman
+Symbol
+Symbol
+Univers
+Univers
+CG Times
+CG Times
+Univers (W1)
+Univers (W1)
+Arial Rounded MT Bold
+Arial Rounded MT Bold
+Tahoma
+Tahoma
+Courier New
+Courier New
+Immagine di Microsoft Word
+MSWordDoc
+Word.Picture.8
+CString CSRadView::TipoPan(int ttt)
+Paolo Lazzerini
+Normal.dO
+ObjectPool
+WordDocument
+WordDocument
+SummaryInformation
+SummaryInformation
+DocumentSummaryInformation
+DocumentSummaryInformation
+ NUMPAGES 
+ PAGE 
+ NUMPAGES 
+ FILENAME \p 
+Immagine in Documento3
+ PAGE 
+ NUMPAGES 
+Normal.dot
+Microsoft Word 8.0
+Studio Renato Lazzerini
+_PID_GUID
+{2EFCE71A-E29B-11D2-B1AF-444553540000}
+{2EFCE71A-E29B-11D2-B1AF-444553540000}
+tw³'èû·b6ë ^Ä^õ-ìU?cuy=x
+ºÀp¸
+9A3Xªb?Lí@'+Ø4ÿ
+c`Hp%4
+1Table
+1Table
+SummaryInformation
+SummaryInformation
+DocumentSummaryInformation
+DocumentSummaryInformation
+CompObj
+CompObj
+Paolo Lazzerini
+Microsoft Word 10.0
+Studio Renato Lazzerini
+CString CSRadView::TipoPan(int ttt)
+Titolo
+Documento di Microsoft Word
+MSWordDoc
+Word.Document.8
+Normale
+Normale
+Titolo 1
+Titolo 1
+Titolo 2
+Titolo 2
+Titolo 3
+Titolo 3
+Titolo 4
+Titolo 4
+Titolo 5
+Titolo 5
+Titolo 6
+Titolo 6
+Titolo 7
+Titolo 7
+Titolo 8
+Titolo 8
+Titolo 9
+Titolo 9
+Carattere predefinito paragrafo
+Carattere predefinito paragrafo
+Tabella normale
+Tabella normale
+Nessun elenco
+Nessun elenco
+Didascalia
+Didascalia
+Indice 1
+Indice 1
+Indice 2
+Indice 2
+Indice 3
+Indice 3
+Indice 4
+Indice 4
+Indice 5
+Indice 5
+Indice 6
+Indice 6
+Indice 7
+Indice 7
+Intestazione
+Intestazione
+Testo commento
+Testo commento
+NormaleNR
+NormaleNR
+Numero elenco
+Numero elenco
+Numero pagina
+Numero pagina
+Numero riga
+Numero riga
+Piè di pagina
+Piè di pagina
+Punto elenco
+Punto elenco
+Rimando nota a piè di pagina
+Rimando nota a piè di pagina
+Rimando nota di chiusura
+Rimando nota di chiusura
+Sommario 1
+Sommario 1
+Sommario 2
+Sommario 2
+Sommario 3
+Sommario 3
+Sommario 4
+Sommario 4
+Sommario 5
+Sommario 5
+Sommario 6
+Sommario 6
+Sommario 7
+Sommario 7
+Sommario 8
+Sommario 8
+Sommario 9
+Sommario 9
+Testo macro
+Testo macro
+Testo nota a piè di pagina
+Testo nota a piè di pagina
+Titolo indice
+Titolo indice
+Corpo del testo
+Corpo del testo
+Corpo del testo corsivo
+Corpo del testo corsivo
+Corpo del testo rientrato
+Corpo del testo rientrato
+Elenco 3
+Elenco 3
+Indice 8
+Indice 8
+Indice 9
+Indice 9
+Mappa documento
+Mappa documento
+Titolo
+Titolo
+Titolo I pagina
+Titolo I pagina
+Oggetto
+Oggetto
+Punto elenco 2
+Punto elenco 2
+Punto elenco 3
+Punto elenco 3
+Rientro corpo del testo
+Rientro corpo del testo
+Sommario
+Sommario
+Testo normale
+Testo normale
+_Toc5706131
+_Toc5706131
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+
+3
+3
+3
+3
+3
+3
+
+3
+3
+3
+3
+3
+3
+
+Paolo Lazzerini
+Paolo Lazzerini
+IndiceSN4??TestalinoSN<??V_CodiceD??V_CommittenteL??V_DocumentoT??V_Edizione\??V_Revisioned??1
+Unknownÿ?
+Times New Roman
+Times New Roman
+Symbol
+Symbol
+ZapfHumnst BT
+ZapfHumnst BT
+Univers
+Univers
+ZapfHumnst Ult BT
+ZapfHumnst Ult BT
+CG Times
+CG Times
+Times New Roman
+Times New Roman
+Garamond
+Garamond
+Tahoma
+Tahoma
+Gill Sans MT Condensed
+Gill Sans MT Condensed
+Arial Narrow
+Arial Narrow
+Gill Sans Extra Bold
+Gill Sans Extra Bold
+Century Gothic
+Century Gothic
+Gill Sans MT
+Gill Sans MT
+Century Gothic
+Century Gothic
+Courier New
+Courier New
+Wingdings
+Wingdings
+)\lf7\lf
+#CString CSRadView::TipoPan(int ttt)
+#CString CSRadView::TipoPan(int ttt)
+Paolo Lazzerini
+Paolo Lazzerini
+Paolo Lazzerini
+Paolo Lazzerini

@@ -1,0 +1,13 @@
+const
+ ch100='\progetti\';
+ ch101='\carterm';
+ ch102='\tubi';
+ ch103='\cca';
+ ch104='\daticca';
+ ch105='\disp';
+ ch106='\igro';
+ ch107='\373';
+ ch108='\dm82';
+ ch109='\graphinp';
+ ch110='\inpgraf';
+ ch111='\displt';

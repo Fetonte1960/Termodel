@@ -1,0 +1,104 @@
+Amb:Ambienti:1:
+array:Ambienti_D:MaxAmb:500:NAmb:Master:Numero:20:Par:
+Num:Numero:Autoinc:
+Descr:Descrizione:string[20]:
+Direz:Direzione:real:
+Tipo:Tipo Geometria:string[10]:
+L:Larghezza:real:
+H:Altezza:real:
+Alt:Altezza netta:real:
+LQ1:Larghezza quadrotti:real:
+HQ1:Altezza quadrotti:real:
+allinea:Allineamento quadrotti:String[2]:
+NLamp:Densità lampade:integer:
+TLamp:Totale lampade:integer:
+LLamp1:Larghezza lampade:real:
+HLamp1:Altezza lampade:real:
+SLamp:Superficie lampade:real:
+POtlamp:POtenza di una lampada:real:
+TPOtlamp:POtenza delle lampade:real:
+Irragg:Irraggiamento:real:
+Persone:Persone:real:
+AltriC:Altri carichi:real:
+ETotSens:E,Totale sensibile:real:
+ITotSens:I,Totale sensibile:real:
+Slorda:Superficie lorda:real:
+Snetta:Superficie netta:real:
+POrtAp:Portata aria primaria :real:
+TiI:I, Temperatura ambiente:real:
+URI:I, umidita relativa  ambiente:real:
+ITmaria:I, Temperatura di immissione dell aria:real:
+ITmacq:I, Temperatura di mandata dell acqua:real:
+ITracq:I, Temperatura di ritorno dell acqua:real:
+TiE:E, temperatura ambiente:real:
+URE:E, umidita relativa  ambiente:real:
+ETmaria:E, Temperatura di immissione dell aria:real:
+ETmacq:E, Temperatura di mandata dell acqua:real:
+ETracq:E, Temperatura di ritorno dell acqua:real:
+tp:Tipo di pannello:integer:
+DescrP:Descrizione pannello:string[30];
+ts:Tipo di scambiatore:integer:
+resaI:Resa invernale:real:
+resaE:Resa Estiva:real:
+TotE:Resa totale Estiva:real:
+TotI:Resa totale Invernale:real:
+*
+RecPar:Pareti:3:
+array:Pareti_D:MaxPar:3000:NPar:Slave:Numero:Integer:
+Lato:Lato:String[3]:
+Tipo:Tipo:String[9]:
+Cod:Codice:String[8]:
+Num:Num/Lung:real:
+Sup:Sup.:real:
+*
+Recdef:default:2:
+Record:Default_D:
+POrtAp:Portata aria primaria :real:
+Alt:Altezza netta:real:
+TiI:I, temperatura ambiente:real:
+URI:I, umidita relativa  ambiente:real:
+ITmaria:I, Temperatura di immissione dell aria:real:
+ITmacq:I, Temperatura di mandata dell acqua:real:
+ITracq:I, Temperatura di ritorno dell acqua:real:
+TiE:E, temperatura ambiente:real:
+URE:E, umidita relativa  ambiente:real:
+ETmaria:E, Temperatura di immissione dell aria:real:
+ETmacq:E, Temperatura di mandata dell acqua:real:
+ETracq:E, Temperatura di ritorno dell acqua:real:
+*
+Recgen:generalita:2:
+Record:Gen_D:
+Data::string[8]:
+Codice::string[20]:
+Committente::string[30]:
+Commessa::string[30]:
+Impianto::string[8]:
+Progettista::string[8]:
+localita:Località:string[8]:
+TestInv:Temperatura esterna Inv.:Real:
+TestEst:Temperatura esterna Est.:Real:
+*
+RecMuri:muri:4:
+array:Muri_D:MaxMuri:100:NMuri:
+Cod:Codice:string[8]:
+Descr:Descrizione:string[20]:
+K:K:real:
+*
+RecFin:Finestre:4:
+array:Finestre_D:MaxFinestre:100:NFinestre:
+Cod:Codice:string[8]:
+Descr:Descrizione:string[20]:
+SupUn:Superficie unitaria:real:
+K:K:real:
+AttSol:Shading solare (0..1):real:
+*
+RecEsp:Esposiz:4:
+array:Espos_D:MaxEspos:100:NEspos:
+Cod:Codice:string[8]:
+Descr:Descrizione:string[20]:
+Tipo:Interno/Esterno:string[1]:
+Incl:Inclinazione:real:
+TLcI:T. inv. loc. conf:real:
+TLcE:T. est. loc. conf:real:
+**
+

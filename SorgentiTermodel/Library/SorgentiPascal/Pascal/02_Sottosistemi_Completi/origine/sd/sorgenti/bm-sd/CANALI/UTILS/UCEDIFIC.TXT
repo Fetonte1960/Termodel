@@ -1,0 +1,441 @@
+object CEDIFICIO: TCEDIFICIO
+  Left = 33
+  Top = 17
+  Width = 606
+  Height = 438
+BorderStyle = bsDialog
+Caption = 'CARATTERISTICHE STANDARD DELLA ZONA'
+Font.Color = clBlack
+Font.Height = -11
+Font.Name = 'MS Sans Serif'
+PixelsPerInch = 96
+Position = poScreenCenter
+TextHeight = 13
+Object Edit1:Tedit
+  Left = 280
+  Top = 82
+  Width = 89
+  Height = 20
+Taborder = 0
+  end
+Object Edit2:Tedit
+  Left = 371
+  Top = 82
+  Width = 89
+  Height = 20
+Taborder = 1
+  end
+Object Edit3:Tedit
+  Left = 462
+  Top = 82
+  Width = 100
+  Height = 20
+Taborder = 2
+  end
+Object Edit4:Tedit
+  Left = 280
+  Top = 103
+  Width = 89
+  Height = 20
+Taborder = 3
+  end
+Object Edit5:Tedit
+  Left = 371
+  Top = 103
+  Width = 89
+  Height = 20
+Taborder = 4
+  end
+Object Edit6:Tedit
+  Left = 462
+  Top = 103
+  Width = 100
+  Height = 20
+Taborder = 5
+  end
+Object Edit7:Tedit
+  Left = 327
+  Top = 127
+  Width = 84
+  Height = 20
+Taborder = 6
+  end
+Object Edit8:Tedit
+  Left = 534
+  Top = 127
+  Width = 28
+  Height = 20
+Taborder = 7
+  end
+Object Edit9:Tedit
+  Left = 327
+  Top = 148
+  Width = 49
+  Height = 20
+Taborder = 8
+  end
+Object Edit10:Tedit
+  Left = 327
+  Top = 170
+  Width = 42
+  Height = 20
+Taborder = 9
+  end
+Object Edit11:Tedit
+  Left = 520
+  Top = 170
+  Width = 42
+  Height = 20
+Taborder = 10
+  end
+Object Edit12:Tedit
+  Left = 327
+  Top = 192
+  Width = 49
+  Height = 20
+Taborder = 11
+  end
+Object Edit13:Tedit
+  Left = 513
+  Top = 192
+  Width = 49
+  Height = 20
+Taborder = 12
+  end
+Object Edit14:Tedit
+  Left = 327
+  Top = 213
+  Width = 49
+  Height = 20
+Taborder = 13
+  end
+Object Edit15:Tedit
+  Left = 513
+  Top = 213
+  Width = 49
+  Height = 20
+Taborder = 14
+  end
+Object Edit16:Tedit
+  Left = 327
+  Top = 235
+  Width = 49
+  Height = 20
+Taborder = 15
+  end
+Object Edit17:Tedit
+  Left = 513
+  Top = 235
+  Width = 49
+  Height = 20
+Taborder = 16
+  end
+Object Edit18:Tedit
+  Left = 327
+  Top = 257
+  Width = 49
+  Height = 20
+Taborder = 17
+  end
+Object Edit19:Tedit
+  Left = 513
+  Top = 257
+  Width = 49
+  Height = 20
+Taborder = 18
+  end
+Object Edit20:Tedit
+  Left = 257
+  Top = 300
+  Width = 42
+  Height = 20
+Taborder = 19
+  end
+Object Edit21:Tedit
+  Left = 520
+  Top = 300
+  Width = 42
+  Height = 20
+Taborder = 20
+  end
+Object Edit22:Tedit
+  Left = 513
+  Top = 322
+  Width = 49
+  Height = 20
+Taborder = 21
+  end
+Object Okbtn:TbitBtn
+Kind = bkOk
+Caption = 'Ok'
+  Left = 140
+  Top = 375
+  Width = 80
+  Height = 25
+Taborder = 22
+  end
+Object Cancelbtn:TbitBtn
+Kind = bkCancel
+Caption='Annulla'
+  Left = 234
+  Top = 375
+  Width = 80
+  Height = 25
+Taborder = 23
+  end
+Object Label1:Tlabel
+  Left = 42
+  Top = 60
+  Width = 236
+  Height = 20
+  Caption = 'CONDIZIONI INTERNE DI PROGETTO'
+  end
+Object Label2:Tlabel
+  Left = 280
+  Top = 60
+  Width = 89
+  Height = 20
+  Caption = '     Inverno'
+  end
+Object Label3:Tlabel
+  Left = 371
+  Top = 60
+  Width = 89
+  Height = 20
+  Caption = '      Estate'
+  end
+Object Label4:Tlabel
+  Left = 462
+  Top = 60
+  Width = 100
+  Height = 20
+  Caption = 'Differenziale [\261]'
+  end
+Object Label5:Tlabel
+  Left = 42
+  Top = 82
+  Width = 236
+  Height = 20
+  Caption = ' - Temperatura                              [\260C] :'
+  end
+Object Label6:Tlabel
+  Left = 42
+  Top = 103
+  Width = 236
+  Height = 20
+  Caption = ' - Umidita` relativa                          [%] :'
+  end
+Object Label7:Tlabel
+  Left = 42
+  Top = 127
+  Width = 284
+  Height = 20
+  Caption = 'PERSONE          - Affollamento     [mq/persona] :'
+  end
+Object Label8:Tlabel
+  Left = 413
+  Top = 127
+  Width = 119
+  Height = 20
+  Caption = '        Codice orario :'
+  end
+Object Label9:Tlabel
+  Left = 42
+  Top = 148
+  Width = 284
+  Height = 20
+  Caption = '                         - Ricambio per persona    [l/s] :'
+  end
+Object Label10:Tlabel
+  Left = 42
+  Top = 170
+  Width = 284
+  Height = 20
+  Caption = '                         - Sensibile          [W/persona] :'
+  end
+Object Label11:Tlabel
+  Left = 371
+  Top = 170
+  Width = 147
+  Height = 20
+  Caption = ' - Latente  [W/persona] :'
+  end
+Object Label12:Tlabel
+  Left = 42
+  Top = 192
+  Width = 284
+  Height = 20
+  Caption = 'ILLUMINAZIONE         - Fissa                [W/m\262] :'
+  end
+Object Label13:Tlabel
+  Left = 378
+  Top = 192
+  Width = 133
+  Height = 20
+  Caption = ' - Variabile  [W/m\262]    :'
+  end
+Object Label14:Tlabel
+  Left = 42
+  Top = 213
+  Width = 284
+  Height = 20
+  Caption = '                                 - Codice lampade           :'
+  end
+Object Label15:Tlabel
+  Left = 378
+  Top = 213
+  Width = 133
+  Height = 20
+  Caption = ' - Codice orario         :'
+  end
+Object Label16:Tlabel
+  Left = 378
+  Top = 148
+  Width = 184
+  Height = 20
+  Caption = ''
+  end
+Object Label17:Tlabel
+  Left = 42
+  Top = 235
+  Width = 284
+  Height = 20
+  Caption = 'APPARECCHIATURE      - Sensibile       [W/m\262] :'
+  end
+Object Label18:Tlabel
+  Left = 378
+  Top = 235
+  Width = 133
+  Height = 20
+  Caption = ' - Latente  [W/m\262]     :'
+  end
+Object Label19:Tlabel
+  Left = 378
+  Top = 257
+  Width = 133
+  Height = 20
+  Caption = ' - Codice orario         :'
+  end
+Object Label20:Tlabel
+  Left = 42
+  Top = 257
+  Width = 284
+  Height = 20
+  Caption = '                                    - Radiante/Sensibile   :'
+  end
+Object Label21:Tlabel
+  Left = 42
+  Top = 278
+  Width = 520
+  Height = 20
+  Caption = '                                PESO DELLE STRUTTURE NON SCAMBIANTI'
+  end
+Object Label22:Tlabel
+  Left = 42
+  Top = 300
+  Width = 214
+  Height = 20
+  Caption = '           Pareti                    [Kg/m\262] :'
+  end
+Object Label23:Tlabel
+  Left = 301
+  Top = 300
+  Width = 217
+  Height = 20
+  Caption = '            Solette                 [Kg/m\262] :'
+  end
+Object Label24:Tlabel
+  Left = 42
+  Top = 322
+  Width = 469
+  Height = 20
+  Caption = '                     ALTEZZA INTERNA NETTA DEI LOCALI                               [m] :'
+  end
+Object Label25:Tlabel
+  Left = 525
+  Top = 18
+  Width = 35
+  Height = 13
+  Caption = 'Pag.1'
+  end
+Object Bevel1:Tbevel
+Shape = bsBox
+Style = bsLowered
+  Left = 520
+  Top = 13
+  Width = 49
+  Height = 23
+  end
+Object Bevel2:Tbevel
+Shape = bsLeftline
+Style = bsLowered
+  Left = 520
+  Top = 13
+  Width = 49
+  Height = 23
+  end
+Object Hlepbtn:TbitBtn
+Kind = bkHelp
+Caption = 'Help'
+  Left = 329
+  Top = 375
+  Width = 80
+  Height = 25
+Taborder = 24
+  end
+Object Bevel3:Tbevel
+Shape = bsBox
+Style = bsLowered
+  Left = 32
+  Top = 52
+  Width = 541
+  Height = 300
+  end
+Object Bevel4:Tbevel
+Shape = bsLeftline
+Style = bsLowered
+  Left = 32
+  Top = 52
+  Width = 541
+  Height = 300
+  end
+Object Button1:Tbutton
+  Left = 438
+  Top = 385
+  Width = 114
+  Height = 23
+  Caption = 'F2 Pag. Seguente'
+  end
+Object Bevel5:Tbevel
+Shape = bsTopline
+Style = bsLowered
+  Left = 23
+  Top = 42
+  Width = 560
+  Height = 3
+  end
+Object Bevel6:Tbevel
+Shape = bsLeftline
+Style = bsLowered
+  Left = 23
+  Top = 42
+  Width = 7
+  Height = 322
+  end
+Object Bevel7:Tbevel
+Shape = bsTopline
+Style = bsLowered
+  Left = 23
+  Top = 362
+  Width = 560
+  Height = 2
+  end
+Object Bevel8:Tbevel
+Shape = bsLeftline
+Style = bsLowered
+  Left = 581
+  Top = 42
+  Width = 5
+  Height = 322
+  end
+end

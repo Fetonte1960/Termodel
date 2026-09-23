@@ -1,0 +1,610 @@
+object LDATI10: TLDATI10
+  Left = 5
+  Top = 23
+  Width = 600
+  Height = 457
+BorderStyle = bsDialog
+Caption = 'Dati generali di progetto'
+Font.Color = clBlack
+Font.Height = -11
+Font.Name = 'MS Sans Serif'
+PixelsPerInch = 96
+Position = poScreenCenter
+TextHeight = 13
+Object Edit1:Tedit
+  Left = 173
+  Top = 18
+  Width = 224
+  Height = 20
+Taborder = 0
+  end
+Object Edit2:Tedit
+  Left = 173
+  Top = 38
+  Width = 402
+  Height = 20
+Taborder = 1
+  end
+Object Edit3:Tedit
+  Left = 173
+  Top = 58
+  Width = 154
+  Height = 20
+Taborder = 2
+  end
+Object Edit4:Tedit
+  Left = 401
+  Top = 58
+  Width = 49
+  Height = 20
+Taborder = 3
+  end
+Object Edit5:Tedit
+  Left = 522
+  Top = 58
+  Width = 54
+  Height = 20
+Taborder = 4
+  end
+Object Edit6:Tedit
+  Left = 173
+  Top = 78
+  Width = 56
+  Height = 18
+Taborder = 5
+  end
+Object Edit7:Tedit
+  Left = 374
+  Top = 77
+  Width = 21
+  Height = 20
+Taborder = 6
+  end
+Object Edit8:Tedit
+  Left = 173
+  Top = 97
+  Width = 154
+  Height = 20
+Taborder = 7
+  end
+Object Edit9:Tedit
+  Left = 401
+  Top = 90
+  Width = 49
+  Height = 20
+Taborder = 8
+  end
+Object Edit10:Tedit
+  Left = 522
+  Top = 90
+  Width = 54
+  Height = 20
+Taborder = 9
+  end
+Object Edit11:Tedit
+  Left = 401
+  Top = 123
+  Width = 56
+  Height = 20
+Taborder = 10
+  end
+Object Edit12:Tedit
+  Left = 520
+  Top = 127
+  Width = 56
+  Height = 20
+Taborder = 11
+  end
+Object Edit13:Tedit
+  Left = 401
+  Top = 143
+  Width = 56
+  Height = 20
+Taborder = 12
+  end
+Object Edit14:Tedit
+  Left = 520
+  Top = 147
+  Width = 56
+  Height = 20
+Taborder = 13
+  end
+Object Edit15:Tedit
+  Left = 401
+  Top = 163
+  Width = 56
+  Height = 20
+Taborder = 14
+  end
+Object Edit16:Tedit
+  Left = 520
+  Top = 167
+  Width = 56
+  Height = 20
+Taborder = 15
+  end
+Object Edit17:Tedit
+  Left = 37
+  Top = 217
+  Width = 21
+  Height = 20
+Visible = false
+Taborder = 17
+  end
+Object Edit18:Tedit
+  Left = 315
+  Top = 213
+  Width = 259
+  Height = 20
+Taborder = 18
+  end
+Object Edit19:Tedit
+  Left = 315
+  Top = 253
+  Width = 259
+  Height = 20
+Taborder = 20
+  end
+Object Edit20:Tedit
+  Left = 198
+  Top = 337
+  Width = 84
+  Height = 20
+Taborder = 28
+  end
+Object Edit21:Tedit
+  Left = 336
+  Top = 337
+  Width = 84
+  Height = 20
+Taborder = 29
+  end
+Object Edit22:Tedit
+  Left = 539
+  Top = 335
+  Width = 35
+  Height = 20
+Taborder = 30
+  end
+Object Edit23:Tedit
+  Left = 198
+  Top = 358
+  Width = 84
+  Height = 20
+Taborder = 31
+  end
+Object Label1:Tlabel
+  Left = 24
+  Top = 22
+  Width = 144
+  Height = 13
+  Caption = 'Direttore impianti termici:'
+  end
+Object Label2:Tlabel
+  Left = 24
+  Top = 43
+  Width = 122
+  Height = 13
+  Caption = 'Descrizione progetto:'
+  end
+Object Label3:Tlabel
+  Left = 24
+  Top = 63
+  Width = 119
+  Height = 13
+  Caption = 'Comune di:'
+  end
+Object Label4:Tlabel
+  Left = 334
+  Top = 60
+  Width = 61
+  Height = 13
+  Caption = 'Altitudine:'
+  end
+Object Label5:Tlabel
+  Left = 486
+  Top = 63
+  Width = 28
+  Height = 13
+  Caption = 'Lat.:'
+  end
+Object Label6:Tlabel
+  Left = 24
+  Top = 80
+  Width = 116
+  Height = 13
+  Caption = 'Gradi giorno:'
+  end
+Object Label7:Tlabel
+  Left = 282
+  Top = 80
+  Width = 93
+  Height = 13
+  Caption = 'Zona climatica:'
+  end
+Object Label8:Tlabel
+  Left = 24
+  Top = 98
+  Width = 133
+  Height = 13
+  Caption = 'Comune di riferimento:'
+  end
+Object Label9:Tlabel
+  Left = 334
+  Top = 98
+  Width = 63
+  Height = 13
+  Caption = 'Altitudine:'
+  end
+Object Label10:Tlabel
+  Left = 485
+  Top = 98
+  Width = 28
+  Height = 13
+  Caption = 'Lat.:'
+  end
+Object Label11:Tlabel
+  Left = 222
+  Top = 120
+  Width = 84
+  Height = 13
+  Caption = 'Valori di Cd:'
+  end
+Object Label12:Tlabel
+  Left = 406
+  Top = 110
+  Width = 49
+  Height = 13
+  Caption = 'Ammessi'
+  end
+Object Label13:Tlabel
+  Left = 522
+  Top = 113
+  Width = 54
+  Height = 13
+  Caption = 'Adottati'
+  end
+Object Label14:Tlabel
+  Left = 278
+  Top = 133
+  Width = 119
+  Height = 13
+  Caption = ' - per S/V <= 0.2 '
+  end
+Object Label15:Tlabel
+  Left = 278
+  Top = 152
+  Width = 122
+  Height = 13
+  Caption = ' - per S/V >= 0.9 '
+  end
+Object Label16:Tlabel
+  Left = 222
+  Top = 170
+  Width = 142
+  Height = 13
+  Caption = 'Valore T. esterna:'
+  end
+Object Label17:Tlabel
+  Left = 93
+  Top = 218
+  Width = 60
+  Height = 13
+  Caption = 'EDIFICIO:'
+  end
+Object Label18:Tlabel
+  Left = 172
+  Top = 218
+  Width = 138
+  Height = 13
+  Caption = '- destinazione:'
+  end
+Object Label19:Tlabel
+  Left = 172
+  Top = 238
+  Width = 138
+  Height = 13
+  Caption = '- classe dei serramenti:'
+  end
+Object Label20:Tlabel
+  Left = 168
+  Top = 255
+  Width = 142
+  Height = 13
+  Caption = ' - ubicazione:'
+  end
+Object Label21:Tlabel
+  Left = 28
+  Top = 340
+  Width = 140
+  Height = 13
+  Caption = 'Concessione edilizia  n°'
+  end
+Object Label22:Tlabel
+  Left = 303
+  Top = 342
+  Width = 28
+  Height = 13
+  Caption = 'del:'
+  end
+Object Label23:Tlabel
+  Left = 425
+  Top = 340
+  Width = 105
+  Height = 12
+  Caption = 'N° unità abitative:'
+  end
+Object Label24:Tlabel
+  Left = 28
+  Top = 362
+  Width = 130
+  Height = 13
+  Caption = 'Numero Abitanti:'
+  end
+Object Okbtn:TbitBtn
+Kind = bkOk
+Caption = 'Ok'
+  Left = 72
+  Top = 402
+  Width = 70
+  Height = 25
+  end
+Object Hlepbtn:TbitBtn
+Kind = bkHelp
+Caption = 'Help'
+  Left = 150
+  Top = 402
+  Width = 70
+  Height = 25
+  end
+Object Cancelbtn:TbitBtn
+Kind = bkCancel
+Caption='Annulla'
+  Left = 229
+  Top = 402
+  Width = 70
+  Height = 25
+  end
+Object Label25:Tlabel
+  Left = 28
+  Top = 277
+  Width = 149
+  Height = 13
+  Caption = 'Periodo di riscaldamento:'
+  end
+Object Edit24:Tedit
+  Left = 289
+  Top = 275
+  Width = 28
+  Height = 20
+Taborder = 21
+  end
+Object Label26:Tlabel
+  Left = 376
+  Top = 278
+  Width = 91
+  Height = 13
+  Caption = 'Mese finale (n):'
+  end
+Object Edit25:Tedit
+  Left = 478
+  Top = 277
+  Width = 28
+  Height = 20
+Taborder = 22
+  end
+Object Label27:Tlabel
+  Left = 180
+  Top = 277
+  Width = 102
+  Height = 13
+  Caption = 'Mese iniziale (n):'
+  end
+Object Label28:Tlabel
+  Left = 28
+  Top = 320
+  Width = 163
+  Height = 13
+  Caption = 'Metodo di Calcolo  ( A-B-C )'
+  end
+Object Edit26:Tedit
+  Left = 198
+  Top = 315
+  Width = 28
+  Height = 20
+Taborder = 25
+  end
+Object Bevel1:Tbevel
+Shape = bsBox
+Style = bsLowered
+  Left = 21
+  Top = 13
+  Width = 558
+  Height = 197
+  end
+Object Bevel2:Tbevel
+Shape = bsLeftline
+Style = bsLowered
+  Left = 21
+  Top = 13
+  Width = 558
+  Height = 197
+  end
+Object Bevel3:Tbevel
+Shape = bsBox
+Style = bsLowered
+  Left = 21
+  Top = 212
+  Width = 558
+  Height = 170
+  end
+Object Bevel4:Tbevel
+Shape = bsLeftline
+Style = bsLowered
+  Left = 21
+  Top = 212
+  Width = 558
+  Height = 170
+  end
+Object Button1:Tbutton
+  Left = 301
+  Top = 403
+  Width = 184
+  Height = 20
+  Caption = 'F1 Carica da archivio'
+  end
+Object Label29:Tlabel
+  Left = 231
+  Top = 320
+  Width = 105
+  Height = 13
+  Caption = 'Tipo distribuzione:'
+  end
+Object Bevel5:Tbevel
+Shape = bsTopline
+Style = bsLowered
+  Left = 12
+  Top = 8
+  Width = 576
+  Height = 3
+  end
+Object Bevel6:Tbevel
+Shape = bsLeftline
+Style = bsLowered
+  Left = 584
+  Top = 8
+  Width = 5
+  Height = 383
+  end
+Object Bevel7:Tbevel
+Shape = bsLeftline
+Style = bsLowered
+  Left = 14
+  Top = 8
+  Width = 2
+  Height = 383
+  end
+Object Bevel8:Tbevel
+Shape = bsTopline
+Style = bsLowered
+  Left = 12
+  Top = 390
+  Width = 574
+  Height = 3
+  end
+Object Edit27:Tedit
+  Left = 289
+  Top = 297
+  Width = 28
+  Height = 20
+Taborder = 23
+  end
+Object Label30:Tlabel
+  Left = 376
+  Top = 298
+  Width = 96
+  Height = 12
+  Caption = 'Giorno finale (n):'
+  end
+Object Edit28:Tedit
+  Left = 478
+  Top = 298
+  Width = 28
+  Height = 20
+Taborder = 24
+  end
+Object Label31:Tlabel
+  Left = 180
+  Top = 298
+  Width = 105
+  Height = 13
+  Caption = 'Giorno iniziale (n):'
+  end
+Object ComboBox1:TComboBox
+  Left = 336
+  Top = 315
+  Width = 56
+  Height = 67
+Style = csDropDownList
+Taborder = 26
+  end
+Object Edit29:Tedit
+  Left = 315
+  Top = 233
+  Width = 259
+  Height = 20
+Taborder = 19
+  end
+Object Edit30:Tedit
+  Left = 401
+  Top = 183
+  Width = 56
+  Height = 20
+Taborder = 16
+  end
+Object Label32:Tlabel
+  Left = 222
+  Top = 188
+  Width = 145
+  Height = 13
+  Caption = 'Valore di U.R. esterna: '
+  end
+Object ComboBox2:TComboBox
+  Left = 424
+  Top = 357
+  Width = 150
+  Height = 85
+Style = csDropDownList
+Taborder = 32
+  end
+Object Label33:Tlabel
+  Left = 287
+  Top = 362
+  Width = 133
+  Height = 13
+  Caption = 'Periodo di costruzione:'
+  end
+Object Label34:Tlabel
+  Left = 462
+  Top = 133
+  Width = 56
+  Height = 13
+  Caption = '[W/mc°C]'
+  end
+Object Label35:Tlabel
+  Left = 462
+  Top = 152
+  Width = 56
+  Height = 13
+  Caption = '[W/mc°C]'
+  end
+Object Label36:Tlabel
+  Left = 474
+  Top = 170
+  Width = 28
+  Height = 13
+  Caption = '[°C]'
+  end
+Object Label37:Tlabel
+  Left = 462
+  Top = 187
+  Width = 28
+  Height = 13
+  Caption = '[%]'
+  end
+Object Button2:Tbutton
+  Left = 301
+  Top = 425
+  Width = 184
+  Height = 20
+  Caption = 'F3 Ricalcolo CD'
+  end
+Object CheckBox1:TCheckBox
+  Left = 406
+  Top = 318
+  Width = 164
+  Height = 17
+  Caption = 'Calcolo con T.operante'
+Taborder = 27
+  end
+end

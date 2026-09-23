@@ -1,0 +1,71 @@
+Confronto in corso tra KEY.PAS e F:\SORG_COR\UTILS\KEY.PAS
+***** KEY.PAS
+        winprocs,                                 (* SentinelScribe driver   *)
+        strings,
+     {$ENDIF}
+***** F:\SORG_COR\UTILS\KEY.PAS
+        winprocs,                                 (* SentinelScribe driver   *)
+     {$ENDIF}
+*****
+
+***** KEY.PAS
+var EntrYLevel,inphpgl:integer;
+    var st:string[80];
+    pc:array[0..80] of char;
+
+***** F:\SORG_COR\UTILS\KEY.PAS
+var EntrYLevel,inphpgl:integer;
+
+*****
+
+***** KEY.PAS
+   messagebeep(10);
+   st:=w_m(7)+w_m(8);{'La chive di protezione non risponde.Verificare l''installazione';}
+   strpcopy(pc,st);
+   bwccmessagebox(0,pc,'Mc4-hvac',mb_ok or mb_iconexclamation);
+   {$endif}
+***** F:\SORG_COR\UTILS\KEY.PAS
+   messagebeep(10);
+   bwccmessagebox(0,'La chive di protezione non risponde.Verificare l''installazione',
+   'Mc4-hvac',mb_ok or mb_iconexclamation);
+   {$endif}
+*****
+
+***** KEY.PAS
+         begin
+            st:='La chive di protezione non e'' abilitata a funzionare con la versione WINDOWS ';
+            strpcopy(pc,st);
+            bwccmessagebox(0,pc,'Mc4-hvac',mb_ok or mb_iconexclamation);
+            halt;
+***** F:\SORG_COR\UTILS\KEY.PAS
+         begin
+            bwccmessagebox(0,'La chive di protezione non e'' abilitata a funzionare con la versione WINDOWS ',
+            'Mc4-hvac',mb_ok or mb_iconexclamation);
+            halt;
+*****
+
+***** KEY.PAS
+procedure messerrore;
+var st:string[80];
+   pc:array[0..80] of char;
+begin
+***** F:\SORG_COR\UTILS\KEY.PAS
+procedure messerrore;
+
+begin
+*****
+
+***** KEY.PAS
+ {$ifdef win}
+ st:=w_m(4)+w_m(5); {'La chive di protezione non corrisponde alla versione del programma.Verificare l''installazione';}
+ strpcopy(pc,st);
+ bwccmessagebox(0,pc,'Mc4-hvac',mb_ok or mb_iconexclamation);
+ {$endif}
+***** F:\SORG_COR\UTILS\KEY.PAS
+ {$ifdef win}
+ bwccmessagebox(0,'La chive di protezione non corrisponde alla versione del programma.Verificare l''installazione',
+   'Mc4-hvac',mb_ok or mb_iconexclamation);
+ {$endif}
+*****
+
+

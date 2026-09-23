@@ -1,0 +1,12 @@
+#Campi
+Tipo:Tipo:Intero:
+Tipo:Tipo:Reale:
+Tipo:Tipo:Caratteri:
+TipoCampo:TipoCampo:Normale:
+TipoCampo:TipoCampo:Codice:
+TipoCampo:TipoCampo:Descrizione:
+#Rec
+Tipo:Tipo:Archivio semplice:
+Tipo:Tipo:Elenco:
+Tipo:Tipo:Elenco con associato:
+Tipo:Tipo:Elenco associato:

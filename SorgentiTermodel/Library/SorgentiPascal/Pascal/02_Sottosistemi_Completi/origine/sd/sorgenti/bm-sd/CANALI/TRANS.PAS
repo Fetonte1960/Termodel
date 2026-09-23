@@ -1,0 +1,25 @@
+case tabella[campocorrente-100].L of
+               255:transfer:=sizeof( st255 );
+               240:transfer:=sizeof( st240 );
+               26 :transfer:=sizeof( st126 );
+               80 :transfer:=sizeof( st80 );
+               70 :transfer:=sizeof( st70 );
+               60 :transfer:=sizeof( st60 );
+               50 :transfer:=sizeof( st50 );
+               35 :transfer:=sizeof( st35 );
+               30 :transfer:=sizeof( st30 );
+               25 :transfer:=sizeof( st25 );
+               18 :transfer:=sizeof( st18 );
+               15 :transfer:=sizeof( st15 );
+               11 :transfer:=sizeof( st11 );
+               10 :transfer:=sizeof( st10 );
+               8  :transfer:=sizeof( st8  );
+               6  :transfer:=sizeof( st6  );
+               5  :transfer:=sizeof( st5  );
+               4  :transfer:=sizeof( st4  );
+               3  :transfer:=sizeof( st3  );
+               2  :transfer:=sizeof( st2  );
+               1  :transfer:=sizeof( st1  );
+               40 :transfer:=sizeof( st40 );
+               20 :transfer:=sizeof( st20 );
+            end;

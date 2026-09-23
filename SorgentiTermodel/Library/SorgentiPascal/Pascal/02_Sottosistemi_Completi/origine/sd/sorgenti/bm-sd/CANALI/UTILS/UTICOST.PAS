@@ -1,0 +1,3 @@
+CONST
+CHut1   ='S';   { si }
+CHut2   ='N';   { no }

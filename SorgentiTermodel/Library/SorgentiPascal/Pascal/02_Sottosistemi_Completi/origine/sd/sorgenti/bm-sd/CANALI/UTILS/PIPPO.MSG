@@ -1,0 +1,27 @@
+
+ risp:=2;
+  H_max:=W_max*750/1000;
+  x_fin1:=risp;
+  L_fin1:=round((w_max-risp*3)/3*2);
+  L_fin2:=round((w_max-risp*6)/3);
+  Temp:=L_fin2;
+PIPPO
+pippo.hlp,3
+  H_fin2:=round(temp*750/1000);
+  Load_win(1,risp,risp,L_fin1);
+  new(mw,init(@self,'Finestra di disegno'));  load_win(2,L_fin1+2*risp,risp,L_fin2);
+  new(mw,init(@self,'Finestra di disegno'));
+  {load_win(3,L_fin1+2*risp,1+2*risp+H_fin2,L_fin2);
+  new(mw,init(@self,'Finestra di disegno'));}
+  Num_win:=0;
+  Tot_win:=2;
+ENDMES
+  new(ept);
+  FinUnica:=false;
+  {$ifdef scanplus}
+  initcart;
+  {$endif}
+end;
+procedure tCarwindow.aggdaark(var msg:tmessage);
+var i:integer;
+begin

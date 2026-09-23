@@ -1,0 +1,211 @@
+:RecGen:Reti:1:
+array:GENERALITA_D1:MaxGen:50:NGen:
+#5:Codice::STRING[20]:GRD#0:
+#6:Progetto:Descrizione:STRING[50]:GRD#130:
+Committ:#''-:STRING[50]:
+Progettista:#''-:STRING[50]:
+Revisione:#1-:integer:
+Data:#''-:STRING[20]:
+Luogo:#''-:STRING[32]:
+ritorno:#'S'-:String[1]:
+#1:dps:Perdite ammesse in pred.:real:INI#200:
+#2:maxvels:Velocità ammessa in pred.:real:INI#1:
+#3:dpe:Perdite ammesse rami favoriti:real:INI#400:
+#4:maxvele:Velocità ammessa rami favoriti:real:INI#2:
+#7:maxvelColl:Velocità ammessa rami del collettore:real:INI#0.5:
+#8:Piano:Piano di riferimento:String[30]:
+#9:Angolo:Angolo di rotazione:real:
+#10:Spec:Specchiatura del blocco:String[2]:
+valvtipo:#''-:string[8]:
+perdmin:#0-:real:
+Tolleranza:#0.1-:real:
+Iterazioni:#50-:integer:
+V::string[1]:
+Xori::Real:
+Yori::Real:
+Zori::Real:
+Origine::Integer:
+Portata::Real;
+Prevalenza::Real;
+*
+:Recsez:Diametri:3:
+array:Diam_D:MaxSez:50:NSez:Slave:Numero:Integer:
+#1:Dnom:Sigla diametro:string[15]:GRD#0:
+#2:Dint:Diametro interno:Real:GRD#0:DEC#2:
+#3:spes:Spessore:Real:GRD#0:
+form:#1-:integer:
+*
+:RecTubaz:Tubazioni:1:
+array:Tubaz_D:MaxTubax:100:Ntubaz:Master:Numero:10:Sez:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[100]:GRD#150:
+#3:CodMateriale:Materiale:String[8]:LKK#MatTubi/1/A:
+#4:Dens:Densità [Kg/m3]:Real:GRD#0:DEC#2:
+#5:Rug:Rugosità [mm]:Real:GRD#0:DEC#2:
+*
+:RecMatTubaz:MatTubi:1:
+array:MatTubaz_D:MaxMatTubax:100:NMattubaz:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[20]:GRD#100:
+#3:Dens:Densità [Kg/m3]:Real:GRD#0:DEC#2:
+#4:Rug:Rugosità [mm]:Real:GRD#0:DEC#2:
+*
+:RecPerd:perdite:1:
+array:Perd_D:MaxPerd:500:Nperd:
+#1:Cod:Codice:string[15]:
+#2:Descr:Descrizione:string[70]:
+Leq:#0-Lunghezza eq:real:DEC#2:
+#4:Zeta:Coeff Zeta:real:DEC#2:
+Rit:#'S'-:String[1]:
+*
+Vuoto:RecsezB:DiametriB:3:
+array:DiamB_D:MaxSezB:50:NSezB:Slave:Numero:Integer:
+#1:Dnom:Sigla diametro:string[15]:GRD#0:
+#2:Dint:Diametro interno:Real:GRD#0:DEC#2:
+#3:spes:Spessore:Real:GRD#0:DEC#2:
+#4:Utiliz:Utilizzato:String[2]:GRD#0:CMB#SI:C24/05/2004MB#NO:
+#5:Lunghezza::Real:INI#0:DEC#2:
+form:#1-:integer:
+*
+Vuoto:RecTipiRete:TipiRete:1:
+array:TipiRete_D:MaxTipiRete:500:NTipiRete:Master:Numero:10:SezB:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[8]:GRD#0:INI#'':
+#2:Descr:Descrizione:string[20]:GRD#0:INI#'':
+#3:SerieDiam:Serie Diametri:string[8]:INI#'':LKK#Tubazioni/2/A:
+#4:TipoCurve:Tipo curve:string[8]:INI#'':LKK#Perdite/1/A:INI#'Cu_05_90':
+#5:TipoDiramazioni:Tipo Diramazioni:string[8]:INI#'':LKK#Perdite/1/A:INI#'Dir_1_90':
+#6:TipoTEE:Tipo TEE:string[8]:INI#'':LKK#Perdite/1/A:INI#'TEE_1_45':
+#7:TipoColle:Tipo collettore:string[8]:INI#'NO':CMB#NO:CMB#SI:
+#8:TipoIsol:Tipo isolamento:string[8]:INI#'':
+#9:TipoInstal:Tipo installazione:string[8]:INI#'':
+#10:TipoMat:Materiale Tubazione:string[8]:INI#'Acc_A':LKK#MatTubi/1/A:
+#11:Dens:Densità:Real:DEC#2:
+#12:Rug:Rugosità:Real:DEC#2:
+#13:TLinea::String[50]:INI#'ACAD_ISO02W100':
+#14:Colore::String[50]:INI#'Rosso':
+*
+vuoto:RecDettTermin:DettTerminali:3:
+array:DettTermin_D:MaxDettTermin:50:NDettTermin:Slave:Numero:Integer:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[30]:GRD#0:
+#3:Pnom:Potenza:Real:DEC#2:
+#4:Esponente:Esponente:Real:DEC#2:
+#5:Altezza:Altezza:Real:DEC#2:
+#6:Largezzael:Larghezza:Real:DEC#2:
+#7:Profondita:Profondita:Real:DEC#2:
+#8:Interasse:Interasse:Real:DEC#2:
+#9:CapH2O:Capacita H2O:Real:DEC#2:
+*
+vuoto:RecDettVentil:DettVentilConvettori:3:
+array:DettVentil_D:MaxDettVentil:50:NDettVentil:Slave:Numero:Integer:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[30]:GRD#0:
+#3:PTermInv:PTermInv:Real:DEC#2:
+#4:PFrigEstTot:PFrigEstTot:Real:DEC#2:
+#5:PFrigEstSens:PFrigEstSens:Real:DEC#2:
+#6:PFrigEstLat:PFrigEstLat:Real:DEC#2:
+#7:PortH2O:PortH2O:Real:DEC#2:
+#8:PerdCaricRaffr:PerdCaricRaffr:Real:DEC#2:
+#9:PerdCarcRisc:PerdCarcRisc:Real:DEC#2:
+#10:PotTermBattAus:PotTermBattAus:Real:DEC#2:
+#11:PortH2OAus:PortH2OAus:Real:DEC#2:
+#12:PerdCarH2OBAus:PerdCarH2OBAus:Real:DEC#2:
+#13:TImmH2OI:TImmH2OI:Real:DEC#2:
+#14:SaltoTI:SaltoTI:Real:DEC#2:
+#15:TempAriaI:TempAriaI:Real:DEC#2:
+#16:TImmH2OE:TImmH2OE:Real:DEC#2:
+#17:SaltoTE:SaltoTE:Real:DEC#2:
+#18:TempAriaE:TempAriaE:Real:DEC#2:
+#19:Profondita_VC:Profondita_VC:Real:DEC#2:
+#20:Larghezza_VC:Larghezza_VC:Real:DEC#2:
+#21:Altezza_VC:Altezza_VC:Real:DEC#2:
+*
+vuoto:RecDettBocDiff:DettBocDiff:3:
+array:DettBocDiff_D:MaxDettBoccDiff:50:NDettBocDiff:Slave:Numero:Integer:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[30]:GRD#0:
+#3:LargRag_BD:Larghezza/Raggio:Real:DEC#2:
+#4:Altezza_BD:Altezza:Real:DEC#2:
+#5:Port:Portata massima:Real:DEC#2:
+#6:PerdCaric:Perdita di carico:Real:DEC#2:
+*
+vuoto:RecTipoTermin:TipoTerminali:1:
+array:TipoTerminali_D:MaxTipoTermin:100:NTipoTermin:Master:Numero:10:DettTermin:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[30]:GRD#130:
+#3:Fabric:Fabbricante:string[20]:GRD#0:
+#4:Tipologia::string[20]:GRD#0:
+#5:Disegno::string[30]:
+*
+Vuoto:RecDettPerdC:Dett_Perdite_Conc:3:
+array:DettPerdC_D:MaxDettPerdC:30:NDPerdC:Slave:Numero:Integer:
+#1:PCCod:Codice:string[8]:
+#2:PCGiri:Giri:Real:DEC#2:
+#3:PCKV:KV:Real:DEC#2:
+#4:PCZeta:Zeta:Real:DEC#2:
+*
+Vuoto:RecPerdConc:Perdite_Conc:1:
+array:PerdConc_D:MaxPerdConc:100:NPerditeConc:Master:Numero:10:DPerdC:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[8]:GRD#0:INI#'':
+#2:Tipo:Tipo:string[10]:INI#'':
+#3:Descr:Descrizione:string[20]:GRD#0:INI#'':
+#4:DN:DN:Real:DEC#2:
+*
+:RecAttrib:Attributi:3:FISSA:
+array:Attributi_D:MaxAttrib:20:NAttrib:Slave:Numero:Integer:
+#1:CodA::String[30]:
+#2:Valore::String[30]:
+#5:XA::Real:
+#6:YA::Real:
+#7:ZA::Real:
+*
+Vuoto:RecEnt:Entita:1:FISSA:DoppioP:
+array:Entita_D:MaxEntita:5000:NEntita:Master:Numero:20:Attrib:
+Num:Numero:Autoinc:
+#1:Cod::String[1]:
+#2:Layer::String[30]:
+#3:Colore::String[30]:
+#4:Tlinea::String[30]:
+#5:X1::Real:
+#6:Y1::Real:
+#7:Z1::Real:
+#8:X2::Real:
+#9:Y2::Real:
+#10:Z2::Real:
+#11:CodEnt::String[10]:
+#12:NomeBl::String[70]:
+#13:Valido::String[1]:
+#14:Ang::Real:
+*
+Vuoto:RecUpDate:UPdate:1:FISSA:DoppioP:
+array:Update_D:MaxUpdate:500:NUpdate:
+#1:IndPezzo::Integer:INI#0:
+#2:xa1::real:INI#0:
+#3:ya1::real:INI#0:
+#4:za1::real:INI#0:
+#5:xa2::real:INI#0:
+#6:ya2::real:INI#0:
+#7:za2::real:INI#0:
+#8:Codp::string[30]:
+#9:prog::string[30]:
+*
+:RecPia:Piani:1:FISSA:
+array:Piani_D:MaxPiani:200:NPiani:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[60]:GRD#80:INI#'Piano 1':
+#2:AltL::real:DEC#2:GRD#0:INI#3:
+#3:AltN::real:DEC#2:GRD#0:INI#2.7:
+#4:Quota::real:DEC#2:
+#5:Indice::Integer:GRD#0:INI#1:
+#6:Piani_Uguali::Integer:GRD#0:
+#7:CopiaDi::String[30]:
+#8:Tipo::String[20]:
+#24:T_Pav:Tipo Pav:String[8]:LKK#Strutture/2/P:
+#25:C_Pav:Confine Pavimento:String[8]:LKK#Confine/1/P:
+#26:T_Soff:Tipo Soffitto:String[8]:LKK#Strutture/2/P:
+#27:C_Soff:Confine Soffitto:String[8]:LKK#Confine/1/P:
+**

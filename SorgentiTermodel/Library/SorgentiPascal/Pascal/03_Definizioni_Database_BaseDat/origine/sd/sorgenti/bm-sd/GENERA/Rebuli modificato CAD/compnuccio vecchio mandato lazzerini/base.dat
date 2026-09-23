@@ -1,0 +1,40 @@
+RecRad:Radiatori:1:Variabile:
+array:Rad_D:MaxRad:100:NRad:
+Grand:Grandezza:string[8]:
+Resa:Resa dt=60:Real:
+*
+RecFan:Fancoil:1:Variabile:
+array:Fan_D:MaxFan:100:NFan:
+Grand:Grandezza:string[8]:
+EPotsens:E Potenza sensibile:real:
+EPotTot:E Potenza totale:real:
+EPortH2o:E Portata acqua:real:
+EPerdH2o:E Perdite di carico:real:
+IPortH2o:I Portata acqua:real:
+IPotsens:I Potenza sensibile:real:
+IPerdH2o:I Perdite di carico:real:
+*
+RecVuoto:Vuoto:1:Variabile:
+array:Vuoto_D:MaxVuoto:100:NVuoto:
+Faitu:Database da definire puoi farlo tu:string[50]:
+*
+RecTerm:Terminale:1:
+Record:Terminali_D:
+Fab:Fabbricante:String[20]:
+Modello::String[20]:
+Grand:Grandezza:String[20]:
+ETbs:E Temperatura interna BS:real:
+ETbu:E Temperatura interna BU:real:
+ITbs:I Temperatura interna BS:real:
+EPsens:E Potenza sensibile:real:
+IPsens:I Potenza sensibile:real:
+EPTot:E Potenza totale:real:
+EInH2o:E T ingresso acqua:real:
+EDt:E Salto termico acqua:real:
+EPort:E Portata acqua:real:
+EDP:E Perdite di carico:real:
+IInH2o:I T ingresso acqua:real:
+IDt:I Salto termico acqua:real:
+IPort:I Portata acqua:real:
+IDP:I Perdite di carico:real:
+**

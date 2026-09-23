@@ -1,0 +1,145 @@
+object Editapezzo: TEditapezzo
+  Left = 368
+  Top = 228
+  Width = 400
+  Height = 316
+  BorderIcons = []
+  Caption = 'Pezzi speciali'
+  Font.Color = clBlack
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Font.Style = []
+  FormStyle = fsStayOnTop
+  PixelsPerInch = 96
+  OnCreate = FormCreate
+  TextHeight = 13
+  object DBText1: TDBText
+    Left = 4
+    Top = 204
+    Width = 361
+    Height = 17
+    DataField = 'Descrizione'
+    DataSource = DataSource1
+  end
+  object DBImage1: TDBImage
+    Left = 4
+    Top = 16
+    Width = 249
+    Height = 181
+    DataField = 'Figura'
+    DataSource = DataSource1
+    TabOrder = 0
+  end
+  object DBGrid1: TDBGrid
+    Left = 4
+    Top = 232
+    Width = 377
+    Height = 45
+    DataSource = DataSource1
+    TabOrder = 1
+    TitleFont.Color = clBlack
+    TitleFont.Height = -11
+    TitleFont.Name = 'MS Sans Serif'
+    TitleFont.Style = []
+  end
+  object ComboBox1: TComboBox
+    Left = 256
+    Top = 176
+    Width = 113
+    Height = 21
+    ItemHeight = 13
+    Items.Strings = (
+      'Allargamenti'
+      'Riduzioni'
+      'Curve'
+      'Croci'
+      'Derivazioni'
+      'Bocchette'
+      'Diffusori'
+      'Antivibranti'
+      'Batterie'
+      'Filtri'
+      'Griglie'
+      'Plenum'
+      'Canali'
+      'Serrande'
+      'Silenziatori'
+      'Condotti'
+      'Cappe'
+      'Trasformazioni'
+      'Ostruzioni'
+      'Schiacciamenti'
+      'Raccordi'
+      'Ventilatori'
+      'Rotazioni')
+    TabOrder = 2
+    OnChange = ComboBox1Change
+  end
+  object BitBtn1: TBitBtn
+    Left = 260
+    Top = 16
+    Width = 89
+    Height = 25
+    TabOrder = 3
+    OnClick = BitBtn1Click
+    Kind = bkClose
+  end
+  object DataSource1: TDataSource
+    DataSet = Table1
+    Left = 24
+    Top = 16
+  end
+  object Table1: TTable
+    Active = True
+    DatabaseName = 'C:\ARCHMC4\DUCT'
+    TableName = 'PEZZI.DB'
+    Left = 56
+    Top = 16
+    object Table1Codice: TStringField
+      FieldName = 'Codice'
+      Size = 5
+    end
+    object Table1Descrizione: TStringField
+      FieldName = 'Descrizione'
+      Visible = False
+      Size = 40
+    end
+    object Table1Disegno: TSmallintField
+      FieldName = 'Disegno'
+      Visible = False
+    end
+    object Table1Main: TStringField
+      FieldName = 'Main'
+      Size = 8
+    end
+    object Table1Branch: TStringField
+      FieldName = 'Branch'
+      Size = 8
+    end
+    object Table1Fonte: TStringField
+      FieldName = 'Fonte'
+      Visible = False
+      Size = 8
+    end
+    object Table1Varie: TStringField
+      FieldName = 'Varie'
+      Visible = False
+      Size = 10
+    end
+    object Table1TipoSez: TStringField
+      FieldName = 'TipoSez'
+      Size = 5
+    end
+    object Table1Nuscite: TSmallintField
+      FieldName = 'Nuscite'
+    end
+    object Table1Figura: TGraphicField
+      FieldName = 'Figura'
+      Visible = False
+    end
+    object Table1Categoria: TStringField
+      FieldName = 'Categoria'
+      Size = 15
+    end
+  end
+end

@@ -1,0 +1,24 @@
+case tabella[campocorrente-100].L of
+               255:s:=st255(buffer^);
+               240:s:=st240(buffer^);
+               26 :s:=st126(buffer^);
+               80 :s:=st80 (buffer^);
+               70 :s:=st70 (buffer^);
+               60 :s:=st60 (buffer^);
+               50 :s:=st50 (buffer^);
+               35 :s:=st35 (buffer^);
+               30 :s:=st30 (buffer^);
+               25 :s:=st25 (buffer^);
+               18 :s:=st18 (buffer^);
+               15 :s:=st15 (buffer^);
+               11 :s:=st11 (buffer^);
+               10 :s:=st10 (buffer^);
+               8  :s:=st8  (buffer^);
+               6  :s:=st6  (buffer^);
+               5  :s:=st5  (buffer^);
+               4  :s:=st4  (buffer^);
+               3  :s:=st3  (buffer^);
+               2  :s:=st2  (buffer^);
+               1  :s:=st1  (buffer^);
+               40 :s:=st40 (buffer^);
+               20 :s:=st20 (buffer^);

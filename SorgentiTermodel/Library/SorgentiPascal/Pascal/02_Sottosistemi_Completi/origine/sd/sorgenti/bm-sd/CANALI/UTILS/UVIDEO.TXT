@@ -1,0 +1,99 @@
+object VIDEO: TVIDEO
+  Left = 72
+  Top = 65
+  Width = 609
+  Height = 313
+BorderStyle = bsDialog
+Caption = 'Configurazione del programma'
+Font.Color = clBlack
+Font.Height = -11
+Font.Name = 'MS Sans Serif'
+PixelsPerInch = 96
+Position = poScreenCenter
+TextHeight = 13
+Object Edit1:Tedit
+  Left = 354
+  Top = 28
+  Width = 21
+  Height = 20
+Visible = false
+Taborder = 0
+  end
+Object Edit2:Tedit
+  Left = 354
+  Top = 52
+  Width = 21
+  Height = 20
+Taborder = 1
+  end
+Object Edit3:Tedit
+  Left = 354
+  Top = 115
+  Width = 224
+  Height = 20
+Taborder = 2
+  end
+Object Edit4:Tedit
+  Left = 354
+  Top = 148
+  Width = 224
+  Height = 20
+Taborder = 3
+  end
+Object Edit5:Tedit
+  Left = 354
+  Top = 182
+  Width = 224
+  Height = 20
+Taborder = 4
+  end
+Object Edit6:Tedit
+  Left = 354
+  Top = 215
+  Width = 224
+  Height = 20
+Taborder = 5
+  end
+Object Label1:Tlabel
+  Left = 26
+  Top = 57
+  Width = 322
+  Height = 13
+  Caption = 'MESSAGGIO INFORMATIVO SULLE MASCHERE (S/N)'
+  end
+Object Label2:Tlabel
+  Left = 26
+  Top = 118
+  Width = 322
+  Height = 13
+  Caption = 'DIRECTORY PROGETTI'
+  end
+Object Label3:Tlabel
+  Left = 26
+  Top = 152
+  Width = 322
+  Height = 13
+  Caption = 'DIRECTORY ARCHIVI '
+  end
+Object Label4:Tlabel
+  Left = 26
+  Top = 185
+  Width = 322
+  Height = 13
+  Caption = 'DIRECTORY PROGRAMMA ESTERNO'
+  end
+Object Label5:Tlabel
+  Left = 26
+  Top = 218
+  Width = 322
+  Height = 13
+  Caption = 'LINEA DI COMANDO PROGRAMMA ESTERNO'
+  end
+Object Label6:Tlabel
+  Left = 26
+  Top = 88
+  Width = 320
+  Height = 13
+  Caption = 'STAMPE IN DOCUMENTO UNICO'
+  end
+end

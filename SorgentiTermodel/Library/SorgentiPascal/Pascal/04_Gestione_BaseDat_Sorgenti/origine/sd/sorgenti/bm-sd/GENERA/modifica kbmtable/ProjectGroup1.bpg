@@ -1,0 +1,33 @@
+#------------------------------------------------------------------------------
+VERSION = BWS.01
+#------------------------------------------------------------------------------
+!ifndef ROOT
+ROOT = $(MAKEDIR)\..
+!endif
+#------------------------------------------------------------------------------
+MAKE = $(ROOT)\bin\make.exe -$(MAKEFLAGS) -f$**
+DCC = $(ROOT)\bin\dcc32.exe $**
+BRCC = $(ROOT)\bin\brcc32.exe $**
+#------------------------------------------------------------------------------
+PROJECTS = progettotest.exe GeneraSource.exe Sun_trace.exe CompQ.bpl \
+  BmTermoCadDll.dll
+#------------------------------------------------------------------------------
+default: $(PROJECTS)
+#------------------------------------------------------------------------------
+
+progettotest.exe: C:\assistenza\kbmtable\progettotest\progettotest.dpr
+  $(DCC)
+
+GeneraSource.exe: GeneraSource.dpr
+  $(DCC)
+
+Sun_trace.exe: ..\..\Sun-Trace\Sun_trace.dpr
+  $(DCC)
+
+CompQ.bpl: ..\..\componenti\kbmmem\CompQ.dpk
+  $(DCC)
+
+BmTermoCadDll.dll: P:\PRJS\CPI WIN CLIMA\VERSIONE_10\AggiornamentiV13\DllPrincipale\BmTermoCadDll.dpr
+  $(DCC)
+
+

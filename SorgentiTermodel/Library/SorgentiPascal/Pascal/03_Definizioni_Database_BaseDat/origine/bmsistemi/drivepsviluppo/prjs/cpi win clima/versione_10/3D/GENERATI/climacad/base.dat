@@ -1,0 +1,2481 @@
+:RecStamp:DescStampe:1:
+record:Stampe_D:
+#2:PROGIMPTERM::String[64]:REP#IDEM:
+#3:PROGISOTERM::String[64]:REP#IDEM:
+#4:TIPORELAZIONE::String[150]:REP#IDEM:
+#5:REL_GENERATORE::String[10]:LKK#Generatori/1/P:REP#IDEM:
+#6:PATH_SEZIONE1::String[150]:REP#IDEM:INI#'':
+#7:PATH_SEZIONE2::String[150]:REP#IDEM:INI#'':
+#8:PATH_SEZIONE3::String[150]:REP#IDEM:INI#'':
+#9:PATH_SEZIONE4::String[150]:REP#IDEM:INI#'':
+#10:PATH_SEZIONE5::String[150]:REP#IDEM:INI#'':
+#11:PATH_SEZIONE6::String[150]:REP#IDEM:INI#'':
+#12:PATH_SEZIONE7::String[150]:REP#IDEM:INI#'':
+#13:PATH_SEZIONE8::String[150]:REP#IDEM:INI#'':
+#14:PATH_SEZIONE9::String[150]:REP#IDEM:INI#'':
+#15:PATH_SEZIONE10::String[150]:REP#IDEM:INI#'':
+#16:PATH_SEZIONE11::String[150]:REP#IDEM:INI#'':
+#17:DESCR_PROGETTO::String[64]:REP#IDEM:INI#'Impianto di riscaldamento per singola unità abitativa':
+#20:UBICEDIF::String[100]:REP#IDEM:
+#21:CONC_EDIL::String[10]:REP#IDEM:
+#22:DATA_CONC::String[10]:REP#IDEM:
+#24:ABIUNIT::String[10]:REP#IDEM:INI#'1':
+#26:COMMITTENTE::String[100]:REP#IDEM:
+#27:DIRIMTER::String[64]:REP#IDEM:
+#28:DIRISTER::String[64]:REP#IDEM:
+#29:NA1::String[1]:REP#IDEM:
+#30:NA2::String[1]:REP#IDEM:
+#31:NA3::String[1]:REP#IDEM:
+#32:PATH_SEZIONE12::String[150]:REP#IDEM:INI#'':
+#33:PATH_SEZIONE13::String[150]:REP#IDEM:INI#'':
+#34:NI1::Integer:INI#0:
+#35:NI2::Integer:INI#0:
+#36:NI3::Integer:INI#0:
+#37:NI4::Integer:INI#0:
+#40:ALLEGATI_DOC::String[150]:REP#IDEM:INI#'':
+#41:RELDEROGA::String[150]:REP#IDEM:
+#42:INSTALLAZIONE::String[30]:REP#IDEM:
+#43:PROGEDIL::String[64]:REP#IDEM:
+#44:PROGTECN::String[64]:REP#IDEM:
+#45:CODPROG::String[10]:REP#IDEM:
+#46:NI5::Integer:INI#0:
+#47:NI6::Integer:INI#0:
+#48:ESEG::String[20]:
+#49:VALIDITA::String[20]:
+#50:CERTRIL::String[150]:
+#51:NSCHEDA::String[10]:
+#52:TIPOED::String[150]:
+#53:NOMPROP::String[100]:
+#54:INDPROP::String[150]:
+#55:TELFAX::String[50]:
+#56:CITTAPROP::String[50]:
+#57:CAP::String[10]:
+#58:ANNOC::String[10]:
+#59:ANNOR1::String[10]:
+#60:ANNOR2::String[10]:
+#62:TEMPM::String[2]:
+#63:REGA::String[2]:
+#64:GEN35::String[2]:
+#65:POTM35::String[2]:
+#66:PATH_SEZIONE14::String[150]:REP#IDEM:INI#'':
+#67:PATH_SEZIONE15::String[150]:REP#IDEM:INI#'':
+#68:PATH_SEZIONE16::String[150]:REP#IDEM:INI#'':
+#69:PATH_SEZIONE17::String[150]:REP#IDEM:INI#'':
+#70:PATH_SEZIONE18::String[150]:REP#IDEM:INI#'':
+#71:PATH_SEZIONE19::String[150]:REP#IDEM:INI#'':
+#72:PATH_SEZIONE20::String[150]:REP#IDEM:INI#'':
+#73:PATH_SEZIONE21::String[150]:REP#IDEM:INI#'':
+#74:PATH_SEZIONE22::String[150]:REP#IDEM:INI#'':
+#75:PATH_SEZIONE23::String[150]:REP#IDEM:INI#'':
+#76:PATH_SEZIONE24::String[150]:REP#IDEM:INI#'':
+#77:PATH_SEZIONE25::String[150]:REP#IDEM:INI#'':
+#78:PATH_SEZIONE26::String[150]:REP#IDEM:INI#'':
+#79:NCERT::String[8]:
+#80:RICHIED::String[40]:
+#81:TIPORICHIED::String[1]:
+#82:TIPOALTRO::String[20]:
+#83:UNIMM::String[8]:
+#84:UNMILL::Real:INI#0.0:
+#85:PIANO::String[20]:
+#86:SCALA::String[15]:
+#87:LICEDIL::String[4]:
+#88:STVERT::String[100]:
+#89:SERR::String[100]:
+#90:TETTO::String[100]:
+#91:CENTTERM::String[1]:
+#92:OSS::String[20]:
+#93:RICARIA::String[1]:
+#94:FOTO::String[20]:
+*
+:RecLoc:#Localita:1:
+record:Localita_D:
+#1:Nome:Localita:String[64]:
+#2:NomeComune:Comune:real:
+#3:HMare:Altitudine:real:
+#4:Lat:Latitudine:real:
+#5:Lon:Longitudine:real:
+MeriDRifOra:#-15-:real:
+OraLegInizio:#7-:Integer:
+OraLegFine:#10-:Integer:
+#9:TIestBS:T esterna BS:real:
+#10:TInvEsternaBS:T invernale esterna BS:real:
+TInvEsternaBU:#2-:real:
+TEstEsternaBS:#34-:real:
+TEstEsternaBU:#29-:real:
+#13:UInvEsterna:Umidità relativa esterna:real:
+UEstEsterna:#60-:real:
+ET:#9-:real:
+FattFoschia:#1-:real:
+Riflettivita:#0.2-:real:
+*
+Archivio:RecArcLoc:Localita:1:
+array:ArcLocalita_D:MaxArcLoc:200:NArcLoc:
+#1:Nome:Localita:String[64]:GRD#0:
+#2:Comune:Comune:string[60]:
+#3:AltCom:Altitudine:real:
+#4:LatCom:Latitudine:real:
+#5:gradi:Gradi Giorno:real:
+#6:ZonaCl:Zona Climatica:string[1]:
+#7:ComuneRif:Provincia:string[20]:
+#8:CD1:CD S/V <= 0.2:real:
+#9:CD2:CD S/V >= 0.9:real:
+#10:TEst:Temperatura Inv. esterna:real:
+#11:urest:Um. rel. Esterna:real:
+#12:Mesein:Mese iniziale risc.:integer:
+#13:mesefin:Mese finale risc.:integer:
+#14:GiornoIn:Giorno iniziale risc.:integer:
+#15:GiornoFin:Giorno finale risc.:integer:
+#16:Zonageo:Zona geografica:string[35]:INI#'ITALIA CENTRALE E MERIDIONALE':
+#17:localitarad:Seconda prov.di riferimento:string[20]:
+#18:latrad:Latitudine seconda prov.:real:
+#19:distmar:Distanza dal mare:real:
+#20:regvento:Regione di vento:string[1]:
+#21:zonavent:Zona di vento:Integer:
+#22:MeriDRifOra:Meridiani di riferimento:real:INI#-15:CNT#Meridiano di riferimento/>=0:CNT#Meridiano di riferimento/<360:
+#23:OraLegInizio:Inizio ora legale:Integer:INI#7:
+#24:OraLegFine:Fine ora legale:Integer:INI#10:
+#25:TEstEsternaBS:Temp. Estiva Est.BS:real:INI#34:
+#26:UEstEsterna:Um. Estiva Est.BS:real:INI#60:
+#27:ET:Escursione termica:real:INI#11.5:
+#28:FattFoschia:Fatt. Foschia:real:INI#1:
+#29:Longitudine:Longitudine:real:
+#30:AltProv:Altitudine Prov.:real:
+#31:LatProv:Latitudine Prov.:real:
+#32:ZonaPiemonte::String[30]:
+#33:Regione::Integer:
+#34:IrragMax::Real:
+#35:MeseIrrMax::String[10]:
+#36:Sigla_Prov::Integer:
+#37:Cap::String[5]:
+*
+Vuoto:RecImp:Impianti:1:
+array:ImPianto_D:MaxImpianti:100:NImpianti:
+#1:Codice::string[10]:GRD#0:
+#2:Descrizione::string[50]:GRD#130:
+#3:TipoImpiantoIdraulico:Tipo impianto idraulico:STRING[32]:CMB#Radiatori:CMB#Ventilconvettori:CMB#Nessuno:CMB#Altro:
+#4:SistIdr:Sistema idraulico:STRING[32]:CMB#Collettori:CMB#Mandata e ritorno:CMB#Mandata e ritorno compensato:CMB#Monotubo:CMB#Altro:
+#5:Tiporegolaz:Tipo regolazione:STRING[32]:CMB#Termostato sulla ventola:CMB#Valvola termostatica:CMB#Valvola a 3 vie:CMB#Valvola a 2 vie:CMB#Valvola di zona sul collettore:CMB#Nessuno:CMB#Altro:
+#6:CodTerm:Modello terminali:STRING[35]:LKK#TipoTerminali/3/A:
+#7:InvProfiloVent:InvProfiloVent:String[30]:LKK#Orari/1/P:
+#8:EstTimmH2O:EstTimmH2O:Real:DEC#2:
+#9:EstDTH2O:EstDTH2O:Real:DEC#2:
+#10:InvTimmH2O:InvTimmH2O:Real:DEC#2:
+#11:InvDTH2O:InvDTH2O:Real:DEC#2:
+#12:TipoImpiantoVentilazione:TipoImpiantoVentilazione:STRING[32]:CMB#Aria primaria:CMB#Solo aria:CMB#Solo aria esterna:CMB#Nessuno:CMB#Altro:
+#13:EstProfiloVent:EstProfiloVent:String[30]:LKK#Orari/1/P:
+#16:Trugiada:Temperatura di rugiada:Real:DEC#2:
+#17:RecsensEst:E Recupero sensibile:Real:DEC#2:INI#50:
+#18:RecLat:Recupero latente:Real:DEC#2:INI#0:
+#21:RecsensInv:I Recupero:Real:DEC#2:INI#50:
+#22:TipoImpiantoAspirazione:Tipo impianto aspirazione:STRING[32]:CMB#Per singolo locale:CMB#Attraverso servizi o corridoi:CMB#Nessuno:CMB#Altro:
+#23:NOreNotte:NOreNotte:real:DEC#2:
+#24:NOreGiorno:NOreGiorno:real:DEC#2:
+#25:DayWeekOff:DayWeekOff:Integer:
+#26:TempMin:TempMin:real:DEC#2:INI#16:
+#27:GenEst:Generatore estivo:String[50]:LKK#Generatori/2/P:
+#28:GenInvt:Generatore invernale:String[50]:LKK#Generatori/2/P:
+#29:GenVentEst:Generatore vent. estivo:String[50]:LKK#Generatori/2/P:
+#30:GenVentInv:Generatore vent. invern:String[50]:LKK#Generatori/2/P:
+#31:TipoTerm:Tipo terminali:string[55]:CMB#Termoconvettori:CMB#Ventilconvettori:CMB#Bocchette aria calda:CMB#Radiatori, tutte le tipologie esclusa la successiva:CMB#Radiatori con superficie di emissione piana e continua:CMB#Pannelli radianti isolati dalle strutture:CMB#Pannelli annegati a pavimento:CMB#Pannelli annegati a soffitto:INI#'Radiatori, tutte le tipologie esclusa la successiva':
+#32:TipoProd:tipologia di prodotto:string[50]:CMB#Termostato di caldaia:CMB#Regolatore climatico e/o ottimizzatore:CMB#Regolatore si/no a differenziale:CMB#Regolatore modulante (banda proporzionale 1 °C):CMB#Regolatore modulante (banda proporzionale 2 °C):
+#33:TipoReg:sistema di regolazione:string[50]:CMB#Regolazione manuale:CMB#Climatico centralizzato:CMB#Solo per singolo ambiente:CMB#Climatico + singolo ambiente:CMB#Solo di zona:CMB#Climatico + zona:
+#34:OreOn:OreOn:real:DEC#2:
+#35:VMVolImpOn:VMVolImpOn:real:DEC#2:
+#36:PercAriaEst:PercAriaEst:real:DEC#2:
+#19:TimmInv:Vent Temp Immis Inv:real:DEC#2:
+#14:TimmEst:Vent Temp Immis Est:real:DEC#2:
+#20:URimmInv:Umidità Rel.Imm.Inv.:real:DEC#2:
+#15:URimmEst:Umidità Rel.Imm.Est.:real:DEC#2:
+#41:CalcoloImpTuttaria:Modalità calcolo Impianto tuttaria:String[50]:CMB#Calcola ricambi:CMB#Calcola Temperatura d''immissione:
+#42:TImmInvTaria:Temp.imm.taria(Inv):Real:DEC#2:
+#43:MaxTImmTAria:MaxTemp.imm.taria(Inv):Real:DEC#2:
+#44:MinTImmTAria:MimTemp.imm.taria(Inv):Real:DEC#2:
+#45:TImmEstTaria:Temp.imm.taria(Est):Real::Real:DEC#2:
+#46:MaxEstTImmTAria:MaxTemp.imm.taria(Est):Real::Real:DEC#2:
+#47:MinEstTImmTAria:MimTemp.imm.taria(Est):Real::Real:DEC#2:
+#48:RicTAria:Ricambiotaria:Real:DEC#2:
+#49:MaxRicTAria:RicambioMassimotaria:Real:DEC#2:
+#50:MinRicTAria:RicambioMinimotaria:Real:DEC#2:
+#51:TipoImpiantoI:TipoImp.Ventil.(Imp):String[42]:CMB#Nessun impianto:CMB#Impianto di estrazione:CMB#Impianto Tutt''aria:CMB#Impianto Aria esterna:CMB#Altro:INI#'Nessun impianto':
+#52:AriaEs:Aria Esterna:Real:INI#100:
+#53:EsigVentil:Esigenze Ventilazione:string[40]:CMB#Ventilazione definita dal regolamento:CMB#Esigenze particolari di ventilazione:
+#54:Motivo:Motivo Deroga:String[255]:
+#55:InvProfiloImpianto:InvProfiloImpianto:String[30]:LKK#Orari/1/P:
+#56:EstProfiloImpianto:EstProfiloImpianto:String[30]:LKK#Orari/1/P:
+#57:UTA:UTA:String[8]:
+#58:TipoDistr::String[100]:
+#59:TipoTermMax4::string[55]:
+#60:PeriodoSD::string[15]:
+#61:NOreAcc:NOreAcc:real:DEC#2:
+#62:TipoTermSEmis::string[100]:
+#63:PortataAria::string[20]:
+#64:PotEletSEmiss::Real:DEC#2:INI#0:
+#65:ArrestoVent::string[1]:INI#'F':
+#66:ArrestPompa::string[1]:INI#'F':
+#67:PompaVelVar::string[1]:INI#'F':
+#68:PotEletSDistr::Real:DEC#2:INI#0:
+#70:TempManRit::string[20]:
+#71:SupAcc:SupAcc:Real:DEC#2:
+#72:SpessC:SpessC:Real:DEC#2:
+#73:CondC:CondC:Real:DEC#2:
+#74:Tc:Tc:Real:DEC#2:
+#75:TcL:TcL:Real:DEC#2:
+#76:ValAcc:ValAcc:string[20]:
+#77:Distr::string[40]:INI#'Semplificato':
+#78:TipoApp::string[85]:INI#'Generatore a gas di tipo istantaneo per sola produzione di acqua calda sanitaria':
+#79:Versione::string[30]:INI#'Tipo b con pilota permanente':
+#80:UbicAcc::string[30]:INI#'In ambiente riscaldato':
+#81:UbicAccGen::string[30]:INI#'All''interno del generatore':
+#82:AltPiani::string[16]:INI#'':
+#83:AusilElettrFunz::string[1]:INI#'F':
+#84:IsolDistr::string[15]:INI#'Legge 10/91':
+#85:TipoDistrib::string[70]:INI#'Legge 10/91':
+#86:PresAccumulo::string[1]:INI#'F':
+#87:ValoreDispTD::real:DEC#2:
+#88:ValDispTerm::string[1]:INI#'F':
+*
+:RecPar:Pareti:3:FISSA:
+array:Pareti_D:MaxPar:1000:NPar:Slave:Numero:Integer:
+#1:Confine::String[8]:GRD#0:
+#2:Lato:Lato:String[5]:GRD#30:
+#3:Tipo:Tipo:String[9]:GRD#40:
+#4:Cod:Codice:String[8]:GRD#0:
+#5:Num:Num-L:real:GRD#38:DEC#2:
+#6:Alt::real:GRD#38:DEC#2:
+#7:Sup:Sup.:real:GRD#38:DEC#2:
+#8:Item::Integer:GRD#45:
+#9:Alt2::real:GRD#38:DEC#2:
+#10:x1::real::DEC#2:
+#11:y1::real::DEC#2:
+#12:x2::real::DEC#2:
+#13:y2::real::DEC#2:
+*
+Vuoto:RecAmb:Locali:1:FISSA:DoppioP:
+array:Ambienti_D:MaxAmbienti:1000:NAmbienti:Master:Numero:20:Par:
+Num:Numero:Autoinc:
+#1:CodNum:Codice:string[8]:GRD#0:
+#5:CodZona:Zona:String[10]:LKK#Zone/1/P:INI#'Edificio':
+#21:Piano::String[60]:GRD#0:
+#4:Denom:Descrizione:STRING[20]:GRD#0:INI#'Intero edificio':
+#6:Superficie::REAL:DEC#2:
+#7:HSoffitto:Altezza netta:REAL:INI#3:DEC#2:
+#8:Impianto::String[10]:LKK#Impianti/1/P:
+#2:InfInv:I Infiltrazioni naturali:real:DEC#2:
+#10:CodPROccupaz:Presenza persone:String[30]:LKK#Orari/1/P:
+#11:NPersone:Numero persone:INTEGER:
+#12:RicambioPersona:Ricambio per persona:REAL:DEC#2:
+#13:SensibilePersona:Sensibile per persona:REAL:DEC#2:
+#14:LatentePersona:Latente per persona:REAL:DEC#2:
+#15:CodPRApparecch:Presenza apparecchi:String[30]:LKK#Orari/1/P:
+#16:SensApparecch:Sens. apparecchi:REAL:DEC#2:
+#17:LatenteApparecch:Lat. apparecchi:REAL:DEC#2:
+#18:CodPRIlluminaz:Presenza Illuminazione:String[30]:LKK#Orari/1/P:
+#19:IlluminazFissa:Illuminazione:REAL:DEC#2:
+#20:InfEst:E Infiltrazioni naturali:REAL:DEC#2:
+#22:TNEst:Temp.Estiva Locale:real:DEC#2:
+#23:TNInv:Temp.Invernale Locale:real:DEC#2:
+#3:Ventilazione:Ventilazione meccanica:REAL:DEC#2:
+#9:V::String[1]:
+#24:T_Pav:Tipo Pavimento:String[8]:LKK#Strutture/2/P:
+#25:C_Pav:Confine Pavimento:String[8]:LKK#Confine/1/P:
+#26:T_Soff:Tipo Soffitto:String[8]:LKK#Strutture/2/P:
+#27:C_Soff:Confine Soffitto:String[8]:LKK#Confine/1/P:
+#28:x1::real:
+#29:Y1::real:
+#30:PEstSens::real:
+#31:PestLat::real:
+#32:Pinv::real:
+#33:PortAria::real:
+#34:PortAriaEst::real:
+#35:POtVol::real:
+#36:AppSens::real:
+#37:AppLat::real:
+#38:AppSensInv::real:
+#39:TotWattMatElettr::Real:INI#0.0:DEC#2:
+#40:TotWattLampDat::Real:INI#0.0:DEC#2:
+#41:ValBxLNR::REAL:INI#0:
+#42:NumAppElettr::Integer:INI#0:
+#43:NumMacch::Integer:INI#0:
+#44:DescAppIll::Integer:INI#1:
+#45:TipoAppIll::String[15]:INI#'Fluorescente':
+#46:PotLamb::Real:INI#0.0:DEC#2:
+#47:PotMacch::Real:INI#0.0:DEC#2:
+#48:CoeffSP::Real:INI#0.0:DEC#2:
+#49:CoeffSI::Real:INI#0.0:DEC#2:
+#50:CoeffSA::Real:INI#0.0:DEC#2:
+#51:TipoCalcTempNR::String[30]:INI#'Temperatura prefissata':
+#52:CaricoInt::REAL:DEC#2:
+#53:RicAria::REAL:DEC#2:
+#54:TipoBXScelto::String[150]:INI'':
+#55:AppCorrisp::Integer:INI#0:
+#56:LocAbit::Integer:INI#0:
+Indimpianto:#1-:integer:
+Z10:#1-:INTEGER:
+Numimpianto:#1-:INTEGER:
+ProfiloIlluminaz:#1-:INTEGER:
+ProfiloApparecch:#1-:INTEGER:
+ProfiloOccupaz:#1-:INTEGER:
+IlluminazVar:#0-:REAL:
+TipoIlluminaz:#1:INTEGER:
+RappRS:#0.45-:REAL:
+CircolazAria:#1-:INTEGER:
+inf_risc:#0-:real:
+alfaSerra:#0-:real:
+alloggio:#1-:real:
+PotenzaWatt :#0-:real:
+Zona:#1-:INTEGER:
+AmbientiUguali:#1-:INTEGER:
+*
+:RecPPiano:PPiano:3:FISSA:
+array:PPiano_D:MaxPPiano:900:NPPiano:Slave:Numero:Integer:
+#1:Confine::String[10]:LKK#Confine/1/P:GRD#0:
+#2:Lato:Lato:String[3]:
+#3:Tipo:Tipo:String[9]:GRD#0:
+#4:Cod:Codice:String[8]:LKK#Strutture/2/P:GRD#0:
+#5:Num:Num/Lung:real:DEC#2:
+#6:Alt::real:GRD#40:
+#7:Sup:Sup.:real:DEC#2:
+#8:Item::integer:GRD#40:
+#9:Alt2::real:GRD#40:
+#10:X1::real:
+#11:X2::real:
+#12:y1::real:
+#13:y2::real:
+*
+vuoto:RecPia:Piani:1:FISSA:
+array:Piani_D:MaxPiani:200:NPiani:Master:Numero:20:ParL:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[60]:GRD#130:
+#2:AltL::real:DEC#2:INI#3:
+#3:AltN::real:DEC#2:INI#2.7:
+#4:Quota::real:DEC#2:
+#5:Indice::Integer:INI#0:GRD#50:
+#6:Piani_Uguali::Integer:
+#7:CopiaDi::String[30]:LKK#Piani/2/P:
+#8:Tipo::String[20]:
+#24:T_Pav:Tipo Pav:String[8]:LKK#Strutture/2/P:CMB#Interp:INI#'Interp':
+#25:C_Pav:Confine Pavimento:String[8]:LKK#Confine/1/P:CMB#Non sc:CMB#Esterno:INI#'Non sc':
+#26:T_Soff:Tipo Soffitto:String[8]:LKK#Strutture/2/P:CMB#Interp:INI#'Interp':
+#27:C_Soff:Confine Soffitto:String[8]:LKK#Confine/1/P:CMB#Non sc:CMB#Esterno:INI#'Non sc':
+#28:Rif_Pianta::String[100]:
+#29:ScalaP::real:INI#1:
+#30:TipoD::String[20]:INI#'Pianta':CMB#Pianta:CMB#Sezione:CMB#Pianta (solo  reti):CMB#Sezione (solo  reti):
+#31:AllineaX::real:INI#0:
+#32:AllineaY::real:INI#0:
+#33:Sfondo_Pinf::String[3]:CMB#Si:CMB#No:INI#'No':
+#34:Sfondo_Psup::String[3]:CMB#Si:CMB#No:INI#'No':
+#35:ScalaDis::real:INI#50:
+*
+Vuoto:RecZone:Zone:1:
+array:Zone_D:MaxZone:200:Nzone:
+#1:Cod:Codice:String[8]:GRD#0:
+#4:Denom:Descrizione:STring[20]:GRD#0:
+#7:HSoffittoRicorr:Altezza netta:REAL:DEC#2:
+#20:TInv:I Temperatura interna:REAL:DEC#2:
+#21:UInv:I UR interna:REAL:DEC#2:
+#2:InfInv:I Infiltrazioni naturali:real:DEC#2:
+#26:TEst:Temperatura estiva:REAL:DEC#2:
+#27:UEst:UR estiva:REAL:DEC#2:
+#22:InfEst:E Infiltrazioni naturali:REAL:DEC#2:
+#10:ProfiloOccupaz:Presenza persone:String[30]:LKK#Orari/1/P:
+#11:AffollPersona:Densità di persone:REAL:DEC#2:
+#12:RicambioPersona:Ricambio per persona:REAL:DEC#2:
+#13:SensibilePersona:Sensibile per persona:REAL:DEC#2:
+#14:LatentePersona:Latente per persona:REAL:DEC#2:
+#18:ProfiloIlluminaz:Presenza illuminazione:String[30]:LKK#Orari/1/P:
+#19:IlluminazFissa:Illuminazione:REAL:DEC#2:
+#23:Codicelampade:Tipo lampade:String[30]:CMB#Ad incandescenza:CMB#A fluorescenza:CMB#Ad alto risparmio energetico:
+#15:ProfiloApparecch:Presenza apparecchi:String[30]:LKK#Orari/1/P:
+#16:SensApparecch:Sens. apparecchi:REAL:DEC#2:
+#17:LatenteApparecch:Lat. apparecchi:REAL:DEC#2:
+#24:ClSerram:Classe serramenti:string[20]:CMB#Classe serramenti:
+#28:Impianto::String[30]:LKK#Impianti/1/P:
+#29:AssImp:Assegna impianto:String[30]:CMB#Assegna automaticamente:CMB#Assegna alla pressione del pulsante:
+#30:ClassifL10:Classificazione Legge10:string[55]:CMB#E1(1):CMB#E1(2):CMB#E1(3):CMB#E2:CMB#E3:CMB#E4(1):CMB#E4(2):CMB#E4(3):CMB#E5:CMB#E6(1):CMB#E6(2):CMB#E6(3):CMB#E7:CMB#E8:
+#6:EtaRecup:Efficienza del recup:REAL:DEC#2:
+#31:TimmInv:Vent Temp Immis Inv:real:DEC#2:
+#32:TimmEst:Vent Temp Immis Est:real:DEC#2:
+#35:URimmInv:Umidità Rel.Imm.Inv.:real:DEC#2:
+#36:URimmEst:Umidità Rel.Imm.Est.:real:DEC#2:
+#33:VMVolImpOn:Ric.Nat.Vent.Mecc.Acc.:Real:
+#34:OreOn:Ore Accenzione:Real:DEC#2:
+#37:TipoImpianto:TipoImpianto:String[70]:CMB#Nessun impianto di ventilazione meccanica:CMB#Estrazione dai servizi intermittente:CMB#Estrazione dai servizi continua:CMB#Altro:
+#38:EsigVentil:Esigenze Ventilazione:string[40]:CMB#Ventilazione definita dal regolamento:CMB#Esigenze particolari di ventilazione:
+#39:N:Numero Ricambi:real:DEC#2:
+#40:TempOc:TempOc:real:INI#8:
+#41:Motivo:Motivo Deroga:String[255]:
+#42:AriaEst:Port.Aria.Est.Phi:real:INI#1.38:DEC#2:
+#43:Affol:Affollamento:real:INI#4:DEC#2:
+#44:Ngo:Ngo:real:INI#30:DEC#2:
+#47:Classif:Classe Edificio:string[6]:CMB#E1(1):CMB#E1(2):CMB#E1(3):CMB#E2:CMB#E3:CMB#E4(1):CMB#E4(2):CMB#E4(3):CMB#E5:CMB#E6(1):CMB#E6(2):CMB#E6(3):CMB#E7:CMB#E8:
+#48:Intonaco:Tipo Intonaco:String[20]:CMB#Malta:CMB#Gesso:
+#49:Isolamento:Tipo Isolamento:String[18]:CMB#Assente o Esterno:CMB#Interno:
+#50:ParetiEsterne:Tipo Parete Esterna:String[18]:CMB#Medie:CMB#Leggere o Blocchi:CMB#Pesanti:
+#51:Pavimenti:Tipo Pavimento:String[10]:CMB#Piastrelle:CMB#Tessile:CMB#Legno:
+#3:PortMec:Ventilazione (Non Trat):Real:DEC#2:
+#52:VentMecTratt:Ventilazione (Trattata):Real:DEC#2:
+#53:ApportiGrat:Apporti gratuiti:Real:DEC#2:
+#54:ModCalcoloApportiGra:ModCalcoloApportiGra:String[80]:CMB#Considera i valori del calcolo estivo:CMB#Considera il valore di input indicato:INI#'Considera i valori del calcolo estivo':
+#55:IndiceAffol:Indice affollamento:Real:INI#0:
+#56:RicAriaTrat:Ric. Aria Trattata:Real:INI#0:
+#57:RicAriaNTrat:Ric. Aria Non Trattata:Real:INI#0.0:
+#58:Art8:Articolo 8:String[2]:INI#'No':
+#59:RAriaTratmq:R Aria Trattatamq:Real:INI#39.60:DEC#2:
+#60:IncrIntV:IncrIntV:Real:INI#0:DEC#0:
+#61:IncrIntE:IncrIntE:Real:INI#0:DEC#0:
+#62:TipoCostrN:TipoCostrN:String[50]:CMB#Edifici con muri di pietra o assimilabili:CMB#Edifici con muri di mattoni pieni o assimilabili:CMB#Edifici con muri di mattoni forati o assimilabili:CMB#Edifici con pareti leggere o isolati dall''interno:INI#'Edifici con muri di mattoni pieni o assimilabili':
+#63:TipoE1:TipoE1:String[1]:INI#'F':
+#64:CalcFAS:CalcFAS:String[1]:INI#'F':
+#65:TipoE42PM::String[1]::INI#'A':
+#66:RicAriaNTratVH::Real:INI#0.0:DEC#2:
+#67:NumMatElettr::Integer:INI#0:
+#68:WattMatElettr::Real:INI#0.0:DEC#2:
+#69:NumLampDat::Integer:INI#0:
+#70:WattLampDat::Real:INI#0.0:DEC#2:
+#71:AltLorda::REAL:DEC#2:
+#72:UsoCott::Real:DEC#2:
+#73:CalcUsoCott::String[1]:INI#'F':
+#74:EffRecup::Real:DEC#2:
+#75:K::Real:DEC#2:
+#76:CalcTD::String[15]:INI#'Semplificato':
+#77:DescAppIll::String[50]:INI#'Illum. fluorescente apparecchi non incassati':
+#78:TipoAppIll::String[20]:INI#'Fluorescente':
+#79:CoeffSP::Real:INI#1:DEC#2:
+#80:CoeffSI::Real:INI#1:DEC#2:
+#81:CoeffSA::Real:INI#1:DEC#2:
+#82:CombustFattC::String[20]:INI#'Elettrico':
+#83:TAssentiInv::Real:DEC#2:INI#20:
+TolleranzaT:#1-:REAL:
+TolleranzaU:#10-:REAL:
+IlluminazVar:#0-:REAL:
+TipoIlluminaz:#1:INTEGER:
+RappRS:#0.45-:REAL:
+MassaFrontDivisInt:#100-:REAL:
+MassaFrontSoletteInt:#300-:REAL:
+CoeffIntermittInv:#1-:REAL:
+CoeffIntermittEst:#1-:REAL:
+CircolazAria:#1-:INTEGER:
+Ventilazione:#0-:REAL:
+ProfVentInv:#1-:INTEGER:
+ProfVentEst:#1-:INTEGER:
+TimmInvBU:#0-:real:
+TimmEstBU:#0-:real:
+VecchiaZonaLegge10 :#1-:integer:
+ProfiloImpiantoInv:#1-:INTEGER:
+ProfiloImpianto:#1-:INTEGER:
+*
+:RecZoneL10:#Zone10:1:Fissa:
+array:Zone10:MaxZone10:200:NZone10:
+descr::string[20]:
+TAria::real:INI#20:DEC#2:
+UR::real:DEC#2:
+ClSerram:Classe serramenti:string[20]:CMB#Classe serramenti:
+PortNat:portata ventilazione naturale:real:DEC#2:
+CalcAnal:calcolo analitico:string[1]:CMB#S:CMB#N:
+PortMec:portata ventilazione meccanica:real:DEC#2:
+VMVolImpOn:vent. mecc. ric. nat.imp. acceso:real:DEC#2:
+OreOn::real:DEC#2:
+EtaRecup::real:DEC#2:
+TipoPav:tipo pavimento non sacambiante:Integer:
+TipoEdif::string[55]:CMB#Tipo edificio:
+TipoTerm:tipo terminali:string[55]:
+RendTerm:rendimento terminali:real:
+PotNom::real:DEC#2:
+Perc::real:DEC#2:
+TempAT::real:DEC#2:
+TipoProd:tipologia di prodotto:string[50]:CMB#Termostato di caldaia:CMB#Regolatore climatico e/o ottimizzatore:CMB#Regolatore si/no a differenziale:CMB#Regolatore modulante (banda proporzionale 1 °C):CMB#Regolatore modulante (banda proporzionale 2 °C):
+TipoReg:sistema di regolazione:string[50]:CMB#Regolazione manuale:CMB#Climatico centralizzato:CMB#Solo per singolo ambiente:CMB#Climatico + singolo ambiente:CMB#Solo di zona:CMB#Climatico + zona:
+RendReg:rendimento regolazione:real:DEC#2:
+NOreNotte::real:DEC#2:
+NOreGiorno::real:DEC#2:
+DayWeekOff:giorni settimanali di spegnimento impianto:Integer:
+TempMin:temperatura minima in attenuazione:Integer:
+TipoCostrN:TipoCostrN:String[50]:
+IndImp:IndImp:Integer:
+TipoImpianto:TipoImpianto:String[70]:
+K::real:DEC#2:
+ApportiGrat::Real:DEC#2:
+Intonaco::String[20]:
+Isolamento::String[18]:
+ParetiEsterne::String[18]:
+Pavimenti::String[10]:
+AltZona::Real:DEC#2:
+TipoTermMax4::String[70]:
+NOreAcc::Real:DEC#2:
+TipoDistr::String[100]:
+PeriodoSD::string[15]:
+TempManRit::string[20]:
+TEst::REAL:DEC#2:
+UsoCott::Real:
+CalcUsoCott::String[1]:
+CombustFattC::String[20]:
+SupAcc:SupAcc:Real:DEC#2:
+SpessC:SpessC:Real:DEC#2:
+CondC:CondC:Real:DEC#2:
+Tc:Tc:Real:DEC#2:
+TcL:TcL:Real:DEC#2:
+UbicAcc::string[30]:
+UbicAccGen::string[30]:
+AltPiani::string[16]:
+AusilElettrFunz::string[1]:
+IsolDistr::string[15]:
+TipoDistrib::string[70]:
+PresAccumulo::string[1]:
+ValoreDispTD::real:
+ValDispTerm::string[1]:
+PotEletSEmiss::Real:
+ArrestPompa::string[1]:
+PompaVelVar::string[1]:
+PotEletSDistr::Real:
+VolumeLordo::Real:
+SuperficieLorda::Real:
+VolumeNetto::Real:
+SuperficieNetta::Real:
+SupUtileZona::Real;
+*
+Vuoto:Recsetti:setti:3:Fissa:
+array:s_D:Maxsetti:200:Nsetti:Slave:Numero:Integer:
+#1:Tipo::String[8]:
+#2:Altezza::Real:DEC#2:
+#3:Larghezza::Real:DEC#2:
+#4:LTelaio::Real:DEC#2:
+#5:KOpadisp::Real:DEC#2:
+#6:KOpaL10::Real:DEC#2:
+#7:TipoOpa::String[1]:
+#8:klinopa::Real:DEC#2:
+#9:ltelsup::Real:DEC#2:
+#10:ltelinf::Real:DEC#2:
+#11:ltelsin::Real:DEC#2:
+#12:lteldes::Real:DEC#2:
+#13:formatelaio::String[1]:INI#'R':
+#14:Tipo2::String[8]:
+#15:Altezza2::Real:DEC#2:
+#16:Larghezza2::Real:DEC#2:
+#17:LTelaio2::Real:DEC#2:
+#18:KOpadisp2::Real:DEC#2:
+#19:KOpaL102::Real:DEC#2:
+#20:TipoOpa2::String[1]:
+#21:klinopa2::Real:DEC#2:
+#22:ltelsup2::Real:DEC#2:
+#23:ltelinf2::Real:DEC#2:
+#24:ltelsin2::Real:DEC#2:
+#25:lteldes2::Real:DEC#2:
+#26:formatelaio2::String[1]::INI#'R':
+#27:Tipo3::String[8]:
+#28:Altezza3::Real:DEC#2:
+#29:Larghezza3::Real:DEC#2:
+#30:LTelaio3::Real:DEC#2:
+#31:KOpadisp3::Real:DEC#2:
+#32:KOpaL103::Real:DEC#2:
+#33:TipoOpa3::String[1]:
+#34:klinopa3::Real:DEC#2:
+#35:ltelsup3::Real:DEC#2:
+#36:ltelinf3::Real:DEC#2:
+#37:ltelsin3::Real:DEC#2:
+#38:lteldes3::Real:DEC#2:
+#39:formatelaio3::String[1]::INI#'R':
+#40:Tipo4::String[8]:
+#41:Altezza4::Real:DEC#2:
+#42:Larghezza4::Real:DEC#2:
+#43:LTelaio4::Real:DEC#2:
+#44:KOpadisp4::Real:DEC#2:
+#45:KOpaL104::Real:DEC#2:
+#46:TipoOpa4::String[1]:
+#47:klinopa4::Real:DEC#2:
+#48:ltelsup4::Real:DEC#2:
+#49:ltelinf4::Real:DEC#2:
+#50:ltelsin4::Real:DEC#2:
+#51:lteldes4::Real:DEC#2:
+#52:formatelaio4::String[1]::INI#'R':
+#53:Tipo5::String[8]:
+#54:Altezza5::Real:DEC#2:
+#55:Larghezza5::Real:DEC#2:
+#56:LTelaio5::Real:DEC#2:
+#57:KOpadisp5::Real:DEC#2:
+#58:KOpaL105::Real:DEC#2:
+#59:TipoOpa5::String[1]:
+#60:klinopa5::Real:DEC#2:
+#61:ltelsup5::Real:DEC#2:
+#62:ltelinf5::Real:DEC#2:
+#63:ltelsin5::Real:DEC#2:
+#64:lteldes5::Real:DEC#2:
+#65:formatelaio5::String[1]::INI#'R':
+*
+Vuoto:RecFin:finestre:1:FISSA:
+array:Finestre_D:MaxFinestre:150:NFinestre:Master:Numero:20:setti:
+Num:Numero:Autoinc:
+#12:Codice::String[8]:GRD#0:
+#27:Denom:Descrizione:STRING[20]:GRD#0:
+#13:Trasmittanza::REAL:DEC#3:
+#14:SuperfUnit:Superficie Unitaria:REAL:DEC#3:
+#15:PercVetr:Percentuale Vetrata:INTEGER:INI#85:
+IncrSic:Incremento di sicurezza:REAL:DEC#3:
+#16:TipoSchermatura:Tipo Schermatura:STRING[30]:CMB#Interno:CMB#Esterno:CMB#Nessuno:
+#17:Shedingsc:Attenuazione sol.:real:INI#1:DEC#3:
+#18:Codv:Codice del vetro:string[30]:
+#19:descrV:descrizione vetro:string[50]:
+#20:shedingV::real:INI#0.5:DEC#3:
+#21:PosizSchermo:Posizione schermo:string[1]:INI#'N':
+#22:Shading::REAL:DEC#3:
+#23:Altezza::REAL:DEC#3:
+#24:Larghezza::REAL:DEC#3:
+#28:tapparella::REAL:INI#0.22:DEC#3:
+Rientranza:#0.15-:REAL:DEC#2:
+LOrizz:#0-:REAL:DEC#2:
+DOrizz:#0-:REAL:DEC#2:
+LVertDX:#0-:REAL:DEC#2:
+DVertDX:#0-:REAL:DEC#2:
+LVertSX:#0-:REAL:DEC#2:
+DVertSX:#0-:REAL:DEC#2:
+Lineak:#0-:integer:
+#1:AltezzaFin::Real:DEC#2:
+#2:LarghezzaFin::Real:DEC#2:
+#3:TelaioFin::Real:DEC#2:
+#4:AnteFin::Integer:DEC#2:
+#5:AltSopraFin::Real:DEC#2:
+#6:TipoSopraFin::String[10]:
+#7:AltCassoFin::Real:DEC#2:INI#0:
+#8:TipoCassoFin::String[25]:CMB#Nessuno:CMB#Cassonetto non isolato:CMB#Cassonetto isolato:INI#'Nessuno':
+#9:AltSottoFin::Real:DEC#2:
+#10:TipoSottoFin::String[30]:CMB#Nessuno:LKK#Strutture/3/P:INI#'Nessuno':
+#11:TipoBordoFin::String[10]:
+#29:Ag:Area del vetro:Real:DEC#2:
+#30:Af:Area del telaio:Real:DEC#2:
+#31:Lg:Lunghezza  vetrata:Real:DEC#2:
+#25:Ki:Trasmittanza distanziatore:REAL:INI#0.05:DEC#2:
+#26:Kf:Trasmittanza telaio:REAL:INI#3.1:DEC#2:
+#32:Kg:Trasmittanza term. vetro:Real:CRL#STRUTTURE/2/6/P/CODV:DEC#2:
+#33:Uw:Trasmittanza totale fin:REAL:DEC#2:
+#34:Supsetti:Superficie Setti:REAL:DEC#2:
+#35:Ksetti:Trasmittanza setti:REAL:DEC#2:
+#36:FinPor::String[10]:CMB#Finestra:CMB#Porta:
+#37:KgL10::REAL:CRL#STRUTTURE/2/27/P/CODV:DEC#2:
+#38:KDISPL10PORTE::REAL:DEC#2:
+#39:INCRSICUREZZAPORTE::REAL:INI#1:DEC#2:
+#40:PERMEABILITAPORTE::REAL:DEC#2:
+#41:COLOREPORTE::String[10]:CMB#Chiaro:CMB#Medio:CMB#Scuro:
+#42:INCRSICUREZZAFINESTRA::REAL:INI#0:DEC#2:
+#43:RESISTENZATERMICATAPPARELLA::REAL:DEC#2:
+#44:PERMEABILITASERRAMENTO::REAL:DEC#2:
+#45:PERMEABILITACASSONETTO::REAL:DEC#2:
+#46:LUNGHEZZACASSONETTO::REAL:DEC#2:INI#0:
+#47:ShadingSchermo::REAL:INI#0:DEC#2:INI#1:
+#48:ShadingVetro::REAL:INI#0:DEC#2:INI#0.7:
+#49:ProfVerticaleSx::REAL:INI#0:DEC#2:
+#50:DistVerticaleSx::REAL:INI#0:DEC#2:
+#51:ProfVerticaleDx::REAL:INI#0:DEC#2:
+#52:DistVerticaleDx::REAL:INI#0:DEC#2:
+#53:ProfBalconi::REAL:INI#0:DEC#2:
+#54:DistBalcomi::REAL:INI#0:DEC#2:
+#55:TrasmittL10::REAL:DEC#2:
+#56:Hi:Add. interna:Real:DEC#2:
+#57:He:Add. esterna:Real:DEC#2:
+#58:paretecontinua::String[1]:
+#59:ripetizioni::integer:
+#60:terminale::string[2]:CMB#SI:CMB#NO:
+#61:kSottoFin::Real:CRL#STRUTTURE/2/6/P/TipoSottoFin:DEC#2:
+#62:kSottoFinL10::Real:CRL#STRUTTURE/2/27/P/TipoSottoFin:DEC#2:
+#63:VerificaF192::String[2]:GRD#60:
+#64:ValLimFT::real:DEC#2:
+#65:TrasmVetro::real:Dec#2:
+#66:ClassZ:ClassZ:String[2]:INI#'--':
+VerFDlg192::string[1]:
+#67:EscludiVer::String[2]:INI#'NO':
+#68:Ristrut::String[2]:INI#'NO':
+#69:LivelloPM::String[15]:INI#'':
+#70:SchermMob::String[1]:INI#'F':
+#71:ResTermaddCC::real:Dec#2:INI#0:
+#72:TrasmFinCC::real:Dec#2:INI#0:
+#73:TipoTrasmL::String[100]:INI#'':
+#74:TipoTrasmT::String[110]:INI#'':
+#75:TipoShadingSch::String[100]:INI#'':
+#76:TipoShadingV::String[100]:INI#'':
+#77:ColoreSchermo::String[6]:CMB#Chiaro:CMB#Medio:CMB#Scuro:INI#'Chiaro':
+#78:Infiltraz::real:Dec#2:INI#0:
+#79:TrasmCass::real:Dec#2:
+#80:TrasmFinProd::String[1]:INI#'F':
+#81:TelaioFinL::Real:DEC#2:
+#82:TelaioFinC::Real:DEC#2:
+#83:TelaioFinS::Real:DEC#2:
+#84:TelaioFinI::Real:DEC#2:
+#85:TrasmCassonetto::Real:DEC#2:
+#86:TipoCompV::String[20]:INI#'Vetro singolo':
+#87:TipoTrasmV::String[30]:INI#'Da normativa':
+#88:TipoGas::String[10]:INI#'Aria':
+#89:TipoEmiss::String[30]:INI#'0.89':
+#90:TipoSpessV::String[10]:INI#'4-6-4':
+#91:TipoVetro::String[50]:INI#'Vetro normale':
+#92:TrasmUG::Real:DEC#2:
+#93:EsisteTapp::String[1]:INI#'F':
+#94:ResistenzaDTCalc::String[75]:CMB#Resistenza termica caratteristica della chiusura:CMB#Resistenza termica addizionale per una specifica permeabilità dell''aria:String[50]:INI#'Resistenza termica caratteristica della chiusura':
+#95:Permeabilita::String[60]::INI#'Chiusure con elevata permeabilità':
+#96:TipoChius::String[60]:INI#'Avvolgibili in alluminio':
+#97:Dimtel::String[1]:INI#'F':
+#98:RSH::Real:DEC#2:
+#99:FSH::Real:DEC#2:
+#100:UCORR::Real:DEC#2:
+#101:AREACASSONETTO::REAL:DEC#2:
+#102:FRW::REAL:DEC#2:
+CodGen::string[255]:
+*
+:RecOrari:Orari:1:FISSA:
+array:Orari_D:MaxOrari:50:NOrari:
+#25:Codice::String[15]:INI#'Orario ufficio':GRD#0:
+#26:Descrizione::STRING[30]:INI#'Orario ufficio':GRD#130:
+#1:Ora1::Integer:INI#0:
+#2:Ora2::Integer:INI#0:
+#3:Ora3::Integer:INI#0:
+#4:Ora4::Integer:INI#0:
+#5:Ora5::Integer:INI#0:
+#6:Ora6::Integer:INI#0:
+#7:Ora7::Integer:INI#0:
+#8:Ora8::Integer:INI#0:
+#9:Ora9::Integer:INI#100:
+#10:Ora10::Integer:INI#100:
+#11:Ora11::Integer:INI#100:
+#12:Ora12::Integer:INI#100:
+#13:Ora13::Integer:INI#100:
+#14:Ora14::Integer:INI#0:
+#15:Ora15::Integer:INI#100:
+#16:Ora16::Integer:INI#100:
+#17:Ora17::Integer:INI#100:
+#18:Ora18::Integer:INI#100:
+#19:Ora19::Integer:INI#0:
+#20:Ora20::Integer:INI#0:
+#21:Ora21::Integer:INI#0:
+#22:Ora22::Integer:INI#0:
+#23:Ora23::Integer:INI#0:
+#24:Ora24::Integer:INI#0:
+*
+Vuoto:RecUpDate:UPdate:1:FISSA:DoppioP:
+array:Update_D:MaxUpdate:500:NUpdate:
+#1:IndPezzo::Integer:INI#0:
+#2:xa1::real:INI#0:
+#3:ya1::real:INI#0:
+#4:za1::real:INI#0:
+#5:xa2::real:INI#0:
+#6:ya2::real:INI#0:
+#7:za2::real:INI#0:
+#8:Codp::string[30]:
+#9:prog::string[30]:
+*
+:RecConf:Confine:1:FISSA:
+array:Confine_D:MaxConfini:100:NConfini:
+#1:Codice::String[8]:GRD#0:CNT#Codice/<>'':
+#2:Denom:Descrizione:STRING[30]:GRD#130:CNT#Descrizione/<>'':
+Tipo:#'I'-:STRING[1]:
+#18:Orient:Orientamento:REAL:INI#0:DEC#2:
+#17:Inclin:Inclinazione:REAL:DEC#2:CNT#Angolo inclinazione/>0:
+#16:TrifEst:Temp. confine estivo:REAL:INI#28:DEC#2:
+#3:TrifInv:Temp. confine Invernale:REAL:INI#2:DEC#2:
+#4:Tipop:Tipo pav. su terr.:String[100]:CMB#1 - PAVIMENTO. SU TERR. SENZA ISOLAM./CON ISOLAM. UNIFORME:CMB#2 - PAV. CON ISOLAM. PERIMETRALE ORIZZONTALE:CMB#3 - PAV. CON ISOLAM. PERIMETR. VERTICALE (strato Isolante):CMB#4 - PAV. CON ISOLAM. PERIMETR. VERTICALE (fondazione a bassa densità):CMB#5 - PAVIMENTO SU SPAZIO AERATO:CMB#6 - PAVIMENTO INTERRATO RISCALDATO:CMB#7 - PAVIMENTO INTERRATO NON RISCALDATO O PARZIALMENTE RISC.:INI#'1 - PAVIMENTO. SU TERR. SENZA ISOLAM./CON ISOLAM. UNIFORME':
+#5:Area:Superficie del pavimento:real:DEC#2:
+#6:CodTipoPav:Tipo di pavimento:Integer:
+#7:Perimetro:Perimetro:real:DEC#2:
+#19:SiglaMuro:Tipo di parete verticale:String[10]:LKK#Strutture/2/P:
+#8:CodMuro:Codice parete verticale:Integer:
+#9:LambdaTerr:Lambda del terreno:real:DEC#2:INI#1.5:
+#10:H::real:DEC#2:
+#11:Epson:Area aperture ventilazione:real:DEC#2:
+#12:D:Largh./Prof. isolam. bordo:real:DEC#2:
+#13:Dis:Spessore equiv. isolam. termico:real:DEC#2:
+#14:LambdaIs:Condutt. termica isolante:real:DEC#2:
+#15:Hg:Coeff. accopp. termico:real:DEC#2:
+#20:SpessorePareteVerticale::REAL:DEC#2:
+#21:DescrizioneOstruzione::String[60]:
+#22:AltezzaOstruzione::Real:DEC#2:CNT#altezza ostruzione/>0:
+#23:DistanzaOstruzione::Real:DEC#2:CNT#distanza ostruzione/>0:
+#24:AltezzaEdificio::Real:DEC#2:
+#25:Angolo::Real:DEC#2:CNT#Angolo di inclinazione/>=0:
+#26:CoefficienteProtezioneVento::Real:DEC#2:
+IncrSic:Incremento Sicurezza:REAL:INI#1:DEC#2:
+CodPav :#''-:STRING[8]:
+CodOst :#''-:STRING[8]:
+#27:TipoConfine::String[17]:CMB#INTERNO:CMB#ESTERNO:CMB#TERRENO:CMB#PARETE INCLINATA:INI#'TERRENO':CNT#Iinserire un valore per il campo/<>'':
+#28:StatoOstacolo::String[7]:CMB#VICINO:CMB#LONTANO:
+#29:TLinea::String[50]:INI#'ACAD_ISO02W100':
+#30:ConfZona::String[1]:
+#31:ZColmo::real:INI#0:
+#32:QuotaGronda::real:INI#0:
+#33:FaldaUnica::String[2]:CMB#SI:CMB#NO:INI#'SI':
+#34:PortataAr:Portata_Aria_Vant:Real:Dec#2:INI#0.3:
+#35:Z::real:DEC#2:
+#36:A::real:DEC#2:
+#37:B::real:DEC#2:
+#38:sporgenza::real:DEC#2:
+#39:LarghezzaOstruz::real:DEC#2:
+#40:ImpostazTemp::String[30]:INI#'Fissa per tutti i mesi':
+#41:TempG::real:DEC#2:INI#10:
+#42:TempF::real:DEC#2:INI#10:
+#43:TempM::real:DEC#2:INI#10:
+#44:TempA::real:DEC#2:INI#10:
+#45:TempMa::real:DEC#2:INI#10:
+#46:TempGiu::real:DEC#2:INI#10:
+#47:Templ::real:DEC#2:INI#10:
+#48:TempAG::real:DEC#2:INI#10:
+#49:TempS::real:DEC#2:INI#10:
+#50:TempO::real:DEC#2:INI#10:
+#51:TempN::real:DEC#2:INI#10:
+#52:TempD::real:DEC#2:INI#10:
+#53:CalcProsp113::String[1]:INI#'F':
+*
+vuoto:RecPSpec:PSpec:1:
+array:PSpec_D:MaxPSpec:12:NPSpec:
+#1:Codice::String[15]:
+#2:Descr::String[30]:
+#3:T1::String[15]:LKK#Strutture/2/P:
+#4:C1::String[15]:LKK#Confine/1/P:
+#5:H1::Real:
+#6:Fin1::String[15]:LKK#Finestre/2/P:
+#7:T2::String[15]:LKK#Strutture/2/P:
+#8:C2::String[15]:LKK#Confine/1/P:
+#9:H2::Real:
+#10:Fin2::String[15]:LKK#Finestre/2/P:
+#11:T3::String[15]:LKK#Strutture/2/P:
+#12:C3::String[15]:LKK#Confine/1/P:
+#13:H3::Real:
+#14:Fin3::String[15]:LKK#Finestre/2/P:
+#15:ColCAD:Colore Cad:String[10]:INI#'Rosso':
+*
+Vuoto:RecEsp:Esposizioni:1:FISSA:
+array:Esposizioni_D:MaxEsposizioni:100:NEsposizioni:
+Codice::String[8]:
+Denom::STRING[30]:
+Tipo::STRING[1]:
+Orient::REAL:DEC#2:
+Inclin::REAL:DEC#2:
+TrifEst::REAL:DEC#2:
+TrifInv::REAL:DEC#2:
+IncrSic:Incremento Sicurezza:REAL:INI#1:DEC#2:
+CodPav ::STRING[8]:
+CodOst ::STRING[8]:
+TipoConfine::String[17]:
+Angolo::REAL:DEC#2:
+AltezzaOstruzione::Real:DEC#2:
+DistanzaOstruzione::Real:DEC#2:
+StatoOstacolo::String[7]:
+*
+Vuoto:Recponti:ponti:1:FISSA:
+array:POnti_D:MaxPOnti:100:NPOnti:
+#1:Codice::String[8]:
+#2:Denom:Descrizione:STRING[255]:
+#3:KL:Condutt. lineare:Real:DEC#2:
+#4:IMG:Immagine:String[20]:
+#5:Categoria:Categoria:STRING[255]:
+#6:L2D:L2D:Real:DEC#2:
+#7:LI1:LI1:Real:DEC#2:
+#8:LI2:LI2:Real:DEC#2:
+#9:LE1:LE1:Real:DEC#2:
+#10:LE2:LE2:Real:DEC#2:
+#11:FiE:FiE:Real:DEC#2:
+#12:FiOI:FiOI:Real:DEC#2:
+#13:FiI:FiI:Real:DEC#2:
+*
+Vuoto:RecFrontLin:#Ponti:1:FISSA:DoppioP:
+array:Frontierelin_D:Maxfrontierelin:4000:NFrontiereLin:
+CodNum:Codice:real:
+CodAmb:Codice ambiente:INTEGER:
+CodEsp:Codice esposizione:INTEGER:
+CodPonte1:Codice ponte1:INTEGER:
+LUNG1:Lunghezza ponte 1:REAL:DEC#2:
+CodPonte2:Codice ponte2:INTEGER:
+LUNG2:Lunghezza ponte 2:REAL:DEC#2:
+Kappa::real:DEC#2:
+*
+Vuoto:RecMuri:#Muri:1:Fissa;
+array:Muri_d:MassimoMuri:200:NMuri:
+Denom:Descrizione:STRING[20]:
+CodArch:Codice archivio:INTEGER:
+Colore::string[1]:
+IncrSic:Incremento sicurezza:REAL:
+*
+Vuoto:RecPorte:#POrte:1:Fissa:
+array:porte_D:Maxporte:20:NPOrte:
+Denom:Descrizione:STRING[20]:
+Trasmittanza::REAL:DEC#2:
+TrasmL10::real:DEC#2:
+Colore::string[1]:
+SuperfUnit:Superficie Unitaria:REAL:DEC#2:
+IncrSic:Incremento sicurezza:real:DEC#2:
+PermAria:Permeabilità all aria:REAL:DEC#2:
+*
+Vuoto:RecFront:frontiere:1:Fissa:DoppioP:
+array:Frontiere_D:MaxFrontiere:4000:Nfrontiere:
+CodNum:Codice:real:
+CodAmb:Codice Ambiente:INTEGER:
+CodEsposiz:Codice Esposizione:INTEGER:
+LungMuro:Lungezza Muro:REAL:DEC#2:
+CodMuro:Codice Muro:INTEGER:
+SupMuro:Superficie Muro:REAL:DEC#2:
+CodMuro2:Codice muro 2:INTEGER:
+SupMuro2:Superficie Muro 2:REAL:DEC#2:
+CodFinestra:Codice Finestra:INTEGER:
+ModFinestra::INTEGER:
+SupFinestra:Superficie Finestra:REAL:DEC#2:
+CodPorta:Codice Porta:INTEGER:
+ModPorta::INTEGER:
+SupPorta:Superficie Porta:REAL:DEC#2:
+SupLordaMuro::real:DEC#2:
+AltLorda::real:DEC#2:
+AltNetta::real:DEC#2:
+*
+Archivio:RecMateriali:Materiali:1:FISSA:
+array:Materiali_D:MaxMateriali:2000:NMateriali:
+#1:Indice:Indice:Real:DEC#2:GRD#35:
+#2:Categoria::String[100]:
+#3:Descrizione::String[160]:GRD#180:
+#4:Spessore::Real:DEC#2:
+#5:Indice_mat:Indice mat:Integer:
+#6:Lambda::Real:DEC#4:GRD#35:
+#7:Condutt:Condutt.:Real:DEC#2:
+#8:Peso_specifico:Peso specifico:Real:DEC#2:
+#9:Permeabilita:Permeabilità:Real:DEC#2:GRD#35:
+#10:Revisione::Integer:
+#11:CapTerm:Cap.Term.:Real:DEC#2:GRD#35:
+#12:Disegno::String[10]:
+#13:Orizz:Orizz.:String[3]:
+#14:FormaBMP::String[2]:
+*
+:Recstrati:strati:3:Fissa:
+array:s_D:Maxstrati:200:Nstrati:Slave:Numero:Integer:
+#1:NFile:Codice:string[5]:GRD#35:
+#2:Descrizione::string[50]:GRD#150:
+#3:PesoSpecifico::Real:DEC#2:
+#4:Spessore::real:DEC#2:GRD#35:
+#5:Conduttanza::real:DEC#2:GRD#35:
+#6:ConduttivitaLineare::real:DEC#2:GRD#35:
+#7:CaloreSpecifico::real:DEC#2:
+#8:mu:Permeabilità al vapore:real:DEC#2:
+#9:Disegno::String[20]:
+#10:Stretch::string[1]:
+*
+Vuoto:TabStruttura:strutture:1:fissa:DoppioP:
+array:Strutture_D:Maxstrutture:200:NStrutture:Master:Numero:20:Strati:
+Num:Numero:Autoinc:
+#7:NFile:Codice:string[12]:GRD#0:
+#8:Descr:Descrizione:STring[30]:GRD#130:
+#9:ColCAD:Colore Cad:String[10]:INI#'Rosso':
+#1:HI:Adduttanza interna:REAL:INI#8.14:DEC#3:
+#2:HE:Adduttanza esterna:REAL:INI#23.25:DEC#3:
+NK:#0-:INTEGER:
+B0:#0-:real:DEC#2:
+B1:#0-:real:DEC#2:
+SC:#0-:real:DEC#2:
+D1:#0-:real:DEC#2:
+#10:Trasmitt:Trasmittanza:real:DEC#2:
+#14:Colore::String[6]:CMB#Medio:CMB#Chiaro:CMB#Scuro:INI#'Medio':
+MFstrutt:#0-:real:DEC#2:
+#3:Ti:Inverno Temp. Int:Real::DEC#2:
+#5:Te:Inverno Temp. Est:Real::DEC#2:
+#4:URi:Inverno Um. Int:Real::DEC#2:
+#6:URe:Inverno Um. Est:Real::DEC#2:
+#15:wind:Velocità vento:Real:INI#4:
+#13:PercInc:Incremento Sicurezza:Real:INI#0:CNT#incremento di sicurezza/>=0:
+#30:EsTi:Estate Temp. Int:Real::DEC#2:
+#31:EsTe:Estate Temp. Est:Real::DEC#2:
+#34:EsURi:Estate Umidità Rel Int:Real::DEC#2:
+#35:EsURe:Estate Umidità Rel Est:Real::DEC#2:
+EsG::real:INI#60:DEC#2:
+TipoStrut::integer:INI#4:
+#19:st_vet::string[1]:
+#16:epson::Real:INI#0.837:
+#17:alfa::Real:INI#7.7:
+#18:beta::Real:INI#25:
+#11:SpessoreParete::real:DEC#2:
+#12:Categoria::string[11]:CMB#OPACO:CMB#TRASPARENTE:
+#20:StampaParete:Stampa Parete:String[24]:CMB#Stratigrafia + Condensa:CMB#Stratigrafia:CMB#Nessuna Stampa:INI#'Stratigrafia + Condensa':
+#21:TrasmittL10:Trasmittanza L10:real:DEC#2:
+#22:ClassUmInt:Classe Umid.Interna:String[110]:CMB#Magazzino:CMB#Ufficio - Negozio:CMB#Abitazione con basso indice di occupazione:CMB#Abitazione con alto indice di occupazione - Palestra - Cucina - Cantina - Edificio riscaldato con terminali:CMB#Edifici speciali - Lavanderie - Piscine:INI#'Abitazione con basso indice di occupazione':
+#23:MeseCritico:Mese Critico:string[10]:INI#'Gennaio':
+#24:NoCondInt:No Cond. Interstiziale:String[2]:
+#25:DeltaPA1:Delta Pa1:real:DEC#2:
+#26:SiCondInt:Si Cond. Interstiziale:String[2]:
+#27:Condensato:Condensato:real:DEC#2:
+#28:NoCondSup:No Cond. Superficiale:String[2]:
+#29:DeltaPA2:Delta Pa2:real:DEC#2:
+#32:parsof::string[12]:CMB#PARETE:CMB#PAVIMENTO:CMB#SOFFITTO:
+#33:interest::string[12]:CMB#ESTERNA:CMB#INTERNA:INI#'ESTERNA':
+#36:SeparaAlloggi::string[80]:CMB#Divisorio separazione tra locali:CMB#Divisorio separazione tra alloggi:
+#37:MassaSup:Massa superficiale:real:Dec#2:INI#0:
+#38:Verifica192::String[2]:GRD#60:
+#39:VerificaMassaS::String[2]:GRD#70:
+#40:ValLimT::real:DEC#2:
+#41:ValLimM::real:DEC#2:
+#42:ClassZ:ClassZ:String[2]:INI#'--':
+VerDlg192::string[1]:
+#43:EscludiVer::String[2]:INI#'NO':
+#44:Ristrut::String[2]:INI#'NO':
+#45:LivelloPM::String[15]:INI#'':
+#47:MaggPT::String[100]:INI#'Nessuna':
+#48:PercMaggPT::Integer:INI#0:
+#49:Permeabilita:Permeabilita:real:Dec#2:INI#0:
+#50:TipoTrasmProd::string[1]:INI#'F':
+#51:ValoreUCA::string[1]:INI#'F':
+#52:DescrTrasmP::string[255]:INI#'':
+#53:TrasmittPT::real:DEC#2:
+#54:CapTInt::real:DEC#2:
+#55:CapTEst::real:DEC#2:
+#56:Attenuazione::real:DEC#2:
+#57:Sfasamento::real:DEC#2:
+#58:TrasmPeriod::real:DEC#2:
+#59:LimSfas::real:DEC#2:
+#60:VerificaSfasTR::String[2]:INI#'NO':
+#61:ClassePrestSf::String[20]:INI#'V - Cattiva':
+#62:RW::real:DEC#2:INI#0:
+#63:PareteControterra::string[1]:INI#'F':
+#64:LW::real:DEC#2:INI#0:
+CodGen:#''-:string[255]:
+*
+Vuoto:RecPavSut:#Pavimenti:1:Fissa:
+array:PavSuTer:MaxPav:50:NPavsuTer:
+Codice::string[8]:
+Tipo::Integer:
+Area::real:DEC#2:
+CodPav::Integer:
+Perimetro::real:DEC#2:
+CodMuro::Integer:
+LambdaTerr::real:DEC#2:
+H::real:DEC#2:
+Epson::real:DEC#2:
+D::real:DEC#2:
+Dis::real:DEC#2:
+LambdaIs::real:DEC#2:
+Hg::real:DEC#2:
+Z::real:DEC#2:
+PortataAr::Real:Dec#2:
+Volume::Real:Dec#2:
+CalcProsp113::String[1]:
+Tipologia::String[30]:
+*
+:RecArchCom:#Comuni:1:
+record:ArchCom:
+#2:Nome:Comune:String[60]:
+#3:AltCom:Altitudine:real:CNT#altitudine del comune/>0:DEC#2:
+#4:LatCom:Latitudine:real:DEC#2:
+#5:gradi:Gradi Giorno:real:DEC#2:
+#6:ZonaCl:Zona Climatica:string[1]:
+#7:ComuneRif:Provincia:string[20]:
+#8:CD1:CD S/V <= 0.2:real:DEC#2:
+#9:CD2:CD S/V >= 0.9:real:DEC#2:
+#10:TEst:Temperatura Inv. Esterna:real:DEC#2:
+#11:urest:Um. Rel. Esterna:real:DEC#2:
+#16:Zonageo:Zona geografica:string[35]:CMB#ITALIA SETTENTRIONALE TRANSPADANA:CMB#ITALIA SETTENTRIONALE CISPADANA:CMB#ITALIA CENTRALE E MERIDIONALE:CMB#SICILIA:CMB#SARDEGNA:
+#17:localitarad:Seconda Prov.di riferimento:string[20]:
+#18:latrad:Latitudine seconda Prov.:real:DEC#2:
+#19:distmar:Distanza dal mare:real:DEC#2:
+#20:regvento:Regione di vento:string[1]:
+#21:zonavent:Zona di vento:Integer:
+#22:MeriDRifOra:Meridiani di riferimento:real:DEC#2:
+#23:OraLegInizio:Inizio Ora Legale:Integer:
+#24:OraLegFine:Fine Ora Legale:Integer:
+#25:TEstEsternaBS:Temp. Estiva Est.BS:real:DEC#2:
+#26:UEstEsterna:Um. Estiva Est.BS:real:DEC#2:
+#27:ET:Escursione Termica:real:DEC#2:
+#28:FattFoschia:Fatt. Foschia:real:DEC#2:
+#29:Longitudine:Longitudine:real:DEC#2:
+#30:AltProv:Altitudine Prov.:real:DEC#2:
+#31:LatProv:Latitudine Prov.:real:DEC#2:
+*
+:RecGenC:Fabbricato:1:
+record:prog:
+#1:Localita:Localita:string[64]:LKK#Localita/1/A:INI#'Roma':
+#2:Comune::string[60]:INI#'Roma':
+#3:AltCom:Altitudine:real:INI#20:DEC#2:
+#4:LatCom:Latitudine:real:INI#41.53:DEC#2:
+#5:gradi:Gradi Giorno:real:INI#1415:DEC#2:
+#6:ZonaCl:Zona Climatica:string[1]:INI#'D':
+#7:ComuneRif:Provincia:string[20]:INI#'ROMA':
+#8:CD1:CD S/V <= 0.2:real:INI#0.418:DEC#3:
+#9:CD2:CD S/V >= 0.9:real:INI#0.946:DEC#3:
+#10:TEst:Temperatura inv. esterna:real:INI#0:DEC#2:
+#11:urest:Um. rel. Esterna:real:INI#80:DEC#2:
+#12:Mesein:Mese iniziale risc.:integer:INI#11:
+#13:mesefin:Mese finale risc.:integer:INI#4:
+#14:GiornoIn:Giorno iniziale risc.:integer:INI#1:
+#15:GiornoFin:Giorno finale risc.:integer:INI#15:
+#16:Zonageo:Zona geografica:string[35]:INI#'ITALIA CENTRALE E MERIDIONALE':
+#17:localitarad:Seconda prov.di riferimen:string[20]:INI#'ROMA':
+#18:latrad:Latitudine seconda prov.:real:INI#41.53:DEC#2:
+#19:distmar:Distanza dal mare:real:INI#0:DEC#2:
+#20:regvento:Regione di vento:string[1]:INI#'C':
+#21:zonavent:Zona di vento:Integer:INI#2:
+#22:MeriDRifOra:Meridiani di riferimento:real:INI#-15:DEC#2:
+#23:OraLegInizio:Inizio ora legale:Integer:INI#4:
+#24:OraLegFine:Fine ora legale:Integer:INI#9:
+#25:TEstEsternaBS:Temp. Estiva Est.BS:real:INI#33:DEC#2:
+#26:UEstEsterna:Um. Estiva Est.BS:real:INI#60:DEC#2:
+#27:ET:Escursione Termica:real:INI#11.5:DEC#2:
+#28:FattFoschia:Fatt. Foschia:real:INI#1:DEC#2:
+#29:Longitudine:Longitudine:real:INI#12.3:DEC#2:
+#30:AltProv:Altitudine Prov.:real:INI#20:DEC#2:
+#31:LatProv:Latitudine Prov.:real:INI#41.53:DEC#2:
+#32:Riflettivita::real:INI#0.2:DEC#2:
+#33:DataCostr:Data costruzione:string[15]:CMB#Dopo il 1987:CMB#Prima del 1987:
+#34:TipoDistr:Tipo distribuzione:string[11]:CMB#A:CMB#B:CMB#C:
+#35:Tiposchermo::string[25]:CMB#Non schermato:CMB#Parzialmente schermato:CMB#Totalmente schermato:
+#36:CodUb::string[20]:CMB#Centro urbano:CMB#Periferia:CMB#Campagna:
+#37:Codperm:Classe dei serramenti:STring[10]:CMB#Elevata:CMB#Media:CMB#Bassa:
+#38:SuperficieLorda::Real:DEC#2:
+#39:VolumeLordo::Real:DEC#2:
+#40:Classif:Classe Edificio:string[6]:CMB#E1(1):CMB#E1(2):CMB#E1(3):CMB#E2:CMB#E3:CMB#E4(1):CMB#E4(2):CMB#E4(3):CMB#E5:CMB#E6(1):CMB#E6(2):CMB#E6(3):CMB#E7:CMB#E8:
+#41:TempOc:Period.Occup.Giorn.:real:INI#8:DEC#2:
+#42:AriaEst:Port.Aria.Est.Phi:real:INI#1.38:DEC#2:
+#43:Affol:Affollamento:real:INI#4:DEC#2:
+#44:Ngo:GG Occup.Mese:real:INI#30:DEC#2:
+#46:EsigVentil:Esigenze Ventilazione:string[40]:CMB#Ventilazione definita dal regolamento:CMB#Esigenze particolari di ventilazione:
+#47:N:Numero Ricambi:real:DEC#2:
+#48:Motivo:Motivo Deroga:String[255]:INI#'':
+#49:Intonaco:Tipo Intonaco:String[20]:CMB#Malta:CMB#Gesso:INI#'Gesso':
+#50:Isolamento:Tipo Isolamento:String[18]:CMB#Assente o Esterno:CMB#Interno::INI#'Interno':
+#51:ParetiEsterne:Tipo Parete Esterna:String[18]:CMB#Medie:CMB#Leggere o Blocchi:CMB#Pesanti:INI#'Medie':
+#52:Pavimenti:Tipo Pavimento:String[10]:CMB#Piastrelle:CMB#Tessile:CMB#Legno:INI#'Tessile':
+#53:VMVolImpOn:Ric.Nat.Vent.Mecc.Acc.:Real:INI#0.5:DEC#2:
+#54:OreOn:Ore Accenzione:Real:INI#8:DEC#2:
+#55:EtaRecup:Eff.Recuperatore:Real:INI#50:DEC#2:
+#56:PortMec:Ventilazione (Non Trat):Real:INI#0.00:DEC#2:
+#57:PortNat:Ric. naturali (Infiltrazioni):Real:DEC#2:
+#58:UR:Umidita Relativa:Real:DEC#2:DEC#2:
+#59:TipoProgetto:Tipo Progetto:String[40]:
+#60:VerifLegge10:Verifica L10:String[2]:CMB#Si:CMB#No:
+#61:HSoffittoRicorr:Altezza netta:REAL:INI#3:DEC#2:DEC#2:
+#62:TInv:I Temperatura interna:REAL:INI#20:DEC#2:DEC#2:
+#63:UInv:I UR interna:REAL:INI#65:DEC#2:
+#64:InfInv:I Infiltrazioni naturali:real:INI#0.5:DEC#2:
+#65:TIntEstiva:Temperatura estiva:REAL:INI#26:DEC#2:
+#66:UEst:UR estiva:REAL:INI#50:DEC#2:
+#67:InfEst:E Infiltrazioni naturali:REAL:INI#0.5: DEC#2:
+#68:ProfiloOccupaz:Presenza persone:String[30]:LKK#Orari/1/P:INI#'Orario ufficio':
+#69:AffollPersona:Densità di persone:REAL:INI#25:DEC#2:
+#70:RicambioPersona:Ricambio per persona:REAL:INI#0:DEC#2:
+#71:SensibilePersona:Sensibile per persona:REAL:INI#60:DEC#2:
+#72:LatentePersona:Latente per persona:REAL:INI#40:DEC#2:
+#73:ProfiloIlluminaz:Presenza illuminazione:String[30]:LKK#Orari/1/P:INI#'Orario ufficio':
+#74:IlluminazFissa:Illuminazione:REAL:INI#20:DEC#2:
+#75:Codicelampade:Tipo lampade:String[30]:CMB#Ad incandescenza:CMB#A fluorescenza:CMB#Ad alto risparmio energetico:
+#76:ProfiloApparecch:Presenza apparecchi:String[30]:LKK#Orari/1/P:INI#'Orario ufficio':
+#77:SensApparecch:Sens. apparecchi:REAL:INI#15:DEC#2:
+#78:LatenteApparecch:Lat. apparecchi:REAL:INI#0:DEC#2:
+#79:TimmInv:Vent Temp Immis Inv:real:INI#20:DEC#2:
+#80:TimmEst:Vent Temp Immis Est:real:INI#27:DEC#2:
+#81:URimmInv:Umidità Rel.Imm.Inv.:real:INI#60:DEC#2:
+#82:URimmEst:Umidità Rel.Imm.Est.:real:INI#40:DEC#2:
+#83:ProfVentEst:Profilo Vent. Est.:INTEGER:
+#84:ProfiloImpianto:Prof.Imp.Est.:INTEGER:
+#85:AltPianoLorda:Altezza Lorda Piano:real:INI#3.3:DEC#2:
+#86:TipoImpianto:Tipo Imp. Ventil.:String[42]:CMB#Nessun impianto di ventilazione meccanica:CMB#Estrazione dai servizi intermittente:CMB#Estrazione dai servizi continua:CMB#Altro:INI#'Nessun impianto di ventilazione meccanica':
+#87:SistIdr:Sistema idraulico:STRING[32]:CMB#Collettori:CMB#Altro:CMB#Nessun calcolo di reti:
+#88:TipoGeneratore:Tipo Generatore:String[30]:CMB#Caldaia:CMB#Pompa di calore:
+#89:TubiAddDiamColl:Diam.Tubi Add.Coll.:String[8]:LKK#Tubazioni/2/A:
+#90:TubiAddMatColl:Mat.Tubi Add.Coll.:String[8]:LKK#MatTubi/1/A:
+#91:DiamCollettori:Diam. Collettori:String[8]:LKK#Tubazioni/2/A:
+#92:MaterCollettori:Mater. Collettori:String[8]:LKK#MatTubi/1/A:
+#93:TubiDistDiamColl:Diam.Tubi Dist.Coll.:String[8]:LKK#Tubazioni/2/A:
+#94:TubiDistMatColl:Mat.Tubi Dist.Coll.:String[8]:LKK#MatTubi/1/A:
+#95:TipoTerminali:Tipo Terminali:STRING[32]:CMB#Radiatori:CMB#Ventilconvettori:CMB#Nessuno:CMB#Altro:INI#'Radiatori':
+#96:ModelloTerminali:Modello Terminali:STRING[35]:
+#97:PercSfavPerdCar:Perdita Carico Perc.Sfav.:real:INI#200:DEC#2:
+#98:PercSfavMaxVel:PercSfavMaxVel:real:INI#2:DEC#2:   
+#99:EquilibPerdCar:Perdita Carico Equilib.:real:INI#400:DEC#2:
+#100:EquilibMaxVel:EquilibMaxVel:real:INI#1.2:DEC#2:
+#101:CollMaxVel:Max Velocità Collettore:real:INI#0.5:DEC#2:
+#102:LimiteDiametri:Limite Diametri:real:INI#10:DEC#2:
+#103:TipoProd:tipologia di prodotto:string[50]:CMB#Termostato di caldaia:CMB#Regolatore climatico e/o ottimizzatore:CMB#Regolatore si/no a differenziale:CMB#Regolatore modulante (banda proporzionale 1 °C):CMB#Regolatore modulante (banda proporzionale 2 °C):
+#104:TipoReg:sistema di regolazione:string[30]:CMB#Regolazione manuale:CMB#Climatico centralizzato:CMB#Solo per singolo ambiente:CMB#Climatico + singolo ambiente:CMB#Solo di zona:CMB#Climatico + zona:
+#105:TipoTerm:Classif terminali:string[55]:CMB#Termoconvettori:CMB#Ventilconvettori:CMB#Bocchette aria calda:CMB#Radiatori, tutte le tipologie esclusa la successiva:CMB#Radiatori con superficie di emissione piana e continua:CMB#Pannelli radianti isolati dalle strutture:CMB#Pannelli radianti annegati a pavimento:CMB#Pannelli annegati a soffitto:INI#'Radiatori, tutte le tipologie esclusa la successiva':
+#106:ModGeneratore:Modello Generatore:String[30]:
+#107:ApportiGrat:Apporti gratuiti:Real:INI#0.00:DEC#2:
+#108:ModCalcoloApportiGra:Modalità calcolo:String[80]:CMB#Considera i valori del calcolo estivo:CMB#Considera il valore di input indicato:INI#'Considera il valore di input indicato':
+#109:VentMecTratt:Ventilazione (Trattata):Real:INI#0.00:DEC#2:
+#110:TipoImpiantoI:TipoImp.Ventil.(Imp):String[42]:CMB#Nessun impianto:CMB#Impianto di estrazione:CMB#Impianto Tutt''aria:CMB#Impianto Aria esterna:CMB#Altro:INI#'Nessun impianto':
+#111:TipoImpiantoAspirazione:Tipo impianto aspirazione:STRING[32]:CMB#Per singolo locale:CMB#Attraverso servizi o corridoi:CMB#Nessuno:CMB#Altro:
+#112:InvProfiloVent:I Orario di funzionamento:String[30]:LKK#Orari/1/P:INI#'Orario ufficio':
+#113:EstProfiloVent:E Orario di funzionamento:String[30]:LKK#Orari/1/P:INI#'Orario ufficio':
+#114:AriaEs:Aria Esterna:Real:INI#100:DEC#2:
+#115:Trugiada:Temperatura di rugiada:Real:DEC#2:
+#116:RecsensEst:E Recupero sensibile:Real:INI#50:DEC#2:
+#117:RecLat:Recupero latente:Real:DEC#2:INI#0:
+#128:IndiceAffol:Indice affollamento:Real:INI#0:DEC#2:
+#129:RicAriaTrat:Ric. Aria Trattata:Real:INI#0:DEC#2:
+#130:RicAriaNTrat:Ric. Aria Non Trattata:Real:INI#0.0:DEC#2:
+#131:Art8:Articolo 8:String[2]:INI#'No':
+#132:RAriaTratmq:R Aria Trattatamq:Real:INI#0:DEC#2:
+#162:Calc192:Calc192:String[3]:INI#'si':
+#163:Opera:Opera:String[100]:INI#'Edificio di nuova costruzione':
+#164:IncrIntV:IncrIntV:Real:INI#0:DEC#0:
+#165:IncrIntE:IncrIntE:Real:INI#0:DEC#0:
+#166:TipoCostrN:TipoCostrN:String[50]:CMB#Edifici con muri di pietra o assimilabili:CMB#Edifici con muri di mattoni pieni o assimilabili:CMB#Edifici con muri di mattoni forati o assimilabili:CMB#Edifici con pareti leggere o isolati dall''interno:INI#'Edifici con muri di pietra o assimilabili':
+#167:TipoE1:TipoE1:String[1]:INI#'F':
+#168:CalcFAS:CalcFAS:String[1]:INI#'F':
+#169:ZonaPiemonte::String[30]:
+#170:IrragMax::Real:INI#297:DEC#2:
+#171:MeseIrrMax::String[10]:INI#'Luglio':
+#172:InterventoRPM::String[50]:INI#'':
+#173:IncentiviPM::String[1]:INI#'F':
+#174:TipoE42PM::String[1]::INI#'A':
+#175:IrragMaxMJ::Real:INI#25.66:DEC#2:
+#176:Sigla_Prov::Integer:
+#177:Cap::String[5]:
+#178:RicAriaNTratVH::Real:INI#0.0:DEC#2:
+#179:CalcoloEst:CalcoloEst:String[1]:INI#'A':
+#180:NumMatElettr::Integer:
+#181:WattMatElettr::Real:INI#0.0:DEC#2:
+#182:NumLampDat::Integer:
+#183:WattLampDat::Real:INI#0.0:DEC#2:
+#184:TipoCalcoloEst::String[10]:INI#'Carrier':
+#185:MeseICE::String[10]:INI#'Gennaio':
+#186:MeseFCE::String[10]:INI#'Gennaio':
+#187:TempRug::Real:INI#0.0:DEC#2:
+#188:TipoCalcoloFab::String[40]:INI#'Per solo riscaldamento':
+#189:TipoValEnerg::String[50]:INI#'Valutazione di progetto':
+#190:CalcoloFabI::String[1]:INI#'T':
+#191:CalcoloFabE::String[1]:INI#'F':
+#192:CalcoloFabACS::String[1]:INI#'F':
+#193:CalcoloCE::String[1]:INI#'F':
+#194:CalcoloIT::String[1]:INI#'F':
+#195:VarTempInt::Real:INI#0.0:DEC#2:
+#196:VelVento::Real:INI#0.0:DEC#2:
+#197:DirezioneVento::String[10]:INI#'Nord':
+#198:DataValidita::String[15]:
+#199:EdifUsoPubbl::String[1]:INI#'F':
+#200:TEMPSetPoint::Real:INI#0.0:DEC#2:
+#201:CalcoloACU::String[1]:INI#'F':
+DiretImp:#''-:string[30]:
+DescrProgetto:#''-:string[50]:
+Altitudine:#0-:real:DEC#2:
+Latitudine:#0-:real:DEC#2:
+Cda1:#0-:real:DEC#2:
+CDa2:#0-:real:DEC#2:
+TempEst:#0-:real:DEC#2:
+H2oRisc:#''-:string[1]:
+Destinaz:#''-:string[255]:
+ClasPermSer:Classe permeab. serramenti :string[10]:
+Ubicazione:#''-:string[35]:
+valc_anal:#''-:string[1]:
+TempOff:#''-:string[1]:
+NumConcess:#''-:string[10]:
+DataConcess:#''-:string[10]:
+NumAbitaz:#0-:Integer:
+NumAbit:#''-:STRING[10]:
+*
+:RecZone11:#Zone11:1:Fissa:
+array:Zone11:MaxZone11:200:NZone11:
+Classif::string[6]:CMB#Clas:
+GeneratZona::string[8]:
+PortLegM::real:DEC#2:
+MotivVent::string[30]:
+PotH2o::real:DEC#2:
+TempOc::real:DEC#2:
+AriaEst::real:DEC#2:
+Affol::real:DEC#2:
+AreaPav::real:DEC#2:
+N::real:DEC#2:
+Ngo::real:DEC#2:
+Ap::real:DEC#2:
+*
+:RecGenerat:Generatori:1:
+array:DescGen1:MaxGeneratori:200:Ngeneratori:
+#1:Cod:Codice:string[8]:INI#'Cald_18':GRD#0:
+#2:Descrizione::String[40]:INI#'Caldaia   18.0 KW':GRD#0:
+#3:Tipo:Tipo di generatore:string[20]:CMB#Caldaia:CMB#Pompa di calore:INI#'Caldaia':
+#4:Model:Modello:string[30]:INI#'EuroCal Cs1570':
+#5:Numero:Numero generatori:Integer:INI#1:
+#6:fluido:Fluido vettore:string[20]:CMB#Acqua:CMB#Aria:
+#7:combust:Combustibile:string[80]:INI#'Metano':LKK#Carburanti/1/P:
+#8:PNom:Potenza nominale:real:INI#18000:DEC#2:
+#9:Qpo:Potenza pompa:real:INI#100:DEC#2:
+#10:Pfoc:Potenza Focolare:real:INI#20000:DEC#2:
+#11:Pf:Perdite gen. funzionante:real:INI#8.84:DEC#3:
+#12:Pfbs:Perdite generatore spento:real:INI#0.1:DEC#3:
+#13:Pd:Perdite involucro:real:INI#0.66:DEC#3:
+#14:Qbr:Potenza Bruciatore:real:INI#20:DEC#2:
+#15:TipoInvol:TipoInvol:string[50]:CMB#In ottimo stato ad alto rendimento:CMB#In ottimo stato:CMB#Obsoleto e mediamente isolato:CMB#Obsoleto e male isolato:CMB#Obsoleto e privo di isolamento:INI#'In ottimo stato ad alto rendimento':
+#16:TempH2O:Temperatura acqua:real:INI#55:DEC#2:
+#17:Rend100:Rendimento al 100% di Pn:real:INI#90.5:DEC#3:
+#18:Rend30:Rendimento al 30% di Pn:real:INI#89.7:DEC#3:
+#19:QAv:Potenza Ausiliari:real:INI#0.0:DEC#2:
+#20:CopT::real:INI#0.0:DEC#2:
+#21:CopE::real:INI#0.0:DEC#2:
+#22:TempSorg:Temperatura Sorgente:real:INI#0.0:DEC#2:
+#23:TempInt:Temperatura Interna:real:INI#20.0:DEC#2:
+#24:IndiceCP::string[10]:CMB#Vero:CMB#Falso:
+FlagCp:#''-:string[1]:
+#25:dispers::Real:DEC#0:
+#26:VolLord::Real:DEC#2:
+#27:SupLord::Real:DEC#2:
+#28:SV::Real:DEC#2:
+#29:Dt::Real:DEC#2:
+#30:Cdfen::Real:DEC#3:
+#31:CdLeg:Cd di legge:Real:DEC#3:
+#32:CdAdot:Cd calcolato:Real:DEC#3:
+#33:Fts::Real:DEC#2:
+#34:GiorniRis::Real:DEC#2:
+#35:Fen::Real:DEC#2:
+#36:RicAr::Real:DEC#2:
+#37:IrradS::Real:DEC#2:
+#38:DtMed::Real:DEC#2:
+#39:AppGr::Real:DEC#2:
+#40:CorUtilAg::Real:DEC#2:
+#41:RedETg::Real:DEC#2:
+#42:FenLim:Fen limite:Real:DEC#2:
+#43:Verifica::String[2]:INI#'--':GRD#0:
+#44:DispCDInf::Real:DEC#0:
+#45:DispCDVol::Real:DEC#2:
+#46:RedETgRegol::Real:DEC#2:
+#47:Articolo7::String[100]:
+#48:CdVerificato::string[2]:
+#49:FenVerificato::string[2]:
+#50:PotFPompaC:Pot Frigo Pompa Calore:Real:Dec#2:
+#51:CoptF:CopT Frigo:Real:Dec#2:
+#52:CopEF:CopE Frigo:Real:Dec#2:
+#53:PotRicInv::Real:
+#54:PotRicEst::Real:
+#55:ValLimE::Real:Dec#2:
+#56:FBMJ::Real:Dec#2:
+#57:FBKW::Real:Dec#2:
+#58:SupUtileR::Real:Dec#2:
+#59:ValLim::Real:Dec#2:
+#60:FBKWSU::Real:Dec#2:
+#61:ART3192::String[20]:
+#62:RedETp::Real:DEC#2:
+#63:RedETpRegol::Real:DEC#2:
+#64:VicAssenti::String[2]:INI#'NO':
+#65:TempVA::Real:INI#0.0:Dec#2:
+#66:SupVetr::Real:DEC#2:
+#67:STDSU::Real:DEC#2:
+#68:PotVent::Real:DEC#2:
+#69:RendUTL::Real:DEC#2:
+#70:CalcoloS::String[1]:INI#'F':
+#71:ACondensazione::String[1]:INI#'F':
+#72:ModFin::String[1]:INI#'F':
+#73:NEWEPI::Real:DEC#2:
+#74:FABENPRI::Real:DEC#2:
+#75:ZONAALL::String[10]:INI#'':
+#76:UNMIS::String[10]:INI#'':
+#77:UtilPr::String[1]:INI#'F':
+#78:FAcquaCS::Real:INI#0.0:Dec#2:
+#79:FABENPRIF::REAL:DEC#2:
+#80:VolNetto::Real:DEC#2:
+#81:SupNetta::Real:DEC#2:
+#82:AltNetta::Real:DEC#2:
+#83:AltLorda::Real:DEC#2:
+#84:EER::Real:DEC#2:
+#85:TipoAmbEstInt::String[16]:INI#'':
+#86:VelInverter::String[1]:INI#'F':
+#87:VerificaEpi::String[1]:INI#'':
+#88:VerificaPar::String[1]:INI#'':
+#89:VerificaFin::String[1]:INI#'':
+#90:EffCalcolo::String[1]:INI#'F':
+#91:ApportoVent::Real:DEC#2:
+#92:HT::Real:DEC#2:
+#93:RedETe::Real:DEC#2:
+#94:RedETr::Real:DEC#2:
+#95:RedETd::Real:DEC#2:
+#96:RedETgn::Real:DEC#2:
+#97:EmisCo2::Real:DEC#2:
+#98:CostoC::Real:DEC#2:
+#99:QHS::Real:DEC#2:
+#100:EPIS::Real:DEC#2:
+#101:ETAGS::Real:DEC#2:
+#102:EmisS::Real:DEC#2:
+#103:Risparmio::Real:DEC#2:
+#104:DispTot::Real:DEC#2:
+#105:CostoCS::Real:DEC#2:
+#106:DisperSost::Real:DEC#2:
+#107:VLSost::Real:DEC#2:
+#108:SLSost::Real:DEC#2:
+#109:SVSost::Real:DEC#2:
+#110:EPDisp::Real:DEC#2:
+#111:EffImp::Real:DEC#2:
+#112:RappImp::Real:DEC#2:
+#113:EPDispSost::Real:DEC#2:
+#114:EffImpSost::Real:DEC#2:
+#115:RappImpSost::Real:DEC#2:
+#116:Standard::String[1]:INI#'T':
+#117:Bassatemp::String[1]:INI#'F':
+#118:Tipologia::String[150]:INI#'Generatori di calore atmosferici di tipo B':
+#119:Installazione::String[30]:INI#'Entro lo spazio riscaldato':
+#120:Bruciatore::String[20]:INI#'Atmosferco':
+#121:Funzionamento::String[30]:INI#'Monostadio':
+#122:TempMan::Real:INI#70:Dec#1:
+#123:TempRit::Real:INI#55:Dec#1:
+#124:AltC10::String[1]:INI#'F':
+#125:Gen1996::String[1]:INI#'F':
+#126:DeltaTPN::String[25]:INI#'< 12 C°':
+#127:Stelle::String[5]:INI#'**':
+#128:DispInf::Real:INI#0:Dec#0:
+#129:Etagw::Real:INI#0:Dec#2:INI#0:
+#130:MetodoCalcRG::String[60]:INI#'Precalcolato - Prospetto 23 della UNI/TS 11300-2':
+#131:FCorrF7::String[15]:INI#'40 °C':
+#132:FCorrF6::String[1]:INI#'F':
+#133:FCorrF4::String[1]:INI#'F':
+#134:FABUSOCOTT::Real:INI#0:Dec#0:
+#135:PotCarInt::Real:INI#12000:Dec#0:
+#136:PAuxN::Real:INI#40:Dec#2:
+#137:PAuxI::Real:INI#40:Dec#2:
+#138:PAuxP::Real:INI#15:Dec#2:
+#139:CarNPP::Real:INI#32:Dec#2:
+#140:CarNFR::Real:INI#0:Dec#2:
+#141:CarPNR::Real:INI#82.6:Dec#2:
+#142:CarPNT::Real:INI#70:Dec#2:
+#143:CarPNF::Real:INI#0.04:Dec#2:
+#144:CarPIR::Real:INI#77:Dec#2:
+#145:CarPIT::Real:INI#50:Dec#2:
+#146:CarPIF::Real:INI#0.05:Dec#2:
+#148:FCorrF2::String[1]:INI#'F':
+#149:FCorrF5::String[1]:INI#'F':
+#150:FAccEst::String[1]:INI#'F':
+#151:PotGIPP::Real:INI#1:Dec#2:
+#152:SceltaTemp::Integer:INI#0:
+#153:TipoRegol::String[50]:INI#'regolazione in base alla temperatura esterna':
+#154:Esponente::Real:INI#1.3:Dec#2:
+#155:TempMProg::Real:INI#70:Dec#2:
+#156:TempRitProg::Real:INI#60:Dec#2:
+#157:TempSetP::Real:INI#65:Dec#2:
+#158:PotTerm::Real:INI#1000:Dec#2:
+#159:TempMedGen::Real:INI#70:Dec#2:
+#160:PFOCCN::Real:INI#30:Dec#2:
+#161:PAUXPFOX::Real:INI#44:Dec#2:
+#162:PAUXDFOX::Real:INI#160:Dec#2:
+#163:Fattn::Real:INI#0.05:Dec#2:
+#164:Fattp::Real:INI#0.1:Dec#2:
+#165:TempRitProgGen::Real:INI#60:Dec#2:
+#166:TIPOGenN::String[65]:INI#'Generatori a parete, generatori in alluminio (Massa 0-1 kg/kW)':
+#167:CircAcquaCald::String[130]:INI#'Circolazione permanente':
+#168:PotRendNomc::String[10]:INI#'> 106 m':
+#169:PotRendNom::String[10]:INI#'> 102':
+#170:ModAria::String[30]:INI#'Modulazione di aria e gas':
+#171:TAriaCorb::Real:INI#20:Dec#2:
+#172:DeltaTFAcq::Real:INI#5:Dec#2:
+#173:ContOss::Real:INI#6:Dec#2:
+#174:VolStec::Real:INI#8.52:Dec#2:
+#175:VolAriaStec::Real:INI#9.5:Dec#2:
+#176:ProdStec::Real:INI#1.65:Dec#2:
+#177:PotMinFoc::Real:INI#20:Dec#2:
+#178:PerdCamPAcc::Real:INI#10:Dec#2:
+#179:PAuxCond::Real:INI#40:Dec#2:
+#180:ContOssM::Real:INI#6:Dec#2:
+#181:DeltaTFAcqM::Real:INI#5:Dec#2:
+#182:TempoAccGen::Real:INI#12:Dec#2:
+#183:TempoMedG::Real:INI#70:Dec#2:
+#184:TIPOGenB2::String[60]:INI#'Generatore atmosferico di tipo B':
+#185:TipoPerdMant::String[125]:INI#'Generatori con bruciatore ad aria soffiata con chiudura dell''aria comburente all''arresto':
+#186:EPIAcs::Real:INI#0:Dec#2:
+#187:FabbAnnAcsKW::Real:INI#0:Dec#2:
+#188:FabPerRiscAcsKW::Real:INI#0:Dec#2:
+#189:EPAcsLim::Real:INI#0:Dec#2:
+#190:VerEPAcs::String[1]:INI#'F':
+#191:TotApport::Real:INI#0:Dec#2:
+#192:FabEnergprimeqAcs::Real:INI#0:Dec#2:
+#193:EtaerACS::Real:INI#0:Dec#2:
+#194:EtaegrACS::Real:INI#0:Dec#2:
+#195:EtadrACS::Real:INI#0:Dec#2:
+#196:CalcPanSol::String[1]:INI#'F':
+#197:DeltaTFAcqPn::Real:INI#20:Dec#2:
+#198:ContOssPn::Real:INI#6:Dec#2:
+#199:FabbEstMJ::Real:INI#0:Dec#2:
+#200:EPE::Real:INI#0:Dec#2:
+#201:EPELim::Real:INI#0:Dec#2:
+#202:EPIInvol::Real:INI#0:Dec#2:
+#203:FABMENOFRACS::Real:INI#0:Dec#2:
+#204:FABMENOFRRISC::Real:INI#0:Dec#2:
+#205:TOTQH::Real:INI#0:Dec#2:
+#206:FabbTorino::Real:INI#0:Dec#2:
+#207:FabbSchen::Real:INI#0:Dec#2:
+#208:FabbFin::Real:INI#0:Dec#2:
+*
+:RecCD:RisultatiL10:1:
+array:C_D:Maxrisultati:200:Nrisultati:
+#19:Generatore::String[30]:
+#1:dispers::Real:DEC#2:
+#2:VolLord::Real:DEC#2:
+#3:SupLord::Real:DEC#2:
+#4:SV::Real:DEC#2:
+#5:Dt::Real:DEC#2:
+#6:Cdfen::Real:DEC#2:
+#7:CdLeg:Cd di legge:Real:DEC#2:
+#8:CdAdot:Cd calcolato:Real:DEC#2:
+#9:Fts::Real:DEC#2:
+#10:GiorniRis::Real:DEC#2:
+#11:Fen::Real:DEC#2:
+#12:RicAr::Real:DEC#2:
+#13:IrradS::Real:DEC#2:
+#14:DtMed::Real:DEC#2:
+#15:AppGr::Real:DEC#2:
+#16:CorUtilAg::Real:DEC#2:
+#17:RedETg::Real:DEC#2:
+#18:FenLim:Fen limite:Real:DEC#2:
+#20:Verificato::String[3]:
+#21:DispCDInf::Real:DEC#2:
+#22:DispCDVol::Real:DEC#2:
+#23:RedETgRegol::Real:DEC#2:
+#24:Articolo7::String[100]:
+*
+:RecProvince:#Province:1:Fissa:
+array:Prv:MaxLung:150:NProvincia:
+indprov:Indice:Integer:
+indRad:Indice radiazione:Integer:
+Sigla::String[2]:
+nome::String[25]:
+Alt:Altezza s.l.m.:integer:
+Zv:Zona di vento:Integer:
+omega::real;
+dp:Direzione prevalente:String[4]:
+Lat:Latidudine:real:
+*
+:RecTempProv:#TempProv:1:Fissa:
+array:tempmed:MaxLungt:150:NtempProv:
+Ind::Integer:
+T1::Integer:
+datc:Mese-:real[12]:
+Altitudine::integer:
+*
+Vuoto:RecPar1:Pareti1:3:FISSA:
+array:Pareti_D:MaxPar1:100:NPar:Slave:Numero:Integer:
+#1:Lato:Lato:String[3]:GRD#0:
+#2:Esp:Esp:String[3]:GRD#0:
+#3:Confine::String[10]:GRD#0:INI#'Esterno':LKK#Confine/1/P:
+#4:Tipo:Tipo:String[9]:GRD#0:CMB#Parete:CMB#Finestra:CMB#Non scamb.:
+#5:Cod:Cod:String[8]:GRD#0:
+#6:Num:N/L:real:GRD#30:DEC#2:
+#7:Alt::real:DEC#2:
+#8:Sup:Sup.:real:GRD#30:DEC#2:
+#9:Angolo::real:DEC#2:
+*
+Vuoto:Amb1:Ambienti1:1:FISSA:
+array:Ambienti_R:MaxAmb:200:NAmb:Master:Numero:20:Par:
+Num:Numero:Autoinc:
+#1:Descr:Descrizione:string[20]:GRD#0:CNT#descrizione del locale/<>'':
+#2:Direz:Direzione:real:
+#3:Tipo:Tipo Geometria:string[10]:CMB#Rettangolo:CMB#Generica:
+#4:L:Larghezza:real:CNT#dimensione orizzontale del locale/>0:
+#5:H:Altezza:real:CNT#dimensione perpendicolare del locale/>0:
+#6:Alt:Altezza netta:real:CNT#altezza netta del soffitto/>0:
+#7:LQ1:Larghezza quadrotti:real:
+#8:HQ1:Altezza quadrotti:real:
+#9:allinea:Allineamento quadrotti:String[2]:
+#10:NLamp:Densità lampade:integer:
+#11:TLamp:Totale lampade:integer:
+#12:LLamp1:Larghezza lampade:real:
+#13:HLamp1:Altezza lampade:real:
+#14:SLamp:Superficie lampade:real:
+#15:POtlamp:POtenza di una lampada:real:
+#16:TPOtlamp:POtenza delle lampade:real:
+#17:Irragg:Irraggiamento:real:
+#18:Persone:Persone:real:
+#19:AltriC:Altri carichi:real:
+#20:ETotSens:E,Totale sensibile:real:
+#21:ITotSens:I,Totale sensibile:real:
+#22:Slorda:Superficie lorda:real:
+#23:Snetta:Superficie netta:real:
+#24:POrtAp:Portata aria primaria :real:
+#25:TiI:I Temperatura ambiente:real:INI#20:
+#26:URI:I, umidita relativa  ambiente:real:
+#27:ITmaria:I, Temperatura di immissione dell aria:real:INI#18:
+#28:ITmacq:I, Temperatura di mandata dell acqua:real:INI#45:
+#29:ITracq:I, Temperatura di ritorno dell acqua:real:INI#42:
+#30:TiE:E temperatura ambiente:real:INI#26:
+#31:URE:E, umidita relativa  ambiente:real:
+#32:ETmaria:E, Temperatura di immissione dell aria:real:INI#16:
+#33:ETmacq:E, Temperatura di mandata dell acqua:real:INI#15:
+#34:ETracq:E, Temperatura di ritorno dell acqua:real:INI#18:
+#35:tp:Tipo di pannello:integer:
+#36:DescrP:Descrizione pannello:string[30];
+#37:ts:Tipo di scambiatore:integer:
+#38:resaI:Resa invernale:real:
+#39:resaE:Resa Estiva:real:
+#40:TotE:Resa totale Estiva:real:
+#41:TotI:Resa totale Invernale:real:
+#42:InfInv:I Infiltrazioni naturali:real:INI#0.5:
+#43:CodPROccupaz:Presenza persone:String[30]:LKK#Orari/1/P:INI#'Orario ufficio':
+#44:NPersone:Numero persone:INTEGER:INI#3:
+#45:RicambioPersona:Ricambio per persona:REAL:
+#46:SensibilePersona:Sensibile per persona:REAL:INI#60:
+#47:LatentePersona:Latente per persona:REAL:INI#40:
+#48:CodPRApparecch:Presenza apparecchi:String[30]:LKK#Orari/1/P:INI#'Orario ufficio':
+#49:SensApparecch:Sens. apparecchi:REAL:INI#500:
+#50:LatenteApparecch:Lat. apparecchi:REAL:
+#51:CodPRIlluminaz:Presenza Illuminazione:String[30]:LKK#Orari/1/P:INI#'Orario ufficio':
+#52:IlluminazFissa:Illuminazione:REAL:
+#53:InfEst:E Infiltrazioni naturali:REAL:
+#54:Ventilazione:Ventilazione meccanica:REAL:
+#55:POtIrrag::REAL:
+#56:POtPers::REAL:
+#57:Oramax::Integer:
+#58:MeseMax::String[10]:
+#59:MaxPOt::REAL:
+#60:QuotaIrr::REAL:INI#13:
+#61:QuotaPers::REAL:INI#25:
+#62:QuotaIll::REAL:INI#20:
+#63:Altrosens::REAL:
+#64:AltroLat::REAL:
+#65:TotAssorbito::REAL:
+#66:Tipologia::String[15]:
+#67:Scambiatore::String[15]:
+#68:NonAtiva::REAL:
+#69:RicambioPersonamch::REAL:
+#70:PortApMch::REAL:
+#71:EPOrtH2o::REAL:
+#72:TotPOtAssDir::REAL:
+#73:EPOtAria::REAL:
+#74:EPOtNetta::REAL:
+#75:ESupmin::REAL:
+#76:EDeficit::REAL:
+#77:IPOrtH2o::REAL:
+#78:IPOtAria::REAL:
+#79:IPOtNetta::REAL:
+#80:ISupmin::REAL:
+#81:IDeficit::REAL:
+*
+:RecConfcad:ConfCad:1:
+record:Cofcad_D:
+#1:NPiani::Integer:INI#1:
+#2:Versione::String[2]:INI#'11':
+#3:PathArchivi::String[255]:
+#4:TipoParete::String[30]:
+#5:ConfineParete::String[30]:INI#'Autorilevato':CMB#Autorilevato:LKK#Confine/2/P:
+#6:ColoreParete::String[30]:
+#7:TipoLineaParete::String[30]:
+#8:TipoFinestra::String[20]:LKK#Finestre/2/P:
+#9:LarghFinestra::Real:
+#10:AltezFinestra::Real:
+#11:TipoPontiTermici::STRING[8]:LKK#Ponti/1/P:
+#12:LunghPonteTerm::Real:
+#13:TipoZonaLoc::String[30]:LKK#Zone/1/P:
+#14:ImpZonaLoc::String[30]:LKK#Impianti/1/P:
+#15:TipoSoffLoc::String[8]:LKK#Strutture/2/P:CMB#Da piano:#INI'Da piano':
+#16:ConfSoffLoc::String[8]:LKK#Confine/1/P:CMB#Non sc:CMB#Da piano:CMB#Esterno:CMB#Falda:#INI'Da piano':
+#17:TipoPavLoc::String[8]:LKK#Strutture/2/P:CMB#Da piano:#INI'Da piano':
+#18:ConfPavLoc::String[8]:LKK#Confine/1/P:CMB#Non sc:CMB#Da piano:CMB#Esterno:#INI'Da piano':
+#19:CarCostruttRete::string[20]:LKK#TipiRete/2/P:
+#21:ColoreTipoRete::String[50]:
+#22:TipoReteIRR::String[50]:CMB#TUBAZIONI:CMB#CANALI:
+#23:ColoreTipoReteIRR::String[50]:LKK#RETI/1/P:
+#24:TipoAttaccoIRR::String[20]:CMB#DESTRA:CMB#SINISTRA:
+#25:LunghRimRete::Real:
+#26:NPerditeLocRimRete::Real:
+#27:PerdLocRimRete::string[30]:LKK#Perdite/1/P:
+#28:SimboloValv::String[30]:
+#29:CodiceValv::string[30]:LKK#Perdite/1/P:
+#30:AttaccoTerm::String[20]:CMB#DESTRA:CMB#SINISTRA:
+#31:SimboloTerm::String[30]:CMB#RADIATORE:CMB#FANCOIL:CMB#PANNELLO:CMB#DIFFUSORE:CMB#BOCCHETTA:
+#32:MontaggTerm::String[30]:
+#33:IncrPotenza::Real:
+#34:IngombroMax::Real:
+#35:PortataIndip::Real:
+#36:PotenzaIndip::Real:
+#37:PerdCarIndip::Real:
+#38:AttaccoCollettore::String[20]:CMB#DESTRA:CMB#SINISTRA:
+#39:CarattCollettore::string[20]:LKK#TipiRete/1/P:
+#40:NUsciteCollettore::Real:
+#41:PIANOCOR::String[60]:INI#'Piano 1':LKK#Piani/2/P:
+#42:AngNord::Real:INI#0:
+#43:RETECOR::String[60]:LKK#Reti/1/P:
+#44:Lucernaio::String[2]:CMB#NO:CMB#SI:#INI'NO':
+#45:LucSpec::String[2]:CMB#NO:CMB#SI:#INI'NO':
+#46:DescrAmb::String[100]:
+#47:CodRete::String[30]:
+#48:Elabcor::String[20]:LKK#Elab/2/P:
+#49:Serieterm::String[20]:
+#50:Modelloterm::String[20]:
+#51:FissaSerieterm::String[2]:CMB#NO:CMB#SI:#INI'NO':
+#52:Fissamodelloterm::String[2]:CMB#NO:CMB#SI:#INI'NO':
+#53:Altezza::Real:
+#54:CalcoloTemp::String[50]:CMB#Temperatura prefissata:CMB#Temperatura calcolata:CMB#Fattore di correzione BTR,x:#INI'Temperatura calcolata':
+#55:TInv::Real:
+#56:TEst::Real:
+#57:FConv::Real:
+#58:RicAria::Real:
+#59:AppGra::Real: ,
+#60:TIPOBXSCELTO::String[50]:
+*
+vuoto:RecCarichiInt:CarichiInterni:1:
+array:CarInterni:MaxCarInt:500:NCarInt:
+#1:codzona::String[10]:
+#2:Descr::String[200]:
+#3:NUnita::INTEGER:INI#0:
+#4:MjTOT::real:
+#5:TipoCalc::String[1]:
+#6:AreaPApp::real:DEC#2:
+#7:ValWatt::real:DEC#2:INI#0:
+#8:ValWatt2::real:DEC#2:INI#0:
+*
+vuoto:RecAppElettr:AppElettr:1:
+array:AppElettr_D:MaxAppElettr:12:NMaxAppElttr:
+#1:Descr::String[200]:
+#2:NUnita::INTEGER:INI#0:
+#3:MjTOT::real:
+*
+:RecRetiElab:RetiElab:3:FISSA:
+array:RetiElab_D:MaxRetiElab:900:NRetiElab:Slave:Numero:Integer:
+#1:Piano::string[60]:GRD#130:LKK#Piani/2/P:
+#2:Rete::string[60]:GRD#130:LKK#Reti/1/P:
+*
+vuoto:RecElab:Elab:1:FISSA:
+array:Elab_D:MaxElab:50:NElab:Master:Numero:20:RElab:
+Num:Numero:Autoinc:
+#1:Codice::STRING[20]:GRD#0:
+#2:Descrizione::STRING[50]:
+#3:Rif_Pianta::String[100]:
+*
+:RecGen:Reti:1:
+array:GENERALITA_D1:MaxGen:50:NGen:
+#5:Codice::STRING[20]:GRD#0:
+#6:Progetto:Descrizione:STRING[50]:CMB#TUBAZIONI:CMB#CANALI:#INI'TUBAZIONI':
+Committ:#''-:STRING[50]:
+Progettista:#''-:STRING[50]:
+Revisione:#1-:integer:
+Data:#''-:STRING[20]:
+Luogo:#''-:STRING[32]:
+ritorno:#'S'-:String[1]:
+#1:dps:Perdite ammesse in pred.:real:INI#200:
+#2:maxvels:Velocità ammessa in pred.:real:INI#1:
+#3:dpe:Perdite ammesse rami favoriti:real:INI#400:
+#4:maxvele:Velocità ammessa rami favoriti:real:INI#2:
+#7:maxvelColl:Velocità ammessa rami del collettore:real:INI#0.5:
+#8:Piano:Piano di riferimento:String[30]:
+#9:Angolo:Angolo di rotazione:real:
+#10:Spec:Specchiatura del blocco:String[2]:
+perdmin:#0-:real:
+Tolleranza:#0.1-:real:
+Iterazioni:#50-:integer:
+V::string[1]:
+Xori::Real:
+Yori::Real:
+Zori::Real:
+Origine::Integer:
+#11:Descrrete:Descrizione rete:STRING[150]:
+#12:Report::STRING[250]:
+#13:Verifica::STRING[2]:GRD#60:INI#'-':
+#14:Portata::Real:DEC#5:
+#15:Prevalenza::Real:DEC#2:
+#16:valvtipo::string[20]:LKK#Perdite_Conc/1/P:
+#17:Lungmatassa::Real:DEC#0::INI#250:
+#18:PerdmaxCirc::Real:DEC#2::INI#40:
+#19:TAcqua::Real:DEC#2::INI#50:
+#20:DTAcqua::Real:DEC#0::INI#5:
+*
+vuoto:RecValTempAs:ValTempAs:1:
+array:ValTempAs_D:MaxValTempAs:1000:NValTempAs:
+#1:CodRif:CodRif:String[5]:
+#2:Mese:Mese:String[10]:
+#3:TeGen:TeGen:real:DEC#2:
+#4:TAcqF:TAcqF:real:DEC#2:
+#5:DT:DT:real:DEC#2:
+*
+vuoto:RecValFatOAs:ValFatOAs:1:
+array:ValFatOAs_D:MaxValFatOAs:1000:NValFatOAs:
+#1:CodRif:CodRif:String[5]:
+#2:Mese:Mese:String[10]:
+#3:NumPers:NumPers:Integer:
+#4:FattOcc:FattOcc:real:DEC#2:
+*
+vuoto:RecDatiAcqSan:DatiAcqSan:1:
+array:DatiAcqSan_D:MaxDAcqSan:100:NDAcqSan:
+#1:CodDAcqS:Codice:string[5]:
+#2:CodZona:CodZona:string[10]:
+#3:CalcTCost:CalcTCost:string[1]:
+#4:GestAuto:GestAuto:string[1]:
+#5:NumBag:NumBag:string[25]:
+#6:Tipologia:Tipologia:string[60]:
+#7:NumPosti:NumPosti:Integer:
+#8:NPersM:NPersM:Real:DEC#2:
+#9:CalcFMed:CalcFMed:string[1]:
+#10:TipoSist:TipoSist:string[100]:
+#11:TipoDistr:TipoDistr:string[100]:
+#12:CDett:CDett:string[1]:
+#13:SupAcc:SupAcc:Real:DEC#2:
+#14:SpessC:SpessC:Real:DEC#2:
+#15:CondC:CondC:Real:DEC#2:
+#16:Tc:Tc:Real:DEC#2:
+#17:TcL:TcL:Real:DEC#2:
+#18:ValAcc:ValAcc:string[20]:
+#19:Distr::string[40]:INI#'Semplificato':
+#20:TipoApp::string[85]:INI#'Generatore a gas di tipo istantaneo per sola produzione di acqua calda sanitaria':
+#21:Versione::string[30]:INI#'Tipo b con pilota permanente':
+#22:UbicAcc::string[30]:INI#'In ambiente riscaldato':
+#23:UbicAccGen::string[30]:INI#'All''interno del generatore':
+#24:PeriodAtt::String[15]:INI#'Annuale':
+*
+vuoto:RecPerdDistr:PerdDistr:1:
+array:PerdDistr_D:MaxPerdDistr:100:NPerdDistr:
+#1:CodPDistr:CodPDistr:string[8]:
+#2:CodImp:CodImp:string[10]:
+#3:CodZona:CodZona:string[10]:
+#4:LTub:LTub:Real:DEC#2:INI#0.0:
+#5:TipoColl:TipoColl:string[80]:
+#6:Perc:Perc:Real:DEC#2:INI#0.0:
+#7:CodPosTub:CodPosTub:string[8]:
+#8:PotNom:PotNom:Real:DEC#2:INI#0.0:
+#9:PercP:PercP:Real:DEC#2:INI#0.0:
+#10:TempM:TempM:Real:DEC#2:INI#0.0:
+#11:TempA:TempA:Real:DEC#2:INI#0.0:
+*
+vuoto:RecPosTub:PosTub:1:
+array:PosTub_D:MaxPosTub:100:NPosTub:
+#1:CodPosTub:CodPosTub:string[8]:
+#2:TipoTub:TipoTub:string[8]:LKK#Tubazioni/2/A:
+#3:Diam:Diam:string[15]:
+#4:CodValSt:CodValSt:string[8]:
+#5:PosaOper:PosaOper:string[80]:
+#6:LambdaP:LambdaP:Real:DEC#2:INI#0.0:
+#7:ProfInt:ProfInt:Real:DEC#2:INI#0.0:
+#8:DimEst:DimEst:Real:DEC#2:INI#0.0:
+#9:LambdaI:LambdaI:Real:DEC#2:INI#0.0:
+#10:He:He:Real:DEC#2:INI#0.0:
+#11:Inter:Inter:Real:DEC#2:INI#0.0:
+#12:TempFl:TempFl:Real:DEC#2:INI#0.0:
+#13:NunIso:NunIso:Integer:INI#0:
+*
+vuoto:RecValStag:ValStag:1:
+array:ValStag_D:MaxValStag:100:NValStag:
+#1:CodValStag:CodValStag:String[8]:
+#2:DescValStag:DescValStag:String[50]:
+#3:TGen:TGen:real:DEC#2:
+#4:TFeb:TFeb:real:DEC#2:
+#5:TMar:TMar:real:DEC#2:
+#6:TApr:TApr:real:DEC#2:
+#7:TMag:TMag:real:DEC#2:
+#8:TGiu:TGiu:real:DEC#2:
+#9:TLug:TLug:real:DEC#2:
+#10:TAgo:TAgo:real:DEC#2:
+#11:TSet:TSet:real:DEC#2:
+#12:TOtt:TOtt:real:DEC#2:
+#13:TNov:TNov:real:DEC#2:
+#14:TDic:TDic:real:DEC#2:
+*
+:Recsez:Diametri:3:
+array:Diam_D:MaxSez:100:NSez:Slave:Numero:Integer:
+#1:Dnom:Sigla diametro:string[15]:GRD#0:
+#2:Dint:Diametro interno:Real:GRD#0:DEC#2:
+#3:spes:Spessore:Real:GRD#0:
+form:#1-:integer:
+*
+:RecTubaz:Tubazioni:1:
+array:Tubaz_D:MaxTubax:100:Ntubaz:Master:Numero:10:Sez:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[100]:GRD#150:
+#3:CodMateriale:Materiale:String[8]:LKK#MatTubi/1/A:
+Dens:#0:Real:
+Rug:#0:Real:
+*
+:RecMatTubaz:MatTubi:1:
+array:MatTubaz_D:MaxMatTubax:100:NMattubaz:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[20]:GRD#100:
+#3:Dens:Densità [Kg/m3]:Real:GRD#0:DEC#2:
+#4:Rug:Rugosità [mm]:Real:GRD#0:DEC#2:
+*
+:RecPerd:perdite:1:
+array:Perd_D:MaxPerd:1000:Nperd:
+#1:Cod:Codice:string[15]:
+#2:Descr:Descrizione:string[70]:
+Leq:#0-Lunghezza eq:real:DEC#2:
+#4:Zeta:Coeff Zeta:real:DEC#2:
+Rit:#'S'-:String[1]:
+*
+Vuoto:RecsezB:DiametriB:3:
+array:DiamB_D:MaxSezB:100:NSezB:Slave:Numero:Integer:
+#1:Dnom:Sigla diametro:string[15]:GRD#0:
+#2:Dint:Diametro interno:Real:GRD#0:DEC#2:
+#3:spes:Spessore:Real:GRD#0:DEC#2:
+#4:Utiliz:Utilizzato:String[2]:GRD#0:CMB#SI:C24/05/2004MB#NO:
+#5:Lunghezza::Real:INI#0:DEC#2:
+form:#1-:integer:
+*
+Vuoto:RecTipiRete:TipiRete:1:
+array:TipiRete_D:MaxTipiRete:500:NTipiRete:Master:Numero:10:SezB:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[8]:GRD#0:INI#'':
+#2:Descr:Descrizione:string[20]:GRD#0:INI#'':
+#3:SerieDiam:Serie Diametri:string[8]:INI#'':LKK#Tubazioni/2/A:
+#4:TipoCurve:Tipo curve:string[8]:INI#'':LKK#Perdite/1/A:INI#'Cu_05_90':
+#5:TipoDiramazioni:Tipo Diramazioni:string[8]:INI#'':LKK#Perdite/1/A:INI#'Dir_1_90':
+#6:TipoTEE:Tipo TEE:string[8]:INI#'':LKK#Perdite/1/A:INI#'TEE_1_45':
+#7:TipoColle:Tipo collettore:string[8]:INI#'NO':CMB#NO:CMB#SI:
+#8:TipoIsol:Tipo isolamento:string[8]:INI#'':
+#9:TipoInstal:Tipo installazione:string[8]:INI#'':
+#10:TipoMat:Materiale Tubazione:string[8]:INI#'Acc_A':LKK#MatTubi/1/A:
+#11:Dens:Densità:Real:DEC#2:
+#12:Rug:Rugosità:Real:DEC#2:
+#13:TLinea::String[50]:INI#'ACAD_ISO02W100':
+#14:Colore::String[50]:INI#'Rosso':CMB#Rosso:CMB#Verde:CMB#Giallo:CMB#Blu:CMB#Ciano:CMB#Magenta:
+#15:TpTip:Tipologia TR:string[12]:CMB#Rettangolare:CMB#Circolare:INI#'Rettangolare':
+#16:TpUTOr:Tipologia UTOR:string[12]:CMB#Rettangolare:CMB#Circolare:INI#'Rettangolare':
+#17:TpUTVr:Tipologia UTVR:string[12]:CMB#Rettangolare:CMB#Circolare:INI#'Circolare':
+#18:FattFTR:FattF TR:Real:INI#0.5:DEC#2:
+#19:FattFUTOR:FattF UTOR:Real:INI#0.5:DEC#2:
+#20:FattFUTVR:FattF UTVR:Real:INI#0.5:DEC#2:
+#21:MaxLTR:MaxL TR:Real:INI#0:DEC#2:
+#22:MaxLUTOR:MaxL UTOR:Real:INI#0:DEC#2:
+#23:MaxLUTVR:MaxL UTVR:Real:INI#0:DEC#2:
+#24:MaxATR:MaxA TR:Real:INI#0:DEC#2:
+#25:MaxAUTOR:MaxA UTOR:Real:INI#0:DEC#2:
+#26:MaxAUTVR:MaxA UTVR:Real:INI#0:DEC#2:
+#27:FlessUTOR:Fless UTOR:String[2]:CMB#No:CMB#Si:INI#'No':
+#28:FlessUTVR:Fless UTVR:String[2]:CMB#No:CMB#Si:INI#'No':
+#29:TipoTerminaliUTO:Tipo TerminaliUTO:STRING[32]:CMB#Bocchette:CMB#Diffusori:INI#'Bocchette':
+#30:ModelloTerminaliUTO:Modello TerminaliUTO:STRING[35]:
+#31:TipoTerminaliUTV:Tipo TerminaliUTV:STRING[32]:CMB#Bocchette:CMB#Diffusori:INI#'Bocchette':
+#32:ModelloTerminaliUTV:Modello TerminaliUTV:STRING[35]:
+#33:InsSerr:Ins Serr:String[15]:CMB#No:CMB#Sui rami:CMB#Sui terminali:INI#'No':
+#34:SbilMin:Sbil Min:Real:INI#10:DEC#2:
+#35:Sudd:Suddiv:Real:INI#1:DEC#2:
+#36:TipoTipologia::String[10]:INI#'Tubazioni':
+*
+vuoto:RecDettTermin:DettTerminali:3:
+array:DettTermin_D:MaxDettTermin:50:NDettTermin:Slave:Numero:Integer:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[30]:GRD#0:
+#3:Pnom:Potenza:Real:DEC#2:
+#4:Esponente:Esponente:Real:DEC#2:
+#5:Altezza:Altezza:Real:DEC#2:
+#6:Largezzael:Larghezza:Real:DEC#2:
+#7:Profondita:Profondita:Real:DEC#2:
+#8:Interasse:Interasse:Real:DEC#2:
+#9:CapH2O:Capacita H2O:Real:DEC#2:
+*
+vuoto:RecDettVentil:DettVentilConvettori:3:
+array:DettVentil_D:MaxDettVentil:50:NDettVentil:Slave:Numero:Integer:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[30]:GRD#0:
+#3:PTermInv:PTermInv:Real:DEC#2:
+#4:PFrigEstTot:PFrigEstTot:Real:DEC#2:
+#5:PFrigEstSens:PFrigEstSens:Real:DEC#2:
+#6:PFrigEstLat:PFrigEstLat:Real:DEC#2:
+#7:PortH2O:PortH2O:Real:DEC#2:
+#8:PerdCaricRaffr:PerdCaricRaffr:Real:DEC#2:
+#9:PerdCarcRisc:PerdCarcRisc:Real:DEC#2:
+#10:PotTermBattAus:PotTermBattAus:Real:DEC#2:
+#11:PortH2OAus:PortH2OAus:Real:DEC#2:
+#12:PerdCarH2OBAus:PerdCarH2OBAus:Real:DEC#2:
+#13:TImmH2OI:TImmH2OI:Real:DEC#2:
+#14:SaltoTI:SaltoTI:Real:DEC#2:
+#15:TempAriaI:TempAriaI:Real:DEC#2:
+#16:TImmH2OE:TImmH2OE:Real:DEC#2:
+#17:SaltoTE:SaltoTE:Real:DEC#2:
+#18:TempAriaE:TempAriaE:Real:DEC#2:
+#19:Profondita_VC:Profondita_VC:Real:DEC#2:
+#20:Larghezza_VC:Larghezza_VC:Real:DEC#2:
+#21:Altezza_VC:Altezza_VC:Real:DEC#2:
+*
+vuoto:RecDettBocDiff:DettBocDiff:3:
+array:DettBocDiff_D:MaxDettBoccDiff:50:NDettBocDiff:Slave:Numero:Integer:
+#1:Cod:Codice:string[8]:GRD#0:
+#2:Descr:Descrizione:string[30]:
+#3:LargRag_BD:Larghezza/Raggio:Real:DEC#2:
+#4:Altezza_BD:Altezza:Real:DEC#2:
+#5:Port:Portata massima:Real:DEC#2:
+#6:PerdCaric:Perdita di carico:Real:DEC#2:
+*
+vuoto:RecPannPav:PannPav:3:
+array:PannPav_D:MaxPannPav:50:NPannPav:Slave:Numero:Integer:
+#35:Passo::Real:DEC#2:
+#36:Resa::Real:DEC#2:
+#37:Sviluppo::Real:DEC#2:
+#38:Th2oPan::Real:DEC#2:
+#39:Tsup::Real:DEC#2:
+#40:RivSup::String[100]:
+*
+vuoto:RecTipoTermin:TipoTerminali:1:
+array:TipoTerminali_D:MaxTipoTermin:100:NTipoTermin:Master:Numero:10:DettTermin:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[20]:GRD#0:
+#2:Descr:Descrizione:string[30]:
+#3:Fabric:Fabbricante:string[20]:
+#4:Tipologia::string[20]:CMB#Radiatori:CMB#Fancoil:CMB#Pannelli a pavimento:
+#5:Disegno::string[30]:
+*
+vuoto:RecDettTerminali:DettaglioTerminali:3:
+array:DettTerminali_D:MaxDettTerminali:50:NDettTerminali:Slave:Numero:Integer:
+#1:Cod:Codice:string[20]:GRD#0:
+#2:Descr:Descrizione:string[30]:
+//Radiatori
+#3:Pnom:Potenza:Real:DEC#2:
+#4:Esponente:Esponente:Real:DEC#2:
+#5:Altezza:Altezza:Real:DEC#2:
+#6:Largezzael:Larghezza:Real:DEC#2:
+#7:Profondita:Profondita:Real:DEC#2:
+#8:Interasse:Interasse:Real:DEC#2:
+#9:CapH2O:Capacita H2O:Real:DEC#2:
+#10:Componibile::string[20]:INI#'SI':
+#11:Servizi::string[20]:INI#'NO':
+//bocchette
+#12:LargRag_BD:Larghezza/Raggio:Real:DEC#2:
+#13:Altezza_BD:Altezza_BD:Real:DEC#2:
+#14:Port:Portata massima:Real:DEC#2:
+#15:PerdCaric:Perdita di carico:Real:DEC#2:
+//Fancoil
+#16:PTermInv:PTermInv:Real:DEC#2:
+#17:PFrigEstTot:PFrigEstTot:Real:DEC#2:
+#18:PFrigEstSens:PFrigEstSens:Real:DEC#2:
+#19:PFrigEstLat:PFrigEstLat:Real:DEC#2:
+#20:PortH2O:PortH2O:Real:DEC#2:
+#21:PerdCaricRaffr:PerdCaricRaffr:Real:DEC#2:
+#22:PerdCarcRisc:PerdCarcRisc:Real:DEC#2:
+#23:PotTermBattAus:PotTermBattAus:Real:DEC#2:
+#24:PortH2OAus:PortH2OAus:Real:DEC#2:
+#25:PerdCarH2OBAus:PerdCarH2OBAus:Real:DEC#2:
+#26:TImmH2OI:TImmH2OI:Real:DEC#2:
+#27:SaltoTI:SaltoTI:Real:DEC#2:
+#28:TempAriaI:TempAriaI:Real:DEC#2:
+#29:TImmH2OE:TImmH2OE:Real:DEC#2:
+#30:SaltoTE:SaltoTE:Real:DEC#2:
+#31:TempAriaE:TempAriaE:Real:DEC#2:
+#32:Profondita_VC:Profondita_VC:Real:DEC#2:
+#33:Larghezza_VC:Larghezza_VC:Real:DEC#2:
+#34:Altezza_VC:Altezza_VC:Real:DEC#2:
+//Pannelli
+#35:Passo::Real:DEC#2:
+#36:QlimRes::Real:DEC#2:
+#37:Sviluppo::Real:DEC#2:
+#38:ResSup::Real:DEC#2:
+#39:DtTLimRes::Real:DEC#2:
+#40:RivSup::String[100]:CMB#Standard UNI EN 1264-3:CMB#Ceramica,marmo,granito:CMB#Linoleum,materiali plastici:CMB#Legno e tappeti di spessore ridotto:CMB#Legno e tappeti di grosso spessore:
+#41:QlimMarg::Real:DEC#2:
+#42:QlimBagni::Real:DEC#2:
+#43:RuRd::Real:DEC#2:
+#44:DiamInt::Real:DEC#2:
+*
+vuoto:RecTerminali:Terminali:1:
+array:Terminali_D:MaxTerminali:100:NTerminali:Master:Numero:10:DettaglioTerminali:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[20]:GRD#0:
+#2:Descr:Descrizione:string[30]:
+#3:Fabric:Fabbricante:string[20]:
+#4:Tipologia::string[20]:GRD#0:INI#'Radiatori':CMB#Radiatori:CMB#Fancoil:CMB#Pannelli a pavimento:
+#5:Disegno::string[30]:
+//Pannelli
+#6:Analitico::string[2]:INI#'NO':CMB#SI:CMB#NO:
+#7:DiamEsterno::Real:DEC#2:
+#8:Spestubo::Real:DEC#2:
+#9:lambdaTubo::Real:DEC#3:
+#10:Spessmassetto::Real:DEC#3:
+#11:LambdaMassetto::Real:DEC#3:
+#12:LMatassa::Real:DEC#3:
+*
+Vuoto:RecDettPerdC:Dett_Perdite_Conc:3:
+array:DettPerdC_D:MaxDettPerdC:30:NDPerdC:Slave:Numero:Integer:
+#1:PCCod:Codice:string[8]:GRD#80:INI#'':
+#2:PCGiri:Giri:Real:DEC#2:
+#3:PCKV:KV:Real:DEC#2:
+#4:PCZeta:Zeta:Real:DEC#2:
+*
+Vuoto:RecPerdConc:Perdite_Conc:1:
+array:PerdConc_D:MaxPerdConc:100:NPerditeConc:Master:Numero:10:DPerdC:
+Num:Numero:Autoinc:
+#1:Cod:Codice:string[8]:GRD#80:INI#'':
+#2:Tipo:Tipo:string[10]:GRD#100:INI#'':
+#3:Descr:Descrizione:string[20]:GRD#130:INI#'':
+#4:DN:DN:Real:DEC#2:GRD#30:INI#0:
+*
+:RecAttrib:Attributi:3:FISSA:
+array:Attributi_D:MaxAttrib:30:NAttrib:Slave:Numero:Integer:
+#1:CodA::String[30]:
+#2:Valore::String[30]:
+#5:XA::Real:
+#6:YA::Real:
+#7:ZA::Real:
+*
+Vuoto:RecEnt:Entita:1:FISSA:DoppioP:
+array:Entita_D:MaxEntita:50000:NEntita:Master:Numero:20:Attrib:
+Num:Numero:Autoinc:
+#1:Cod::String[1]:
+#2:Layer::String[30]:
+#3:Colore::String[30]:
+#4:Tlinea::String[30]:
+#5:X1::Real:
+#6:Y1::Real:
+#7:Z1::Real:
+#8:X2::Real:
+#9:Y2::Real:
+#10:Z2::Real:
+#11:CodEnt::String[10]:
+#12:NomeBl::String[70]:
+#13:Valido::String[1]:
+#14:Ang::Real:
+*
+:RecRisparmio:Risparmio:1:FISSA:
+array:Risparmio_D:MaxRisparmio:100:NRisparmio:
+#1:Fonte:Fonte energetica:STRING[80]:LKK#Carburanti/1/A:INI#'Metano':GRD#250:
+#2:Aggiornato:Aggiornato il:STRING[20]:
+#3:PotereCal:Potere calorifico:Real:DEC#2:
+#4:TEP::Real:DEC#5:
+#10:Prezzo::Real:DEC#5:
+#5:Densita:Densità:Real:DEC#2:
+#6:TotPrezzo:Spesa:Real:DEC#0:GRD#50:
+#7:TotKg:Consumo Kg:Real:DEC#1:GRD#80:
+#8:TotMc:Consumo mc:Real:DEC#1:GRD#80:
+#13:TotmJ:Consumo mJ:Real:DEC#0:GRD#80:
+#9:TotTEP:Emissioni:Real:DEC#0:GRD#50:
+#11:POt::Real:DEC#0:GRD#50:
+#12:EP::Real:DEC#5:GRD#50:
+#14:SupRisc::Real:DEC#5:GRD#50:
+*
+Vuoto:Recconsumi:Consumi:3:FISSA:
+array:Consumi_D:Maxconsumi:1200:NConsumi:
+#1:CodAll::String[8]:
+#2:Indmese::Integer:
+#3:Mese::STRING[20]:GRD#80:
+#4:Perdite::Real:DEC#2:GRD#80:
+#5:AppInterni:App.Interni:Real:DEC#2:GRD#80:
+#6:AppSolari:App.Solari:Real:DEC#2:GRD#80:
+#7:AppTotali:App.Totali:Real:DEC#2:GRD#80:
+#8:Eta::Real:DEC#2:GRD#80:
+#9:Gamma::Real:DEC#2:GRD#80:
+#10:Fabbisogno::Real:DEC#2:GRD#80:
+*
+Vuoto:RecCarburanti:Carburanti:1:FISSA:
+array:Carburanti_D:MaxCarburanti:100:NCarburanti:
+#1:Descrizione:Descrizione:STRING[80]:GRD#200:
+#2:Aggiornato:Aggiornato il:STRING[20]:GRD#80:
+#3:PotereCal:Potere calorifico:Real:DEC#2:
+#4:TEP::Real:DEC#5:
+#5:Densita:Densità:Real:DEC#2:
+#6:Prezzo::Real:DEC#6:
+*
+Vuoto:RecNewStamp:NewDescStampe:1:
+record:NewStamp_D:
+#1:CodProgetto::String[10]:
+#2:DescProgetto::String[80]:
+#3:Ubicedif::String[100]:
+#4:Committente::String[100]:
+#5:ProgEdil::String[80]:
+#6:ProgTecn::String[80]:
+#7:Installazione::String[80]:
+#8:PATHDirectory::String[150]:
+#9:Dirisol::String[64]: INI#'':
+#10:NAGG::String[1]:INI#'N':
+#11:NP::Integer:INI#0:
+#12:NPr::Integer:INI#0:
+#13:NSF::Integer:INI#0:
+#14:NRG::Integer:INI#0:
+#15:NTI::Integer:INI#0:
+#16:NTP::Integer:INI#0:
+#18:TipoOpera::String[80]:INI#'':
+#19:ProgImpTerm::String[80]:INI#'':
+#20:ProgIsoTerm::String[80]:INI#'':
+#21:Concedil::String[10]:INI#'':
+#22:DataConc::String[10]:INI#'':
+#23:Abiunit::Integer:INI#0:
+#24:Dirimter::String[80]:INI#'':
+#25:Demogrf::Integer:INI#0:
+#26:NomeAss::String[30]:INI#'':
+#27:CognomeAss::String[30]:INI#'':
+#28:CodiceFiscAss::String[16]:INI#'':
+#29:DNascAss::String[12]:INI#'01/01/2009':
+#30:LuogoNascAss::String[30]:INI#'':
+#31:ProvNascAss::String[2]:INI#'':
+#32:IscrittoAss::String[80]:INI#'':
+#33:NumIscAss::String[12]:INI#'':
+#34:LuogoStAss::String[30]:INI#'':
+#35:ViaStAss::String[50]:INI#'':
+#36:DescPrAss::String[100]:INI#'':
+#37:ComPrAss::String[30]:INI#'':
+#38:ProvPrAss::String[2]:INI#'':
+#39:UbicPrAss::String[50]:INI#'':
+#40:IncaricoPrAss::String[30]:INI#'':
+#41:NumPermAss::String[12]:INI#'':
+#42:DataPermAss::String[12]:INI#'01/01/2008':
+#43:ComunePerAss::String[30]:INI#'':
+#44:ProvPermAss::String[2]:INI#'':
+#45:NomeCertAss::String[30]:INI#'':
+#46:CognCertAss::String[30]:INI#'':
+#47:PIVAAss::String[12]:INI#'':
+#48:ImgLogo::String[100]:INI#'':
+*
+Vuoto:RecDatiAllInv:DatiAllInv:1:
+record:DatiAllInv_D:
+#1:CodGen::String[10]:
+#2:PATH_SEZIONE1::String[100]:INI#'':
+#3:PATH_SEZIONE2::String[100]:INI#'':
+#4:PATH_SEZIONE3::String[100]:INI#'':
+#5:PATH_SEZIONE4::String[100]:INI#'':
+#6:PATH_SEZIONE5::String[100]:INI#'':
+#7:PATH_SEZIONE6::String[100]:INI#'':
+#8:PATH_SEZIONE7::String[100]:INI#'':
+#9:PATH_SEZIONE8::String[100]:INI#'':
+#10:PATH_SEZIONE9::String[100]:INI#'':
+#11:PATH_SEZIONE10::String[100]:INI#'':
+#12:PATH_SEZIONE11::String[100]:INI#'':
+#13:PATH_SEZIONE12::String[100]:INI#'':
+#14:PATH_SEZIONE13::String[100]:INI#'':
+#15:PATH_SEZIONE14::String[100]:INI#'':
+#16:PATH_SEZIONE15::String[100]:INI#'':
+#17:PATH_SEZIONE16::String[100]:INI#'':
+#18:PATH_SEZIONE17::String[100]:INI#'':
+#19:PATH_SEZIONE18::String[100]:INI#'':
+#20:PATH_SEZIONE19::String[100]:INI#'':
+#21:PATH_SEZIONE20::String[100]:INI#'':
+#22:PATH_SEZIONE21::String[100]:INI#'':
+#23:PATH_SEZIONE22::String[100]:INI#'':
+#24:PATH_SEZIONE23::String[100]:INI#'':
+#25:PATH_SEZIONE24::String[100]:INI#'':
+#26:PATH_SEZIONE25::String[100]:INI#'':
+#27:SpecVecG::String[100]:INI#'':
+#28:RELDEROGA::String[100]:INI#'':
+#29:TEMPM::String[2]:
+#30:REGA::String[2]:
+#31:GEN35::String[2]:
+#32:POTM35::String[2]:
+#33:ALLEGATI_DOC::String[100]:INI#'':
+#34:PATH_SEZIONE26::String[100]:INI#'':
+*
+Vuoto:RecDatiAllCert:DatiAllCert:1:
+record:DatiAllCert_D:
+#1:CodGen::String[10]:INI#'':
+#2:NCERT::String[8]:INI#'':
+#3:CERTRIL::String[50]:INI#'':
+#4:ESEG::String[20]:INI#'':
+#5:VALIDITA::String[20]:INI#'':
+#6:NSCHEDA::String[10]:INI#'':
+#7:TIPOED::String[50]:INI#'':
+#8:NOMPROP::String[50]:INI#'':
+#9:INDPROP::String[50]:INI#'':
+#10:TELFAX::String[50]:INI#'':
+#11:CITTAPROP::String[50]:INI#'':
+#12:CAP::String[10]:INI#'':
+#13:ANNOC::String[10]:INI#'':
+#14:ANNOR1::String[10]:INI#'':
+#15:ANNOR2::String[10]:INI#'':
+#16:RICHIED::String[50]:INI#'':
+#17:TIPORICHIED::String[1]:INI#'':
+#18:TIPOALTRO::String[20]:INI#'':
+#19:UNIMM::String[8]:INI#'':
+#20:UNMILL::Real:INI#0:
+#21:PIANO::String[20]:INI#'':
+#22:SCALA::String[15]:INI#'':
+#23:LICEDIL::String[4]:INI#'':
+#24:STVERT::String[50]:INI#'':
+#25:SERR::String[50]:INI#'':
+#26:TETTO::String[50]:INI#'':
+#27:CENTTERM::String[1]:INI#'':
+#28:OSS::String[20]:INI#'':
+#29:RICARIA::String[1]:INI#'':
+#30:FOTO::String[100]:INI#'':
+#31:TipolC::String[150]:INI#'':
+#32:TipoRisc::String[1]:INI#'A':
+#33:TipoACS::String[100]:INI#'':
+#34:AnnoRaff::String[4]:INI#'':
+#35:TipoRaff::String[100]:INI#'':
+#36:AnnoRinn::String[4]:INI#'':
+#37:TipoRInn::String[100]:INI#'':
+#38:NomProgA::String[100]:INI#'':
+#39:IndProgA::String[150]:INI#'':
+#40:TelProgA::String[80]:INI#'':
+#41:NomProgI::String[100]:INI#'':
+#42:IndProgI::String[150]:INI#'':
+#43:TelProgI::String[80]:INI#'':
+#44:NomCostr::String[100]:INI#'':
+#45:IndCostr::String[150]:INI#'':
+#46:TelCostr::String[80]:INI#'':
+#47:NomDiret::String[100]:INI#'':
+#48:IndDiret::String[150]:INI#'':
+#49:TelDiret::String[80]:INI#'':
+#50:Cert::String[2]:INI#'EP':
+#51:NomCert::String[100]:INI#'':
+#52:IndCert::String[150]:INI#'':
+#53:TelCert::String[80]:INI#'':
+#54:TitCert::String[100]:INI#'':
+#56:OrdCert::String[100]:INI#'':
+#57:DicCert::String[255]:INI#'':
+#58:InfCert::String[255]:INI#'':
+#59:Sopral1::String[255]:INI#'':
+#60:Sopral2::String[255]:INI#'':
+#61:Sopral3::String[255]:INI#'':
+#62:DatIngr::String[2]:INI#'PE':
+#63:DatResp::String[255]:INI#'':
+#64:Note::String[255]:INI#'':
+#65:EmailProp::String[80]:INI#'':
+#66:QOUTP::String[8]:INI#'0':
+*
+Vuoto:RecDatiAllPM:DatiAllPM:1:
+record:DatiAllPM_D:
+#1:CodGen::String[10]:INI#'':
+#2:Scheda::String[12]:INI#'':
+#3:Classif::String[15]:INI#'':
+#4:TipoE42PM::String[1]::INI#'A':
+#5:AD1::String[10]:INI#'':
+#6:RISP1::String[1]:INI#'':
+#7:NOTE1::String[20]:INI#'':
+#8:AD2::String[10]:INI#'':
+#9:RISP2::String[1]:INI#'':
+#10:NOTE2::String[20]:INI#'':
+#11:AD3::String[10]:INI#'':
+#12:RISP3::String[1]:INI#'':
+#13:NOTE3::String[20]:INI#'':
+#14:AD4::String[10]:INI#'':
+#15:RISP4::String[1]:INI#'':
+#16:NOTE4::String[20]:INI#'':
+#17:AD5::String[10]:INI#'':
+#18:RISP5::String[1]:INI#'':
+#19:NOTR5::String[20]:INI#'':
+#20:AD6::String[10]:INI#'':
+#21:RISP6::String[1]:INI#'':
+#22:NOTR6::String[20]:INI#'':
+#23:AD7::String[10]:INI#'':
+#24:RISP7::String[1]:INI#'':
+#25:NOTR7::String[20]:INI#'':
+#26:AFP1::String[10]:INI#'':
+#27:RISPSFP1::String[1]:INI#'':
+#28:NOTFP1::String[20]:INI#'':
+#29:AFP2::String[10]:INI#'':
+#30:RISPSFP2::String[1]:INI#'':
+#31:NOTFP2::String[20]:INI#'':
+#32:AFP3::String[10]:INI#'':
+#33:RISPSFP3::String[1]:INI#'':
+#34:NOTFP3::String[20]:INI#'':
+#35:AFP4::String[10]:INI#'':
+#36:RISPSFP4::String[1]:INI#'':
+#37:NOTFP4::String[20]:INI#'':
+#38:AFP5::String[10]:INI#'':
+#39:RISPSFP5::String[1]:INI#'':
+#40:NOTFP5::String[20]:INI#'':
+#41:AFP6::String[10]:INI#'':
+#42:RISPSFP6::String[1]:INI#'':
+#43:NOTFP6::String[20]:INI#'':
+#44:AFP7::String[10]:INI#'':
+#45:RISPSFP7::String[1]:INI#'':
+#46:NOTFP7::String[20]:INI#'':
+#47:AFP8::String[10]:INI#'':
+#48:RISPSFP8::String[1]:INI#'':
+#49:NOTFP8::String[20]:INI#'':
+#50:MD1::String[10]:INI#'':
+#51:RISPMD1::String[1]:INI#'':
+#52:NOMD1::String[20]:INI#'':
+#53:MD2::String[10]:INI#'':
+#54:RISPMD2::String[1]:INI#'':
+#55:NOMD2::String[20]:INI#'':
+#56:MD3::String[10]:INI#'':
+#57:RISPMD3::String[1]:INI#'':
+#58:NOMD3::String[20]:INI#'':
+#59:MD4::String[10]:INI#'':
+#60:RISPMD4::String[1]:INI#'':
+#61:NOMD4::String[20]:INI#'':
+#62:MD5::String[10]:INI#'':
+#63:RISPMD5::String[1]:INI#'':
+#64:NOMD5::String[20]:INI#'':
+*
+vuoto:RecTabSostGen:TabSostGen:1:
+array:TabSostGen_D:MaxTabSostGen:200:NTabSostGen:
+#1:DescrGen::String[40]:
+#2:Tipo::String[20]:
+#3:PotNom::real:DEC#2:
+#4:DescrGenSost::String[40]:
+#5:PotNomSost::real:DEC#2:
+#6:RendUtil::real:DEC#2:
+#7:RendUtilSost::real:DEC#2:
+#8:VerifRU::String[1]:
+#9:ValLTU::real:DEC#2:
+#10:RendUtil30::real:DEC#2:
+#11:RendUtil30Sost::real:DEC#2:
+#12:COPE::real:DEC#2:
+#13:COPESost::real:DEC#2:
+#14:Combust::String[20]:
+#15:CombustSost::String[20]:
+#16:TipoSost::String[20]:
+*
+vuoto:RecTabSostST:TabSostST:1:
+array:TabSostST_D:MaxTabSostST:200:NTabSostST:
+#1:DescrPar::String[30]:
+#2:Trasm::real:DEC#2:
+#3:DescrParSost::String[30]:
+#4:TrasmSost::real:DEC#2:
+#5:Verif::String[12]:
+#6:ParSof::String[10]:
+#7:ValLim::real:DEC#2:
+#8:VerifSost::String[12]:
+#9:Tipo::String[12]:
+#10:TipoSost::String[12]:
+*
+vuoto:RecTabSostFin:TabSostFin:1:
+array:TabSostFin_D:MaxTabSostFin:150:NTabSostFin:
+#1:DescrFin::String[20]:
+#2:Trasm::real:DEC#2:
+#3:DescrFinSost::String[20]:
+#4:TrasmSost::real:DEC#2:
+#5:Verif::String[12]:
+#6:ValLim::real:DEC#2:
+#7:VerifSost::String[12]:
+*
+Vuoto:RecFreq:Freq:1:
+array:Freq_D:MaxFreq:200:NFreq:
+#1:CodST:CodiceStrut:String[8]:
+#2:RW:RW:REAL:DEC#2:
+#4:R1::real:DEC#2:
+#5:R2::REAL:DEC#2:
+#6:R3::REAL:DEC#2:
+#7:R4::real:DEC#2:
+#8:R5::REAL:DEC#2:
+#9:R6::REAL:DEC#2:
+#10:R7::real:DEC#2:
+#11:R8::REAL:DEC#2:
+#12:R9::REAL:DEC#2:
+#13:R10::real:DEC#2:
+#14:R11::REAL:DEC#2:
+#15:R12::REAL:DEC#2:
+#16:R13::real:DEC#2:
+#17:R14::REAL:DEC#2:
+#18:R15::REAL:DEC#2:
+#19:R16::real:DEC#2:
+*
+Vuoto:RecAppart:Appart:1:
+array:Appart_D:MaxAppart:200:NAppart:
+#1:CodApp:CodiceApp:String[8]:
+#2:Descriz:Descriz:String[8]:
+*
+Vuoto:RecUnionLoc:UnionLoc:1:
+array:UnionLoc_D:MaxUnionLoc:200:NUnionLoc:
+#1:CodAmbInf:CodAmbInf:String[8]:
+#2:CodAmbSup:CodAmbSup:String[8]:
+*
+Vuoto:RecDatiPanSol:DatiPanSol:1:
+array:DatiPanSol_D:MaxDatiPanSol:200:NDatiPanSol:
+#1:CodiceGen:CodiceGen:String[8]:INI#'':
+#2:FATTCOPERTURA:FATTCOPERTURA:Integer:INI#0:
+#3:NUMPANNELLI:NUMPANNELLI:Integer:INI#60:
+#4:QOUTTOTALE:QOUTTOTALE:Real:INI#0:
+#5:QOUTMESEGEN::Real:INI#0:
+#6:QOUTMESEFEB::Real:INI#0:
+#7:QOUTMESEMAR::Real:INI#0:
+#8:QOUTMESEAPR::Real:INI#0:
+#9:QOUTMESEMAG::Real:INI#0:
+#10:QOUTMESEGIU::Real:INI#0:
+#11:QOUTMESELUG::Real:INI#0:
+#12:QOUTMESEAGO::Real:INI#0:
+#13:QOUTMESESET::Real:INI#0:
+#14:QOUTMESEOTT::Real:INI#0:
+#15:QOUTMESENOV::Real:INI#0:
+#16:QOUTMESEDIC::Real:INI#0:
+#17:QOUTTOTALERISC:QOUTTOTALERISC:Real:INI#0:
+#18:QOUTTOTALEACS:QOUTTOTALEACS:Real:INI#0:
+#19:QOUTMESEGENACS::Real:INI#0:
+#20:QOUTMESEFEBACS::Real:INI#0:
+#21:QOUTMESEMARACS::Real:INI#0:
+#22:QOUTMESEAPRACS::Real:INI#0:
+#23:QOUTMESEMAGACS::Real:INI#0:
+#24:QOUTMESEGIUACS::Real:INI#0:
+#25:QOUTMESELUGACS::Real:INI#0:
+#26:QOUTMESEAGOACS::Real:INI#0:
+#27:QOUTMESESETACS::Real:INI#0:
+#28:QOUTMESEOTTACS::Real:INI#0:
+#29:QOUTMESENOVACS::Real:INI#0:
+#30:QOUTMESEDICACS::Real:INI#0:
+#31:Annoinst::Integer:INI#2010:
+*
+Vuoto:RecParSpeciali:ParetiSpeciali:1:FISSA:DoppioP:
+array:ParSpeciali_D:MaxParSpeciali:300:NParSpeciali:
+#1:Codice::Integer:
+#2:Descrizione::String[30]:INI#'':
+#3:Categoria::String[30]:INI#'':
+#4:TipoFinestra::String[30]:INI#'':
+#5:AltParte1::Real:INI#0:
+#6:TipoStruttura1::String[50]:INI#'':
+#7:ConfineStruttura1::String[50]:INI#'':
+#8:AltParte2::Real:INI#0:
+#9:TipoStruttura2::String[50]:INI#'':
+#10:ConfineStruttura2::String[50]:INI#'':
+#11:TipoStruttura3::String[50]:INI#'':
+#12:ConfineStruttura3::String[50]:INI#'':
+#13:ColCAD:ColoreCad:String[10]:INI#'Rosso':
+**

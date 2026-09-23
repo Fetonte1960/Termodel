@@ -1,0 +1,7 @@
+RecCurve:Curve:1:
+array:Curve_D:MaxCurve:100:NCurve:
+Nome::string[20]:
+Parametro::Real:
+X::Real:
+Y::Real:
+**

@@ -1,0 +1,57 @@
+Confronto dei file NOVITDIM.PAS e \sorg_cor\cca\inpgraf\novitdim.pas in corso...
+****** NOVITDIM.PAS
+
+uses definiz,halotp4,graph,diseg,DEFUTI,strings,winprocs,wintypes;
+
+****** \sorg_cor\cca\inpgraf\novitdim.pas
+
+uses definiz,halotp4,graph,diseg,DEFUTI;
+
+******
+
+****** NOVITDIM.PAS
+
+
+ end;}
+var fmdeb:text;
+
+****** \sorg_cor\cca\inpgraf\novitdim.pas
+
+ end;}
+
+******
+
+****** NOVITDIM.PAS
+BEGIN
+assign(fmdeb,'c:\debug.txt');
+rewrite(fmdeb);
+r1:=xg1(costant.altquo*100,0)-Xg1(0,0);
+r2:=1;
+****** \sorg_cor\cca\inpgraf\novitdim.pas
+BEGIN
+r1:=xg1(costant.altquo*70,0)-Xg1(0,0);
+r2:=1;
+******
+
+****** NOVITDIM.PAS
+                   begin
+
+                   writeln(fmdeb,r1);
+
+                   SetSText(@r1,@r2,@hpgl1[i].quota.setta);
+****** \sorg_cor\cca\inpgraf\novitdim.pas
+                   begin
+                   SetSText(@r1,@r2,@hpgl1[i].quota.setta);
+******
+
+****** NOVITDIM.PAS
+  close(fdis1);
+  close(fmdeb);
+
+****** \sorg_cor\cca\inpgraf\novitdim.pas
+  close(fdis1);
+
+
+******
+
+

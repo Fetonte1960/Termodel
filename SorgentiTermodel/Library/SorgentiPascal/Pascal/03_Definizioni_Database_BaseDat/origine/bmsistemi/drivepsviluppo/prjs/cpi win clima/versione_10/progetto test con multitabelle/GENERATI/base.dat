@@ -1,0 +1,174 @@
+:RecOrari:Orari:1:FISSA:
+array:Orari_D:MaxOrari:50:NOrari:
+#25:Codice::String[15]:INI#'Orario ufficio':GRD#0:
+#26:Descrizione::STRING[30]:INI#'Orario ufficio':GRD#130:
+#1:Ora1::Integer:INI#0:
+#2:Ora2::Integer:INI#0:
+#3:Ora3::Integer:INI#0:
+#4:Ora4::Integer:INI#0:
+#5:Ora5::Integer:INI#0:
+#6:Ora6::Integer:INI#0:
+#7:Ora7::Integer:INI#0:
+#8:Ora8::Integer:INI#0:
+#9:Ora9::Integer:INI#100:
+#10:Ora10::Integer:INI#100:
+#11:Ora11::Integer:INI#100:
+#12:Ora12::Integer:INI#100:
+#13:Ora13::Integer:INI#100:
+#14:Ora14::Integer:INI#0:
+#15:Ora15::Integer:INI#100:
+#16:Ora16::Integer:INI#100:
+#17:Ora17::Integer:INI#100:
+#18:Ora18::Integer:INI#100:
+#19:Ora19::Integer:INI#0:
+#20:Ora20::Integer:INI#0:
+#21:Ora21::Integer:INI#0:
+#22:Ora22::Integer:INI#0:
+#23:Ora23::Integer:INI#0:
+#24:Ora24::Integer:INI#0:
+*
+Vuoto:Recsetti:setti:3:Fissa:
+array:s_D:Maxsetti:200:Nsetti:Slave:Numero:Integer:
+#1:Tipo::String[8]:GRD#0:INI#'Tipo':
+#2:Altezza::Real:DEC#2:
+#3:Larghezza::Real:DEC#2:
+#4:LTelaio::Real:DEC#2:
+#5:KOpadisp::Real:DEC#2:
+#6:KOpaL10::Real:DEC#2:
+#7:TipoOpa::String[1]:
+#8:klinopa::Real:DEC#2:
+#9:ltelsup::Real:DEC#2:
+#10:ltelinf::Real:DEC#2:
+#11:ltelsin::Real:DEC#2:
+#12:lteldes::Real:DEC#2:
+#13:formatelaio::String[1]:INI#'R':
+#14:Tipo2::String[8]:
+#15:Altezza2::Real:DEC#2:
+#16:Larghezza2::Real:DEC#2:
+#17:LTelaio2::Real:DEC#2:
+#18:KOpadisp2::Real:DEC#2:
+#19:KOpaL102::Real:DEC#2:
+#20:TipoOpa2::String[1]:
+#21:klinopa2::Real:DEC#2:
+#22:ltelsup2::Real:DEC#2:
+#23:ltelinf2::Real:DEC#2:
+#24:ltelsin2::Real:DEC#2:
+#25:lteldes2::Real:DEC#2:
+#26:formatelaio2::String[1]::INI#'R':
+#27:Tipo3::String[8]:
+#28:Altezza3::Real:DEC#2:
+#29:Larghezza3::Real:DEC#2:
+#30:LTelaio3::Real:DEC#2:
+#31:KOpadisp3::Real:DEC#2:
+#32:KOpaL103::Real:DEC#2:
+#33:TipoOpa3::String[1]:
+#34:klinopa3::Real:DEC#2:
+#35:ltelsup3::Real:DEC#2:
+#36:ltelinf3::Real:DEC#2:
+#37:ltelsin3::Real:DEC#2:
+#38:lteldes3::Real:DEC#2:
+#39:formatelaio3::String[1]::INI#'R':
+#40:Tipo4::String[8]:
+#41:Altezza4::Real:DEC#2:
+#42:Larghezza4::Real:DEC#2:
+#43:LTelaio4::Real:DEC#2:
+#44:KOpadisp4::Real:DEC#2:
+#45:KOpaL104::Real:DEC#2:
+#46:TipoOpa4::String[1]:
+#47:klinopa4::Real:DEC#2:
+#48:ltelsup4::Real:DEC#2:
+#49:ltelinf4::Real:DEC#2:
+#50:ltelsin4::Real:DEC#2:
+#51:lteldes4::Real:DEC#2:
+#52:formatelaio4::String[1]::INI#'R':
+#53:Tipo5::String[8]:
+#54:Altezza5::Real:DEC#2:
+#55:Larghezza5::Real:DEC#2:
+#56:LTelaio5::Real:DEC#2:
+#57:KOpadisp5::Real:DEC#2:
+#58:KOpaL105::Real:DEC#2:
+#59:TipoOpa5::String[1]:
+#60:klinopa5::Real:DEC#2:
+#61:ltelsup5::Real:DEC#2:
+#62:ltelinf5::Real:DEC#2:
+#63:ltelsin5::Real:DEC#2:
+#64:lteldes5::Real:DEC#2:
+#65:formatelaio5::String[1]::INI#'R':
+*
+Vuoto:RecFin:finestre:1:FISSA:
+array:Finestre_D:MaxFinestre:150:NFinestre:Master:Numero:20:setti:
+Num:Numero:Autoinc:
+#12:Codice::String[8]:GRD#0:INI#'Codice':
+#27:Denom:Descrizione:STRING[20]:GRD#150:INI#'Descrizione':
+#13:Trasmittanza::REAL:DEC#3:
+#14:SuperfUnit:Superficie Unitaria:REAL:DEC#3:
+#15:PercVetr:Percentuale Vetrata:INTEGER:INI#85:
+IncrSic:Incremento di sicurezza:REAL:DEC#3:
+#16:TipoSchermatura:Tipo Schermatura:STRING[30]:CMB#Interno:CMB#Esterno:CMB#Nessuno:
+#17:Shedingsc:Attenuazione sol.:real:INI#1:DEC#3:
+#18:Codv:Codice del vetro:string[30]:LKK#Strutture/3/P:
+#19:descrV:descrizione vetro:string[50]:
+#20:shedingV::real:INI#0.5:DEC#3:
+#21:PosizSchermo:Posizione schermo:string[1]:INI#'N':
+#22:Shading::REAL:DEC#3:
+#23:Altezza::REAL:DEC#3:
+#24:Larghezza::REAL:DEC#3:
+#28:tapparella::REAL:INI#0.22:DEC#3:
+Rientranza:#0.15-:REAL:DEC#2:
+LOrizz:#0-:REAL:DEC#2:
+DOrizz:#0-:REAL:DEC#2:
+LVertDX:#0-:REAL:DEC#2:
+DVertDX:#0-:REAL:DEC#2:
+LVertSX:#0-:REAL:DEC#2:
+DVertSX:#0-:REAL:DEC#2:
+Lineak:#0-:integer:
+#1:AltezzaFin::Real:DEC#2:
+#2:LarghezzaFin::Real:DEC#2:
+#3:TelaioFin::Real:DEC#2:
+#4:AnteFin::Real:DEC#2:
+#5:AltSopraFin::Real:DEC#2:
+#6:TipoSopraFin::String[10]:
+#7:AltCassoFin::Real:DEC#2:
+#8:TipoCassoFin::String[10]:
+#9:AltSottoFin::Real:DEC#2:
+#10:TipoSottoFin::String[30]:LKK#Strutture/3/P:
+#11:TipoBordoFin::String[10]:
+#29:Ag:Area del vetro:Real:DEC#2:
+#30:Af:Area del telaio:Real:DEC#2:
+#31:Lg:Lunghezza  vetrata:Real:DEC#2:
+#25:Ki:Trasmittanza distanziatore:REAL:INI#0.05:DEC#2:
+#26:Kf:Trasmittanza telaio:REAL:INI#3.1:DEC#2:
+#32:Kg:Trasmittanza term. vetro:Real:CRL#STRUTTURE/2/6/P/CODV:DEC#2:
+#33:Uw:Trasmittanza totale fin:REAL:DEC#2:
+#34:Supsetti:Superficie Setti:REAL:DEC#2:
+#35:Ksetti:Trasmittanza setti:REAL:DEC#2:
+#36:FinPor::String[10]:CMB#Finestra:CMB#Porta:
+#37:KgL10::REAL:CRL#STRUTTURE/2/27/P/CODV:DEC#2:
+#38:KDISPL10PORTE::REAL:DEC#2:
+#39:INCRSICUREZZAPORTE::REAL:INI#1:CNT#incremento di sicurezza/>=0:DEC#2:
+#40:PERMEABILITAPORTE::REAL:DEC#2:
+#41:COLOREPORTE::String[10]:CMB#Chiaro:CMB#Medio:CMB#Scuro:
+#42:INCRSICUREZZAFINESTRA::REAL:INI#0:CNT#incremento di sicurezza/>=0:DEC#2:
+#43:RESISTENZATERMICATAPPARELLA::REAL:DEC#2:
+#44:PERMEABILITASERRAMENTO::REAL:DEC#2:
+#45:PERMEABILITACASSONETTO::REAL:DEC#2:
+#46:LUNGHEZZACASSONETTO::REAL:CNT#lunghezza del cassonetto/>=0:DEC#2:
+#47:ShadingSchermo::REAL:INI#0:DEC#2:
+#48:ShadingVetro::REAL:INI#0:DEC#2:
+#49:ProfVerticaleSx::REAL:INI#0:DEC#2:
+#50:DistVerticaleSx::REAL:INI#0:DEC#2:
+#51:ProfVerticaleDx::REAL:INI#0:DEC#2:
+#52:DistVerticaleDx::REAL:INI#0:DEC#2:
+#53:ProfBalconi::REAL:INI#0:DEC#2:
+#54:DistBalcomi::REAL:INI#0:DEC#2:
+#55:TrasmittL10::REAL:DEC#2:
+#56:Hi:Add. interna:Real:DEC#2:
+#57:He:Add. esterna:Real:DEC#2:
+#58:paretecontinua::String[1]:
+#59:ripetizioni::integer:
+#60:terminale::string[2]:CMB#SI:CMB#NO:
+#61:kSottoFin::Real:CRL#STRUTTURE/2/6/P/TipoSottoFin:DEC#2:
+#62:kSottoFinL10::Real:CRL#STRUTTURE/2/27/P/TipoSottoFin:DEC#2:
+#63:VerificaF192::String[2]:
+#64:ValLimFT::real:DEC#2:
+**

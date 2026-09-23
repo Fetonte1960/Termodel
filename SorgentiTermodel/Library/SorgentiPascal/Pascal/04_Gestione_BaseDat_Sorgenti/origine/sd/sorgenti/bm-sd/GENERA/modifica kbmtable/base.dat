@@ -1,0 +1,69 @@
+RecGen:generalita:
+Record:GENERALITA_D:
+Progetto:Descrizione progetto:STRING[50]:
+Committ::STRING[50]:
+Progettista::STRING[50]:
+Revisione::integer:
+Data::STRING[20]:
+Luogo:Ubicazione:STRING[32]:
+ritorno::String[1]:
+dps:Perdite ammesse in predimensionamento:real:
+maxvels:Velocità ammessa in predimensionamento:real:
+dpe:Perdite ammesse in equilibratura:real:
+maxvele:Velocità ammessa in equilibratura:real:
+valvtipo:Tipo valvole:string[8]:
+perdmin:Perdite minime:real:
+Tolleranza::real:
+Iterazioni::integer:
+*
+RecPerd:perdite:
+array:Perd_D:MaxPerd:500:Nperd:
+Cod:Codice:string[8]:
+Descr:Descrizione:string[20]:
+Leq:Lunghezza eq:real:
+Zeta::real:
+Rit:Ritorno:String[1]:
+*
+Recsez:Diametri:
+array:Diam_D:MaxSez:50:NSez:Slave:Codice:10:
+Dnom:Sigla diametro:string[8]:
+Dint:Diametro interno:Real:
+spes:Spessore:Real:
+form:Formula di calcolo:integer:
+*
+RecTubaz:Tubazioni:
+array:Tubaz_D:MaxTubax:100:Ntubaz:Master:Codice:10:Sez:
+Cod:Codice:string[8]:
+Descr:Descrizione:string[55];
+Dens:Densità:Real:
+Rug:Rugosità:Real:
+*
+RecPconc:PerdConc:
+array:Pconc_D:MaxPconc:10:Npconc:
+N:Numero:integer:
+Cod:Codice:string[8]:
+*
+RecPros:rami:
+array:Pros_D:MaxPros:10:Npros:slave:num:10:
+Ramo::Integer:
+*
+calcrec:Nodi:
+array:Dati:Lungdati:16000:Ntronchi:Master:num:10:Pros:
+Num:Numerazione tronchi:integer:
+x:Posizione etichetta X:real:
+y:Posizione etichetta X:real:
+Tipo:Tipo Tubazione:string[8]:
+Dh:Diff di quota:real:
+lungh:Lunghezza:real:
+Coddiam:Codice diametro:string[8];
+diam:Diametro:real:
+SWDiam:Diametro fissato:string[1]:
+port:Port. richiesta:real:
+PortEff:Port. effettiva:real:
+Ti:Linea iniziale:integer:
+Term:Terminale collegato:integer:
+pd:Perdite distribuite:Real:
+pl:Perdite localizzate:Real:
+pp:Perdite progressive:Real:
+pr:Perdite del ramo:Real:
+**

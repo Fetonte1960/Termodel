@@ -1,0 +1,505 @@
+
+Unit PRINT_old;
+
+Interface
+
+Uses
+   dummyfunction,
+  {$ifdef delphia}
+  defutig,
+  utigen;
+  {$else}
+  defuti,
+  utilitie;
+ {$endif}
+
+
+procedure StampaMask(Base,OffSet:word;NomeFile:st80;NotZero:boolean);
+procedure WriteTesto(Nome:string);
+procedure SaltoPag;
+procedure settadriveprn(var nome:string);
+{=============================================================================}
+Implementation
+
+procedure settadriveprn(var nome:string);
+var n_nodrive:string;
+    st:string[80];
+    pc:array[0..80] of char;
+begin
+(*
+  {$ifdef word}
+  n_nodrive:=eliminadir(nome);
+  if not stampe_word then
+  begin
+    if drive_lingua='' then
+    nome:=drivemask+'printita\'+n_nodrive
+    else
+    nome:=drivemask+DRIVE_LINGUA+n_nodrive;
+  end
+  else
+  nome:=drivemask+'word\'+n_nodrive;
+  {$else}
+  n_nodrive:=eliminadir(nome);
+  if not stampe_word then
+    nome:=drivemask+n_nodrive
+  else
+    nome:=drivemask+'word\'+n_nodrive;
+  {$endif}
+  if not exist(nome) then
+  begin
+
+     {messagebox(nome+' non trovato',mbinformation,[mbok],0);}
+
+  end;
+*)
+end;
+
+procedure StampaMask(Base,OffSet:word;NomeFile:st80;NotZero:boolean);
+
+ const NumRigheSt = 60;
+
+
+ var f    :text;
+     PInt :^integer;
+     PStr :^st240;
+     PReal:^real;
+     PChar:^char;
+
+
+ procedure InitTabella;
+  var i:integer;
+  begin
+     for i:=1 to MaxCampi do
+      with Tabella^[i] do
+       begin
+          Tipo:='n';
+          L:=0;
+          x:=0;y:=0;
+          BAddr:=0;OAddr:=0;
+          CifreInt:=0;CifreDec:=0;
+          nlineum:=0;
+          num:=0;
+       end;
+  end;
+
+
+ procedure LeggiMask(NomeF:string);
+  const
+     x=#157;
+     xinfoum=#176;
+  var
+     f:text;
+     Dato,Linea:string[248];
+     ch:char;
+     variabile:String[240];
+     I,J,K,Ll,K1,L1,Init157:integer;
+     Swich,flag1:integer;
+     realtemp:real;
+     num2:integer;
+     nom_mask,s1,s2:string;
+     trovato,finemask:boolean;
+procedure cercamask;
+begin
+  readln(f,linea);
+  nomef:=upstring(eliminadir(nomef));
+  while not trovato and not eof(f) do
+  begin
+    trovato:=linea[1]='#';
+    if not trovato then
+    begin
+      readln(f,linea);
+    end
+    else
+    begin
+      trovato:=copy(linea,2,length(linea)-1)=nomef;
+      if not trovato then
+      begin
+        readln(f,linea);
+      end;
+    end;
+  end;
+end;
+
+
+begin
+     nomef:=eliminadir(nomef);
+     {if length(nomef)>12 then
+     begin
+     nomef:=copy(nomef,1,8)+copy(nomef,length(nomef)-3,4);
+     end;}
+     nom_mask:='prints.sta';
+     settadriveprn(nom_mask);
+
+     if not exist(nom_mask) then
+     begin
+     writeln(glst,'non esiste '+nom_mask);
+     exit;
+     end;
+
+     ninfoum:=0;
+     ch:=' ';
+     assign(f,Nom_mask);
+     reset(f);
+     trovato:=false;
+     cercamask;
+     if not trovato then
+     begin
+       writeln(glst,'non trovo '+nomef+' in '+nom_mask);
+       close(f);
+       exit;
+     end;
+
+     I:=0;
+     finemask:=false;
+     while not eof(f) and not finemask do
+     begin
+         i:=i+1;
+         readln(f,Linea);
+         finemask:=(linea[1]='#') and (linea>'');
+         if not finemask then
+         begin
+           if (linea>'')  then
+           begin
+             Linea:=Format(Linea,248);  (*cippo ex 125*)
+             Ll:=LENGTH(LINEA);
+             K:=1;
+             repeat
+             Ch:=Linea[K];
+             if ch = x then
+             begin
+                Init157:=K;
+                with Tabella^[1] do  {.. lavora solo sul primo elemento di
+                                        Tabella^ ! ..}
+                 begin
+                    K:=K+1;
+                    Tipo:=Linea[K];
+                    if tipo in ['i','I','r','R','$','s','C','c','T','t','L'] then
+                    begin
+                      variabile:='';
+                       repeat
+                         K:=K+1;
+                         ch:=Linea[K];
+                         if ch in ['0'..'9'] then variabile:=variabile+ch;
+                       until not(ch in['0'..'9']);
+
+                       Swich:=0;
+                       val(variabile,L,Swich);
+                       if (Swich <> 0) or (length(variabile) = 0) then L:=0;
+
+                       if ch = ':' then
+                       begin
+                         variabile:='';
+                         repeat
+                           K:=K+1;
+                           ch:=Linea[K];
+                           if ch in ['0'..'9'] then variabile:=variabile+ch;
+                         until not(ch in['0'..'9']);
+                         Swich:=0;
+                         val(variabile,CifreDec,Swich);
+                         if (Swich <> 0) or (length(variabile) = 0) then CifreDec:=0;
+                       end;
+                       k:=k-1;
+                    end
+                    else
+                    begin
+                      variabile:='';
+                      K:=K+1;
+                      ch:=Linea[K];
+                      if ch in ['0'..'9'] then variabile:=variabile+ch;
+                      flag1:=0;
+                      val(variabile,L,flag1);
+                      if (flag1 <> 0) or (length(variabile) = 0) then L:=0;
+                      K:=K+1;
+                      ch:=Linea[K];
+                      variabile:='';
+                      K:=K+1;
+                      ch:=Linea[K];
+                      if ch in ['0'..'9'] then variabile:=variabile+ch;
+                      flag1:=0;
+                      val(variabile,num,flag1);
+                      if (flag1 <> 0) or (length(variabile) = 0) then num:=0;
+                      nlineum:=numerolum(tipo);
+                      case num of
+                      1:tipo:='R';
+                      2:begin
+                          num:=1;
+                          tipo:='R';
+                        end;
+                      3:BEGIN
+                          tipo:='R';
+                          num:=2;
+                        END;
+                      4:begin
+                          num:=2;
+                          tipo:='R';
+                        end;
+                      end;
+                      cifredec:=arkum^[nlineum].um[num].dec;
+                    end;
+                    BAddr:=Base;OAddr:=OffSet;
+                    case Tipo of
+                      'I':
+                        begin
+                           PInt:=ptr(BAddr,OAddr);
+                           if notzero and (PInt^ = 0) then Dato:='  '
+                           else
+                            begin
+                              str(PInt^:L,Dato);
+                              Dato:=SetRight(Dato);
+                            end;
+                           OffSet:=OffSet+2;
+                        end;
+                      'R':
+                        begin
+                           if L > 0 then L:=L+1;
+                           PReal:=ptr(BAddr,OAddr);
+                           if notzero and (PReal^ = 0) then Dato:='  '
+                           else
+                           begin
+                             if nlineum>0 then
+                             realtemp:=preal^/arkum^[nlineum].um[num].coeffum/UmLav^[nlineum].um[num].coeffum
+                             else
+                             realtemp:=preal^;
+                             str(realtemp:L:CifreDec,Dato);
+                             Dato:=SetRight(Dato);
+                             nlineum:=0;
+                           end;
+                           OffSet:=OffSet+6;
+                        end;
+                      'T':
+                        begin
+                           if L > 0 then L:=L+1;
+                           PReal:=ptr(BAddr,OAddr);
+                           if notzero and (PReal^ = 0) then Dato:='  '
+                           else
+                           begin
+                             realtemp:=(preal^*costMolttemp)+costAddTemp;
+                             str(realtemp:L:CifreDec,Dato);
+                             Dato:=setleft(SetRight(Dato));
+                             nlineum:=0;
+                           end;
+                           OffSet:=OffSet+6;
+                        end;
+                      '$':
+                        begin
+                           PStr:=ptr(BAddr,OAddr);
+                           Dato:=PStr^;Dato:=setleft(setright(dato));
+                           OffSet:=OffSet+L+1;
+                        end;
+                      'L':
+                        begin
+                           PStr:=ptr(BAddr,OAddr);
+                           Dato:=PStr^;Dato:=setright(dato);
+                           OffSet:=OffSet+L+1;
+                        end;
+                      'C':
+                        begin
+                           PChar:=ptr(BAddr,OAddr);
+                           Dato:=' ';
+                           Dato[1]:=PChar^;
+                           OffSet:=OffSet+L;
+                        end;
+                      else
+                    end;
+                    L1:=L;
+                  end; { with Tabella^ [1] }
+                 for K1:=Init157 to K do Linea[K1]:=' ';
+                 if L1 > length(Dato) then L1:=length(Dato);
+                 for K1:=1 to L1 do Linea[K1+Init157-1]:=Dato[K1];
+             end; {if ch = x then }
+             if {ch=xinfoum}false then
+             begin
+               ch:=' ';
+               ninfoum:=1;
+               with infoum^[ninfoum] do
+               begin
+                 ix:=k;iy:=i;
+                 k:=k+1;
+                 ch:=linea[k];
+                 if ch<>'T' then
+                 begin
+                   messum^[ninfoum].n1:=numerolum(ch);
+                   variabile:='';
+                   k:=k+1;
+                   ch:=linea[k];
+                   if ch in ['0'..'9'] then variabile:=variabile+ch;
+                   flag1:=0;
+                   val(variabile,num2,flag1);
+                   if (flag1 <> 0) or (length(variabile) = 0) then num2:=0;
+                   messum^[ninfoum].n2:=num2;
+                 end
+                 else
+                 begin
+                   messum^[ninfoum].n1:=0;
+                   messum^[ninfoum].n2:=1;
+                 end;
+               end;
+
+               with infoum^[1] do
+               begin
+                 for K1:=ix to K do Linea[K1]:=' ';
+                 L1 :=length(arkum^[messum^[1].n1].um[messum^[1].n2].descum);
+                 for K1:=1 to L1 do Linea[K1+ix-1]:=arkum^[messum^[1].n1].um[messum^[1].n2].descum[K1];
+               end
+             end;
+             K:=K+1;
+             until K >= Ll;
+             K1:=Length(Linea);
+             while (Linea[K1] = ' ') and (K1 > 0) do K1:=K1-1;
+             Linea:=format(Linea,K1);
+             if Stampprn then
+             begin
+               K1:=length(nomef);
+               delete(linea,15,k1+4);
+               insert('  '+nomef+'  ',linea,15);
+             end;
+           end;
+           writeln(glst,Linea);
+         end;
+      end;
+     close(f);
+  end;
+
+
+ begin
+    if FlagStampa then
+     begin
+        InitTabella;
+        LeggiMask(NomeFile);
+     end;
+ end;
+
+ procedure SaltoPag;
+  begin
+     if FlagStampa then writeln(glst,#12);
+  end;
+
+
+ procedure WriteTesto(Nome:string);
+  var f:text;
+      linea:string[248];
+      k,k1,l1,flag1,num2,ll,x:integer;
+      ch:char;
+      variabile:string[240];
+      nom_mask:string;
+      trovato,finemask:boolean;
+  const xinfoum=#176;
+
+procedure cercamask;
+begin
+  readln(f,linea);
+  nome:=upstring(eliminadir(nome));
+  while not trovato and not eof(f) do
+  begin
+    trovato:=linea[1]='#';
+    if not trovato then
+    begin
+      readln(f,linea);
+    end
+    else
+    begin
+      trovato:=copy(linea,2,length(linea)-1)=nome;
+      if not trovato then
+      begin
+        readln(f,linea);
+      end;
+    end;
+  end;
+end;
+
+
+  begin
+     nome:=eliminadir(nome);
+     {
+     if length(nome)>12 then
+     begin
+     nome:=copy(nome,1,8)+copy(nome,length(nome)-3,4);
+     end;
+     }
+     if not FlagStampa then exit;
+     ninfoum:=0;
+
+
+     nom_mask:='prints.sta';
+     settadriveprn(nom_mask);
+
+     if not exist(nom_mask) then
+     begin
+     writeln(glst,'non esiste '+nom_mask);
+     exit;
+     end;
+     ninfoum:=0;
+     ch:=' ';
+     assign(f,Nom_mask);
+     reset(f);
+     trovato:=false;
+     cercamask;
+     if not trovato then
+     begin
+       writeln(glst,'non trovo '+nome+' in '+nom_mask);
+       close(f);
+       exit;
+     end;
+     finemask:=false;
+     while not eof(f) and not finemask do
+     begin
+       readln(f,Linea);
+       finemask:=(linea[1]='#') and (linea>'');
+       if not finemask then
+       begin
+         Ll:=LENGTH(LINEA);
+         k:=1;
+         if linea>'' then
+         repeat
+         ch:=linea[k];
+         if ch=xinfoum then
+         begin
+           ninfoum:=1;
+           with infoum^[ninfoum] do
+           begin
+             ix:=k;
+             k:=k+1;
+             ch:=linea[k];
+             if ch<>'T' then
+             begin
+               messum^[ninfoum].n1:=numerolum(ch);
+               variabile:='';
+               k:=k+1;
+               ch:=linea[k];
+               if ch in ['0'..'9'] then variabile:=variabile+ch;
+               flag1:=0;
+               val(variabile,num2,flag1);
+               if (flag1 <> 0) or (length(variabile) = 0) then num2:=0;
+               messum^[ninfoum].n2:=num2;
+             end
+             else
+             begin
+               messum^[ninfoum].n1:=0;
+               messum^[ninfoum].n2:=1;
+             end;
+           end;
+           with infoum^[1] do
+           begin
+             for K1:=ix to K do Linea[K1]:=' ';
+             L1 :=length(arkum^[messum^[1].n1].um[messum^[1].n2].descum);
+             for K1:=1 to L1 do Linea[K1+ix-1]:=arkum^[messum^[1].n1].um[messum^[1].n2].descum[K1];
+           end
+         end;
+         K:=K+1;
+         until K >= Ll;
+         K1:=Length(Linea);
+         while (Linea[K1] = ' ') and (K1 > 0) do K1:=K1-1;
+         if StampPrn then
+         begin
+             x:=length(nome);
+             delete(linea,15,x+4);
+             insert('  '+nome+'  ',linea,15);
+          end;
+         Linea:=format(Linea,K1);
+         writeln(glst,Linea);
+       end;
+      end;
+     close(f);
+  end;
+
+end.
