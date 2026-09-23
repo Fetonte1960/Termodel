@@ -139,6 +139,29 @@ Risultato:
   `fa71bd4cee4968a7f57ad3458ba883f0d6c4e262` —
   `Fix FIN numeric validation in Termodel Core`.
 
+### INCARICO 2026-09-23 — esposizione TermodelLog per progetto
+Stato: COMMISSIONATO
+
+Commissionato:
+- verificare il comportamento del logging del Desktop attraverso i sorgenti disponibili in `SorgentiTermodel/Library` e confrontarlo con l'adattatore headless corrente;
+- non introdurre un secondo motore di log: riusare `TermodelLog` già chiamato dal codice Desktop/Core e la diagnostica prodotta da `GeneraModello`;
+- persistere, a ogni `Aggiorna Modello` riuscito, il log applicativo corrente come `SavedProjects/{projectId}/logs/TermodelLog.md`, mantenendo `diagnostics.txt` e `calculation.log` per retrocompatibilità e metadati tecnici;
+- aggiungere `GET /api/projects/{projectId}/logs/termodel` che restituisce il file di log corrente senza rieseguire il calcolo;
+- il log deve essere isolato per projectId, sostituito atomicamente insieme al workspace corrente e sopravvivere al riavvio del Service finché persiste lo storage;
+- verificare che `TermodelLog.Reset()` avvenga a inizio elaborazione e che `WriteLog`, `LogOperation` e `LogError` siano catturati;
+- verificare le differenze residue rispetto al Desktop, in particolare la gestione delle categorie tramite `IsEnabled(...)`; non inventare configurazioni Desktop non presenti nella Library;
+- non modificare frontend, `definizionedati.json` o Library Desktop in questo incarico.
+
+Criteri di completamento:
+- documentare cosa fa realmente il Desktop sulla base dei sorgenti disponibili e quali parti del logger Desktop non sono ancora presenti nella Library;
+- build Release con 0 errori;
+- smoke HTTP reale: calcolo di progetto, presenza fisica di `logs/TermodelLog.md`, GET del log con contenuto identico al file, 404 per progetto/log assente e lettura ancora riuscita dopo riavvio Service;
+- verificare che una elaborazione fallita non sostituisca il log dell'ultimo calcolo riuscito;
+- aggiornare contratto condiviso, README e questa voce a `Stato: ESEGUITO` soltanto dopo build e smoke riusciti.
+
+Risultato:
+- non ancora implementato.
+
 ### INCARICO 2026-09-23 — inoltro suggerimenti utenti a GitHub
 Stato: ESEGUITO
 
