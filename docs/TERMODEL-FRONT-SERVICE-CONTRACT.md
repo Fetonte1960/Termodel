@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.5**  
+Versione documento: **1.6**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; commissionata configurazione log per Aggiorna Modello**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -376,6 +376,52 @@ Regole:
   per retrocompatibilità e metadati tecnici;
 - il frontend potrà consumare l'endpoint in una fase successiva, ma non è
   richiesto modificarlo per l'implementazione server.
+
+### Configurazione log di Aggiorna Modello
+
+`POST /api/calculations` mantiene il body tecnico
+`TERMODEL-PROJECT-TEXT-V1` invariato. Le opzioni di log sono parametri di
+esecuzione della singola elaborazione e non vengono inserite nel progetto.
+
+Parametri query previsti:
+
+```text
+logEnabled=true|false
+logCategories=Sempre,colmi,spezza,Error,Svg,RedrawHelix,GeneraModello,Performance,PontiAutomatici
+```
+
+Regole di compatibilità:
+
+- se entrambi i parametri sono omessi, resta attivo il comportamento Service
+  precedente: tutte le chiamate dirette `WriteLog`, `LogOperation` e
+  `LogError` vengono raccolte, mentre i blocchi diagnostici protetti da
+  `IsEnabled(...)` restano disattivati;
+- `logEnabled=false` disabilita completamente la raccolta del log per quella
+  elaborazione;
+- quando `logCategories` è presente, passa a modalità filtrata:
+  `IsEnabled(category)` è vero soltanto per le categorie selezionate e anche
+  le scritture dirette vengono filtrate;
+- `LogOperation` appartiene alla categoria Desktop `Sempre`;
+- `LogError` appartiene alla categoria Desktop `Error`;
+- i nomi categoria sono case-insensitive;
+- `logCategories=all` abilita tutte le categorie;
+- `logCategories=none` abilita nessuna categoria;
+- una categoria sconosciuta è un errore della richiesta e non deve avviare il
+  calcolo;
+- la configurazione deve essere isolata per richiesta/progetto e non deve
+  modificare flag globali condivisi fra utenti.
+
+Esempi:
+
+```http
+POST /api/calculations?logCategories=colmi,spezza
+POST /api/calculations?logCategories=all
+POST /api/calculations?logEnabled=false
+```
+
+La risposta di `POST /api/calculations` dovrà riportare in modo additivo la
+configurazione log effettivamente applicata; la stessa configurazione sarà
+registrata in `logs/calculation.log`.
 
 ### Assegnazione di un nuovo projectId
 
