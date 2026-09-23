@@ -1,0 +1,803 @@
+# CALCOLO TUBAZIONI — REGISTRO DI SVILUPPO AUTONOMO
+
+Aggiornamento: **23 settembre 2026**  
+Stato: **STUDIO E ARCHITETTURA REGISTRATI — MOTORE NON IMPLEMENTATO**  
+Linea: **TermodelService / libreria di supporto ai pannelli radianti**
+
+Questo documento è il registro autonomo della futura libreria **Calcolo
+Tubazioni**. Non sostituisce `PROJECT-SUMMARY-SERVICE.md`, il contratto
+Frontend↔Service o i riferimenti Desktop/Pascal. Serve a conservare nel tempo
+fonti, decisioni, stato, prove, differenze e prossimi passi di questo
+sottosistema.
+
+## 1. Obiettivo
+
+Realizzare una libreria headless per il calcolo delle reti idrauliche di
+tubazioni, inizialmente destinata soprattutto a supportare i **pannelli
+radianti**.
+
+La libreria dovrà poter essere richiamata in futuro dal flusso autorevole:
+
+```text
+Aggiorna Modello
+      |
+      +--> modello Termodel
+      |
+      +--> pannelli / circuiti / collettori
+      |
+      +--> Calcolo Tubazioni
+      |
+      +--> risultati idraulici + diagnostica + output derivati
+```
+
+Il modulo è una linea di sviluppo autonoma perché possiede algoritmi, archivi,
+test e risultati propri. L'integrazione finale deve però avvenire attraverso
+`Termodel.Core` e non trasformare `Termodel.WebService` in un secondo
+motore algoritmico.
+
+## 2. Principi vincolanti
+
+1. I vecchi sorgenti Pascal sono **fonte di ispirazione funzionale,
+   algoritmica e documentale**, non codice da copiare automaticamente.
+2. Il nuovo motore deve essere .NET/headless, deterministico e testabile senza
+   WPF, BDE/Paradox, AutoCAD, dialoghi o file temporanei usati come flag.
+3. Geometria/rete, calcolo idraulico, dati archivio e presentazione UI devono
+   essere separati.
+4. Il database Tubazioni deve essere **indipendente** dagli archivi Termodel.
+5. Non modificare `definizionedati.json` per introdurre Tubazioni.
+6. Il nuovo schema JSON Tubazioni deve usare la stessa filosofia e lo stesso
+   formato di metadati di `definizionedati.json` per consentire
+   l'automazione delle form.
+7. Il vecchio `base.dat` è un riferimento dichiarativo: default, combo,
+   lookup, griglia, decimali e relazioni vanno reinterpretati in JSON, non
+   mantenuti come parser runtime obbligatorio.
+8. La libreria DXF storica è un riferimento per capire entità e convenzioni,
+   non un requisito per il nuovo solver.
+9. L'integrazione con `Aggiorna Modello` verrà definita soltanto quando il
+   nucleo Tubazioni sarà verificato autonomamente.
+10. Nessun risultato può essere dichiarato equivalente al Pascal senza
+    regression test su casi noti.
+
+## 3. Fonti storiche studiate
+
+### 3.1 Raccolta Pascal
+
+Riferimento generale:
+
+```text
+SorgentiTermodel/Library/SorgentiPascal/
+```
+
+La raccolta è consultiva e conserva struttura/provenienza dei vecchi alberi
+`C:\DOCUMENTI\sd` e `C:\DOCUMENTI\bmsistemi`.
+
+Per Tubazioni il nucleo principale è:
+
+```text
+SorgentiTermodel/Library/SorgentiPascal/Pascal/02_Sottosistemi_Completi/
+  origine/bmsistemi/drivepsviluppo/prjs/cpi win clima/versione_10/Tubi/
+```
+
+La scansione storica documentata per il sottosistema Tubazioni comprende 247
+sorgenti selezionati, 204 dipendenze fuori dal nucleo, 1.113 riferimenti
+risolti e 1.395 riferimenti non risolti. La quantità di dipendenze conferma che
+non è opportuno tentare un porting monolitico del vecchio progetto.
+
+### 3.2 Sorgenti algoritmici principali
+
+| Sorgente Pascal | Ruolo osservato |
+|---|---|
+| `Calcolo_Tubi.pas` | orchestrazione del solver, portate, perdite distribuite, dimensionamento, percorso sfavorito, equilibratura, portate effettive |
+| `PERDCONC.PAS` | perdite concentrate / coefficienti di perdita |
+| `EQUIL.PAS` | variante/algoritmi di equilibratura |
+| `UGrafoDXF.pas` | ricostruzione del grafo della rete da entità geometriche, terminali, valvole, curve e diramazioni |
+| `RITORNO.PAS` | costruzione geometrica della rete di ritorno |
+| `collettori.pas` | costruzione/disegno dei collettori |
+| `iotubi.pas` | inizializzazione e I/O degli archivi storici |
+| `DATITUBI.PAS` | gestione archivi tubazioni, terminali, perdite, fluidi, montaggi |
+| `OutDXFBM.pas` | emissione di comandi geometrici linee/archi/quote per il risultato di disegno |
+| `UMain_CalcTubi.pas` | UI/orchestratore Delphi, generazione DB/form, caricamento DXF, avvio calcoli |
+| `CalcTubiDll.dpr` | DLL storica che espone `CalcTubi` e compone le dipendenze |
+| `Calcolo_analitico_pannelli.pas` | tabelle/interpolazioni e formule storiche per pannelli radianti |
+| `Pannelli.pas` | funzioni storiche collegate ai pannelli |
+
+## 4. Comportamento storico ricostruito
+
+Il flusso concettuale del vecchio sistema è:
+
+```text
+DXF + blocchi + archivi
+        |
+        v
+ricostruzione entità di rete
+        |
+        v
+grafo nodi/tronchi/terminali
+        |
+        v
+controllo topologico
+        |
+        v
+propagazione portate dai terminali verso l'origine
+        |
+        v
+dimensionamento diametri
+        |
+        +--> perdita distribuita
+        +--> perdite concentrate
+        +--> eventuale dislivello
+        |
+        v
+ricerca percorso più sfavorito
+        |
+        +--> eventuale equilibratura
+        +--> eventuali valvole di taratura
+        +--> eventuale iterazione portate effettive
+        |
+        v
+portata/prevalenza + risultati per tronco
+        |
+        v
+ritorno / collettori / quote / output grafico
+```
+
+### 4.1 Portate
+
+`Portate` e la funzione ricorsiva `PortTronco` sommano le portate dei
+terminali lungo l'albero della rete. Il codice contiene anche una modalità
+storica per reti sanitarie basata su unità di carico; questa funzione non è
+necessariamente parte della prima versione per pannelli radianti e dovrà essere
+classificata come estensione separata.
+
+### 4.2 Perdite distribuite
+
+`F0` contiene più correlazioni storiche. La forma 1 implementa il
+coefficiente di attrito Darcy/Colebrook, con gestione del regime laminare.
+
+`Perdita_Tubo` conferma la struttura fisica:
+
+```text
+portata -> velocità -> Reynolds/attrito -> perdita lineare
+```
+
+Nel nuovo motore formule, unità e costanti non vanno trascritte senza test:
+devono diventare funzioni pure con unità esplicite e casi di verifica
+indipendenti.
+
+### 4.3 Dimensionamento
+
+`dimensiona` / `DimensTronco`:
+
+- individua la famiglia di tubo;
+- usa il diametro imposto in verifica oppure cerca nella serie disponibile;
+- applica limiti di velocità e perdita specifica;
+- tratta in modo particolare i rami di collettore;
+- somma perdite distribuite e concentrate;
+- percorre ricorsivamente i rami;
+- determina il percorso più sfavorito.
+
+Parametri storici di rete provengono da `Reti`:
+`dps`, `maxvels`, `dpe`, `maxvele`, `maxvelColl`,
+`Tolleranza`, `Iterazioni`.
+
+### 4.4 Perdite concentrate ed equilibratura
+
+Le perdite localizzate sono associate a curve, TEE, diramazioni, valvole e
+terminali. `UGrafoDXF` riconosce anche la geometria degli angoli e associa i
+componenti al tratto.
+
+L'equilibratura storica prova a ridurre lo sbilanciamento dei rami modificando
+diametri e/o usando elementi di taratura. L'opzione deve diventare esplicita
+nel nuovo modello di calcolo.
+
+### 4.5 Opzioni storiche da non replicare come file
+
+Il vecchio `calcoli` attiva modalità tramite file come:
+
+```text
+ver.sce
+equil.sce
+Valv.sce
+port.sce
+sanit*.sce
+```
+
+Nel nuovo modulo queste devono diventare proprietà di un oggetto
+`TubazioniCalculationOptions`, non file di controllo sul filesystem.
+
+## 5. Grafo e geometria: separazione dal DXF
+
+`UGrafoDXF.pas` contiene due responsabilità che nel nuovo progetto vanno
+separate:
+
+1. lettura/interpretazione delle entità CAD;
+2. costruzione e validazione del grafo idraulico.
+
+Il solver non deve ricevere un file DXF. Deve ricevere un modello neutro,
+indicativamente:
+
+```text
+TubazioniNetwork
+  Nodes[]
+  Segments[]
+  Terminals[]
+  Manifolds[]
+  Valves[]
+  LocalLosses[]
+```
+
+Ogni segmento deve poter descrivere almeno:
+
+- identificativo;
+- nodo iniziale/finale;
+- lunghezza;
+- dislivello;
+- famiglia tubo;
+- diametro imposto o calcolabile;
+- perdite concentrate/componenti;
+- piano/circuito di appartenenza;
+- eventuale relazione mandata/ritorno.
+
+Un adattatore separato potrà costruire questo modello da:
+
+- geometria Termodel corrente;
+- grafo pannelli già prodotto dal Desktop/C#;
+- SVG tecnico;
+- DXF/netDxf quando realmente necessario;
+- casi test costruiti direttamente in memoria.
+
+### 5.1 Cosa conservare dalla vecchia libreria DXF
+
+Da `UGest_cad.pas`, `UGrafoDXF.pas`, `leggi_dxf_bm.pas`,
+`OutDXFBM.pas` vanno conservati come conoscenza:
+
+- convenzioni per layer tubi/terminali/collettori/ritorno/quote;
+- significato dei blocchi terminale, valvola, inizio rete e collettore;
+- logica di prossimità/connessione;
+- riconoscimento di curve e diramazioni;
+- relazione fra geometria di mandata e ritorno;
+- emissione di linee, archi e quote come risultato derivato.
+
+Non vanno portati nel Core:
+
+- script AutoCAD;
+- `WinExec`;
+- generazione di file `.scr`;
+- dipendenza da prototipi DXF nel filesystem;
+- naming di file temporanei come protocollo fra moduli.
+
+`OutDXFBM` suggerisce invece un concetto utile: un **drawing result neutro**
+(linea/arco/etichetta/metadata), convertibile successivamente in SVG, DXF o
+altro artifact senza contaminare il solver.
+
+## 6. Rapporto con i pannelli radianti
+
+Il riferimento C# Desktop corrente è:
+
+```text
+SorgentiTermodel/Library/PannelliRadianti.cs
+SorgentiTermodel/Library/Impianti/Pannelli/CalcoloPannelli.cs
+SorgentiTermodel/Library/Impianti/Pannelli/IoPannelli.cs
+SorgentiTermodel/Library/Impianti/Pannelli/IoTubi.cs
+```
+
+`CalcoloPannelli.cs` possiede già DTO logici per piani, locali e circuiti e
+calcola, fra l'altro, lunghezza del circuito e potenze richiesta/erogabile.
+
+`IoPannelli` genera un `retePannelli.xml` con nodi e tratti; `IoTubi`
+usa già tale grafo per collettori, collegamenti mandata/ritorno ed esecutivo.
+
+Quindi l'integrazione target non deve ricominciare dal DXF storico. La
+direzione preferita è:
+
+```text
+Pannelli / Spirali
+      |
+      | circuiti + lunghezze + potenze + grafo
+      v
+TubazioniNetworkAdapter
+      |
+      v
+Tubazioni.Core
+      |
+      +--> portate per circuito
+      +--> perdite circuito
+      +--> collettori/rami
+      +--> prevalenza richiesta
+      +--> bilanciamento
+      +--> segnalazioni
+```
+
+Il calcolo Tubazioni deve essere utilizzabile anche senza pannelli radianti;
+i pannelli costituiscono il primo produttore di input e il primo caso d'uso.
+
+## 7. Database Tubazioni indipendente
+
+### 7.1 Precedente storico `base.dat`
+
+Il `base.dat` Tubazioni storico è stato trovato in tre collocazioni della
+versione 10; le tre copie lette hanno lo stesso Git blob:
+
+```text
+a643c307657969b756d53cbeca484a20463596dc
+```
+
+Il file descrive in modo dichiarativo tabelle, campi, default e relazioni.
+
+Archivi particolarmente rilevanti:
+
+- `Reti`;
+- `Tubazioni`;
+- `Diametri`;
+- `MatTubi`;
+- `Perdite`;
+- `TipiRete`;
+- `TipoTerminali` / `DettTerminali`;
+- `Perdite_Conc` / `Dett_Perdite_Conc`;
+- dati fluidi e valvole presenti negli altri sorgenti storici.
+
+La sintassi storica contiene metadati equivalenti concettualmente a:
+
+- `INI`: valore iniziale;
+- `CMB`: scelta da elenco;
+- `LKK`: lookup fra archivi;
+- `GRD`: colonna visibile/griglia;
+- `DEC`: precisione;
+- relazioni master/slave.
+
+### 7.2 Generatore storico e automazione form
+
+Il vecchio programma `GENERA` leggeva `base.dat` e generava
+automaticamente:
+
+- strutture record;
+- database;
+- lettura/scrittura dati;
+- griglie;
+- form;
+- combo;
+- lookup;
+- inizializzazioni;
+- validazioni;
+- relazioni master/slave.
+
+Il codice generato `CompilaForm.pas` usa infatti primitive come
+`etichetta`, `AddGrid`, `AddCombo`, `LookUp`.
+
+Il nuovo sistema deve conservare **questa idea**, non il generatore Pascal:
+i metadati JSON devono essere interpretati direttamente a runtime.
+
+### 7.3 Nuovo schema JSON
+
+Nome di lavoro:
+
+```text
+tubazioni-definizionedati.json
+```
+
+Deve essere separato da:
+
+```text
+SorgentiTermodel/Library/definizionedati/definizionedati.json
+Server/.../Definitions/definizionedati.json
+```
+
+e usare la stessa forma concettuale del metadata Termodel corrente:
+
+```json
+{
+  "Tubazioni": {
+    "Codice": {
+      "LunghezzaMassima": 50,
+      "Descr": "Codice",
+      "Ini": "",
+      "Grid": ["Archivio"]
+    },
+    "Materiale": {
+      "Descr": "Materiale",
+      "Combo": ["auto_combo", "MaterialiTubi", "Codice", ""]
+    }
+  }
+}
+```
+
+Le proprietà Termodel da mantenere compatibili dove applicabili sono:
+
+- `LunghezzaMassima`;
+- `NumeroCifre`;
+- `NumeroDecimali`;
+- `Descr`;
+- `Ini`;
+- `ReadOnly`;
+- `Combo`;
+- `Grid`;
+- `Form`.
+
+In particolare va mantenuta la convenzione:
+
+```json
+["auto_combo", "NomeArchivio", "Campo", "ValoreInizialeOpzionale"]
+```
+
+per i lookup dinamici.
+
+### 7.4 Dati operativi JSON
+
+Tubazioni avrà anche un archivio dati indipendente JSON. Nome di lavoro:
+
+```text
+tubazioni-database.json
+```
+
+La struttura logica deve mantenere la semantica già usata da Termodel in
+memoria: **archivio -> elenco righe -> campi valore**, ad esempio:
+
+```json
+{
+  "format": "TERMODEL-TUBAZIONI-DATABASE",
+  "version": 1,
+  "archives": {
+    "MaterialiTubi": [
+      {
+        "Codice": "PEX",
+        "Descrizione": "Polietilene reticolato",
+        "RugositaMm": "..."
+      }
+    ],
+    "Tubazioni": [],
+    "Diametri": [],
+    "PerditeLocalizzate": []
+  }
+}
+```
+
+I nomi definitivi, i tipi e i dati iniziali devono essere approvati dopo il
+mapping completo di `base.dat` e degli archivi storici.
+
+**Nota importante:** il Termodel Desktop corrente usa
+`definizionedati.json` come metadata e persiste molti archivi operativi in
+XML. Per Tubazioni la decisione è invece di usare JSON anche per il database
+operativo, mantenendo però la stessa filosofia di collection di record e lo
+stesso metadata/AutoForm. Non va dichiarato che l'attuale archivio Termodel
+sia già persistito interamente in JSON.
+
+### 7.5 Archivi candidati della prima versione
+
+Da verificare nel mapping di dettaglio:
+
+```text
+Reti
+MaterialiTubi
+Tubazioni
+Diametri
+TipiRete
+PerditeLocalizzate
+PerditeConcentrate
+DettaglioPerditeConcentrate
+Terminali
+Fluidi
+ValvoleTaratura
+Collettori
+```
+
+Le relazioni master/slave del vecchio `base.dat` devono diventare lookup e
+chiavi esplicite, senza puntatori o dipendenza dall'ordine fisico delle righe.
+
+## 8. Automazione Form
+
+Il riferimento moderno è:
+
+```text
+SorgentiTermodel/Library/definizionedati/AutoForm.cs
+SorgentiTermodel/Library/definizionedati/FormArchivio.xaml.cs
+```
+
+Il principio da riusare è:
+
+```text
+metadata JSON
+    |
+    +--> campi
+    +--> etichette
+    +--> default
+    +--> combo/lookup
+    +--> colonne griglia
+    +--> readonly/validazione
+    |
+    v
+form generata automaticamente
+```
+
+Il nuovo sviluppo non deve copiare WPF dentro il Core. Va separato:
+
+- **Tubazioni.Metadata**: schema neutro;
+- **Tubazioni.Data**: collezioni e validazione;
+- **renderer UI**: Desktop/Web specifico.
+
+Quando il frontend verrà coinvolto, la stessa definizione JSON dovrà poter
+pilotare una form Web senza duplicare manualmente lo schema.
+
+## 9. Architettura target
+
+Struttura logica proposta:
+
+```text
+Termodel.Core
+│
+├── Pannelli / modello energetico
+│
+└── Tubazioni
+    ├── Domain
+    │   ├── Network
+    │   ├── Node
+    │   ├── Segment
+    │   ├── Terminal
+    │   ├── Manifold
+    │   └── ComponentLoss
+    │
+    ├── Hydraulics
+    │   ├── FlowPropagation
+    │   ├── Friction
+    │   ├── LocalLosses
+    │   ├── PipeSizing
+    │   ├── CriticalPath
+    │   └── Balancing
+    │
+    ├── Data
+    │   ├── metadata JSON
+    │   ├── database JSON
+    │   └── validation/lookups
+    │
+    ├── Adapters
+    │   ├── RadiantPanels
+    │   ├── TermodelGeometry
+    │   └── DXF/SVG (solo se necessario)
+    │
+    └── Results
+        ├── HydraulicResult
+        ├── SegmentResult
+        ├── CircuitResult
+        ├── Diagnostics
+        └── DrawingResult
+```
+
+La collocazione fisica definitiva dentro `Termodel.Core` verrà scelta nella
+fase di implementazione. Non creare un nuovo servizio autonomo di rete se una
+libreria Core è sufficiente.
+
+## 10. Contratto interno preliminare
+
+Il solver dovrà tendere a una API pura simile a:
+
+```text
+TubazioniResult Calculate(
+    TubazioniNetwork network,
+    TubazioniDatabase database,
+    TubazioniCalculationOptions options)
+```
+
+Questa firma è solo una direzione progettuale; non è ancora contratto pubblico.
+
+`TubazioniCalculationOptions` dovrà sostituire i vecchi flag/file e potrà
+contenere, dopo verifica:
+
+- modalità verifica/predimensionamento;
+- equilibratura;
+- inserimento valvole di taratura;
+- calcolo portata effettiva;
+- tolleranza;
+- numero massimo iterazioni;
+- eventuale trattamento mandata/ritorno.
+
+## 11. Risultati attesi
+
+Il risultato non deve limitarsi a un numero globale. Dovrà poter contenere:
+
+- portata totale;
+- prevalenza richiesta;
+- percorso più sfavorito;
+- risultato per ogni tronco:
+  - portata;
+  - diametro;
+  - velocità;
+  - perdita lineare;
+  - perdita distribuita;
+  - perdite concentrate;
+  - perdita progressiva;
+- eventuale sbilanciamento;
+- taratura/valvola quando abilitata;
+- risultati per circuito pannello;
+- warning/errori strutturati;
+- eventuale drawing result per mandata/ritorno/collettori/quote.
+
+Le unità devono essere esplicite nel modello e nei test. Il nuovo codice non
+deve dipendere dalle unità implicite del Pascal.
+
+## 12. Diagnostica e logging
+
+Il nuovo modulo non deve creare un logger globale separato.
+
+Decisione provvisoria:
+
+- il solver produce una lista strutturata di diagnostiche;
+- l'adattatore Termodel potrà riversarle nel `TermodelLog` della singola
+  elaborazione;
+- l'eventuale nuova categoria `Tubazioni` di `TermodelLog` non viene
+  introdotta in questa fase: richiederà una decisione esplicita e
+  aggiornamento del contratto log.
+
+## 13. Integrazione futura con Aggiorna Modello
+
+**Non implementata in questa fase.**
+
+La sequenza target è:
+
+```text
+POST /api/calculations
+        |
+        v
+caricamento progetto
+        |
+        v
+modello Termodel
+        |
+        +--> pannelli/spirali (quando richiesti)
+        |
+        +--> adattamento rete Tubazioni
+        |
+        +--> Tubazioni.Core.Calculate(...)
+        |
+        v
+publish transazionale degli artifact
+```
+
+Prima dell'integrazione si dovranno decidere:
+
+- come il progetto dichiara che il calcolo Tubazioni è richiesto;
+- quali dati Tubazioni appartengono al progetto e quali al database generale;
+- dove vengono collocati metadata e database iniziale;
+- nome/formato dell'artifact risultante;
+- eventuali endpoint di lettura;
+- regole stale e persistenza;
+- compatibilità col frontend.
+
+Qualunque modifica a `TERMODEL-PROJECT-TEXT-V1` o al contratto
+Frontend↔Service richiederà un incarico separato.
+
+## 14. Strategia di regression test
+
+Il Pascal storico va usato come riferimento di confronto, non come dipendenza
+runtime.
+
+### Livello A — formule pure
+
+Test su:
+
+- Reynolds;
+- Darcy/Colebrook;
+- perdita lineare;
+- velocità;
+- perdite concentrate Zeta/Kv dove applicabili;
+- conversioni di unità.
+
+### Livello B — singolo tronco
+
+Input noto:
+
+```text
+portata + lunghezza + tubo + diametro + fluido + perdite concentrate
+```
+
+Confrontare:
+
+```text
+velocità
+perdita lineare
+perdita totale
+```
+
+### Livello C — albero semplice
+
+Rete con una origine, una diramazione e due terminali:
+
+- propagazione portate;
+- scelta diametri;
+- percorso sfavorito;
+- prevalenza.
+
+### Livello D — equilibratura
+
+Rete asimmetrica con risultati Pascal approvati:
+
+- sbilanciamento iniziale;
+- scelta diametri;
+- eventuale taratura;
+- convergenza entro tolleranza.
+
+### Livello E — pannelli radianti
+
+Caso reale ridotto:
+
+```text
+collettore
+  +-- circuito locale A
+  +-- circuito locale B
+```
+
+Confrontare lunghezze, portate, perdite dei circuiti, collettore e prevalenza.
+
+### Golden Results
+
+Quando saranno disponibili esecuzioni Pascal riproducibili, salvare input e
+risultati approvati in una struttura coerente con la strategia generale
+`TestProjects / GoldenResults / RegressionRunner`.
+
+Un Golden Result non deve essere aggiornato automaticamente quando il nuovo
+motore produce un valore differente.
+
+## 15. Fasi di sviluppo
+
+| Fase | Contenuto | Stato |
+|---|---|---|
+| T0 | studio sorgenti Pascal, `base.dat`, generatore form/DB, DXF e Pannelli C# | **ESEGUITO** |
+| T1 | specifica completa metadata + database JSON Tubazioni e mapping `base.dat` | DA FARE |
+| T2 | dominio neutro `TubazioniNetwork` + validazione topologica | DA FARE |
+| T3 | kernel idraulico puro: portate, attrito, perdite, sizing, percorso sfavorito | DA FARE |
+| T4 | equilibratura / valvole / portate effettive selezionate | DA FARE |
+| T5 | adapter Pannelli radianti usando il grafo C# corrente | DA FARE |
+| T6 | regression test Pascal/golden | DA FARE |
+| T7 | drawing result neutro e adapter DXF/SVG | DA FARE |
+| T8 | integrazione controllata in `Aggiorna Modello` | DA FARE |
+| T9 | eventuale UI Web/Desktop guidata dai metadata | DA FARE |
+
+## 16. Decisioni consolidate
+
+- Nome linea: **Calcolo Tubazioni**.
+- Sviluppo autonomo, ma destinato a vivere come libreria riusabile dal Core.
+- Primo utilizzo: supporto idraulico ai pannelli radianti.
+- Fonte algoritmica primaria: vecchio sottosistema Pascal `Tubi`.
+- `base.dat` e `GENERA` sono precedenti storici del nuovo metadata system.
+- Nuovo database: JSON autonomo Tubazioni.
+- Nuovo metadata: JSON autonomo con convenzioni compatibili con
+  `definizionedati.json`.
+- Automazione form: obbligatoria come principio; non creare una form rigida per
+  ciascun archivio.
+- Nessuna modifica all'attuale `definizionedati.json`.
+- Nessuna dipendenza necessaria da AutoCAD.
+- Il solver deve lavorare su grafo/rete neutri, non direttamente su DXF.
+- I risultati grafici sono derivati e separati dall'algoritmo idraulico.
+- Il collegamento con `Aggiorna Modello` verrà fatto solo dopo test autonomi.
+
+## 17. Questioni aperte
+
+- definire il set minimo esatto degli archivi T1;
+- verificare quali dati storici siano ancora tecnicamente/normativamente
+  appropriati;
+- decidere se i dati di fluido saranno tabellari o calcolati da proprietà
+  termofisiche;
+- identificare progetti Pascal ancora eseguibili per produrre Golden Results;
+- formalizzare la relazione circuiti Pannelli ↔ terminali Tubazioni;
+- decidere il formato finale del drawing result;
+- decidere se introdurre una categoria log `Tubazioni`;
+- definire in un incarico futuro il contratto di integrazione con
+  `POST /api/calculations`.
+
+## 18. Stato di verifica
+
+```text
+studiato sorgenti storici:       SI, prima mappatura
+architettura progettata:         SI, livello registro
+metadata JSON implementato:      NO
+database JSON implementato:      NO
+solver idraulico implementato:   NO
+adapter Pannelli implementato:   NO
+integrazione Aggiorna Modello:   NO
+compilato:                       NON APPLICABILE in questa fase documentale
+eseguito:                        NO
+regression test Pascal:          NO
+confronto Golden:                NO
+```
+
+La prossima attività corretta è **T1: mappare integralmente il `base.dat`
+Tubazioni nel nuovo schema metadata/database JSON**, senza ancora collegarlo
+al frontend o ad `Aggiorna Modello`.
