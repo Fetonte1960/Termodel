@@ -2,7 +2,7 @@
 
 Versione documento: **1.5**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; definito endpoint server per feedback utenti verso GitHub Issues; commissionato artifact TermodelLog per progetto**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -354,7 +354,7 @@ Percorso logico:
 SavedProjects/{projectId}/logs/TermodelLog.md
 ```
 
-Endpoint previsto:
+Endpoint implementato:
 
 ```http
 GET /api/projects/{projectId}/logs/termodel
@@ -369,6 +369,9 @@ Regole:
 - una elaborazione fallita non deve sostituire il log dell'ultimo calcolo
   riuscito;
 - la lettura del log non deve rilanciare il calcolo;
+- la risposta usa `text/markdown; charset=utf-8`, nome logico
+  `TermodelLog.md` e `X-Termodel-Artifact-Stale` per indicare se un
+  salvataggio successivo ha reso il log riferito a uno stato precedente;
 - `diagnostics.txt` e `calculation.log` restano disponibili internamente
   per retrocompatibilità e metadati tecnici;
 - il frontend potrà consumare l'endpoint in una fase successiva, ma non è
