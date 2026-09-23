@@ -736,146 +736,193 @@ Collettori
 Le relazioni master/slave del vecchio `base.dat` devono diventare lookup e
 chiavi esplicite, senza puntatori o dipendenza dall'ordine fisico delle righe.
 
-### 7.6 Archivi minimi per il calcolo pannelli
+### 7.6 Revisione archivi pannelli radianti — modello autorevole
 
-La prima funzione operativa richiede soltanto due famiglie di archivio
-obbligatorie: **Tubazioni** e **Fluidi**. Sono già progettate in modo da non
-impedire l'estensione futura al programma generalista.
+**Revisione 23 settembre 2026 — la precedente ipotesi
+`TipologiePannelli / Tubazioni / Fluidi` è SUPERATA.**
 
-#### 7.6.1 Archivio Tubazioni
+Per il completamento pannelli radianti gli archivi autorevoli sono due:
 
-Struttura minima proposta:
+```text
+Reti
+TipologiePannelli
+```
+
+La separazione segue la responsabilità dei dati:
+
+```text
+Reti
+  = cosa sto progettando e come deve funzionare
+
+TipologiePannelli
+  = quale prodotto/sistema costruttivo sto usando
+```
+
+#### 7.6.1 Archivio Reti
+
+`Reti` è predisposto come archivio generalista della rete.
+
+Tipi futuri previsti:
+
+```text
+PannelliRadianti
+Tubazioni
+Canali
+...
+```
+
+Nella fase corrente è implementato soltanto:
+
+```text
+TipoRete = PannelliRadianti
+```
+
+Prima riga:
+
+```text
+Codice                     RAD-DEFAULT
+Descrizione                Pannelli radianti - rete standard
+TipoRete                   PannelliRadianti
+CodiceTipologiaPannello    GEN-DEFAULT
+PassoSelezionatoMm         300
+Fluido                     Acqua
+TemperaturaMandataC        35
+TemperaturaRitornoC        30
+TemperaturaAmbienteC       20
+TemperaturaEsternaProgettoC 5
+LunghezzaMassimaCircuitoM  100
+PerditaCaricoMassimaCircuitoPa 25000
+KLayout                    1.000
+FormulaPerdita             Darcy-Weisbach
+Attivo                     SI
+```
+
+Principio: in `Reti` vanno i dati che **non dipendono dal costruttore del
+pannello**, ma dalla scelta progettuale e dalle condizioni di esercizio.
+
+La temperatura media dell'acqua sarà ricavata da mandata/ritorno. Per la prima
+versione il fluido è acqua e le proprietà termofisiche necessarie a Darcy
+(densità e viscosità) verranno ricavate dal kernel in funzione della
+temperatura, senza un archivio `Fluidi` separato.
+
+Il passo selezionato appartiene alla rete, ma dovrà essere validato rispetto ai
+passi ammessi dalla tipologia pannello selezionata.
+
+#### 7.6.2 Archivio TipologiePannelli
+
+Chiave funzionale:
+
+```text
+CasaProduttrice + Modello
+```
+
+La tipologia contiene dati legati al prodotto/sistema:
+
+```text
+Codice
+CasaProduttrice
+Modello
+Descrizione
+MaterialeTubo
+DiametroEsternoTuboMm
+SpessoreTuboMm
+DiametroInternoTuboMm
+RugositaAssolutaMm
+BarrieraOssigeno
+PassiDisponibiliMm
+LunghezzaMatassaM
+CoefficienteResaWm2K
+Attivo
+```
+
+Prima riga:
+
+```text
+Codice                 GEN-DEFAULT
+CasaProduttrice        Generico
+Modello                Default Termodel
+MaterialeTubo          PE-Xa
+DiametroEsternoTuboMm  16
+SpessoreTuboMm         2
+DiametroInternoTuboMm  12
+RugositaAssolutaMm     0.0007
+BarrieraOssigeno       SI
+PassiDisponibiliMm     50;100;150;200;250;300
+LunghezzaMatassaM      600
+CoefficienteResaWm2K   5
+Attivo                 SI
+```
+
+L'elenco passi è esplicito perché alcuni sistemi, in particolare pannelli a
+funghetti, permettono soltanto interassi discreti determinati dalla geometria
+del pannello.
+
+Il default della rete usa 300 mm per conservare l'attuale comportamento
+`PassoTubi = 0,30 m`.
+
+Il riferimento PE-Xa 16x2, barriera ossigeno e rugosità 0.0007 mm resta quello
+già verificato nella specifica precedente.
+
+#### 7.6.3 Dati non più separati
+
+I nuovi progetti non generano più:
 
 ```text
 Tubazioni
-  Codice
-  Descrizione
-  Materiale
-  Applicazione
-  RugositaAssoluta_mm
-  FormulaPerditaDefault
-  BarrieraOssigeno
-  Attivo
-
-DiametriTubazioni
-  CodiceTubazione
-  Sigla
-  DiametroEsterno_mm
-  Spessore_mm
-  DiametroInterno_mm
-  Attivo
-```
-
-La separazione famiglia/diametri riprende la semantica master/slave del
-`base.dat` storico senza conservarne la tecnologia BDE.
-
-##### Tubo iniziale per pannelli radianti
-
-La richiesta iniziale citava "PVC". La verifica tecnica sulle documentazioni
-dei produttori mostra però che per i circuiti radianti il riferimento corretto
-è **PE-X/PEX** o PE-RT/multistrato, non PVC come scelta standard.
-
-Uponor Italia indica, per esempio:
-
-- PE-Xa con barriera EVOH, 16 x 2 mm;
-- multistrato PE-RT/alluminio/PE-RT, 16 x 2 mm.
-
-Fonti:
-- https://www.uponor.com/it-it/prodotti/riscaldamento-e-raffrescamento-a-pavimento-bassa-inerzia/klett-twinboard-a-bassa-inerzia
-- https://www.uponor.com/it-it/prodotti/riscaldamento-e-raffrescamento-a-pavimento/radiante-sostenibile
-
-Per la prima base dati si registra quindi come default:
-
-```text
-Codice famiglia:       PEXA-O2
-Descrizione:           PE-Xa per pannelli radianti con barriera ossigeno
-Materiale:             PE-Xa
-Applicazione:          PannelliRadianti
-Formula default:       Darcy-Weisbach
-Barriera ossigeno:     SI
-Diametro:              16 x 2 mm
-Diametro interno:      12 mm
-```
-
-Per la rugosità, il PPI 2024 indica per PEX un intervallo di rugosità assoluta
-di circa **0.0005–0.0007 mm** per i calcoli Darcy. Si adotta
-provvisoriamente:
-
-```text
-RugositaAssoluta_mm = 0.0007
-```
-
-come valore iniziale conservativo e modificabile nell'archivio.
-
-PVC/CPVC e altre famiglie potranno essere aggiunte successivamente al database
-generalista, ma non saranno il default per il circuito radiante.
-
-#### 7.6.2 Archivio Fluidi
-
-Per evitare proprietà fisiche fisse a una sola temperatura, la struttura
-preferita è:
-
-```text
 Fluidi
-  Codice
-  Descrizione
-  Tipo
-  ModelloProprieta
-  Attivo
-
-ProprietaFluidi
-  CodiceFluido
-  Temperatura_C
-  Densita_kg_m3
-  ViscositaDinamica_Pa_s
-  CaloreSpecifico_J_kgK        [predisposto per sviluppi successivi]
 ```
 
-Primo fluido:
+come archivi separati per il ramo pannelli.
+
+Le caratteristiche del tubo usato dal pannello sono proprietà di
+`TipologiePannelli`. Le condizioni dell'acqua e la formula idraulica sono
+proprietà della rete/solver.
+
+Eventuali vecchi progetti creati durante la breve fase precedente possono
+contenere ancora `Tubazioni`, `Fluidi` e
+`definition/pannelli-tubazioni-definizionedati.json`: il frontend li può
+leggere per compatibilità e deve preservarli senza cancellazione automatica,
+ma non sono più il modello autorevole.
+
+### 7.7 Gestione frontend e futura selezione CAD
+
+Implementato nel frontend:
 
 ```text
-Codice:              H2O
-Descrizione:         Acqua
-Tipo:                LiquidoNewtoniano
-ModelloProprieta:    TabellaTemperatura
-Attivo:              SI
+Modifica
+  ├── Archivio Reti
+  └── Archivio Tipologie pannelli
 ```
 
-Le proprietà saranno interpolate alla temperatura media del circuito.
-
-Valori di riferimento verificati per l'acqua:
-
-| T [°C] | densità [kg/m³] | viscosità dinamica [Pa s] |
-|---:|---:|---:|
-| 30 | ~995.6 | ~0.000797 |
-| 35 | ~994.1 | ~0.000720 |
-| 40 | ~992.2 | ~0.000653 |
-
-Fonti di confronto:
-- Anton Paar, tabella viscosità/densità acqua, riferimento IAPWS 2008:
-  https://wiki.anton-paar.com/en/water/
-- https://www.thermexcel.com/english/tables/eau_atm
-
-I valori definitivi della tabella JSON dovranno essere verificati e
-normalizzati in unità SI durante l'implementazione dell'archivio.
-
-### 7.7 Gestione futura da menu
-
-È registrata la futura voce di interfaccia:
+I due archivi usano il metadata:
 
 ```text
-Tubazioni
-  ├── Archivio tubazioni
-  ├── Archivio fluidi
-  └── [future funzioni generaliste]
+definition/reti-pannelli-definizionedati.json
 ```
 
-**Stato: IN SOSPESO.**
+e il motore unico `ArchivioWeb`.
 
-Non si implementano menu o form in questa fase. Quando verranno realizzati,
-dovranno usare i metadata di `tubazioni-definizionedati.json` e lo stesso
-principio AutoForm già adottato da Termodel.
+#### Selezione della rete nel CAD 2D
 
+Decisione registrata:
+
+```text
+CAD 2D
+  -> combo Rete
+  -> selezione Reti.Codice
+  -> TipoRete determina il tipo di rete che si sta disegnando
+```
+
+**Stato: DA DEFINIRE / NON IMPLEMENTATO.**
+
+Verranno definiti in seguito:
+
+- posizione della combo;
+- associazione fra primitive grafiche e codice rete;
+- comportamento quando cambia rete;
+- comandi grafici specifici per PannelliRadianti, Tubazioni, Canali;
+- validazione del passo selezionato rispetto a
+  `TipologiePannelli.PassiDisponibiliMm`.
 
 ## 8. Automazione Form
 
@@ -1134,7 +1181,7 @@ motore produce un valore differente.
 | Fase | Contenuto | Stato |
 |---|---|---|
 | T0 | studio sorgenti Pascal, `base.dat`, generatore form/DB, DXF e Pannelli C# | **ESEGUITO** |
-| T1 | specifica completa metadata + database JSON Tubazioni e mapping `base.dat` | **IN CORSO** — definiti archivi minimi Tubazioni/Fluidi per pannelli |
+| T1 | specifica metadata/database reti e mapping progressivo `base.dat` | **IN CORSO** — modello pannelli revisionato in `Reti` + `TipologiePannelli` |
 | T2 | dominio neutro `TubazioniNetwork` + validazione topologica | DA FARE |
 | T3 | kernel idraulico puro: portate, attrito, perdite, sizing, percorso sfavorito | DA FARE |
 | T4 | equilibratura / valvole / portate effettive selezionate | DA FARE |
@@ -1146,14 +1193,9 @@ motore produce un valore differente.
 
 ## 15.1 Milestone — completamento dati di base pannelli radianti
 
-Aggiornamento 23 settembre 2026.
+Aggiornamento 23 settembre 2026 — **REVISIONATO**.
 
-È stata implementata la prima parte classificata come **completamento calcolo
-pannelli radianti**: i parametri di progetto non devono più essere considerati
-soltanto costanti nascoste nel codice, ma dispongono ora di archivi tecnici
-consolidati nel progetto.
-
-Archivi introdotti:
+La prima implementazione aveva separato:
 
 ```text
 TipologiePannelli
@@ -1161,79 +1203,60 @@ Tubazioni
 Fluidi
 ```
 
-Metadata separati:
+Questa struttura è stata riconosciuta come eccessivamente frammentata ed è
+stata sostituita dal modello:
 
 ```text
-definition/pannelli-tubazioni-definizionedati.json
+Reti
+TipologiePannelli
 ```
+
+Metadata autorevole:
+
+```text
+definition/reti-pannelli-definizionedati.json
+```
+
+### Reti
+
+Contiene il tipo di rete e i dati di progetto/esercizio non dipendenti dal
+costruttore. La prima riga è `RAD-DEFAULT / PannelliRadianti`, collega la
+tipologia `GEN-DEFAULT`, usa passo 300 mm, acqua 35/30 °C,
+limite circuito 100 m, limite perdita 25 kPa, `KLayout=1` e
+`Darcy-Weisbach`.
 
 ### TipologiePannelli
 
-La chiave funzionale è costituita almeno da:
-
-```text
-CasaProduttrice + Modello
-```
-
-La prima riga `Generico / Default Termodel` riproduce tutti i valori
-provvisori precedentemente hard-coded in `DatiProgettoPannelli`:
-
-- passo tubo 0,30 m;
-- diametro esterno 16 mm;
-- spessore 2 mm;
-- mandata 35 °C;
-- ritorno 30 °C;
-- ambiente 20 °C;
-- temperatura esterna di progetto 5 °C;
-- matassa 600 m;
-- lunghezza massima circuito 100 m;
-- perdita massima circuito 25.000 Pa;
-- coefficiente resa 5 W/m²K.
-
-La riga contiene inoltre i riferimenti:
-
-```text
-CodiceTubazione = PEXA-O2-16X2
-CodiceFluido = H2O
-```
-
-### Tubazioni
-
-Prima riga precompilata:
-
-```text
-PEXA-O2-16X2
-PE-Xa 16 x 2 mm con barriera ossigeno
-D interno 12 mm
-rugosità 0,0007 mm
-formula Darcy-Weisbach
-```
-
-### Fluidi
-
-Primo fluido precompilato: acqua `H2O`, con punti proprietà a 30, 35 e
-40 °C per la futura interpolazione della densità e della viscosità.
+Contiene casa produttrice/modello e caratteristiche costruttive: tubo PE-Xa
+16x2, diametro interno 12 mm, rugosità 0.0007 mm, barriera ossigeno, matassa,
+coefficiente resa e lista dei passi ammessi.
 
 ### Consolidamento progetto
 
-`ProgFileUnico` include gli archivi estesi nei nuovi
-`TERMODEL-PROJECT-TEXT-V1` sia come JSON sia come XML. Il progetto vuoto
-statico del frontend è stato aggiornato con le medesime sezioni.
+`ProgFileUnico` e il `ProgettoVuoto` generano ora soltanto
+`Reti` e `TipologiePannelli` fra gli archivi estesi del ramo pannelli.
 
-Il vecchio `definizionedati.json` non è stato modificato. Le tre voci archivio
-frontend (`Tipologie pannelli`, `Tubazioni`, `Fluidi`) sono ora implementate
-nel menu `Modifica`; il futuro sottomenu generalista `Tubazioni`, destinato a
-funzioni di calcolo dedicate, resta sospeso.
+Il vecchio `definizionedati.json` resta invariato.
+
+Il frontend espone:
+
+```text
+Archivio Reti
+Archivio Tipologie pannelli
+```
+
+La futura combo Rete del CAD 2D è registrata ma non ancora implementata.
 
 Stato della milestone:
 
 ```text
-metadata archivi:               IMPLEMENTATO
-dati iniziali archivi:          IMPLEMENTATO
+metadata Reti/TipologiePannelli: IMPLEMENTATO
+dati iniziali:                  IMPLEMENTATI
 integrazione progetto nuovo:    IMPLEMENTATA
 ProgettoVuoto frontend:         IMPLEMENTATO
 voci archivio frontend:         IMPLEMENTATE
-sottomenu generalista Tubazioni: SOSPESO
+compatibilità metadata legacy:  PRESERVATA IN LETTURA
+combo Rete CAD 2D:              DA DEFINIRE
 lettura archivi dal solver:     DA FARE
 perdita Darcy circuito:         DA FARE
 ```
@@ -1246,8 +1269,8 @@ perdita Darcy circuito:         DA FARE
 - Prima funzione operativa: perdita di carico distribuita del singolo circuito radiante.
 - Fonte algoritmica primaria: vecchio sottosistema Pascal `Tubi`.
 - `base.dat` e `GENERA` sono precedenti storici del nuovo metadata system.
-- Nuovo database: JSON autonomo Tubazioni.
-- Nuovo metadata: JSON autonomo con convenzioni compatibili con
+- Per il ramo pannelli i dati progetto sono organizzati in `Reti` e `TipologiePannelli`.
+- Il metadata esteso è JSON autonomo e compatibile con le convenzioni di
   `definizionedati.json`.
 - Automazione form: obbligatoria come principio; non creare una form rigida per
   ciascun archivio.
@@ -1259,11 +1282,15 @@ perdita Darcy circuito:         DA FARE
 
 ## 17. Questioni aperte
 
-- completare il set generalista degli archivi T1 oltre al nucleo già deciso Tubazioni/Fluidi;
+- estendere in futuro `Reti.TipoRete` oltre `PannelliRadianti` verso
+  Tubazioni/Canali senza creare archivi concorrenti;
+- definire la combo `Reti` nel CAD 2D e l'associazione delle primitive alla rete;
+- implementare la validazione del passo selezionato rispetto ai passi ammessi
+  dalla tipologia pannello;
 - verificare quali dati storici siano ancora tecnicamente/normativamente
   appropriati;
-- decidere se i dati di fluido saranno tabellari o calcolati da proprietà
-  termofisiche;
+- definire nel kernel le proprietà dell'acqua in funzione della temperatura
+  media e l'eventuale futura estensione ad altri fluidi;
 - identificare progetti Pascal ancora eseguibili per produrre Golden Results;
 - formalizzare la relazione circuiti Pannelli ↔ terminali Tubazioni;
 - decidere il formato finale del drawing result;
@@ -1276,8 +1303,8 @@ perdita Darcy circuito:         DA FARE
 ```text
 studiato sorgenti storici:       SI, prima mappatura
 architettura progettata:         SI, livello registro
-metadata JSON implementato:      NO
-database JSON implementato:      NO
+metadata JSON Reti/Pannelli:     SI
+dati progetto Reti/Pannelli:     SI
 solver idraulico implementato:   NO
 adapter Pannelli implementato:   NO
 integrazione Aggiorna Modello:   NO
@@ -1287,8 +1314,7 @@ regression test Pascal:          NO
 confronto Golden:                NO
 ```
 
-La prossima attività corretta per il ramo pannelli è implementare, in un nuovo
-incarico, il nucleo minimo verificabile: metadata/database JSON Tubazioni e
-Fluidi + funzione pura Darcy-Weisbach su un singolo circuito sintetico. Il
-mapping generalista completo del `base.dat` resta parte di T1 e non deve
-bloccare questo primo test idraulico.
+La prossima attività corretta per il ramo pannelli è collegare il calcolo
+pannelli ai due archivi `Reti`/`TipologiePannelli` e implementare il primo
+caso Darcy-Weisbach su un circuito sintetico. La combo Rete del CAD 2D verrà
+progettata separatamente.
