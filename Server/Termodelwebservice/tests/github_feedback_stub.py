@@ -13,8 +13,21 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             return
 
-        length = int(self.headers.get("Content-Length", "0"))
-        raw = self.rfile.read(length)
+        if self.headers.get("Transfer-Encoding", "").lower() == "chunked":
+            chunks = []
+            while True:
+                size_line = self.rfile.readline().strip()
+                size = int(size_line.split(b";", 1)[0], 16)
+                if size == 0:
+                    self.rfile.readline()
+                    break
+                chunks.append(self.rfile.read(size))
+                self.rfile.read(2)
+            raw = b"".join(chunks)
+        else:
+            length = int(self.headers.get("Content-Length", "0"))
+            raw = self.rfile.read(length)
+
         payload = json.loads(raw.decode("utf-8"))
 
         capture = {
