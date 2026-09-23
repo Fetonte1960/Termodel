@@ -187,6 +187,10 @@ jobs:
           $ErrorActionPreference = "Stop"
           $base = "http://127.0.0.1:5081"
           $capture = Join-Path $env:RUNNER_TEMP "termodel-feedback-capture.json"
+          $serviceOut = Join-Path $env:RUNNER_TEMP "termodel-feedback-service.out.log"
+          $serviceErr = Join-Path $env:RUNNER_TEMP "termodel-feedback-service.err.log"
+          $stubOut = Join-Path $env:RUNNER_TEMP "termodel-feedback-stub.out.log"
+          $stubErr = Join-Path $env:RUNNER_TEMP "termodel-feedback-stub.err.log"
           $env:ASPNETCORE_URLS = $base
           $env:TERMODEL_FEEDBACK_GITHUB_TOKEN = "test-token"
           $env:TERMODEL_FEEDBACK_REPOSITORY = "Fetonte1960/Termodel"
@@ -194,7 +198,7 @@ jobs:
           $env:TERMODEL_FEEDBACK_GITHUB_API_BASE_URL = "http://127.0.0.1:5099"
 
           function Start-ServiceProcess {
-            $p = Start-Process dotnet -ArgumentList @("run","--project","src/Termodel.WebService/Termodel.WebService.csproj","--configuration","Release","--no-build","--no-launch-profile") -PassThru
+            $p = Start-Process dotnet -ArgumentList @("run","--project","src/Termodel.WebService/Termodel.WebService.csproj","--configuration","Release","--no-build","--no-launch-profile") -RedirectStandardOutput $serviceOut -RedirectStandardError $serviceErr -PassThru
             for ($attempt = 0; $attempt -lt 40; $attempt++) {
               try {
                 if ((Invoke-RestMethod -Uri "$base/health" -Method Get).status -eq "ok") { return $p }
@@ -217,8 +221,22 @@ jobs:
           $service = $null
 
           try {
-            $stub = Start-Process python -ArgumentList @("tests/github_feedback_stub.py",$capture) -PassThru
+            $stub = Start-Process python -ArgumentList @("tests/github_feedback_stub.py",$capture) -RedirectStandardOutput $stubOut -RedirectStandardError $stubErr -PassThru
             Start-Sleep -Milliseconds 500
+
+            if ($stub.HasExited) {
+              if (Test-Path $stubErr) { Get-Content $stubErr | Write-Host }
+              throw "Stub GitHub non avviato."
+            }
+
+            $probeBody = '{"title":"probe","body":"probe"}'
+            $probe = Invoke-WebRequest -Uri "http://127.0.0.1:5099/repos/Fetonte1960/Termodel/issues" -Method Post -Headers @{ Authorization = "Bearer test-token" } -ContentType "application/json" -Body $probeBody -SkipHttpErrorCheck
+            if ($probe.StatusCode -ne 201) {
+              if (Test-Path $stubErr) { Get-Content $stubErr | Write-Host }
+              throw "Stub GitHub non raggiungibile: HTTP $($probe.StatusCode)."
+            }
+            Remove-Item -LiteralPath $capture -Force -ErrorAction SilentlyContinue
+
             $service = Start-ServiceProcess
 
             $validBody = @{
@@ -236,8 +254,14 @@ jobs:
             $invalid = Invoke-WebRequest -Uri "$base/api/feedback" -Method Post -Headers @{ Origin = "https://www.termodel.it" } -ContentType "application/json" -Body $invalidBody -SkipHttpErrorCheck
             if ($invalid.StatusCode -ne 400) { throw "Payload feedback non valido: atteso 400, ricevuto $($invalid.StatusCode)." }
 
-            $createdResponse = Invoke-WebRequest -Uri "$base/api/feedback" -Method Post -Headers @{ Origin = "https://www.termodel.it" } -ContentType "application/json" -Body $validBody
-            if ($createdResponse.StatusCode -ne 201) { throw "Creazione feedback: atteso 201, ricevuto $($createdResponse.StatusCode)." }
+            $createdResponse = Invoke-WebRequest -Uri "$base/api/feedback" -Method Post -Headers @{ Origin = "https://www.termodel.it" } -ContentType "application/json" -Body $validBody -SkipHttpErrorCheck
+            if ($createdResponse.StatusCode -ne 201) {
+              Write-Host "Feedback response: $($createdResponse.Content)"
+              if (Test-Path $serviceOut) { Get-Content $serviceOut | Select-Object -Last 80 | Write-Host }
+              if (Test-Path $serviceErr) { Get-Content $serviceErr | Select-Object -Last 80 | Write-Host }
+              if (Test-Path $stubErr) { Get-Content $stubErr | Select-Object -Last 80 | Write-Host }
+              throw "Creazione feedback: atteso 201, ricevuto $($createdResponse.StatusCode)."
+            }
 
             $created = $createdResponse.Content | ConvertFrom-Json
             if ($created.status -ne "created" -or $created.issueNumber -ne 4242) { throw "Risposta feedback creata non valida." }
@@ -278,4 +302,7 @@ jobs:
             Stop-ChildProcess $service
             Stop-ChildProcess $stub
             if (Test-Path -LiteralPath $capture) { Remove-Item -LiteralPath $capture -Force }
+            foreach ($logPath in @($serviceOut,$serviceErr,$stubOut,$stubErr)) {
+              if ($logPath -and (Test-Path -LiteralPath $logPath)) { Remove-Item -LiteralPath $logPath -Force }
+            }
           }
