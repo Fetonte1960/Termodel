@@ -328,19 +328,17 @@ Risultato:
   dati progetto precedentemente hard-coded e formula preliminare di resa;
   NO per equivalenza numerica completa del generatore spirali/collettori,
   che non è ancora nel Service;
-- il generatore grafico storico delle spirali **non è stato integrato
-  deliberatamente**: il motore condiviso `SpiraliGPT` usa ancora
-  `PassoTubi=0,30 m` compile-time e workflow
-  `locale.xml/locale.svg` basato sulla working directory. Integrarlo così
-  renderebbe non autorevole `Reti.PassoSelezionatoMm` e introdurrebbe stato
-  file globale nel Service. Il prossimo intervento corretto è rendere
-  parametrico/headless il motore condiviso, senza copiarlo;
+- **stato storico di questa commissione:** il generatore grafico non era
+  ancora integrato. Questa limitazione è stata successivamente superata dalla
+  commissione “attivazione esecutivo pannelli SVG/DXF” per il solo default
+  corrente `PassoTubi=0,30 m`; resta da rendere parametrico il motore
+  condiviso per passi diversi da 300 mm;
 - non sono ancora incluse perdita collettore, valvole, flussimetri, perdite
   concentrate, distribuzione primaria, sizing automatico o equilibratura;
   per decisione del 23/09/2026 questi aspetti, insieme al grafo generale e al
   percorso sfavorito, sono **fuori dal completamento pannelli corrente** e
   appartengono alla futura fase Tubi universale;
-- contratto Front↔Service aggiornato alla **v1.11**;
+- contratto Front↔Service aggiornato allora alla **v1.11**; stato corrente del contratto dopo l'esecutivo: **v1.13**;
 - registro
   `Server/Termodelwebservice/docs/TUBAZIONI-DEVELOPMENT-REGISTER.md`
   aggiornato alla milestone 15.3;
@@ -2302,10 +2300,14 @@ Il supporto geometrico dei layer ausiliari è operativo anche per l'input
 `Tubo` dei pannelli: il Virtual CAD ricostruisce
 `<NomePiano>_tubipannelli`, conserva `data-termodel-rete` nei metadata
 della linea e l'adattatore headless `IoPannelli.LeggiTubiDXF` continua a
-vedere la convenzione Desktop. Il primo solver idraulico pannelli è ora
-integrato in `POST /api/calculations` e produce
-`artifacts/pannelli.json`; il generatore grafico delle spirali resta invece
-da rendere parametrico/headless prima dell'integrazione.
+vedere la convenzione Desktop. Il primo solver idraulico pannelli è integrato
+in `POST /api/calculations` e produce `artifacts/pannelli.json`.
+Dal 23 settembre 2026 è inoltre attivo l'esecutivo grafico con il default
+corrente `PassoTubi=0,30 m`, che produce
+`pannelli-esecutivo.svg` e `pannelli-esecutivo.dxf` dallo stesso modello
+grafico neutro. Resta futura soltanto la parametrizzazione del motore spirali
+per passi diversi da 300 mm; grafo e collettore restano alla fase Tubi
+universale.
 
 ### Virtual DB
 
@@ -2440,6 +2442,9 @@ POST /api/projects/{projectId}/unlock
 POST /api/model/3d
 POST /api/calculations
 GET  /api/projects/{projectId}/artifacts/model3d
+GET  /api/projects/{projectId}/artifacts/pannelli
+GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-svg
+GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
 GET  /api/projects/{projectId}/logs/termodel
 POST /api/feedback
 ```
@@ -2457,19 +2462,24 @@ corrente:
 SavedProjects/{projectId}/
 ├── project.tmdl
 ├── artifacts/
-│   └── model3d.json
+│   ├── model3d.json
+│   ├── pannelli.json
+│   ├── pannelli-esecutivo.svg   (quando generabile)
+│   └── pannelli-esecutivo.dxf   (quando generabile)
 └── logs/
     ├── calculation.log
-    └── diagnostics.txt
+    ├── diagnostics.txt
+    └── TermodelLog.md
 ```
 
 La root resta configurabile tramite `TERMODEL_SAVED_PROJECTS_DIR`.
 `project.tmdl` è la copia UTF-8 del projectText realmente ricevuto; non viene
 rigenerato dal Service e non acquisisce gli sfondi esclusivamente frontend.
 
-`GET /api/projects/{projectId}/artifacts/model3d` legge il JSON persistito e
-non esegue un nuovo calcolo. Gli artifact restano quindi leggibili dopo il
-riavvio del Service.
+Gli endpoint `GET /api/projects/{projectId}/artifacts/*` leggono gli artifact
+persistiti e non eseguono un nuovo calcolo. Questo vale per `model3d`,
+`pannelli` e per i due esecutivi pannelli SVG/DXF quando presenti. Gli
+artifact restano quindi leggibili dopo il riavvio del Service.
 
 Il precedente modello per-elaborazione è stato rimosso dal runtime:
 non esistono più `CalculationSnapshotStore`, response `calculationId` o
@@ -2499,16 +2509,19 @@ dello stesso progetto tramite route del tipo:
 
 ```text
 GET /api/projects/{projectId}/artifacts/model3d
-GET /api/projects/{projectId}/artifacts/xml-nazionale
-GET /api/projects/{projectId}/artifacts/report-dispersioni
 GET /api/projects/{projectId}/artifacts/pannelli
-GET /api/projects/{projectId}/artifacts/spirali/{piano}
-GET /api/projects/{projectId}/artifacts/pianta-pulita/{piano}
+GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-svg
+GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
+GET /api/projects/{projectId}/artifacts/xml-nazionale                 (futuro)
+GET /api/projects/{projectId}/artifacts/report-dispersioni            (futuro)
+GET /api/projects/{projectId}/artifacts/pianta-pulita/{piano}         (futuro)
 ```
 
-Al momento è implementato e persistito `model3d`; gli altri artifact sono le
-estensioni successive dello stesso workspace e non devono introdurre storage
-paralleli o identificatori per-elaborazione.
+Al momento sono implementati e persistiti `model3d`, `pannelli` e, quando
+il progetto dispone di locali/tubi idonei, `pannelli-esecutivo.svg` e
+`pannelli-esecutivo.dxf`. XML nazionale, report dispersioni e pianta pulita
+persistente restano estensioni successive dello stesso workspace e non devono
+introdurre storage paralleli o identificatori per-elaborazione.
 
 Formati indicativi degli artifact:
 
@@ -2516,9 +2529,9 @@ Formati indicativi degli artifact:
 - XML nazionale: `application/xml`;
 - report dispersioni: dati JSON, non HTML generato dal Core;
 - report pannelli: dati JSON;
-- spirali: SVG per piano;
-- pianta pulita: SVG per piano;
-- eventuali esecutivi DXF: `application/dxf`.
+- esecutivo pannelli corrente: SVG `image/svg+xml` e DXF
+  `application/dxf`, derivati dallo stesso modello grafico neutro;
+- pianta pulita: SVG per piano (futuro artifact persistente).
 
 Compatibilità: gli endpoint legacy `POST /api/model/3d` e
 `GET /api/model/clean-floor/{floorName}` restano disponibili finché non
