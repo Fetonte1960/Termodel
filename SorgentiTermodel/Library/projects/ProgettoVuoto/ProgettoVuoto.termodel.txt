@@ -163,27 +163,27 @@
     {
       "name": "definition/reti-pannelli-definizionedati.json",
       "contentType": "application/json",
-      "sha256": "80c5daac4c871e50972694d5863fc1885edad9023d55473f14dceb72b8d0020e"
+      "sha256": "62e15565def12071ea497f90ce9a631c49235e9b813374f1e35a451b2bbe84ca"
     },
     {
       "name": "archives/xml/Reti.xml",
       "contentType": "application/xml",
-      "sha256": "7bf72ecec8958cc1f73152911149ac7e426705764bc908f434433e9571c6cb1c"
+      "sha256": "674d5d6ccb3616a4c177f1af1976d4ca42ec6839a304fd7ef22bf882789c9a9a"
     },
     {
       "name": "archives/json/Reti.json",
       "contentType": "application/json",
-      "sha256": "8776760cdcd43f9ce05932e29398dd93a10ab61c13350eab34449a85baa920ce"
+      "sha256": "520494395fc16c806d8f3f2cda1fa680a95a38ee035f62ae9ed3027888648cb3"
     },
     {
       "name": "archives/xml/TipologiePannelli.xml",
       "contentType": "application/xml",
-      "sha256": "c10fc43dff863102a6b99bbf693c74ca973ac564f1e7bae6b9c8d29423ad52fd"
+      "sha256": "a6d3f9bf8f0e377fa606f575bb2d9ec016b4f04217a90ee1aecf9ac0430610fa"
     },
     {
       "name": "archives/json/TipologiePannelli.json",
       "contentType": "application/json",
-      "sha256": "cab5833cdf6089c2204f97dda6aed17aafa8df0a70f8a0810cc30b520fb6c530"
+      "sha256": "477295c33154cbd01dfa8cdeab3b2f377c9fd901bfbe287c5bcf4ee675ed698e"
     }
   ],
   "diagnostics": [
@@ -33699,6 +33699,12 @@ EOF
 
 
 
+
+
+
+
+
+
 ---BEGIN:definition/reti-pannelli-definizionedati.json---
 {
   "Reti": {
@@ -33801,6 +33807,11 @@ EOF
         "NO"
       ],
       "Ini": "SI"
+    },
+    "FormulaPerdita": {
+      "LunghezzaMassima": 80,
+      "Descr": "Formula perdita",
+      "Ini": "Darcy-Weisbach"
     }
   },
   "TipologiePannelli": {
@@ -33884,11 +33895,6 @@ EOF
       "Descr": "Coefficiente resa (W/m²K)",
       "Ini": "5"
     },
-    "FormulaPerdita": {
-      "LunghezzaMassima": 80,
-      "Descr": "Formula perdita",
-      "Ini": "Darcy-Weisbach"
-    },
     "Attivo": {
       "LunghezzaMassima": 10,
       "Descr": "Attivo",
@@ -33962,6 +33968,10 @@ EOF
       <Key>Attivo</Key>
       <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">SI</Value>
     </KeyValueOfstringanyType>
+    <KeyValueOfstringanyType>
+      <Key>FormulaPerdita</Key>
+      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Darcy-Weisbach</Value>
+    </KeyValueOfstringanyType>
   </ArrayOfKeyValueOfstringanyType>
 </ArrayOfArrayOfKeyValueOfstringanyType>
 ---END:archives/xml/Reti.xml---
@@ -33982,7 +33992,8 @@ EOF
     "LunghezzaMassimaCircuitoM": 100,
     "PerditaCaricoMassimaCircuitoPa": 25000,
     "KLayout": 1,
-    "Attivo": "SI"
+    "Attivo": "SI",
+    "FormulaPerdita": "Darcy-Weisbach"
   }
 ]
 ---END:archives/json/Reti.json---
@@ -34044,10 +34055,6 @@ EOF
       <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:int">5</Value>
     </KeyValueOfstringanyType>
     <KeyValueOfstringanyType>
-      <Key>FormulaPerdita</Key>
-      <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">Darcy-Weisbach</Value>
-    </KeyValueOfstringanyType>
-    <KeyValueOfstringanyType>
       <Key>Attivo</Key>
       <Value xmlns:d4p1="http://www.w3.org/2001/XMLSchema" i:type="d4p1:string">SI</Value>
     </KeyValueOfstringanyType>
@@ -34071,7 +34078,6 @@ EOF
     "PassiDisponibiliMm": "50;100;150;200;250;300",
     "LunghezzaMatassaM": 600,
     "CoefficienteResaWm2K": 5,
-    "FormulaPerdita": "Darcy-Weisbach",
     "Attivo": "SI"
   }
 ]
