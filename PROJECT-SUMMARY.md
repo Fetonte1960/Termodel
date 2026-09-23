@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-23**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`d1399a4f9c3dc68fc1f1a0efd9982b57108cbca8` — `Restore opt-in exploration help and configure calculation logs`  
+`c182089deef12665942f589516a02cecf5d1af4c` — `Clean exploration help wording`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -1283,6 +1283,8 @@ Commit principali:
   `Restore opt-in exploration help and configure calculation logs`;
 - `c784579ee569977de42e4d271271817c1714a0c9` —
   `Document frontend log controls in contract`.
+- `c182089deef12665942f589516a02cecf5d1af4c` —
+  `Clean exploration help wording`.
 
 ### INCARICO 2026-09-23 — rimozione modalità informazioni comandi
 Stato: **ESEGUITO**
