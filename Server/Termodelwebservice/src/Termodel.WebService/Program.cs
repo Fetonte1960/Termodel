@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Termodel.Core;
 using Termodel.Core.ProjectFiles;
+using Termodel.Core.RadiantPanels;
 using Termodel.Leggidxf;
 using Termodel.utilities;
 using Termodel.WebService.Projects;
@@ -521,13 +522,27 @@ app.MapPost("/api/calculations", async (
                         token,
                         logConfiguration);
 
+                RadiantPanelsArtifact panels =
+                    RadiantPanelCalculator.Calculate(projectText);
+
                 string logMode = GetLogMode(logConfiguration);
                 string[] logCategories = GetLogCategoryNames(logConfiguration);
+                string[] combinedDiagnostics = result.Diagnostics
+                    .Concat(panels.Diagnostics)
+                    .ToArray();
+
+                var artifactJsonOptions =
+                    new JsonSerializerOptions(JsonSerializerDefaults.Web)
+                    {
+                        WriteIndented = true
+                    };
 
                 return new ProjectCalculationData(
                     JsonSerializer.SerializeToUtf8Bytes(result.Model),
-                    result.Diagnostics,
+                    JsonSerializer.SerializeToUtf8Bytes(panels, artifactJsonOptions),
+                    combinedDiagnostics,
                     result.Model.PrimitiveCount,
+                    panels.CircuitCount,
                     logConfiguration.Enabled,
                     logMode,
                     logCategories);
@@ -536,6 +551,8 @@ app.MapPost("/api/calculations", async (
 
         string model3DHref =
             $"/api/projects/{projectId:D}/artifacts/model3d";
+        string panelsHref =
+            $"/api/projects/{projectId:D}/artifacts/pannelli";
 
         return Results.Json(new
         {
@@ -553,6 +570,12 @@ app.MapPost("/api/calculations", async (
                     name = "model3d",
                     contentType = "application/json",
                     href = model3DHref
+                },
+                new
+                {
+                    name = "pannelli",
+                    contentType = "application/json",
+                    href = panelsHref
                 }
             },
             diagnostics = data.Diagnostics,
@@ -610,6 +633,37 @@ app.MapGet(
 
     return Results.Bytes(
         model3DJson,
+        contentType: "application/json; charset=utf-8");
+});
+
+// Funzione realizzata da Codex in autonomia
+app.MapGet(
+    "/api/projects/{projectId:guid}/artifacts/pannelli",
+    async (
+        Guid projectId,
+        HttpResponse response,
+        ProjectStore projects,
+        CancellationToken cancellationToken) =>
+{
+    byte[]? panelsJson =
+        await projects.ReadRadiantPanelsAsync(projectId, cancellationToken);
+
+    if (panelsJson is null)
+    {
+        return Results.Problem(
+            title: "Artifact pannelli non disponibile",
+            detail: $"Il projectId '{projectId:D}' non esiste o non dispone ancora di pannelli.json.",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    bool stale = await projects.AreArtifactsStaleAsync(
+        projectId,
+        cancellationToken);
+
+    response.Headers["X-Termodel-Artifact-Stale"] = stale ? "true" : "false";
+
+    return Results.Bytes(
+        panelsJson,
         contentType: "application/json; charset=utf-8");
 });
 
