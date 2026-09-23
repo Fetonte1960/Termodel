@@ -147,6 +147,30 @@ jobs:
               return $projectText.Substring(0,$cs) + $geometry + $projectText.Substring($ei)
             }
 
+            function Set-RadiantStepInXml([string]$projectText,[int]$stepMm) {
+              $sectionName = "archives/xml/Reti.xml"
+              $begin = "---BEGIN:$sectionName---"
+              $end = "---END:$sectionName---"
+              $bi = $projectText.IndexOf($begin,[System.StringComparison]::Ordinal)
+              if ($bi -lt 0) { throw "Sezione $sectionName non trovata per smoke validazione passo." }
+              $cs = $bi + $begin.Length
+              while ($cs -lt $projectText.Length -and ($projectText[$cs] -eq [char]13 -or $projectText[$cs] -eq [char]10)) { $cs++ }
+              $ei = $projectText.IndexOf($end,$cs,[System.StringComparison]::Ordinal)
+              if ($ei -lt 0) { throw "Sezione $sectionName non chiusa per smoke validazione passo." }
+
+              $xml = $projectText.Substring($cs,$ei-$cs)
+              $key = "<Key>PassoSelezionatoMm</Key>"
+              $ki = $xml.IndexOf($key,[System.StringComparison]::Ordinal)
+              if ($ki -lt 0) { throw "PassoSelezionatoMm non trovato nell'XML Reti." }
+              $vi = $xml.IndexOf("<Value",$ki,[System.StringComparison]::Ordinal)
+              $gt = $xml.IndexOf(">",$vi,[System.StringComparison]::Ordinal)
+              $ve = $xml.IndexOf("</Value>",$gt,[System.StringComparison]::Ordinal)
+              if ($vi -lt 0 -or $gt -lt 0 -or $ve -lt 0) { throw "Value di PassoSelezionatoMm non leggibile." }
+              $xml = $xml.Substring(0,$gt + 1) + $stepMm + $xml.Substring($ve)
+
+              return $projectText.Substring(0,$cs) + $xml + $projectText.Substring($ei)
+            }
+
             $reti = @(Read-ProjectJsonSection $baseProject "archives/json/Reti.json")
             $tipologiePannelli = @(Read-ProjectJsonSection $baseProject "archives/json/TipologiePannelli.json")
             if ($reti.Count -ne 1) { throw "Reti deve essere precompilato con una rete pannelli." }
@@ -226,6 +250,58 @@ jobs:
 
             $calcATube = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -Headers $headersA -ContentType "text/plain; charset=utf-8" -Body $projectATube
             if ($calcATube.projectId -ne $allocA.projectId) { throw "Calcolo con Tubo non completato sul progetto A." }
+            if (@($calcATube.artifacts.name) -notcontains "pannelli") { throw "Response Aggiorna Modello priva dell'artifact pannelli." }
+
+            $panelsPathA = Join-Path $dirA "artifacts\pannelli.json"
+            if (-not (Test-Path $panelsPathA)) { throw "pannelli.json non persistito nel workspace progetto." }
+
+            $panelsResponse = Invoke-WebRequest -Uri "$base/api/projects/$($allocA.projectId)/artifacts/pannelli" -Method Get
+            if ($panelsResponse.StatusCode -ne 200) { throw "GET artifact pannelli deve restituire 200." }
+            if ($panelsResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false") { throw "Artifact pannelli appena calcolato marcato stale." }
+            if ($panelsResponse.Headers["Content-Type"] -notmatch "^application/json") { throw "Content-Type artifact pannelli inatteso." }
+
+            $panels = $panelsResponse.Content | ConvertFrom-Json
+            if ($panels.format -ne "TermodelRadiantPanels" -or $panels.version -ne 1 -or $panels.status -ne "completed") {
+              throw "Formato artifact pannelli non valido."
+            }
+            if ($panels.networkCount -ne 1 -or $panels.circuitCount -ne 1) {
+              throw "Artifact pannelli deve contenere una rete e un circuito nel caso smoke."
+            }
+
+            $network = @($panels.networks)[0]
+            $circuit = @($network.circuits)[0]
+            if ($network.networkCode -ne "RAD-DEFAULT" -or $network.panelCode -ne "GEN-DEFAULT") {
+              throw "Artifact pannelli non conserva rete/tipologia progetto."
+            }
+            if ($network.stepMm -ne 300 -or $network.internalDiameterMm -ne 12) {
+              throw "Artifact pannelli non usa passo/diametro degli archivi."
+            }
+            if ($circuit.floorName -ne $pipeFloor -or $circuit.segmentCount -ne 1) {
+              throw "Circuito pannelli non associato correttamente al piano/Tubo."
+            }
+            if ([Math]::Abs([double]$circuit.geometricLengthM - 1.0) -gt 0.000001 -or
+                [Math]::Abs([double]$circuit.hydraulicLengthM - 1.0) -gt 0.000001) {
+              throw "Lunghezza circuito smoke inattesa: geometric=$($circuit.geometricLengthM), hydraulic=$($circuit.hydraulicLengthM)."
+            }
+            if ([Math]::Abs([double]$circuit.stepFactorMPerM2 - 3.4) -gt 0.000001) {
+              throw "Fattore passo 300 mm inatteso."
+            }
+            if ([double]$circuit.flowM3S -le 0 -or
+                [double]$circuit.reynolds -le 0 -or
+                [double]$circuit.pressureLossPa -le 0) {
+              throw "Kernel Darcy non ha prodotto portata/Reynolds/perdita positivi."
+            }
+
+            $panelsHashBeforeInvalidStep = (Get-FileHash -LiteralPath $panelsPathA -Algorithm SHA256).Hash
+            $invalidStepProject = Set-RadiantStepInXml $projectATube 333
+            $invalidStepResponse = Invoke-WebRequest -Uri "$base/api/calculations" -Method Post -Headers $headersA -ContentType "text/plain; charset=utf-8" -Body $invalidStepProject -SkipHttpErrorCheck
+            if ($invalidStepResponse.StatusCode -ne 422) { throw "Passo rete non ammesso deve restituire 422." }
+            if ($invalidStepResponse.Content -notmatch "passo 333") { throw "Errore validazione passo non descrittivo." }
+            $panelsHashAfterInvalidStep = (Get-FileHash -LiteralPath $panelsPathA -Algorithm SHA256).Hash
+            if ($panelsHashBeforeInvalidStep -ne $panelsHashAfterInvalidStep) {
+              throw "Calcolo con passo non valido ha sostituito l'ultimo artifact pannelli valido."
+            }
+            Write-Host "RADIANT_PANEL_DARCY_SMOKE_OK"
 
             $persistedTubeProject = [System.IO.File]::ReadAllText((Join-Path $dirA "project.tmdl"),[System.Text.UTF8Encoding]::new($false))
             if ($persistedTubeProject -notmatch [regex]::Escape("data-termodel-layer=`"$pipeLayer`"") -or
