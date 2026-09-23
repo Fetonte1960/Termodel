@@ -73,6 +73,77 @@ function Set-Manifest([string]$projectText,[string]$projectId,[string]$generated
   return Replace-Section $projectText "manifest.json" $json
 }
 
+
+function Build-CanonicalServerGeometry([string]$projectText,[string]$localGeometry) {
+  $manifest = (Get-Section $projectText "manifest.json") | ConvertFrom-Json
+  $floor = @($manifest.floors)[0]
+  if (-not $floor) { throw "Nessun piano nel manifest per canonicalizzazione Service." }
+
+  $source = [System.Xml.XmlDocument]::new()
+  $source.PreserveWhitespace = $false
+  $source.LoadXml($localGeometry)
+
+  $sourceGroup = $source.SelectSingleNode("/*[local-name()='svg']/*[local-name()='g' and @id='calpestabile']")
+  if (-not $sourceGroup) { throw "Gruppo locale calpestabile non trovato." }
+
+  $out = [System.Xml.XmlDocument]::new()
+  $root = $out.CreateElement("svg","http://www.w3.org/2000/svg")
+  $root.SetAttribute("version","1.1")
+  $root.SetAttribute("data-termodel-format","TERMODEL-PROJECT-SVG-V1")
+  $root.SetAttribute("data-termodel-units","cm")
+  [void]$out.AppendChild($root)
+
+  $group = $out.CreateElement("g","http://www.w3.org/2000/svg")
+  $floorId = [string]$floor.id
+  $floorName = [string]$floor.name
+  $floorRole = ([string]$floor.type).ToLowerInvariant()
+  $floorFile = [string]$floor.fileName
+  $floorLayer = [string]$floor.cadLayer
+  $floorOrder = [string]$floor.order
+
+  $group.SetAttribute("id","floor-" + ($floorId -replace '[^A-Za-z0-9_-]+','_'))
+  $group.SetAttribute("data-termodel-floor-id",$floorId)
+  $group.SetAttribute("data-termodel-name",$floorName)
+  $group.SetAttribute("data-termodel-role",$floorRole)
+  $group.SetAttribute("data-termodel-file",$floorFile)
+  $group.SetAttribute("data-termodel-layer",$floorLayer)
+  $group.SetAttribute("data-termodel-order",$floorOrder)
+
+  foreach ($node in @($sourceGroup.ChildNodes)) {
+    if ($node.NodeType -ne [System.Xml.XmlNodeType]::Element) { continue }
+    $include = $node.LocalName -eq "line"
+    if ($node.LocalName -eq "text") {
+      $first = $node.SelectSingleNode("*[local-name()='tspan'][1]")
+      $include = $first -and ([string]$first.InnerText -match '^\s*BLOCCO\s*,')
+    }
+    if (-not $include) { continue }
+
+    $clone = $out.ImportNode($node,$true)
+    if ([string]::IsNullOrWhiteSpace($clone.GetAttribute("data-termodel-layer"))) {
+      $clone.SetAttribute("data-termodel-layer",$floorLayer)
+    }
+
+    if ($clone.LocalName -eq "line") {
+      if ([string]::IsNullOrWhiteSpace($clone.GetAttribute("data-termodel-linetype"))) {
+        $localType = $clone.GetAttribute("data-termodel-tipo-linea")
+        if (-not [string]::IsNullOrWhiteSpace($localType)) {
+          $clone.SetAttribute("data-termodel-linetype",$localType)
+        }
+      }
+      if ([string]::IsNullOrWhiteSpace($clone.GetAttribute("data-termodel-color"))) {
+        $localColor = $clone.GetAttribute("data-termodel-colore")
+        if ($localColor -match '^\s*(\d+)') {
+          $clone.SetAttribute("data-termodel-color",$Matches[1])
+        }
+      }
+    }
+    [void]$group.AppendChild($clone)
+  }
+
+  [void]$root.AppendChild($group)
+  return $out.OuterXml
+}
+
 function Start-ServiceProcess {
   $p = Start-Process dotnet -ArgumentList @(
     "run","--project","src/Termodel.WebService/Termodel.WebService.csproj",
@@ -99,7 +170,12 @@ function Stop-ServiceProcess($p) {
 
 function Save-WebResponse([string]$name,$response) {
   [System.IO.File]::WriteAllText((Join-Path $responseDir "$name.status.txt"),[string]$response.StatusCode,$utf8)
-  [System.IO.File]::WriteAllText((Join-Path $responseDir "$name.body.txt"),[string]$response.Content,$utf8)
+  $body = if ($response.Content -is [byte[]]) {
+    [System.Text.Encoding]::UTF8.GetString($response.Content)
+  } else {
+    [string]$response.Content
+  }
+  [System.IO.File]::WriteAllText((Join-Path $responseDir "$name.body.txt"),$body,$utf8)
   $headers = @()
   foreach ($key in $response.Headers.Keys) {
     $headers += "$key=$($response.Headers[$key] -join ',')"
@@ -128,10 +204,20 @@ $originalInputPath = Join-Path $requestDir "project-user-equivalent.tmdl"
 [System.IO.File]::WriteAllText($originalInputPath,$project,$utf8)
 
 $manifest = (Get-Section $project "manifest.json") | ConvertFrom-Json
+$serverGeometry = Build-CanonicalServerGeometry $project $geometry
+$serverGeometrySha = Sha256-Utf8 $serverGeometry
+$serverProject = Replace-Section $project "geometry/project.svg" $serverGeometry
+$serverProject = Set-Manifest $serverProject $originalProjectId $originalGeneratedAtUtc $serverGeometrySha
+[System.IO.File]::WriteAllText((Join-Path $requestDir "project-server-payload.tmdl"),$serverProject,$utf8)
+[System.IO.File]::WriteAllText((Join-Path $requestDir "geometry-server-canonical.svg"),$serverGeometry,$utf8)
+
 $checks = @(
   "sourceFixture=SorgentiTermodel/Library/projects/ProgettoVuoto/ProgettoVuoto.termodel.txt",
   "geometrySha256=$geometrySha",
   "expectedGeometrySha256=$expectedGeometrySha",
+  "serverGeometrySha256=$serverGeometrySha",
+  "serverGeometryHasUnits=$($serverGeometry.Contains('data-termodel-units=\"cm\"'))",
+  "serverGeometryHasFormat=$($serverGeometry.Contains('data-termodel-format=\"TERMODEL-PROJECT-SVG-V1\"'))",
   "projectId=$($manifest.projectId)",
   "generatedAtUtc=$($manifest.generatedAtUtc)",
   "sectionCount=$(@($manifest.sections).Count)"
@@ -142,8 +228,14 @@ $service = $null
 try {
   $service = Start-ServiceProcess
 
-  $direct = Invoke-WebRequest -Uri "$base/api/model/3d" -Method Post -ContentType "text/plain; charset=utf-8" -Body $project -SkipHttpErrorCheck
-  Save-WebResponse "model3d-direct" $direct
+  # Conserva il primo risultato: il progetto copiato dagli appunti non è il payload
+  # tecnico Service. Il frontend normale passa prima da buildTermodelServerPayload().
+  $rawDirect = Invoke-WebRequest -Uri "$base/api/model/3d" -Method Post -ContentType "text/plain; charset=utf-8" -Body $project -SkipHttpErrorCheck
+  Save-WebResponse "model3d-raw-copied-project" $rawDirect
+
+  # Questo è il percorso equivalente al frontend: payload canonico Service.
+  $direct = Invoke-WebRequest -Uri "$base/api/model/3d" -Method Post -ContentType "text/plain; charset=utf-8" -Body $serverProject -SkipHttpErrorCheck
+  Save-WebResponse "model3d-server-payload" $direct
 
   $allocation = Invoke-RestMethod -Uri "$base/api/projects/allocate-id" -Method Post
   $allocation | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $responseDir "allocation.json") -Encoding utf8NoBOM
@@ -153,7 +245,7 @@ try {
     throw "allocate-id non ha restituito projectId/lock token."
   }
 
-  $calculationProject = Set-Manifest $project $projectId $originalGeneratedAtUtc $geometrySha
+  $calculationProject = Set-Manifest $serverProject $projectId $originalGeneratedAtUtc $serverGeometrySha
   [System.IO.File]::WriteAllText((Join-Path $requestDir "project-calculation.tmdl"),$calculationProject,$utf8)
   $headers = @{ "X-Termodel-Project-Lock" = $lockToken }
 
@@ -169,11 +261,13 @@ try {
   }
 
   $lines = @(
-    "TERMODEL_AI_REAL_PROJECT_DEBUG_V1",
+    "TERMODEL_AI_REAL_PROJECT_DEBUG_V2",
     "projectId=$projectId",
     "sourceFixture=$fixturePath",
-    "geometrySha256=$geometrySha",
-    "model3dDirectStatus=$($direct.StatusCode)",
+    "rawGeometrySha256=$geometrySha",
+    "serverGeometrySha256=$serverGeometrySha",
+    "rawCopiedModel3dStatus=$($rawDirect.StatusCode)",
+    "model3dServerPayloadStatus=$($direct.StatusCode)",
     "calculationStatus=$($calc.StatusCode)",
     "generatedFilesStatus=$($generated.StatusCode)",
     "workspace=$workspace"
