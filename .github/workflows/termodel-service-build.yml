@@ -291,6 +291,13 @@ jobs:
                 [double]$circuit.pressureLossPa -le 0) {
               throw "Kernel Darcy non ha prodotto portata/Reynolds/perdita positivi."
             }
+            # Golden numerico sintetico: T001 lungo 1 m, passo 300 mm, PE-Xa 12 mm,
+            # acqua 35/30 °C, coefficiente resa 5 W/m2K.
+            if ([Math]::Abs([double]$circuit.flowLitersHour - 3.1826793) -gt 0.01 -or
+                [Math]::Abs([double]$circuit.reynolds - 123.4017) -gt 0.5 -or
+                [Math]::Abs([double]$circuit.pressureLossPa - 1.313675) -gt 0.02) {
+              throw "Golden Darcy sintetico fuori tolleranza: flow=$($circuit.flowLitersHour) L/h, Re=$($circuit.reynolds), dP=$($circuit.pressureLossPa) Pa."
+            }
 
             $panelsHashBeforeInvalidStep = (Get-FileHash -LiteralPath $panelsPathA -Algorithm SHA256).Hash
             $invalidStepProject = Set-RadiantStepInXml $projectATube 333
