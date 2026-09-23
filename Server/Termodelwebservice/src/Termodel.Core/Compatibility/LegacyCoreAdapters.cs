@@ -170,30 +170,95 @@ namespace Termodel.utilities
 
     public static class TermodelLog
     {
-        public enum LogCategory { generale, colmi, spezza, GeneraModello, PontiAutomatici }
+        public enum LogCategory
+        {
+            Sempre,
+            colmi,
+            spezza,
+            Error,
+            Svg,
+            RedrawHelix,
+            GeneraModello,
+            Performance,
+            PontiAutomatici
+        }
+
+        public sealed record LogConfiguration(
+            bool Enabled,
+            IReadOnlySet<LogCategory>? EnabledCategories)
+        {
+            public bool UsesCategoryFilter => EnabledCategories is not null;
+        }
 
         private static readonly AsyncLocal<List<string>?> CurrentMessages = new();
+        private static readonly AsyncLocal<LogConfiguration?> CurrentConfiguration = new();
 
         public static string LogContesto { get; set; } = string.Empty;
         public static string? erroreDaMostrare { get; set; }
         public static IReadOnlyList<string> Messages => CurrentMessages.Value ?? [];
+        public static LogConfiguration Configuration =>
+            CurrentConfiguration.Value ?? ServiceDefaultConfiguration();
+
         public static void Reset()
         {
             CurrentMessages.Value = [];
+            CurrentConfiguration.Value = ServiceDefaultConfiguration();
             erroreDaMostrare = null;
         }
 
         // Equivalente headless dell'InitializeLog Desktop: ogni elaborazione
-        // parte con un log nuovo e isolato nella richiesta corrente.
-        public static void InitializeLog() => Reset();
+        // parte con un log nuovo e isolato nella richiesta corrente. Se non
+        // viene fornita una configurazione esplicita conserva il comportamento
+        // Service storico: scritture dirette raccolte, blocchi IsEnabled spenti.
+        public static void InitializeLog(LogConfiguration? configuration = null)
+        {
+            CurrentMessages.Value = [];
+            CurrentConfiguration.Value = configuration ?? ServiceDefaultConfiguration();
+            erroreDaMostrare = null;
+        }
 
-        // Le categorie di debug del logger Desktop non sono ancora presenti
-        // nella Library come implementazione autorevole; restano quindi
-        // disabilitate invece di inventare una configurazione server.
-        public static bool IsEnabled(LogCategory category) => false;
-        public static void WriteLog(string message, LogCategory category = LogCategory.generale) => Add("info", message);
-        public static void LogOperation(string message) => Add("operation", message);
-        public static void LogError(string message) => Add("error", message);
+        public static bool IsEnabled(LogCategory category)
+        {
+            LogConfiguration configuration = Configuration;
+            return configuration.Enabled &&
+                configuration.EnabledCategories is not null &&
+                configuration.EnabledCategories.Contains(category);
+        }
+
+        public static void WriteLog(
+            string message,
+            LogCategory category = LogCategory.Sempre)
+        {
+            if (ShouldWrite(category))
+                Add("info", message);
+        }
+
+        public static void LogOperation(string message)
+        {
+            if (ShouldWrite(LogCategory.Sempre))
+                Add("operation", message);
+        }
+
+        public static void LogError(string message)
+        {
+            if (ShouldWrite(LogCategory.Error))
+                Add("error", message);
+        }
+
+        private static bool ShouldWrite(LogCategory category)
+        {
+            LogConfiguration configuration = Configuration;
+            if (!configuration.Enabled)
+                return false;
+
+            // Null significa compatibilità Service precedente: tutte le
+            // scritture dirette sono raccolte, ma IsEnabled resta false.
+            return configuration.EnabledCategories is null ||
+                configuration.EnabledCategories.Contains(category);
+        }
+
+        private static LogConfiguration ServiceDefaultConfiguration() =>
+            new(true, null);
 
         private static void Add(string level, string message) =>
             (CurrentMessages.Value ??= []).Add($"{level}: {LogContesto}{message}");
