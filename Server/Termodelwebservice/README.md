@@ -29,6 +29,7 @@ GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-svg
 GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
 GET  /api/projects/{projectId}/generated-files
 GET  /api/projects/{projectId}/generated-files/{relativePath}
+POST /api/projects/{projectId}/publish-session-snapshot
 GET  /api/projects/{projectId}/logs/termodel
 POST /api/model/3d
 POST /api/feedback
@@ -148,6 +149,61 @@ per retrocompatibilità.
 
 Il canale è destinato ai futuri disegni, report, CSV, PDF, SVG/DXF, JSON e
 log prodotti dai calcoli.
+
+## Snapshot diagnostico verso GitHub
+
+Il Service può pubblicare **su richiesta esplicita** i file generati
+dell'ultima elaborazione valida del progetto su un branch GitHub dedicato.
+
+Endpoint amministrativo:
+
+```http
+POST /api/projects/{projectId}/publish-session-snapshot
+X-Termodel-Snapshot-Key: <chiave amministrativa>
+```
+
+La pubblicazione usa esclusivamente i file già visibili attraverso il
+catalogo `generated-files`:
+
+```text
+artifacts/**
+logs/**
+```
+
+`project.tmdl` non viene pubblicato. Ogni snapshot viene scritto con un solo
+commit atomico sotto:
+
+```text
+service-snapshots/<snapshotId>/
+  manifest.json
+  artifacts/...
+  logs/...
+```
+
+Il manifest usa il formato `TERMODEL-SERVICE-SNAPSHOT-V1` e contiene
+projectId, timestamp UTC, eventuale commit del Service, stale, content type,
+dimensione e SHA-256 di ogni file.
+
+Configurazione server:
+
+```text
+TERMODEL_SNAPSHOT_GITHUB_TOKEN=<fine-grained PAT con Contents: read/write>
+TERMODEL_SNAPSHOT_ADMIN_KEY=<secret amministrativo lungo e casuale>
+TERMODEL_SNAPSHOT_REPOSITORY=Fetonte1960/Termodel
+TERMODEL_SNAPSHOT_BRANCH=service-snapshots
+TERMODEL_SNAPSHOT_BASE_BRANCH=main
+TERMODEL_SNAPSHOT_GITHUB_API_BASE_URL=https://api.github.com
+TERMODEL_SNAPSHOT_ROOT=service-snapshots
+```
+
+Le ultime cinque variabili hanno già i valori predefiniti mostrati; in Render
+sono quindi indispensabili soltanto `TERMODEL_SNAPSHOT_GITHUB_TOKEN` e
+`TERMODEL_SNAPSHOT_ADMIN_KEY`.
+
+Il token snapshot è volutamente separato dal token feedback: il token feedback
+può avere permessi Issues, mentre questo richiede accesso `Contents: write`.
+Non memorizzare né token né chiave amministrativa nel repository o nel
+frontend.
 
 ## TermodelLog del progetto
 
