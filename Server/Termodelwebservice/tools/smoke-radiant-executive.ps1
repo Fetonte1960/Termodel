@@ -133,6 +133,65 @@ try {
   $svgResponse = Invoke-WebRequest -Uri "$base/api/projects/$($allocation.projectId)/artifacts/pannelli-esecutivo-svg" -Method Get
   $dxfResponse = Invoke-WebRequest -Uri "$base/api/projects/$($allocation.projectId)/artifacts/pannelli-esecutivo-dxf" -Method Get
 
+  # Canale universale file generati: catalogo + GET sicuro, usato dal frontend
+  # per disegni, report e altri output futuri.
+  $generatedCatalog = Invoke-RestMethod -Uri "$base/api/projects/$($allocation.projectId)/generated-files" -Method Get
+  if ($generatedCatalog.contractVersion -ne "TERMODEL-GENERATED-FILES-V1") {
+    throw "Contratto catalogo file generati non riconosciuto."
+  }
+
+  $generatedPaths = @($generatedCatalog.files | ForEach-Object { [string]$_.path })
+  foreach ($expectedPath in @(
+    "artifacts/model3d.json",
+    "artifacts/pannelli.json",
+    "artifacts/pannelli-esecutivo.svg",
+    "artifacts/pannelli-esecutivo.dxf",
+    "logs/TermodelLog.md",
+    "logs/calculation.log"
+  )) {
+    if ($generatedPaths -notcontains $expectedPath) {
+      throw "Catalogo file generati privo di $expectedPath."
+    }
+  }
+  if ($generatedPaths -contains "project.tmdl" -or
+      @($generatedPaths | Where-Object { $_ -notmatch "^(artifacts|logs)/" }).Count -gt 0) {
+    throw "Il catalogo universale espone file fuori da artifacts/logs."
+  }
+
+  $generatedSvgRecord = @($generatedCatalog.files | Where-Object {
+    $_.path -eq "artifacts/pannelli-esecutivo.svg"
+  })[0]
+  $generatedDxfRecord = @($generatedCatalog.files | Where-Object {
+    $_.path -eq "artifacts/pannelli-esecutivo.dxf"
+  })[0]
+  $generatedPanelsRecord = @($generatedCatalog.files | Where-Object {
+    $_.path -eq "artifacts/pannelli.json"
+  })[0]
+  $generatedLogRecord = @($generatedCatalog.files | Where-Object {
+    $_.path -eq "logs/TermodelLog.md"
+  })[0]
+
+  $genericSvgResponse = Invoke-WebRequest -Uri ($base + [string]$generatedSvgRecord.href) -Method Get
+  $genericDxfResponse = Invoke-WebRequest -Uri ($base + [string]$generatedDxfRecord.href) -Method Get
+  $genericPanelsResponse = Invoke-WebRequest -Uri ($base + [string]$generatedPanelsRecord.href) -Method Get
+  $genericLogResponse = Invoke-WebRequest -Uri ($base + [string]$generatedLogRecord.href) -Method Get
+
+  if ($genericSvgResponse.Headers["Content-Type"] -notmatch "^image/svg\+xml" -or
+      $genericDxfResponse.Headers["Content-Type"] -notmatch "^application/dxf" -or
+      $genericPanelsResponse.Headers["Content-Type"] -notmatch "^application/json" -or
+      $genericLogResponse.Headers["Content-Type"] -notmatch "^text/markdown") {
+    throw "Content-Type del canale universale non coerenti."
+  }
+  if ($genericSvgResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false" -or
+      $genericSvgResponse.Headers["X-Termodel-Generated-File"] -ne "artifacts/pannelli-esecutivo.svg") {
+    throw "Header del GET universale SVG non coerenti."
+  }
+
+  $deniedProjectFile = Invoke-WebRequest -Uri "$base/api/projects/$($allocation.projectId)/generated-files/project.tmdl" -Method Get -SkipHttpErrorCheck
+  if ($deniedProjectFile.StatusCode -ne 404) {
+    throw "Il canale universale non deve esporre project.tmdl."
+  }
+
   if ($svgResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false" -or
       $dxfResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false") {
     throw "Artifact esecutivo appena calcolato marcato stale."
@@ -150,6 +209,54 @@ try {
   if ($svgText -notmatch "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1") {
     throw "Formato SVG esecutivo non riconosciuto."
   }
+
+  [xml]$svgXml = $svgText
+  $svgRoot = $svgXml.DocumentElement
+  if ($svgRoot.GetAttribute("data-coordinate-unit") -ne "m" -or
+      [string]::IsNullOrWhiteSpace($svgRoot.GetAttribute("data-termodel-max-y"))) {
+    throw "SVG esecutivo privo dei metadata metrici richiesti dal CAD2D."
+  }
+
+  $ns = New-Object System.Xml.XmlNamespaceManager($svgXml.NameTable)
+  $ns.AddNamespace("s","http://www.w3.org/2000/svg")
+  $buildingLayer = $floorName + "_Edificio_Output"
+  $mandataLayer = $floorName + "_PannelliMandata_Output"
+  $ritornoLayer = $floorName + "_PannelliRitorno_Output"
+
+  $buildingGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$buildingLayer']",$ns)
+  $mandataGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$mandataLayer']",$ns)
+  $ritornoGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$ritornoLayer']",$ns)
+  if (-not $buildingGroup -or -not $mandataGroup -or -not $ritornoGroup) {
+    throw "SVG esecutivo privo dei gruppi edificio/mandata/ritorno."
+  }
+  if ($mandataGroup.ChildNodes.Count -lt 1 -or $ritornoGroup.ChildNodes.Count -lt 1) {
+    throw "SVG esecutivo non contiene geometria spirale mandata/ritorno."
+  }
+
+  $buildingLines = @($buildingGroup.SelectNodes("./s:line",$ns))
+  if ($buildingLines.Count -lt 4) {
+    throw "SVG esecutivo non contiene il perimetro edificio 4x4 dello smoke."
+  }
+  $xs = @()
+  $ys = @()
+  foreach ($line in $buildingLines) {
+    $xs += [double]::Parse($line.GetAttribute("x1"),[Globalization.CultureInfo]::InvariantCulture)
+    $xs += [double]::Parse($line.GetAttribute("x2"),[Globalization.CultureInfo]::InvariantCulture)
+    $ys += [double]::Parse($line.GetAttribute("y1"),[Globalization.CultureInfo]::InvariantCulture)
+    $ys += [double]::Parse($line.GetAttribute("y2"),[Globalization.CultureInfo]::InvariantCulture)
+  }
+  if ([Math]::Abs(($xs | Measure-Object -Minimum).Minimum - 0.0) -gt 0.001 -or
+      [Math]::Abs(($xs | Measure-Object -Maximum).Maximum - 4.0) -gt 0.001 -or
+      [Math]::Abs(($ys | Measure-Object -Minimum).Minimum - 0.0) -gt 0.001 -or
+      [Math]::Abs(($ys | Measure-Object -Maximum).Maximum - 4.0) -gt 0.001) {
+    throw "Scala geometrica SVG esecutivo non coerente col locale 4x4 m."
+  }
+
+  if ($genericSvgResponse.Content -notmatch "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1") {
+    throw "GET universale non ha restituito l'SVG spirali."
+  }
+  Write-Host "GENERATED_FILES_CHANNEL_SMOKE_OK"
+  Write-Host "RADIANT_EXECUTIVE_SVG_GEOMETRY_SMOKE_OK"
 
   foreach ($layer in @(
     ($floorName + "_Edificio_Output"),
