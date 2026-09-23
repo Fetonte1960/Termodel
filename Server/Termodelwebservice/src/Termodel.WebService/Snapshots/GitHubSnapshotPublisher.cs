@@ -121,7 +121,7 @@ public sealed class GitHubSnapshotPublisher(
         {
             DateTimeOffset now = DateTimeOffset.UtcNow;
             string snapshotId =
-                $"{now:yyyyMMddTHHmmssfffZ}_{projectId:N}"[..(20 + 1 + 8)];
+                $"{now:yyyyMMddTHHmmssfffZ}_{projectId.ToString("N")[..8]}";
             string snapshotRoot =
                 $"{options.RootPath}/{snapshotId}";
 
