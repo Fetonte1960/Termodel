@@ -1,0 +1,200 @@
+{
+  "Reti": {
+    "Codice": {
+      "LunghezzaMassima": 80,
+      "Descr": "Codice rete",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Descrizione": {
+      "LunghezzaMassima": 180,
+      "Descr": "Descrizione",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "TipoRete": {
+      "LunghezzaMassima": 80,
+      "Descr": "Tipo rete",
+      "Combo": [
+        "PannelliRadianti"
+      ],
+      "Grid": [
+        "Archivio"
+      ],
+      "Ini": "PannelliRadianti"
+    },
+    "CodiceTipologiaPannello": {
+      "LunghezzaMassima": 80,
+      "Descr": "Tipologia pannello",
+      "Combo": [
+        "auto_combo",
+        "TipologiePannelli",
+        "Codice",
+        "GEN-DEFAULT"
+      ],
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "PassoSelezionatoMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 0,
+      "Descr": "Passo selezionato (mm)",
+      "Ini": "300"
+    },
+    "Fluido": {
+      "LunghezzaMassima": 60,
+      "Descr": "Fluido",
+      "Ini": "Acqua"
+    },
+    "TemperaturaMandataC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura mandata (°C)",
+      "Ini": "35"
+    },
+    "TemperaturaRitornoC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura ritorno (°C)",
+      "Ini": "30"
+    },
+    "TemperaturaAmbienteC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura ambiente (°C)",
+      "Ini": "20"
+    },
+    "TemperaturaEsternaProgettoC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura esterna progetto (°C)",
+      "Ini": "5"
+    },
+    "LunghezzaMassimaCircuitoM": {
+      "NumeroCifre": 10,
+      "NumeroDecimali": 2,
+      "Descr": "Lunghezza massima circuito (m)",
+      "Ini": "100"
+    },
+    "PerditaCaricoMassimaCircuitoPa": {
+      "NumeroCifre": 12,
+      "NumeroDecimali": 0,
+      "Descr": "Perdita carico massima circuito (Pa)",
+      "Ini": "25000"
+    },
+    "KLayout": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 3,
+      "Descr": "Coefficiente lunghezza spirale K layout",
+      "Ini": "1.000"
+    },
+    "Attivo": {
+      "LunghezzaMassima": 10,
+      "Descr": "Attivo",
+      "Combo": [
+        "SI",
+        "NO"
+      ],
+      "Ini": "SI"
+    }
+  },
+  "TipologiePannelli": {
+    "Codice": {
+      "LunghezzaMassima": 80,
+      "Descr": "Codice",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "CasaProduttrice": {
+      "LunghezzaMassima": 120,
+      "Descr": "Casa produttrice",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Modello": {
+      "LunghezzaMassima": 160,
+      "Descr": "Modello",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Descrizione": {
+      "LunghezzaMassima": 240,
+      "Descr": "Descrizione"
+    },
+    "MaterialeTubo": {
+      "LunghezzaMassima": 80,
+      "Descr": "Materiale tubo",
+      "Ini": "PE-Xa"
+    },
+    "DiametroEsternoTuboMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Diametro esterno tubo (mm)",
+      "Ini": "16"
+    },
+    "SpessoreTuboMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Spessore tubo (mm)",
+      "Ini": "2"
+    },
+    "DiametroInternoTuboMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Diametro interno tubo (mm)",
+      "Ini": "12"
+    },
+    "RugositaAssolutaMm": {
+      "NumeroCifre": 12,
+      "NumeroDecimali": 6,
+      "Descr": "Rugosità assoluta tubo (mm)",
+      "Ini": "0.0007"
+    },
+    "BarrieraOssigeno": {
+      "LunghezzaMassima": 10,
+      "Descr": "Barriera ossigeno",
+      "Combo": [
+        "SI",
+        "NO"
+      ],
+      "Ini": "SI"
+    },
+    "PassiDisponibiliMm": {
+      "LunghezzaMassima": 160,
+      "Descr": "Passi disponibili (mm, separati da ;)",
+      "Ini": "50;100;150;200;250;300"
+    },
+    "LunghezzaMatassaM": {
+      "NumeroCifre": 10,
+      "NumeroDecimali": 2,
+      "Descr": "Lunghezza matassa (m)",
+      "Ini": "600"
+    },
+    "CoefficienteResaWm2K": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 3,
+      "Descr": "Coefficiente resa (W/m²K)",
+      "Ini": "5"
+    },
+    "FormulaPerdita": {
+      "LunghezzaMassima": 80,
+      "Descr": "Formula perdita",
+      "Ini": "Darcy-Weisbach"
+    },
+    "Attivo": {
+      "LunghezzaMassima": 10,
+      "Descr": "Attivo",
+      "Combo": [
+        "SI",
+        "NO"
+      ],
+      "Ini": "SI"
+    }
+  }
+}
