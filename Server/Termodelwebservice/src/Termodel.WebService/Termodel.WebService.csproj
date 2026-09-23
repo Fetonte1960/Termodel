@@ -7,7 +7,7 @@
     <Content Update="Definitions\definizionedati.json"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
-    <Content Update="Definitions\pannelli-tubazioni-definizionedati.json"
+    <Content Update="Definitions\reti-pannelli-definizionedati.json"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
