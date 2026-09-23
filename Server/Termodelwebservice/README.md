@@ -24,6 +24,7 @@ POST /api/projects/{projectId}/close
 POST /api/projects/{projectId}/unlock
 POST /api/calculations
 GET  /api/projects/{projectId}/artifacts/model3d
+GET  /api/projects/{projectId}/artifacts/pannelli
 GET  /api/projects/{projectId}/logs/termodel
 POST /api/model/3d
 POST /api/feedback
@@ -63,6 +64,36 @@ Richiesta minima:
 ```
 
 Se `piani` è omesso viene creato il piano calpestabile predefinito. Gli altri archivi sono clonati dal progetto base incorporato; eventuali archivi forniti nella richiesta sostituiscono quelli omonimi dopo validazione. Il contenitore comprende anche `project/DisegnoInput.dxf`, `thermal/input.xml` e `thermal/input.json`.
+
+## Artifact pannelli radianti
+
+`POST /api/calculations` produce anche il primo risultato idraulico dei
+pannelli radianti quando il progetto contiene gli archivi estesi
+`Reti` e `TipologiePannelli`.
+
+Il risultato viene persistito in:
+
+```text
+SavedProjects/{projectId}/artifacts/pannelli.json
+```
+
+e si legge senza nuovo calcolo con:
+
+```http
+GET /api/projects/{projectId}/artifacts/pannelli
+```
+
+Formato corrente: `TermodelRadiantPanels v1`. Il primo kernel supporta
+acqua, Darcy-Weisbach, fattore laminare `64/Re`, Colebrook in turbolento,
+transizione diagnosticata, limiti lunghezza/perdita e validazione del passo
+contro la tipologia pannello. I segmenti CAD `Tubo` sono associati alla rete
+tramite `data-termodel-rete`.
+
+Questa prima versione usa la centerline Tubo manuale come lunghezza idraulica
+e una portata preliminare derivata dalla resa/temperature. Collettore,
+perdite concentrate e generazione grafica parametrica delle spirali restano
+fuori da questo artifact finché il motore condiviso delle spirali non avrà un
+ingresso headless governato da `Reti.PassoSelezionatoMm`.
 
 ## TermodelLog del progetto
 
