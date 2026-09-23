@@ -17,8 +17,18 @@ Il template è una copia di distribuzione: non sostituisce le fonti desktop e de
 
 Dal 23 settembre 2026 il template incorpora anche gli archivi progetto estesi in `extended-archives/`:
 
-- `TipologiePannelli.json`;
-- `Tubazioni.json`;
-- `Fluidi.json`.
+- `Reti.json`;
+- `TipologiePannelli.json`.
 
-Sono archivi tecnici del progetto e vengono inseriti da `ProgFileUnico` nel `TERMODEL-PROJECT-TEXT-V1` sia in JSON sia in XML. I relativi metadata sono mantenuti separatamente in `Definitions/pannelli-tubazioni-definizionedati.json`, senza modificare `definizionedati.json`.
+Sono archivi tecnici del progetto e vengono inseriti da `ProgFileUnico` nel `TERMODEL-PROJECT-TEXT-V1` sia in JSON sia in XML. I relativi metadata sono mantenuti separatamente in `Definitions/reti-pannelli-definizionedati.json`, senza modificare `definizionedati.json`.
+
+
+### Revisione struttura 23 settembre 2026
+
+La prima suddivisione `TipologiePannelli / Tubazioni / Fluidi` è stata superata.
+Il template autorevole usa ora due soli archivi estesi:
+`Reti` per tipo rete e parametri di esercizio/progetto indipendenti dal
+costruttore, e `TipologiePannelli` per dati del prodotto, caratteristiche
+della tubazione e passi ammessi. Le vecchie sezioni `Tubazioni` e `Fluidi`
+restano compatibilità storica di eventuali progetti già creati, ma non vengono
+più generate nei nuovi progetti.
