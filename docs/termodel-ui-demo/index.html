@@ -1761,6 +1761,10 @@
             <div class="cad-tool-dropdown">
               <button id="cadAddBackground" type="button" title="Importa uno sfondo PDF, raster, SVG o DXF per il piano corrente">＋ Aggiungi sfondo</button>
               <input id="cadBackgroundFile" type="file" accept=".pdf,application/pdf,.dxf,application/dxf,.svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden />
+              <div class="cad-tool-separator"></div>
+              <button id="cadLoadGeneratedExecutive" type="button" title="Carica dal Service l'ultimo esecutivo pannelli SVG generato">↻ Esecutivo pannelli SVG</button>
+              <label><input id="cadShowGeneratedExecutive" type="checkbox" disabled /> Mostra esecutivo calcolato</label>
+              <div class="cad-tool-separator"></div>
               <label><input id="cadShowBackground" type="checkbox" checked /> Mostra sfondo</label>
               <label><input id="cadShowInput" type="checkbox" checked /> Mostra disegno input</label>
             </div>
@@ -2242,6 +2246,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=1.04"></script>
+  <script type="module" src="./app.js?v=1.05"></script>
 </body>
 </html>
