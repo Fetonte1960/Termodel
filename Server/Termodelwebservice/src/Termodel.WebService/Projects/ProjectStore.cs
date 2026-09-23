@@ -283,6 +283,54 @@ public sealed class ProjectStore
         }
     }
 
+    public async Task<byte[]?> ReadRadiantExecutiveSvgAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        return await ReadArtifactAsync(
+            projectId,
+            "pannelli-esecutivo.svg",
+            cancellationToken);
+    }
+
+    public async Task<byte[]?> ReadRadiantExecutiveDxfAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        return await ReadArtifactAsync(
+            projectId,
+            "pannelli-esecutivo.dxf",
+            cancellationToken);
+    }
+
+    private async Task<byte[]?> ReadArtifactAsync(
+        Guid projectId,
+        string fileName,
+        CancellationToken cancellationToken)
+    {
+        SemaphoreSlim gate = GetGate(projectId);
+        await gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            string artifactPath = Path.Combine(
+                GetProjectDirectory(projectId),
+                "artifacts",
+                fileName);
+
+            if (!File.Exists(artifactPath))
+                return null;
+
+            return await File.ReadAllBytesAsync(
+                artifactPath,
+                cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public async Task<byte[]?> ReadTermodelLogAsync(
         Guid projectId,
         CancellationToken cancellationToken)
@@ -375,6 +423,22 @@ public sealed class ProjectStore
                     cancellationToken);
             }
 
+            if (data.RadiantExecutiveSvg is not null)
+            {
+                await File.WriteAllBytesAsync(
+                    Path.Combine(artifactsDirectory, "pannelli-esecutivo.svg"),
+                    data.RadiantExecutiveSvg,
+                    cancellationToken);
+            }
+
+            if (data.RadiantExecutiveDxf is not null)
+            {
+                await File.WriteAllBytesAsync(
+                    Path.Combine(artifactsDirectory, "pannelli-esecutivo.dxf"),
+                    data.RadiantExecutiveDxf,
+                    cancellationToken);
+            }
+
             string termodelLog =
                 string.Join(Environment.NewLine, data.Diagnostics);
 
@@ -396,6 +460,8 @@ public sealed class ProjectStore
                 $"status=completed{Environment.NewLine}" +
                 $"primitiveCount={data.PrimitiveCount}{Environment.NewLine}" +
                 $"radiantPanelCircuitCount={data.RadiantPanelCircuitCount}{Environment.NewLine}" +
+                $"radiantExecutivePrimitiveCount={data.RadiantExecutivePrimitiveCount}{Environment.NewLine}" +
+                $"radiantExecutiveFloorCount={data.RadiantExecutiveFloorCount}{Environment.NewLine}" +
                 $"diagnosticCount={data.Diagnostics.Count}{Environment.NewLine}" +
                 $"logEnabled={data.LogEnabled.ToString().ToLowerInvariant()}{Environment.NewLine}" +
                 $"logMode={data.LogMode}{Environment.NewLine}" +
@@ -586,9 +652,13 @@ public sealed class ProjectStore
 public sealed record ProjectCalculationData(
     byte[] Model3DJson,
     byte[]? RadiantPanelsJson,
+    byte[]? RadiantExecutiveSvg,
+    byte[]? RadiantExecutiveDxf,
     IReadOnlyList<string> Diagnostics,
     int PrimitiveCount,
     int RadiantPanelCircuitCount,
+    int RadiantExecutivePrimitiveCount,
+    int RadiantExecutiveFloorCount,
     bool LogEnabled,
     string LogMode,
     IReadOnlyList<string> LogCategories);
