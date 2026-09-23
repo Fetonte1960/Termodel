@@ -16,7 +16,10 @@ const ARCHIVE_ORDER = [
   'Ponti',
   'PontiAutomatici',
   'PontiAutomaticiFinestre',
-  'Zone'
+  'Zone',
+  'TipologiePannelli',
+  'Tubazioni',
+  'Fluidi'
 ];
 
 const PROTECTED_ROW_ARCHIVES = new Set(['Finestre', 'Pareti', 'Ponti', 'Zone']);
@@ -24,6 +27,7 @@ const PROTECTED_ROW_ARCHIVES = new Set(['Finestre', 'Pareti', 'Ponti', 'Zone']);
 const archiveState = {
   schemaUrl: DEFAULT_SCHEMA_URL,
   schema: null,
+  baseSchema: null,
   schemaPromise: null,
   project: null,
   currentArchive: 'Piani',
@@ -80,8 +84,9 @@ async function loadSchema() {
       );
     }
 
-    archiveState.schema = parsed;
-    return parsed;
+    archiveState.baseSchema = deepClone(parsed);
+    archiveState.schema = deepClone(parsed);
+    return archiveState.schema;
   })().finally(() => {
     archiveState.schemaPromise = null;
   });
@@ -198,6 +203,27 @@ export async function loadTermodelProjectText(text) {
 
   const parsed = parseProjectSections(text);
   const manifest = parseManifest(parsed.sections);
+
+  // Ogni progetto riparte dallo schema storico e può estenderlo con metadata
+  // tecnici portati dal progetto stesso, senza modificare definizionedati.json.
+  archiveState.schema = deepClone(archiveState.baseSchema ?? archiveState.schema ?? {});
+  const extendedSchemaText =
+    parsed.sections.get('definition/pannelli-tubazioni-definizionedati.json');
+  if (extendedSchemaText) {
+    try {
+      const extendedSchema = JSON.parse(extendedSchemaText);
+      if (!extendedSchema || typeof extendedSchema !== 'object' || Array.isArray(extendedSchema))
+        throw new Error('la radice non è un oggetto');
+
+      Object.assign(archiveState.schema, extendedSchema);
+    } catch (error) {
+      throw new Error(
+        'definition/pannelli-tubazioni-definizionedati.json non valido: ' +
+        error.message
+      );
+    }
+  }
+
   const archives = {};
   const archiveSectionNames = {};
 
