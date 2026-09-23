@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — completamento ramo pannelli radianti Service
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - completare il passo successivo al trasporto CAD Tubo già verificato;
@@ -116,17 +116,115 @@ Commissionato:
 - distinguere esplicitamente ciò che è progettato, implementato, compilato,
   eseguito e confrontato col riferimento Desktop.
 
-Criteri di completamento:
-- build Release verde;
-- validazione Reti/TipologiePannelli realmente esercitata;
-- almeno un circuito sintetico con risultato Darcy deterministico e testato;
-- artifact pannelli persistente nello stesso `SavedProjects/{projectId}`;
-- GET artifact senza nuovo calcolo;
-- nessun regressione agli smoke projectId/log/feedback;
-- eventuale parte spirali dichiarata implementata solo se realmente eseguita.
-
 Risultato:
-- implementazione in corso.
+- aggiunto in `Termodel.Core`
+  `RadiantPanels/RadiantPanelCalculator.cs`;
+- il solver legge **a runtime** gli archivi XML del file unico
+  `Reti` e `TipologiePannelli`, seleziona le reti attive
+  `TipoRete=PannelliRadianti`, risolve
+  `CodiceTipologiaPannello` e usa passo, temperature, limiti,
+  `KLayout`, diametro interno, rugosità e coefficiente resa;
+- `PassoSelezionatoMm` viene realmente validato contro
+  `PassiDisponibiliMm`; un passo 333 mm non ammesso produce HTTP 422 e
+  non sostituisce l'ultimo artifact valido;
+- `SvgDxfReader` conserva ora sulle linee del Virtual CAD un
+  `SvgDxfLineMetadata` con id, piano, entità, rete e layer. Il normale
+  layer/colore/linetype netDxf usato dal codice Desktop resta invariato;
+- i segmenti `Tubo` della stessa rete/piano vengono raggruppati per
+  connettività geometrica (tolleranza 1 mm) in circuiti; vengono rilevate e
+  diagnosticate topologie aperte/chiuse/ramificate;
+- implementato il primo kernel idraulico:
+  densità e viscosità acqua dalla temperatura media, velocità, Reynolds,
+  fattore Darcy `64/Re` in laminare, Colebrook in turbolento e transizione
+  interpolata/diagnosticata 2300–4000;
+- perdita distribuita:
+  `DeltaP = f * (L/D) * rho*v²/2`, con output Pa/m, Pa e kPa;
+- la resa preliminare mantiene la stessa relazione del Desktop
+  `CalcoloPannelli.CalcolaPotenzaSpecifica`:
+  `CoefficienteResaWm2K * (TmediaAcqua - Tambiente)`;
+- finché il calcolo pannelli completo non fornisce una portata circuito
+  autorevole, la prima versione ricava esplicitamente una **portata
+  preliminare** da potenza, `cp=4180 J/(kg K)` e salto mandata/ritorno;
+- per il CAD manuale la centerline Tubo è trattata come lunghezza idraulica
+  effettiva. L'area servita è stimata inversamente dal fattore
+  superficie/passo e `KLayout`; questa assunzione è dichiarata
+  nell'artifact e non viene confusa con una spirale generata;
+- i fattori passo implementati sono quelli registrati nella specifica:
+  50→20; 100→10; 125→8; 150→6,7; 175→5,8; 200→5; 300→3,4 m/m²,
+  con fallback `1000/passo_mm`;
+- `POST /api/calculations` continua a essere l'unica elaborazione
+  autorevole e pubblica anche:
+  ```text
+  SavedProjects/{projectId}/artifacts/pannelli.json
+  ```
+  formato `TermodelRadiantPanels v1`;
+- aggiunto:
+  ```http
+  GET /api/projects/{projectId}/artifacts/pannelli
+  ```
+  che legge il JSON persistito senza rilanciare il calcolo e restituisce
+  `X-Termodel-Artifact-Stale` coerente con lo stato progetto;
+- la response di `POST /api/calculations` include ora gli artifact
+  `model3d` e `pannelli`;
+- le diagnostiche idrauliche restano dentro `pannelli.json`; il campo
+  top-level `diagnostics` continua a rispettare esattamente
+  `logEnabled/logCategories`, preservando il contratto TermodelLog;
+- `logs/calculation.log` registra anche
+  `radiantPanelCircuitCount`;
+- test sintetico end-to-end: un `T001` di 1,000 m, rete
+  `RAD-DEFAULT`, passo 300 mm, PE-Xa D interno 12 mm, acqua 35/30 °C
+  produce, entro tolleranze definite:
+  ```text
+  portata derivata ~= 3,1826793 L/h
+  Reynolds         ~= 123,4017
+  perdita          ~= 1,313675 Pa
+  ```
+- lo smoke verifica anche rete/tipologia, passo, diametro, fattore 3,4,
+  lunghezze 1 m, persistenza di `pannelli.json`, GET senza ricalcolo,
+  validazione passo 333 -> 422 e conservazione dell'ultimo artifact valido;
+- **compilato:** SI — GitHub Actions `TermodelService Build` run **#165**
+  (run id `35871205144`), Build Release riuscita con **0 Error(s)**;
+- **eseguito/testato:** SI — nello stesso run sono verdi
+  `RADIANT_NETWORK_ARCHIVES_SMOKE_OK`,
+  `RADIANT_INVALID_STEP_STATUS_422`,
+  `RADIANT_PANEL_DARCY_SMOKE_OK`,
+  `RADIANT_PIPE_FILE_UNIQUE_SMOKE_OK`,
+  `TERMODEL_LOG_OPTIONS_SMOKE_OK`,
+  `PROJECT_LOCK_SMOKE_OK` e `GITHUB_FEEDBACK_SMOKE_OK`;
+- **confrontato con riferimento Desktop:** SI per convenzione layer Tubo,
+  dati progetto precedentemente hard-coded e formula preliminare di resa;
+  NO per equivalenza numerica completa del generatore spirali/collettori,
+  che non è ancora nel Service;
+- il generatore grafico storico delle spirali **non è stato integrato
+  deliberatamente**: il motore condiviso `SpiraliGPT` usa ancora
+  `PassoTubi=0,30 m` compile-time e workflow
+  `locale.xml/locale.svg` basato sulla working directory. Integrarlo così
+  renderebbe non autorevole `Reti.PassoSelezionatoMm` e introdurrebbe stato
+  file globale nel Service. Il prossimo intervento corretto è rendere
+  parametrico/headless il motore condiviso, senza copiarlo;
+- non sono ancora incluse perdita collettore, valvole, flussimetri, perdite
+  concentrate, distribuzione primaria, sizing automatico o equilibratura;
+- contratto Front↔Service aggiornato alla **v1.11**;
+- registro
+  `Server/Termodelwebservice/docs/TUBAZIONI-DEVELOPMENT-REGISTER.md`
+  aggiornato alla milestone 15.3;
+- `Server/Termodelwebservice/README.md` documenta il nuovo endpoint;
+- `definizionedati.json`, `TERMODEL-PROJECT-TEXT-V1` e la Library
+  Desktop non sono stati modificati;
+- principali commit dell'incarico:
+  `ea7be8d2a03e848d16e2c8ac5a26e8ebae05be04`,
+  `1c1b4eae87fdb5a63669fd9ac8af2aa1e1a3d009`,
+  `ccfeaf5d42d74f84cb07d3c1c63cfdf56b6b3e13`,
+  `59bd736f7141430a8760e215fbe4769e748d76f2`,
+  `f96091fe9cc3c62f38a6da184e542f788530276a`,
+  `f6bf6ce3034f546064a5e22546049d38843a7b1a`,
+  `cd90e16ede425dbc5945fd079e0d5852623cdb1c`,
+  `e871fb4f742eb03c4ba51af654cace2115ba6c48`,
+  `cf7f3efb636ed09601017c1cbc925651a413b92b`,
+  `1c1486e817087aa849edd705263058868f212e6a`,
+  `b7f1cab0c889a7673a8b0baa5072b15fef58f3fb`,
+  `232c970088d88b64e9aa96c2c4ee44a076f79438`,
+  `459e07f4a06a65c865a2b91c61595db5d8a39805`.
 
 ### INCARICO 2026-09-23 — entità Tubo in modalità Rete CAD 2D
 Stato: ESEGUITO
@@ -2066,11 +2164,12 @@ che geometria e layer provengono dallo SVG.
 
 Il supporto geometrico dei layer ausiliari è operativo anche per l'input
 `Tubo` dei pannelli: il Virtual CAD ricostruisce
-`<NomePiano>_tubipannelli` e l'adattatore headless
-`IoPannelli.LeggiTubiDXF` acquisisce tali linee senza interrompere il
-percorso 3D. Il solver pannelli/spirali resta però non integrato: in questa
-fase le linee vengono riconosciute e trasportate, non ancora trasformate in
-un artifact pannelli o in risultati idraulici.
+`<NomePiano>_tubipannelli`, conserva `data-termodel-rete` nei metadata
+della linea e l'adattatore headless `IoPannelli.LeggiTubiDXF` continua a
+vedere la convenzione Desktop. Il primo solver idraulico pannelli è ora
+integrato in `POST /api/calculations` e produce
+`artifacts/pannelli.json`; il generatore grafico delle spirali resta invece
+da rendere parametrico/headless prima dell'integrazione.
 
 ### Virtual DB
 
