@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.2**  
-Aggiornamento: **22 settembre 2026**  
-Stato: **projectId-only implementato lato Service; Apri/Salva server-owned; apertura esclusiva del progetto con recupero lock impropri; frontend/mobile in adeguamento separato**
+Versione documento: **1.3**  
+Aggiornamento: **23 settembre 2026**  
+Stato: **projectId-only e lock progetto implementati lato Service; pretest remoto Render attivo; frontend in adeguamento al Service HTTPS pubblico**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -732,6 +732,90 @@ occupazione logica del progetto.
 
 Una futura `Duplica come nuovo progetto` produrrà invece un nuovo projectId e
 un lock indipendente.
+
+---
+## 2.8 Profilo di pretest remoto Render
+
+Decisione operativa del **23 settembre 2026**.
+
+Per il pretest remoto il Termodel.WebService pubblico è raggiungibile a:
+
+```text
+https://termodel.onrender.com
+```
+
+Il frontend pubblico resta:
+
+```text
+https://www.termodel.it
+```
+
+Il percorso principale di collaudo frontend ↔ Service usa quindi HTTPS pubblico.
+Il supporto localhost/PNA può restare disponibile per sviluppo e compatibilità,
+ma non è più necessario per il pretest remoto.
+
+Endpoint minimi del pretest:
+
+```http
+GET  /health
+GET  /api/model/capabilities
+GET  /api/projects
+POST /api/projects/allocate-id
+POST /api/projects/{projectId}/open
+PUT  /api/projects/{projectId}/save
+PUT  /api/projects/{projectId}/save-as?projectName=...
+POST /api/projects/{projectId}/heartbeat
+POST /api/projects/{projectId}/close
+POST /api/projects/{projectId}/unlock
+POST /api/calculations
+GET  /api/projects/{projectId}/artifacts/model3d
+```
+
+Il client che possiede il lock invia il token nell'header:
+
+```text
+X-Termodel-Project-Lock: <projectLockToken>
+```
+
+Il Service autorizza il frontend pubblico `https://www.termodel.it` tramite CORS.
+Il precedente supporto localhost/PNA può restare per sviluppo locale.
+
+### Hosting indipendente
+
+L'API Termodel non deve dipendere da Render. Il Service deve restare compatibile
+con Linux/.NET 8 in container e non introdurre percorsi Windows locali.
+
+La porta HTTP non deve essere fissata nel codice applicativo. Nel container
+Render la porta viene fornita dalla variabile `PORT`; il Dockerfile deve
+continuare ad adattarsi alla porta assegnata dall'hosting.
+
+### Persistenza nel pretest Free
+
+L'istanza Render Free usa filesystem effimero. Di conseguenza:
+- `SavedProjects` è valido per test funzionali durante la vita dell'istanza;
+- non è storage definitivo dei progetti clienti;
+- restart, redeploy o ricreazione possono eliminare progetto, artifact, lock
+  e altri file locali;
+- questa limitazione non modifica il contratto projectId-only e non giustifica
+  l'introduzione di un nuovo identificatore o di storage alternativi nel frontend.
+
+Un hosting/storage persistente verrà scelto separatamente prima dell'uso
+produttivo.
+
+### Sleep/wakeup Render Free
+
+Dopo inattività l'istanza Free può essere sospesa. La prima richiesta successiva
+può richiedere circa 50 secondi o più. Nel pretest il frontend deve presentare
+uno stato di attesa/connessione e non trattare automaticamente questa latenza
+come errore Termodel.
+
+### Client desktop e mobile
+
+PC, Android, tablet, iPhone e altri client Web che usano il Service remoto
+devono poter utilizzare la stessa base URL HTTPS pubblica. La precedente variante
+mobile completamente serverless può restare una modalità separata, ma il
+ProjectBrowser Web mobile del pretest non deve dipendere dalla presenza di un
+PC locale per raggiungere Termodel.WebService.
 
 ---
 ## 3. Operazione principale: AggiornaCalcolo
