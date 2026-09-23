@@ -560,6 +560,8 @@ app.MapPost("/api/calculations", async (
             },
             cancellationToken);
 
+        string generatedFilesHref =
+            $"/api/projects/{projectId:D}/generated-files";
         string model3DHref =
             $"/api/projects/{projectId:D}/artifacts/model3d";
         string panelsHref =
@@ -611,6 +613,7 @@ app.MapPost("/api/calculations", async (
             {
                 fileName = "project.tmdl"
             },
+            generatedFilesHref,
             artifacts,
             diagnostics = data.Diagnostics,
             logging = new
@@ -637,6 +640,111 @@ app.MapPost("/api/calculations", async (
             detail: exception.Message,
             statusCode: StatusCodes.Status422UnprocessableEntity);
     }
+});
+
+// Canale universale read-only dei file generati dal Service.
+// Espone soltanto artifacts/* e logs/* del workspace progetto.
+app.MapGet(
+    "/api/projects/{projectId:guid}/generated-files",
+    async (
+        Guid projectId,
+        ProjectStore projects,
+        CancellationToken cancellationToken) =>
+{
+    if (!projects.HasProjectWorkspace(projectId))
+    {
+        return Results.Problem(
+            title: "Progetto non disponibile",
+            detail: $"Il projectId '{projectId:D}' non dispone di un workspace corrente.",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    IReadOnlyList<ProjectGeneratedFileEntry> files =
+        await projects.ListGeneratedFilesAsync(
+            projectId,
+            cancellationToken);
+
+    return Results.Json(new
+    {
+        contractVersion = "TERMODEL-GENERATED-FILES-V1",
+        projectId,
+        artifactsStale = files.FirstOrDefault()?.Stale ??
+            await projects.AreArtifactsStaleAsync(projectId, cancellationToken),
+        files = files.Select(file => new
+        {
+            path = file.RelativePath,
+            fileName = file.FileName,
+            category = file.Category,
+            contentType = file.ContentType,
+            size = file.Size,
+            lastWriteTimeUtc = file.LastWriteTimeUtc,
+            inline = file.Inline,
+            stale = file.Stale,
+            href =
+                $"/api/projects/{projectId:D}/generated-files/" +
+                string.Join(
+                    "/",
+                    file.RelativePath
+                        .Split('/', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(Uri.EscapeDataString))
+        })
+    });
+});
+
+app.MapGet(
+    "/api/projects/{projectId:guid}/generated-files/{**relativePath}",
+    async (
+        Guid projectId,
+        string relativePath,
+        HttpResponse response,
+        ProjectStore projects,
+        CancellationToken cancellationToken) =>
+{
+    ProjectGeneratedFileContent? file =
+        await projects.ReadGeneratedFileAsync(
+            projectId,
+            relativePath,
+            cancellationToken);
+
+    if (file is null)
+    {
+        return Results.Problem(
+            title: "File generato non disponibile",
+            detail:
+                $"Il file generato '{relativePath}' non è disponibile per " +
+                $"il projectId '{projectId:D}'.",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    response.Headers["X-Termodel-Artifact-Stale"] =
+        file.Stale ? "true" : "false";
+    response.Headers["X-Termodel-Generated-File"] =
+        file.RelativePath;
+    response.Headers["X-Content-Type-Options"] = "nosniff";
+    response.Headers.CacheControl = "no-store";
+    response.Headers.LastModified =
+        file.LastWriteTimeUtc.ToUniversalTime().ToString("R");
+
+    string safeFileName = file.FileName.Replace(""", string.Empty);
+    string disposition = file.Inline ? "inline" : "attachment";
+    response.Headers.ContentDisposition =
+        $"{disposition}; filename=\"{safeFileName}\"; " +
+        $"filename*=UTF-8''{Uri.EscapeDataString(file.FileName)}";
+
+    if (file.ContentType.StartsWith(
+            "image/svg+xml",
+            StringComparison.OrdinalIgnoreCase) ||
+        file.ContentType.StartsWith(
+            "text/html",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        response.Headers.ContentSecurityPolicy =
+            "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:";
+    }
+
+    return Results.Bytes(
+        file.Content,
+        contentType: file.ContentType);
 });
 
 // Funzione realizzata da Codex in autonomia
