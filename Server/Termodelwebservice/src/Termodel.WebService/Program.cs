@@ -7,6 +7,7 @@ using Termodel.Leggidxf;
 using Termodel.utilities;
 using Termodel.WebService.Projects;
 using Termodel.WebService.Feedback;
+using Termodel.WebService.Snapshots;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,11 @@ builder.Services.AddSingleton<FeedbackRateLimiter>();
 builder.Services.AddHttpClient<GitHubFeedbackPublisher>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(15);
+});
+builder.Services.AddSingleton<SnapshotOptions>();
+builder.Services.AddHttpClient<GitHubSnapshotPublisher>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
 
 const string TermodelWebCorsPolicy = "TermodelWeb";
@@ -154,6 +160,101 @@ app.MapPost("/api/feedback", async (
     {
         return Results.Problem(
             title: "GitHub temporaneamente non disponibile",
+            detail: exception.Message,
+            statusCode: StatusCodes.Status502BadGateway);
+    }
+});
+
+// Pubblicazione amministrativa dello snapshot diagnostico corrente su GitHub.
+app.MapPost(
+    "/api/projects/{projectId:guid}/publish-session-snapshot",
+    async (
+        Guid projectId,
+        HttpContext context,
+        ProjectStore projects,
+        SnapshotOptions snapshotOptions,
+        GitHubSnapshotPublisher snapshotPublisher,
+        CancellationToken cancellationToken) =>
+{
+    if (!snapshotOptions.IsConfigured)
+    {
+        return Results.Problem(
+            title: "Publisher snapshot non configurato",
+            detail:
+                "Configurare TERMODEL_SNAPSHOT_GITHUB_TOKEN e " +
+                "TERMODEL_SNAPSHOT_ADMIN_KEY sul server.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    string suppliedKey =
+        context.Request.Headers["X-Termodel-Snapshot-Key"].ToString();
+
+    if (!snapshotOptions.IsAuthorized(suppliedKey))
+    {
+        return Results.Problem(
+            title: "Pubblicazione snapshot non autorizzata",
+            detail: "Chiave amministrativa snapshot non valida.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    if (!projects.HasProjectWorkspace(projectId))
+    {
+        return Results.Problem(
+            title: "Progetto non disponibile",
+            detail:
+                $"Il projectId '{projectId:D}' non dispone di un workspace corrente.",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    IReadOnlyList<ProjectGeneratedFileContent> files =
+        await projects.ReadGeneratedFilesSnapshotAsync(
+            projectId,
+            cancellationToken);
+
+    if (files.Count == 0)
+    {
+        return Results.Problem(
+            title: "Nessun file generato",
+            detail:
+                "Il progetto non dispone ancora di artifacts/logs da pubblicare.",
+            statusCode: StatusCodes.Status409Conflict);
+    }
+
+    try
+    {
+        SnapshotPublishResult published =
+            await snapshotPublisher.PublishAsync(
+                projectId,
+                files,
+                cancellationToken);
+
+        return Results.Json(
+            new
+            {
+                status = "published",
+                projectId,
+                snapshotId = published.SnapshotId,
+                repository = published.Repository,
+                branch = published.Branch,
+                rootPath = published.RootPath,
+                commitSha = published.CommitSha,
+                fileCount = published.FileCount,
+                totalBytes = published.TotalBytes,
+                treeUrl = published.TreeUrl
+            },
+            statusCode: StatusCodes.Status201Created);
+    }
+    catch (SnapshotNotConfiguredException exception)
+    {
+        return Results.Problem(
+            title: "Publisher snapshot non configurato",
+            detail: exception.Message,
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+    catch (SnapshotPublishException exception)
+    {
+        return Results.Problem(
+            title: "Pubblicazione snapshot fallita",
             detail: exception.Message,
             statusCode: StatusCodes.Status502BadGateway);
     }
