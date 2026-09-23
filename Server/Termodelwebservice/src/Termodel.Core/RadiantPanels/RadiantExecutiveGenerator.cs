@@ -583,6 +583,15 @@ internal static class RadiantExecutiveSvgWriter
                 "data-termodel-format",
                 "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1"),
             new XAttribute(
+                "data-coordinate-unit",
+                "m"),
+            new XAttribute(
+                "data-termodel-max-y",
+                F(maxY)),
+            new XAttribute(
+                "data-termodel-min-y",
+                F(minY)),
+            new XAttribute(
                 "data-primitive-count",
                 primitives.Count));
 
