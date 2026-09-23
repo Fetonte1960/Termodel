@@ -54,6 +54,7 @@ const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
 const helpExplorationMode = document.getElementById('helpExplorationMode');
+const helpCopyProjectClipboard = document.getElementById('helpCopyProjectClipboard');
 const TERMODEL_LOG_CATEGORIES = [
   'Sempre',
   'colmi',
@@ -65,7 +66,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.05';
+const APP_VERSION = '1.06';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -521,6 +522,14 @@ COMMAND_HELP['Aggiorna Modello'] = {
   body: `
     <p>Invia lo stato tecnico corrente del progetto al Termodel Service, esegue il calcolo completo e visualizza l'artifact <strong>model3d</strong> restituito dal server.</p>
     <p>Le categorie selezionate nel menu <strong>Help → Log Aggiorna Modello</strong> controllano il log della singola elaborazione.</p>
+  `
+};
+
+COMMAND_HELP['Copia progetto negli appunti'] = {
+  title: 'Copia progetto negli appunti',
+  body: `
+    <p>Copia negli appunti il progetto corrente completo nel formato canonico <strong>TERMODEL-PROJECT-TEXT-V1</strong>.</p>
+    <p>Serve per incollare direttamente il progetto in una chat AI o in un test controllato, senza passare da Render e senza pubblicare snapshot.</p>
   `
 };
 
@@ -1960,6 +1969,10 @@ function setStructuredProjectState(enabled) {
 
   if (saveProjectButton) saveProjectButton.disabled = needsProject;
   if (saveProjectAsButton) saveProjectAsButton.disabled = needsProject;
+  if (helpCopyProjectClipboard) {
+    helpCopyProjectClipboard.disabled = needsProject;
+    helpCopyProjectClipboard.title = needsProject ? inviteTitle : 'Copia il TERMODEL-PROJECT-TEXT-V1 corrente negli appunti.';
+  }
 }
 
 async function loadEmptyProjectText() {
@@ -2749,24 +2762,22 @@ function buildTermodelServerExchangeReport(exchange = {}) {
   return lines.join('\n');
 }
 
-async function copyTermodelServerExchange(exchange) {
-  const text = buildTermodelServerExchangeReport(exchange);
-  lastTermodelServerExchange = text;
-  globalThis.TERMODEL_LAST_SERVER_EXCHANGE = text;
+async function copyTextToClipboard(text, label = 'testo') {
+  const value = String(text == null ? '' : text);
 
   try {
     if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(value);
       return true;
     }
   } catch (error) {
-    console.warn('Clipboard API non disponibile per la diagnostica Service.', error);
+    console.warn('Clipboard API non disponibile per ' + label + '.', error);
   }
 
   // Fallback per browser che negano navigator.clipboard dopo una richiesta async.
   try {
     const textarea = document.createElement('textarea');
-    textarea.value = text;
+    textarea.value = value;
     textarea.setAttribute('readonly', '');
     textarea.style.position = 'fixed';
     textarea.style.left = '-10000px';
@@ -2778,9 +2789,29 @@ async function copyTermodelServerExchange(exchange) {
     textarea.remove();
     return copied;
   } catch (error) {
-    console.warn('Copia diagnostica Service non riuscita.', error);
+    console.warn('Copia negli appunti non riuscita per ' + label + '.', error);
     return false;
   }
+}
+
+async function copyTermodelServerExchange(exchange) {
+  const text = buildTermodelServerExchangeReport(exchange);
+  lastTermodelServerExchange = text;
+  globalThis.TERMODEL_LAST_SERVER_EXCHANGE = text;
+  return copyTextToClipboard(text, 'la diagnostica Service');
+}
+
+async function copyCurrentProjectToClipboard() {
+  const text = await buildCurrentProjectText();
+  if (!isCompleteTermodelProjectText(text))
+    throw new Error('Il progetto corrente non è TERMODEL-PROJECT-TEXT-V1.');
+
+  const copied = await copyTextToClipboard(text, 'il progetto Termodel');
+  if (!copied)
+    throw new Error('Il browser non ha consentito la copia negli appunti.');
+
+  setMainAiStatus('✓ Progetto TERMODEL-PROJECT-TEXT-V1 copiato negli appunti.');
+  return text;
 }
 
 async function readTermodelServiceError(response) {
@@ -9299,6 +9330,19 @@ saveProjectAsButton?.addEventListener('click', async event => {
   } catch (error) {
     console.error('Salvataggio progetto non riuscito:', error);
     window.alert('Impossibile salvare il progetto Termodel.\n\n' + error.message);
+  }
+});
+
+helpCopyProjectClipboard?.addEventListener('click', async event => {
+  event.preventDefault();
+  event.stopPropagation();
+  helpCopyProjectClipboard.closest('.menu')?.classList.remove('open');
+
+  try {
+    await copyCurrentProjectToClipboard();
+  } catch (error) {
+    console.error('Copia progetto negli appunti non riuscita:', error);
+    window.alert('Impossibile copiare il progetto negli appunti.\n\n' + error.message);
   }
 });
 
