@@ -126,12 +126,24 @@ jobs:
               if ($ei -lt 0) { throw "Sezione $sectionName non chiusa per smoke Tubo." }
 
               $geometry = $projectText.Substring($cs,$ei-$cs)
-              $closeGroup = $geometry.IndexOf("</g>",[System.StringComparison]::OrdinalIgnoreCase)
-              if ($closeGroup -lt 0) { throw "Nessun gruppo piano trovato in geometry/project.svg." }
+              $groupStart = $geometry.IndexOf("<g ",[System.StringComparison]::OrdinalIgnoreCase)
+              if ($groupStart -lt 0) { throw "Nessun gruppo piano trovato in geometry/project.svg." }
 
               $layer = $floorName + "_tubipannelli"
               $pipe = "<line id=`"T001`" x1=`"10`" y1=`"10`" x2=`"110`" y2=`"10`" data-termodel-piano=`"$floorName`" data-termodel-layer=`"$layer`" data-termodel-entity=`"Tubo`" data-termodel-rete=`"$networkCode`" data-termodel-linetype=`"Continuous`" data-termodel-color=`"1`" />"
-              $geometry = $geometry.Insert($closeGroup,$pipe + [Environment]::NewLine)
+
+              $closeGroup = $geometry.IndexOf("</g>",$groupStart,[System.StringComparison]::OrdinalIgnoreCase)
+              if ($closeGroup -ge 0) {
+                $geometry = $geometry.Insert($closeGroup,$pipe + [Environment]::NewLine)
+              }
+              else {
+                # Il ProgettoVuoto canonico usa un gruppo piano autochiuso <g ... />.
+                $selfClose = $geometry.IndexOf(" />",$groupStart,[System.StringComparison]::Ordinal)
+                if ($selfClose -lt 0) { throw "Gruppo piano SVG non chiuso in forma supportata." }
+                $replacement = ">" + [Environment]::NewLine + $pipe + [Environment]::NewLine + "</g>"
+                $geometry = $geometry.Remove($selfClose,3).Insert($selfClose,$replacement)
+              }
+
               return $projectText.Substring(0,$cs) + $geometry + $projectText.Substring($ei)
             }
 
