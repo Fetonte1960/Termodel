@@ -84,6 +84,50 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — completamento ramo pannelli radianti Service
+Stato: COMMISSIONATO
+
+Commissionato:
+- completare il passo successivo al trasporto CAD Tubo già verificato;
+- riusare prima di tutto il comportamento Desktop documentato in
+  `SorgentiTermodel/Library/Impianti/Pannelli/*`, evitando un motore
+  pannelli parallelo nel WebService;
+- collegare runtime gli archivi progetto `Reti` e
+  `TipologiePannelli` al calcolo pannelli, eliminando per il ramo Web i
+  default hard-coded quando gli archivi contengono i dati equivalenti;
+- validare `PassoSelezionatoMm` rispetto a `PassiDisponibiliMm`;
+- implementare nel Core un primo kernel idraulico puro Darcy-Weisbach per i
+  circuiti radianti, con proprietà acqua derivate dalla temperatura media,
+  fattore Darcy e diagnostica esplicita;
+- usare la geometria Tubo già trasportata nel Virtual CAD e il grafo/DTO
+  pannelli Desktop quando disponibili, senza inventare protocolli alternativi;
+- produrre nel workspace projectId almeno un artifact dati pannelli JSON
+  persistente e leggibile senza ricalcolo; aggiungere SVG spirali per piano
+  soltanto se il percorso Desktop headless è realmente integrabile in questa
+  milestone senza dipendenze UI;
+- aggiungere endpoint GET degli artifact correnti mantenendo
+  `POST /api/calculations` come unica elaborazione autorevole;
+- aggiungere smoke automatici su progetto sintetico che verifichino:
+  archivi -> solver -> artifact -> persistenza -> GET;
+- non modificare `definizionedati.json`;
+- non modificare la Library Desktop;
+- aggiornare contratto Front↔Service, registro Tubazioni e questo Summary
+  secondo lo stato reale;
+- distinguere esplicitamente ciò che è progettato, implementato, compilato,
+  eseguito e confrontato col riferimento Desktop.
+
+Criteri di completamento:
+- build Release verde;
+- validazione Reti/TipologiePannelli realmente esercitata;
+- almeno un circuito sintetico con risultato Darcy deterministico e testato;
+- artifact pannelli persistente nello stesso `SavedProjects/{projectId}`;
+- GET artifact senza nuovo calcolo;
+- nessun regressione agli smoke projectId/log/feedback;
+- eventuale parte spirali dichiarata implementata solo se realmente eseguita.
+
+Risultato:
+- implementazione in corso.
+
 ### INCARICO 2026-09-23 — entità Tubo in modalità Rete CAD 2D
 Stato: ESEGUITO
 
