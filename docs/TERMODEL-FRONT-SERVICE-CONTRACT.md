@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.7**  
+Versione documento: **1.8**  
 Aggiornamento: **23 settembre 2026**  
 Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; configurazione log per Aggiorna Modello implementata; archivi progetto pannelli/tubazioni/fluidi implementati**
 
@@ -161,9 +161,16 @@ Regole di contratto:
 - il `ProgettoVuoto` consolidato distribuito al frontend deve contenere gli
   stessi tre archivi;
 - apertura, modifica e ricostruzione del file unico nel frontend devono
-  conservare queste sezioni anche quando non sono ancora esposte da un menu UI;
-- il futuro sottomenu `Tubazioni` resta fuori da questo contratto finché non
-  verrà esplicitamente implementato;
+  conservare queste sezioni;
+- il menu frontend `Modifica` espone le voci `Archivio Tipologie pannelli`,
+  `Archivio Tubazioni` e `Archivio Fluidi`, collegate al motore unico
+  `ArchivioWeb`;
+- `ArchivioWeb` deve leggere i metadata estesi dalla sezione progetto
+  `definition/pannelli-tubazioni-definizionedati.json`, mantenendo separato
+  `definizionedati.json` storico;
+- il futuro sottomenu generalista `Tubazioni` con funzioni di calcolo dedicate
+  resta distinto da queste semplici voci archivio e rimane fuori dal contratto
+  finché non verrà esplicitamente implementato;
 - `TipologiePannelli` è codificato almeno per `CasaProduttrice` +
   `Modello`; la riga iniziale `Generico / Default Termodel` replica tutti
   i parametri attualmente hard-coded nel calcolo pannelli:
