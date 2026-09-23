@@ -100,6 +100,40 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — debug Action sul progetto copiato dagli appunti
+Stato: ESEGUITO
+
+Commissionato:
+- usare il `TERMODEL-PROJECT-TEXT-V1` reale copiato dal frontend e fornito dall'utente;
+- eseguire il Service realmente in GitHub Actions, senza Render;
+- raccogliere risposta HTTP, `generated-files`, artifact, workspace e log;
+- esaminare i file di ritorno e isolare le anomalie;
+- usare un branch diagnostico separato e non modificare `definizionedati.json`, Library Desktop o frontend operativo durante la diagnosi.
+
+Risultato:
+- branch diagnostico: `ai-debug-action-20260923`;
+- input utente verificato tramite SHA-256: `geometry/project.svg = bda76910a15d4206f018d733d621f427ffb269c3fa4526f89bc0e3a23f17dd06`;
+- tutte le sezioni tecniche diverse da `geometry/project.svg` coincidono con il fixture versionato `SorgentiTermodel/Library/projects/ProgettoVuoto/ProgettoVuoto.termodel.txt`;
+- run diagnostico #236 / id `35905600774`: build ed esecuzione riuscite; inviando direttamente il progetto copiato, `POST /api/model/3d` e `POST /api/calculations` restituiscono HTTP 422 perché lo SVG locale non dichiara `data-termodel-units="cm"`;
+- chiarito che il comando Help copia correttamente il progetto locale completo, mentre il percorso normale `Aggiorna Modello` applica prima `buildTermodelServerPayload()`; pertanto un futuro bridge clipboard -> Action deve eseguire la stessa canonicalizzazione prima di chiamare il Service;
+- run diagnostico #241 / id `35906187985`: payload canonico equivalente al frontend, `/api/model/3d = 200`, `/api/calculations = 200`, `generated-files = 200`;
+- artifact reali raccolti: `artifacts/model3d.json` (31.939 byte), `artifacts/pannelli.json` (932 byte), `logs/TermodelLog.md`, `logs/diagnostics.txt`, `logs/calculation.log`, progetto materializzato e stdout/stderr Service;
+- `model3d.json`: 36 primitive = 2 Soffitto + 2 Pavimento + 8 Parete + 24 Ponte; i 24 mesh Ponte corrispondono a 12 ponti termici automatici, ciascuno esportato come lati+tappi;
+- bounding box complessivo delle primitive: X 1,8276..6,65768 m, Y 1,59438..5,37853 m, Z -0,1..3,89 m; nessun vertice fuori scala o oggetto remoto è presente nell'artifact Service;
+- il rettangolo edilizio derivato dalle quattro linee utente misura circa 4,57008 x 3,52415 m, coerente con le coordinate SVG; il file di ritorno non spiega quindi da solo una visualizzazione del modello molto piccola;
+- i ponti automatici sono coerenti con gli archivi del progetto base: la parete `Parete esterna isolata` usa il gruppo `PontiAutomatici= Parete`;
+- individuata una perdita del Nord nel trasporto frontend -> Service: il progetto locale contiene l'accessorio `NORD` con orientamento 71°, ma la canonicalizzazione corrente conserva solo linee e blocchi tecnici di piano; il contratto prescrive invece di non eliminare i simboli tecnici;
+- il Core storico rileva il Nord come blocco CAD `NORD` e calcola `DirezNord = (Insert.Rotation + 90) % 360`;
+- run diagnostico #243 / id `35906729046`: traduzione temporanea del Nord 71° nel blocco tecnico `NORD` con rotation 341°; build completa e job standard GitHub Actions entrambi SUCCESS; `/api/model/3d = 200`, `/api/calculations = 200`, `generated-files = 200`; l'errore `Il simbolo NORD non è stato trovato` scompare;
+- il `model3d.json` del run #243 è identico al run #241 ignorando solo `generatedAtUtc`: il Nord mancante è quindi un difetto reale del contratto/adapter di trasporto, ma non genera le primitive aggiuntive e non altera la scala geometrica del modello;
+- resta un messaggio stdout `Errore: Il valore 'Solaio piano' non è un numero intero valido per il colore della copertura.`; non interrompe il calcolo e il codice identico è presente sia nella Library Desktop sia nella copia Core: `Solaio piano` ricade nel valore storico `ColoreCopertura=0`. È una diagnostica fuorviante da correggere eventualmente nel sorgente condiviso, non una causa del fallimento corrente;
+- `pannelli.json`: una rete standard, zero circuiti; diagnostica coerente con l'assenza di linee tubo CAD;
+- nessuna correzione di prodotto applicata durante questo incarico: sono stati isolati i punti di intervento e verificati con Action reali;
+- commit diagnostici principali sul branch:
+  `cc03138bb75c13592b34e0a71edeb96aba1f7003`,
+  `6b7b8682dd8918c5aff1d1af2e33e29bed02f519`,
+  `fb719fbdf648984e22176beb73d88adf2d85f9b8`.
+
 ### INCARICO 2026-09-23 — collaudo generico protocollo "Debug avanzato"
 Stato: ESEGUITO
 
