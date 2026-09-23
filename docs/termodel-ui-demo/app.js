@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.04';
+const APP_VERSION = '1.05';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -121,6 +121,8 @@ const cadCloseOrthogonalSequence = document.getElementById('cadCloseOrthogonalSe
 const cadStopSequence = document.getElementById('cadStopSequence');
 const cadAddBackground = document.getElementById('cadAddBackground');
 const cadBackgroundFile = document.getElementById('cadBackgroundFile');
+const cadLoadGeneratedExecutive = document.getElementById('cadLoadGeneratedExecutive');
+const cadShowGeneratedExecutive = document.getElementById('cadShowGeneratedExecutive');
 const cadShowBackground = document.getElementById('cadShowBackground');
 const cadShowInput = document.getElementById('cadShowInput');
 const pdfImportModal = document.getElementById('pdfImportModal');
@@ -293,6 +295,9 @@ let cadToolbarState = {
 };
 let cadCleanPlanByPlane = new Map();
 let cadGeneratedPlanByPlane = new Map();
+// Overlay runtime letto dagli artifact Service. Non entra in cadWorkingDoc e
+// quindi non modifica TERMODEL-PROJECT-TEXT-V1 né lo stack Undo/Redo.
+let cadGeneratedExecutiveOverlay = null;
 const CAD_SNAP_DISTANCE = 12;
 const CAD_JOIN_EPSILON = 0.05;
 const CAD_CALIBRATION_ORTHO_EPSILON = 0.05;
@@ -2273,6 +2278,47 @@ function termodelServiceUrl(path) {
   return TERMODEL_SERVICE_BASE_URL + (value.startsWith('/') ? value : '/' + value);
 }
 
+async function termodelGeneratedFilesCatalog(projectId) {
+  const id = String(projectId || '').trim();
+  if (!id) throw new Error('ProjectId non disponibile.');
+
+  const response = await fetch(
+    termodelServiceUrl('/api/projects/' + encodeURIComponent(id) + '/generated-files'),
+    { cache: 'no-store' }
+  );
+
+  if (!response.ok) {
+    const detail = await readTermodelServiceError(response);
+    throw new Error('File generati: ' + detail);
+  }
+
+  const data = await response.json();
+  if (data?.contractVersion !== 'TERMODEL-GENERATED-FILES-V1')
+    throw new Error('Contratto file generati non riconosciuto.');
+  if (!Array.isArray(data.files))
+    throw new Error('Catalogo file generati non valido.');
+
+  return data;
+}
+
+async function termodelGeneratedFileText(fileRecord) {
+  const href = String(fileRecord?.href || '').trim();
+  if (!href) throw new Error('Href file generato mancante.');
+
+  const response = await fetch(termodelServiceUrl(href), {
+    cache: 'no-store'
+  });
+  if (!response.ok) {
+    const detail = await readTermodelServiceError(response);
+    throw new Error('File generato: ' + detail);
+  }
+
+  return {
+    text: await response.text(),
+    stale: String(response.headers.get('X-Termodel-Artifact-Stale') || '').toLowerCase() === 'true'
+  };
+}
+
 function ensureTermodelServiceProgress() {
   let panel = document.getElementById('termodelServiceProgress');
   if (panel) return panel;
@@ -2834,6 +2880,14 @@ async function loadCalculatedModelFromService() {
 
     const data = await modelResponse.json();
     currentServiceManifest = calculation;
+    // Un nuovo calcolo può aver sostituito l'esecutivo precedente. L'overlay
+    // CAD è runtime: viene invalidato e ricaricato esplicitamente dal catalogo
+    // universale dei file generati.
+    cadGeneratedExecutiveOverlay = null;
+    if (cadShowGeneratedExecutive) {
+      cadShowGeneratedExecutive.checked = false;
+      cadShowGeneratedExecutive.disabled = true;
+    }
     currentProjectLeaseExpiresAtUtc = String(
       calculation.leaseExpiresAtUtc || currentProjectLeaseExpiresAtUtc
     );
@@ -4520,6 +4574,198 @@ function cadDecodeSvgDataUrl(dataUrl) {
   } catch (error) {
     console.warn('Snap sfondo: Data URL SVG non decodificabile.', error);
     return '';
+  }
+}
+
+function cadNormalizeToken(value) {
+  return cadText(value).toLocaleLowerCase();
+}
+
+function cadParseGeneratedExecutiveSvg(svgText) {
+  const safeSvg = sanitizeSvgForPreview(svgText);
+  const doc = new DOMParser().parseFromString(safeSvg, 'image/svg+xml');
+  if (doc.querySelector('parsererror'))
+    throw new Error('Esecutivo pannelli SVG non valido.');
+
+  const root = doc.documentElement;
+  if (cadText(root.getAttribute('data-termodel-format')) !== 'TERMODEL-PANNELLI-ESECUTIVO-SVG-V1')
+    throw new Error('Formato esecutivo pannelli SVG non riconosciuto.');
+
+  const coordinateUnit = cadText(root.getAttribute('data-coordinate-unit')).toLowerCase();
+  const maxY = Number(root.getAttribute('data-termodel-max-y'));
+  if (coordinateUnit !== 'm' || !Number.isFinite(maxY))
+    throw new Error('Esecutivo pannelli privo dei metadata metrici per l\'overlay CAD.');
+
+  const primitiveCount = Number(root.getAttribute('data-primitive-count'));
+  return {
+    svgText: new XMLSerializer().serializeToString(root),
+    maxY,
+    primitiveCount: Number.isFinite(primitiveCount) ? primitiveCount : 0
+  };
+}
+
+function cadGeneratedExecutiveAvailable() {
+  return !!cadGeneratedExecutiveOverlay &&
+    String(cadGeneratedExecutiveOverlay.projectId || '') === String(currentProjectId || '');
+}
+
+function cadAppendGeneratedExecutiveOverlay(target, planeName) {
+  if (!target || !cadGeneratedExecutiveAvailable()) return 0;
+
+  const parsed = cadParseGeneratedExecutiveSvg(
+    cadGeneratedExecutiveOverlay.svgText
+  );
+  const doc = new DOMParser().parseFromString(parsed.svgText, 'image/svg+xml');
+  const wantedPlane = cadNormalizeToken(planeName);
+  let count = 0;
+
+  const toCmX = value => Number(value) * 100;
+  const toCmY = value => (parsed.maxY - Number(value)) * 100;
+
+  Array.from(doc.documentElement.children)
+    .filter(group => group.localName === 'g')
+    .forEach(group => {
+      const layerName = cadText(group.getAttribute('data-layer'));
+      const outputGroup = svgNode('g', {
+        'data-generated-layer': layerName || null
+      });
+
+      Array.from(group.children).forEach(source => {
+        const sourcePlane = cadNormalizeToken(source.getAttribute('data-piano'));
+        if (sourcePlane && wantedPlane && sourcePlane !== wantedPlane) return;
+
+        const color =
+          source.getAttribute('stroke') ||
+          source.getAttribute('fill') ||
+          '#606060';
+
+        if (source.localName === 'line') {
+          const values = [
+            Number(source.getAttribute('x1')),
+            Number(source.getAttribute('y1')),
+            Number(source.getAttribute('x2')),
+            Number(source.getAttribute('y2'))
+          ];
+          if (!values.every(Number.isFinite)) return;
+          outputGroup.appendChild(svgNode('line', {
+            x1: toCmX(values[0]),
+            y1: toCmY(values[1]),
+            x2: toCmX(values[2]),
+            y2: toCmY(values[3]),
+            fill: 'none',
+            stroke: color,
+            'stroke-width': 1.6,
+            'stroke-linecap': 'round',
+            'vector-effect': 'non-scaling-stroke'
+          }));
+          count++;
+          return;
+        }
+
+        if (source.localName === 'polyline' || source.localName === 'polygon') {
+          const points = cadSvgNumberPairs(source.getAttribute('points'))
+            .filter(point => point.every(Number.isFinite))
+            .map(point => toCmX(point[0]) + ',' + toCmY(point[1]))
+            .join(' ');
+          if (!points) return;
+          outputGroup.appendChild(svgNode(source.localName, {
+            points,
+            fill: source.localName === 'polygon' ? 'none' : 'none',
+            stroke: color,
+            'stroke-width': 1.6,
+            'stroke-linejoin': 'round',
+            'stroke-linecap': 'round',
+            'vector-effect': 'non-scaling-stroke'
+          }));
+          count++;
+          return;
+        }
+
+        if (source.localName === 'text') {
+          const x = Number(source.getAttribute('x'));
+          const y = Number(source.getAttribute('y'));
+          const fontSizeM = Number(source.getAttribute('font-size'));
+          if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+          const text = svgNode('text', {
+            x: toCmX(x),
+            y: toCmY(y),
+            fill: color,
+            'font-size': Number.isFinite(fontSizeM)
+              ? Math.max(4, fontSizeM * 100)
+              : 12,
+            'text-anchor': source.getAttribute('text-anchor') || 'middle',
+            'dominant-baseline': source.getAttribute('dominant-baseline') || 'middle',
+            'font-family': 'Segoe UI, Arial, sans-serif'
+          });
+          text.textContent = source.textContent || '';
+          outputGroup.appendChild(text);
+          count++;
+        }
+      });
+
+      if (outputGroup.childNodes.length)
+        target.appendChild(outputGroup);
+    });
+
+  return count;
+}
+
+async function cadLoadGeneratedExecutiveBackground() {
+  if (!cadWorkingDoc) {
+    cadSetStatus('Apri prima il CAD2D.', 'error');
+    return;
+  }
+  if (!currentProjectId) {
+    cadSetStatus('Nessun projectId corrente: usa prima Aggiorna Modello.', 'error');
+    return;
+  }
+
+  try {
+    cadSetStatus('Recupero catalogo file generati dal Service…');
+
+    const catalog = await termodelGeneratedFilesCatalog(currentProjectId);
+    const record = catalog.files.find(file =>
+      cadText(file?.path).toLowerCase() === 'artifacts/pannelli-esecutivo.svg'
+    );
+
+    if (!record)
+      throw new Error('L\'ultimo calcolo non contiene pannelli-esecutivo.svg.');
+
+    const fetched = await termodelGeneratedFileText(record);
+    const parsed = cadParseGeneratedExecutiveSvg(fetched.text);
+
+    cadGeneratedExecutiveOverlay = {
+      projectId: currentProjectId,
+      svgText: parsed.svgText,
+      sourcePath: cadText(record.path),
+      stale: fetched.stale || Boolean(record.stale),
+      primitiveCount: parsed.primitiveCount
+    };
+
+    if (cadShowGeneratedExecutive) {
+      cadShowGeneratedExecutive.disabled = false;
+      cadShowGeneratedExecutive.checked = true;
+    }
+
+    renderCadComparison();
+    cadUpdateControls();
+    cadSetStatus(
+      '✓ Esecutivo pannelli SVG caricato dal Service · ' +
+      parsed.primitiveCount + ' primitive' +
+      (cadGeneratedExecutiveOverlay.stale ? ' · ATTENZIONE: artifact non aggiornato' : '')
+    );
+  } catch (error) {
+    console.error(error);
+    cadGeneratedExecutiveOverlay = null;
+    if (cadShowGeneratedExecutive) {
+      cadShowGeneratedExecutive.checked = false;
+      cadShowGeneratedExecutive.disabled = true;
+    }
+    renderCadComparison();
+    cadSetStatus(
+      'Esecutivo pannelli non disponibile: ' + (error?.message || error),
+      'error'
+    );
   }
 }
 
@@ -6934,6 +7180,14 @@ function cadUpdateControls() {
   if (cadMobilePropertiesToggle)
     cadMobilePropertiesToggle.disabled = !hasDoc;
   if (cadAddBackground) cadAddBackground.disabled = !hasDoc || busy;
+  if (cadLoadGeneratedExecutive)
+    cadLoadGeneratedExecutive.disabled =
+      !hasDoc || busy || !currentProjectId || loading;
+  const hasGeneratedExecutive = cadGeneratedExecutiveAvailable();
+  if (cadShowGeneratedExecutive) {
+    cadShowGeneratedExecutive.disabled = !hasDoc || !hasGeneratedExecutive;
+    if (!hasGeneratedExecutive) cadShowGeneratedExecutive.checked = false;
+  }
   if (cadAddRoofPlane) cadAddRoofPlane.disabled = !hasDoc || busy;
   if (cadShowBackground)
     cadShowBackground.disabled = !hasDoc || !cadPlaneBackground(cadWorkingDoc, cadCurrentPlane());
@@ -8220,9 +8474,13 @@ function cadInstallPointerEditing(svg) {
 function applyCadLayerVisibility() {
   if (!cadCanvas) return;
   const background = cadCanvas.querySelector('#cadImportedBackgroundLayer');
+  const generatedExecutive = cadCanvas.querySelector('#cadGeneratedExecutiveLayer');
   const input = cadCanvas.querySelector('#cadInputLayer');
 
   if (background) background.style.display = cadShowBackground?.checked === false ? 'none' : '';
+  if (generatedExecutive)
+    generatedExecutive.style.display =
+      cadShowGeneratedExecutive?.checked === false ? 'none' : '';
   if (input) input.style.display = cadShowInput?.checked === false ? 'none' : '';
 
   const handles = cadCanvas.querySelector('#cadHandlesLayer');
@@ -8292,6 +8550,20 @@ function renderCadComparison() {
     }));
   }
   svg.appendChild(backgroundLayer);
+
+  // Overlay runtime dell'ultimo file generato dal Service. È volutamente
+  // separato da cadWorkingDoc: può fungere da sfondo di verifica senza
+  // entrare nel progetto unico né essere reinviato al calcolo.
+  const generatedExecutiveLayer = svgNode('g', {
+    id: 'cadGeneratedExecutiveLayer',
+    opacity: '0.72',
+    'pointer-events': 'none'
+  });
+  cadAppendGeneratedExecutiveOverlay(
+    generatedExecutiveLayer,
+    cadCurrentPlane()
+  );
+  svg.appendChild(generatedExecutiveLayer);
 
   // Overlay semantico editabile. In v0.7 sono editabili soltanto E/W.
   const inputLayer = svgNode('g', { id: 'cadInputLayer' });
@@ -8800,6 +9072,14 @@ dxfImportModal?.addEventListener('click', event => {
 cadAddBackground?.addEventListener('click', () => {
   if (!cadWorkingDoc || !cadBackgroundFile) return;
   cadBackgroundFile.click();
+});
+cadLoadGeneratedExecutive?.addEventListener(
+  'click',
+  cadLoadGeneratedExecutiveBackground
+);
+cadShowGeneratedExecutive?.addEventListener('change', () => {
+  applyCadLayerVisibility();
+  cadUpdateControls();
 });
 cadBackgroundFile?.addEventListener('change', async () => {
   const file = cadBackgroundFile.files?.[0];
