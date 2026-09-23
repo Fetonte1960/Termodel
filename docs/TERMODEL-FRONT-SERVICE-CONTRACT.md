@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.10**  
+Versione documento: **1.11**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; configurazione log per Aggiorna Modello implementata; archivi Reti/TipologiePannelli e trasporto CAD Tubo implementati**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; archivi Reti/TipologiePannelli, CAD Tubo e primo artifact idraulico pannelli implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -312,17 +312,95 @@ Regole:
   metadata tecnici; `SvgDxfReader` usa
   `data-termodel-layer/data-termodel-linetype/data-termodel-color` per
   ricostruire la corrispondente linea nel `DxfDocument` virtuale;
-- `data-termodel-rete` resta nel file unico come associazione di progetto ma
-  non viene ancora usato dal solver pannelli storico;
+- `data-termodel-rete` è conservato nel Virtual CAD e viene usato dal primo
+  adapter idraulico Core per associare i segmenti Tubo alla riga `Reti`;
 - il disegno Tubo è sequenziale/multiplo come quello Parete; `Chiudi` diretto
   è ammesso, mentre `Chiudi ortogonale` non è disponibile in modalità Rete;
 - `GeneraPianta.js` deve ignorare le linee Tubo nella polygonizzazione
   architettonica: solo le linee E/W partecipano alla ricostruzione dei locali.
 
-Il Core headless accetta ora il layer tubi al confine
-`LeggiDxf -> IoPannelli.LeggiTubiDXF` e non rifiuta più il progetto. Questo
-stato significa **input CAD tubi acquisito dal calcolo**, non che il solver
-pannelli/spirali e il relativo artifact siano già integrati nel WebService.
+Il Core headless accetta il layer tubi al confine
+`LeggiDxf -> IoPannelli.LeggiTubiDXF`. Inoltre `SvgDxfReader` conserva
+nel `UserData` della linea virtuale l'identificatore, il piano, l'entità e
+`Reti.Codice`, senza alterare il contratto netDxf visto dal codice Desktop.
+
+### Primo calcolo idraulico pannelli — artifact `pannelli`
+
+Dal 23 settembre 2026 `POST /api/calculations` esegue anche il primo adapter
+headless dei pannelli radianti e pubblica:
+
+```http
+GET /api/projects/{projectId}/artifacts/pannelli
+Content-Type: application/json
+```
+
+Il formato corrente è:
+
+```text
+TermodelRadiantPanels v1
+```
+
+Il calcolo usa gli archivi **XML runtime** del file unico:
+
+```text
+Reti
+  -> TipoRete=PannelliRadianti
+  -> CodiceTipologiaPannello
+  -> PassoSelezionatoMm
+  -> temperature
+  -> limiti lunghezza/perdita
+  -> KLayout
+  -> FormulaPerdita
+
+TipologiePannelli
+  -> diametro interno
+  -> rugosità
+  -> passi disponibili
+  -> coefficiente resa
+```
+
+Regole implementate:
+
+- `PassoSelezionatoMm` deve appartenere a
+  `TipologiePannelli.PassiDisponibiliMm`; in caso contrario
+  `POST /api/calculations` fallisce con progetto non valido e l'ultimo
+  artifact valido non viene sostituito;
+- attualmente sono supportati `Fluido=Acqua` e
+  `FormulaPerdita=Darcy-Weisbach`;
+- segmenti Tubo geometricamente connessi entro 1 mm vengono raggruppati come
+  un circuito CAD;
+- la lunghezza delle centerline Tubo è espressa in metri dopo la conversione
+  canonica SVG cm -> Virtual CAD;
+- il fattore tubo per passo usa i valori registrati nel programma Tubazioni
+  (50→20; 100→10; 125→8; 150→6,7; 175→5,8; 200→5; 300→3,4 m/m²) e fallback
+  `1000/passo_mm`;
+- densità e viscosità dell'acqua sono derivate dalla temperatura media;
+- il fattore Darcy usa `64/Re` in laminare, Colebrook in turbolento e una
+  transizione diagnosticata fra Re 2300 e 4000;
+- l'artifact espone almeno lunghezza, area servita stimata, passo, portata,
+  diametro, velocità, Reynolds, fattore Darcy, Pa/m, Pa e kPa per circuito.
+
+Nella **prima versione operativa**, il CAD manuale non distingue ancora nello
+stesso circuito la spirale interna dai collegamenti al collettore. La
+centerline Tubo viene quindi trattata come lunghezza idraulica effettiva;
+l'area servita viene ricavata inversamente da lunghezza/passo/KLayout. La
+portata è una **portata preliminare derivata** dalla resa
+`CoefficienteResaWm2K`, dalla differenza fra temperatura media acqua e
+ambiente e dal salto mandata/ritorno.
+
+Non sono ancora inclusi nella perdita:
+
+- collettore;
+- valvole e flussimetri;
+- perdite concentrate;
+- distribuzione primaria.
+
+Il generatore grafico storico delle **spirali** non viene dichiarato integrato
+in questo contratto: il suo motore corrente usa ancora un passo compile-time
+di 0,30 m e un workflow file-based. Collegarlo direttamente violerebbe la
+regola che `PassoSelezionatoMm` dell'archivio sia autorevole. L'integrazione
+verrà effettuata quando il motore condiviso avrà un ingresso headless
+parametrico, senza creare una seconda copia nel Service.
 
 ## 2.1 Standard del payload Frontend → Service
 
@@ -1071,6 +1149,7 @@ POST /api/projects/{projectId}/close
 POST /api/projects/{projectId}/unlock
 POST /api/calculations
 GET  /api/projects/{projectId}/artifacts/model3d
+GET  /api/projects/{projectId}/artifacts/pannelli
 ```
 
 Il client che possiede il lock invia il token nell'header:
@@ -1560,6 +1639,11 @@ Risposta indicativa:
       "name": "model3d",
       "contentType": "application/json",
       "href": "/api/projects/7b30f4f4-.../artifacts/model3d"
+    },
+    {
+      "name": "pannelli",
+      "contentType": "application/json",
+      "href": "/api/projects/7b30f4f4-.../artifacts/pannelli"
     }
   ],
   "diagnostics": []
@@ -1613,7 +1697,13 @@ Endpoint di riferimento:
 
 ```http
 GET /api/projects/{projectId}/artifacts/model3d
+GET /api/projects/{projectId}/artifacts/pannelli
 ```
+
+Entrambi gli artifact vengono letti dal workspace persistito dell'ultima
+elaborazione valida e **non provocano un nuovo calcolo**. L'header
+`X-Termodel-Artifact-Stale` indica se un successivo salvataggio del progetto
+li ha resi non più allineati al file corrente.
 
 Schema previsto:
 
