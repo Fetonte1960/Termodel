@@ -43,6 +43,12 @@ Prima di intervenire:
 9. aggiornare questo summary quando cambiano contratti, stato o prossimi passi.
 10. **Regola permanente di autorizzazione:** quando l'utente autorizza modifiche al progetto, registrare prima in questo Summary (e nel contratto condiviso se pertinente) le decisioni/lo stato concordati, quindi applicare le modifiche al codice; al termine aggiornare nuovamente lo stato reale se implementazione, build o test cambiano.
 11. **Registro incarichi obbligatorio:** ogni autorizzazione esplicita a procedere deve creare, prima delle modifiche, una voce nel registro incarichi con `Stato: COMMISSIONATO`, descrizione concreta del lavoro e criteri di completamento. Quando il lavoro è terminato, la stessa voce deve essere aggiornata a `Stato: ESEGUITO`, indicando risultato reale, build/test effettuati e commit. Se la chat termina durante il lavoro, la voce deve restare `COMMISSIONATO`: la chat successiva deve considerarla lavoro affidato ma non ancora concluso e riprenderla prima di dichiararla eseguita.
+12. **Snapshot diagnostico permanente:** quando l'utente chiede di esaminare una sessione reale del Service, prima di chiedere copie manuali di SVG/DXF/JSON/report/log leggere
+   `Server/Termodelwebservice/docs/SERVICE-SNAPSHOT-DIAGNOSTIC.md` e il branch
+   `service-snapshots`. La sequenza standard è
+   `service-snapshots/LATEST.json -> manifest.json -> artifact/log reali`.
+   L'utente deve normalmente fare soltanto `Aggiorna Modello`, pubblicare
+   lo snapshot e dire `esamina l'ultimo snapshot`.
 
 ## 1.1 Registro incarichi autorizzati
 
@@ -85,7 +91,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — procedura permanente snapshot per diagnostica AI
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Decisione:
 - la procedura `Aggiorna Modello -> pubblica snapshot -> esamina l'ultimo snapshot`
@@ -117,16 +123,46 @@ Decisione:
   Front↔Service, nel README Service e nella nota frontend sul WebService;
 - non modificare il `PROJECT-SUMMARY.md` Web JS alla radice.
 
-Criteri di completamento:
-- tutti i documenti sopra indicati descrivono lo stesso flusso utente e la
-  stessa regola per le nuove chat;
-- è presente il riferimento a `service-snapshots/LATEST.json`;
-- sono esplicitati pubblicazione manuale, persistenza GitHub, assenza di
-  retention automatica e segreti da non condividere;
-- nessuna modifica funzionale al Service o al frontend.
-
 Risultato:
-- registrazione documentale in corso.
+- creata la specifica operativa autorevole:
+  ```text
+  Server/Termodelwebservice/docs/SERVICE-SNAPSHOT-DIAGNOSTIC.md
+  ```
+  con istruzioni separate per utente e nuova chat AI;
+- aggiunta alle regole iniziali di questo Summary la regola permanente n. 12:
+  una chat deve tentare prima la lettura dello snapshot GitHub e non chiedere
+  copie manuali di file già disponibili;
+- contratto Front↔Service aggiornato alla **v1.15** con la procedura normativa
+  Render → GitHub → AI;
+- README Service aggiornato con la sequenza pratica:
+  ```text
+  Aggiorna Modello
+  -> Pubblica snapshot
+  -> "esamina l'ultimo snapshot"
+  ```
+- aggiornata anche
+  `docs/termodel-ui-demo/info_termodelwebservice.md`, così una chat/frontend
+  developer conosce il meccanismo e sa che la chiave amministrativa non deve
+  essere inserita nel JavaScript;
+- documentato che:
+  - la pubblicazione snapshot è manuale/on-demand;
+  - Render Free è effimero;
+  - GitHub è la copia diagnostica persistente;
+  - `LATEST.json` individua automaticamente l'ultima sessione;
+  - non esiste ancora retention/pulizia automatica;
+  - token GitHub e admin key non devono essere incollati in chat;
+- aggiornato anche lo stato storico della funzione snapshot: la pubblicazione
+  reale Render → GitHub è stata **verificata** sul progetto
+  `b38f622b-6411-48ea-ba57-0b07862f4046`, snapshot
+  `20260923T162958425Z_b38f622b`;
+- nessuna modifica funzionale a Core, WebService o frontend;
+- nessuna modifica a `PROJECT-SUMMARY.md` della linea Web JS;
+- commit:
+  `8ebc751d900ffea2a650df05e52b170c69ef3471`,
+  `ca726b10b8809eaad0cd09ebfea8b6e488908e62`,
+  `3312435bb12ff6eb25f5f67282ce63f965213cc8`,
+  `6f2af534a9820ced47fd5f71a894686616e4c14b`,
+  `f4615154b2e15f9aea5159a5df3d8d61a481810e`.
 
 ### INCARICO 2026-09-23 — pubblicazione snapshot diagnostico Service → GitHub
 Stato: ESEGUITO
@@ -242,11 +278,11 @@ Risultato:
   pannelli;
 - README Service aggiornato con endpoint, formato snapshot e configurazione
   Render;
-- **GitHub reale da Render:** NON ancora attivato/testato perché i due secret
-  `TERMODEL_SNAPSHOT_GITHUB_TOKEN` e
-  `TERMODEL_SNAPSHOT_ADMIN_KEY` devono essere configurati dall'utente
-  nell'ambiente Render; fino a quel momento l'endpoint pubblico restituisce
-  correttamente 503;
+- **GitHub reale da Render:** SI — i due secret sono stati configurati su
+  Render e il 23/09/2026 è stata eseguita una pubblicazione reale del progetto
+  `b38f622b-6411-48ea-ba57-0b07862f4046`; lo snapshot
+  `20260923T162958425Z_b38f622b` è stato letto successivamente dalla chat
+  tramite `service-snapshots/LATEST.json` e `manifest.json`;
 - non sono stati modificati `definizionedati.json`,
   `TERMODEL-PROJECT-TEXT-V1` o la Library Desktop;
 - commit principali:
