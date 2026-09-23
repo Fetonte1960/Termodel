@@ -84,6 +84,36 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — rinvio grafo alla fase Tubi universale
+Stato: COMMISSIONATO
+
+Decisione:
+- il grafo generale della rete, il riconoscimento/scomposizione
+  collettore→rami→terminali e il relativo percorso sfavorito vengono
+  **rimandati alla futura fase Tubi universale**;
+- questa fase PannelliRadianti non deve essere bloccata dall'assenza del
+  grafo universale;
+- per il ramo pannelli corrente è sufficiente il **calcolo delle perdite di
+  carico per singolo circuito**, usando la geometria del circuito già
+  identificato e i dati di `Reti`/`TipologiePannelli`;
+- non introdurre adesso una seconda implementazione del grafo specifica dei
+  pannelli che poi dovrebbe essere sostituita dal motore Tubi universale;
+- mantenere il kernel Darcy già implementato come componente riusabile della
+  futura fase Tubi universale;
+- aggiornare Summary, registro Calcolo Tubazioni e contratto Front↔Service
+  per evitare che il grafo venga indicato come requisito pendente della fase
+  pannelli attuale.
+
+Criterio di completamento:
+- documentazione coerente nel dichiarare che il perimetro attuale termina al
+  calcolo perdite per circuito;
+- grafo/collettore/percorso sfavorito classificati come lavoro futuro del
+  modulo Tubi universale;
+- nessuna modifica al codice di calcolo corrente.
+
+Risultato:
+- registrazione in corso.
+
 ### INCARICO 2026-09-23 — completamento ramo pannelli radianti Service
 Stato: ESEGUITO
 
