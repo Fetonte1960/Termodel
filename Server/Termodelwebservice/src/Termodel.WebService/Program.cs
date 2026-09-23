@@ -4,11 +4,18 @@ using Termodel.Core;
 using Termodel.Core.ProjectFiles;
 using Termodel.Leggidxf;
 using Termodel.WebService.Projects;
+using Termodel.WebService.Feedback;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<ProjectStore>();
 builder.Services.AddSingleton<ProjectLockManager>();
+builder.Services.AddSingleton<FeedbackOptions>();
+builder.Services.AddSingleton<FeedbackRateLimiter>();
+builder.Services.AddHttpClient<GitHubFeedbackPublisher>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 
 const string TermodelWebCorsPolicy = "TermodelWeb";
 
@@ -72,6 +79,83 @@ app.MapGet("/health", () => Results.Ok(new
 
 // Funzione realizzata da Codex in autonomia
 app.MapGet("/api/model/capabilities", () => Results.Ok(CoreInformation.GetCapabilities()));
+
+
+// Funzione realizzata da Codex in autonomia
+app.MapPost("/api/feedback", async (
+    UserFeedbackRequest request,
+    HttpContext context,
+    FeedbackOptions feedbackOptions,
+    FeedbackRateLimiter feedbackRateLimiter,
+    GitHubFeedbackPublisher feedbackPublisher,
+    CancellationToken cancellationToken) =>
+{
+    string origin = context.Request.Headers.Origin.ToString();
+
+    if (!string.Equals(
+        origin,
+        feedbackOptions.AllowedOrigin,
+        StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.Problem(
+            title: "Origine non autorizzata",
+            detail: "I suggerimenti possono essere inviati soltanto dall'applicazione Termodel autorizzata.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    if (!UserFeedbackSubmission.TryCreate(
+        request,
+        out UserFeedbackSubmission? feedback,
+        out Dictionary<string, string[]> errors) ||
+        feedback is null)
+    {
+        return Results.ValidationProblem(errors);
+    }
+
+    string clientKey = FeedbackClientKey(context);
+    if (!feedbackRateLimiter.TryConsume(
+        clientKey,
+        out int retryAfterSeconds))
+    {
+        context.Response.Headers.RetryAfter =
+            retryAfterSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        return Results.Problem(
+            title: "Troppi suggerimenti inviati",
+            detail: "Attendere prima di inviare un nuovo suggerimento.",
+            statusCode: StatusCodes.Status429TooManyRequests);
+    }
+
+    try
+    {
+        GitHubIssueResult issue = await feedbackPublisher.PublishAsync(
+            feedback,
+            cancellationToken);
+
+        return Results.Json(
+            new
+            {
+                status = "created",
+                issueNumber = issue.IssueNumber,
+                issueUrl = issue.IssueUrl
+            },
+            statusCode: StatusCodes.Status201Created);
+    }
+    catch (FeedbackNotConfiguredException exception)
+    {
+        return Results.Problem(
+            title: "Servizio suggerimenti non configurato",
+            detail: exception.Message,
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+    catch (FeedbackPublishException exception)
+    {
+        return Results.Problem(
+            title: "GitHub temporaneamente non disponibile",
+            detail: exception.Message,
+            statusCode: StatusCodes.Status502BadGateway);
+    }
+});
 
 // Funzione realizzata da Codex in autonomia
 app.MapGet("/api/projects", async (
@@ -634,6 +718,22 @@ static IResult LockedProblem(string detail) =>
         title: "Il progetto è già in uso",
         detail: detail,
         statusCode: 423);
+
+static string FeedbackClientKey(HttpContext context)
+{
+    string forwardedFor = context.Request.Headers["X-Forwarded-For"].ToString();
+    if (!string.IsNullOrWhiteSpace(forwardedFor))
+    {
+        string first = forwardedFor
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault() ?? string.Empty;
+
+        if (first.Length > 0)
+            return "xff:" + first;
+    }
+
+    return "ip:" + (context.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+}
 
 static IResult InvalidProjectProblem(string detail) =>
     Results.Problem(
