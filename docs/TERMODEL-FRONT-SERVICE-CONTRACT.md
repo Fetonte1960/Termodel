@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.14**  
+Versione documento: **1.15**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF e canale universale read-only dei file generati implementati**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati e snapshot diagnostico persistente Render→GitHub implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -541,6 +541,74 @@ Questo è il canale previsto per futuri:
 - elaborati DXF/SVG;
 - risultati JSON;
 - log diagnostici.
+
+### Procedura diagnostica permanente Render → GitHub → AI
+
+Questa procedura è parte **normativa** del contratto operativo fra frontend,
+Service e sviluppo AI.
+
+Il flusso utente da usare quando una chat deve esaminare ciò che il Service
+ha realmente prodotto è:
+
+```text
+Aggiorna Modello
+    ↓
+Pubblica snapshot
+    ↓
+"esamina l'ultimo snapshot"
+```
+
+La pubblicazione **non avviene automaticamente** a ogni
+`POST /api/calculations`. Viene eseguita soltanto su richiesta esplicita
+tramite:
+
+```http
+POST /api/projects/{projectId}/publish-session-snapshot
+X-Termodel-Snapshot-Key: <chiave amministrativa>
+```
+
+Lo snapshot usa esclusivamente i file derivati già pubblicabili dal canale
+`generated-files` e li rende persistenti sul branch GitHub:
+
+```text
+service-snapshots
+```
+
+Per una chat AI la procedura obbligatoria di lettura è:
+
+```text
+branch service-snapshots
+  -> service-snapshots/LATEST.json
+  -> <rootPath>/manifest.json
+  -> artifact/log necessari
+```
+
+L'utente **non deve** copiare manualmente SVG, DXF, JSON, report o log già
+presenti nello snapshot e non deve comunicare lo `snapshotId`: il file
+`LATEST.json` individua l'ultima sessione pubblicata.
+
+La chiave `TERMODEL_SNAPSHOT_ADMIN_KEY` e il token
+`TERMODEL_SNAPSHOT_GITHUB_TOKEN` sono secret server e **non devono essere
+inseriti nel frontend né incollati in chat**.
+
+Persistenza:
+
+- il workspace Render Free può essere azzerato da redeploy/riavvio;
+- lo snapshot GitHub resta persistente;
+- attualmente **non esiste pulizia automatica** degli snapshot;
+- `LATEST.json` punta soltanto all'ultimo, senza cancellare i precedenti;
+- una futura retention automatica deve essere deliberata esplicitamente
+  prima di eliminare snapshot storici.
+
+La procedura completa, incluse le istruzioni per l'utente e per ogni nuova
+chat, è autorevole in:
+
+```text
+Server/Termodelwebservice/docs/SERVICE-SNAPSHOT-DIAGNOSTIC.md
+```
+
+Il collegamento reale Render → GitHub → lettura AI è stato verificato il
+23 settembre 2026.
 
 ### Esecutivo pannelli SVG come sfondo runtime CAD2D
 
