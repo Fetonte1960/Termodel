@@ -131,19 +131,33 @@ public sealed class GitHubSnapshotPublisher(
                 now,
                 files);
 
-            byte[] manifestBytes = JsonSerializer.SerializeToUtf8Bytes(
-                manifest,
+            var jsonOptions =
                 new JsonSerializerOptions(JsonSerializerDefaults.Web)
                 {
                     WriteIndented = true
-                });
+                };
+
+            byte[] manifestBytes = JsonSerializer.SerializeToUtf8Bytes(
+                manifest,
+                jsonOptions);
+
+            byte[] latestBytes = JsonSerializer.SerializeToUtf8Bytes(
+                new
+                {
+                    format = "TERMODEL-SERVICE-SNAPSHOT-LATEST-V1",
+                    snapshotId,
+                    projectId,
+                    generatedAtUtc = now,
+                    rootPath = snapshotRoot
+                },
+                jsonOptions);
 
             string headSha = await EnsureBranchAsync(cancellationToken);
             string baseTreeSha = await GetCommitTreeShaAsync(
                 headSha,
                 cancellationToken);
 
-            var entries = new List<object>(files.Count + 1);
+            var entries = new List<object>(files.Count + 2);
 
             foreach (ProjectGeneratedFileContent file in files)
             {
@@ -170,6 +184,18 @@ public sealed class GitHubSnapshotPublisher(
                 mode = "100644",
                 type = "blob",
                 sha = manifestBlobSha
+            });
+
+            string latestBlobSha = await CreateBlobAsync(
+                latestBytes,
+                cancellationToken);
+
+            entries.Add(new
+            {
+                path = $"{options.RootPath}/LATEST.json",
+                mode = "100644",
+                type = "blob",
+                sha = latestBlobSha
             });
 
             string treeSha = await CreateTreeAsync(
