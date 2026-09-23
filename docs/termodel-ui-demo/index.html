@@ -1774,7 +1774,7 @@
                 <option value="E">E esterna</option>
               </select>
               <button id="cadNewLine" type="button" title="Clicca il punto iniziale e poi i punti successivi">＋ Nuova parete</button>
-              <div class="cad-tool-separator"></div>
+              <div id="cadEntitySeparator" class="cad-tool-separator"></div>
               <button id="cadInsertAlign" type="button" title="Inserisci Allinea sul piano/layer corrente">＋ Allinea</button>
               <button id="cadInsertOpening" type="button" title="Inserisci FIN in sequenza fino a Esc o Interrompi sequenza">＋ Porta/Finestra</button>
               <button id="cadInsertOpeningTwoPoint" type="button" title="Disegna la larghezza della finestra con due punti sulla stessa parete">＋ Finestra 2 punti</button>
@@ -1791,7 +1791,7 @@
               <label title="Aggancia esclusivamente agli estremi delle pareti"><input id="cadSnapEndpoint" name="cadSnapMode" type="radio" value="endpoint" /> Estremo</label>
               <div class="cad-tool-separator"></div>
               <label title="Somma allo Snap normale gli endpoint dello sfondo SVG vettoriale"><input id="cadSnapBackground" type="checkbox" checked /> Sfondo vettoriale</label>
-              <label title="Vincola le nuove pareti a orizzontale o verticale"><input id="cadOrtho" type="checkbox" checked /> Orto</label>
+              <label title="Vincola le nuove linee a orizzontale o verticale"><input id="cadOrtho" type="checkbox" checked /> Orto</label>
             </div>
           </details>
 
@@ -2242,6 +2242,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=1.03"></script>
+  <script type="module" src="./app.js?v=1.04"></script>
 </body>
 </html>
