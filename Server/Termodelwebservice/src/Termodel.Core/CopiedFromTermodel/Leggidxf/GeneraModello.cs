@@ -51,7 +51,7 @@ public sealed class GeneraModello
         ProjectArchiveDatabase archiveDatabase = ProjectArchiveDatabase.Load(project);
         var utiDb = new UtiDb(archiveDatabase);
         Database.DB.Use(utiDb);
-        TermodelLog.Reset();
+        TermodelLog.InitializeLog();
         GeneraPianta.IniziaGenerazione();
 
         IReadOnlyList<SvgDxfFloor> svgFloors = SvgDxfReader.ParseProjectSvg(
