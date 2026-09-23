@@ -17,10 +17,28 @@ public static class RadiantExecutiveGenerator
 {
     private static readonly object SpiralEngineGate = new();
 
-    public static RadiantExecutiveArtifacts? Generate(string projectText)
+    public static RadiantExecutiveArtifacts? Generate(
+        string projectText,
+        string? panelInputXml)
     {
-        XDocument? panelDocument = IoPannelli.GetDocumentSnapshot();
-        if (panelDocument?.Root is null)
+        if (string.IsNullOrWhiteSpace(panelInputXml))
+            return null;
+
+        XDocument panelDocument;
+        try
+        {
+            panelDocument = XDocument.Parse(
+                panelInputXml,
+                LoadOptions.PreserveWhitespace);
+        }
+        catch (Exception exception)
+        {
+            throw new InvalidDataException(
+                $"Input pannelli headless non valido: {exception.Message}",
+                exception);
+        }
+
+        if (panelDocument.Root is null)
             return null;
 
         List<XElement> floorNodes = panelDocument.Root
