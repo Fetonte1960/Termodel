@@ -12,7 +12,60 @@ docs/TERMODEL-FRONT-SERVICE-CONTRACT.md
 
 Questa nota resta un documento di orientamento frontend; in caso di differenza sul contratto di comunicazione prevale il documento condiviso.
 
-Aggiornamento: 21 settembre 2026.
+Aggiornamento: 23 settembre 2026.
+
+## Procedura diagnostica Service → GitHub → AI
+
+Questa procedura è importante anche per il developer frontend perché evita di
+trasferire manualmente alla chat file prodotti dal backend.
+
+Quando serve far esaminare alla chat l'ultima elaborazione reale:
+
+```text
+1. nel frontend eseguire "Aggiorna Modello";
+2. pubblicare lo snapshot del projectId corrente;
+3. dire alla chat: "esamina l'ultimo snapshot".
+```
+
+La pubblicazione avviene **solo su richiesta**, non dopo ogni
+`Aggiorna Modello`.
+
+Endpoint amministrativo:
+
+```http
+POST /api/projects/{projectId}/publish-session-snapshot
+X-Termodel-Snapshot-Key: <chiave amministrativa>
+```
+
+La chiave non deve essere inserita nel JavaScript/frontend. Fino a quando non
+sarà disponibile un comando locale sicuro dedicato, viene usata dall'utente
+fuori dal browser, ad esempio da PowerShell.
+
+Gli output vengono conservati sul branch GitHub
+`service-snapshots`. Una chat nuova deve partire da:
+
+```text
+service-snapshots/LATEST.json
+```
+
+e poi leggere `manifest.json` e gli artifact/log elencati.
+
+In questo modo la chat può controllare direttamente gli output reali del
+Service, inclusi SVG, DXF, JSON e log, senza chiedere copie manuali
+all'utente.
+
+Il filesystem Render Free resta effimero; lo snapshot GitHub è la copia
+diagnostica persistente. Al momento gli snapshot storici non vengono
+cancellati automaticamente.
+
+Documento operativo completo:
+
+```text
+Server/Termodelwebservice/docs/SERVICE-SNAPSHOT-DIAGNOSTIC.md
+```
+
+Il collegamento reale Render → GitHub → lettura AI è stato verificato il
+23 settembre 2026.
 
 ## Separazione delle responsabilità
 
