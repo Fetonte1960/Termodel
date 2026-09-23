@@ -423,6 +423,20 @@ La risposta di `POST /api/calculations` riporta in modo additivo la
 configurazione log effettivamente applicata; la stessa configurazione viene
 registrata in `logs/calculation.log`.
 
+**Implementazione frontend v0.99 (PC/Desktop):**
+
+- il menu `Help` espone le nove categorie contrattuali come checkbox;
+- tutte le categorie sono **disattivate di default**;
+- nessuna categoria selezionata → il frontend invia
+  `POST /api/calculations?logEnabled=false`;
+- una o più categorie selezionate → il frontend invia
+  `logEnabled=true` e `logCategories=<elenco>`;
+- la configurazione resta un parametro della singola elaborazione e non entra
+  nel `TERMODEL-PROJECT-TEXT-V1`;
+- nello stesso menu `Help` è disponibile la **Modalità esplorazione**,
+  disattivata di default: questa è esclusivamente una funzione UI e non cambia
+  il contratto Service.
+
 ### Assegnazione di un nuovo projectId
 
 Operazione:
