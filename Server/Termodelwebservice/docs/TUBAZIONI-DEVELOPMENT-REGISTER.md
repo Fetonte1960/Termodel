@@ -311,6 +311,259 @@ Tubazioni.Core
 Il calcolo Tubazioni deve essere utilizzabile anche senza pannelli radianti;
 i pannelli costituiscono il primo produttore di input e il primo caso d'uso.
 
+### 6.1 Prima funzione operativa — perdita di carico dei circuiti radianti
+
+Decisione del 23 settembre 2026: la **prima funzione realmente utile** da
+realizzare nella nuova libreria Tubazioni sarà il calcolo della perdita di
+carico di ogni circuito del pannello radiante.
+
+#### 6.1.1 La lunghezza geometrica della spirale non è autorevole
+
+La lunghezza salvata/calcolata dal generatore grafico della spirale non deve
+essere usata come input idraulico autorevole, perché può essere corrotta o
+risentire di errori del generatore geometrico.
+
+Il calcolo idraulico deve invece ricostruire una lunghezza indipendente a
+partire da:
+
+- superficie effettivamente servita dal circuito;
+- passo/interasse dei tubi;
+- fattore di conversione superficie/passo -> metri di tubo;
+- lunghezza reale dei collegamenti fra collettore e circuito.
+
+La lunghezza grafica della spirale potrà essere conservata soltanto come dato
+diagnostico da confrontare con la lunghezza stimata.
+
+#### 6.1.2 Fattore superficie/passo
+
+Riferimento tecnico verificato: la guida Uponor per impianti radianti riporta
+la quantità di tubo necessaria per unità di superficie in funzione del passo:
+
+| Passo [mm] | Fattore tubo [m/m²] |
+|---:|---:|
+| 50 | 20.0 |
+| 100 | 10.0 |
+| 125 | 8.0 |
+| 150 | 6.7 |
+| 175 | 5.8 |
+| 200 | 5.0 |
+| 300 | 3.4 |
+
+La stessa guida specifica che ai metri ricavati dalla superficie devono essere
+aggiunte separatamente le lunghezze di mandata/ritorno fra collettore e
+ambiente.
+
+Fonte verificata:
+https://www.uponor.com/getmedia/c5ab8a1f-9f02-43a4-8bcb-3b6a186dafeb/underfloor-heating-install-guidepdf?sitename=UK
+
+Per i passi standard si userà quindi il fattore tabellato:
+
+```text
+L_spirale_stimata = Area_servita_m2 * F_passo_m_per_m2
+```
+
+Per un passo non presente in tabella, il fallback geometrico è:
+
+```text
+F_passo ~= 1 / passo_m
+        ~= 1000 / passo_mm
+```
+
+Questa relazione produce, ad esempio:
+
+```text
+100 mm -> 10.0 m/m²
+150 mm ->  6.67 m/m²
+200 mm ->  5.0 m/m²
+```
+
+Il fattore è trattato come **dato empirico/configurabile**, non come lunghezza
+letta dal disegno.
+
+Non si deve aggiungere automaticamente un 5–10% di "scorta di posa": la scorta
+commerciale serve per approvvigionamento/tagli, non rappresenta tubo realmente
+attraversato dall'acqua e falserebbe la perdita di carico.
+
+È previsto un coefficiente di calibrazione:
+
+```text
+K_layout = 1.000   (default)
+```
+
+e quindi:
+
+```text
+L_spirale_idraulica =
+    Area_servita_m2 * F_passo_m_per_m2 * K_layout
+```
+
+`K_layout` resterà 1.000 finché regression test su spirali sane non
+dimostreranno uno scostamento sistematico. Non va modificato per far coincidere
+arbitrariamente un singolo caso.
+
+#### 6.1.3 Collegamenti al collettore
+
+Alla lunghezza stimata della spirale deve essere sommata la lunghezza
+**geometrica reale** dei tubi di collegamento.
+
+```text
+L_collegamenti =
+    somma lunghezze centrolinea mandata
+  + somma lunghezze centrolinea ritorno
+```
+
+Questi tratti sono già rappresentabili dalla geometria/grafo prodotto dal
+sistema Pannelli e non devono essere stimati con un coefficiente percentuale.
+
+Per un circuito:
+
+```text
+L_idraulica_totale =
+    L_spirale_idraulica
+  + L_collegamenti
+```
+
+Se in futuro collegamento e spirale useranno diametri/materiali differenti, il
+solver non userà più una sola lunghezza equivalente ma sommerà le perdite dei
+singoli segmenti in serie.
+
+#### 6.1.4 Confine del circuito
+
+Per la prima versione il "circuito pannello" va inteso:
+
+```text
+uscita collettore
+    -> collegamento mandata
+    -> spirale nel pavimento
+    -> collegamento ritorno
+    -> ingresso collettore
+```
+
+Sono esclusi dalla prima versione:
+
+- perdita interna del collettore;
+- valvole di regolazione;
+- flussimetri;
+- attuatori;
+- raccordi speciali esplicitamente modellati;
+- prevalenza della distribuzione primaria.
+
+Questi componenti entreranno nel successivo programma generalista attraverso
+le perdite concentrate.
+
+#### 6.1.5 Input minimo del calcolo
+
+Per ogni circuito:
+
+```text
+AreaServita_m2
+Passo_mm
+LunghezzaCollegamenti_m
+Portata_m3_s (o unità convertibile)
+CodiceTubazione
+CodiceFluido
+TemperaturaMediaFluido_C
+```
+
+`TemperaturaMediaFluido_C` deve preferibilmente essere:
+
+```text
+(T_mandata + T_ritorno) / 2
+```
+
+La portata è un input autorevole proveniente dal calcolo pannelli. Una futura
+funzione potrà ricavarla da potenza e salto termico, ma non fa parte di questa
+prima specifica.
+
+#### 6.1.6 Formula predefinita: Darcy-Weisbach
+
+Formula primaria:
+
+```text
+DeltaP = f * (L / D) * (rho * v² / 2)
+```
+
+con:
+
+```text
+v  = 4 Q / (pi D²)
+Re = rho v D / mu
+```
+
+dove:
+
+- `L` = lunghezza idraulica totale [m];
+- `D` = diametro interno [m];
+- `Q` = portata volumetrica [m³/s];
+- `rho` = densità fluido [kg/m³];
+- `mu` = viscosità dinamica [Pa s];
+- `f` = fattore di attrito Darcy.
+
+Per il fattore di attrito:
+
+- regime laminare: `f = 64 / Re`;
+- regime turbolento: Colebrook-White con rugosità relativa `epsilon / D`;
+- zona di transizione: deve produrre una diagnostica esplicita; la regola
+  numerica definitiva sarà fissata durante l'implementazione del kernel.
+
+Darcy-Weisbach è confermata come formula generale di default. Il vecchio
+Pascal già contiene una forma Darcy/Colebrook, ma il nuovo kernel sarà
+implementato e testato autonomamente.
+
+Riferimenti verificati:
+- https://www.engineeringtoolbox.com/darcy-weisbach-equation-d_646.html
+- PPI, *PEX Pipe Design Manual for Water Oil Gas Industrial Applications*,
+  edizione 2024:
+  https://www.plasticpipe.org/common/Uploaded%20files/1-PPI/Manuals-Design%20Guides/PEX%20Pipe%20MRS%20Based/PEX%20Pipe%20Design%20Manual%20for%20WOG%20MRS%20Based.pdf
+
+#### 6.1.7 Output minimo della prima funzione
+
+Per ogni circuito il risultato dovrà almeno contenere:
+
+```text
+AreaServita_m2
+Passo_mm
+FattorePasso_m_m2
+K_layout
+LunghezzaSpiraleStimata_m
+LunghezzaCollegamenti_m
+LunghezzaIdraulicaTotale_m
+Portata
+DiametroInterno_mm
+Velocita_m_s
+Reynolds
+FattoreAttritoDarcy
+PerditaLineare_Pa_m
+PerditaCircuito_Pa
+PerditaCircuito_kPa
+Diagnostiche[]
+```
+
+La prima versione calcola la perdita distribuita della tubazione. Finché le
+perdite concentrate non saranno introdotte, il dato esposto come perdita del
+circuito deve essere accompagnato nella diagnostica dalla qualificazione
+"perdita distribuita; componenti locali non ancora modellati".
+
+#### 6.1.8 Controllo di coerenza con la spirale grafica
+
+Se è disponibile una lunghezza proveniente dal generatore della spirale:
+
+```text
+L_grafica
+```
+
+essa non entra nel calcolo Darcy, ma può generare un controllo diagnostico:
+
+```text
+scostamento =
+    abs(L_grafica - L_spirale_idraulica) / L_spirale_idraulica
+```
+
+Una soglia verrà definita con i test. Uno scostamento elevato deve segnalare
+possibile corruzione geometrica senza alterare automaticamente il risultato
+idraulico.
+
+
 ## 7. Database Tubazioni indipendente
 
 ### 7.1 Precedente storico `base.dat`
@@ -482,6 +735,147 @@ Collettori
 
 Le relazioni master/slave del vecchio `base.dat` devono diventare lookup e
 chiavi esplicite, senza puntatori o dipendenza dall'ordine fisico delle righe.
+
+### 7.6 Archivi minimi per il calcolo pannelli
+
+La prima funzione operativa richiede soltanto due famiglie di archivio
+obbligatorie: **Tubazioni** e **Fluidi**. Sono già progettate in modo da non
+impedire l'estensione futura al programma generalista.
+
+#### 7.6.1 Archivio Tubazioni
+
+Struttura minima proposta:
+
+```text
+Tubazioni
+  Codice
+  Descrizione
+  Materiale
+  Applicazione
+  RugositaAssoluta_mm
+  FormulaPerditaDefault
+  BarrieraOssigeno
+  Attivo
+
+DiametriTubazioni
+  CodiceTubazione
+  Sigla
+  DiametroEsterno_mm
+  Spessore_mm
+  DiametroInterno_mm
+  Attivo
+```
+
+La separazione famiglia/diametri riprende la semantica master/slave del
+`base.dat` storico senza conservarne la tecnologia BDE.
+
+##### Tubo iniziale per pannelli radianti
+
+La richiesta iniziale citava "PVC". La verifica tecnica sulle documentazioni
+dei produttori mostra però che per i circuiti radianti il riferimento corretto
+è **PE-X/PEX** o PE-RT/multistrato, non PVC come scelta standard.
+
+Uponor Italia indica, per esempio:
+
+- PE-Xa con barriera EVOH, 16 x 2 mm;
+- multistrato PE-RT/alluminio/PE-RT, 16 x 2 mm.
+
+Fonti:
+- https://www.uponor.com/it-it/prodotti/riscaldamento-e-raffrescamento-a-pavimento-bassa-inerzia/klett-twinboard-a-bassa-inerzia
+- https://www.uponor.com/it-it/prodotti/riscaldamento-e-raffrescamento-a-pavimento/radiante-sostenibile
+
+Per la prima base dati si registra quindi come default:
+
+```text
+Codice famiglia:       PEXA-O2
+Descrizione:           PE-Xa per pannelli radianti con barriera ossigeno
+Materiale:             PE-Xa
+Applicazione:          PannelliRadianti
+Formula default:       Darcy-Weisbach
+Barriera ossigeno:     SI
+Diametro:              16 x 2 mm
+Diametro interno:      12 mm
+```
+
+Per la rugosità, il PPI 2024 indica per PEX un intervallo di rugosità assoluta
+di circa **0.0005–0.0007 mm** per i calcoli Darcy. Si adotta
+provvisoriamente:
+
+```text
+RugositaAssoluta_mm = 0.0007
+```
+
+come valore iniziale conservativo e modificabile nell'archivio.
+
+PVC/CPVC e altre famiglie potranno essere aggiunte successivamente al database
+generalista, ma non saranno il default per il circuito radiante.
+
+#### 7.6.2 Archivio Fluidi
+
+Per evitare proprietà fisiche fisse a una sola temperatura, la struttura
+preferita è:
+
+```text
+Fluidi
+  Codice
+  Descrizione
+  Tipo
+  ModelloProprieta
+  Attivo
+
+ProprietaFluidi
+  CodiceFluido
+  Temperatura_C
+  Densita_kg_m3
+  ViscositaDinamica_Pa_s
+  CaloreSpecifico_J_kgK        [predisposto per sviluppi successivi]
+```
+
+Primo fluido:
+
+```text
+Codice:              H2O
+Descrizione:         Acqua
+Tipo:                LiquidoNewtoniano
+ModelloProprieta:    TabellaTemperatura
+Attivo:              SI
+```
+
+Le proprietà saranno interpolate alla temperatura media del circuito.
+
+Valori di riferimento verificati per l'acqua:
+
+| T [°C] | densità [kg/m³] | viscosità dinamica [Pa s] |
+|---:|---:|---:|
+| 30 | ~995.6 | ~0.000797 |
+| 35 | ~994.1 | ~0.000720 |
+| 40 | ~992.2 | ~0.000653 |
+
+Fonti di confronto:
+- Anton Paar, tabella viscosità/densità acqua, riferimento IAPWS 2008:
+  https://wiki.anton-paar.com/en/water/
+- https://www.thermexcel.com/english/tables/eau_atm
+
+I valori definitivi della tabella JSON dovranno essere verificati e
+normalizzati in unità SI durante l'implementazione dell'archivio.
+
+### 7.7 Gestione futura da menu
+
+È registrata la futura voce di interfaccia:
+
+```text
+Tubazioni
+  ├── Archivio tubazioni
+  ├── Archivio fluidi
+  └── [future funzioni generaliste]
+```
+
+**Stato: IN SOSPESO.**
+
+Non si implementano menu o form in questa fase. Quando verranno realizzati,
+dovranno usare i metadata di `tubazioni-definizionedati.json` e lo stesso
+principio AutoForm già adottato da Termodel.
+
 
 ## 8. Automazione Form
 
@@ -740,7 +1134,7 @@ motore produce un valore differente.
 | Fase | Contenuto | Stato |
 |---|---|---|
 | T0 | studio sorgenti Pascal, `base.dat`, generatore form/DB, DXF e Pannelli C# | **ESEGUITO** |
-| T1 | specifica completa metadata + database JSON Tubazioni e mapping `base.dat` | DA FARE |
+| T1 | specifica completa metadata + database JSON Tubazioni e mapping `base.dat` | **IN CORSO** — definiti archivi minimi Tubazioni/Fluidi per pannelli |
 | T2 | dominio neutro `TubazioniNetwork` + validazione topologica | DA FARE |
 | T3 | kernel idraulico puro: portate, attrito, perdite, sizing, percorso sfavorito | DA FARE |
 | T4 | equilibratura / valvole / portate effettive selezionate | DA FARE |
@@ -755,6 +1149,7 @@ motore produce un valore differente.
 - Nome linea: **Calcolo Tubazioni**.
 - Sviluppo autonomo, ma destinato a vivere come libreria riusabile dal Core.
 - Primo utilizzo: supporto idraulico ai pannelli radianti.
+- Prima funzione operativa: perdita di carico distribuita del singolo circuito radiante.
 - Fonte algoritmica primaria: vecchio sottosistema Pascal `Tubi`.
 - `base.dat` e `GENERA` sono precedenti storici del nuovo metadata system.
 - Nuovo database: JSON autonomo Tubazioni.
@@ -770,7 +1165,7 @@ motore produce un valore differente.
 
 ## 17. Questioni aperte
 
-- definire il set minimo esatto degli archivi T1;
+- completare il set generalista degli archivi T1 oltre al nucleo già deciso Tubazioni/Fluidi;
 - verificare quali dati storici siano ancora tecnicamente/normativamente
   appropriati;
 - decidere se i dati di fluido saranno tabellari o calcolati da proprietà
@@ -798,6 +1193,8 @@ regression test Pascal:          NO
 confronto Golden:                NO
 ```
 
-La prossima attività corretta è **T1: mappare integralmente il `base.dat`
-Tubazioni nel nuovo schema metadata/database JSON**, senza ancora collegarlo
-al frontend o ad `Aggiorna Modello`.
+La prossima attività corretta per il ramo pannelli è implementare, in un nuovo
+incarico, il nucleo minimo verificabile: metadata/database JSON Tubazioni e
+Fluidi + funzione pura Darcy-Weisbach su un singolo circuito sintetico. Il
+mapping generalista completo del `base.dat` resta parte di T1 e non deve
+bloccare questo primo test idraulico.
