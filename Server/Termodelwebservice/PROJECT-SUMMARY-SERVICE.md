@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — voci archivi pannelli nel menu frontend
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - aggiungere al menu frontend le voci per gli archivi progetto
@@ -104,11 +104,64 @@ Criteri di completamento:
 - metadata caricati dalla sezione progetto
   `definition/pannelli-tubazioni-definizionedati.json`;
 - progetti precedenti senza i nuovi archivi restano caricabili;
-- verifica sintattica/runtime frontend e pubblicazione GitHub Pages;
+- verifica frontend e pubblicazione GitHub Pages;
 - Summary aggiornato allo stato reale.
 
 Risultato:
-- implementazione in corso.
+- aggiunte in `docs/termodel-ui-demo/index.html`, menu `Modifica`, le voci:
+  `Archivio Tipologie pannelli`, `Archivio Tubazioni`,
+  `Archivio Fluidi`, tutte collegate tramite `data-archive`;
+- `ARCHIVE_ORDER` di `archivio-web.js` esteso con
+  `TipologiePannelli`, `Tubazioni`, `Fluidi`, quindi i tre archivi
+  compaiono anche nelle tab interne della finestra Archivi;
+- `ArchivioWeb` mantiene una copia dello schema storico base e, ad ogni
+  progetto caricato, integra i metadata presenti nella sezione
+  `definition/pannelli-tubazioni-definizionedati.json`;
+- nessuna modifica e nessuna duplicazione del file storico
+  `definizionedati.json`;
+- i metadata estesi sono quindi realmente quelli trasportati dal progetto;
+- sui progetti precedenti senza metadata/archivio esteso il caricamento del
+  progetto resta compatibile; la richiesta esplicita di una nuova voce assente
+  produce ora un errore chiaro invece di aprire silenziosamente un altro
+  archivio;
+- versione frontend portata a **1.01** e import `archivio-web.js` portato a
+  cache key **0.81**;
+- contratto Front↔Service aggiornato alla **v1.8**: le tre voci archivio sono
+  ora parte della UI implementata; il futuro sottomenu generalista
+  `Tubazioni` con funzioni di calcolo resta distinto e sospeso;
+- registro `TUBAZIONI-DEVELOPMENT-REGISTER.md` aggiornato:
+  `voci archivio frontend = IMPLEMENTATE`,
+  `sottomenu generalista Tubazioni = SOSPESO`;
+- GitHub Pages run **#725**, run id `35851842080`, commit frontend
+  `4216a670ca78def2f0e7754a0c887bba96b803ad`:
+  build Jekyll **success**, deploy Pages **success**, report build status
+  **success**;
+- il precedente Service build avviato dalla registrazione dell'incarico,
+  run **#125**, è terminato con successo; nessuna modifica Service runtime è
+  stata necessaria;
+- verifica del percorso logico frontend eseguita sul codice:
+  menu `data-archive` -> `openArchivioWeb(name)` -> schema esteso del
+  progetto -> records `archives/json/<name>.json` -> form/griglia
+  `ArchivioWeb`;
+- **compilato:** non applicabile come binario per il frontend statico; build
+  GitHub Pages riuscita;
+- **eseguito:** pubblicazione GitHub Pages riuscita;
+- **testato:** struttura/menu/schema e deploy automatico verificati; il click
+  manuale nel browser dell'utente resta una verifica reale separata;
+- **confrontato con riferimento:** coerente con il motore unico ArchivioWeb e
+  con gli archivi progetto introdotti nell'incarico precedente;
+- algoritmi pannelli, Service API, protocollo progetto e
+  `definizionedati.json` non modificati;
+- commit principali:
+  `a065bde25e3ae1ec3084c6d36b0e69a49960bccc`,
+  `e49d9a1774b69e2462e2c6c4e2479a0d1588926c`,
+  `356cb28449f6926a3c46af452c65f5ab065a7451`,
+  `be6ef9340ee1f64205f6ec4a4cf9cf6780ff9939`,
+  `d33e2241652749c03a37bacedbdfc1f85d49dd46`,
+  `a15ec69165a0d29a876475da9d5f22ef101d97f3`,
+  `4216a670ca78def2f0e7754a0c887bba96b803ad`,
+  `1e70bc65625a65638040f43716c20116a8aec13d`,
+  `838926d57b5a48f3178ddc4be88c61cbebeafc95`.
 
 ### INCARICO 2026-09-23 — completamento calcolo pannelli radianti: archivi progetto
 Stato: ESEGUITO
