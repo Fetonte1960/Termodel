@@ -99,6 +99,11 @@
         "NO"
       ],
       "Ini": "SI"
+    },
+    "FormulaPerdita": {
+      "LunghezzaMassima": 80,
+      "Descr": "Formula perdita",
+      "Ini": "Darcy-Weisbach"
     }
   },
   "TipologiePannelli": {
@@ -181,11 +186,6 @@
       "NumeroDecimali": 3,
       "Descr": "Coefficiente resa (W/m²K)",
       "Ini": "5"
-    },
-    "FormulaPerdita": {
-      "LunghezzaMassima": 80,
-      "Descr": "Formula perdita",
-      "Ini": "Darcy-Weisbach"
     },
     "Attivo": {
       "LunghezzaMassima": 10,
