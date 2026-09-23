@@ -84,6 +84,49 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — registro sviluppo autonomo Calcolo Tubazioni
+Stato: COMMISSIONATO
+
+Commissionato:
+- studiare i sorgenti Pascal storici presenti in
+  `SorgentiTermodel/Library/SorgentiPascal/` relativi al calcolo reti/tubazioni,
+  ai pannelli radianti, alla gestione DXF, alle definizioni `base.dat` e al
+  generatore database/form;
+- usare tali sorgenti come **fonte di ispirazione funzionale e algoritmica**,
+  non come codice da portare ciecamente;
+- definire una nuova linea di sviluppo autonoma **Calcolo Tubazioni**, concepita
+  come libreria di supporto ai pannelli radianti e futura fase richiamata da
+  `Aggiorna Modello`;
+- progettare un database JSON indipendente per Tubazioni, ma con la stessa
+  impostazione strutturale/di metadati degli archivi JSON Termodel, evitando di
+  modificare `definizionedati.json`;
+- prevedere generazione/automazione dei form basata sui metadati, secondo il
+  principio già usato da Termodel per gli archivi, evitando form codificati a
+  mano per ogni tabella;
+- studiare la vecchia libreria DXF Pascal per identificare soltanto le
+  responsabilità geometriche/di rete riutilizzabili; il nuovo motore non deve
+  dipendere obbligatoriamente da AutoCAD o dal filesystem storico;
+- creare un registro di sviluppo dedicato in
+  `Server/Termodelwebservice/docs/TUBAZIONI-DEVELOPMENT-REGISTER.md` con
+  fonti studiate, architettura target, dati, fasi, decisioni, rischi, test e
+  stato di avanzamento;
+- in questo incarico non implementare ancora il motore Tubazioni e non
+  modificare frontend, Library Pascal, `TERMODEL-PROJECT-TEXT-V1` o
+  `definizionedati.json`.
+
+Criteri di completamento:
+- individuare e classificare i sorgenti Pascal realmente rilevanti;
+- descrivere il flusso storico dati → grafo/rete → calcolo → risultati/DXF;
+- definire il confine fra nuovo Core Tubazioni, database JSON, generatore form
+  e adattatore futuro per `Aggiorna Modello`;
+- registrare una roadmap autonoma con fasi verificabili e strategia di
+  regression test contro i programmi Pascal storici;
+- aggiornare il Summary con il percorso del nuovo registro e lo stato reale
+  dell'analisi.
+
+Risultato:
+- analisi e registro in corso.
+
 ### INCARICO 2026-09-23 — configurazione log per Aggiorna Modello
 Stato: ESEGUITO
 
