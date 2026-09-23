@@ -90,6 +90,20 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — debug progetto reale tramite GitHub Actions
+Stato: COMMISSIONATO
+
+Commissionato:
+- usare il progetto reale `TERMODEL-PROJECT-TEXT-V1` fornito dall'utente come input di un test GitHub Actions, senza coinvolgere Render;
+- eseguire il Service compilato nel runner GitHub e inviare il progetto a `POST /api/calculations`;
+- raccogliere in un artifact di workflow risposta HTTP, catalogo `generated-files`, artifact e log realmente prodotti;
+- esaminare i file di ritorno per individuare anomalie nella generazione del modello;
+- svolgere il test su branch diagnostico separato, senza modificare `definizionedati.json`, Library Desktop o frontend operativo;
+- distinguere build, esecuzione e risultato del debug.
+
+Risultato:
+- in corso; compilazione/esecuzione/test e commit saranno registrati dopo l'Action.
+
 ### INCARICO 2026-09-23 — comando Help "Copia progetto negli appunti"
 Stato: ESEGUITO
 
