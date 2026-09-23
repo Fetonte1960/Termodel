@@ -90,6 +90,35 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — comando Help "Copia progetto negli appunti"
+Stato: COMMISSIONATO
+
+Commissionato:
+- aggiungere nel menu `Help` del frontend operativo
+  `docs/termodel-ui-demo/` il comando:
+  `Copia progetto negli appunti`;
+- il comando deve copiare negli appunti il progetto tecnico corrente nel
+  formato canonico `TERMODEL-PROJECT-TEXT-V1`, riusando la funzione di
+  serializzazione già esistente nel frontend e senza introdurre un formato
+  parallelo;
+- il comando deve servire al flusso di test rapido:
+  `frontend -> clipboard -> chat AI -> GitHub Action/Service temporaneo`;
+- non deve modificare il progetto, non deve chiamare Render e non deve
+  pubblicare snapshot;
+- deve mostrare un riscontro chiaro di successo/errore all'utente;
+- non inserire secret o credenziali negli appunti;
+- non modificare `definizionedati.json`, Core, WebService o Library Desktop.
+
+Criteri di completamento:
+- voce visibile nel menu Help;
+- copia del file unico corrente negli appunti;
+- riuso della serializzazione canonica del progetto;
+- controllo sintattico JavaScript eseguito;
+- Summary aggiornato con risultato reale e commit.
+
+Risultato:
+- implementazione in corso.
+
 ### INCARICO 2026-09-23 — procedura permanente snapshot per diagnostica AI
 Stato: ESEGUITO
 
