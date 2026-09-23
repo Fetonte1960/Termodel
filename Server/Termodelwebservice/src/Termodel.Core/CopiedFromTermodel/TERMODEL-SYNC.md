@@ -36,11 +36,22 @@ diagnostica a `GeneraModello` e pubblicarla transazionalmente nel workspace del
 
 Le categorie Desktop autorevoli sono `Sempre`, `colmi`, `spezza`, `Error`,
 `Svg`, `RedrawHelix`, `GeneraModello`, `Performance` e `PontiAutomatici`.
-I flag costanti correnti disabilitano tutte le categorie tranne
-`PontiAutomatici`. Il metodo headless `IsEnabled(...)` resta intenzionalmente
-`false` per i blocchi condizionati di debug; le chiamate dirette a `WriteLog`,
-`LogOperation` e `LogError` continuano invece a essere raccolte, come richiesto
-dal contratto log del Service già verificato.
+I flag costanti del Desktop corrente abilitano soltanto
+`PontiAutomatici`.
+
+L'adattatore headless usa ora gli stessi nomi categoria ma mantiene una
+semantica server compatibile con il comportamento già pubblicato:
+
+- senza opzioni esplicite di calcolo, tutte le scritture dirette vengono
+  raccolte e `IsEnabled(...)` resta falso;
+- con `logCategories` esplicito, la configurazione è per-request tramite
+  `AsyncLocal`: `IsEnabled(...)` e le scritture dirette rispettano
+  esclusivamente le categorie selezionate;
+- `LogOperation` è associato a `Sempre`, `LogError` a `Error`;
+- `logEnabled=false` spegne la raccolta soltanto per la richiesta corrente.
+
+Questa configurazione non viene riportata nel file progetto e non modifica il
+riferimento Desktop: è un adattamento di hosting/diagnostica del Service.
 
 Il supporto desktop `SorgentiTermodel/Library/utilities/ErrorManager.cs` è
 sostituito nel Service da un sink diagnostico headless in
