@@ -114,6 +114,27 @@ jobs:
               return $projectText.Substring($cs,$ei-$cs).Trim() | ConvertFrom-Json
             }
 
+            function Add-RadiantPipeToProject([string]$projectText,[string]$floorName,[string]$networkCode) {
+              $sectionName = "geometry/project.svg"
+              $begin = "---BEGIN:$sectionName---"
+              $end = "---END:$sectionName---"
+              $bi = $projectText.IndexOf($begin,[System.StringComparison]::Ordinal)
+              if ($bi -lt 0) { throw "Sezione $sectionName non trovata per smoke Tubo." }
+              $cs = $bi + $begin.Length
+              while ($cs -lt $projectText.Length -and ($projectText[$cs] -eq [char]13 -or $projectText[$cs] -eq [char]10)) { $cs++ }
+              $ei = $projectText.IndexOf($end,$cs,[System.StringComparison]::Ordinal)
+              if ($ei -lt 0) { throw "Sezione $sectionName non chiusa per smoke Tubo." }
+
+              $geometry = $projectText.Substring($cs,$ei-$cs)
+              $closeGroup = $geometry.IndexOf("</g>",[System.StringComparison]::OrdinalIgnoreCase)
+              if ($closeGroup -lt 0) { throw "Nessun gruppo piano trovato in geometry/project.svg." }
+
+              $layer = $floorName + "_tubipannelli"
+              $pipe = "<line id=`"T001`" x1=`"10`" y1=`"10`" x2=`"110`" y2=`"10`" data-termodel-piano=`"$floorName`" data-termodel-layer=`"$layer`" data-termodel-entity=`"Tubo`" data-termodel-rete=`"$networkCode`" data-termodel-linetype=`"Continuous`" data-termodel-color=`"1`" />"
+              $geometry = $geometry.Insert($closeGroup,$pipe + [Environment]::NewLine)
+              return $projectText.Substring(0,$cs) + $geometry + $projectText.Substring($ei)
+            }
+
             $reti = @(Read-ProjectJsonSection $baseProject "archives/json/Reti.json")
             $tipologiePannelli = @(Read-ProjectJsonSection $baseProject "archives/json/TipologiePannelli.json")
             if ($reti.Count -ne 1) { throw "Reti deve essere precompilato con una rete pannelli." }
@@ -179,6 +200,28 @@ jobs:
             $calcA = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -Headers $headersA -ContentType "text/plain; charset=utf-8" -Body $projectA
             if ($calcA.projectId -ne $allocA.projectId -or $calcA.PSObject.Properties["calculationId"]) { throw "Response calcolo A non valida." }
 
+            # Smoke end-to-end Tubo: il file unico porta una linea tecnica sul
+            # layer Desktop <NomePiano>_tubipannelli fino a LeggiDxf/IoPannelli.
+            $pianiA = @(Read-ProjectJsonSection $projectA "archives/json/Piani.json")
+            if ($pianiA.Count -lt 1 -or [string]::IsNullOrWhiteSpace([string]$pianiA[0].Nome)) { throw "Piano smoke Tubo non disponibile." }
+            $pipeFloor = [string]$pianiA[0].Nome
+            $pipeLayer = $pipeFloor + "_tubipannelli"
+            $projectATube = Add-RadiantPipeToProject $projectA $pipeFloor "RAD-DEFAULT"
+            if ($projectATube -notmatch [regex]::Escape('data-termodel-rete="RAD-DEFAULT"') -or
+                $projectATube -notmatch [regex]::Escape("data-termodel-layer=`"$pipeLayer`"")) {
+              throw "Il file unico smoke non contiene i metadati Tubo attesi."
+            }
+
+            $calcATube = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -Headers $headersA -ContentType "text/plain; charset=utf-8" -Body $projectATube
+            if ($calcATube.projectId -ne $allocA.projectId) { throw "Calcolo con Tubo non completato sul progetto A." }
+
+            $persistedTubeProject = [System.IO.File]::ReadAllText((Join-Path $dirA "project.tmdl"),[System.Text.UTF8Encoding]::new($false))
+            if ($persistedTubeProject -notmatch [regex]::Escape("data-termodel-layer=`"$pipeLayer`"") -or
+                $persistedTubeProject -notmatch [regex]::Escape('data-termodel-entity="Tubo"') -or
+                $persistedTubeProject -notmatch [regex]::Escape('data-termodel-rete="RAD-DEFAULT"')) {
+              throw "project.tmdl non ha conservato il Tubo della rete."
+            }
+
             $termodelLogPathA = Join-Path $dirA "logs\TermodelLog.md"
             $diagnosticsPathA = Join-Path $dirA "logs\diagnostics.txt"
             if (-not (Test-Path $termodelLogPathA)) { throw "TermodelLog.md non persistito nel workspace del progetto." }
@@ -188,6 +231,9 @@ jobs:
             $diagnosticsFileA = [System.IO.File]::ReadAllText($diagnosticsPathA,[System.Text.UTF8Encoding]::new($false))
             if ([string]::IsNullOrWhiteSpace($termodelLogFileA)) { throw "TermodelLog.md esiste ma non contiene messaggi: logging Core non attivo." }
             if ($termodelLogFileA -ne $diagnosticsFileA) { throw "TermodelLog.md e diagnostics.txt devono rappresentare lo stesso log Core corrente." }
+            if ($termodelLogFileA -notmatch [regex]::Escape("Letti 1 tubi dal layer $pipeLayer")) { throw "Il Core non ha acquisito T001 dal layer pannelli atteso." }
+            Write-Host "RADIANT_PIPE_FILE_UNIQUE_SMOKE_OK"
+
 
             $termodelLogResponse = Invoke-WebRequest -Uri "$base/api/projects/$($allocA.projectId)/logs/termodel" -Method Get
             if ($termodelLogResponse.StatusCode -ne 200) { throw "GET TermodelLog deve restituire 200." }
