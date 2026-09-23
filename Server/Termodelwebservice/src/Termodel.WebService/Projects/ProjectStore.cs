@@ -258,6 +258,31 @@ public sealed class ProjectStore
         }
     }
 
+    public async Task<byte[]?> ReadRadiantPanelsAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        SemaphoreSlim gate = GetGate(projectId);
+        await gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            string artifactPath = Path.Combine(
+                GetProjectDirectory(projectId),
+                "artifacts",
+                "pannelli.json");
+
+            if (!File.Exists(artifactPath))
+                return null;
+
+            return await File.ReadAllBytesAsync(artifactPath, cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public async Task<byte[]?> ReadTermodelLogAsync(
         Guid projectId,
         CancellationToken cancellationToken)
@@ -342,6 +367,14 @@ public sealed class ProjectStore
                 data.Model3DJson,
                 cancellationToken);
 
+            if (data.RadiantPanelsJson is not null)
+            {
+                await File.WriteAllBytesAsync(
+                    Path.Combine(artifactsDirectory, "pannelli.json"),
+                    data.RadiantPanelsJson,
+                    cancellationToken);
+            }
+
             string termodelLog =
                 string.Join(Environment.NewLine, data.Diagnostics);
 
@@ -362,6 +395,7 @@ public sealed class ProjectStore
                 $"completedAtUtc={completedAtUtc:O}{Environment.NewLine}" +
                 $"status=completed{Environment.NewLine}" +
                 $"primitiveCount={data.PrimitiveCount}{Environment.NewLine}" +
+                $"radiantPanelCircuitCount={data.RadiantPanelCircuitCount}{Environment.NewLine}" +
                 $"diagnosticCount={data.Diagnostics.Count}{Environment.NewLine}" +
                 $"logEnabled={data.LogEnabled.ToString().ToLowerInvariant()}{Environment.NewLine}" +
                 $"logMode={data.LogMode}{Environment.NewLine}" +
@@ -551,8 +585,10 @@ public sealed class ProjectStore
 
 public sealed record ProjectCalculationData(
     byte[] Model3DJson,
+    byte[]? RadiantPanelsJson,
     IReadOnlyList<string> Diagnostics,
     int PrimitiveCount,
+    int RadiantPanelCircuitCount,
     bool LogEnabled,
     string LogMode,
     IReadOnlyList<string> LogCategories);
