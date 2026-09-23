@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.12**  
+Versione documento: **1.13**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; archivi Reti/TipologiePannelli, CAD Tubo e primo artifact idraulico pannelli implementati**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito ed esecutivo pannelli SVG/DXF implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -418,12 +418,59 @@ PannelliRadianti dedicato che duplichererebbe il futuro motore Tubi
 universale. Il kernel Darcy per circuito resta invece parte stabile e
 riusabile del Core.
 
-Il generatore grafico storico delle **spirali** non viene dichiarato integrato
-in questo contratto: il suo motore corrente usa ancora un passo compile-time
-di 0,30 m e un workflow file-based. Collegarlo direttamente violerebbe la
-regola che `PassoSelezionatoMm` dell'archivio sia autorevole. L'integrazione
-verrà effettuata quando il motore condiviso avrà un ingresso headless
-parametrico, senza creare una seconda copia nel Service.
+### Esecutivo pannelli con default corrente
+
+Per la milestone corrente è stato attivato il motore grafico Desktop
+`SpiraliGPT` con il **default storico attuale di 0,30 m**, coerente con il
+progetto iniziale `RAD-DEFAULT` che seleziona 300 mm.
+
+`POST /api/calculations`, quando dispone di locali e tubi pannelli idonei,
+può quindi pubblicare anche:
+
+```http
+GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-svg
+GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
+```
+
+Gli artifact persistiti sono:
+
+```text
+artifacts/pannelli-esecutivo.svg
+artifacts/pannelli-esecutivo.dxf
+```
+
+Il principio di equivalenza è vincolante: **SVG e DXF non sono due disegni
+ricalcolati separatamente**. Il Core costruisce un unico modello grafico
+esecutivo neutro e lo serializza nei due formati. Il contenuto equivalente
+comprende, per il perimetro supportato:
+
+- geometria base del piano sul layer `<Piano>_Edificio_Output`;
+- andata/mandata rossa sul layer `<Piano>_PannelliMandata_Output`;
+- ritorno blu sul layer `<Piano>_PannelliRitorno_Output`;
+- box e numero circuito verdi su `<Piano>_NumeriCircuiti_Output`, quando
+  prodotti da `ChiusuraGPT`.
+
+Il formato SVG dichiara:
+
+```text
+TERMODEL-PANNELLI-ESECUTIVO-SVG-V1
+```
+
+e mantiene lo stesso insieme di primitive tecniche del DXF OUT della
+milestone. La diversa convenzione dell'asse Y nel rendering SVG è una
+trasformazione di presentazione, non un secondo modello geometrico.
+
+Il **grafo non viene riattivato** da questa funzione. In assenza di
+`retePannelli.xml`, come nel percorso Desktop, disposizione degli attacchi
+sul collettore e disegno del collettore restano no-op. Questa responsabilità
+rimane rimandata a **Tubi universale**.
+
+Limitazione intenzionale: il motore condiviso usa ancora
+`PassoTubi=0,30 m` compile-time e un workspace temporaneo
+`locale.xml/locale.svg`. Per questa milestone è usato esclusivamente con il
+default corrente richiesto. La futura generalizzazione dei passi dovrà
+rendere parametrico/headless lo stesso motore condiviso; non va creata una
+seconda implementazione nel WebService.
 
 ## 2.1 Standard del payload Frontend → Service
 
