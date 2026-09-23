@@ -25,6 +25,8 @@ POST /api/projects/{projectId}/unlock
 POST /api/calculations
 GET  /api/projects/{projectId}/artifacts/model3d
 GET  /api/projects/{projectId}/artifacts/pannelli
+GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-svg
+GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
 GET  /api/projects/{projectId}/logs/termodel
 POST /api/model/3d
 POST /api/feedback
@@ -94,6 +96,28 @@ e una portata preliminare derivata dalla resa/temperature. Collettore,
 perdite concentrate e generazione grafica parametrica delle spirali restano
 fuori da questo artifact finché il motore condiviso delle spirali non avrà un
 ingresso headless governato da `Reti.PassoSelezionatoMm`.
+
+## Esecutivo pannelli SVG/DXF
+
+Con il default pannelli corrente a passo 300 mm, `POST /api/calculations`
+può produrre anche:
+
+```text
+SavedProjects/{projectId}/artifacts/pannelli-esecutivo.svg
+SavedProjects/{projectId}/artifacts/pannelli-esecutivo.dxf
+```
+
+lettura senza nuovo calcolo:
+
+```http
+GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-svg
+GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
+```
+
+DXF e SVG derivano dallo **stesso modello grafico esecutivo** del Core. Il
+motore geometrico è il `SpiraliGPT` Desktop corrente, usato con il default
+storico `PassoTubi=0,30 m`. Il grafo/collettore resta fuori scope e viene
+rimandato a Tubi universale.
 
 ## TermodelLog del progetto
 
