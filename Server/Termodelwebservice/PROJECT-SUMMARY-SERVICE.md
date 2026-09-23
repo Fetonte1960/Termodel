@@ -84,6 +84,51 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — configurazione log per Aggiorna Modello
+Stato: COMMISSIONATO
+
+Commissionato:
+- estendere `POST /api/calculations` (Aggiorna Modello) con parametri opzionali
+  per configurare il logging della singola elaborazione;
+- usare come categorie autorevoli quelle del Desktop appena acquisite:
+  `Sempre`, `colmi`, `spezza`, `Error`, `Svg`, `RedrawHelix`,
+  `GeneraModello`, `Performance`, `PontiAutomatici`;
+- mantenere piena retrocompatibilità: se non vengono passati parametri di log,
+  il Service deve conservare il comportamento headless corrente già verificato;
+- introdurre i parametri query opzionali `logEnabled` e `logCategories`;
+  `logCategories` accetta elenco separato da virgole, case-insensitive, oltre
+  agli alias `all` e `none`;
+- quando `logCategories` è specificato, `IsEnabled(...)` deve riflettere
+  esattamente le categorie selezionate e le scritture dirette devono essere
+  filtrate per categoria; `LogOperation` usa la categoria Desktop `Sempre`
+  e `LogError` la categoria `Error`;
+- `logEnabled=false` disabilita completamente la raccolta log per quella sola
+  elaborazione;
+- le opzioni devono essere isolate per richiesta tramite lo stesso meccanismo
+  `AsyncLocal`, senza stato globale condiviso fra progetti;
+- non modificare `TERMODEL-PROJECT-TEXT-V1`: le opzioni di log sono parametri
+  di esecuzione e non dati persistenti del progetto;
+- aggiungere alla risposta di `POST /api/calculations` il riepilogo della
+  configurazione log effettivamente applicata e registrarla anche in
+  `logs/calculation.log`;
+- preservare `TermodelLog.md`, `diagnostics.txt`, endpoint
+  `GET /api/projects/{projectId}/logs/termodel`, publish transazionale e
+  protezione dell'ultimo risultato valido;
+- non modificare frontend, Library Desktop o `definizionedati.json`.
+
+Criteri di completamento:
+- build Release con 0 errori;
+- smoke HTTP del comportamento predefinito invariato;
+- smoke con `logEnabled=false`;
+- smoke con filtro di categoria e con `logCategories=all`;
+- verifica rifiuto di categoria sconosciuta con errore client strutturato;
+- verifica isolamento fra elaborazioni successive con configurazioni diverse;
+- aggiornare README, contratto condiviso e questa voce a `Stato: ESEGUITO`
+  soltanto dopo build e smoke riusciti.
+
+Risultato:
+- non ancora implementato.
+
 ### INCARICO 2026-09-23 — acquisizione sorgente Desktop autorevole TermodelLog
 Stato: ESEGUITO
 
