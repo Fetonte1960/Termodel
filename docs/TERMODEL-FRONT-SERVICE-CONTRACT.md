@@ -2,7 +2,7 @@
 
 Versione documento: **1.9**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; configurazione log per Aggiorna Modello implementata; archivi progetto pannelli/tubazioni/fluidi implementati**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; configurazione log per Aggiorna Modello implementata; archivi progetto Reti/TipologiePannelli implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
