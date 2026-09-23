@@ -101,7 +101,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-23 — collaudo generico protocollo "Debug avanzato"
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - verificare la fattibilità pratica del protocollo permanente di debug avanzato senza inseguire alcun bug applicativo specifico;
@@ -114,7 +114,28 @@ Commissionato:
 - non modificare Core, runtime WebService, frontend, definizionedati.json o Library Desktop.
 
 Risultato:
-- in corso.
+- branch diagnostico usato: ai-debug-protocol-test-20260923;
+- workflow temporaneo: .github/workflows/advanced-debug-protocol-test.yml;
+- commit diagnostico: 4d2c4477400461185432221e1ab7f2f80460f998;
+- GitHub Actions run #1, run id 35906599732: COMPLETATO CON SUCCESSO;
+- restore: success;
+- build Release: success;
+- avvio reale di Termodel.WebService nel runner Windows: success;
+- sonda GET /health: HTTP 200, risposta status=ok;
+- sonda GET /api/model/capabilities: HTTP 200;
+- capabilities osservate: Termodel Core 0.3.0-experimental, updateModelAvailable=true, newProjectAvailable=true, formato TERMODEL-PROJECT-TEXT-V1 disponibile;
+- artifact advanced-debug-protocol-return creato e scaricato dalla chat;
+- contenuto artifact verificato:
+  - probe.json (537 byte);
+  - service.stdout.log (2583 byte);
+  - service.stderr.log (0 byte);
+- stdout conferma ascolto su http://127.0.0.1:5082 e richieste HTTP 200;
+- stderr vuoto;
+- dimostrato end-to-end il canale:
+  chat -> branch diagnostico -> GitHub Action -> build -> avvio Service -> richiesta HTTP -> artifact/log -> download -> analisi chat;
+- nessun bug applicativo specifico è stato investigato durante questo collaudo;
+- nessuna modifica a Core, runtime WebService, frontend, definizionedati.json o Library Desktop;
+- la strumentazione temporanea viene rimossa dal branch al termine del collaudo.
 
 ### INCARICO 2026-09-23 — contratto permanente "Debug avanzato"
 Stato: ESEGUITO
