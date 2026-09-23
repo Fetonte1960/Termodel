@@ -1491,13 +1491,16 @@ Gli errori HTTP devono essere strutturati e leggibili dal frontend.
 
 | HTTP | Significato |
 |---|---|
-| 400 | richiesta malformata |
+| 400 | richiesta malformata o feedback non valido |
+| 403 | origine non autorizzata per l'invio feedback |
 | 404 | projectId o artifact non disponibile |
 | 409 | conflitto nella registrazione/allocazione del projectId |
 | 415 | Content-Type non supportato |
 | 422 | progetto valido come richiesta HTTP ma non elaborabile da Termodel |
+| 429 | rate-limit feedback superato |
 | 500 | errore interno inatteso |
-| 503 | risorsa o dipendenza necessaria non disponibile |
+| 502 | dipendenza GitHub feedback raggiunta ma non utilizzabile |
+| 503 | risorsa/dipendenza necessaria non configurata o non disponibile |
 
 Warning e diagnostica dell'ultima elaborazione riuscita devono essere associati
 al workspace del `projectId`.
