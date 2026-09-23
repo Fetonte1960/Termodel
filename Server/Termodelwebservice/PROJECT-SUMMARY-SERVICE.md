@@ -140,7 +140,7 @@ Risultato:
   `Fix FIN numeric validation in Termodel Core`.
 
 ### INCARICO 2026-09-23 — inoltro suggerimenti utenti a GitHub
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - progettare e implementare in `Termodel.WebService` un servizio pubblico
@@ -177,7 +177,58 @@ Criteri di completamento:
   build e smoke riusciti.
 
 Risultato:
-- non ancora implementato.
+- **progettato/implementato:** aggiunto
+  `src/Termodel.WebService/Feedback/GitHubFeedbackService.cs` e
+  `POST /api/feedback`; il Service crea una GitHub Issue nel repository
+  configurato, senza eseguire commit, `git push` o richiedere un clone Git;
+- il payload accetta `message/category/title/page/appVersion`; categorie:
+  `suggestion`, `bug`, `question`, `other`; sono applicati limiti di
+  lunghezza e titolo automatico quando manca;
+- il campo `page` perde query string e fragment prima dell'invio; il testo
+  disarma le mention `@`; non vengono aggiunti automaticamente file progetto,
+  `projectId`, email, cookie o IP al corpo dell'Issue;
+- il token GitHub resta esclusivamente lato server tramite
+  `TERMODEL_FEEDBACK_GITHUB_TOKEN`; repository, origine autorizzata e API base
+  sono configurabili con `TERMODEL_FEEDBACK_REPOSITORY`,
+  `TERMODEL_FEEDBACK_ALLOWED_ORIGIN` e
+  `TERMODEL_FEEDBACK_GITHUB_API_BASE_URL`;
+- default: repository `Fetonte1960/Termodel`, origine
+  `https://www.termodel.it`, API `https://api.github.com`;
+- previsto fine-grained PAT limitato al solo repository con permesso minimo
+  **Issues: Read and write**; nessuna credenziale è presente nel repository;
+- origine diversa da quella configurata → 403; payload non valido → 400;
+  configurazione/token assenti → 503; errore/rete GitHub → 502;
+- rate-limit in memoria: massimo 5 feedback per client/10 minuti e 100 globali/
+  ora; superamento → 429 con `Retry-After`;
+- README e contratto condiviso **v1.4** documentano endpoint, errori,
+  configurazione Render e regole di privacy/sicurezza;
+- aggiunto `tests/github_feedback_stub.py` e nuovo smoke end-to-end nel
+  workflow GitHub Actions; lo stub simula la REST API Issues senza usare
+  credenziali reali;
+- **compilato:** GitHub Actions run **#82**, commit
+  `0989c0e967bcc86edb909a3cbb73498be4b2c658`: build Release riuscita,
+  **153 warning, 0 errori**;
+- **eseguito/testato:** nello stesso run il WebService ASP.NET è stato avviato
+  realmente e lo smoke ha concluso con `GITHUB_FEEDBACK_SMOKE_OK`,
+  `issueNumber=4242`; verificati anche il precedente
+  `PROJECT_LOCK_SMOKE_OK`, origine non autorizzata 403, payload invalido 400,
+  creazione Issue simulata 201, path/API/header GitHub, rimozione query dalla
+  pagina, rate-limit 429 e configurazione senza token 503;
+- **GitHub reale/Render:** non è stata ancora creata una Issue reale tramite
+  Render, perché il secret `TERMODEL_FEEDBACK_GITHUB_TOKEN` deve essere
+  configurato esplicitamente nell'hosting; non dichiarare questo livello come
+  verificato finché non viene eseguita una prova reale;
+- **frontend:** non modificato in questo incarico; la futura UI
+  `Invia suggerimento` dovrà limitarsi a chiamare `POST /api/feedback`;
+- **confronto con riferimento Desktop:** non applicabile, perché questa è una
+  funzione di trasporto/WebService senza algoritmo Desktop;
+- commit principali:
+  `3351bd74540dfe43c79a881ad5fe6288af77d84a`,
+  `9d68b0f05499973cc3e9ea3b363d2b5d613c9d43`,
+  `01f9899cffa590bc9a9647e675b057589c3a9ca9`,
+  `aaf0444d77ecce930307d35419e9203798507ae9`,
+  `52b6460a3e745940a019aae37ddb7d289bb120b0`,
+  `0989c0e967bcc86edb909a3cbb73498be4b2c658`.
 ### INCARICO 2026-09-22 — gestione progetti server e apertura esclusiva
 Stato: ESEGUITO
 
@@ -1117,11 +1168,19 @@ GET  /
 GET  /health
 GET  /api/model/capabilities
 GET  /api/model/clean-floor/{floorName}
+GET  /api/projects
 POST /api/projects/new
 POST /api/projects/allocate-id
+POST /api/projects/{projectId}/open
+PUT  /api/projects/{projectId}/save
+PUT  /api/projects/{projectId}/save-as
+POST /api/projects/{projectId}/heartbeat
+POST /api/projects/{projectId}/close
+POST /api/projects/{projectId}/unlock
 POST /api/model/3d
 POST /api/calculations
 GET  /api/projects/{projectId}/artifacts/model3d
+POST /api/feedback
 ```
 
 `POST /api/projects/new` continua a creare il file unico base e non assegna
