@@ -84,6 +84,67 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — acquisizione sorgente Desktop autorevole TermodelLog
+Stato: ESEGUITO
+
+Commissionato:
+- individuare nel sorgente Desktop locale reale l'implementazione autorevole
+  di `TermodelLog` e verificarne provenienza e SHA-256;
+- integrare in `SorgentiTermodel/Library/utilities/TermodelLog.cs` una copia
+  non adattata e byte-per-byte identica all'originale Desktop;
+- confrontare il comportamento Desktop con l'adattatore headless già presente
+  in `Compatibility/LegacyCoreAdapters.cs`, preservando lifecycle per-request,
+  isolamento `AsyncLocal`, persistenza per progetto ed endpoint già verificati;
+- aggiornare `TERMODEL-SYNC.md`, `docs/copied-from-termodel.md` e questo
+  Summary eliminando il precedente limite documentale dovuto all'assenza del
+  sorgente Desktop nella Library;
+- non modificare l'adattatore headless salvo una necessità dimostrata dal
+  confronto; non copiare nel runtime server dipendenze WPF, filesystem Desktop,
+  finestre di errore o diagnostica grafica IFC/NTS;
+- non modificare frontend, `PROJECT-SUMMARY.md` alla radice o
+  `definizionedati.json`.
+
+Criteri di completamento:
+- copia Library con SHA-256 identico all'originale locale;
+- confronto funzionale Desktop/headless documentato per API, categorie,
+  lifecycle, persistenza, concorrenza e dipendenze non portabili;
+- verifica statica che il sistema headless e il suo contratto pubblico siano
+  rimasti invariati;
+- stato aggiornato a `ESEGUITO` soltanto dopo le verifiche finali, riportando
+  distintamente build, esecuzione e test realmente effettuati.
+
+Risultato:
+- **sorgente recuperato:** individuato l'originale Desktop locale
+  `utilities/TermodelLog.cs`, 378 righe, SHA-256
+  `79C4143C34407575C70DD22E8279F1FFE0F078B55CA095549A31A4E6174B4218`;
+- **Library integrata:** aggiunto
+  `SorgentiTermodel/Library/utilities/TermodelLog.cs` come copia non adattata;
+  SHA-256 e confronto byte-per-byte coincidono con l'originale locale;
+- **confronto Desktop:** il logger Desktop usa file globali
+  `TermodelLog.md`/`LogError.md` sotto `GestProg.ProgramPath`, categorie a
+  costanti (solo `PontiAutomatici=true`), presentazione errori WPF e funzioni
+  diagnostiche dipendenti da SVGHelper, xBIM e NetTopologySuite; conserva
+  inoltre rami legacy resi inattivi da ritorni anticipati;
+- **confronto headless:** `InitializeLog()`/`Reset()`, buffer `AsyncLocal`,
+  raccolta `WriteLog`/`LogOperation`/`LogError`, publish transazionale per
+  `projectId` ed endpoint persistente sono requisiti server corretti e restano
+  invariati. `IsEnabled(...)` continua a disabilitare i blocchi condizionati di
+  debug, mentre le chiamate dirette restano raccolte nel buffer diagnostico;
+- **decisione:** il file Desktop acquisito chiude la lacuna della Library ma
+  non deve sostituire l'adattatore headless, perché reintrodurrebbe filesystem
+  globale, UI e dipendenze non portabili e perderebbe l'isolamento per richiesta;
+- aggiornati `TERMODEL-SYNC.md` e `docs/copied-from-termodel.md` con
+  provenienza, hash, categorie, differenze e responsabilità delle due versioni;
+- **verifica statica:** `LegacyCoreAdapters.cs` è invariato rispetto a
+  `origin/main`; frontend, `PROJECT-SUMMARY.md` radice e
+  `definizionedati.json` non sono stati modificati;
+- **compilazione:** non eseguita, perché non è cambiato alcun progetto o
+  sorgente compilato dal Service e il nuovo file è una copia consultiva fuori
+  dalla soluzione;
+- **esecuzione/test HTTP:** non eseguiti; resta valido il run #91 per il sistema
+  headless non modificato;
+- **commit finale:** da registrare dopo il commit di questo incarico.
+
 ### INCARICO 2026-09-23 — correzione validazione attributi numerici FIN
 Stato: ESEGUITO
 
@@ -1039,6 +1100,13 @@ esclusioni e SHA-256 sono registrati in
 `SorgentiTermodel/Library/RIFERIMENTI-DESKTOP-APE-PANNELLI.md`. Tutte le 21
 copie sono risultate byte-per-byte uguali agli originali locali.
 
+Il 23 settembre 2026 è stato inoltre acquisito il sorgente Desktop autorevole
+`utilities/TermodelLog.cs`, fino ad allora assente dalla Library. La copia è
+invariata e ha SHA-256
+`79C4143C34407575C70DD22E8279F1FFE0F078B55CA095549A31A4E6174B4218`.
+Il confronto conferma che l'adattatore headless deve restare distinto per
+isolamento `AsyncLocal`, diagnostica HTTP e persistenza per `projectId`.
+
 Questa integrazione non implementa XML APE o pannelli nel WebService: rende
 soltanto disponibile il riferimento autorevole per una futura estrazione
 headless. Restano da isolare dipendenze WPF/MainWindow, Helix, IFC/Xbim,
@@ -1061,6 +1129,9 @@ Modello.cs
 
 utilities/ErrorManager.cs
 6A7E93D009526D4DA5ED0F800B6155AB0B90C52237C13E76CEC52C4204863ECD
+
+utilities/TermodelLog.cs
+79C4143C34407575C70DD22E8279F1FFE0F078B55CA095549A31A4E6174B4218
 ```
 
 ## 3.1 Strategia permanente di compatibilità Desktop

@@ -17,16 +17,30 @@ restare minima, commentata e confrontabile con il riferimento indicato.
 | `Model/Polig3D.cs` | `SorgentiTermodel/Library/leggidxf/Polig3D.cs` | PENDING — BYTE-IDENTICAL, Git blob `d7d835a8a39febb3c3b26bcb88a8cc5cebb19411` |
 | `Model/Modello.cs` | `SorgentiTermodel/Library/Modello.cs` | PENDING |
 
-Il sorgente autorevole Desktop di `TermodelLog` non è attualmente presente
-in `SorgentiTermodel/Library`: nella Library sono presenti i chiamanti
-(`InitializeLog`, `WriteLog`, `LogOperation`, `LogError`,
-`IsEnabled`) ma non la classe che ne definisce persistenza e categorie.
-Il Service usa quindi temporaneamente
-`Compatibility/LegacyCoreAdapters.cs::TermodelLog`: il lifecycle è
-allineato al Desktop con `InitializeLog()` a inizio elaborazione e raccolta
-per-request tramite `AsyncLocal`; le categorie verbose condizionate da
-`IsEnabled(...)` restano disabilitate finché non sarà disponibile il
-riferimento Desktop, per evitare di inventarne la configurazione.
+Il sorgente autorevole Desktop di `TermodelLog` è ora disponibile come copia
+non adattata in `SorgentiTermodel/Library/utilities/TermodelLog.cs`:
+
+```text
+origine locale: utilities/TermodelLog.cs
+SHA-256: 79C4143C34407575C70DD22E8279F1FFE0F078B55CA095549A31A4E6174B4218
+```
+
+Il Service continua a usare
+`Compatibility/LegacyCoreAdapters.cs::TermodelLog`. Il confronto conferma che
+non è una copia mancante da inserire nel runtime, ma un adattatore necessario:
+il Desktop scrive file globali sotto `GestProg.ProgramPath`, usa WPF per
+mostrare il primo errore e contiene diagnostica grafica dipendente da xBIM/NTS;
+il Service deve invece isolare la richiesta con `AsyncLocal`, restituire la
+diagnostica a `GeneraModello` e pubblicarla transazionalmente nel workspace del
+`projectId`.
+
+Le categorie Desktop autorevoli sono `Sempre`, `colmi`, `spezza`, `Error`,
+`Svg`, `RedrawHelix`, `GeneraModello`, `Performance` e `PontiAutomatici`.
+I flag costanti correnti disabilitano tutte le categorie tranne
+`PontiAutomatici`. Il metodo headless `IsEnabled(...)` resta intenzionalmente
+`false` per i blocchi condizionati di debug; le chiamate dirette a `WriteLog`,
+`LogOperation` e `LogError` continuano invece a essere raccolte, come richiesto
+dal contratto log del Service già verificato.
 
 Il supporto desktop `SorgentiTermodel/Library/utilities/ErrorManager.cs` è
 sostituito nel Service da un sink diagnostico headless in
@@ -40,6 +54,10 @@ Riferimenti integrati il 21 settembre 2026:
 
 - `Modello.cs`: `7B201DA17781CB2682EC9AF25D798B753EC590850031572A4A07E63975B125F0`;
 - `utilities/ErrorManager.cs`: `6A7E93D009526D4DA5ED0F800B6155AB0B90C52237C13E76CEC52C4204863ECD`.
+
+Riferimento integrato il 23 settembre 2026:
+
+- `utilities/TermodelLog.cs`: `79C4143C34407575C70DD22E8279F1FFE0F078B55CA095549A31A4E6174B4218`.
 
 Obiettivo progressivo: eliminare le copie quando il codice cruciale potrà essere
 condiviso realmente fra desktop e Service senza dipendenze WPF, Helix o IFC.

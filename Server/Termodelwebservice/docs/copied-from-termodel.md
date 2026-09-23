@@ -51,10 +51,74 @@ riportabile nel Core condiviso oppure esclusiva del server.
 | Copia ridotta `CopiedFromTermodel/Leggidxf/GeneraModello.cs` | `937C1F2B418AB454FF1D60BBCF0B26D09F87AF15065A4DF6E967084A0710D4CE` |
 | Desktop `Leggidxf/GeneraPianta.cs` | `26715FA5E614504DBD1B3D7DDA08717E161AC7F485AF074368104DA1AB4ED407` |
 | Copia SVG `CopiedFromTermodel/Leggidxf/GeneraPianta.cs` | `2978BB3A1B3EA0006924E0A80161698C247BBF0133D8C3C91FD510A0F51A97EA` |
+| Desktop `utilities/TermodelLog.cs` | `79C4143C34407575C70DD22E8279F1FFE0F078B55CA095549A31A4E6174B4218` |
 
 Gli hash differenti sono intenzionali: la copia conserva l'algoritmo di
 orchestrazione ma sostituisce UI, filesystem DXF e chiusura IFC con gli adattatori
 headless del file unico.
+
+## Confronto TermodelLog Desktop / headless
+
+Il riferimento Desktop completo è stato acquisito, senza adattamenti, in
+`SorgentiTermodel/Library/utilities/TermodelLog.cs`. La copia ha lo stesso
+SHA-256 dell'originale locale `utilities/TermodelLog.cs`:
+
+```text
+79C4143C34407575C70DD22E8279F1FFE0F078B55CA095549A31A4E6174B4218
+```
+
+### Contratto comune conservato
+
+Entrambe le implementazioni espongono il nucleo usato dalle classi migrate:
+
+- `InitializeLog()` inizializza un nuovo ciclo di log;
+- `WriteLog(...)`, `LogOperation(...)` e `LogError(...)` ricevono i messaggi;
+- `LogContesto` aggiunge il contesto del chiamante;
+- `IsEnabled(...)` governa i blocchi diagnostici condizionati;
+- `erroreDaMostrare` conserva il concetto Desktop del primo errore destinato
+  all'interfaccia, pur non essendo usato dal contratto HTTP.
+
+### Comportamento autorevole Desktop
+
+- persistenza globale in `GestProg.ProgramPath/TermodelLog.md` e
+  `LogError.md`;
+- `InitializeLog()` tronca e reinizializza i file e azzera il contatore SVG;
+- categorie: `Sempre`, `colmi`, `spezza`, `Error`, `Svg`, `RedrawHelix`,
+  `GeneraModello`, `Performance`, `PontiAutomatici`;
+- configurazione corrente a costanti: soltanto `PontiAutomatici=true`; tutte
+  le altre categorie sono `false`, compresa `Sempre`, categoria predefinita;
+- `MostraErrore(...)` usa WPF (`Application.Current.MainWindow`, `HelpGPT`,
+  `MessageBox`) per presentare il primo errore;
+- `LogDisegnoSVG`, `LogIfcPoly` e `LogNtsPolygon` dipendono rispettivamente da
+  filesystem/SVGHelper, xBIM e NetTopologySuite;
+- il sorgente contiene rami legacy attualmente irraggiungibili: ritorno
+  immediato in `IsFileLocked`, `CisonoErrori`, `LogError` dopo la cattura del
+  primo errore e `LogDisegnoSVG`. La Library li conserva invariati e non li
+  interpreta come comportamento da replicare ciecamente sul server.
+
+### Adattamento headless preservato
+
+- nessun file globale e nessuna dipendenza WPF/UI;
+- `InitializeLog()` delega a `Reset()` e crea un buffer nuovo per
+  elaborazione;
+- `AsyncLocal<List<string>?>` isola i messaggi della richiesta corrente;
+- `WriteLog`, `LogOperation` e `LogError` producono rispettivamente prefissi
+  `info`, `operation` ed `error` e confluiscono nella diagnostica restituita da
+  `GeneraModello`;
+- `ProjectStore` persiste il risultato valido in
+  `SavedProjects/{projectId}/logs/TermodelLog.md`; l'endpoint
+  `GET /api/projects/{projectId}/logs/termodel` legge quel file senza
+  rieseguire il calcolo;
+- `IsEnabled(...)` resta `false` per i blocchi condizionati di debug. Il
+  parametro categoria delle chiamate dirette non filtra il buffer headless:
+  questa scelta conserva la diagnostica utile al server e non replica i flag
+  compile-time del Desktop;
+- il buffer per-request e il publish transazionale sono requisiti server e non
+  devono essere sostituiti dalla persistenza globale Desktop.
+
+Conclusione: il riferimento acquisito chiude la lacuna documentale, ma non
+giustifica la sostituzione dell'adattatore. L'equivalenza richiesta è di
+contratto per i chiamanti, non di filesystem, UI o configurazione diagnostica.
 
 `GeneraPianta` conserva temporaneamente il nome storico `SalvaDXF` per ridurre
 il delta con il desktop, ma nel percorso Web non legge né scrive DXF: pubblica
