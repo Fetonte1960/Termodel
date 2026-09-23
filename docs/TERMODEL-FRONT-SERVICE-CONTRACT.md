@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.6**  
+Versione documento: **1.7**  
 Aggiornamento: **23 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; configurazione log per Aggiorna Modello implementata**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; artifact TermodelLog per progetto implementato; configurazione log per Aggiorna Modello implementata; archivi progetto pannelli/tubazioni/fluidi implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -113,6 +113,8 @@ Esempi di sezioni già previste nel file unico:
 
 ```text
 manifest.json
+definition/definizionedati.json
+definition/pannelli-tubazioni-definizionedati.json
 geometry/project.svg
 archives/xml/*.xml
 archives/json/*.json
@@ -124,6 +126,62 @@ thermal/input.json
 Il server non deve modificare implicitamente il file unico ricevuto mentre
 calcola. Un eventuale futuro "progetto aggiornato dal server" dovrà essere
 definito come operazione esplicita e separata.
+
+## 2.0.1 Archivi di progetto per completamento pannelli radianti
+
+Dal 23 settembre 2026 il progetto nuovo consolidato include, oltre agli archivi
+storici Termodel, tre archivi tecnici estesi:
+
+```text
+archives/json/TipologiePannelli.json
+archives/json/Tubazioni.json
+archives/json/Fluidi.json
+```
+
+e le corrispondenti sezioni XML:
+
+```text
+archives/xml/TipologiePannelli.xml
+archives/xml/Tubazioni.xml
+archives/xml/Fluidi.xml
+```
+
+I metadata di questi archivi sono separati dalla definizione Desktop storica e
+sono contenuti in:
+
+```text
+definition/pannelli-tubazioni-definizionedati.json
+```
+
+Regole di contratto:
+
+- `definizionedati.json` storico non viene esteso o modificato per questi
+  archivi;
+- `POST /api/projects/new` deve creare i tre archivi già precompilati;
+- il `ProgettoVuoto` consolidato distribuito al frontend deve contenere gli
+  stessi tre archivi;
+- apertura, modifica e ricostruzione del file unico nel frontend devono
+  conservare queste sezioni anche quando non sono ancora esposte da un menu UI;
+- il futuro sottomenu `Tubazioni` resta fuori da questo contratto finché non
+  verrà esplicitamente implementato;
+- `TipologiePannelli` è codificato almeno per `CasaProduttrice` +
+  `Modello`; la riga iniziale `Generico / Default Termodel` replica tutti
+  i parametri attualmente hard-coded nel calcolo pannelli:
+  passo, diametro esterno, spessore, temperature mandata/ritorno/ambiente/
+  esterna di progetto, lunghezza matassa, lunghezza massima circuito,
+  perdita massima circuito e coefficiente di resa;
+- la tipologia pannello contiene inoltre i riferimenti al codice tubazione e
+  al codice fluido;
+- `Tubazioni` contiene inizialmente il tubo radiante PE-Xa 16x2 mm con
+  barriera ossigeno, diametro interno 12 mm, rugosità e formula
+  `Darcy-Weisbach`;
+- `Fluidi` contiene inizialmente acqua (`H2O`) con proprietà tabellate a
+  30, 35 e 40 °C, predisposte per interpolazione;
+- questi tre archivi sono **dati tecnici del progetto** e quindi non devono
+  essere filtrati dal payload inviato a `POST /api/calculations`.
+
+Questa estensione non cambia il marcatore o la versione del contenitore:
+il formato resta `TERMODEL-PROJECT-TEXT-V1`.
 
 ## 2.1 Standard del payload Frontend → Service
 
