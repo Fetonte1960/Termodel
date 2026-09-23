@@ -13,6 +13,13 @@ public sealed class ProjectStore
         WriteIndented = true
     };
 
+    private static readonly HashSet<string> GeneratedFileRoots =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "artifacts",
+            "logs"
+        };
+
     private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _projectLocks = new();
     private readonly string _reservationsDirectory;
 
@@ -356,6 +363,123 @@ public sealed class ProjectStore
         }
     }
 
+    public bool HasProjectWorkspace(Guid projectId) =>
+        Directory.Exists(GetProjectDirectory(projectId));
+
+    public async Task<IReadOnlyList<ProjectGeneratedFileEntry>> ListGeneratedFilesAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        SemaphoreSlim gate = GetGate(projectId);
+        await gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            string projectDirectory = GetProjectDirectory(projectId);
+            if (!Directory.Exists(projectDirectory))
+                return [];
+
+            ProjectState state = await ReadStateUnlockedAsync(
+                projectId,
+                cancellationToken);
+
+            var result = new List<ProjectGeneratedFileEntry>();
+
+            foreach (string rootName in GeneratedFileRoots)
+            {
+                string root = Path.Combine(projectDirectory, rootName);
+                if (!Directory.Exists(root))
+                    continue;
+
+                foreach (string file in Directory.EnumerateFiles(
+                    root,
+                    "*",
+                    SearchOption.AllDirectories))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var info = new FileInfo(file);
+                    string relativePath = Path
+                        .GetRelativePath(projectDirectory, file)
+                        .Replace('\\', '/');
+
+                    GeneratedFileDescriptor descriptor =
+                        DescribeGeneratedFile(relativePath);
+
+                    result.Add(new ProjectGeneratedFileEntry(
+                        relativePath,
+                        info.Name,
+                        descriptor.Category,
+                        descriptor.ContentType,
+                        info.Length,
+                        info.LastWriteTimeUtc,
+                        descriptor.Inline,
+                        state.ArtifactsStale));
+                }
+            }
+
+            return result
+                .OrderBy(
+                    item => item.RelativePath,
+                    StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<ProjectGeneratedFileContent?> ReadGeneratedFileAsync(
+        Guid projectId,
+        string relativePath,
+        CancellationToken cancellationToken)
+    {
+        SemaphoreSlim gate = GetGate(projectId);
+        await gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            string? fullPath = ResolveGeneratedFilePath(
+                projectId,
+                relativePath);
+
+            if (fullPath is null || !File.Exists(fullPath))
+                return null;
+
+            string projectDirectory = GetProjectDirectory(projectId);
+            string normalizedRelativePath = Path
+                .GetRelativePath(projectDirectory, fullPath)
+                .Replace('\\', '/');
+
+            GeneratedFileDescriptor descriptor =
+                DescribeGeneratedFile(normalizedRelativePath);
+            ProjectState state = await ReadStateUnlockedAsync(
+                projectId,
+                cancellationToken);
+
+            byte[] content = await File.ReadAllBytesAsync(
+                fullPath,
+                cancellationToken);
+
+            var info = new FileInfo(fullPath);
+
+            return new ProjectGeneratedFileContent(
+                normalizedRelativePath,
+                info.Name,
+                descriptor.Category,
+                descriptor.ContentType,
+                descriptor.Inline,
+                state.ArtifactsStale,
+                info.LastWriteTimeUtc,
+                content);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public async Task<bool> AreArtifactsStaleAsync(
         Guid projectId,
         CancellationToken cancellationToken)
@@ -619,6 +743,96 @@ public sealed class ProjectStore
         }
     }
 
+    private string? ResolveGeneratedFilePath(
+        Guid projectId,
+        string relativePath)
+    {
+        string normalized = (relativePath ?? string.Empty)
+            .Replace('\\', '/')
+            .Trim('/');
+
+        if (normalized.Length == 0 ||
+            normalized.IndexOf('\0') >= 0 ||
+            normalized.Contains(':', StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        string[] parts = normalized.Split(
+            '/',
+            StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length < 2 ||
+            !GeneratedFileRoots.Contains(parts[0]) ||
+            parts.Any(part =>
+                part is "." or ".." ||
+                part.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
+        {
+            return null;
+        }
+
+        string projectDirectory = Path.GetFullPath(
+            GetProjectDirectory(projectId));
+        string allowedRoot = Path.GetFullPath(
+            Path.Combine(projectDirectory, parts[0]));
+        string fullPath = Path.GetFullPath(
+            Path.Combine(projectDirectory, Path.Combine(parts)));
+
+        string separator = Path.DirectorySeparatorChar.ToString();
+        string allowedPrefix = allowedRoot.TrimEnd(
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar) + separator;
+
+        if (!fullPath.StartsWith(
+                allowedPrefix,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return fullPath;
+    }
+
+    private static GeneratedFileDescriptor DescribeGeneratedFile(
+        string relativePath)
+    {
+        string normalized = relativePath.Replace('\\', '/');
+        string root = normalized.Split('/', 2)[0];
+        string category = root.Equals(
+            "logs",
+            StringComparison.OrdinalIgnoreCase)
+            ? "log"
+            : "artifact";
+
+        string extension = Path
+            .GetExtension(normalized)
+            .ToLowerInvariant();
+
+        (string contentType, bool inline) = extension switch
+        {
+            ".json" => ("application/json; charset=utf-8", true),
+            ".svg" => ("image/svg+xml; charset=utf-8", true),
+            ".dxf" => ("application/dxf", false),
+            ".pdf" => ("application/pdf", true),
+            ".csv" => ("text/csv; charset=utf-8", false),
+            ".txt" => ("text/plain; charset=utf-8", true),
+            ".md" => ("text/markdown; charset=utf-8", true),
+            ".xml" => ("application/xml; charset=utf-8", true),
+            ".html" or ".htm" => ("text/html; charset=utf-8", false),
+            ".png" => ("image/png", true),
+            ".jpg" or ".jpeg" => ("image/jpeg", true),
+            ".webp" => ("image/webp", true),
+            ".gif" => ("image/gif", true),
+            ".zip" => ("application/zip", false),
+            _ => ("application/octet-stream", false)
+        };
+
+        return new GeneratedFileDescriptor(
+            category,
+            contentType,
+            inline);
+    }
+
     private SemaphoreSlim GetGate(Guid projectId) =>
         _projectLocks.GetOrAdd(projectId, static _ => new SemaphoreSlim(1, 1));
 
@@ -662,6 +876,31 @@ public sealed record ProjectCalculationData(
     bool LogEnabled,
     string LogMode,
     IReadOnlyList<string> LogCategories);
+
+public sealed record ProjectGeneratedFileEntry(
+    string RelativePath,
+    string FileName,
+    string Category,
+    string ContentType,
+    long Size,
+    DateTime LastWriteTimeUtc,
+    bool Inline,
+    bool Stale);
+
+public sealed record ProjectGeneratedFileContent(
+    string RelativePath,
+    string FileName,
+    string Category,
+    string ContentType,
+    bool Inline,
+    bool Stale,
+    DateTime LastWriteTimeUtc,
+    byte[] Content);
+
+internal sealed record GeneratedFileDescriptor(
+    string Category,
+    string ContentType,
+    bool Inline);
 
 public sealed record ProjectListEntry(
     Guid ProjectId,
