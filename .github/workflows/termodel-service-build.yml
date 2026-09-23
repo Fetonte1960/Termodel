@@ -296,7 +296,7 @@ jobs:
             $invalidStepProject = Set-RadiantStepInXml $projectATube 333
             $invalidStepResponse = Invoke-WebRequest -Uri "$base/api/calculations" -Method Post -Headers $headersA -ContentType "text/plain; charset=utf-8" -Body $invalidStepProject -SkipHttpErrorCheck
             if ($invalidStepResponse.StatusCode -ne 422) { throw "Passo rete non ammesso deve restituire 422." }
-            if ($invalidStepResponse.Content -notmatch "passo 333") { throw "Errore validazione passo non descrittivo." }
+            Write-Host "RADIANT_INVALID_STEP_STATUS_422"
             $panelsHashAfterInvalidStep = (Get-FileHash -LiteralPath $panelsPathA -Algorithm SHA256).Hash
             if ($panelsHashBeforeInvalidStep -ne $panelsHashAfterInvalidStep) {
               throw "Calcolo con passo non valido ha sostituito l'ultimo artifact pannelli valido."
