@@ -85,7 +85,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-22 — gestione progetti server e apertura esclusiva
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - implementare lato Termodel.WebService le operazioni server per elenco/apertura,
@@ -124,7 +124,82 @@ Criteri di completamento:
   a `Stato: ESEGUITO` soltanto dopo i test reali.
 
 Risultato:
-- non ancora implementato.
+- **implementato** lato `Termodel.WebService` con `ProjectStore`,
+  `ProjectLockManager` e API server-owned per elenco/apertura, Salva, Salva con
+  nome, heartbeat, close, unlock e `POST /api/calculations` protetto dal lock;
+- aggiunti endpoint:
+  `GET /api/projects`,
+  `POST /api/projects/{projectId}/open`,
+  `PUT /api/projects/{projectId}/save`,
+  `PUT /api/projects/{projectId}/save-as`,
+  `POST /api/projects/{projectId}/heartbeat`,
+  `POST /api/projects/{projectId}/close`,
+  `POST /api/projects/{projectId}/unlock`;
+- `POST /api/projects/allocate-id` restituisce anche il lock iniziale;
+- token lock trasmesso tramite header `X-Termodel-Project-Lock`; non entra nel
+  manifest e non sostituisce `projectId`;
+- doppia apertura dello stesso progetto → HTTP 423; progetti differenti possono
+  essere aperti contemporaneamente;
+- lease lock configurabile con `TERMODEL_PROJECT_LOCK_LEASE_SECONDS`, heartbeat,
+  scadenza automatica e recupero dei lock residui dopo crash/riavvio;
+- `Salva` e `Salva con nome` persistono `project.tmdl` nella cartella progetto;
+  `Salva con nome` conserva il projectId e modifica il nome leggibile;
+- salvataggi senza ricalcolo marcano gli artifact come stale tramite
+  `project-state.json`; il GET model3d espone `X-Termodel-Artifact-Stale`;
+- `POST /api/calculations` richiede un lock valido e pubblica di nuovo artifact
+  coerenti/non stale;
+- **compilato/eseguito/testato:** GitHub Actions run #62 sul commit
+  `cee1343106d2c09864d3c45161701c737d809447` completato con successo;
+- verifica nuovamente superata nel run #63 del commit
+  `a6aada8df28347cc3d753be86c3a26bf8146638c` con
+  `PROJECT_LOCK_SMOKE_OK`; build e smoke HTTP completi riusciti;
+- lo smoke verifica realmente doppia apertura 423, apertura simultanea A/B,
+  lock errato su calcolo, Salva, Salva con nome, stale artifact, heartbeat,
+  sblocco con conferma/force, scadenza lease e recovery dopo restart;
+- frontend, Core, Library e `definizionedati.json` non sono stati modificati
+  durante l'incarico server;
+- confronto Desktop non applicabile alla gestione lock/filesystem; il motore
+  algoritmico Core non è stato modificato.
+
+### INCARICO 2026-09-23 — pretest remoto Render e collegamento frontend
+Stato: COMMISSIONATO
+
+Commissionato:
+- registrare il nuovo Termodel.WebService pubblico di pretest su
+  `https://termodel.onrender.com`, repository `Fetonte1960/Termodel`, branch
+  `main`, deploy Docker/Linux/.NET 8;
+- considerare Render Free esclusivamente ambiente di collaudo: filesystem
+  effimero, `SavedProjects` non definitivo e cold-start dopo inattività;
+- mantenere `projectId` come unico identificatore persistente dominante e non
+  reintrodurre `calculationId`;
+- adeguare il frontend pubblico `https://www.termodel.it` a usare come base URL
+  primaria il Service HTTPS Render, mantenendo la possibilità di override per
+  sviluppo locale;
+- adeguare `Aggiorna Modello` al contratto corrente projectId +
+  `X-Termodel-Project-Lock`, rimuovendo le aspettative frontend sul vecchio
+  `calculationId`;
+- collegare almeno creazione/allocazione projectId, elenco/apertura progetto,
+  Salva, Salva con nome, heartbeat/close lock e recupero model3d alle API
+  server già implementate;
+- PC e Web mobile devono usare lo stesso endpoint pubblico; non introdurre
+  dipendenze da un PC locale per il pretest remoto;
+- preservare CORS per `https://www.termodel.it`, compatibilità Linux/container
+  e porta dinamica `PORT`; non introdurre percorsi Windows;
+- non trasformare la persistenza effimera Render Free in una nuova architettura
+  di storage.
+
+Criteri di completamento:
+- frontend su main usa `https://termodel.onrender.com` come default Service;
+- codice frontend non usa più `calculationId` nel workflow corrente;
+- chiamate mutanti inviano il lock token corretto;
+- apertura e salvataggio progetto passano dalle API Service;
+- heartbeat e rilascio lock sono gestiti dal frontend;
+- build/smoke Service continuano a riuscire;
+- aggiornare contratto e Summary con distinzione fra implementato e verificato
+  realmente sul frontend pubblico/mobile.
+
+Risultato:
+- non ancora completato.
 ### INCARICO 2026-09-22 — projectId unico, persistenza corrente e rimozione calculationId
 Stato: ESEGUITO
 
