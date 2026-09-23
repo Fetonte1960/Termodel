@@ -353,14 +353,19 @@ POST /api/projects/allocate-id
 La richiesta assegna e riserva soltanto un nuovo identificatore. Non crea un
 progetto Termodel e non modifica implicitamente un file progetto.
 
-Risposta:
+Risposta corrente:
 
 ```json
 {
   "contractVersion": "TERMODEL-FRONT-SERVICE-V1",
-  "projectId": "7b30f4f4-..."
+  "projectId": "7b30f4f4-...",
+  "projectLockToken": "token-opaco-temporaneo",
+  "leaseExpiresAtUtc": "..."
 }
 ```
+
+Nel workflow implementato l'allocazione apre anche la lease iniziale del nuovo
+progetto, così il client può salvarlo o calcolarlo senza una seconda apertura.
 
 Il Service deve verificare/riservare l'unicità rispetto ai projectId già
 presenti e deve gestire correttamente richieste concorrenti.
@@ -533,9 +538,12 @@ gestione catalogo/cartelle server
 Questa limitazione riguarda la persistenza dei progetti e non implica che il
 motore locale o le altre funzioni mobile debbano usare il WebService.
 
-I nomi definitivi delle route HTTP per Apri/Salva/Salva con nome verranno
-fissati al momento dell'implementazione; il principio di responsabilità
-Service-vs-frontend definito qui è già vincolante.
+Le route implementate sono `GET /api/projects`,
+`POST /api/projects/{projectId}/open`,
+`PUT /api/projects/{projectId}/save` e
+`PUT /api/projects/{projectId}/save-as?projectName=...`.
+Heartbeat, chiusura e sblocco usano rispettivamente `/heartbeat`, `/close` e
+`/unlock` sullo stesso projectId.
 
 ---
 
