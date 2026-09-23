@@ -56,6 +56,10 @@ public sealed class GeneraModello
         Database.DB.Use(utiDb);
         TermodelLog.InitializeLog(logConfiguration);
         GeneraPianta.IniziaGenerazione();
+        // Modificato da Codex per realizzare: inizializzare una sola volta
+        // per elaborazione il documento pannelli headless, come nel Modello
+        // Desktop, così LeggiDxf può raccogliere locali e tubi per l'esecutivo.
+        Termodel.Impianti.Pannelli.IoPannelli.InitClass();
 
         IReadOnlyList<SvgDxfFloor> svgFloors = SvgDxfReader.ParseProjectSvg(
             project.GetRequiredSection("geometry/project.svg"));
