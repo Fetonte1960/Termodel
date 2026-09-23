@@ -17,9 +17,8 @@ const ARCHIVE_ORDER = [
   'PontiAutomatici',
   'PontiAutomaticiFinestre',
   'Zone',
-  'TipologiePannelli',
-  'Tubazioni',
-  'Fluidi'
+  'Reti',
+  'TipologiePannelli'
 ];
 
 const PROTECTED_ROW_ARCHIVES = new Set(['Finestre', 'Pareti', 'Ponti', 'Zone']);
@@ -208,6 +207,7 @@ export async function loadTermodelProjectText(text) {
   // tecnici portati dal progetto stesso, senza modificare definizionedati.json.
   archiveState.schema = deepClone(archiveState.baseSchema ?? archiveState.schema ?? {});
   const extendedSchemaText =
+    parsed.sections.get('definition/reti-pannelli-definizionedati.json') ??
     parsed.sections.get('definition/pannelli-tubazioni-definizionedati.json');
   if (extendedSchemaText) {
     try {
@@ -218,7 +218,7 @@ export async function loadTermodelProjectText(text) {
       Object.assign(archiveState.schema, extendedSchema);
     } catch (error) {
       throw new Error(
-        'definition/pannelli-tubazioni-definizionedati.json non valido: ' +
+        'Definizione estesa Reti/Pannelli non valida: ' +
         error.message
       );
     }
