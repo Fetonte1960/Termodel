@@ -77,7 +77,12 @@ public sealed record UserFeedbackSubmission(
 
         string message = (request.Message ?? string.Empty).Trim();
         string category = (request.Category ?? "suggestion").Trim().ToLowerInvariant();
-        string title = (request.Title ?? string.Empty).Trim();
+        string title = string.Join(
+            " ",
+            (request.Title ?? string.Empty)
+                .Split(
+                    ['\r', '\n'],
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         string page = SanitizePage(request.Page);
         string appVersion = (request.AppVersion ?? string.Empty).Trim();
 
@@ -287,7 +292,11 @@ public sealed class GitHubFeedbackPublisher(
 
             return new GitHubIssueResult(issueNumber, issueUrl);
         }
-        catch (Exception exception) when (exception is JsonException)
+        catch (Exception exception) when (
+            exception is JsonException or
+            KeyNotFoundException or
+            InvalidOperationException or
+            FormatException)
         {
             logger.LogWarning(
                 exception,
@@ -304,7 +313,7 @@ public sealed class GitHubFeedbackPublisher(
         {
             "### Segnalazione utente",
             string.Empty,
-            feedback.Message,
+            DisarmMentions(feedback.Message),
             string.Empty,
             "---",
             string.Empty,
@@ -336,6 +345,9 @@ public sealed class GitHubFeedbackPublisher(
             "other" => "Other",
             _ => "Suggestion"
         };
+
+    private static string DisarmMentions(string value) =>
+        value.Replace("@", "@\u200B", StringComparison.Ordinal);
 
     private static string EscapeInlineCode(string value) =>
         value.Replace("`", "'", StringComparison.Ordinal);
