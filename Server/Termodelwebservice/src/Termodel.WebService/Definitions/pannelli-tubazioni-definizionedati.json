@@ -1,0 +1,228 @@
+{
+  "TipologiePannelli": {
+    "Codice": {
+      "LunghezzaMassima": 80,
+      "Descr": "Codice",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "CasaProduttrice": {
+      "LunghezzaMassima": 120,
+      "Descr": "Casa produttrice",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Modello": {
+      "LunghezzaMassima": 160,
+      "Descr": "Modello",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "PassoTubiM": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 3,
+      "Descr": "Passo tubi (m)",
+      "Ini": "0.30"
+    },
+    "DiametroEsternoTuboMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Diametro esterno tubo (mm)",
+      "Ini": "16"
+    },
+    "SpessoreTuboMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Spessore tubo (mm)",
+      "Ini": "2"
+    },
+    "TemperaturaMandataC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura mandata (°C)",
+      "Ini": "35"
+    },
+    "TemperaturaRitornoC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura ritorno (°C)",
+      "Ini": "30"
+    },
+    "TemperaturaAmbienteC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura ambiente (°C)",
+      "Ini": "20"
+    },
+    "TemperaturaEsternaProgettoC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura esterna progetto (°C)",
+      "Ini": "5"
+    },
+    "LunghezzaMatassaM": {
+      "NumeroCifre": 10,
+      "NumeroDecimali": 2,
+      "Descr": "Lunghezza matassa (m)",
+      "Ini": "600"
+    },
+    "LunghezzaMassimaCircuitoM": {
+      "NumeroCifre": 10,
+      "NumeroDecimali": 2,
+      "Descr": "Lunghezza massima circuito (m)",
+      "Ini": "100"
+    },
+    "PerditaCaricoMassimaCircuitoPa": {
+      "NumeroCifre": 12,
+      "NumeroDecimali": 0,
+      "Descr": "Perdita carico massima circuito (Pa)",
+      "Ini": "25000"
+    },
+    "CoefficienteResaWm2K": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 3,
+      "Descr": "Coefficiente resa (W/m²K)",
+      "Ini": "5"
+    },
+    "CodiceTubazione": {
+      "LunghezzaMassima": 80,
+      "Descr": "Tubazione",
+      "Combo": [
+        "auto_combo",
+        "Tubazioni",
+        "Codice",
+        "PEXA-O2-16X2"
+      ]
+    },
+    "CodiceFluido": {
+      "LunghezzaMassima": 40,
+      "Descr": "Fluido",
+      "Ini": "H2O"
+    }
+  },
+  "Tubazioni": {
+    "Codice": {
+      "LunghezzaMassima": 80,
+      "Descr": "Codice",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Descrizione": {
+      "LunghezzaMassima": 250,
+      "Descr": "Descrizione",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Materiale": {
+      "LunghezzaMassima": 80,
+      "Descr": "Materiale"
+    },
+    "Applicazione": {
+      "LunghezzaMassima": 120,
+      "Descr": "Applicazione"
+    },
+    "DiametroEsternoMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Diametro esterno (mm)"
+    },
+    "SpessoreMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Spessore (mm)"
+    },
+    "DiametroInternoMm": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Diametro interno (mm)"
+    },
+    "RugositaAssolutaMm": {
+      "NumeroCifre": 12,
+      "NumeroDecimali": 6,
+      "Descr": "Rugosità assoluta (mm)"
+    },
+    "FormulaPerditaDefault": {
+      "LunghezzaMassima": 80,
+      "Descr": "Formula perdita",
+      "Ini": "Darcy-Weisbach"
+    },
+    "BarrieraOssigeno": {
+      "LunghezzaMassima": 10,
+      "Descr": "Barriera ossigeno",
+      "Combo": [
+        "SI",
+        "NO"
+      ]
+    },
+    "Attivo": {
+      "LunghezzaMassima": 10,
+      "Descr": "Attivo",
+      "Combo": [
+        "SI",
+        "NO"
+      ]
+    }
+  },
+  "Fluidi": {
+    "Codice": {
+      "LunghezzaMassima": 40,
+      "Descr": "Codice fluido",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "Descrizione": {
+      "LunghezzaMassima": 120,
+      "Descr": "Descrizione",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "TemperaturaC": {
+      "NumeroCifre": 8,
+      "NumeroDecimali": 2,
+      "Descr": "Temperatura (°C)",
+      "Grid": [
+        "Archivio"
+      ]
+    },
+    "DensitaKgM3": {
+      "NumeroCifre": 10,
+      "NumeroDecimali": 3,
+      "Descr": "Densità (kg/m³)"
+    },
+    "ViscositaDinamicaPaS": {
+      "NumeroCifre": 12,
+      "NumeroDecimali": 9,
+      "Descr": "Viscosità dinamica (Pa·s)"
+    },
+    "CaloreSpecificoJKgK": {
+      "NumeroCifre": 10,
+      "NumeroDecimali": 1,
+      "Descr": "Calore specifico (J/kgK)"
+    },
+    "Tipo": {
+      "LunghezzaMassima": 80,
+      "Descr": "Tipo",
+      "Ini": "LiquidoNewtoniano"
+    },
+    "ModelloProprieta": {
+      "LunghezzaMassima": 80,
+      "Descr": "Modello proprietà",
+      "Ini": "TabellaTemperatura"
+    },
+    "Attivo": {
+      "LunghezzaMassima": 10,
+      "Descr": "Attivo",
+      "Combo": [
+        "SI",
+        "NO"
+      ]
+    }
+  }
+}
