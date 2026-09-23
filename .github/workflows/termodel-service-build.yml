@@ -54,9 +54,17 @@ jobs:
           }
 
           function Stop-ServiceProcess($p) {
-            if ($p -and -not $p.HasExited) {
-              Stop-Process -Id $p.Id -Force
-              $p.WaitForExit(5000) | Out-Null
+            if (-not $p) { return }
+            if (-not $p.HasExited) {
+              if ($IsWindows) {
+                # dotnet run può avere un processo figlio che mantiene aperti
+                # i file di lock anche dopo la terminazione del solo launcher.
+                & taskkill.exe /PID $p.Id /T /F 2>$null | Out-Null
+              }
+              else {
+                Stop-Process -Id $p.Id -Force
+              }
+              try { $p.WaitForExit(5000) | Out-Null } catch {}
             }
           }
 
