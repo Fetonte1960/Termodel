@@ -236,7 +236,12 @@ public static class RadiantExecutiveGenerator
 
         string layer = $"{floorName}_Edificio_Output";
 
-        foreach (netDxf.Entities.Line line in floor.Document.Lines)
+        foreach (netDxf.Entities.Line line in floor.Document.Lines
+            .Where(line =>
+                line.Layer is not null &&
+                line.Layer.Name.Equals(
+                    floor.Layer,
+                    StringComparison.OrdinalIgnoreCase)))
         {
             drawing.Primitives.Add(
                 RadiantExecutivePrimitive.Line(
