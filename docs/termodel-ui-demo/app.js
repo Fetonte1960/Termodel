@@ -54,7 +54,6 @@ const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
 const APP_VERSION = '0.98';
-const APP_VERSION_SHORT = APP_VERSION.split('.').pop().padStart(2, '0').slice(-2);
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -763,36 +762,6 @@ function installAndroidExploreStyles() {
     }
     .android-explore-main {
       padding: 0 12px;
-    }
-    .android-explore-help {
-      min-width: 48px;
-      width: auto;
-      padding: 0 8px 0 6px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      font-size: 14px;
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-    }
-    .android-myhome-icon {
-      width: 25px;
-      height: 25px;
-      flex: 0 0 25px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 7px;
-      background: linear-gradient(135deg, #12bff4 0%, #6b63ff 52%, #f34ca7 100%);
-      color: #fff;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.42),
-        0 1px 4px rgba(40,45,90,.34);
-      font-size: 19px;
-      font-weight: 800;
-      line-height: 1;
-      text-shadow: 0 1px 2px rgba(0,0,0,.28);
     }
     .android-project-plane {
       height: 38px;
@@ -1886,7 +1855,7 @@ function setRenderOriginBadge(origin, projectId = '') {
       : 'Artifact model3d elaborato da Termodel Service';
   } else {
     renderOriginBadge.textContent = 'ANTEPRIMA LOCALE · nessuna elaborazione server';
-    renderOriginBadge.title = 'Rendering prodotto dal browser o dal JSON demo, senza elaborazione Termodel Service.';
+    renderOriginBadge.title = 'Rendering prodotto localmente dal browser, senza elaborazione Termodel Service.';
   }
 }
 
@@ -2759,8 +2728,8 @@ function openProjectStartDialog(context = {}) {
   if (projectStartMessage) {
     projectStartMessage.textContent =
       projectStartContext.target === 'archive'
-        ? `Il modello iniziale è una demo. Per aprire l'archivio "${projectStartContext.archiveName}" crea o importa prima il tuo progetto Termodel.`
-        : 'Il modello iniziale è una demo. Scegli come vuoi iniziare il tuo progetto Termodel.';
+        ? `Il modello iniziale è un esempio. Per aprire l'archivio "${projectStartContext.archiveName}" crea o importa prima il tuo progetto Termodel.`
+        : 'Il modello iniziale è un esempio. Scegli come vuoi iniziare il tuo progetto Termodel.';
   }
 
   if (!projectStartModal) return;
