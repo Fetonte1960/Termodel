@@ -182,6 +182,14 @@ namespace Termodel.utilities
             CurrentMessages.Value = [];
             erroreDaMostrare = null;
         }
+
+        // Equivalente headless dell'InitializeLog Desktop: ogni elaborazione
+        // parte con un log nuovo e isolato nella richiesta corrente.
+        public static void InitializeLog() => Reset();
+
+        // Le categorie di debug del logger Desktop non sono ancora presenti
+        // nella Library come implementazione autorevole; restano quindi
+        // disabilitate invece di inventare una configurazione server.
         public static bool IsEnabled(LogCategory category) => false;
         public static void WriteLog(string message, LogCategory category = LogCategory.generale) => Add("info", message);
         public static void LogOperation(string message) => Add("operation", message);
