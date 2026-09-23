@@ -1,0 +1,62 @@
+{
+  "format": "TERMODEL-SERVICE-SNAPSHOT-V1",
+  "snapshotId": "20260923T162958425Z_b38f622b",
+  "projectId": "b38f622b-6411-48ea-ba57-0b07862f4046",
+  "generatedAtUtc": "2026-09-23T16:29:58.4259005+00:00",
+  "serviceCommit": "f3b9605e823975b59f1404f43661e2b934794fce",
+  "artifactsStale": false,
+  "fileCount": 5,
+  "totalBytes": 37815,
+  "files": [
+    {
+      "path": "artifacts/model3d.json",
+      "fileName": "model3d.json",
+      "category": "artifact",
+      "contentType": "application/json; charset=utf-8",
+      "size": 36629,
+      "lastWriteTimeUtc": "2026-09-23T16:21:26.1214632Z",
+      "stale": false,
+      "sha256": "d184d99029265407d873930696625558e4f5daabfe9932cb0363d8406ad8952a"
+    },
+    {
+      "path": "artifacts/pannelli.json",
+      "fileName": "pannelli.json",
+      "category": "artifact",
+      "contentType": "application/json; charset=utf-8",
+      "size": 899,
+      "lastWriteTimeUtc": "2026-09-23T16:21:26.1214632Z",
+      "stale": false,
+      "sha256": "24a0b2d7e45eb324165984f78af578d36cd29d2b368156bbbb6913630ef18761"
+    },
+    {
+      "path": "logs/calculation.log",
+      "fileName": "calculation.log",
+      "category": "log",
+      "contentType": "application/octet-stream",
+      "size": 287,
+      "lastWriteTimeUtc": "2026-09-23T16:21:26.1214632Z",
+      "stale": false,
+      "sha256": "55b358f48a97f8f4db7ee33adee4426c29b58ffa9050713bb2236c34d29f090d"
+    },
+    {
+      "path": "logs/diagnostics.txt",
+      "fileName": "diagnostics.txt",
+      "category": "log",
+      "contentType": "text/plain; charset=utf-8",
+      "size": 0,
+      "lastWriteTimeUtc": "2026-09-23T16:21:26.1214632Z",
+      "stale": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/TermodelLog.md",
+      "fileName": "TermodelLog.md",
+      "category": "log",
+      "contentType": "text/markdown; charset=utf-8",
+      "size": 0,
+      "lastWriteTimeUtc": "2026-09-23T16:21:26.1214632Z",
+      "stale": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}
