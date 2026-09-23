@@ -32,3 +32,5 @@ rappresentazioni XML e JSON dello stesso archivio.
 Rigenerare il file soltanto quando cambia intenzionalmente il progetto base o
 la definizione dati autorizzata. Dopo ogni rigenerazione verificare marcatori,
 sezioni, impronte e coerenza fra archivi XML e JSON.
+
+Aggiornamento 23 settembre 2026: il progetto vuoto consolidato contiene anche `TipologiePannelli`, `Tubazioni` e `Fluidi`, con metadata separati in `definition/pannelli-tubazioni-definizionedati.json`. Queste sezioni preparano il completamento del calcolo pannelli radianti e devono essere conservate dal frontend anche se il relativo menu di gestione è ancora sospeso.
