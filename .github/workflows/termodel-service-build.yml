@@ -252,6 +252,16 @@ jobs:
             if ($captured.payload.body -notmatch "confrontare due varianti") { throw "Corpo GitHub Issue non contiene il feedback." }
             if ($captured.payload.body -match "token-da-non-inviare") { throw "La query string della pagina non deve arrivare su GitHub." }
 
+            # La prima richiesta valida ha consumato 1 slot; altre 4 devono riuscire.
+            1..4 | ForEach-Object {
+              $extra = Invoke-WebRequest -Uri "$base/api/feedback" -Method Post -Headers @{ Origin = "https://www.termodel.it" } -ContentType "application/json" -Body $validBody
+              if ($extra.StatusCode -ne 201) { throw "Feedback entro rate-limit deve restituire 201." }
+            }
+
+            $rateLimited = Invoke-WebRequest -Uri "$base/api/feedback" -Method Post -Headers @{ Origin = "https://www.termodel.it" } -ContentType "application/json" -Body $validBody -SkipHttpErrorCheck
+            if ($rateLimited.StatusCode -ne 429) { throw "Sesto feedback in 10 minuti: atteso 429, ricevuto $($rateLimited.StatusCode)." }
+            if (-not $rateLimited.Headers["Retry-After"]) { throw "Risposta 429 priva di Retry-After." }
+
             Stop-ChildProcess $service
             $service = $null
 
