@@ -258,6 +258,31 @@ public sealed class ProjectStore
         }
     }
 
+    public async Task<byte[]?> ReadTermodelLogAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        SemaphoreSlim gate = GetGate(projectId);
+        await gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            string logPath = Path.Combine(
+                GetProjectDirectory(projectId),
+                "logs",
+                "TermodelLog.md");
+
+            if (!File.Exists(logPath))
+                return null;
+
+            return await File.ReadAllBytesAsync(logPath, cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public async Task<bool> AreArtifactsStaleAsync(
         Guid projectId,
         CancellationToken cancellationToken)
@@ -317,9 +342,18 @@ public sealed class ProjectStore
                 data.Model3DJson,
                 cancellationToken);
 
+            string termodelLog =
+                string.Join(Environment.NewLine, data.Diagnostics);
+
             await File.WriteAllTextAsync(
                 Path.Combine(logsDirectory, "diagnostics.txt"),
-                string.Join(Environment.NewLine, data.Diagnostics),
+                termodelLog,
+                Utf8WithoutBom,
+                cancellationToken);
+
+            await File.WriteAllTextAsync(
+                Path.Combine(logsDirectory, "TermodelLog.md"),
+                termodelLog,
                 Utf8WithoutBom,
                 cancellationToken);
 
