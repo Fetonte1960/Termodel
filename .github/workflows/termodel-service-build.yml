@@ -179,3 +179,93 @@ jobs:
               Remove-Item $env:TERMODEL_SAVED_PROJECTS_DIR -Recurse -Force
             }
           }
+
+
+      - name: Smoke test GitHub feedback bridge
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $base = "http://127.0.0.1:5081"
+          $capture = Join-Path $env:RUNNER_TEMP "termodel-feedback-capture.json"
+          $env:ASPNETCORE_URLS = $base
+          $env:TERMODEL_FEEDBACK_GITHUB_TOKEN = "test-token"
+          $env:TERMODEL_FEEDBACK_REPOSITORY = "Fetonte1960/Termodel"
+          $env:TERMODEL_FEEDBACK_ALLOWED_ORIGIN = "https://www.termodel.it"
+          $env:TERMODEL_FEEDBACK_GITHUB_API_BASE_URL = "http://127.0.0.1:5099"
+
+          function Start-ServiceProcess {
+            $p = Start-Process dotnet -ArgumentList @("run","--project","src/Termodel.WebService/Termodel.WebService.csproj","--configuration","Release","--no-build","--no-launch-profile") -PassThru
+            for ($attempt = 0; $attempt -lt 40; $attempt++) {
+              try {
+                if ((Invoke-RestMethod -Uri "$base/health" -Method Get).status -eq "ok") { return $p }
+              } catch {
+                Start-Sleep -Milliseconds 500
+              }
+            }
+            if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+            throw "Termodel.WebService feedback smoke non ha risposto a /health."
+          }
+
+          function Stop-ChildProcess($p) {
+            if ($p -and -not $p.HasExited) {
+              Stop-Process -Id $p.Id -Force
+              $p.WaitForExit(5000) | Out-Null
+            }
+          }
+
+          $stub = $null
+          $service = $null
+
+          try {
+            $stub = Start-Process python -ArgumentList @("tests/github_feedback_stub.py",$capture) -PassThru
+            Start-Sleep -Milliseconds 500
+            $service = Start-ServiceProcess
+
+            $validBody = @{
+              message = "Vorrei un comando per confrontare due varianti del progetto."
+              category = "suggestion"
+              title = "Confronto varianti"
+              page = "/termodel-ui-demo/?token-da-non-inviare=123"
+              appVersion = "0.98"
+            } | ConvertTo-Json
+
+            $badOrigin = Invoke-WebRequest -Uri "$base/api/feedback" -Method Post -Headers @{ Origin = "https://evil.example" } -ContentType "application/json" -Body $validBody -SkipHttpErrorCheck
+            if ($badOrigin.StatusCode -ne 403) { throw "Origine feedback non autorizzata: atteso 403, ricevuto $($badOrigin.StatusCode)." }
+
+            $invalidBody = @{ message = "x"; category = "invalid" } | ConvertTo-Json
+            $invalid = Invoke-WebRequest -Uri "$base/api/feedback" -Method Post -Headers @{ Origin = "https://www.termodel.it" } -ContentType "application/json" -Body $invalidBody -SkipHttpErrorCheck
+            if ($invalid.StatusCode -ne 400) { throw "Payload feedback non valido: atteso 400, ricevuto $($invalid.StatusCode)." }
+
+            $createdResponse = Invoke-WebRequest -Uri "$base/api/feedback" -Method Post -Headers @{ Origin = "https://www.termodel.it" } -ContentType "application/json" -Body $validBody
+            if ($createdResponse.StatusCode -ne 201) { throw "Creazione feedback: atteso 201, ricevuto $($createdResponse.StatusCode)." }
+
+            $created = $createdResponse.Content | ConvertFrom-Json
+            if ($created.status -ne "created" -or $created.issueNumber -ne 4242) { throw "Risposta feedback creata non valida." }
+
+            if (-not (Test-Path -LiteralPath $capture)) { throw "Stub GitHub non ha ricevuto la richiesta issue." }
+            $captured = Get-Content -LiteralPath $capture -Raw | ConvertFrom-Json
+
+            if ($captured.path -ne "/repos/Fetonte1960/Termodel/issues") { throw "Path GitHub Issues inatteso: $($captured.path)" }
+            if ($captured.authorization -ne "Bearer test-token") { throw "Authorization GitHub non corretta." }
+            if ($captured.userAgent -notmatch "Termodel-WebService") { throw "User-Agent GitHub non corretto." }
+            if ($captured.payload.title -notmatch "^\[Termodel Feedback/Suggestion\]") { throw "Titolo GitHub Issue inatteso." }
+            if ($captured.payload.body -notmatch "confrontare due varianti") { throw "Corpo GitHub Issue non contiene il feedback." }
+            if ($captured.payload.body -match "token-da-non-inviare") { throw "La query string della pagina non deve arrivare su GitHub." }
+
+            Stop-ChildProcess $service
+            $service = $null
+
+            Remove-Item Env:TERMODEL_FEEDBACK_GITHUB_TOKEN -ErrorAction SilentlyContinue
+            $service = Start-ServiceProcess
+
+            $notConfigured = Invoke-WebRequest -Uri "$base/api/feedback" -Method Post -Headers @{ Origin = "https://www.termodel.it" } -ContentType "application/json" -Body $validBody -SkipHttpErrorCheck
+            if ($notConfigured.StatusCode -ne 503) { throw "Feedback senza token: atteso 503, ricevuto $($notConfigured.StatusCode)." }
+
+            Write-Host "GITHUB_FEEDBACK_SMOKE_OK"
+            Write-Host "issueNumber=$($created.issueNumber)"
+          }
+          finally {
+            Stop-ChildProcess $service
+            Stop-ChildProcess $stub
+            if (Test-Path -LiteralPath $capture) { Remove-Item -LiteralPath $capture -Force }
+          }
