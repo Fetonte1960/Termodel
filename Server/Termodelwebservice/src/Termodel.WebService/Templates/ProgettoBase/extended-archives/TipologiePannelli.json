@@ -1,0 +1,20 @@
+[
+  {
+    "Codice": "GEN-DEFAULT",
+    "CasaProduttrice": "Generico",
+    "Modello": "Default Termodel",
+    "PassoTubiM": 0.3,
+    "DiametroEsternoTuboMm": 16,
+    "SpessoreTuboMm": 2,
+    "TemperaturaMandataC": 35,
+    "TemperaturaRitornoC": 30,
+    "TemperaturaAmbienteC": 20,
+    "TemperaturaEsternaProgettoC": 5,
+    "LunghezzaMatassaM": 600,
+    "LunghezzaMassimaCircuitoM": 100,
+    "PerditaCaricoMassimaCircuitoPa": 25000,
+    "CoefficienteResaWm2K": 5,
+    "CodiceTubazione": "PEXA-O2-16X2",
+    "CodiceFluido": "H2O"
+  }
+]
