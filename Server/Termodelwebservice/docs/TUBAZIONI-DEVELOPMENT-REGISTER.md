@@ -1220,8 +1220,10 @@ Primo fluido precompilato: acqua `H2O`, con punti proprietà a 30, 35 e
 `TERMODEL-PROJECT-TEXT-V1` sia come JSON sia come XML. Il progetto vuoto
 statico del frontend è stato aggiornato con le medesime sezioni.
 
-Il vecchio `definizionedati.json` non è stato modificato. Il futuro menu
-`Tubazioni` resta sospeso.
+Il vecchio `definizionedati.json` non è stato modificato. Le tre voci archivio
+frontend (`Tipologie pannelli`, `Tubazioni`, `Fluidi`) sono ora implementate
+nel menu `Modifica`; il futuro sottomenu generalista `Tubazioni`, destinato a
+funzioni di calcolo dedicate, resta sospeso.
 
 Stato della milestone:
 
@@ -1230,7 +1232,8 @@ metadata archivi:               IMPLEMENTATO
 dati iniziali archivi:          IMPLEMENTATO
 integrazione progetto nuovo:    IMPLEMENTATA
 ProgettoVuoto frontend:         IMPLEMENTATO
-menu Tubazioni:                 SOSPESO
+voci archivio frontend:         IMPLEMENTATE
+sottomenu generalista Tubazioni: SOSPESO
 lettura archivi dal solver:     DA FARE
 perdita Darcy circuito:         DA FARE
 ```
