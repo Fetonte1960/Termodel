@@ -53,7 +53,10 @@ function wallClassFromId(id) {
 
 function readLinee(calpestabile) {
   return Array.from(calpestabile.children)
-    .filter(el => el.localName === 'line')
+    // GeneraPianta ricostruisce soltanto l'edificio: le linee tecniche di
+    // rete (Tubo, layer *_tubipannelli) restano nel file unico ma non devono
+    // partecipare a noding/polygonizzazione dei locali.
+    .filter(el => el.localName === 'line' && /^[EW]/i.test(el.id || ''))
     .map((el, index) => {
       const id = el.id || `L${String(index + 1).padStart(3, '0')}`;
       const wallClass = wallClassFromId(id);
