@@ -7204,7 +7204,9 @@ function cadNextLineId(prefix) {
 
   Array.from(cadWorkingDoc?.querySelectorAll?.('line[id]') || []).forEach(line => {
     used.add(line.id);
-    const match = new RegExp('^' + p + '(\\d+)
+    const match = new RegExp('^' + p + '(\\d+)$', 'i').exec(line.id || '');
+    if (match) max = Math.max(max, Number(match[1]) || 0);
+  });
 
   let n = max + 1;
   let id = p + String(n).padStart(3, '0');
@@ -7214,7 +7216,6 @@ function cadNextLineId(prefix) {
   }
   return id;
 }
-
 function cadHideContextMenu() {
   if (cadContextMenu) cadContextMenu.hidden = true;
 }
