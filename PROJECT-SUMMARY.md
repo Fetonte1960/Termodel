@@ -1234,6 +1234,25 @@ Sintassi JavaScript di `app.js` e `archivio-web.js` verificata. La v0.79
 non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
 
+### INCARICO 2026-09-23 — File → Apri esempio da catalogo consolidato
+Stato: **COMMISSIONATO**
+
+Commissionato:
+- aggiungere nel menu **File** la voce `Apri esempio...`;
+- usare esclusivamente il catalogo consolidato `docs/termodel-ui-demo/examples/catalog.json`;
+- presentare all'utente l'elenco degli esempi disponibili e consentirne la selezione;
+- caricare l'esempio scelto riusando `loadProjectBrowserExample(...)`, senza creare un secondo catalogo o un secondo loader;
+- preservare il workflow Service/projectId e, se necessario, rilasciare il lock del progetto corrente prima di sostituirlo con un esempio locale;
+- limitare l'intervento al frontend e alla documentazione di continuità; nessuna modifica a WebService/Core/Library/definizionedati.json.
+
+Criteri di completamento:
+- voce File presente e collegata;
+- elenco derivato dal catalogo corrente;
+- selezione valida carica l'esempio;
+- sintassi JavaScript verificata;
+- cache-busting/versione frontend aggiornati;
+- Summary aggiornato con esito reale e commit.
+
 ### Termodel Web v0.96 — readiness Render health/capabilities
 
 Stato: **IMPLEMENTATO SU main; verifica statica completata; collaudo manuale remoto/mobile da eseguire** — 23 settembre 2026.
