@@ -362,7 +362,10 @@ public sealed class ProjectStore
                 $"completedAtUtc={completedAtUtc:O}{Environment.NewLine}" +
                 $"status=completed{Environment.NewLine}" +
                 $"primitiveCount={data.PrimitiveCount}{Environment.NewLine}" +
-                $"diagnosticCount={data.Diagnostics.Count}{Environment.NewLine}";
+                $"diagnosticCount={data.Diagnostics.Count}{Environment.NewLine}" +
+                $"logEnabled={data.LogEnabled.ToString().ToLowerInvariant()}{Environment.NewLine}" +
+                $"logMode={data.LogMode}{Environment.NewLine}" +
+                $"logCategories={string.Join(',', data.LogCategories)}{Environment.NewLine}";
 
             await File.WriteAllTextAsync(
                 Path.Combine(logsDirectory, "calculation.log"),
@@ -549,7 +552,10 @@ public sealed class ProjectStore
 public sealed record ProjectCalculationData(
     byte[] Model3DJson,
     IReadOnlyList<string> Diagnostics,
-    int PrimitiveCount);
+    int PrimitiveCount,
+    bool LogEnabled,
+    string LogMode,
+    IReadOnlyList<string> LogCategories);
 
 public sealed record ProjectListEntry(
     Guid ProjectId,
