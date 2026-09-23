@@ -1175,10 +1175,10 @@ motore produce un valore differente.
 |---|---|---|
 | T0 | studio sorgenti Pascal, `base.dat`, generatore form/DB, DXF e Pannelli C# | **ESEGUITO** |
 | T1 | specifica metadata/database reti e mapping progressivo `base.dat` | **ESEGUITO PER PANNELLI** — `Reti` + `TipologiePannelli` operativi |
-| T2 | dominio neutro `TubazioniNetwork` + validazione topologica | **PARZIALE** — componenti CAD connessi/ramificati riconosciuti, dominio generalista ancora da fare |
-| T3 | kernel idraulico puro: portate, attrito, perdite, sizing, percorso sfavorito | **PARZIALE** — Darcy/Re/Colebrook e perdita distribuita implementati; sizing/percorso sfavorito da fare |
-| T4 | equilibratura / valvole / portate effettive selezionate | DA FARE |
-| T5 | adapter Pannelli radianti usando il grafo C# corrente | **PARZIALE** — CAD Tubo + archivi -> circuiti idraulici; grafo spirali/collettori da completare |
+| T2 | dominio neutro `TubazioniNetwork` + validazione topologica | **RIMANDATO A TUBI UNIVERSALE** — non è requisito del ramo pannelli corrente |
+| T3 | kernel idraulico puro: portate, attrito, perdite, sizing, percorso sfavorito | **PARZIALE** — Darcy/Re/Colebrook e perdita distribuita per circuito implementati; sizing/percorso sfavorito rimandati a Tubi universale |
+| T4 | equilibratura / valvole / portate effettive selezionate | **RIMANDATO A TUBI UNIVERSALE** |
+| T5 | adapter Pannelli radianti | **IMPLEMENTATO PER PERDITE DI CIRCUITO** — CAD Tubo + archivi -> circuiti idraulici; nessun grafo universale richiesto in questa fase |
 | T6 | regression test Pascal/golden | **PARZIALE** — golden numerico sintetico; confronto Pascal/GoldenResults da fare |
 | T7 | drawing result neutro e adapter DXF/SVG | DA FARE |
 | T8 | integrazione controllata in `Aggiorna Modello` | **IMPLEMENTATA PER `pannelli.json`** |
@@ -1372,6 +1372,36 @@ Verifica GitHub Actions: `TermodelService Build` run **#165**
 success, marker `RADIANT_PANEL_DARCY_SMOKE_OK`, validazione passo 422,
 `RADIANT_PIPE_FILE_UNIQUE_SMOKE_OK`, test logging e feedback tutti verdi.
 
+### Perimetro funzionale deciso dopo la simulazione del flusso
+
+Decisione del 23 settembre 2026:
+
+- il **grafo generale della rete** non fa parte del completamento pannelli
+  corrente;
+- riconoscimento collettore, scomposizione dei rami, percorso sfavorito,
+  sizing di rete, equilibratura e perdite concentrate vengono spostati alla
+  futura fase **Tubi universale**;
+- il ramo pannelli corrente è considerato sufficiente quando calcola la
+  **perdita distribuita di ciascun circuito già identificato**;
+- il kernel Darcy implementato resta il componente idraulico riusabile che
+  verrà successivamente impiegato anche dal dominio Tubi universale.
+
+Convenzione operativa fino all'introduzione del grafo universale:
+
+```text
+un circuito = una componente geometrica connessa indipendente
+```
+
+Quindi circuiti diversi non devono condividere un nodo geometrico comune
+(collettore) nel disegno usato per il calcolo corrente. Se due rami vengono
+uniti nello stesso punto, il solver li riconosce come un unico componente
+ramificato e segnala la topologia; **non tenta di scomporla**. Il collettore
+topologico e la separazione automatica dei rami saranno responsabilità del
+modulo Tubi universale.
+
+Questa scelta evita di introdurre ora un grafo specifico pannelli che sarebbe
+poi duplicato o sostituito dal motore generalista.
+
 ### Limite intenzionale della milestone
 
 Non viene dichiarato integrato il generatore grafico storico delle spirali.
@@ -1386,6 +1416,7 @@ prima di collegarlo al Service, senza copiarlo in un secondo motore.
 ## 16. Decisioni consolidate
 
 - Nome linea: **Calcolo Tubazioni**.
+- Decisione 23/09/2026: il grafo generalista e la topologia collettore/rami appartengono alla futura fase **Tubi universale**; il ramo PannelliRadianti corrente si ferma al calcolo delle perdite per circuito già identificato.
 - Sviluppo autonomo, ma destinato a vivere come libreria riusabile dal Core.
 - Primo utilizzo: supporto idraulico ai pannelli radianti.
 - Prima funzione operativa: perdita di carico distribuita del singolo circuito radiante.
@@ -1437,9 +1468,9 @@ confronto Golden storico:        NO
 spirali grafiche Service:        NO, motore condiviso da rendere parametrico
 ```
 
-Il prossimo salto funzionale del ramo pannelli non è più Darcy: è rendere il
+Il prossimo salto funzionale del ramo pannelli non è il grafo: è rendere il
 generatore spirali condiviso parametrico/headless, così che
 `Reti.PassoSelezionatoMm` governi realmente anche la geometria generata.
-Successivamente l'artifact potrà usare superficie/spirale/collegamenti reali,
-portata autorevole, collettori e perdite concentrate, mantenendo il kernel
-Darcy già verificato.
+Il **grafo, i collettori, il percorso sfavorito, le perdite concentrate e
+l'equilibratura sono esplicitamente rimandati alla fase Tubi universale**.
+Il kernel Darcy per singolo circuito è già verificato e resta riusabile.
