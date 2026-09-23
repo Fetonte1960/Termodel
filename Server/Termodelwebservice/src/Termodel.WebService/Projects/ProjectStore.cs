@@ -480,6 +480,64 @@ public sealed class ProjectStore
         }
     }
 
+    public async Task<IReadOnlyList<ProjectGeneratedFileContent>> ReadGeneratedFilesSnapshotAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        SemaphoreSlim gate = GetGate(projectId);
+        await gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            string projectDirectory = GetProjectDirectory(projectId);
+            if (!Directory.Exists(projectDirectory))
+                return [];
+
+            ProjectState state = await ReadStateUnlockedAsync(projectId, cancellationToken);
+            var result = new List<ProjectGeneratedFileContent>();
+
+            foreach (string rootName in GeneratedFileRoots)
+            {
+                string root = Path.Combine(projectDirectory, rootName);
+                if (!Directory.Exists(root))
+                    continue;
+
+                foreach (string file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    string relativePath = Path
+                        .GetRelativePath(projectDirectory, file)
+                        .Replace('\\', '/');
+
+                    GeneratedFileDescriptor descriptor =
+                        DescribeGeneratedFile(relativePath);
+
+                    byte[] content = await File.ReadAllBytesAsync(file, cancellationToken);
+                    var info = new FileInfo(file);
+
+                    result.Add(new ProjectGeneratedFileContent(
+                        relativePath,
+                        info.Name,
+                        descriptor.Category,
+                        descriptor.ContentType,
+                        descriptor.Inline,
+                        state.ArtifactsStale,
+                        info.LastWriteTimeUtc,
+                        content));
+                }
+            }
+
+            return result
+                .OrderBy(item => item.RelativePath, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public async Task<bool> AreArtifactsStaleAsync(
         Guid projectId,
         CancellationToken cancellationToken)
