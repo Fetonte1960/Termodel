@@ -174,11 +174,17 @@ logs/**
 commit atomico sotto:
 
 ```text
+service-snapshots/LATEST.json
 service-snapshots/<snapshotId>/
   manifest.json
   artifacts/...
   logs/...
 ```
+
+`LATEST.json` usa il formato
+`TERMODEL-SERVICE-SNAPSHOT-LATEST-V1` e punta sempre allo snapshot più
+recente. Questo permette a una chat successiva di trovare l'ultima sessione
+senza conoscere in anticipo lo `snapshotId`.
 
 Il manifest usa il formato `TERMODEL-SERVICE-SNAPSHOT-V1` e contiene
 projectId, timestamp UTC, eventuale commit del Service, stale, content type,
