@@ -9,7 +9,7 @@
 Ultimo aggiornamento: **2026-09-23**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`928c7f39dabc0f93b1b41e52a48a24d5a96ba12b` — `Clean legacy demo-help remnants from v0.98`  
+`d1399a4f9c3dc68fc1f1a0efd9982b57108cbca8` — `Restore opt-in exploration help and configure calculation logs`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -1235,7 +1235,7 @@ non cambia contratti Frontend↔Service e non modifica Core/WebService.
 Il test manuale reale su smartphone resta necessario.
 
 ### INCARICO 2026-09-23 — Help desktop, modalità esplorazione e livelli log
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO**
 
 Decisione/obiettivo:
 - Termodel Web resta una **WebApp operativa**;
@@ -1250,28 +1250,39 @@ Decisione/obiettivo:
   `logEnabled=false`;
 - con una o più categorie selezionate, `Aggiorna Modello` deve inviare
   `logEnabled=true&logCategories=<categorie>`;
-- categorie ammesse, senza inventarne altre:
+- categorie ammesse:
   `Sempre`, `colmi`, `spezza`, `Error`, `Svg`, `RedrawHelix`,
-  `GeneraModello`, `Performance`, `PontiAutomatici`;
-- il body `TERMODEL-PROJECT-TEXT-V1` deve restare invariato;
+  `GeneraModello`, `Performance`, `PontiAutomatici`.
+
+Risultato:
+- frontend portato a **v0.99**;
+- aggiunto menu desktop **Help**;
+- **Modalità esplorazione** è OFF di default e non crea/apre alcun pannello;
+- quando attivata ripristina il catalogo di spiegazioni contestuali precedente
+  per menu, comandi, tab, filtri e `Aggiorna Modello`, senza riportare la
+  WebApp alla vecchia filosofia di demo permanente;
+- aggiunte le nove categorie log contrattuali come checkbox, tutte OFF di default;
+- nessuna categoria selezionata → `POST /api/calculations?logEnabled=false`;
+- una o più categorie selezionate → `logEnabled=true` +
+  `logCategories=<categorie selezionate>`;
+- il body tecnico `TERMODEL-PROJECT-TEXT-V1` resta invariato;
+- il report `TERMODEL-SERVICE-EXCHANGE-V1` registra ora anche l'URL POST reale
+  comprensivo dei parametri log;
+- sintassi JavaScript del corpo modulo verificata: **OK**;
+- verificati: Help presente, esplorazione OFF iniziale, nove categorie presenti,
+  default log disabilitato, URL calcolo costruito dal menu, cache-busting
+  `app.js?v=0.99`;
+- aggiornato `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` con il comportamento
+  frontend v0.99;
 - nessuna modifica a WebService/Core/Library/definizionedati.json.
 
-File previsti:
-- `docs/termodel-ui-demo/index.html`;
-- `docs/termodel-ui-demo/app.js`;
-- `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` per registrare il consumo frontend
-  della configurazione log già implementata;
-- questo Summary.
-
-Criteri di completamento:
-- Help visibile nel menu desktop;
-- esplorazione OFF di default e help automatico assente;
-- esplorazione ON ripristina le spiegazioni contestuali;
-- tutte le categorie log OFF di default;
-- URL di `POST /api/calculations` costruito esclusivamente secondo contratto;
-- sintassi JavaScript verificata;
-- versione/cache-busting aggiornati;
-- Summary/contratto aggiornati con esito reale.
+Commit principali:
+- `94c1e0a4bcec7d1b9552ccdda99bb4b31a950c83` —
+  `Add desktop Help and log controls in v0.99`;
+- `d1399a4f9c3dc68fc1f1a0efd9982b57108cbca8` —
+  `Restore opt-in exploration help and configure calculation logs`;
+- `c784579ee569977de42e4d271271817c1714a0c9` —
+  `Document frontend log controls in contract`.
 
 ### INCARICO 2026-09-23 — rimozione modalità informazioni comandi
 Stato: **ESEGUITO**
