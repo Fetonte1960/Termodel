@@ -84,6 +84,42 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-23 — modalità Edificio/Rete nel pannello CAD 2D
+Stato: COMMISSIONATO
+
+Commissionato:
+- modificare esplicitamente il frontend `docs/termodel-ui-demo` nel pannello
+  principale del CAD 2D;
+- aggiungere un combo `Modalità` con almeno `Edificio` e `Rete`, con
+  `Edificio` come modalità iniziale compatibile col comportamento corrente;
+- quando `Modalità=Rete`, mostrare un secondo combo `Rete` alimentato
+  dall'archivio progetto `Reti`, usando il codice della riga come
+  identificatore e una descrizione leggibile per l'utente;
+- mantenere il combo `Piano` sempre attivo sia in modalità `Edificio` sia
+  in modalità `Rete`, perché una stessa rete può svilupparsi su più piani;
+- quando si torna a `Edificio`, nascondere/disattivare il selettore della
+  rete senza alterare il piano corrente;
+- aggiornare il combo Rete quando cambia/carica il progetto e quando viene
+  aggiornato lo stato degli archivi, gestendo in modo leggibile anche
+  l'assenza di righe `Reti`;
+- in questo incarico la selezione `Rete` è stato operativo del CAD/frontend:
+  non implementare ancora la semantica di disegno delle reti, il tagging delle
+  entità CAD o il calcolo pannelli;
+- non modificare Service API, `TERMODEL-PROJECT-TEXT-V1`,
+  `definizionedati.json`, Termodel.Core o Library Desktop.
+
+Criteri di completamento:
+- toolbar CAD 2D con combo Modalità visibile;
+- modalità Rete mostra il combo Rete popolato dall'archivio `Reti`;
+- modalità Edificio conserva il comportamento CAD corrente;
+- combo Piano resta utilizzabile in entrambe le modalità;
+- cambio progetto/archivio riallinea la selezione Rete senza errori;
+- verifica sintassi JavaScript e deploy GitHub Pages;
+- Summary aggiornato allo stato reale.
+
+Risultato:
+- implementazione in corso.
+
 ### INCARICO 2026-09-23 — revisione archivi pannelli radianti: Reti + TipologiePannelli
 Stato: ESEGUITO
 
