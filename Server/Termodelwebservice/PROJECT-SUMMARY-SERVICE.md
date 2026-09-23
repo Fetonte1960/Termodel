@@ -157,11 +157,17 @@ Risultato:
   quindi ogni snapshot corrisponde a **un solo commit atomico**;
 - ogni snapshot viene scritto sotto:
   ```text
+  service-snapshots/LATEST.json
   service-snapshots/<timestamp>_<project-prefix>/
     manifest.json
     artifacts/...
     logs/...
   ```
+- `LATEST.json` usa il formato
+  `TERMODEL-SERVICE-SNAPSHOT-LATEST-V1` e punta sempre allo snapshot più
+  recente; una chat successiva può quindi leggere direttamente
+  `service-snapshots/LATEST.json` sul branch `service-snapshots` senza
+  conoscere prima lo snapshotId;
 - `manifest.json` usa il formato
   `TERMODEL-SERVICE-SNAPSHOT-V1` e registra:
   projectId, timestamp UTC, eventuale commit Service
@@ -182,8 +188,8 @@ Risultato:
   - esclusione reale di un `project.tmdl` presente nel workspace;
   - manifest con SHA-256 validi;
 - **compilato/eseguito/testato:** SI — GitHub Actions
-  `TermodelService Build` run **#215**
-  (run id `35883512397`) completato con **success**;
+  `TermodelService Build` run **#219**
+  (run id `35884001322`) completato con **success**;
 - marker verificato:
   ```text
   GITHUB_SESSION_SNAPSHOT_SMOKE_OK
@@ -208,7 +214,10 @@ Risultato:
   `6809503da66566b53a8ddd4d0020fa0f22f17add`,
   `2b07cba1cae7ecad3992e8dbe38dd12b195df432`,
   `d3f8586af2aed9d8f391ea50ab1d11d3625dda3f`,
-  `4f18e69fa6ee98c990d68d59eecf7b51bd0788c0`.
+  `4f18e69fa6ee98c990d68d59eecf7b51bd0788c0`,
+  `00cd332adb89c794a3cdea065388cb4c50e753aa`,
+  `a4c75c5b9b83c790fbf869f7ef349bb1c3c046ca`,
+  `2d4d1c53258997cd3f669938ff02f31077996517`.
 
 ### INCARICO 2026-09-23 — canale universale file generati + test SVG spirali al frontend
 Stato: ESEGUITO
