@@ -100,6 +100,18 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-24 — FIN visibili solo dal lato interno
+Stato: COMMISSIONATO
+
+Commissionato:
+- riprodurre e correggere il difetto residuo dell'esempio pubblico `Appartamento`: dopo la precedente correzione di orientamento e profondità, le finestre risultano visibili dal lato interno ma ancora coperte/non visibili dal lato esterno;
+- verificare congiuntamente offset lungo la normale della parete, verso dell'estrusione, profondità effettiva della FIN e orientamento/facce della mesh headless rispetto al riferimento Desktop;
+- intervenire con modifica minima in Core/renderer, senza modificare frontend, `definizionedati.json` o Library Desktop salvo necessità dimostrata;
+- verificare con GitHub Actions sull'Appartamento reale e distinguere build, esecuzione HTTP, regressione geometrica e verifica visiva.
+
+Risultato:
+- da completare.
+
 ### INCARICO 2026-09-24 — visibilità FIN attraverso lo spessore parete
 Stato: ESEGUITO
 
