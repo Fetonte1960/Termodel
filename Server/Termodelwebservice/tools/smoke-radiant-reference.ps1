@@ -74,14 +74,21 @@ function Refresh-Manifest([string]$projectText,[string]$projectId = "") {
   $manifest.generatedAtUtc = [DateTime]::UtcNow.ToString("o")
 
   $kept = @()
+  $definitionHash = ""
   foreach ($section in @($manifest.sections)) {
     $name = [string]$section.name
     if ($name.StartsWith("assets/backgrounds/",[System.StringComparison]::OrdinalIgnoreCase)) { continue }
     $body = Get-ProjectSection $projectText $name
     $section.sha256 = Get-Sha256Text $body
+    if ($name -eq [string]$manifest.databaseDefinition.path) {
+      $definitionHash = [string]$section.sha256
+    }
     $kept += $section
   }
   $manifest.sections = @($kept)
+  if ($definitionHash -and $manifest.databaseDefinition) {
+    $manifest.databaseDefinition.sha256 = $definitionHash
+  }
   $json = $manifest | ConvertTo-Json -Depth 100
   return Set-ProjectSection $projectText "manifest.json" $json
 }
