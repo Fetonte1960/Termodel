@@ -108,6 +108,27 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-24 — Farmacia.dxf come regression fixture e ottimizzazione pianta architettonica
+Stato: COMMISSIONATO
+
+Commissionato:
+- consolidare nel repository GitHub il DXF reale fornito dall'utente, `Farmacia.dxf`, come fixture permanente per i test DXF→SVG;
+- usare il file reale, non un DXF sintetico, per misurare layer, entità, unità, bounding box e qualità dello SVG prodotto;
+- ottimizzare `Termodel.Core.Cad.DxfSvgConverter` affinché possa produrre automaticamente una pianta architettonica intellegibile, eliminando per default il rumore grafico non architettonico quando viene richiesto il profilo architettonico;
+- preservare la modalità manuale esistente e la retrocompatibilità delle opzioni layer/unità;
+- usare il frontend soltanto per selezione/opzioni e chiamata HTTP, senza reintrodurre conversione SVG locale;
+- aggiungere regression test GitHub Actions basati su `Farmacia.dxf` e documentare le regole consolidate;
+- non modificare `definizionedati.json` né i sorgenti Desktop Library.
+
+Criteri di completamento:
+- `Farmacia.dxf` presente in Git in una posizione stabile dei test;
+- test automatico reale che converte la fixture tramite il Service/Core;
+- profilo architettonico che conserva i layer geometrici utili e sopprime quote/retini/arredi o altri layer annotativi evidenti;
+- curve architettoniche abilitate nel profilo per mantenere leggibili porte e aperture;
+- output con dimensioni coerenti col disegno reale e con almeno i layer architettonici osservati nella fixture;
+- GitHub Actions SUCCESS con notifica `Termodel/job`;
+- Summary aggiornato a `ESEGUITO` solo dopo build e smoke reali.
+
 ### INCARICO 2026-09-24 — spostamento conversione DXF→SVG dal frontend al Service
 Stato: ESEGUITO
 
