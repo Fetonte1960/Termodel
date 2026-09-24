@@ -10,7 +10,8 @@ public sealed record DxfSvgConversionOptions(
     string? Unit = null,
     bool Curves = false,
     bool ConvertText = false,
-    bool ExplodeBlocks = false);
+    bool ExplodeBlocks = false,
+    string? Profile = null);
 
 public sealed record DxfSvgConversionStats(
     int Converted,
@@ -39,7 +40,9 @@ public sealed record DxfSvgConversionResult(
     double RealHeightMeters,
     DxfSvgPoint OriginOffsetCm,
     int UnitsCode,
-    string UnitsLabel);
+    string UnitsLabel,
+    string Profile,
+    IReadOnlyList<string> AppliedLayers);
 
 /// <summary>
 /// Conversione headless del DXF ASCII 2D usato come sfondo del CAD Web.
@@ -289,14 +292,25 @@ public static class DxfSvgConverter
         ];
 
         var groups = new List<string>();
+        double baseStrokeWidth = Math.Max(width, height) / 1800.0;
 
         foreach ((string layer, List<string> paths) in layerPaths)
         {
             if (paths.Count == 0)
                 continue;
 
+            string role = ArchitecturalLayerRole(layer);
+            double strokeMultiplier = role switch
+            {
+                "section" => 1.45,
+                "projection" => 0.82,
+                _ => 1.0
+            };
+
             groups.Add(
-                "<g data-dxf-layer=\"" + EscapeXml(layer) + "\">" +
+                "<g data-dxf-layer=\"" + EscapeXml(layer) + "\"" +
+                " data-dxf-role=\"" + role + "\"" +
+                " stroke-width=\"" + G17(baseStrokeWidth * strokeMultiplier) + "\">" +
                 "<path d=\"" + string.Join(" ", paths) + "\" />" +
                 "</g>");
         }
@@ -330,12 +344,13 @@ public static class DxfSvgConverter
             " width=\"" + F5(viewBox[2]) + "cm\"" +
             " height=\"" + F5(viewBox[3]) + "cm\"" +
             " fill=\"none\" stroke=\"#222\" stroke-width=\"" +
-            G17(Math.Max(width, height) / 1800.0) + "\"" +
+            G17(baseStrokeWidth) + "\"" +
             " stroke-linecap=\"round\" stroke-linejoin=\"round\"" +
             " data-termodel-dxf-plotter=\"1\"" +
             " data-termodel-source-unit=\"" + normalized.Unit + "\"" +
             " data-termodel-unit-scale-cm=\"" +
             G17(normalized.UnitScaleToCm) + "\"" +
+            " data-termodel-dxf-profile=\"" + normalized.Profile + "\"" +
             " data-termodel-coordinate-normalization=\"origin\">" +
             "<g transform=\"translate(" +
             F5(originShiftX) + " " + F5(originShiftY) + ")\">" +
@@ -363,7 +378,11 @@ public static class DxfSvgConverter
             RealHeightMeters: height / 100.0,
             OriginOffsetCm: new DxfSvgPoint(minX, minY),
             UnitsCode: model.InsUnits,
-            UnitsLabel: model.UnitsLabel);
+            UnitsLabel: model.UnitsLabel,
+            Profile: normalized.Profile,
+            AppliedLayers: normalized.Layers
+                .OrderBy(layer => layer, StringComparer.Ordinal)
+                .ToArray());
     }
 
     private static DxfModel Parse(string? text)
@@ -393,6 +412,8 @@ public static class DxfSvgConverter
 
         var layerCounts =
             new Dictionary<string, int>(StringComparer.Ordinal);
+        var topLevelLayerStats =
+            new Dictionary<string, DxfLayerStats>(StringComparer.Ordinal);
 
         foreach (string layer in tableLayers)
             layerCounts.TryAdd(layer, 0);
@@ -408,7 +429,18 @@ public static class DxfSvgConverter
         }
 
         foreach (DxfEntity entity in entities)
+        {
             AddLayer(entity.Layer);
+
+            string layer = string.IsNullOrWhiteSpace(entity.Layer)
+                ? "0"
+                : entity.Layer.Trim();
+
+            if (!topLevelLayerStats.TryGetValue(layer, out DxfLayerStats? stats))
+                stats = new DxfLayerStats();
+
+            topLevelLayerStats[layer] = stats.Add(entity.Type);
+        }
 
         foreach (DxfBlock block in blocks.Values)
         {
@@ -426,7 +458,8 @@ public static class DxfSvgConverter
             unitsLabel,
             blocks,
             entities,
-            layerCounts.Keys.ToArray());
+            layerCounts.Keys.ToArray(),
+            topLevelLayerStats);
     }
 
     private static IReadOnlyList<DxfPair> DxfPairs(string? text)
@@ -849,6 +882,17 @@ public static class DxfSvgConverter
     {
         options ??= new DxfSvgConversionOptions();
 
+        string profile = string.IsNullOrWhiteSpace(options.Profile)
+            ? "manual"
+            : options.Profile.Trim().ToLowerInvariant();
+
+        if (profile is not "manual" and not "architectural")
+        {
+            throw new InvalidDataException(
+                "Profilo DXF sconosciuto '" + options.Profile +
+                "'. Valori ammessi: manual, architectural.");
+        }
+
         var selectedLayers =
             options.Layers is not null
                 ? new HashSet<string>(
@@ -860,6 +904,9 @@ public static class DxfSvgConverter
                     model.Layers,
                     StringComparer.Ordinal);
 
+        if (profile == "architectural")
+            selectedLayers = ArchitecturalLayers(model, selectedLayers);
+
         string unit =
             options.Unit is "m" or "cm" or "mm"
                 ? options.Unit
@@ -867,11 +914,104 @@ public static class DxfSvgConverter
 
         return new NormalizedOptions(
             selectedLayers,
-            options.Curves,
+            options.Curves || profile == "architectural",
             options.ConvertText,
             options.ExplodeBlocks,
             unit,
-            UnitScaleToCm(unit));
+            UnitScaleToCm(unit),
+            profile);
+    }
+
+    private static HashSet<string> ArchitecturalLayers(
+        DxfModel model,
+        HashSet<string> candidates)
+    {
+        var selected = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (string layer in candidates)
+        {
+            if (!model.TopLevelLayerStats.TryGetValue(
+                    layer,
+                    out DxfLayerStats? stats))
+            {
+                continue;
+            }
+
+            if (IsArchitecturalNoiseLayerName(layer))
+                continue;
+
+            if (stats.Geometry == 0 && stats.Inserts == 0)
+                continue;
+
+            int annotationNoise =
+                stats.Dimensions + stats.Text + stats.Hatches;
+
+            // Layer prevalentemente di quote/testi/retini: non deve dilatare
+            // il viewBox né sporcare la pianta architettonica.
+            if (annotationNoise > stats.Geometry + stats.Inserts)
+                continue;
+
+            selected.Add(layer);
+        }
+
+        // Non nascondere tutto su DXF con convenzioni layer impreviste:
+        // se il filtro euristico non riconosce nulla, resta il set candidato.
+        if (selected.Count == 0)
+            selected.UnionWith(candidates);
+
+        return selected;
+    }
+
+    private static bool IsArchitecturalNoiseLayerName(string layer)
+    {
+        string name = layer.Trim().ToLowerInvariant();
+
+        if (name is "defpoints")
+            return true;
+
+        string[] noiseTokens =
+        [
+            "quote",
+            "quot",
+            "dimension",
+            "dimens",
+            "retin",
+            "hatch",
+            "arred",
+            "furniture",
+            "figure",
+            "testi",
+            "testo",
+            "text",
+            "scritte"
+        ];
+
+        return noiseTokens.Any(name.Contains);
+    }
+
+    private static string ArchitecturalLayerRole(string layer)
+    {
+        string name = layer.Trim().ToLowerInvariant();
+
+        if (name.Contains("sezion") ||
+            name.Contains("muri") ||
+            name.Contains("wall") ||
+            name.Contains("struttur") ||
+            name.Contains("portante"))
+        {
+            return "section";
+        }
+
+        if (name.Contains("proiez") ||
+            name.Contains("finestre") ||
+            name.Contains("infissi") ||
+            name.Contains("window") ||
+            name.Contains("door"))
+        {
+            return "projection";
+        }
+
+        return "base";
     }
 
     private static string UnitFromInsUnits(int insUnits) =>
@@ -1241,7 +1381,35 @@ public static class DxfSvgConverter
         string UnitsLabel,
         IReadOnlyDictionary<string, DxfBlock> Blocks,
         IReadOnlyList<DxfEntity> Entities,
-        IReadOnlyList<string> Layers);
+        IReadOnlyList<string> Layers,
+        IReadOnlyDictionary<string, DxfLayerStats> TopLevelLayerStats);
+
+    private sealed record DxfLayerStats(
+        int Geometry = 0,
+        int Dimensions = 0,
+        int Text = 0,
+        int Hatches = 0,
+        int Inserts = 0,
+        int Other = 0)
+    {
+        public DxfLayerStats Add(string entityType) =>
+            entityType switch
+            {
+                "LINE" or "LWPOLYLINE" or "POLYLINE" or
+                "ARC" or "CIRCLE" or "ELLIPSE" or "SPLINE" =>
+                    this with { Geometry = Geometry + 1 },
+                "DIMENSION" or "LEADER" or "MULTILEADER" =>
+                    this with { Dimensions = Dimensions + 1 },
+                "TEXT" or "MTEXT" =>
+                    this with { Text = Text + 1 },
+                "HATCH" =>
+                    this with { Hatches = Hatches + 1 },
+                "INSERT" =>
+                    this with { Inserts = Inserts + 1 },
+                _ =>
+                    this with { Other = Other + 1 }
+            };
+    }
 
     private sealed record NormalizedOptions(
         HashSet<string> Layers,
@@ -1249,7 +1417,8 @@ public static class DxfSvgConverter
         bool ConvertText,
         bool ExplodeBlocks,
         string Unit,
-        double UnitScaleToCm);
+        double UnitScaleToCm,
+        string Profile);
 
     private sealed record TextItem(
         string Layer,
