@@ -200,9 +200,32 @@ public static class SvgDxfReader
 
         foreach (netDxf.Entities.Attribute attribute in insert.Attributes)
             if (values.TryGetValue(attribute.Tag, out string? value))
-                attribute.Value = value;
+                attribute.Value = NormalizeBlockAttributeValue(blockName, attribute.Tag, value);
 
         return insert;
+    }
+
+    private static string NormalizeBlockAttributeValue(string blockName, string tag, string value)
+    {
+        // Il CAD Web usa centimetri (data-termodel-units="cm"), mentre i blocchi
+        // FIN del Desktop memorizzano LARGHEZZA/ALTEZZA/SOTTOFINESTRA/SOPRALUCE
+        // in metri. Le coordinate erano gia convertite cm -> m, ma gli attributi
+        // testuali FIN no: questo produceva finestre 100x fuori scala.
+        if (!string.Equals(blockName, "FIN", StringComparison.OrdinalIgnoreCase))
+            return value;
+
+        if (!tag.Equals("LARGHEZZA", StringComparison.OrdinalIgnoreCase) &&
+            !tag.Equals("ALTEZZA", StringComparison.OrdinalIgnoreCase) &&
+            !tag.Equals("SOTTOFINESTRA", StringComparison.OrdinalIgnoreCase) &&
+            !tag.Equals("SOPRALUCE", StringComparison.OrdinalIgnoreCase))
+            return value;
+
+        if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double centimeters) ||
+            !double.IsFinite(centimeters))
+            return value;
+
+        return (centimeters * CentimetersToMeters)
+            .ToString("G17", CultureInfo.InvariantCulture);
     }
 
     private static string Required(XElement element, string attribute) =>
