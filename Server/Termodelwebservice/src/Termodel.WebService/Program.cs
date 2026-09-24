@@ -111,7 +111,8 @@ app.MapPost("/api/dxf/to-svg", (DxfToSvgRequest request) =>
                 request.Unit,
                 request.Curves,
                 request.ConvertText,
-                request.ExplodeBlocks));
+                request.ExplodeBlocks,
+                request.Profile));
 
         return Results.Json(result);
     }
@@ -1309,4 +1310,5 @@ public sealed record DxfToSvgRequest(
     string? Unit = null,
     bool Curves = false,
     bool ConvertText = false,
-    bool ExplodeBlocks = false);
+    bool ExplodeBlocks = false,
+    string? Profile = null);
