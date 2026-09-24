@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.12';
+const APP_VERSION = '1.13';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -2278,6 +2278,7 @@ async function loadModel() {
     status.textContent = `Errore caricamento modello: ${error.message}`;
   } finally {
     loading = false;
+    cadUpdateControls();
   }
 }
 
@@ -2791,6 +2792,14 @@ async function loadCalculatedModelFromService() {
       projectId
     });
     resetView();
+
+    // L'esecutivo pannelli è un artifact derivato dell'ultimo calcolo:
+    // se presente lo carichiamo subito come overlay runtime del CAD2D.
+    // La sua assenza non rende fallito Aggiorna Modello.
+    await cadLoadGeneratedExecutiveBackground({
+      automatic: true,
+      silentMissing: true
+    });
 
     const diagnostics = Array.isArray(calculation.diagnostics)
       ? calculation.diagnostics.filter(Boolean)
@@ -4603,26 +4612,46 @@ function cadAppendGeneratedExecutiveOverlay(target, planeName) {
   return count;
 }
 
-async function cadLoadGeneratedExecutiveBackground() {
+async function cadLoadGeneratedExecutiveBackground(options = {}) {
+  const silentMissing = options.silentMissing === true;
+  const automatic = options.automatic === true;
+
   if (!cadWorkingDoc) {
-    cadSetStatus('Apri prima il CAD2D.', 'error');
-    return;
+    if (!silentMissing)
+      cadSetStatus('Apri prima il CAD2D.', 'error');
+    return false;
   }
   if (!currentProjectId) {
-    cadSetStatus('Nessun projectId corrente: usa prima Aggiorna Modello.', 'error');
-    return;
+    if (!silentMissing)
+      cadSetStatus('Nessun projectId corrente: usa prima Aggiorna Modello.', 'error');
+    return false;
   }
 
   try {
-    cadSetStatus('Recupero catalogo file generati dal Service…');
+    if (!automatic)
+      cadSetStatus('Recupero catalogo file generati dal Service…');
 
     const catalog = await termodelGeneratedFilesCatalog(currentProjectId);
     const record = catalog.files.find(file =>
       cadText(file?.path).toLowerCase() === 'artifacts/pannelli-esecutivo.svg'
     );
 
-    if (!record)
+    if (!record) {
+      cadGeneratedExecutiveOverlay = null;
+      if (cadShowGeneratedExecutive) {
+        cadShowGeneratedExecutive.checked = false;
+        cadShowGeneratedExecutive.disabled = true;
+      }
+      renderCadComparison();
+      cadUpdateControls();
+
+      if (silentMissing) {
+        cadSetStatus('Nessun esecutivo pannelli prodotto dall\'ultimo calcolo.');
+        return false;
+      }
+
       throw new Error('L\'ultimo calcolo non contiene pannelli-esecutivo.svg.');
+    }
 
     const fetched = await termodelGeneratedFileText(record);
     const parsed = cadParseGeneratedExecutiveSvg(fetched.text);
@@ -4643,10 +4672,12 @@ async function cadLoadGeneratedExecutiveBackground() {
     renderCadComparison();
     cadUpdateControls();
     cadSetStatus(
-      '✓ Esecutivo pannelli SVG caricato dal Service · ' +
-      parsed.primitiveCount + ' primitive' +
+      '✓ Esecutivo pannelli SVG ' +
+      (automatic ? 'caricato automaticamente' : 'caricato dal Service') +
+      ' · ' + parsed.primitiveCount + ' primitive' +
       (cadGeneratedExecutiveOverlay.stale ? ' · ATTENZIONE: artifact non aggiornato' : '')
     );
+    return true;
   } catch (error) {
     console.error(error);
     cadGeneratedExecutiveOverlay = null;
@@ -4655,10 +4686,12 @@ async function cadLoadGeneratedExecutiveBackground() {
       cadShowGeneratedExecutive.disabled = true;
     }
     renderCadComparison();
+    cadUpdateControls();
     cadSetStatus(
       'Esecutivo pannelli non disponibile: ' + (error?.message || error),
       'error'
     );
+    return false;
   }
 }
 
