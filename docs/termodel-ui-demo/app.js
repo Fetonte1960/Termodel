@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.15';
+const APP_VERSION = '1.16';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -736,6 +736,7 @@ async function loadProjectBrowserExamples() {
           model3d: String(item.model3d || '').trim(),
           project: String(item.project || '').trim(),
           geometry: String(item.geometry || '').trim(),
+          executive: item.executive === true,
           background:
             item.background && typeof item.background === 'object'
               ? {
@@ -806,19 +807,64 @@ async function openProjectBrowserExampleFromMenu() {
   return chosen;
 }
 
-function syncAndroidExampleCadAvailability(singleLineButton) {
-  if (!singleLineButton) return;
-
-  const current = projectBrowserExamples.find(
+function currentProjectBrowserExample() {
+  return projectBrowserExamples.find(
     item => item.id === activeProjectBrowserExampleId
-  );
-  const hasCad = Boolean(current?.project || current?.geometry);
+  ) || null;
+}
 
-  singleLineButton.disabled = !hasCad;
-  singleLineButton.title =
-    current
-      ? (hasCad ? '' : 'Questo esempio dispone per ora soltanto del modello 3D.')
-      : 'Seleziona prima un esempio.';
+function syncAndroidExampleCadAvailability(singleLineButton) {
+  const current = currentProjectBrowserExample();
+  const hasCad = Boolean(current?.project || current?.geometry);
+  const hasExecutive = hasCad && current?.executive === true;
+
+  if (singleLineButton) {
+    singleLineButton.disabled = !hasCad;
+    singleLineButton.title =
+      current
+        ? (hasCad ? '' : 'Questo esempio dispone per ora soltanto del modello 3D.')
+        : 'Seleziona prima un esempio.';
+  }
+
+  const executiveButton = document.getElementById('androidExploreExecutive');
+  if (executiveButton) {
+    executiveButton.disabled = !hasExecutive;
+    executiveButton.title =
+      current
+        ? (hasExecutive
+            ? 'Calcola, se necessario, e mostra l\'esecutivo pannelli nel CAD2D.'
+            : 'Questo esempio non dispone di un esecutivo pannelli.')
+        : 'Seleziona prima un esempio.';
+  }
+
+  refreshAndroidCadExploreControls();
+}
+
+async function ensureProjectBrowserExecutive() {
+  const current = currentProjectBrowserExample();
+  if (!current?.executive) return false;
+  if (cadGeneratedExecutiveAvailable()) return true;
+
+  status.textContent = 'Genero l\'esecutivo pannelli dell\'esempio ' + current.name + '…';
+  await loadCalculatedModelFromService();
+  return cadGeneratedExecutiveAvailable();
+}
+
+async function openProjectBrowserExecutive() {
+  if (!await ensureProjectBrowserExecutive()) {
+    status.textContent = 'Esecutivo pannelli non disponibile per l\'esempio corrente.';
+    return false;
+  }
+
+  if (cadShowGeneratedExecutive) {
+    cadShowGeneratedExecutive.disabled = false;
+    cadShowGeneratedExecutive.checked = true;
+  }
+
+  activateCadPage();
+  renderCadComparison();
+  refreshAndroidCadExploreControls();
+  return true;
 }
 
 async function populateAndroidExploreExamples(select, singleLineButton) {
@@ -1112,7 +1158,7 @@ async function loadProjectBrowserExample(exampleId, singleLineButton) {
     resetView();
     requestAnimationFrame(resize);
 
-    setAndroidExampleProgress('Appartamento pronto', 100);
+    setAndroidExampleProgress(example.name + ' pronto', 100);
     completed = true;
   } catch (error) {
     setAndroidExampleProgress('Errore: ' + (error?.message || error), 100);
@@ -1313,6 +1359,9 @@ function createAndroidExploreBox() {
       <button id="androidExploreSingleLine" class="android-explore-action" type="button">
         Disegno unifilare
       </button>
+      <button id="androidExploreExecutive" class="android-explore-action" type="button">
+        Disegno esecutivo
+      </button>
     </div>
   `;
 
@@ -1323,6 +1372,7 @@ function createAndroidExploreBox() {
   const menu = box.querySelector('#androidExploreMenu');
   const exampleSelect = box.querySelector('#androidExploreExample');
   const singleLine = box.querySelector('#androidExploreSingleLine');
+  const executive = box.querySelector('#androidExploreExecutive');
 
   const setOpen = (open) => {
     const next = Boolean(open);
@@ -1367,6 +1417,20 @@ function createAndroidExploreBox() {
     activateCadPage();
   });
 
+  executive.addEventListener('click', async event => {
+    event.stopPropagation();
+    setOpen(false);
+    executive.disabled = true;
+    try {
+      await openProjectBrowserExecutive();
+    } catch (error) {
+      console.error('Esecutivo esempio non disponibile:', error);
+      status.textContent = 'Errore esecutivo esempio: ' + (error?.message || error);
+    } finally {
+      syncAndroidExampleCadAvailability(singleLine);
+    }
+  });
+
   document.addEventListener('click', (event) => {
     if (!box.contains(event.target))
       setOpen(false);
@@ -1378,6 +1442,7 @@ function createAndroidExploreBox() {
 
 let androidCadPlaneSelect = null;
 let androidCadShowBackground = null;
+let androidCadShowExecutive = null;
 let androidCadShowInput = null;
 
 function refreshAndroidCadExploreControls() {
@@ -1410,6 +1475,13 @@ function refreshAndroidCadExploreControls() {
     androidCadShowBackground.checked = cadShowBackground.checked;
     androidCadShowBackground.disabled = cadShowBackground.disabled;
   }
+  if (androidCadShowExecutive && cadShowGeneratedExecutive) {
+    const canGenerateExecutive = currentProjectBrowserExample()?.executive === true;
+    androidCadShowExecutive.checked =
+      cadGeneratedExecutiveAvailable() && cadShowGeneratedExecutive.checked;
+    androidCadShowExecutive.disabled =
+      !cadGeneratedExecutiveAvailable() && !canGenerateExecutive;
+  }
   if (androidCadShowInput && cadShowInput) {
     androidCadShowInput.checked = cadShowInput.checked;
     androidCadShowInput.disabled = !cadWorkingDoc;
@@ -1424,6 +1496,7 @@ function createAndroidCadBrowserBox() {
   if (existing) {
     androidCadPlaneSelect = existing.querySelector('#androidCadPlane');
     androidCadShowBackground = existing.querySelector('#androidCadShowBackground');
+    androidCadShowExecutive = existing.querySelector('#androidCadShowExecutive');
     androidCadShowInput = existing.querySelector('#androidCadShowInput');
     refreshAndroidCadExploreControls();
     return existing;
@@ -1450,6 +1523,10 @@ function createAndroidCadBrowserBox() {
         <span>Sfondo</span>
       </label>
       <label class="android-explore-check">
+        <input id="androidCadShowExecutive" type="checkbox" />
+        <span>Esecutivo pannelli</span>
+      </label>
+      <label class="android-explore-check">
         <input id="androidCadShowInput" type="checkbox" />
         <span>Unifilare input</span>
       </label>
@@ -1463,6 +1540,7 @@ function createAndroidCadBrowserBox() {
   const menu = box.querySelector('#androidCadExploreMenu');
   androidCadPlaneSelect = box.querySelector('#androidCadPlane');
   androidCadShowBackground = box.querySelector('#androidCadShowBackground');
+  androidCadShowExecutive = box.querySelector('#androidCadShowExecutive');
   androidCadShowInput = box.querySelector('#androidCadShowInput');
 
   const setOpen = open => {
@@ -1497,6 +1575,27 @@ function createAndroidCadBrowserBox() {
     if (!cadShowBackground) return;
     cadShowBackground.checked = androidCadShowBackground.checked;
     cadShowBackground.dispatchEvent(new Event('change', { bubbles: true }));
+    refreshAndroidCadExploreControls();
+  });
+
+  androidCadShowExecutive.addEventListener('change', async event => {
+    event.stopPropagation();
+    if (!cadShowGeneratedExecutive) return;
+
+    if (androidCadShowExecutive.checked && !cadGeneratedExecutiveAvailable()) {
+      androidCadShowExecutive.disabled = true;
+      const available = await ensureProjectBrowserExecutive();
+      if (!available) {
+        androidCadShowExecutive.checked = false;
+        refreshAndroidCadExploreControls();
+        return;
+      }
+    }
+
+    cadShowGeneratedExecutive.disabled = !cadGeneratedExecutiveAvailable();
+    cadShowGeneratedExecutive.checked =
+      androidCadShowExecutive.checked && cadGeneratedExecutiveAvailable();
+    cadShowGeneratedExecutive.dispatchEvent(new Event('change', { bubbles: true }));
     refreshAndroidCadExploreControls();
   });
 

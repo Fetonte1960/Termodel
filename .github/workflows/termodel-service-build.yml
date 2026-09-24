@@ -89,11 +89,11 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.15';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.16';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.15")) {
-            throw "Cache-busting app.js v1.15 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.16")) {
+            throw "Cache-busting app.js v1.16 non aggiornato."
           }
 
           if ($app -match 'const height = Math\.max\(\s*320,') {
@@ -122,6 +122,52 @@ jobs:
           }
 
           Write-Host "ANDROID_MOBILE_BOOT_SPLASH_OK"
+
+          $catalogPath = "..\..\docs\termodel-ui-demo\examples\catalog.json"
+          $radiantExamplePath = "..\..\docs\termodel-ui-demo\examples\pannelli-radianti.tmdl.txt"
+          $catalog = Get-Content -LiteralPath $catalogPath -Raw
+          $radiantExample = Get-Content -LiteralPath $radiantExamplePath -Raw
+
+          foreach ($marker in @(
+            '"id": "pannelli-radianti"',
+            '"project": "./examples/pannelli-radianti.tmdl.txt"',
+            '"executive": true'
+          )) {
+            if (-not $catalog.Contains($marker)) {
+              throw "Catalogo esempio pannelli incompleto: $marker"
+            }
+          }
+          if ($catalog.Contains('"id": "appartamento"')) {
+            throw "Il catalogo espone ancora Appartamento come esempio corrente."
+          }
+
+          foreach ($marker in @(
+            "[TERMODEL-PROJECT-TEXT-V1]",
+            'data-termodel-rete="RAD-DEFAULT"',
+            'data-termodel-circuito="C001"',
+            'data-termodel-circuito="C006"',
+            "---BEGIN:archives/json/Reti.json---",
+            "---BEGIN:archives/json/TipologiePannelli.json---"
+          )) {
+            if (-not $radiantExample.Contains($marker)) {
+              throw "Progetto esempio pannelli incompleto: $marker"
+            }
+          }
+
+          foreach ($marker in @(
+            'id="androidExploreExecutive"',
+            "Disegno esecutivo",
+            'id="androidCadShowExecutive"',
+            "Esecutivo pannelli",
+            "async function ensureProjectBrowserExecutive()",
+            "await openProjectBrowserExecutive();"
+          )) {
+            if (-not $app.Contains($marker)) {
+              throw "Wiring esempio/esecutivo mobile mancante: $marker"
+            }
+          }
+
+          Write-Host "RADIANT_PUBLIC_EXAMPLE_OK"
 
           Write-Host "RADIANT_EXECUTIVE_AUTOLOAD_FRONTEND_OK"
 
