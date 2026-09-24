@@ -9,7 +9,8 @@ Il file originale aveva:
 
 - 987.311 byte;
 - 34.125 righe;
-- SHA-256 originale: `4af2675d670ed039f00d36e9c3fc82061db27a3c19cb4e5451faa69f3ebfe87a`;
+- SHA-256 byte-per-byte del file originale CRLF: `a2b5ddce40059ecae852ca572491bca230a1a95ecce376f8d2e69a43c0196411`;
+- SHA-256 del contenuto normalizzato LF, usato dalla fixture Git: `4af2675d670ed039f00d36e9c3fc82061db27a3c19cb4e5451faa69f3ebfe87a`;
 - 33 sezioni;
 - tutte le impronte delle sezioni dichiarate nel manifest coerenti con il file
   originale.
@@ -24,8 +25,10 @@ RadiantPanelsReference.original.part03.txt
 RadiantPanelsReference.original.part04.txt
 ```
 
-Il regression runner le ricompone in ordine prima del test. L'hash sopra resta
-quello del file utente originale, prima della sola normalizzazione dei fine riga.
+Il regression runner le ricompone in ordine prima del test. Entrambe le impronte sopra sono conservate: la prima identifica esattamente i
+byte ricevuti dall'utente; la seconda identifica lo stesso progetto dopo la
+sola normalizzazione CRLF -> LF necessaria alla fixture Git. Le impronte delle
+singole sezioni dichiarate nel manifest sono già calcolate sul contenuto LF.
 
 ## Dati pannelli
 
