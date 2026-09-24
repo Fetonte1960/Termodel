@@ -108,6 +108,26 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-24 — feedback DXF non deve deformare la toolbar CAD 2D
+Stato: COMMISSIONATO
+
+Segnalazione reale:
+- dopo l'importazione DXF il messaggio di stato completo (`DXF convertito dal Service ...`) occupa una larghezza eccessiva nella toolbar del CAD 2D;
+- nella schermata desktop il testo arancione invade lo spazio dei comandi e rende la barra apparentemente corrotta.
+
+Obiettivo:
+- rendere il feedback CAD non invasivo e resistente a messaggi lunghi;
+- mantenere accessibile il messaggio completo senza alterare il layout;
+- correggere il problema in modo generale nella toolbar, non soltanto accorciando una singola stringa DXF;
+- non modificare algoritmo DXF, dati di progetto o `definizionedati.json`.
+
+Criteri di completamento:
+- status desktop con larghezza limitata, ellissi e nessuna espansione incontrollata;
+- messaggio completo disponibile come tooltip/title;
+- controlli successivi della toolbar non spostati o coperti dal feedback DXF;
+- modifica piccola e retrocompatibile;
+- Summary aggiornato a ESEGUITO dopo verifica.
+
 ### INCARICO 2026-09-24 — Farmacia.dxf come regression fixture e ottimizzazione pianta architettonica
 Stato: ESEGUITO
 
