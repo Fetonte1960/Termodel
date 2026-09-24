@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Termodel.Core;
+using Termodel.Core.Cad;
 using Termodel.Core.ProjectFiles;
 using Termodel.Core.RadiantPanels;
 using Termodel.Leggidxf;
@@ -88,6 +89,40 @@ app.MapGet("/health", () => Results.Ok(new
 // Funzione realizzata da Codex in autonomia
 app.MapGet("/api/model/capabilities", () => Results.Ok(CoreInformation.GetCapabilities()));
 
+
+// Conversione DXF ASCII 2D -> SVG di sfondo. La logica vive nel Core;
+ // il WebService espone soltanto il contratto HTTP.
+app.MapPost("/api/dxf/to-svg", (DxfToSvgRequest request) =>
+{
+    try
+    {
+        if (string.IsNullOrWhiteSpace(request.DxfText))
+        {
+            return Results.Problem(
+                title: "DXF non valido",
+                detail: "Il contenuto DXF è vuoto.",
+                statusCode: StatusCodes.Status422UnprocessableEntity);
+        }
+
+        DxfSvgConversionResult result = DxfSvgConverter.Convert(
+            request.DxfText,
+            new DxfSvgConversionOptions(
+                request.Layers,
+                request.Unit,
+                request.Curves,
+                request.ConvertText,
+                request.ExplodeBlocks));
+
+        return Results.Json(result);
+    }
+    catch (InvalidDataException exception)
+    {
+        return Results.Problem(
+            title: "DXF non convertibile",
+            detail: exception.Message,
+            statusCode: StatusCodes.Status422UnprocessableEntity);
+    }
+});
 
 // Funzione realizzata da Codex in autonomia
 app.MapPost("/api/feedback", async (
@@ -1266,3 +1301,12 @@ static IResult InvalidProjectProblem(string detail) =>
         title: "File unico, projectId o geometria non validi",
         detail: detail,
         statusCode: StatusCodes.Status422UnprocessableEntity);
+
+
+public sealed record DxfToSvgRequest(
+    string DxfText,
+    IReadOnlyCollection<string>? Layers = null,
+    string? Unit = null,
+    bool Curves = false,
+    bool ConvertText = false,
+    bool ExplodeBlocks = false);
