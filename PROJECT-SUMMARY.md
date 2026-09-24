@@ -27,19 +27,33 @@ Commit che ha creato questo summary:
 
 Incarico autorizzato: riportare la gestione ordinaria dei progetti al frontend.
 
-Stato: **COMMISSIONATO**.
+Stato: **ESEGUITO**.
 
-Decisione:
+Decisione e stato reale:
 
-- `File → Apri` deve leggere un file locale `TERMODEL-PROJECT-TEXT-V1`;
-- `Salva` e `Salva con nome` devono produrre localmente il file progetto, senza persistenza Render;
-- il frontend non deve dipendere da elenco/open/save/lock/heartbeat/allocate-id del Service;
+- frontend **v1.12**;
+- `File → Apri` legge un file locale `TERMODEL-PROJECT-TEXT-V1`;
+- `Salva` e `Salva con nome` producono localmente il file progetto, senza persistenza Render;
+- il frontend corrente non dipende da elenco/open/save/lock/heartbeat/allocate-id del Service;
 - Render/Termodel.WebService resta responsabile di calcolo e artifact;
-- `Aggiorna Modello` deve inviare il progetto tecnico completo anche se il workspace server è assente dopo un redeploy;
-- il `projectId` può essere letto dal manifest o generato localmente dal frontend come UUID tecnico;
-- gli endpoint server di gestione progetto restano legacy compatibili ma fuori dal flusso frontend corrente.
+- `Aggiorna Modello` invia il progetto tecnico completo anche se il workspace server è assente dopo un redeploy;
+- il `projectId` viene letto dal manifest o generato localmente come UUID tecnico;
+- `POST /api/calculations` crea/ricrea autonomamente il workspace tecnico del projectId e non richiede lock;
+- gli endpoint server di gestione progetto restano legacy compatibili ma fuori dal flusso frontend corrente;
+- il file locale è la copia autorevole del progetto; gli artifact Render sono ricreabili.
 
-Il contratto condiviso è stato aggiornato in `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` prima dell'implementazione.
+Riferimento contrattuale:
+- `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` versione **1.21**.
+
+Verifica automatica conclusiva:
+- GitHub Actions run `35980223478`, job `107570267161`: **SUCCESS**;
+- sintassi `app.js`: SUCCESS;
+- build Release WebService: SUCCESS;
+- regression `LOCAL_PROJECT_CALCULATION_SMOKE_OK`: SUCCESS;
+- compatibilità lock legacy e smoke funzionali esistenti: SUCCESS;
+- notifica workflow telefono: SUCCESS.
+
+La prova manuale interattiva di Apri/Salva nel browser resta distinta dalla CI e non è stata dichiarata eseguita da questa sessione.
 
 
 ## 1. Regola obbligatoria per nuove chat
