@@ -89,11 +89,11 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.14';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.15';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.14")) {
-            throw "Cache-busting app.js v1.14 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.15")) {
+            throw "Cache-busting app.js v1.15 non aggiornato."
           }
 
           if ($app -match 'const height = Math\.max\(\s*320,') {
@@ -104,6 +104,24 @@ jobs:
           }
 
           Write-Host "ANDROID_LANDSCAPE_VIEWPORT_OK"
+
+          foreach ($marker in @(
+            "document.documentElement.classList.add('termodel-android', 'termodel-mobile-boot');",
+            'id="termodelMobileBootSplash"',
+            "function completeTermodelMobileBoot()",
+            "document.documentElement.classList.remove('termodel-mobile-boot');",
+            "completeTermodelMobileBoot();"
+          )) {
+            if (-not ($index.Contains($marker) -or $app.Contains($marker))) {
+              throw "Avvio mobile anti-flash incompleto: $marker"
+            }
+          }
+
+          if ($index.IndexOf("termodel-mobile-boot") -gt $index.IndexOf("<body>")) {
+            throw "Il rilevamento mobile anti-flash deve essere definito nel head prima del body."
+          }
+
+          Write-Host "ANDROID_MOBILE_BOOT_SPLASH_OK"
 
           Write-Host "RADIANT_EXECUTIVE_AUTOLOAD_FRONTEND_OK"
 

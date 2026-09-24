@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.14';
+const APP_VERSION = '1.15';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -140,6 +140,22 @@ if (TERMODEL_ANDROID_DEVICE) {
   window.addEventListener('resize', syncAndroidViewportLayout);
   window.addEventListener('orientationchange', syncAndroidViewportLayout);
   window.visualViewport?.addEventListener?.('resize', syncAndroidViewportLayout);
+}
+
+function completeTermodelMobileBoot() {
+  if (!TERMODEL_ANDROID_DEVICE) return;
+
+  if (globalThis.__termodelMobileBootFailsafe) {
+    clearTimeout(globalThis.__termodelMobileBootFailsafe);
+    globalThis.__termodelMobileBootFailsafe = null;
+  }
+
+  requestAnimationFrame(() => {
+    syncAndroidViewportLayout();
+    requestAnimationFrame(() => {
+      document.documentElement.classList.remove('termodel-mobile-boot');
+    });
+  });
 }
 
 const viewer = document.getElementById('viewer');
@@ -9398,4 +9414,5 @@ renderer.setAnimationLoop(() => {
 });
 
 resize();
+completeTermodelMobileBoot();
 loadModel();
