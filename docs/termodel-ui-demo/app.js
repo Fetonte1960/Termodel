@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.10';
+const APP_VERSION = '1.11';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -4542,6 +4542,7 @@ function cadApplyPipeAttributes(line, state = cadToolbarState) {
   cadSetOptionalAttribute(line, 'data-termodel-layer', cadPipeLayerForPlane(state.piano));
   cadSetOptionalAttribute(line, 'data-termodel-entity', 'Tubo');
   cadSetOptionalAttribute(line, 'data-termodel-rete', state.rete);
+  cadSetOptionalAttribute(line, 'data-termodel-circuito', state.circuito);
   cadSetOptionalAttribute(line, 'data-termodel-linetype', 'Continuous');
   cadSetOptionalAttribute(line, 'data-termodel-color', '1');
   line.setAttribute('stroke', '#ff0000');
@@ -5766,6 +5767,22 @@ function cadAllPipeLines() {
   const group = cadCalpestabile();
   if (!group) return [];
   return Array.from(group.children).filter(cadIsPipeLine);
+}
+
+function cadNextPipeCircuitId(networkCode = cadToolbarState?.rete, planeName = cadCurrentPlane()) {
+  const network = cadText(networkCode);
+  const plane = cadText(planeName);
+  let max = 0;
+
+  cadAllPipeLines().forEach(line => {
+    if (plane && cadEntityPlane(line) !== plane) return;
+    if (network && cadText(line.getAttribute('data-termodel-rete')) !== network) return;
+    const value = cadText(line.getAttribute('data-termodel-circuito'));
+    const match = /^C(\d+)$/i.exec(value);
+    if (match) max = Math.max(max, Number(match[1]) || 0);
+  });
+
+  return 'C' + String(max + 1).padStart(3, '0');
 }
 
 function cadEditableSourceLines() {
@@ -7842,11 +7859,14 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
       lastLineId: '',
       segmentCount: 0,
       kind: pipeMode ? 'pipe' : 'wall',
-      rete: pipeMode ? cadToolbarState.rete : ''
+      rete: pipeMode ? cadToolbarState.rete : '',
+      circuito: pipeMode
+        ? cadNextPipeCircuitId(cadToolbarState.rete, cadCurrentPlane())
+        : ''
     };
     cadRenderNewLinePreview(svg, point, snapped.snapped);
     const lineLabel = pipeMode
-      ? ('Tubo · Rete ' + cadToolbarState.rete)
+      ? ('Tubo · Rete ' + cadToolbarState.rete + ' · Circuito ' + cadNewLineState.circuito)
       : (cadPlaneIsCoverage() ? 'Linea perimetro falde' : ('Parete ' + (cadNewLineType?.value || 'W').toUpperCase()));
     cadSetStatus(
       `${lineLabel} · punto iniziale${snapped.snapped ? ' · ' + cadSnapLabel(snapped) : ''}${cadOrtho?.checked ? ' · ORTO' : ''} · clicca il punto successivo`
@@ -7895,7 +7915,8 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
   if (isPipeSequence) {
     cadApplyPipeAttributes(line, {
       ...cadToolbarState,
-      rete: cadNewLineState.rete || cadToolbarState.rete
+      rete: cadNewLineState.rete || cadToolbarState.rete,
+      circuito: cadNewLineState.circuito
     });
   } else {
     cadApplySemanticAttributes(line, cadToolbarState);
@@ -7938,7 +7959,8 @@ function cadStartOrFinishNewLine(svg, rawPoint) {
     lastLineId,
     segmentCount,
     kind: isPipeSequence ? 'pipe' : 'wall',
-    rete: isPipeSequence ? (cadNewLineState.rete || cadToolbarState.rete) : ''
+    rete: isPipeSequence ? (cadNewLineState.rete || cadToolbarState.rete) : '',
+    circuito: isPipeSequence ? cadNewLineState.circuito : ''
   };
 
   renderCadComparison();
@@ -8052,7 +8074,9 @@ function cadCloseWallSequence(orthogonal = false) {
       ...cadToolbarState,
       rete: cadText(firstLine.getAttribute('data-termodel-rete')) ||
         cadNewLineState.rete ||
-        cadToolbarState.rete
+        cadToolbarState.rete,
+      circuito: cadText(firstLine.getAttribute('data-termodel-circuito')) ||
+        cadNewLineState.circuito
     });
   } else {
     // La parete di chiusura eredita i dati semantici dalla prima parete.
