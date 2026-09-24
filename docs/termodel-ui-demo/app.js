@@ -7371,7 +7371,12 @@ function cadUpdateControls() {
     cadSnapBackground.disabled = !hasDoc || !cadVectorPlaneBackground();
   if (cadUndo) cadUndo.disabled = !cadUndoStack.length || busy;
   if (cadRedo) cadRedo.disabled = !cadRedoStack.length || busy;
-  if (cadDelete) cadDelete.disabled = !selected || busy;
+  if (cadDelete) {
+    cadDelete.disabled = !selected || busy;
+    cadDelete.title = networkMode
+      ? 'Elimina il tubo selezionato'
+      : 'Elimina la parete selezionata';
+  }
   if (cadRegenerate) {
     cadRegenerate.disabled = !hasDoc || !dirty || busy;
     cadRegenerate.textContent = networkMode ? '⟳ Consolida rete' : '⟳ Rigenera pianta';
