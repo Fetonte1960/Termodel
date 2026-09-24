@@ -182,6 +182,79 @@ jobs:
             }
             Write-Host "DXF_TO_SVG_SMOKE_OK"
 
+            # Regression reale: Farmacia.dxf fornito dall'utente.
+            # La fixture è conservata lossless come gzip/base64 per limitare
+            # il peso Git; qui viene ricostruita byte-per-byte.
+            $fixtureB64 = Get-Content "tests/fixtures/Farmacia.dxf.gz.b64" -Raw
+            $fixtureGzipBytes = [Convert]::FromBase64String($fixtureB64.Trim())
+            $fixtureInput = [System.IO.MemoryStream]::new($fixtureGzipBytes)
+            $fixtureGzip = [System.IO.Compression.GZipStream]::new(
+              $fixtureInput,
+              [System.IO.Compression.CompressionMode]::Decompress
+            )
+            $fixtureOutput = [System.IO.MemoryStream]::new()
+            $fixtureGzip.CopyTo($fixtureOutput)
+            $fixtureGzip.Dispose()
+            $fixtureInput.Dispose()
+            $fixtureBytes = $fixtureOutput.ToArray()
+            $fixtureOutput.Dispose()
+
+            $fixtureSha = [Convert]::ToHexString(
+              [System.Security.Cryptography.SHA256]::HashData($fixtureBytes)
+            ).ToLowerInvariant()
+            if ($fixtureSha -ne "81b7e14c361b0b5de94a877c715091b77a42f599c6a757ca1fc2906251496adc") {
+              throw "Farmacia.dxf: SHA-256 inatteso $fixtureSha"
+            }
+
+            $fixtureText = [System.Text.UTF8Encoding]::new($false).GetString($fixtureBytes)
+            $farmaciaRequest = @{
+              dxfText = $fixtureText
+              layers = $null
+              unit = $null
+              curves = $false
+              convertText = $false
+              explodeBlocks = $false
+              profile = "architectural"
+            } | ConvertTo-Json -Depth 10
+
+            $farmacia = Invoke-RestMethod -Uri "$base/api/dxf/to-svg" -Method Post -ContentType "application/json" -Body $farmaciaRequest
+            $farmaciaLayers = @($farmacia.appliedLayers)
+
+            if ($farmacia.profile -ne "architectural") {
+              throw "Farmacia.dxf: profilo applicato inatteso '$($farmacia.profile)'."
+            }
+            if ($farmacia.drawingUnit -ne "m" -or [double]$farmacia.unitScaleToCm -ne 100.0) {
+              throw "Farmacia.dxf: $INSUNITS=6 non riconosciuto come metri."
+            }
+            foreach ($requiredLayer in @("0","01-SEZIONI","02-PROIEZIONI")) {
+              if ($farmaciaLayers -notcontains $requiredLayer) {
+                throw "Farmacia.dxf: layer architettonico mancante $requiredLayer."
+              }
+            }
+            foreach ($noiseLayer in @("03-QUOTE","04-RETINI")) {
+              if ($farmaciaLayers -contains $noiseLayer -or
+                  $farmacia.svgText -match ('data-dxf-layer="' + [regex]::Escape($noiseLayer) + '"')) {
+                throw "Farmacia.dxf: layer di rumore non filtrato $noiseLayer."
+              }
+            }
+            if ([double]$farmacia.realWidthMeters -lt 18.9 -or [double]$farmacia.realWidthMeters -gt 19.2) {
+              throw "Farmacia.dxf: larghezza architettonica inattesa $($farmacia.realWidthMeters) m."
+            }
+            if ([double]$farmacia.realHeightMeters -lt 17.0 -or [double]$farmacia.realHeightMeters -gt 17.3) {
+              throw "Farmacia.dxf: altezza architettonica inattesa $($farmacia.realHeightMeters) m."
+            }
+            if ([int]$farmacia.stats.converted -lt 200) {
+              throw "Farmacia.dxf: troppo poche entita architettoniche convertite: $($farmacia.stats.converted)."
+            }
+            if ($farmacia.svgText -notmatch 'data-dxf-role="section"' -or
+                $farmacia.svgText -notmatch 'data-dxf-role="projection"' -or
+                $farmacia.svgText -notmatch 'data-termodel-dxf-profile="architectural"') {
+              throw "Farmacia.dxf: gerarchia grafica architettonica non presente nello SVG."
+            }
+
+            Write-Host "FARMACIA_DXF_ARCHITECTURAL_SMOKE_OK"
+            Write-Host "Farmacia layers=$($farmaciaLayers -join ',') converted=$($farmacia.stats.converted) size=$([Math]::Round([double]$farmacia.realWidthMeters,3))x$([Math]::Round([double]$farmacia.realHeightMeters,3))m"
+
             $baseProject = Invoke-RestMethod -Uri "$base/api/projects/new" -Method Post -ContentType "application/json" -Body "{}"
 
             foreach ($requiredSection in @(
