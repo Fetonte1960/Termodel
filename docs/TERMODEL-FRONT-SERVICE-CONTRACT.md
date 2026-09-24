@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.19**  
+Versione documento: **1.20**  
 Aggiornamento: **24 settembre 2026**  
 Stato: **projectId-only e lock progetto implementati; pretest Render attivo; conversione DXF→SVG spostata nel Core/Service; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati e snapshot diagnostico persistente Render→GitHub implementati; notifica GitHub Actions/telefono implementata**
 
@@ -411,28 +411,45 @@ Non sono ancora inclusi nella perdita:
 - perdite concentrate;
 - distribuzione primaria.
 
-### Confine attuale: perdita per circuito, senza grafo di rete
+### Identità esplicita del circuito, senza grafo generalista
 
-Decisione consolidata del 23 settembre 2026: il grafo generalista non è un
-requisito della fase PannelliRadianti corrente. Viene rimandato alla futura
-fase **Tubi universale**, insieme a collettore topologico, scomposizione dei
-rami, percorso sfavorito, sizing, equilibratura e perdite concentrate.
+Decisione consolidata del 24 settembre 2026 sul progetto reale di regression:
+la sola connettività geometrica non è sufficiente a rappresentare il CAD
+manuale dei pannelli. Più sequenze Tubo possono infatti partire dallo stesso
+punto di collettore usando lo snap e restare circuiti idraulici distinti.
 
-Per il contratto corrente:
+Il CAD Web assegna quindi a ogni nuova sequenza Tubo un identificatore stabile:
 
 ```text
-1 componente geometrica connessa = 1 circuito da verificare idraulicamente
+data-termodel-circuito="C001"
+data-termodel-circuito="C002"
+...
 ```
 
-Di conseguenza, per ottenere risultati distinti, circuiti diversi devono
-essere disegnati come componenti indipendenti e non devono condividere
-l'estremo del collettore. Una componente ramificata viene diagnosticata ma
-non viene automaticamente scomposta in più circuiti.
+Tutti i segmenti creati nella stessa sequenza conservano lo stesso
+`data-termodel-circuito`, insieme a `data-termodel-rete`, piano e layer.
+Una nuova sequenza riceve un nuovo codice circuito anche quando il suo primo
+punto viene agganciato con Snap Vicino/Estremo a un tubo esistente.
 
-Questo comportamento è intenzionale e transitorio: evita un grafo
-PannelliRadianti dedicato che duplichererebbe il futuro motore Tubi
-universale. Il kernel Darcy per circuito resta invece parte stabile e
-riusabile del Core.
+Il Core conserva il metadato nel Virtual CAD e applica la seguente precedenza:
+
+```text
+data-termodel-circuito presente
+    -> raggruppamento per circuito dichiarato dal CAD
+
+data-termodel-circuito assente (progetti legacy)
+    -> fallback: 1 componente geometrica connessa = 1 circuito
+```
+
+Questo permette a circuiti diversi di condividere geometricamente un punto
+di collettore senza essere fusi in un'unica componente ramificata. Se uno
+stesso circuito dichiarato contiene più componenti disconnesse, il Core le
+separa e produce diagnostica invece di sommarle silenziosamente.
+
+La modifica **non introduce il grafo generalista di rete**: collettore
+topologico, percorso sfavorito, sizing, equilibratura, perdite concentrate e
+distribuzione primaria restano nella futura fase **Tubi universale**. Il
+kernel Darcy per circuito resta parte stabile e riusabile del Core.
 
 ### Esecutivo pannelli con default corrente
 
