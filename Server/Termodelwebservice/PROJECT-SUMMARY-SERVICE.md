@@ -117,7 +117,7 @@ Risultato:
 - commit codice su `main`: `eb2f5479ed986259c0caf6ec312306954c3024ee` — `Expose FIN meshes through host wall thickness`;
 - tracciatura della divergenza temporanea aggiornata in `CopiedFromTermodel/TERMODEL-SYNC.md`, commit `77acd802511425d2772892b433b9eeb4a32930df` — `Track headless FIN wall-thickness adaptation`; la Library Desktop non è stata modificata;
 - GitHub Actions standard su `main`, run **#266**, id `35956352931`: **SUCCESS**;
-- verifica dedicata su branch `ai-debug-fin-thickness-20260924`, run **#269**, id `35956721203`: build reale, avvio reale del Service, `POST /api/model/3d = 200`, `POST /api/calculations = 200`, artifact `model3d` con **438 primitive**;
+- verifica dedicata definitiva su branch `ai-debug-fin-thickness-20260924`, run **#270**, id `35956863374`: **SUCCESS** sia per il job diagnostico sia per il job standard; build reale, avvio reale del Service, `POST /api/model/3d = 200`, `POST /api/calculations = 200`, artifact `model3d` con **438 primitive**;
 - regression geometrica: **9 FIN controllate, 0 errori**. F001..F009 restano parallele alla parete associata con allineamento `1.000000`; per tutte il volume FIN contiene l'intero intervallo di spessore della parete e lascia circa `0,01 m` di sormonto su ciascuna faccia;
 - confronto con artifact precedente alla correzione (run #259) conferma numericamente il difetto: parete `0,13 m` contro FIN `0,10 m`, centrata sulla linea e non sullo spessore della parete;
 - strumentazione diagnostica temporanea rimossa dal branch al termine della prova; frontend, `definizionedati.json`, contratto Frontend↔Service e Library Desktop invariati;
