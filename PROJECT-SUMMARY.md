@@ -23,6 +23,25 @@ Commit che ha creato questo summary:
 
 ---
 
+## 0.1 Decisione architetturale 2026-09-24 — progetti locali, Service di calcolo
+
+Incarico autorizzato: riportare la gestione ordinaria dei progetti al frontend.
+
+Stato: **COMMISSIONATO**.
+
+Decisione:
+
+- `File → Apri` deve leggere un file locale `TERMODEL-PROJECT-TEXT-V1`;
+- `Salva` e `Salva con nome` devono produrre localmente il file progetto, senza persistenza Render;
+- il frontend non deve dipendere da elenco/open/save/lock/heartbeat/allocate-id del Service;
+- Render/Termodel.WebService resta responsabile di calcolo e artifact;
+- `Aggiorna Modello` deve inviare il progetto tecnico completo anche se il workspace server è assente dopo un redeploy;
+- il `projectId` può essere letto dal manifest o generato localmente dal frontend come UUID tecnico;
+- gli endpoint server di gestione progetto restano legacy compatibili ma fuori dal flusso frontend corrente.
+
+Il contratto condiviso è stato aggiornato in `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` prima dell'implementazione.
+
+
 ## 1. Regola obbligatoria per nuove chat
 
 Prima di lavorare:
