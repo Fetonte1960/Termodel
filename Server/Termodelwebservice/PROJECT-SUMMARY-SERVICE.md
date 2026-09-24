@@ -110,21 +110,34 @@ già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 
 ### INCARICO 2026-09-24 — pulsante versione desktop completa dalla main mobile
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - nella main Android/mobile aggiungere accanto al pulsante `Esplora` un piccolo pulsante con icona monitor per passare volontariamente alla versione completa desktop;
 - il comando deve disattivare la modalità immersiva Android esistente, mostrare barre/menu/pannelli desktop reali e usare una viewport logica desktop, senza duplicare l'interfaccia;
 - la modifica riguarda soltanto `docs/termodel-ui-demo`; non modificare Service, Core, contratto API, `definizionedati.json` o Library Desktop;
-- preservare il comportamento mobile attuale finché l'utente non preme il nuovo pulsante;
-- incrementare la versione/cache busting frontend e verificare staticamente che il passaggio rimuova gli override Android.
+- preservare il comportamento mobile attuale finché l'utente non preme il nuovo pulsante.
 
-Criteri di completamento:
-- pulsante compatto visibile accanto a `Esplora` nella main mobile;
-- click -> interfaccia desktop completa, non la palette mobile immersiva;
-- nessuna duplicazione dei comandi desktop;
-- sorgente GitHub ricontrollato dopo la modifica;
-- Summary aggiornato a ESEGUITO con commit e stato reale dei test.
+Risultato:
+- `docs/termodel-ui-demo/app.js`: aggiunto accanto a `Esplora` il pulsante compatto `androidFullDesktop` con icona SVG monitor e descrizione accessibile “Versione completa desktop”;
+- il click chiude l'eventuale menu Esplora e chiama `enableTermodelFullDesktopLayout()`;
+- il passaggio rimuove la classe `termodel-android`, mantiene un flag che impedisce ai successivi eventi resize/orientation di riapplicare gli override immersivi e pulisce le altezze/grid inline impostate dalla modalità Android;
+- la meta viewport viene portata a **1100 px logici**, oltre tutte le breakpoint responsive correnti (massimo 900/820 px), così il tablet usa la UI desktop completa invece delle regole mobile;
+- nessuna UI desktop è stata duplicata: vengono semplicemente rese nuovamente visibili titlebar, menubar, tabs, bottom bar e pannelli già esistenti;
+- frontend portato a **v1.08**, titolo statico e `app.js?v=1.08` aggiornati.
+
+Verifica:
+- sorgente GitHub ricontrollato dopo i commit: pulsante presente subito dopo `Esplora`, listener presente e collegato alla funzione di passaggio desktop;
+- controllo statico delle breakpoint: viewport 1100 px supera le soglie responsive presenti in `index.html`;
+- compilazione: non applicabile al frontend statico JavaScript;
+- esecuzione browser/tablet reale: NON ancora verificata in questa chat;
+- test visuale su dispositivo Android/tablet: NON ancora eseguito;
+- Service/Core/contratto API/`definizionedati.json`/Library Desktop: non modificati.
+
+Commit:
+- `91f456d6...` — registrazione incarico;
+- `d2e6db82...` — pulsante e logica passaggio alla UI desktop completa;
+- `a10a56af...` — versione/cache busting frontend 1.08.
 
 ### INCARICO 2026-09-24 — feedback DXF non deve deformare la toolbar CAD 2D
 Stato: ESEGUITO
