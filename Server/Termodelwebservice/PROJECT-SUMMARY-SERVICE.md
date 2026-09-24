@@ -110,7 +110,7 @@ già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 
 ### INCARICO 2026-09-24 — selezione e cancellazione Tubo CAD 2D
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - in modalità `Rete` rendere selezionabili con click le entità `Tubo` Txxx già disegnate sul piano corrente;
@@ -121,12 +121,33 @@ Commissionato:
 - modifica limitata al frontend `docs/termodel-ui-demo`, senza toccare Service/Core, contratto API, `definizionedati.json` o Library Desktop;
 - incrementare versione/cache busting frontend e verificare staticamente il percorso.
 
-Criteri di completamento:
-- click su Txxx in modalità Rete evidenzia il tubo;
-- `Elimina` diventa attivo e rimuove Txxx;
-- le pareti non diventano selezionabili per errore in modalità Rete;
-- modalità Edificio invariata;
-- Summary aggiornato a ESEGUITO con commit e verifiche reali disponibili.
+Risultato:
+- individuata la causa: il renderer marcava come editabili/selezionabili soltanto le linee E/W; inoltre `cadSelectLine`, `cadUpdateControls`, `cadSyncOverlay` e `cadDeleteSelected` usavano `cadFindSourceLine()`, che rifiuta correttamente le entità Txxx;
+- aggiunta `cadFindSelectableLine()`: in modalità `Rete` accetta soltanto i tubi del piano corrente, in modalità `Edificio` continua ad accettare soltanto le pareti E/W;
+- il renderer rende cliccabili i Txxx soltanto quando `Modalità=Rete`; le pareti restano non selezionabili in tale modalità;
+- il click su un tubo imposta `cadSelectedLineId`, applica l'evidenziazione `selected` e abilita `× Elimina`;
+- la cancellazione rimuove soltanto il segmento selezionato dal documento SVG, mantiene undo/redo e mostra `Tubo Txxx eliminato · premi Consolida rete`;
+- il drag geometrico delle pareti non è stato esteso ai tubi: dopo la selezione Txxx il percorso drag continua intenzionalmente a richiedere `cadFindSourceLine()`;
+- tooltip del comando Elimina reso contestuale: tubo in modalità Rete, parete in modalità Edificio;
+- frontend portato a **v1.10** con titolo e `app.js?v=1.10` per cache busting;
+- Service/Core, contratto API, `definizionedati.json` e Library Desktop non modificati.
+
+Verifica:
+- sorgente GitHub ricontrollato dopo le modifiche;
+- verificato staticamente che `cadFindSelectableLine()` accetti Txxx soltanto in modalità Rete;
+- verificato che il renderer usi `cadIsPipeLine(line)` per rendere i tubi selezionabili in Rete e E/W in Edificio;
+- verificato che `cadUpdateControls()` abiliti Elimina usando la selezione contestuale;
+- verificato che `cadDeleteSelected()` rimuova la linea contestuale selezionata e produca feedback specifico Tubo/Parete;
+- verificato che il drag dei tubi resti disattivato perché la routine di trascinamento continua a richiedere una parete E/W;
+- verificati `APP_VERSION='1.10'`, titolo v1.10 e cache busting v1.10;
+- compilazione: non applicabile al frontend statico JavaScript;
+- esecuzione/test browser reale: NON ancora eseguito in questa chat.
+
+Commit:
+- `96996394...` — registrazione incarico;
+- `0001127c...` — selezione/cancellazione tubo + versione app 1.10;
+- `06384767...` — titolo/cache busting frontend 1.10;
+- `b8d40583...` — tooltip Elimina contestuale.
 
 ### INCARICO 2026-09-24 — snap Vicino/Estremo sui tubi CAD 2D
 Stato: ESEGUITO
