@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.08';
+const APP_VERSION = '1.09';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -5772,6 +5772,16 @@ function cadEditableSourceLines() {
   return cadAllSourceLines().filter(cadEntityBelongsToCurrentPlane);
 }
 
+// Lo snap deve seguire il contesto CAD corrente.
+// In Edificio resta ancorato alle pareti E/W; in Rete usa invece i tubi
+// già disegnati sul piano corrente, così Vicino/Estremo funzionano anche
+// durante la costruzione della rete impiantistica.
+function cadSnapSourceLines() {
+  if (cadToolbarState?.modalita === 'rete')
+    return cadAllPipeLines().filter(cadEntityBelongsToCurrentPlane);
+  return cadEditableSourceLines();
+}
+
 function cadSerializeCurrentPlaneSvg() {
   if (!cadWorkingDoc) return '';
   const clone = cadWorkingDoc.cloneNode(true);
@@ -7504,7 +7514,10 @@ function cadSnapPoint(point, movingLineId) {
   let bestLineId = '';
   let bestSource = '';
 
-  cadEditableSourceLines().forEach(line => {
+  const snapLines = cadSnapSourceLines();
+  const snapEntitySource = cadToolbarState?.modalita === 'rete' ? 'pipe' : 'wall';
+
+  snapLines.forEach(line => {
     if (line.id === movingLineId) return;
     const a = cadLinePoint(line, 1);
     const b = cadLinePoint(line, 2);
@@ -7516,7 +7529,7 @@ function cadSnapPoint(point, movingLineId) {
           best = candidate.slice();
           bestDistance = distance;
           bestLineId = line.id || '';
-          bestSource = 'wall';
+          bestSource = snapEntitySource;
         }
       }
       return;
@@ -7528,7 +7541,7 @@ function cadSnapPoint(point, movingLineId) {
       best = projected;
       bestDistance = segmentDistance;
       bestLineId = line.id || '';
-      bestSource = 'wall';
+      bestSource = snapEntitySource;
     }
   });
 
@@ -7546,7 +7559,7 @@ function cadSnapPoint(point, movingLineId) {
   return {
     point: snapped ? best : point,
     snapped,
-    targetLineId: snapped && bestSource === 'wall' ? bestLineId : '',
+    targetLineId: snapped && (bestSource === 'wall' || bestSource === 'pipe') ? bestLineId : '',
     snapMode: mode,
     snapSource: snapped ? bestSource : ''
   };
