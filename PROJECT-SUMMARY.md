@@ -17,7 +17,7 @@
 Ultimo aggiornamento: **2026-09-24**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`c182089deef12665942f589516a02cecf5d1af4c` — `Clean exploration help wording`  
+`be5da6cbb38784b610af479489ea5c675ed8491f` — `Test frontend radiant executive auto-load`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -58,23 +58,35 @@ La prova manuale interattiva di Apri/Salva nel browser resta distinta dalla CI e
 
 ## 0.2 Incarico 2026-09-24 — attivazione automatica esecutivo pannelli dopo Aggiorna Modello
 
-Stato: **COMMISSIONATO**.
+Stato: **ESEGUITO**.
 
-Obiettivo:
-- dopo un `Aggiorna Modello` riuscito, verificare se il Service ha prodotto `artifacts/pannelli-esecutivo.svg`;
-- se presente, caricarlo automaticamente nel CAD2D come overlay runtime;
-- abilitare e spuntare `Mostra esecutivo calcolato`;
-- ridisegnare immediatamente il CAD mostrando l'esecutivo;
-- se l'artifact non esiste, lasciare il controllo disabilitato senza trasformare l'assenza dell'esecutivo in errore dell'intero `Aggiorna Modello`;
-- mantenere disponibile il comando manuale `Esecutivo pannelli SVG` come ricarica esplicita;
-- non modificare il file progetto locale né incorporare l'esecutivo nel `TERMODEL-PROJECT-TEXT-V1`.
+Risultato:
+- frontend portato a **v1.13**;
+- dopo un `Aggiorna Modello` riuscito il frontend interroga automaticamente il catalogo `generated-files`;
+- se esiste `artifacts/pannelli-esecutivo.svg`, lo scarica, lo valida, lo carica come overlay runtime, abilita e spunta `Mostra esecutivo calcolato` e ridisegna subito il CAD2D;
+- se l'artifact non esiste, `Aggiorna Modello` resta riuscito e il checkbox rimane disabilitato;
+- il comando manuale `Esecutivo pannelli SVG` resta disponibile come ricarica esplicita;
+- al termine del calcolo `cadUpdateControls()` viene richiamato dopo `loading=false`, evitando controlli rimasti artificialmente disabilitati;
+- nessun contenuto dell'esecutivo viene inserito nel file progetto locale;
+- contratto Frontend↔Service aggiornato a **v1.22**;
+- il workflow `TermodelService Build` ora scatta anche per modifiche in `docs/termodel-ui-demo/**` e contiene un controllo dedicato al wiring dell'auto-load.
 
-Criteri di completamento:
-- frontend con versione incrementata;
-- sintassi JavaScript valida;
-- build/test GitHub Actions verdi;
-- regression test frontend/Service coerente con il caricamento automatico;
-- Summary aggiornato a `ESEGUITO` soltanto dopo verifica.
+Verifica:
+- GitHub Actions run `35982141962`, job `107576306780`: **SUCCESS**;
+- `Check frontend JavaScript syntax`: SUCCESS;
+- `RADIANT_EXECUTIVE_AUTOLOAD_FRONTEND_OK`: SUCCESS;
+- build Release WebService: SUCCESS;
+- smoke HTTP: SUCCESS;
+- `RADIANT_EXECUTIVE_SVG_DXF_SMOKE_OK`: SUCCESS;
+- `RADIANT_REFERENCE_PROJECT_OK`: SUCCESS;
+- snapshot GitHub: SUCCESS;
+- stato finale `TERMODEL_JOB_STATUS=SUCCESS`;
+- notifica telefono `PHONE_NOTIFICATION_SENT status=SUCCESS`.
+
+Commit principali:
+- `82ee52a2e51d4e6bf07162eae5d2d7726036fea7` — auto-load esecutivo dopo Aggiorna Modello;
+- `8d3169aa4d6d695414ecb2b13cd32e661676d140` — frontend v1.13;
+- `be5da6cbb38784b610af479489ea5c675ed8491f` — regression CI e trigger frontend.
 
 
 ## 1. Regola obbligatoria per nuove chat
