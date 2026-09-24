@@ -70,6 +70,30 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
+Stato: COMMISSIONATO
+
+Commissionato:
+- verificare e mantenere attivo il percorso storico `LeggiDxf -> GeneraPianta` che, in modalità 2 sui piani calpestabili, produce la pianta architettonica derivata dal modello;
+- denominare funzionalmente questo elaborato **Pianta pulita**;
+- conservare nel Core l'output SVG già equivalente alla pianta DXF storica, formato `TERMODEL-CLEAN-FLOOR-SVG-V1`;
+- trasferire tutte le piante pulite prodotte da una elaborazione nel `ProjectCalculationData` e pubblicarle atomicamente nel workspace del relativo `projectId`;
+- esporre ogni piano tramite `GET /api/projects/{projectId}/artifacts/pianta-pulita/{piano}`, senza rieseguire il calcolo;
+- rendere gli SVG reperibili anche dal catalogo universale `generated-files`;
+- mantenere compatibile il legacy `GET /api/model/clean-floor/{floorName}`;
+- aggiungere regression HTTP automatica che verifichi generazione, persistenza, catalogo e lettura dell'SVG;
+- non modificare frontend, Library Desktop o `definizionedati.json`.
+
+Criteri di completamento:
+- build Release verde;
+- almeno una Pianta pulita prodotta da un progetto reale di regression;
+- SVG persistito sotto `artifacts/pianta-pulita/`;
+- endpoint projectId-scoped HTTP 200 con `image/svg+xml`;
+- stesso elaborato presente in `generated-files`;
+- lettura artifact senza nuovo calcolo;
+- GitHub Actions con stato/notifica secondo `.github/TERMODEL-ACTION-NOTIFICATIONS.md`.
+
+
 ### INCARICO 2026-09-24 — registro strategie geometriche SpiraliGPT
 Stato: ESEGUITO
 
