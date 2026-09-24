@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.20**  
+Versione documento: **1.21**  
 Aggiornamento: **24 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; conversione DXF→SVG spostata nel Core/Service; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati e snapshot diagnostico persistente Render→GitHub implementati; notifica GitHub Actions/telefono implementata**
+Stato: **progetti autorevoli locali nel frontend; Service Render dedicato a calcolo e artifact con workspace ricreabile per projectId; endpoint legacy open/save/lock mantenuti compatibili; conversione DXF→SVG nel Core/Service; feedback utenti verso GitHub Issues, archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati, snapshot diagnostico Render→GitHub e notifica GitHub Actions/telefono implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -1147,11 +1147,12 @@ POST /api/calculations
 Content-Type: text/plain; charset=utf-8
 ```
 
-**Stato implementazione 22 settembre 2026:** il Service usa ora il modello
-projectId-only. `POST /api/projects/allocate-id` assegna e riserva il
-`projectId`; `POST /api/calculations` legge `manifest.projectId`, aggiorna
-`SavedProjects/{projectId}/` e restituisce `projectId` senza un secondo
-identificatore per-elaborazione. `model3d` viene persistito su disco e letto
+**Stato implementazione aggiornato 24 settembre 2026:** `POST /api/calculations`
+legge `manifest.projectId` dal file completo ricevuto dal frontend e crea o
+sostituisce direttamente il workspace tecnico `SavedProjects/{projectId}/`,
+anche se l'ID non era stato precedentemente allocato o il filesystem Render è
+stato ricreato. `POST /api/projects/allocate-id` resta soltanto compatibile
+con i client precedenti. `model3d` viene scritto nel workspace tecnico e letto
 tramite `GET /api/projects/{projectId}/artifacts/model3d` senza ricalcolo.
 Il precedente snapshot RAM per-elaborazione e la relativa route artifact sono
 stati rimossi dal WebService.
@@ -1921,5 +1922,6 @@ Da definire durante l'implementazione:
 
 Il principio non aperto è già deciso:
 
-> il `projectId` è l'unico riferimento operativo del progetto e ogni nuova
-> elaborazione riuscita sostituisce i risultati precedenti di quel progetto.
+> il file locale `TERMODEL-PROJECT-TEXT-V1` è la copia autorevole del
+> progetto; il `projectId` è soltanto la chiave tecnica degli artifact sul
+> Service e un nuovo `AggiornaCalcolo` può ricreare interamente il workspace.
