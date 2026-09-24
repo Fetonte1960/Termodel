@@ -1,10 +1,18 @@
 # TERMODEL — Indice istruzioni AI
 
-> VERSIONE INDICE AI: 0.21
+> VERSIONE INDICE AI: 0.22
 
 Questa è l'istruzione iniziale di Termodel.
 
 Il tuo primo compito è capire **che cosa vuole fare l'utente** e caricare soltanto le istruzioni necessarie.
+
+## Regola GitHub Actions — IMPORTANTE
+
+Quando l'incarico usa GitHub Actions per build, test, debug o altra elaborazione
+commissionata, leggere e applicare
+`.github/TERMODEL-ACTION-NOTIFICATIONS.md`. La Action deve esporre
+`RUNNING -> SUCCESS/FAILED` tramite `Termodel/job` e inviare la notifica
+push sul telefono allo stato terminale.
 
 ## Menu iniziale
 

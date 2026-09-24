@@ -1,12 +1,20 @@
 # TERMODEL — PROJECT SUMMARY
 
+> **IMPORTANTE — GitHub Actions e notifica telefono**
+>
+> Ogni incarico operativo eseguito tramite GitHub Actions deve applicare la
+> procedura permanente documentata in
+> `.github/TERMODEL-ACTION-NOTIFICATIONS.md`: stato
+> `RUNNING -> SUCCESS/FAILED` tramite Commit Status `Termodel/job` e
+> notifica push al telefono negli stati terminali.
+
 > **Documento primario di continuità del progetto**
 >
 > Ogni nuova chat o sessione che lavora sul repository Termodel deve leggere **questo file per primo**, prima di proporre o modificare codice.
 >
 > Questo documento serve a evitare la perdita di contesto quando una chat diventa troppo lunga. Deve essere mantenuto breve, operativo e aggiornato dopo ogni intervento che cambia architettura, stato, file importanti, contratti o prossimi passi.
 
-Ultimo aggiornamento: **2026-09-23**  
+Ultimo aggiornamento: **2026-09-24**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
 `c182089deef12665942f589516a02cecf5d1af4c` — `Clean exploration help wording`  
@@ -25,7 +33,8 @@ Prima di lavorare:
 4. leggere soltanto i documenti specialistici indicati nella sezione relativa al lavoro da svolgere;
 5. non assumere che lo stato ricordato da una chat precedente sia ancora corrente;
 6. prima di modificare codice, comunicare sinteticamente cosa si vuole cambiare e quali file sono coinvolti;
-7. non fare commit o push se l'utente non ha autorizzato l'intervento.
+7. non fare commit o push se l'utente non ha autorizzato l'intervento;
+8. se il lavoro usa GitHub Actions come incarico operativo, leggere e applicare `.github/TERMODEL-ACTION-NOTIFICATIONS.md`.
 
 Dopo un intervento significativo:
 

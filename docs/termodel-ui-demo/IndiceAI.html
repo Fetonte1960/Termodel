@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TERMODEL — Indice istruzioni AI v0.21</title>
+  <title>TERMODEL — Indice istruzioni AI v0.22</title>
   <meta name="description" content="Istruzioni operative AI Termodel">
   <style>
     body{margin:0;background:#f7f7f7;color:#222;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
@@ -14,11 +14,19 @@
 <body>
   <main><pre># TERMODEL — Indice istruzioni AI
 
-&gt; VERSIONE INDICE AI: 0.21
+&gt; VERSIONE INDICE AI: 0.22
 
 Questa è l'istruzione iniziale di Termodel.
 
 Il tuo primo compito è capire **che cosa vuole fare l'utente** e caricare soltanto le istruzioni necessarie.
+
+## Regola GitHub Actions — IMPORTANTE
+
+Quando l'incarico usa GitHub Actions per build, test, debug o altra elaborazione
+commissionata, leggere e applicare
+`.github/TERMODEL-ACTION-NOTIFICATIONS.md`. La Action deve esporre
+`RUNNING -&gt; SUCCESS/FAILED` tramite `Termodel/job` e inviare la notifica
+push sul telefono allo stato terminale.
 
 ## Menu iniziale
 

@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.16**  
+Versione documento: **1.17**  
 Aggiornamento: **24 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati e snapshot diagnostico persistente Render→GitHub implementati**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati e snapshot diagnostico persistente Render→GitHub implementati; notifica GitHub Actions/telefono implementata**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -18,6 +18,22 @@ Non sostituisce:
 Quando frontend e server devono concordare endpoint, formati, sequenze,
 versionamento o comportamento della comunicazione, **questo documento è il
 punto comune da aggiornare**.
+
+---
+
+## 0.1 Regola operativa GitHub Actions — IMPORTANTE
+
+Gli incarichi operativi eseguiti tramite GitHub Actions devono seguire la
+specifica canonica:
+
+```text
+.github/TERMODEL-ACTION-NOTIFICATIONS.md
+```
+
+Regola sintetica: `RUNNING -> SUCCESS/FAILED` tramite Commit Status
+`Termodel/job`; notifica push telefono solo nello stato terminale; step finale
+con `always()`; secret `TERMODEL_NTFY_TOPIC` mai esposto. Il meccanismo è
+stato verificato end-to-end il 24 settembre 2026.
 
 ---
 
