@@ -101,7 +101,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-24 — visibilità FIN attraverso lo spessore parete
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - correggere l'esempio pubblico `Appartamento` perché le finestre, pur correttamente dimensionate e orientate nel piano, risultano coperte dalla parete ospite nel rendering 3D;
@@ -110,7 +110,18 @@ Commissionato:
 - verificare la correzione con build ed esecuzione reale GitHub Actions sull'Appartamento e controllare numericamente che ogni FIN attraversi lo spessore della parete associata.
 
 Risultato:
-- da completare.
+- causa isolata in `Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/Model/Modello.cs`, metodo `AggiungiFinestra(..., spessoreParete)`: il parametro con lo spessore reale della parete arrivava correttamente da `LeggiDxf` ma veniva ignorato; la FIN veniva sempre costruita con profondità fissa `SpesPonte = 0,10 m` e centrata sulla linea CAD della parete;
+- il renderer headless costruisce invece la parete a partire dalla linea CAD ed estrude lo spessore tutto lungo una normale. Nell'Appartamento reale la parete finestrata misura `0,13 m`: prima della correzione l'intervallo normale della parete era circa `-0,13..0,00 m`, mentre quello della FIN era `-0,05..+0,05 m`; il serramento non raggiungeva quindi la faccia opposta della parete e poteva risultare completamente coperto dalla mesh opaca osservando quel lato;
+- correzione headless: `AggiungiFinestra` usa ora `abs(spessoreParete)`, calcola la stessa normale usata dall'estrusione parete, sposta il centro FIN di metà spessore nella parete e assegna profondità `max(0,10 m, spessoreParete + 0,02 m)`; il centimetro aggiuntivo per faccia evita z-fighting/copertura esatta;
+- sull'Appartamento la FIN risultante è profonda `0,15 m` e occupa circa `-0,14..+0,01 m` rispetto alla linea della parete: è centrata sui `0,13 m` della parete e sporge di `0,01 m` su entrambe le facce;
+- commit codice su `main`: `eb2f5479ed986259c0caf6ec312306954c3024ee` — `Expose FIN meshes through host wall thickness`;
+- tracciatura della divergenza temporanea aggiornata in `CopiedFromTermodel/TERMODEL-SYNC.md`, commit `77acd802511425d2772892b433b9eeb4a32930df` — `Track headless FIN wall-thickness adaptation`; la Library Desktop non è stata modificata;
+- GitHub Actions standard su `main`, run **#266**, id `35956352931`: **SUCCESS**;
+- verifica dedicata su branch `ai-debug-fin-thickness-20260924`, run **#269**, id `35956721203`: build reale, avvio reale del Service, `POST /api/model/3d = 200`, `POST /api/calculations = 200`, artifact `model3d` con **438 primitive**;
+- regression geometrica: **9 FIN controllate, 0 errori**. F001..F009 restano parallele alla parete associata con allineamento `1.000000`; per tutte il volume FIN contiene l'intero intervallo di spessore della parete e lascia circa `0,01 m` di sormonto su ciascuna faccia;
+- confronto con artifact precedente alla correzione (run #259) conferma numericamente il difetto: parete `0,13 m` contro FIN `0,10 m`, centrata sulla linea e non sullo spessore della parete;
+- strumentazione diagnostica temporanea rimossa dal branch al termine della prova; frontend, `definizionedati.json`, contratto Frontend↔Service e Library Desktop invariati;
+- livello distinto non dichiarato: verifica visiva nel browser pubblico dopo il successivo redeploy Render.
 
 ### INCARICO 2026-09-24 — allineamento FIN alla parete nell'Appartamento
 Stato: ESEGUITO
