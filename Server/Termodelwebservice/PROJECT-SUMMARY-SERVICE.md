@@ -108,6 +108,24 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+
+### INCARICO 2026-09-24 — pulsante versione desktop completa dalla main mobile
+Stato: COMMISSIONATO
+
+Commissionato:
+- nella main Android/mobile aggiungere accanto al pulsante `Esplora` un piccolo pulsante con icona monitor per passare volontariamente alla versione completa desktop;
+- il comando deve disattivare la modalità immersiva Android esistente, mostrare barre/menu/pannelli desktop reali e usare una viewport logica desktop, senza duplicare l'interfaccia;
+- la modifica riguarda soltanto `docs/termodel-ui-demo`; non modificare Service, Core, contratto API, `definizionedati.json` o Library Desktop;
+- preservare il comportamento mobile attuale finché l'utente non preme il nuovo pulsante;
+- incrementare la versione/cache busting frontend e verificare staticamente che il passaggio rimuova gli override Android.
+
+Criteri di completamento:
+- pulsante compatto visibile accanto a `Esplora` nella main mobile;
+- click -> interfaccia desktop completa, non la palette mobile immersiva;
+- nessuna duplicazione dei comandi desktop;
+- sorgente GitHub ricontrollato dopo la modifica;
+- Summary aggiornato a ESEGUITO con commit e stato reale dei test.
+
 ### INCARICO 2026-09-24 — feedback DXF non deve deformare la toolbar CAD 2D
 Stato: ESEGUITO
 
