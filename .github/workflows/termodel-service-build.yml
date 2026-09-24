@@ -123,6 +123,65 @@ jobs:
           try {
             $service = Start-ServiceProcess
 
+            # DXF -> SVG: prova reale dell'endpoint server-side con un segmento
+            # lungo 1000 mm. Il risultato deve conservare layer e scala: 1,000 m.
+            $dxfSource = @'
+0
+SECTION
+2
+HEADER
+9
+$INSUNITS
+70
+4
+0
+ENDSEC
+0
+SECTION
+2
+ENTITIES
+0
+LINE
+8
+WALL
+10
+0
+20
+0
+11
+1000
+21
+0
+0
+ENDSEC
+0
+EOF
+'@
+            $dxfRequest = @{
+              dxfText = $dxfSource
+              layers = @("WALL")
+              unit = "mm"
+              curves = $false
+              convertText = $false
+              explodeBlocks = $false
+            } | ConvertTo-Json -Depth 10
+
+            $dxfResult = Invoke-RestMethod -Uri "$base/api/dxf/to-svg" -Method Post -ContentType "application/json" -Body $dxfRequest
+            if ($dxfResult.stats.converted -ne 1) {
+              throw "DXF -> SVG: numero entita convertite inatteso: $($dxfResult.stats.converted)"
+            }
+            if ([Math]::Abs([double]$dxfResult.realWidthMeters - 1.0) -gt 0.000001) {
+              throw "DXF -> SVG: scala errata, larghezza=$($dxfResult.realWidthMeters) m"
+            }
+            if ($dxfResult.drawingUnit -ne "mm" -or [double]$dxfResult.unitScaleToCm -ne 0.1) {
+              throw "DXF -> SVG: unita/scala inattese."
+            }
+            if ($dxfResult.svgText -notmatch 'data-dxf-layer="WALL"' -or
+                $dxfResult.svgText -notmatch 'data-termodel-source-unit="mm"') {
+              throw "DXF -> SVG: metadata SVG attesi non trovati."
+            }
+            Write-Host "DXF_TO_SVG_SMOKE_OK"
+
             $baseProject = Invoke-RestMethod -Uri "$base/api/projects/new" -Method Post -ContentType "application/json" -Body "{}"
 
             foreach ($requiredSection in @(
