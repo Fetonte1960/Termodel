@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.06';
+const APP_VERSION = '1.07';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -7236,7 +7236,12 @@ function cadToggleMobileProperties() {
 
 function cadSetStatus(message, kind = '') {
   if (!cadEditStatus) return;
-  cadEditStatus.textContent = message;
+  const text = String(message ?? '');
+  cadEditStatus.textContent = text;
+  // La toolbar deve restare stabile anche con feedback diagnostici molto lunghi
+  // (es. import DXF). Il CSS tronca visivamente con ellissi; il testo completo
+  // resta disponibile passando il mouse sullo status.
+  cadEditStatus.title = text;
   cadEditStatus.classList.remove('dirty', 'error');
   if (kind) cadEditStatus.classList.add(kind);
 }
