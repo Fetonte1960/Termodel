@@ -110,7 +110,7 @@ già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 
 ### INCARICO 2026-09-24 — snap Vicino/Estremo sui tubi CAD 2D
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - correggere il CAD 2D in modalità `Rete`: durante il disegno `Tubo`, gli snap `Vicino` e `Estremo` devono agganciarsi ai tubi già disegnati sul piano corrente;
@@ -119,11 +119,30 @@ Commissionato:
 - applicare la modifica minima al frontend `docs/termodel-ui-demo`, senza toccare Service/Core, contratto API, `definizionedati.json` o Library Desktop;
 - incrementare la versione/cache busting frontend e verificare staticamente il percorso di snap.
 
-Criteri di completamento:
-- in modalità Rete, `Snap Estremo` considera gli estremi Txxx del piano corrente;
-- in modalità Rete, `Snap Vicino` considera la proiezione sul segmento Txxx del piano corrente;
-- in modalità Edificio il comportamento storico E/W resta invariato;
-- Summary aggiornato a ESEGUITO con commit e stato reale delle verifiche.
+Risultato:
+- individuata la causa: `cadSnapPoint()` iterava esclusivamente su `cadEditableSourceLines()`, che contiene solo pareti E/W; le entità `Tubo` Txxx erano quindi escluse dallo snap;
+- aggiunta `cadSnapSourceLines()`: in modalità `Edificio` restituisce le pareti E/W del piano corrente, in modalità `Rete` restituisce i tubi Txxx del piano corrente;
+- `cadSnapPoint()` usa ora la sorgente contestuale e distingue internamente `wall` / `pipe`, mantenendo lo snap allo sfondo vettoriale invariato;
+- `Snap Estremo` può agganciare gli endpoint dei tubi già disegnati;
+- `Snap Vicino` può agganciare la proiezione sul segmento tubo già disegnato;
+- il normale vincolo `Orto` resta invariato: quando attivo, uno snap incompatibile con l'asse ortogonale continua correttamente a non prevalere;
+- frontend portato a **v1.09**; titolo e query `app.js?v=1.09` aggiornati per cache busting;
+- Service/Core, contratto API, `definizionedati.json` e Library Desktop non modificati.
+
+Verifica:
+- sorgente GitHub ricontrollato dopo la modifica;
+- verificato staticamente che in modalità Rete la sorgente snap sia `cadAllPipeLines().filter(cadEntityBelongsToCurrentPlane)`;
+- verificato staticamente che in modalità Edificio resti `cadEditableSourceLines()`;
+- verificato che `targetLineId` accetti sia sorgenti `wall` sia `pipe`;
+- verificati `APP_VERSION='1.09'`, titolo v1.09 e cache busting v1.09;
+- compilazione: non applicabile al frontend statico JavaScript;
+- esecuzione/test browser reale: NON ancora eseguito in questa chat;
+- deploy GitHub Pages associato al commit: non ancora osservato al momento della chiusura dell'incarico.
+
+Commit:
+- `646321df...` — registrazione incarico;
+- `810fbac1...` — correzione snap contestuale pareti/tubi + versione app 1.09;
+- `73a58e1f...` — titolo/cache busting frontend 1.09.
 
 ### INCARICO 2026-09-24 — pulsante versione desktop completa dalla main mobile
 Stato: ESEGUITO
