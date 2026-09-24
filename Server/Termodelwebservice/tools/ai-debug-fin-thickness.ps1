@@ -465,8 +465,8 @@ try {
     "modelTypeCounts=$modelTypeCounts",
     "modelBBox=$modelBBox",
     "coverageChecked=$coverageChecked",
-    "coverageFailures=$coverageFailures",
-    $coverageDetails,
+    "coverageFailures=$coverageFailures"
+  ) + $coverageDetails.ToArray() + @(
     "workspace=$workspace"
   )
   [System.IO.File]::WriteAllLines($summaryPath,$lines,$utf8)
