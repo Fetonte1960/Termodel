@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.21**  
+Versione documento: **1.22**  
 Aggiornamento: **24 settembre 2026**  
 Stato: **progetti autorevoli locali nel frontend; Service Render dedicato a calcolo e artifact con workspace ricreabile per projectId; endpoint legacy open/save/lock mantenuti compatibili; conversione DXF→SVG nel Core/Service; feedback utenti verso GitHub Issues, archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati, snapshot diagnostico Render→GitHub e notifica GitHub Actions/telefono implementati**
 
@@ -659,7 +659,16 @@ Nel menu **Sfondo** del CAD2D sono disponibili:
 Mostra esecutivo calcolato
 ```
 
-L'esecutivo è un **overlay runtime di verifica**:
+L'esecutivo è un **overlay runtime di verifica**.
+
+Comportamento frontend aggiornato il **24 settembre 2026**:
+
+- dopo un `POST /api/calculations` completato, il frontend tenta automaticamente di recuperare dal catalogo universale `artifacts/pannelli-esecutivo.svg`;
+- se il file esiste ed è valido, viene caricato come overlay, `Mostra esecutivo calcolato` viene abilitato e spuntato e il CAD2D viene ridisegnato immediatamente;
+- se il file non esiste, l'assenza dell'esecutivo non rende fallito `Aggiorna Modello`: il controllo resta disabilitato;
+- il comando `Esecutivo pannelli SVG` resta disponibile come ricarica manuale dell'ultimo artifact corrente.
+
+Proprietà dell'overlay:
 
 - non viene inserito in `cadWorkingDoc`;
 - non entra nello stack Undo/Redo;
