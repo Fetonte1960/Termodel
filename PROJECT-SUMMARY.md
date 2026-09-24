@@ -17,7 +17,7 @@
 Ultimo aggiornamento: **2026-09-24**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`466a064599da2e1ec27fc08060f203b0aa236763` — `Hide desktop flash during Android startup`  
+`c44a16ee314de9fc668c35917837fed803342528` — `Replace apartment example with radiant project`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -181,6 +181,46 @@ Verifica automatica:
 - GitHub Pages run `36002378492`: **SUCCESS**.
 
 La verifica HTTP diretta del dominio pubblico non è disponibile dall'ambiente di questa sessione; il deploy GitHub Pages è confermato ma la prova visuale reale su telefono resta distinta.
+
+
+## 0.6 Modifica 2026-09-24 — esempio pubblico pannelli radianti + esecutivo mobile
+
+Stato: **ESEGUITO**.
+
+Obiettivo:
+- sostituire nel catalogo pubblico l'esempio **Appartamento** con il progetto reale consolidato usato per la regression dei pannelli radianti;
+- rendere accessibile dal piccolo box mobile sia il disegno unifilare sia il disegno esecutivo dei pannelli.
+
+Risultato:
+- frontend portato a **v1.16**;
+- `docs/termodel-ui-demo/examples/catalog.json` espone ora come unico esempio attivo:
+  - id `pannelli-radianti`;
+  - nome **Pannelli radianti**;
+  - progetto `./examples/pannelli-radianti.tmdl.txt`;
+  - capacità `executive: true`;
+- aggiunto `docs/termodel-ui-demo/examples/pannelli-radianti.tmdl.txt`, ricavato dalla fixture reale `RadiantPanelsReference` con i metadata circuito corretti C001..C006; il file pubblico usa line ending LF normalizzati ma conserva lo stesso contenuto tecnico della fixture corretta;
+- i vecchi asset `appartamento.svg` e relativo sfondo restano nel repository come materiale storico ma non sono più pubblicati dal catalogo;
+- nel box mobile principale **Esplora** sono disponibili:
+  - **Disegno unifilare**;
+  - **Disegno esecutivo**;
+- nel box **Esplora** del CAD mobile è disponibile la spunta **Esecutivo pannelli**;
+- l'esecutivo non viene incorporato nel progetto e non viene congelato come asset statico: se non esiste ancora l'overlay runtime, il frontend usa il normale `AggiornaCalcolo` tramite Service, riceve `pannelli-esecutivo.svg` e lo mostra nel CAD;
+- dopo il primo caricamento dell'artifact, la spunta mobile permette di mostrarlo/nasconderlo senza alterare `TERMODEL-PROJECT-TEXT-V1`;
+- nessuna modifica a Termodel.Core, WebService o contratto Frontend↔Service.
+
+Verifica:
+- commit codice: `c44a16ee314de9fc668c35917837fed803342528`;
+- GitHub Actions run `36005367827`, job `107652035686`: **SUCCESS**;
+- sintassi JavaScript: SUCCESS;
+- `RADIANT_PUBLIC_EXAMPLE_OK`: SUCCESS;
+- `RADIANT_EXECUTIVE_SVG_DXF_SMOKE_OK`: SUCCESS;
+- `RADIANT_REFERENCE_PROJECT_OK`: SUCCESS;
+- progetto regression reale confermato a **6 circuiti**;
+- stato finale `TERMODEL_JOB_STATUS=SUCCESS`;
+- notifica telefono `PHONE_NOTIFICATION_SENT status=SUCCESS`;
+- GitHub Pages run `36005367220`: **SUCCESS**.
+
+La prova visuale reale del nuovo box sul telefono resta distinta dalla CI e non è stata eseguita da questa sessione.
 
 
 ## 1. Regola obbligatoria per nuove chat
