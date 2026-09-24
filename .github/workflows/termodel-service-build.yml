@@ -15,10 +15,12 @@ on:
   push:
     paths:
       - 'Server/Termodelwebservice/**'
+      - 'docs/termodel-ui-demo/**'
       - '.github/workflows/termodel-service-build.yml'
   pull_request:
     paths:
       - 'Server/Termodelwebservice/**'
+      - 'docs/termodel-ui-demo/**'
       - '.github/workflows/termodel-service-build.yml'
 
 jobs:
@@ -64,6 +66,37 @@ jobs:
 
       - name: Check frontend JavaScript syntax
         run: node --check ..\..\docs\termodel-ui-demo\app.js
+
+      - name: Check radiant executive auto-load wiring
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $appPath = "..\..\docs\termodel-ui-demo\app.js"
+          $indexPath = "..\..\docs\termodel-ui-demo\index.html"
+          $app = Get-Content -LiteralPath $appPath -Raw
+          $index = Get-Content -LiteralPath $indexPath -Raw
+
+          foreach ($marker in @(
+            "await cadLoadGeneratedExecutiveBackground({",
+            "automatic: true",
+            "silentMissing: true",
+            "caricato automaticamente",
+            "loading = false;",
+            "cadUpdateControls();"
+          )) {
+            if (-not $app.Contains($marker)) {
+              throw "Wiring frontend esecutivo automatico mancante: $marker"
+            }
+          }
+
+          if (-not $app.Contains("const APP_VERSION = '1.13';")) {
+            throw "APP_VERSION frontend inattesa."
+          }
+          if (-not $index.Contains("./app.js?v=1.13")) {
+            throw "Cache-busting app.js v1.13 non aggiornato."
+          }
+
+          Write-Host "RADIANT_EXECUTIVE_AUTOLOAD_FRONTEND_OK"
 
       - name: Build
         run: dotnet build Termodel.WebService.sln --configuration Release --no-restore
