@@ -1,7 +1,7 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.15**  
-Aggiornamento: **23 settembre 2026**  
+Versione documento: **1.16**  
+Aggiornamento: **24 settembre 2026**  
 Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati e snapshot diagnostico persistente Render→GitHub implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
@@ -695,6 +695,12 @@ Regole normative del payload server:
 - `geometry/project.svg` nel payload server deve usare il formato tecnico
   `TERMODEL-PROJECT-SVG-V1`, con namespace SVG e
   `data-termodel-units="cm"`;
+- nel blocco tecnico `FIN` prodotto dal CAD Web, gli attributi dimensionali
+  `LARGHEZZA`, `ALTEZZA`, `SOTTOFINESTRA` e `SOPRALUCE` sono espressi
+  in **centimetri**, coerentemente con l'unità dello SVG; il confine
+  `SvgDxfReader` li converte in **metri** quando ricostruisce il blocco
+  netDxf atteso dal motore Desktop storico. `NUMEROANTE` resta un intero e
+  non subisce conversioni;
 - i piani devono essere figli diretti `g` della radice SVG e dichiarare
   `data-termodel-floor-id`, `data-termodel-name`,
   `data-termodel-role`, `data-termodel-file`,
