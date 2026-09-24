@@ -935,7 +935,7 @@ public static class DxfSvgConverter
 
         double dx = b.X - a.X;
         double dy = b.Y - a.Y;
-        double chord = Math.Hypot(dx, dy);
+        double chord = Math.Sqrt(dx * dx + dy * dy);
 
         if (chord < 1e-9)
             return [a, b];
@@ -949,7 +949,7 @@ public static class DxfSvgConverter
         DxfPoint center =
             new(mx + nx * offset, my + ny * offset);
         double radius =
-            Math.Hypot(a.X - center.X, a.Y - center.Y);
+            Distance(a.X - center.X, a.Y - center.Y);
         double start =
             Math.Atan2(a.Y - center.Y, a.X - center.X);
         int segments =
@@ -1015,7 +1015,7 @@ public static class DxfSvgConverter
         DxfEntity entity)
     {
         double majorLength =
-            Math.Hypot(entity.Major.X, entity.Major.Y);
+            Distance(entity.Major.X, entity.Major.Y);
 
         if (majorLength == 0)
             return [];
@@ -1092,6 +1092,9 @@ public static class DxfSvgConverter
         double s = Math.Sin(radians);
         return [c, s, -s, c, 0, 0];
     }
+
+    private static double Distance(double x, double y) =>
+        Math.Sqrt(x * x + y * y);
 
     private static DxfPoint TransformPoint(
         IReadOnlyList<double> matrix,
