@@ -850,7 +850,7 @@ public static class DxfSvgConverter
         options ??= new DxfSvgConversionOptions();
 
         var selectedLayers =
-            options.Layers is { Count: > 0 }
+            options.Layers is not null
                 ? new HashSet<string>(
                     options.Layers
                         .Where(layer => !string.IsNullOrWhiteSpace(layer))
