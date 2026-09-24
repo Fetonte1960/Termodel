@@ -21,6 +21,7 @@ public sealed record SvgDxfLineMetadata(
     string FloorName,
     string Entity,
     string NetworkCode,
+    string CircuitCode,
     string LayerName);
 
 public static class SvgDxfReader
@@ -150,6 +151,7 @@ public static class SvgDxfReader
             element.Attribute("data-termodel-piano")?.Value?.Trim() ?? string.Empty,
             element.Attribute("data-termodel-entity")?.Value?.Trim() ?? string.Empty,
             element.Attribute("data-termodel-rete")?.Value?.Trim() ?? string.Empty,
+            element.Attribute("data-termodel-circuito")?.Value?.Trim() ?? string.Empty,
             layer.Name);
 
         return line;
