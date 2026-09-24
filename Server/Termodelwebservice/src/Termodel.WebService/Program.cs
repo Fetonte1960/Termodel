@@ -675,6 +675,7 @@ app.MapPost("/api/calculations", async (
 
                 return new ProjectCalculationData(
                     JsonSerializer.SerializeToUtf8Bytes(result.Model),
+                    result.CleanFloorPlans,
                     JsonSerializer.SerializeToUtf8Bytes(panels, artifactJsonOptions),
                     executive?.Svg,
                     executive?.Dxf,
@@ -715,6 +716,21 @@ app.MapPost("/api/calculations", async (
                 href = panelsHref
             }
         };
+
+        foreach (string floorName in data.CleanFloorPlans.Keys.OrderBy(
+                     name => name,
+                     StringComparer.OrdinalIgnoreCase))
+        {
+            artifacts.Add(new
+            {
+                name = "pianta-pulita",
+                floorName,
+                contentType = "image/svg+xml",
+                href =
+                    $"/api/projects/{projectId:D}/artifacts/pianta-pulita/" +
+                    Uri.EscapeDataString(floorName)
+            });
+        }
 
         if (data.RadiantExecutiveSvg is not null &&
             data.RadiantExecutiveDxf is not null)
@@ -904,6 +920,50 @@ app.MapGet(
     return Results.Bytes(
         model3DJson,
         contentType: "application/json; charset=utf-8");
+});
+
+// Pianta pulita persistita per projectId. La lettura è read-only e non
+// riesegue LeggiDxf/GeneraPianta.
+app.MapGet(
+    "/api/projects/{projectId:guid}/artifacts/pianta-pulita/{**piano}",
+    async (
+        Guid projectId,
+        string piano,
+        HttpResponse response,
+        ProjectStore projects,
+        CancellationToken cancellationToken) =>
+{
+    byte[]? svg =
+        await projects.ReadCleanFloorPlanAsync(
+            projectId,
+            piano,
+            cancellationToken);
+
+    if (svg is null)
+    {
+        return Results.Problem(
+            title: "Pianta pulita non disponibile",
+            detail:
+                $"Il projectId '{projectId:D}' non dispone della Pianta pulita " +
+                $"del piano '{piano}'.",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    bool stale = await projects.AreArtifactsStaleAsync(
+        projectId,
+        cancellationToken);
+
+    response.Headers["X-Termodel-Artifact-Stale"] = stale ? "true" : "false";
+    response.Headers["Content-Disposition"] =
+        "inline; filename="pianta-pulita.svg"";
+    response.Headers["X-Content-Type-Options"] = "nosniff";
+    response.Headers["Cache-Control"] = "no-store";
+    response.Headers["Content-Security-Policy"] =
+        "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:";
+
+    return Results.Bytes(
+        svg,
+        contentType: "image/svg+xml; charset=utf-8");
 });
 
 // Funzione realizzata da Codex in autonomia

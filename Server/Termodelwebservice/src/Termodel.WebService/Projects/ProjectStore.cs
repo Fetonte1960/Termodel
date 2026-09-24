@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -307,6 +308,38 @@ public sealed class ProjectStore
             cancellationToken);
     }
 
+    public async Task<byte[]?> ReadCleanFloorPlanAsync(
+        Guid projectId,
+        string floorName,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(floorName))
+            return null;
+
+        SemaphoreSlim gate = GetGate(projectId);
+        await gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            string artifactPath = Path.Combine(
+                GetProjectDirectory(projectId),
+                "artifacts",
+                "pianta-pulita",
+                BuildCleanFloorArtifactFileName(floorName));
+
+            if (!File.Exists(artifactPath))
+                return null;
+
+            return await File.ReadAllBytesAsync(
+                artifactPath,
+                cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     private async Task<byte[]?> ReadArtifactAsync(
         Guid projectId,
         string fileName,
@@ -594,6 +627,34 @@ public sealed class ProjectStore
                 data.Model3DJson,
                 cancellationToken);
 
+            if (data.CleanFloorPlans.Count > 0)
+            {
+                string cleanFloorDirectory =
+                    Path.Combine(artifactsDirectory, "pianta-pulita");
+                Directory.CreateDirectory(cleanFloorDirectory);
+
+                foreach (KeyValuePair<string, string> cleanFloor in
+                    data.CleanFloorPlans.OrderBy(
+                        item => item.Key,
+                        StringComparer.OrdinalIgnoreCase))
+                {
+                    if (string.IsNullOrWhiteSpace(cleanFloor.Key) ||
+                        string.IsNullOrWhiteSpace(cleanFloor.Value))
+                    {
+                        throw new InvalidDataException(
+                            "Pianta pulita priva di nome piano o contenuto SVG.");
+                    }
+
+                    await File.WriteAllTextAsync(
+                        Path.Combine(
+                            cleanFloorDirectory,
+                            BuildCleanFloorArtifactFileName(cleanFloor.Key)),
+                        cleanFloor.Value,
+                        Utf8WithoutBom,
+                        cancellationToken);
+                }
+            }
+
             if (data.RadiantPanelsJson is not null)
             {
                 await File.WriteAllBytesAsync(
@@ -638,6 +699,7 @@ public sealed class ProjectStore
                 $"completedAtUtc={completedAtUtc:O}{Environment.NewLine}" +
                 $"status=completed{Environment.NewLine}" +
                 $"primitiveCount={data.PrimitiveCount}{Environment.NewLine}" +
+                $"cleanFloorPlanCount={data.CleanFloorPlans.Count}{Environment.NewLine}" +
                 $"radiantPanelCircuitCount={data.RadiantPanelCircuitCount}{Environment.NewLine}" +
                 $"radiantExecutivePrimitiveCount={data.RadiantExecutivePrimitiveCount}{Environment.NewLine}" +
                 $"radiantExecutiveFloorCount={data.RadiantExecutiveFloorCount}{Environment.NewLine}" +
@@ -888,6 +950,42 @@ public sealed class ProjectStore
             inline);
     }
 
+    private static string BuildCleanFloorArtifactFileName(string floorName)
+    {
+        string normalized = floorName.Trim();
+        if (normalized.Length == 0)
+            throw new InvalidDataException("Il nome del piano della Pianta pulita è vuoto.");
+
+        var slugBuilder = new StringBuilder(normalized.Length);
+        bool lastWasSeparator = false;
+
+        foreach (char character in normalized)
+        {
+            if (char.IsLetterOrDigit(character))
+            {
+                slugBuilder.Append(character);
+                lastWasSeparator = false;
+            }
+            else if (!lastWasSeparator)
+            {
+                slugBuilder.Append('-');
+                lastWasSeparator = true;
+            }
+        }
+
+        string slug = slugBuilder.ToString().Trim('-');
+        if (slug.Length == 0)
+            slug = "piano";
+        if (slug.Length > 48)
+            slug = slug[..48].TrimEnd('-');
+
+        string hash = Convert
+            .ToHexString(SHA256.HashData(Utf8WithoutBom.GetBytes(normalized)))
+            .ToLowerInvariant()[..12];
+
+        return $"{slug}--{hash}.svg";
+    }
+
     private SemaphoreSlim GetGate(Guid projectId) =>
         _projectLocks.GetOrAdd(projectId, static _ => new SemaphoreSlim(1, 1));
 
@@ -920,6 +1018,7 @@ public sealed class ProjectStore
 
 public sealed record ProjectCalculationData(
     byte[] Model3DJson,
+    IReadOnlyDictionary<string, string> CleanFloorPlans,
     byte[]? RadiantPanelsJson,
     byte[]? RadiantExecutiveSvg,
     byte[]? RadiantExecutiveDxf,

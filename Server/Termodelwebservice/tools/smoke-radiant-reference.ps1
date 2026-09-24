@@ -279,9 +279,68 @@ try {
     throw "Calcolo reale privo di pannelli.json."
   }
 
+  $cleanArtifact = @($calc.artifacts | Where-Object {
+    $_.name -eq "pianta-pulita" -and $_.floorName -eq "Unico"
+  })
+  if ($cleanArtifact.Count -ne 1) {
+    throw "Calcolo reale privo della Pianta pulita del piano Unico."
+  }
+
   $projectDir = Join-Path $env:TERMODEL_SAVED_PROJECTS_DIR ([string]$allocation.projectId)
   $panelsPath = Join-Path $projectDir "artifacts\pannelli.json"
   if (-not (Test-Path -LiteralPath $panelsPath)) { throw "pannelli.json non persistito." }
+
+  $generated = Invoke-RestMethod -Uri "$base/api/projects/$($allocation.projectId)/generated-files" -Method Get
+  $cleanGenerated = @($generated.files | Where-Object {
+    $_.path -like "artifacts/pianta-pulita/*.svg"
+  })
+  if ($cleanGenerated.Count -ne 1) {
+    throw "generated-files: attesa una Pianta pulita SVG, trovate $($cleanGenerated.Count)."
+  }
+
+  $cleanFloorPath = Join-Path $projectDir (($cleanGenerated[0].path -replace '/', '\'))
+  if (-not (Test-Path -LiteralPath $cleanFloorPath)) {
+    throw "Pianta pulita dichiarata dal catalogo ma non persistita nel workspace."
+  }
+
+  $calculationLogPath = Join-Path $projectDir "logs\calculation.log"
+  $calculationLogBefore = (Get-Item -LiteralPath $calculationLogPath).LastWriteTimeUtc.Ticks
+  $cleanFloorBefore = (Get-Item -LiteralPath $cleanFloorPath).LastWriteTimeUtc.Ticks
+
+  $cleanFloorUrl = "$base/api/projects/$($allocation.projectId)/artifacts/pianta-pulita/$([uri]::EscapeDataString('Unico'))"
+  $cleanFloorResponse = Invoke-WebRequest -Uri $cleanFloorUrl -Method Get
+  if ($cleanFloorResponse.StatusCode -ne 200) {
+    throw "Endpoint Pianta pulita: atteso HTTP 200."
+  }
+  if ([string]$cleanFloorResponse.Headers["Content-Type"] -notmatch '^image/svg\+xml') {
+    throw "Endpoint Pianta pulita: Content-Type SVG inatteso."
+  }
+  if ([string]$cleanFloorResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false") {
+    throw "Pianta pulita appena calcolata risulta stale."
+  }
+  if ($cleanFloorResponse.Content -notmatch 'TERMODEL-CLEAN-FLOOR-SVG-V1' -or
+      $cleanFloorResponse.Content -notmatch 'data-termodel-floor-name="Unico"' -or
+      $cleanFloorResponse.Content -notmatch 'pianta-architettonica-pulita') {
+    throw "Pianta pulita SVG non contiene i marker canonici attesi."
+  }
+
+  $generatedCleanResponse = Invoke-WebRequest -Uri ($base + [string]$cleanGenerated[0].href) -Method Get
+  if ($generatedCleanResponse.StatusCode -ne 200 -or
+      $generatedCleanResponse.Content -ne $cleanFloorResponse.Content) {
+    throw "generated-files non restituisce lo stesso SVG della Pianta pulita."
+  }
+
+  if ((Get-Item -LiteralPath $calculationLogPath).LastWriteTimeUtc.Ticks -ne $calculationLogBefore -or
+      (Get-Item -LiteralPath $cleanFloorPath).LastWriteTimeUtc.Ticks -ne $cleanFloorBefore) {
+    throw "La lettura della Pianta pulita ha rieseguito o riscritto il calcolo."
+  }
+
+  $calculationMeta = Get-Content -LiteralPath $calculationLogPath -Raw
+  if ($calculationMeta -notmatch '(?m)^cleanFloorPlanCount=1$') {
+    throw "calculation.log non registra una Pianta pulita."
+  }
+
+  Copy-Item -LiteralPath $cleanFloorPath -Destination (Join-Path $artifactDir "pianta-pulita-Unico.svg") -Force
 
   $panels = Get-Content -LiteralPath $panelsPath -Raw | ConvertFrom-Json
   if ($panels.format -ne "TermodelRadiantPanels" -or
@@ -358,6 +417,7 @@ try {
     }
   }
 
+  Write-Host "CLEAN_FLOOR_ARTIFACT_OK"
   Write-Host "RADIANT_REFERENCE_PROJECT_OK"
   Write-Host "networkCount=$($panels.networkCount)"
   Write-Host "circuitCount=$($panels.circuitCount)"

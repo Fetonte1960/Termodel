@@ -31,6 +31,7 @@ POST /api/projects/{projectId}/close
 POST /api/projects/{projectId}/unlock
 POST /api/calculations
 GET  /api/projects/{projectId}/artifacts/model3d
+GET  /api/projects/{projectId}/artifacts/pianta-pulita/{piano}
 GET  /api/projects/{projectId}/artifacts/pannelli
 GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-svg
 GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
