@@ -1,5 +1,8 @@
 name: TermodelService Build
 
+# IMPORTANTE: protocollo stato/notifica canonico:
+# .github/TERMODEL-ACTION-NOTIFICATIONS.md
+
 permissions:
   contents: read
   statuses: write

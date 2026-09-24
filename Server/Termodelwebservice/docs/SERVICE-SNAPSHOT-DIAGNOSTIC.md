@@ -1,6 +1,12 @@
 # TERMODEL SERVICE — PROCEDURA SNAPSHOT DIAGNOSTICO AI
 
-Aggiornamento: 23 settembre 2026
+Aggiornamento: 24 settembre 2026
+
+> **IMPORTANTE — integrazione con incarichi GitHub Actions**
+>
+> Se la diagnostica snapshot viene usata dentro o insieme a una GitHub Action
+> commissionata, applicare anche `.github/TERMODEL-ACTION-NOTIFICATIONS.md`:
+> Commit Status `Termodel/job` e notifica telefono a SUCCESS/FAILED.
 
 ## Scopo
 

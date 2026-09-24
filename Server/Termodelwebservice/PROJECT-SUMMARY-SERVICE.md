@@ -1,5 +1,12 @@
 # TERMODEL CORE + WEBSERVICE — PROJECT SUMMARY
 
+> **IMPORTANTE — notifica obbligatoria degli incarichi GitHub Actions**
+>
+> Per ogni incarico significativo eseguito via GitHub Actions applicare
+> `.github/TERMODEL-ACTION-NOTIFICATIONS.md`: Commit Status
+> `Termodel/job` con `RUNNING -> SUCCESS/FAILED` e push telefono a
+> SUCCESS/FAILED. La regola è permanente e già verificata end-to-end.
+
 Ultimo aggiornamento: **2026-09-24**  
 Branch GitHub di riferimento: **main**  
 Repository: `https://github.com/Fetonte1960/Termodel`
@@ -59,6 +66,7 @@ Prima di intervenire:
    il ciclo test -> analisi -> correzione -> nuovo test fino alla soluzione
    o a un impedimento concreto. Al termine rimuovere la strumentazione
    occasionale e lasciare solo correzioni/regression test utili.
+14. **Notifica GitHub Actions — IMPORTANTE:** ogni Action usata per un incarico operativo o debug deve seguire `.github/TERMODEL-ACTION-NOTIFICATIONS.md`. All'avvio pubblicare `RUNNING` nel Commit Status `Termodel/job`; nello step finale `always()` pubblicare `SUCCESS` o `FAILED` e inviare una sola notifica push tramite il secret `TERMODEL_NTFY_TOPIC`. Non usare polling e non esporre mai il valore del secret.
 
 ## 1.1 Registro incarichi autorizzati
 

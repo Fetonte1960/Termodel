@@ -1,5 +1,12 @@
 # Termodel WebService
 
+> **IMPORTANTE — GitHub Actions**
+>
+> Gli incarichi eseguiti tramite GitHub Actions devono seguire
+> `.github/TERMODEL-ACTION-NOTIFICATIONS.md`: `RUNNING -> SUCCESS/FAILED`
+> nel Commit Status `Termodel/job` e notifica push telefono allo stato
+> terminale.
+
 Soluzione sperimentale e autonoma per estrarre progressivamente il motore Termodel in un Core C# utilizzabile da ASP.NET Core.
 
 ## Progetti

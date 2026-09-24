@@ -2,6 +2,13 @@
 
 Data introduzione: 2026-09-23
 
+> **IMPORTANTE — notifica di fine incarico**
+>
+> Ogni debug avanzato eseguito con GitHub Actions deve applicare
+> `.github/TERMODEL-ACTION-NOTIFICATIONS.md`: stato `RUNNING` all'avvio e
+> `SUCCESS`/`FAILED` alla fine, con una notifica push sul telefono nello
+> stato terminale. Non usare polling per attendere il completamento.
+
 Questa procedura è il metodo permanente da usare quando un problema del
 TermodelService non può essere risolto in modo affidabile con la sola lettura
 statica del codice.
