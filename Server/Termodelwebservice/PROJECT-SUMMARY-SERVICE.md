@@ -109,7 +109,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-24 — FIN visibili solo dal lato interno
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - riprodurre e correggere il difetto residuo dell'esempio pubblico `Appartamento`: dopo la precedente correzione di orientamento e profondità, le finestre risultano visibili dal lato interno ma ancora coperte/non visibili dal lato esterno;
@@ -118,7 +118,14 @@ Commissionato:
 - verificare con GitHub Actions sull'Appartamento reale e distinguere build, esecuzione HTTP, regressione geometrica e verifica visiva.
 
 Risultato:
-- da completare.
+- confrontati gli artifact reali GitHub Actions prima e dopo la correzione dello spessore, non soltanto il codice;
+- artifact precedente alla correzione (run #259 / id `35955220418`): per F001 la parete E001 occupa lungo la normale circa `-0,34117..-0,21117 m`, mentre la FIN occupa solo `-0,26117..-0,16117 m`; la finestra sporge quindi sul lato interno ma resta circa 8 cm corta rispetto alla faccia esterna. Questo riproduce esattamente il sintomo riferito dall'utente;
+- artifact successivo alla correzione (run #270 / id `35956863374`): la stessa FIN occupa `-0,35117..-0,20117 m`; attraversa l'intero spessore della parete e sporge circa 1 cm da entrambe le facce;
+- verificato anche il renderer frontend corrente: `docs/termodel-ui-demo/app.js` usa `THREE.DoubleSide`, quindi il difetto non deriva dal back-face culling;
+- nessuna ulteriore modifica geometrica è stata applicata: il codice corrente di `main` contiene già la correzione corretta in `Modello.AggiungiFinestra(...)`; aumentare arbitrariamente la profondità avrebbe mascherato un problema di deploy/artifact senza correggerne la causa;
+- commit di registrazione incarico: `a6611fc252543ea2a84d72f79b26f14c1b185643`; GitHub Actions su tale stato, run `35961835080`, job `build`: **SUCCESS**;
+- diagnosi residua: se nel browser pubblico la FIN è ancora visibile soltanto dall'interno, il modello visualizzato è compatibile con un artifact generato prima del commit `eb2f5479ed986259c0caf6ec312306954c3024ee` oppure con un Service Render non ancora allineato a quel commit; serve rigenerare l'artifact con `Aggiorna Modello` dopo il redeploy corrente;
+- verifica diretta del runtime Render pubblico non ottenuta dagli strumenti di questa sessione; pertanto il deploy Render resta distinto dalla build GitHub verificata.
 
 ### INCARICO 2026-09-24 — visibilità FIN attraverso lo spessore parete
 Stato: ESEGUITO
