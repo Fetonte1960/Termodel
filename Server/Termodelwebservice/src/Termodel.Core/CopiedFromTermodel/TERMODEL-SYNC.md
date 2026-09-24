@@ -15,7 +15,7 @@ restare minima, commentata e confrontabile con il riferimento indicato.
 | `Leggidxf/LeggiDxf.cs` | `SorgentiTermodel/Library/leggidxf/LeggiDxf.cs` | PENDING |
 | `Leggidxf/Tetti.cs` | `SorgentiTermodel/Library/leggidxf/Tetti.cs` | PENDING |
 | `Model/Polig3D.cs` | `SorgentiTermodel/Library/leggidxf/Polig3D.cs` | PENDING — BYTE-IDENTICAL, Git blob `d7d835a8a39febb3c3b26bcb88a8cc5cebb19411` |
-| `Model/Modello.cs` | `SorgentiTermodel/Library/Modello.cs` | PENDING |
+| `Model/Modello.cs` | `SorgentiTermodel/Library/Modello.cs` | PENDING — adattamento headless FIN: usa `spessoreParete` per profondità/centratura così il serramento attraversa la mesh opaca ospite; Desktop Library non modificata |
 | `SpiraliGPT/ChiudiSpirale.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/ChiudiSpirale.cs` | PENDING — BYTE-IDENTICAL, Git blob `e7e02e07fc5a5c6c1271a565e4dca115ed4ad9c4` |
 | `SpiraliGPT/Program.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/Program.cs` | PENDING — BYTE-IDENTICAL, Git blob `60bb4ff3ed9d323fd3437a107c0c0e7db3d07f79` |
 | `SpiraliGPT/SpiralDiagnostics.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/SpiralDiagnostics.cs` | PENDING — BYTE-IDENTICAL, Git blob `a26424a41bd42e516c086678e8e1c1d460afeb1f` |
