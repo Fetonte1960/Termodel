@@ -441,7 +441,7 @@ try {
         "$finId wall=$($sourceWall.Id) alignment=$($alignment.ToString('0.000000',[Globalization.CultureInfo]::InvariantCulture)) " +
         "wallNormal=$($wallMin.ToString('0.0000',[Globalization.CultureInfo]::InvariantCulture))..$($wallMax.ToString('0.0000',[Globalization.CultureInfo]::InvariantCulture)) " +
         "windowNormal=$($windowMin.ToString('0.0000',[Globalization.CultureInfo]::InvariantCulture))..$($windowMax.ToString('0.0000',[Globalization.CultureInfo]::InvariantCulture)) " +
-        "centerDelta=$($centerDelta.ToString('0.0000',[Globalization.CultureInfo]::InvariantCulture) " +
+        "centerDelta=$($centerDelta.ToString('0.0000',[Globalization.CultureInfo]::InvariantCulture)) " +
         "reveal=$($revealMin.ToString('0.0000',[Globalization.CultureInfo]::InvariantCulture))/$($revealMax.ToString('0.0000',[Globalization.CultureInfo]::InvariantCulture)) ok=$ok"
       )
     }
