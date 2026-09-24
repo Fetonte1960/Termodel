@@ -39,6 +39,7 @@ GET  /api/projects/{projectId}/generated-files/{relativePath}
 POST /api/projects/{projectId}/publish-session-snapshot
 GET  /api/projects/{projectId}/logs/termodel
 POST /api/model/3d
+POST /api/dxf/to-svg
 POST /api/feedback
 ```
 
@@ -76,6 +77,38 @@ Richiesta minima:
 ```
 
 Se `piani` è omesso viene creato il piano calpestabile predefinito. Gli altri archivi sono clonati dal progetto base incorporato; eventuali archivi forniti nella richiesta sostituiscono quelli omonimi dopo validazione. Il contenitore comprende anche `project/DisegnoInput.dxf`, `thermal/input.xml` e `thermal/input.json`.
+
+## Conversione DXF → SVG lato server
+
+La conversione dei DXF usati come sfondo del CAD Web non viene più eseguita
+dal JavaScript del browser. Il frontend mantiene soltanto l'analisi leggera
+necessaria al dialog di importazione e invia DXF originale + opzioni a:
+
+```http
+POST /api/dxf/to-svg
+Content-Type: application/json
+```
+
+Esempio:
+
+```json
+{
+  "dxfText": "0\nSECTION\n...",
+  "layers": ["MURI"],
+  "unit": "mm",
+  "curves": true,
+  "convertText": false,
+  "explodeBlocks": false
+}
+```
+
+L'algoritmo headless è in
+`src/Termodel.Core/Cad/DxfSvgConverter.cs`; il WebService espone soltanto
+l'adattatore HTTP. Sono gestiti LINE, LWPOLYLINE/POLYLINE e, su opzione,
+ARC/CIRCLE/ELLIPSE/SPLINE, TEXT/MTEXT e INSERT. L'output è uno SVG
+normalizzato in centimetri Termodel con statistiche, bounding box, viewBox e
+informazioni sull'unità di origine. Un DXF non convertibile restituisce HTTP
+`422`.
 
 ## Artifact pannelli radianti
 
