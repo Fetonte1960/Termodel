@@ -130,7 +130,7 @@ già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 
 ### INCARICO 2026-09-24 — progetto regression reale pannelli radianti
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - consolidare su GitHub il progetto reale `TERMODEL-PROJECT-TEXT-V1` fornito dall'utente come fixture permanente per il calcolo pannelli radianti;
@@ -141,13 +141,91 @@ Commissionato:
 - introdurre un regression test permanente sul progetto reale, senza modificare `definizionedati.json` né la Library Desktop;
 - seguire le notifiche obbligatorie GitHub Actions tramite `Termodel/job`.
 
-Criteri di completamento:
-- fixture reale versionata lossless con hash dell'originale;
-- analisi geometrica/topologica documentata;
-- esecuzione HTTP reale del Service in GitHub Actions;
-- difetti riproducibili corretti nel progetto e/o nel CAD;
-- regression test verde sugli artifact pannelli;
-- Summary aggiornato a ESEGUITO con commit, build, test e problemi residui.
+Analisi del progetto reale:
+- file ricevuto: 987.311 byte, 34.125 righe, 33 sezioni;
+- SHA-256 byte-per-byte CRLF ricevuto: `a2b5ddce40059ecae852ca572491bca230a1a95ecce376f8d2e69a43c0196411`;
+- SHA-256 dello stesso contenuto normalizzato LF: `4af2675d670ed039f00d36e9c3fc82061db27a3c19cb4e5451faa69f3ebfe87a`;
+- le impronte di tutte le sezioni dichiarate nel manifest coincidono con il contenuto normalizzato LF: il contenitore non risulta corrotto;
+- rete `RAD-DEFAULT`: PannelliRadianti, tipologia `GEN-DEFAULT`, passo 300 mm, acqua 35/30 °C, ambiente 20 °C, diametro interno 12 mm, limite 100 m / 25.000 Pa;
+- geometria Tubo: 12 segmenti `T002..T013`, layer `Unico_tubipannelli`, tutti associati a `RAD-DEFAULT`;
+- la mancanza di `T001` è compatibile con una cancellazione CAD ed è stata classificata come non errore: gli ID non devono essere contigui;
+- lunghezza centerline complessiva misurata: **19,599780842518 m**.
+
+Difetto reale individuato:
+- sei sequenze Tubo distinte condividono il punto di collettore `(583.349, 474.316) cm`;
+- il CAD precedente salvava rete/piano/layer, ma non l'identità della sequenza/circuito;
+- il Core precedente raggruppava esclusivamente per connettività geometrica entro 1 mm, quindi i 12 segmenti diventavano **un solo componente ramificato** invece di sei circuiti;
+- il difetto è di contratto CAD→Core, non delle coordinate disegnate: spostare artificialmente i punti del collettore sarebbe stata una correzione geometrica sbagliata.
+
+Correzione progetto/fixture:
+- fixture permanente conservata in quattro parti UTF-8 LF sotto `tests/fixtures/RadiantPanelsReference.original.part01..04.txt`, con entrambe le impronte CRLF/LF documentate;
+- `RadiantPanelsReference.circuit-map.json` registra la correzione semantica autorevole del progetto reale:
+  - C001 = T002;
+  - C002 = T003,T004;
+  - C003 = T005,T006;
+  - C004 = T007;
+  - C005 = T008,T009;
+  - C006 = T010,T011,T012,T013;
+- la correzione non modifica coordinate o lunghezze del progetto; aggiunge soltanto l'identità circuito mancante;
+- `README-RadiantPanelsReference.md` documenta provenienza, hash, topologia, distinzione progetto locale/payload Service e criteri regression.
+
+Correzione CAD/frontend:
+- frontend portato a **v1.11**;
+- ogni nuova sequenza `Tubo` riceve ora `data-termodel-circuito="Cnnn"`;
+- tutti i segmenti della stessa sequenza mantengono lo stesso circuito, inclusa la chiusura;
+- una nuova sequenza ottiene un nuovo circuito anche quando parte con Snap Vicino/Estremo da un tubo/punto collettore già esistente;
+- il metadato viene conservato dal normale `buildTermodelServerPayload()`; non è stato introdotto un formato progetto parallelo.
+
+Correzione Core:
+- `SvgDxfLineMetadata` conserva ora anche `CircuitCode` letto da `data-termodel-circuito`;
+- `RadiantPanelCalculator` dà precedenza al circuito dichiarato dal CAD;
+- circuiti dichiarati distinti possono condividere geometricamente il punto collettore senza essere fusi;
+- se uno stesso circuito dichiarato contiene componenti disconnesse, il Core le separa e produce diagnostica;
+- per i progetti legacy senza `data-termodel-circuito` resta il fallback storico per connettività geometrica;
+- non è stato anticipato il grafo generalista Tubi: collettore topologico, percorso sfavorito, sizing, equilibratura e perdite concentrate restano nella futura fase Tubi universale.
+
+Regression permanente:
+- aggiunto `tools/smoke-radiant-reference.ps1` e collegato a `.github/workflows/termodel-service-build.yml`;
+- il test ricompone la fixture, applica la mappa di correzione al progetto legacy, riproduce la canonicalizzazione frontend `TERMODEL-PROJECT-SVG-V1`, avvia realmente il Service e chiama `POST /api/calculations`;
+- verifica 1 rete, **6 circuiti**, segment count per circuito, assenza di ramificazioni, lunghezze golden, valori idraulici positivi e lunghezza totale 19,599780842518 m;
+- raccoglie come artifact CI progetto corretto, payload Service, `pannelli.json`, `pannelli-esecutivo.svg`, `pannelli-esecutivo.dxf`, `TermodelLog.md`, diagnostics e calculation.log;
+- artifact reale del run verde: esecutivo SVG 25.991 byte, DXF 28.843 byte, **58 primitive**; calculation.log registra `radiantPanelCircuitCount=6`, `radiantExecutivePrimitiveCount=58`, `radiantExecutiveFloorCount=1`.
+
+Verifica reale:
+- primo run con nuovo regression, GitHub Actions **#318**, id `35978711969`: build e smoke preesistenti riusciti; regression nuovo fermato da un errore sintattico PowerShell nel solo script di test (`$wantedId:`), corretto senza modificare l'algoritmo; stato/notifica terminale FAILED eseguiti;
+- GitHub Actions **#320**, id `35979205131`, commit `90baf12...`: **SUCCESS**;
+- Build Release: **SUCCESS, 0 errori**;
+- smoke HTTP/storage/lock preesistenti: SUCCESS;
+- smoke esecutivo pannelli sintetico: SUCCESS;
+- regression progetto reale: `RADIANT_REFERENCE_PROJECT_OK`;
+- risultato reale: `networkCount=1`, `circuitCount=6`, `totalLengthM=19.599780842518`;
+- artifact diagnostico `radiant-reference-regression` pubblicato con 10 file e ispezionato;
+- Commit Status `Termodel/job=SUCCESS` e `PHONE_NOTIFICATION_SENT status=SUCCESS` verificati nello stesso run;
+- compilazione/esecuzione Visual Studio locale dell'utente: NON ancora eseguita in questa chat;
+- confronto con riferimento: SI per la topologia ricostruita dal progetto reale e le lunghezze centerline; NON è dichiarata equivalenza completa col futuro solver Tubi universale.
+
+Contratto/documentazione:
+- `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md` aggiornato a **v1.20** con `data-termodel-circuito`, precedenza circuito esplicito e fallback legacy;
+- `docs/TUBAZIONI-DEVELOPMENT-REGISTER.md` registra la milestone e mantiene separato il futuro grafo generalista.
+
+Vincoli rispettati:
+- `definizionedati.json` non modificato;
+- Library Desktop non modificata;
+- nessun nuovo formato concorrente a `TERMODEL-PROJECT-TEXT-V1`;
+- geometria T002..T013 non alterata per mascherare il difetto topologico.
+
+Commit principali:
+- `c6de98a1...` — registrazione incarico;
+- `bc7d2445...`, `0e09f92f...`, `2274cd5d...`, `ccc21870...` — fixture reale consolidata;
+- `1eb7d026...` — CircuitCode nel Virtual CAD;
+- `ac095f3b...` — solver per circuito dichiarato + fallback legacy;
+- `4494a142...`, `20c0681c...` — CAD v1.11 con identità circuito;
+- `b9f8df62...` — contratto v1.20;
+- `3d177282...`, `db075dc1...` — mappa/README fixture;
+- `c964e36d...`, `cc1b6a3f...` — regression reale e workflow;
+- `90baf12b...` — fix sintassi regression, run #320 verde;
+- `c36b7505...` — registro Tubazioni;
+- `6f890661...`, `6a5836db...` — robustezza hash fixture e documentazione hash CRLF/LF.
 
 ### INCARICO 2026-09-24 — selezione e cancellazione Tubo CAD 2D
 Stato: ESEGUITO
