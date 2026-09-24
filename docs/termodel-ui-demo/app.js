@@ -5,10 +5,9 @@ import {
   parseDxfPlotSource,
   getDxfLayerSummary,
   estimateDxfConversion,
-  convertDxfToSvg,
   dxfUnitFromInsUnits,
   dxfUnitScaleToCm
-} from './dxf-plotter.js?v=0.70';
+} from './dxf-plotter.js?v=0.71';
 import { generaDxfDaPianta, DXF_EXPORT_INFO } from './export-dxf.js';
 import {
   initArchivioWeb,
@@ -5430,35 +5429,71 @@ async function cadConvertDxfBackground(file) {
     return;
   }
 
-  const result = convertDxfToSvg(model, options);
-  const svgFile = new File(
-    [result.svgText],
-    file.name || 'sfondo.dxf',
-    { type: 'image/svg+xml' }
-  );
+  try {
+    cadSetStatus('Conversione DXF sul Termodel Service…');
+    await ensureTermodelServiceReady();
 
-  await cadImportBackgroundFile(svgFile, {
-    statusLabel: 'DXF convertito',
-    originalName: file.name || 'sfondo.dxf',
-    sourceUnit: result.drawingUnit,
-    unitScaleToCm: result.unitScaleToCm,
-    automaticDxfScale: true,
-    originOffsetCm: result.originOffsetCm,
-    realSizeCm: {
-      width: result.viewBox[2],
-      height: result.viewBox[3]
-    }
-  });
+    const response = await fetchTermodelServiceWithTimeout(
+      '/api/dxf/to-svg',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          dxfText: text,
+          layers: Array.from(options.layers),
+          unit: options.unit,
+          curves: options.curves,
+          convertText: options.convertText,
+          explodeBlocks: options.explodeBlocks
+        })
+      },
+      120000
+    );
 
-  cadSetStatus(
-    '✓ DXF convertito in sfondo SVG · ' +
-    result.stats.converted + ' entità · ' +
-    result.realWidthMeters.toFixed(3) + ' × ' +
-    result.realHeightMeters.toFixed(3) + ' m · ' +
-    'scala automatica ' + result.drawingUnit + ' → cm · Piano ' + cadCurrentPlane() +
-    ' · ' + (file.name || 'sfondo.dxf'),
-    'dirty'
-  );
+    if (!response.ok)
+      throw new Error(await readTermodelServiceError(response));
+
+    const result = await response.json();
+    if (!result?.svgText || !Array.isArray(result?.viewBox))
+      throw new Error('Risposta DXF→SVG del Service non valida.');
+
+    const svgFile = new File(
+      [result.svgText],
+      file.name || 'sfondo.dxf',
+      { type: 'image/svg+xml' }
+    );
+
+    await cadImportBackgroundFile(svgFile, {
+      statusLabel: 'DXF convertito dal Service',
+      originalName: file.name || 'sfondo.dxf',
+      sourceUnit: result.drawingUnit,
+      unitScaleToCm: result.unitScaleToCm,
+      automaticDxfScale: true,
+      originOffsetCm: result.originOffsetCm,
+      realSizeCm: {
+        width: result.viewBox[2],
+        height: result.viewBox[3]
+      }
+    });
+
+    cadSetStatus(
+      '✓ DXF convertito dal Service in sfondo SVG · ' +
+      result.stats.converted + ' entità · ' +
+      result.realWidthMeters.toFixed(3) + ' × ' +
+      result.realHeightMeters.toFixed(3) + ' m · ' +
+      'scala automatica ' + result.drawingUnit + ' → cm · Piano ' + cadCurrentPlane() +
+      ' · ' + (file.name || 'sfondo.dxf'),
+      'dirty'
+    );
+  } catch (error) {
+    cadSetStatus(
+      'Conversione DXF non riuscita: ' + (error?.message || error),
+      'error'
+    );
+    throw error;
+  }
 }
 
 function cadReadFileAsDataUrl(file) {
