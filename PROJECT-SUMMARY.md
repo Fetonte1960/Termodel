@@ -17,7 +17,7 @@
 Ultimo aggiornamento: **2026-09-24**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`be5da6cbb38784b610af479489ea5c675ed8491f` — `Test frontend radiant executive auto-load`  
+`a91f6ffc6c611dd95e891772a8ccddc3fd104f23` — `Fix Android landscape mobile controls`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -121,6 +121,35 @@ Commit di introduzione:
 - `649316cebdd600bd09704dd628fa6ee1a6c70fcc` — chiusura incarico nel Summary Service.
 
 Regola per le future modifiche SpiraliGPT: leggere prima tutte le schede **ATTIVE** del registro e verificare che la nuova strategia non ne violi nessuna.
+
+
+## 0.4 Correzione 2026-09-24 — pulsanti mobile visibili anche in landscape
+
+Stato: **ESEGUITO**.
+
+Problema:
+- su Android, ruotando il telefono in landscape, i pulsanti sovrapposti **Esplora** e **Versione completa desktop** potevano sparire;
+- la causa era in `syncAndroidViewportLayout()`: l'altezza del layout veniva forzata ad almeno **320 px**, anche quando `visualViewport.height` reale in landscape era inferiore;
+- poiché la palette è ancorata al fondo del `modelPage`, i pulsanti finivano sotto la viewport realmente visibile.
+
+Correzione:
+- `docs/termodel-ui-demo/app.js`: eliminato il minimo artificiale di 320 px; altezza e fallback usano ora la viewport reale con sola guardia minima a 1 px;
+- frontend portato a **v1.14**;
+- `docs/termodel-ui-demo/index.html`: titolo, intestazione visibile e cache-busting `app.js?v=1.14` allineati;
+- `.github/workflows/termodel-service-build.yml`: aggiunta regressione che rifiuta il ritorno del minimo 320 px e verifica la nuova guardia a 1 px;
+- nessuna modifica a Service/Core, contratto Front↔Service o dati progetto.
+
+Verifica automatica:
+- commit codice: `a91f6ffc6c611dd95e891772a8ccddc3fd104f23`;
+- GitHub Actions run `35996081738`, job `107621216722`: **SUCCESS**;
+- sintassi JavaScript: SUCCESS;
+- marker `ANDROID_LANDSCAPE_VIEWPORT_OK`: SUCCESS;
+- build e regressioni esistenti: SUCCESS;
+- stato finale `TERMODEL_JOB_STATUS=SUCCESS`;
+- notifica telefono `PHONE_NOTIFICATION_SENT status=SUCCESS`;
+- GitHub Pages run `35996080886`: **SUCCESS**.
+
+La pubblicazione GitHub Pages è riuscita; la verifica HTTP diretta su `www.termodel.it` non è stata eseguita con successo dall'ambiente di questa sessione, quindi resta distinta dalla verifica del deploy.
 
 
 ## 1. Regola obbligatoria per nuove chat
