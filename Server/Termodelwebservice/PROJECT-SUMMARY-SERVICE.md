@@ -70,6 +70,25 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-24 — registro strategie geometriche SpiraliGPT
+Stato: COMMISSIONATO
+
+Commissionato:
+- creare un registro Git dedicato alle decisioni strategiche geometriche per pannelli/SpiraliGPT, distinto dal catalogo storico dei pattern difettosi;
+- registrare come prima regola il caso osservato sul progetto regression pannelli: **imbottigliamento / collo di bottiglia selettivo**;
+- conservare per ogni regola testo, immagine di riferimento, motivazione e criteri di verifica;
+- formalizzare la strategia indicata dall'utente: il ritorno blu può superare il collo quando può entrare e uscire; la mandata rossa deve evitare di impegnare una regione oltre il collo quando, una volta entrata, non può proseguire e richiudersi correttamente;
+- usare il registro come vincolo di regressione per future strategie geometriche;
+- non modificare in questo incarico l'algoritmo SpiraliGPT, la Library Desktop o `definizionedati.json`.
+
+Criteri di completamento:
+- indice del registro creato nel repository;
+- STRATEGY-001 documentata con stato autorevole;
+- screenshot utente conservato nel repository e referenziato dalla scheda;
+- template disponibile per nuovi casi;
+- Summary aggiornati con percorso e ruolo del registro.
+
+
 ### INCARICO 2026-09-24 — ritorno apertura/salvataggio progetti al frontend
 Stato: ESEGUITO
 
