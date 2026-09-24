@@ -56,6 +56,27 @@ Verifica automatica conclusiva:
 La prova manuale interattiva di Apri/Salva nel browser resta distinta dalla CI e non è stata dichiarata eseguita da questa sessione.
 
 
+## 0.2 Incarico 2026-09-24 — attivazione automatica esecutivo pannelli dopo Aggiorna Modello
+
+Stato: **COMMISSIONATO**.
+
+Obiettivo:
+- dopo un `Aggiorna Modello` riuscito, verificare se il Service ha prodotto `artifacts/pannelli-esecutivo.svg`;
+- se presente, caricarlo automaticamente nel CAD2D come overlay runtime;
+- abilitare e spuntare `Mostra esecutivo calcolato`;
+- ridisegnare immediatamente il CAD mostrando l'esecutivo;
+- se l'artifact non esiste, lasciare il controllo disabilitato senza trasformare l'assenza dell'esecutivo in errore dell'intero `Aggiorna Modello`;
+- mantenere disponibile il comando manuale `Esecutivo pannelli SVG` come ricarica esplicita;
+- non modificare il file progetto locale né incorporare l'esecutivo nel `TERMODEL-PROJECT-TEXT-V1`.
+
+Criteri di completamento:
+- frontend con versione incrementata;
+- sintassi JavaScript valida;
+- build/test GitHub Actions verdi;
+- regression test frontend/Service coerente con il caricamento automatico;
+- Summary aggiornato a `ESEGUITO` soltanto dopo verifica.
+
+
 ## 1. Regola obbligatoria per nuove chat
 
 Prima di lavorare:
