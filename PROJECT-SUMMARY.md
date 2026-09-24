@@ -17,7 +17,7 @@
 Ultimo aggiornamento: **2026-09-24**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`c44a16ee314de9fc668c35917837fed803342528` — `Replace apartment example with radiant project`  
+`8efdb3329eb30eb2ac962ed6e1dd8a3d2001e71f` — `Restore clean floor regression script`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -221,6 +221,41 @@ Verifica:
 - GitHub Pages run `36005367220`: **SUCCESS**.
 
 La prova visuale reale del nuovo box sul telefono resta distinta dalla CI e non è stata eseguita da questa sessione.
+
+
+
+## 0.7 Modifica 2026-09-24 — Pianta pulita persistente dal Core
+
+Stato: **ESEGUITO**.
+
+Risultato:
+- confermato il percorso Core storico `LeggiDxf -> GeneraPianta` in modalità 2 sui piani calpestabili;
+- l'elaborato viene denominato **Pianta pulita**;
+- il formato Web è SVG `TERMODEL-CLEAN-FLOOR-SVG-V1`, unità centimetri;
+- le piante prodotte da `GeneraPianta` vengono trasferite dal `Model3DGenerationResult` al `ProjectCalculationData` e persistite atomicamente nel workspace del `projectId`;
+- i file sono conservati sotto `artifacts/pianta-pulita/` e compaiono anche in `generated-files`;
+- endpoint canonico:
+  `GET /api/projects/{projectId}/artifacts/pianta-pulita/{piano}`;
+- la lettura dell'SVG non riesegue il calcolo;
+- il vecchio `GET /api/model/clean-floor/{floorName}` resta compatibile ma non è il riferimento stabile del frontend;
+- contratto Frontend↔Service aggiornato a **v1.23**;
+- nessuna modifica al frontend in questo intervento: il collegamento della Pianta pulita a **Disegno 2 / Disegno esecutivo** è il passo frontend successivo.
+
+Verifica:
+- progetto reale regression `RadiantPanelsReference`, piano `Unico`;
+- GitHub Actions run `36012889814` (#343), job `107677835677`: **SUCCESS**;
+- build Release: SUCCESS;
+- `CLEAN_FLOOR_ARTIFACT_OK`: SUCCESS;
+- `RADIANT_REFERENCE_PROJECT_OK`: SUCCESS;
+- endpoint HTTP 200 con `image/svg+xml`, persistenza e `generated-files` verificati;
+- confermato che la lettura non modifica timestamp del calcolo/artifact;
+- `TERMODEL_JOB_STATUS=SUCCESS`;
+- `PHONE_NOTIFICATION_SENT status=SUCCESS`.
+
+Commit principali:
+- `ef4cd8073a184ef1d87c470a97c4150983d9a507` — implementazione;
+- `11c6091ec653571dbe10e2b3a849db2f6603582b` — fix header;
+- `8efdb3329eb30eb2ac962ed6e1dd8a3d2001e71f` — regression finale valida.
 
 
 ## 1. Regola obbligatoria per nuove chat

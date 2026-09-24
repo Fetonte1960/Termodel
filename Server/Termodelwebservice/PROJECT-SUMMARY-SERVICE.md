@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - verificare e mantenere attivo il percorso storico `LeggiDxf -> GeneraPianta` che, in modalità 2 sui piani calpestabili, produce la pianta architettonica derivata dal modello;
@@ -84,14 +84,38 @@ Commissionato:
 - aggiungere regression HTTP automatica che verifichi generazione, persistenza, catalogo e lettura dell'SVG;
 - non modificare frontend, Library Desktop o `definizionedati.json`.
 
-Criteri di completamento:
-- build Release verde;
-- almeno una Pianta pulita prodotta da un progetto reale di regression;
-- SVG persistito sotto `artifacts/pianta-pulita/`;
-- endpoint projectId-scoped HTTP 200 con `image/svg+xml`;
-- stesso elaborato presente in `generated-files`;
-- lettura artifact senza nuovo calcolo;
-- GitHub Actions con stato/notifica secondo `.github/TERMODEL-ACTION-NOTIFICATIONS.md`.
+Risultato:
+- verificato il percorso reale `GeneraModello -> LeggiDxf.LeggiFileDxf(..., modo 2, ...) -> GeneraPianta` sui piani calpestabili;
+- la copia headless di `GeneraPianta.SalvaDXF()` continua a produrre l'SVG canonico `TERMODEL-CLEAN-FLOOR-SVG-V1`, unità cm, senza modificare la Library Desktop;
+- `Model3DGenerationResult.CleanFloorPlans` viene ora trasferito in `ProjectCalculationData`;
+- `ProjectStore` salva atomicamente ogni SVG sotto `artifacts/pianta-pulita/`, con nome fisico deterministico derivato dal nome logico del piano;
+- `POST /api/calculations` elenca le Piante pulite tra gli artifact della risposta, con `floorName` e href projectId-scoped;
+- implementato `GET /api/projects/{projectId}/artifacts/pianta-pulita/{piano}`, che restituisce `image/svg+xml`, header stale coerente e non riesegue il calcolo;
+- gli stessi SVG sono automaticamente visibili nel canale universale `GET /api/projects/{projectId}/generated-files`;
+- il legacy `GET /api/model/clean-floor/{floorName}` è rimasto invariato e compatibile;
+- `calculation.log` registra `cleanFloorPlanCount`;
+- contratto condiviso aggiornato a **v1.23**;
+- frontend, Library Desktop e `definizionedati.json` non modificati.
+
+Verifica:
+- progetto regression reale `RadiantPanelsReference`, piano `Unico`;
+- GitHub Actions run **#343**, id `36012889814`, job `107677835677`: **SUCCESS**;
+- build Release: SUCCESS;
+- smoke HTTP/storage/lock, feedback, esecutivo SVG/DXF e snapshot: SUCCESS;
+- marker `CLEAN_FLOOR_ARTIFACT_OK`: SUCCESS;
+- marker `RADIANT_REFERENCE_PROJECT_OK`: SUCCESS;
+- verificati persistenza del file, catalogo `generated-files`, endpoint HTTP 200, `Content-Type: image/svg+xml`, marker SVG canonici e identità del contenuto;
+- verificato che i GET non cambino i timestamp di `calculation.log` o dell'SVG: nessun ricalcolo/riscrittura in lettura;
+- stato finale `TERMODEL_JOB_STATUS=SUCCESS`;
+- notifica telefono `PHONE_NOTIFICATION_SENT status=SUCCESS`;
+- prova manuale Visual Studio/browser locale: non eseguita in questa sessione.
+
+Commit principali:
+- `16279e6239ab7d22b9c0c9d0b153d652115256ff` — registrazione incarico;
+- `149ce02891900adfbe48373833ddcfc48abce629` — contratto v1.23;
+- `ef4cd8073a184ef1d87c470a97c4150983d9a507` — persistenza artifact + endpoint + regression;
+- `11c6091ec653571dbe10e2b3a849db2f6603582b` — correzione header HTTP;
+- `8efdb3329eb30eb2ac962ed6e1dd8a3d2001e71f` — regression finale valida.
 
 
 ### INCARICO 2026-09-24 — registro strategie geometriche SpiraliGPT
