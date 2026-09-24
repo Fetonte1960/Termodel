@@ -2065,6 +2065,9 @@ async function createStructuredProjectFromSvg(svgText) {
   const project = await loadTermodelProjectText(structuredProjectText);
   currentProjectText = structuredProjectText;
   currentProjectFileName = '';
+  syncCurrentProjectIdFromText(currentProjectText);
+  currentServiceManifest = null;
+  cadGeneratedExecutiveOverlay = null;
   setStructuredProjectState(true);
   return project;
 }
@@ -2086,6 +2089,7 @@ async function loadProjectTextIntoFrontend(text, options = {}) {
   currentProjectFileName = options.fileName || currentProjectFileName || projectFileNameFromName(project.projectName);
   syncCurrentProjectIdFromText(currentProjectText);
   currentServiceManifest = null;
+  cadGeneratedExecutiveOverlay = null;
 
   if (project.geometrySvg) {
     const hydratedGeometrySvg = hydrateTermodelBackgrounds(text, project.geometrySvg);
