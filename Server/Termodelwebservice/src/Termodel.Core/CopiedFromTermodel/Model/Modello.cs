@@ -297,17 +297,29 @@ public sealed class Modello
         double length = Math.Sqrt(dx * dx + dy * dy);
         if (length <= 1e-12) return;
 
+        // Il renderer headless estrude la parete dalla linea di riferimento
+        // lungo la normale positiva. Una FIN centrata sulla linea e profonda
+        // solo SpesPonte (0,10 m) può quindi restare interamente coperta da
+        // pareti più spesse. Centriamo la FIN nello spessore reale della
+        // parete e le diamo un piccolo sormonto su entrambe le facce.
+        double wallThickness = Math.Abs(spessoreParete);
+        double normalX = -dy / length;
+        double normalY = dx / length;
+        double centerOffset = wallThickness * 0.5;
+        const double faceReveal = 0.01; // 1 cm oltre ciascuna faccia
+        double windowDepth = Math.Max(SpesPonte, wallThickness + 2 * faceReveal);
+
         (IfcCartesianPoint insertion, IfcDirection direction) =
             CreatePlacement(
-                puntoInserimento.X,
-                puntoInserimento.Y,
+                puntoInserimento.X + normalX * centerOffset,
+                puntoInserimento.Y + normalY * centerOffset,
                 finestra.Sottofinestra,
                 dx / length,
                 dy / length,
                 0);
 
         double width = finestra.Larghezza;
-        Geometry rectangle = CreateHorizontalRectangle(width, SpesPonte);
+        Geometry rectangle = CreateHorizontalRectangle(width, windowDepth);
         IfcPolyline polyline = CreateIfcPolyline(rectangle.Coordinates, vertical: false);
 
         var dati = new TDatiSuperficieOpaca(
