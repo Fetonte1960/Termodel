@@ -638,7 +638,16 @@ jobs:
             $headersA = LockHeaders ([string]$openAfterExpiry.projectLockToken)
 
             $list = Invoke-RestMethod -Uri "$base/api/projects" -Method Get
-            if (@($list.projects).Count -ne 2) { throw "Elenco progetti non contiene A e B." }
+            $listedIds = @($list.projects | ForEach-Object { [string]$_.projectId })
+            foreach ($expectedId in @(
+              [string]$localProjectId,
+              [string]$allocA.projectId,
+              [string]$allocB.projectId
+            )) {
+              if ($listedIds -notcontains $expectedId) {
+                throw "Elenco progetti legacy non contiene il projectId atteso $expectedId."
+              }
+            }
 
             # Simula crash: lascia A aperto, termina il Service senza close e riavvia.
             Stop-ServiceProcess $service
