@@ -278,6 +278,25 @@ jobs:
 
             $baseProject = Invoke-RestMethod -Uri "$base/api/projects/new" -Method Post -ContentType "application/json" -Body "{}"
 
+            # Flusso frontend corrente: projectId generato localmente, nessuna
+            # allocazione/open/lock preventiva. Il POST deve creare da zero il
+            # workspace tecnico e rendere subito leggibile model3d.
+            $localProjectId = [guid]::NewGuid()
+            $localProject = Set-ProjectManifest $baseProject ([string]$localProjectId) "Progetto Locale Frontend"
+            $localCalc = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body $localProject
+            if ($localCalc.projectId -ne $localProjectId) {
+              throw "Calcolo progetto locale ha restituito projectId inatteso."
+            }
+            $localDir = Join-Path $env:TERMODEL_SAVED_PROJECTS_DIR ([string]$localProjectId)
+            if (-not (Test-Path (Join-Path $localDir "project.tmdl"))) {
+              throw "AggiornaCalcolo non ha creato il workspace per projectId locale."
+            }
+            $localModel = Invoke-WebRequest -Uri "$base/api/projects/$localProjectId/artifacts/model3d" -Method Get
+            if ($localModel.StatusCode -ne 200 -or $localModel.Headers["X-Termodel-Artifact-Stale"] -ne "false") {
+              throw "Artifact model3d del progetto locale non disponibile dopo AggiornaCalcolo."
+            }
+            Write-Host "LOCAL_PROJECT_CALCULATION_SMOKE_OK"
+
             foreach ($requiredSection in @(
               "definition/reti-pannelli-definizionedati.json",
               "archives/json/Reti.json",
@@ -422,11 +441,15 @@ jobs:
             )
             if ($openB.projectId -ne $allocB.projectId) { throw "Apertura contemporanea del progetto B fallita." }
 
+            # Compatibilità: eventuali header lock dei vecchi client sono
+            # ignorati da AggiornaCalcolo; il calcolo non dipende più dal lease.
             $badHeaders = LockHeaders ([guid]::NewGuid().ToString("D"))
-            $badCalc = Invoke-WebRequest -Uri "$base/api/calculations" -Method Post -Headers $badHeaders -ContentType "text/plain; charset=utf-8" -Body $projectA -SkipHttpErrorCheck
-            if ($badCalc.StatusCode -ne 423) { throw "Aggiorna Modello con lock errato deve restituire 423." }
+            $calcWithLegacyHeader = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -Headers $badHeaders -ContentType "text/plain; charset=utf-8" -Body $projectA
+            if ($calcWithLegacyHeader.projectId -ne $allocA.projectId) {
+              throw "Aggiorna Modello non deve dipendere dal vecchio header lock."
+            }
 
-            $calcA = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -Headers $headersA -ContentType "text/plain; charset=utf-8" -Body $projectA
+            $calcA = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body $projectA
             if ($calcA.projectId -ne $allocA.projectId -or $calcA.PSObject.Properties["calculationId"]) { throw "Response calcolo A non valida." }
 
             # Smoke end-to-end Tubo: il file unico porta una linea tecnica sul
@@ -441,7 +464,7 @@ jobs:
               throw "Il file unico smoke non contiene i metadati Tubo attesi."
             }
 
-            $calcATube = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -Headers $headersA -ContentType "text/plain; charset=utf-8" -Body $projectATube
+            $calcATube = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -ContentType "text/plain; charset=utf-8" -Body $projectATube
             if ($calcATube.projectId -ne $allocA.projectId) { throw "Calcolo con Tubo non completato sul progetto A." }
             if (@($calcATube.artifacts.name) -notcontains "pannelli") { throw "Response Aggiorna Modello priva dell'artifact pannelli." }
 
@@ -573,7 +596,7 @@ jobs:
             if ($calcMetaAll -notmatch "logMode=filtered" -or $calcMetaAll -notmatch "PontiAutomatici") { throw "calculation.log non registra le categorie abilitate." }
 
             $logBHashBeforeInvalid = (Get-FileHash -LiteralPath $termodelLogPathB -Algorithm SHA256).Hash
-            $invalidLogConfig = Invoke-WebRequest -Uri "$base/api/calculations?logCategories=colmi,inesistente" -Method Post -Headers $headersB -ContentType "text/plain; charset=utf-8" -Body $projectB -SkipHttpErrorCheck
+            $invalidLogConfig = Invoke-WebRequest -Uri "$base/api/calculations?logCategories=colmi,inesistente" -Method Post -ContentType "text/plain; charset=utf-8" -Body $projectB -SkipHttpErrorCheck
             if ($invalidLogConfig.StatusCode -ne 400) { throw "Categoria log sconosciuta deve restituire 400." }
             $logBHashAfterInvalid = (Get-FileHash -LiteralPath $termodelLogPathB -Algorithm SHA256).Hash
             if ($logBHashBeforeInvalid -ne $logBHashAfterInvalid) { throw "Configurazione log invalida ha modificato il log valido precedente." }
