@@ -109,24 +109,48 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-24 — feedback DXF non deve deformare la toolbar CAD 2D
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Segnalazione reale:
-- dopo l'importazione DXF il messaggio di stato completo (`DXF convertito dal Service ...`) occupa una larghezza eccessiva nella toolbar del CAD 2D;
-- nella schermata desktop il testo arancione invade lo spazio dei comandi e rende la barra apparentemente corrotta.
+- screenshot utente con Termodel CAD 2D v1.06 dopo importazione DXF;
+- il messaggio arancione completo `DXF convertito dal Service ...` occupava
+  larghezza propria nella toolbar e invadeva visivamente i comandi successivi
+  (`Esporta pianta CAD` / `Torna al modello 3d`).
 
-Obiettivo:
-- rendere il feedback CAD non invasivo e resistente a messaggi lunghi;
-- mantenere accessibile il messaggio completo senza alterare il layout;
-- correggere il problema in modo generale nella toolbar, non soltanto accorciando una singola stringa DXF;
-- non modificare algoritmo DXF, dati di progetto o `definizionedati.json`.
+Causa:
+- `.cad-toolbar .cad-status` aveva `white-space: nowrap` e una
+  `min-width`, ma nessun limite desktop di larghezza/overflow;
+- un feedback diagnostico lungo poteva quindi diventare il principale elemento
+  flessibile della barra.
 
-Criteri di completamento:
-- status desktop con larghezza limitata, ellissi e nessuna espansione incontrollata;
-- messaggio completo disponibile come tooltip/title;
-- controlli successivi della toolbar non spostati o coperti dal feedback DXF;
-- modifica piccola e retrocompatibile;
-- Summary aggiornato a ESEGUITO dopo verifica.
+Correzione:
+- `docs/termodel-ui-demo/index.html`:
+  - status CAD: `flex: 0 1 340px`;
+  - `min-width: 120px`, `max-width: 340px`;
+  - `overflow: hidden` e `text-overflow: ellipsis`;
+  - resta `white-space: nowrap`, quindi la toolbar mantiene una sola riga;
+- `docs/termodel-ui-demo/app.js`:
+  - `cadSetStatus()` normalizza il testo e copia sempre il messaggio completo
+    in `title`, quindi l'ellissi non perde l'informazione;
+- versione frontend portata da **1.06 a 1.07** e query
+  `app.js?v=1.07` per cache busting;
+- nessuna modifica all'algoritmo DXF→SVG, al contratto API, ai dati progetto o
+  a `definizionedati.json`.
+
+Commit:
+- `2d7a9a99...` — limite/ellissi dello status + cache busting;
+- `bc40549a...` — tooltip completo e versione frontend 1.07.
+
+Verifica:
+- diagnosi effettuata sullo screenshot reale dell'utente;
+- sorgente GitHub ricontrollato dopo la modifica: il feedback lungo non può più
+  superare 340 px su desktop ed è troncato con ellissi;
+- messaggio integrale resta disponibile nel tooltip;
+- GitHub Actions Service dell'incarico preliminare: run `35968135152`,
+  `Termodel/job = SUCCESS`;
+- verifica visuale finale sul browser dell'utente dopo aggiornamento GitHub
+  Pages/cache: NON ancora eseguita in questa chat.
+
 
 ### INCARICO 2026-09-24 — Farmacia.dxf come regression fixture e ottimizzazione pianta architettonica
 Stato: ESEGUITO
