@@ -62,6 +62,9 @@ jobs:
       - name: Restore
         run: dotnet restore Termodel.WebService.sln
 
+      - name: Check frontend JavaScript syntax
+        run: node --check ..\..\docs\termodel-ui-demo\app.js
+
       - name: Build
         run: dotnet build Termodel.WebService.sln --configuration Release --no-restore
       - name: Smoke test HTTP project storage and exclusive locks
