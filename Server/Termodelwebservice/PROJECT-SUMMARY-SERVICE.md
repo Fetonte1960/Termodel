@@ -100,6 +100,21 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-24 — debug avanzato esempio Appartamento con GitHub Actions
+Stato: COMMISSIONATO
+
+Commissionato:
+- riprodurre con GitHub Actions il difetto corrente per cui l'esempio pubblico `Appartamento` arriva a una vista 3D vuota;
+- usare come input i file correnti di `main`, in particolare `docs/termodel-ui-demo/examples/catalog.json`, `appartamento.svg` e il template `ProgettoVuoto`;
+- ricostruire il payload tecnico equivalente a `buildTermodelServerPayload()`, avviare realmente `Termodel.WebService`, chiamare `POST /api/calculations` e leggere l'artifact `model3d` senza rieseguire il calcolo;
+- raccogliere response HTTP, `generated-files`, `model3d.json`, `TermodelLog.md`, diagnostica, workspace e stdout/stderr del Service;
+- usare un branch diagnostico separato e strumentazione temporanea; non modificare `definizionedati.json` né la Library Desktop;
+- distinguere se il vuoto nasce nell'input/canonicalizzazione frontend, nel Core/WebService, nell'artifact o nel redraw frontend;
+- correggere soltanto la causa dimostrata dal test e ripetere l'Action prima di dichiarare il problema risolto.
+
+Risultato:
+- in corso.
+
 ### INCARICO 2026-09-23 — debug Action sul progetto copiato dagli appunti
 Stato: ESEGUITO
 
