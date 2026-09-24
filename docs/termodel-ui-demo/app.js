@@ -7174,7 +7174,7 @@ function cadUpdateControls() {
   if (cadAddBackground) cadAddBackground.disabled = !hasDoc || busy;
   if (cadLoadGeneratedExecutive)
     cadLoadGeneratedExecutive.disabled =
-      !hasDoc || busy || !currentProjectId || loading;
+      !hasDoc || busy || !currentProjectId || !currentServiceManifest || loading;
   const hasGeneratedExecutive = cadGeneratedExecutiveAvailable();
   if (cadShowGeneratedExecutive) {
     cadShowGeneratedExecutive.disabled = !hasDoc || !hasGeneratedExecutive;
