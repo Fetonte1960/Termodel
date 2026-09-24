@@ -17,7 +17,7 @@
 Ultimo aggiornamento: **2026-09-24**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`a91f6ffc6c611dd95e891772a8ccddc3fd104f23` — `Fix Android landscape mobile controls`  
+`466a064599da2e1ec27fc08060f203b0aa236763` — `Hide desktop flash during Android startup`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -150,6 +150,37 @@ Verifica automatica:
 - GitHub Pages run `35996080886`: **SUCCESS**.
 
 La pubblicazione GitHub Pages è riuscita; la verifica HTTP diretta su `www.termodel.it` non è stata eseguita con successo dall'ambiente di questa sessione, quindi resta distinta dalla verifica del deploy.
+
+
+## 0.5 Correzione 2026-09-24 — avvio mobile senza flash della UI desktop
+
+Stato: **ESEGUITO**.
+
+Problema:
+- all'apertura su Android il browser poteva mostrare per un istante la UI desktop non ancora adattata, con controlli e pannelli visivamente ammucchiati;
+- la classe `termodel-android` veniva infatti aggiunta solo da `app.js`, dopo il caricamento del modulo principale e delle sue dipendenze.
+
+Correzione:
+- frontend portato a **v1.15**;
+- `docs/termodel-ui-demo/index.html` esegue ora un rilevamento Android sincrono nel `<head>`, prima del primo paint, applicando subito `termodel-android` e lo stato `termodel-mobile-boot`;
+- durante l'inizializzazione la UI principale resta nascosta e viene mostrata una schermata neutra **Termodel — Preparazione interfaccia mobile…**;
+- `docs/termodel-ui-demo/app.js` rimuove lo splash solo dopo aver creato le palette Android, eseguito il resize e stabilizzato il layout su due frame;
+- è presente un failsafe di 10 secondi che rimuove solo lo splash in caso di errore di inizializzazione, mantenendo comunque la classe Android e quindi evitando il ritorno alla UI desktop;
+- `.github/workflows/termodel-service-build.yml` verifica presenza e posizione pre-body del rilevamento anti-flash e il completamento dello startup mobile;
+- nessuna modifica a Service/Core, contratto Front↔Service o dati progetto.
+
+Verifica automatica:
+- commit codice: `466a064599da2e1ec27fc08060f203b0aa236763`;
+- GitHub Actions run `36002379101`, job `107641923765`: **SUCCESS**;
+- sintassi JavaScript: SUCCESS;
+- marker `ANDROID_MOBILE_BOOT_SPLASH_OK`: SUCCESS;
+- marker `ANDROID_LANDSCAPE_VIEWPORT_OK`: SUCCESS;
+- build e regressioni esistenti: SUCCESS;
+- stato finale `TERMODEL_JOB_STATUS=SUCCESS`;
+- notifica telefono `PHONE_NOTIFICATION_SENT status=SUCCESS`;
+- GitHub Pages run `36002378492`: **SUCCESS**.
+
+La verifica HTTP diretta del dominio pubblico non è disponibile dall'ambiente di questa sessione; il deploy GitHub Pages è confermato ma la prova visuale reale su telefono resta distinta.
 
 
 ## 1. Regola obbligatoria per nuove chat
