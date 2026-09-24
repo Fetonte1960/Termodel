@@ -109,25 +109,109 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-24 — Farmacia.dxf come regression fixture e ottimizzazione pianta architettonica
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - consolidare nel repository GitHub il DXF reale fornito dall'utente, `Farmacia.dxf`, come fixture permanente per i test DXF→SVG;
-- usare il file reale, non un DXF sintetico, per misurare layer, entità, unità, bounding box e qualità dello SVG prodotto;
-- ottimizzare `Termodel.Core.Cad.DxfSvgConverter` affinché possa produrre automaticamente una pianta architettonica intellegibile, eliminando per default il rumore grafico non architettonico quando viene richiesto il profilo architettonico;
-- preservare la modalità manuale esistente e la retrocompatibilità delle opzioni layer/unità;
-- usare il frontend soltanto per selezione/opzioni e chiamata HTTP, senza reintrodurre conversione SVG locale;
-- aggiungere regression test GitHub Actions basati su `Farmacia.dxf` e documentare le regole consolidate;
-- non modificare `definizionedati.json` né i sorgenti Desktop Library.
+- usare il file reale per misurare layer, entità, unità, bounding box e qualità dello SVG prodotto;
+- ottimizzare `Termodel.Core.Cad.DxfSvgConverter` affinché produca un profilo automatico di pianta architettonica intellegibile, preservando la modalità manuale;
+- aggiungere regression test GitHub Actions basati sul DXF reale;
+- non modificare `definizionedati.json` né la Library Desktop.
 
-Criteri di completamento:
-- `Farmacia.dxf` presente in Git in una posizione stabile dei test;
-- test automatico reale che converte la fixture tramite il Service/Core;
-- profilo architettonico che conserva i layer geometrici utili e sopprime quote/retini/arredi o altri layer annotativi evidenti;
-- curve architettoniche abilitate nel profilo per mantenere leggibili porte e aperture;
-- output con dimensioni coerenti col disegno reale e con almeno i layer architettonici osservati nella fixture;
-- GitHub Actions SUCCESS con notifica `Termodel/job`;
-- Summary aggiornato a `ESEGUITO` solo dopo build e smoke reali.
+Fixture consolidata:
+- originale ricevuto: `Farmacia.dxf`, **3.225.548 byte**, SHA-256
+  `81b7e14c361b0b5de94a877c715091b77a42f599c6a757ca1fc2906251496adc`;
+- per limitare il peso Git senza perdere un solo byte, la fixture è conservata
+  lossless come
+  `Server/Termodelwebservice/tests/fixtures/Farmacia.dxf.gz.b64`;
+- il workflow esegue Base64 decode + gzip decompress e verifica lo SHA-256
+  dell'originale prima di ogni test;
+- documentazione fixture:
+  `Server/Termodelwebservice/tests/fixtures/README-Farmacia.md`;
+- il file originale dichiara `$INSUNITS=6` (metri), contiene 382 entità
+  principali e i layer operativi `0`, `01-SEZIONI`,
+  `02-PROIEZIONI`, `03-QUOTE`, `04-RETINI`.
+
+Ottimizzazione implementata:
+- `DxfSvgConversionOptions` supporta ora `Profile` con valori
+  `manual` e `architectural`; default API storico: `manual`;
+- nel profilo `architectural` il Core seleziona automaticamente i layer
+  geometrici utili e filtra nomi tipicamente annotativi/non architettonici
+  (quote/dimensioni, retini/hatch, testi/scritte, arredi/furniture,
+  figure, Defpoints);
+- viene filtrato anche un layer in cui quote/testi/retini prevalgono
+  numericamente sulla geometria utile;
+- il profilo architettonico abilita automaticamente curve e bulge anche se
+  `curves=false`, così porte, archi e aperture restano leggibili;
+- i gruppi SVG dichiarano `data-dxf-role=section|projection|base` e usano una
+  lieve gerarchia di spessore: sezioni/muri/strutture più marcati,
+  proiezioni/infissi più leggeri;
+- la radice SVG dichiara `data-termodel-dxf-profile`;
+- la risposta API aggiunge `profile` e `appliedLayers`;
+- `DxfToSvgRequest` espone il nuovo campo `profile`;
+- modalità manuale invariata: se il frontend passa `manual`, il Core
+  rispetta la selezione esplicita.
+
+Frontend:
+- import DXF apre ora di default in profilo **pianta architettonica automatica**;
+- curve abilitate di default;
+- layer con nomi evidentemente annotativi/arredo vengono deselezionati nel
+  dialog;
+- se l'utente cambia layer o opzioni grafiche il frontend passa a
+  `profile=manual`, preservando il controllo esplicito;
+- nessuna conversione SVG è stata reintrodotta nel browser.
+
+Regression reale `Farmacia.dxf`:
+- GitHub Actions run `35966250710`, commit `c74604da...`:
+  **SUCCESS**, build **0 errori** e
+  `FARMACIA_DXF_ARCHITECTURAL_SMOKE_OK`;
+- risultato reale Service/Core:
+  `appliedLayers = 0, 01-SEZIONI, 02-PROIEZIONI`;
+- `03-QUOTE` e `04-RETINI` assenti dall'SVG architettonico;
+- **227 entità convertite**;
+- unità riconosciuta: metri, `unitScaleToCm=100`;
+- ingombro architettonico: **19,050 × 17,153 m**;
+- SVG verificato con metadata di profilo e ruoli grafici;
+- GitHub Actions run `35966314257`, commit `0e916722...`:
+  **SUCCESS**, build **0 errori**, regression Farmacia positiva e artifact
+  `dxf-svg-regression` pubblicato;
+- artifact reale scaricato e ispezionato dalla chat:
+  `Farmacia.architectural.svg`, 23.284 byte, con planimetria chiaramente
+  leggibile su fondo bianco: muri, partizioni, porte e archi conservati,
+  senza l'espansione del viewBox causata dalle quote/retini;
+- metadata artifact:
+  `converted=227`, `ignored=155`, `unsupported=0`,
+  `widthMeters=19.04993883792071`,
+  `heightMeters=17.153186825263063`.
+
+Documentazione:
+- contratto Frontend↔Service aggiornato a **v1.19**;
+- README Service documenta profilo architettonico e fixture reale;
+- `definizionedati.json`, Library Desktop e algoritmo Desktop non modificati.
+
+Stato di verifica:
+- **progettato:** SI;
+- **implementato:** SI;
+- **fixture reale consolidata:** SI, con hash dell'originale verificato;
+- **compilato GitHub Actions:** SI, 0 errori;
+- **eseguito/testato via HTTP:** SI;
+- **regression sul DXF Farmacia reale:** SI;
+- **output SVG reale ispezionato visivamente:** SI;
+- **compilato/eseguito in Visual Studio locale dell'utente:** NON ancora
+  verificato in questa chat.
+
+Commit principali:
+- `06c4a4b0...` — registrazione incarico;
+- `10f7104e...` — fixture Farmacia lossless;
+- `564d80e0...` — documentazione fixture;
+- `6cc63b01...` — profilo architettonico nel Core;
+- `2f4e47ef...` — esposizione profilo nell'API;
+- `7d155abf...` — default frontend architettonico;
+- `c74604da...` — regression Farmacia;
+- `0e916722...` — artifact SVG di regression;
+- `6abcc42d...` — contratto v1.19;
+- `ff2c3e27...` — README Service.
+
 
 ### INCARICO 2026-09-24 — spostamento conversione DXF→SVG dal frontend al Service
 Stato: ESEGUITO
