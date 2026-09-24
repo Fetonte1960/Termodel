@@ -100,6 +100,18 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-24 — visibilità FIN attraverso lo spessore parete
+Stato: COMMISSIONATO
+
+Commissionato:
+- correggere l'esempio pubblico `Appartamento` perché le finestre, pur correttamente dimensionate e orientate nel piano, risultano coperte dalla parete ospite nel rendering 3D;
+- verificare spessore e centratura della geometria FIN lungo la normale alla parete, confrontando il comportamento headless con il Desktop autorevole;
+- correggere direttamente la causa nel Core/renderer senza modificare frontend, `definizionedati.json` o Library Desktop;
+- verificare la correzione con build ed esecuzione reale GitHub Actions sull'Appartamento e controllare numericamente che ogni FIN attraversi lo spessore della parete associata.
+
+Risultato:
+- da completare.
+
 ### INCARICO 2026-09-24 — allineamento FIN alla parete nell'Appartamento
 Stato: ESEGUITO
 
