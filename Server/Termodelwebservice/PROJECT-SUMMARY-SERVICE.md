@@ -100,6 +100,30 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-24 — allineamento FIN alla parete nell'Appartamento
+Stato: ESEGUITO
+
+Commissionato:
+- correggere il secondo difetto osservato nell'esempio pubblico `Appartamento`: finestre di dimensioni corrette ma ruotate/disallineate rispetto alla parete;
+- confrontare il renderer headless Web con il `DrawBim` Desktop autorevole;
+- intervenire soltanto sul punto responsabile dell'orientamento, senza modificare frontend, `definizionedati.json`, Library Desktop o algoritmi di associazione FIN-parete;
+- verificare con GitHub Actions lo stesso Appartamento reale e controllare numericamente l'asse di ciascun FIN rispetto alla parete associata.
+
+Risultato:
+- causa isolata in `Server/Termodelwebservice/src/Termodel.Core/Compatibility/HeadlessDesktopUi.cs`, metodo `DrawBim.BuildBaseRing()`;
+- `Modello.AggiungiFinestra()` calcolava già correttamente la direzione della parete e la passava come `rotationAngle`; il renderer headless applicava però tale rotazione soltanto ai profili con `verticale=true`;
+- le finestre sono costruite con `verticale=false`, quindi il loro rettangolo base rimaneva parallelo agli assi globali. Il riferimento Desktop `SorgentiTermodel/Library/utilities/DrawBim.xaml.cs` applica invece la rotazione Z anche ai profili non verticali;
+- correzione: nel ramo non verticale di `BuildBaseRing()` le coordinate locali X/Y vengono ruotate con la stessa matrice `cos/sin` prima della traslazione; non sono stati modificati `Modello.AggiungiFinestra`, `LeggiDxf`, frontend o Desktop;
+- branch diagnostico: `ai-debug-fin-orientation-20260924`; strumentazione temporanea rimossa al termine;
+- GitHub Actions run **#259**, id `35955220418`: build e Service reali riusciti; `POST /api/calculations = 200`, artifact `model3d` con **438 primitive**;
+- regression check specifico: **9 FIN controllati, 0 errori**. Per F001..F009 il prodotto scalare assoluto tra asse larghezza della finestra e direzione della parete associata è `1.000000`; distanza centro finestra/punto FIN `0.000000` m;
+- pareti associate verificate: F001/F002 -> E001, F003/F004 -> E002, F005/F006/F007 -> E003, F008/F009 -> E004;
+- bounding box dopo la correzione: X `-1.77823..11.68775` m, Y `-0.34117..9.09104` m, Z `-0.1..3.89` m;
+- commit su `main`: `d91e13acaf0c4a2447085bb4559bad51710383c9` — `Align Web FIN profiles with wall rotation`;
+- GitHub Actions standard su `main`, run **#260**, id `35955388392`: **SUCCESS**; restore/build, storage+lock HTTP, feedback GitHub, pannelli SVG/DXF e snapshot publisher tutti riusciti;
+- contratto Frontend↔Service invariato: il formato `TermodelWebModel v3` non cambia, si tratta di correzione del renderer headless per parità con Desktop;
+- livello ancora distinto: prova visiva del nuovo commit sul Render pubblico/browser dopo redeploy.
+
 ### INCARICO 2026-09-24 — debug avanzato esempio Appartamento con GitHub Actions
 Stato: ESEGUITO
 
