@@ -1,0 +1,16 @@
+{
+  "format": "TERMODEL-RADIANT-CIRCUIT-MAP-V1",
+  "sourceProjectSha256": "4af2675d670ed039f00d36e9c3fc82061db27a3c19cb4e5451faa69f3ebfe87a",
+  "networkCode": "RAD-DEFAULT",
+  "floor": "Unico",
+  "collectorPointCm": [583.349, 474.316],
+  "circuits": [
+    { "circuitCode": "C001", "segments": ["T002"], "expectedLengthM": 0.76993 },
+    { "circuitCode": "C002", "segments": ["T003", "T004"], "expectedLengthM": 2.72379 },
+    { "circuitCode": "C003", "segments": ["T005", "T006"], "expectedLengthM": 3.52455 },
+    { "circuitCode": "C004", "segments": ["T007"], "expectedLengthM": 4.52194 },
+    { "circuitCode": "C005", "segments": ["T008", "T009"], "expectedLengthM": 1.5260572552897522 },
+    { "circuitCode": "C006", "segments": ["T010", "T011", "T012", "T013"], "expectedLengthM": 6.533513587228323 }
+  ],
+  "expectedTotalLengthM": 19.599780842518076
+}
