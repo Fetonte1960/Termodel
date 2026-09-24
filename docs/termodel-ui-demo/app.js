@@ -5335,13 +5335,29 @@ function dxfSelectedLayers() {
   return selected;
 }
 
+function dxfLayerLooksArchitectural(name) {
+  const value = String(name || '').trim().toLowerCase();
+  if (!value) return false;
+  if (value === 'defpoints') return false;
+  return ![
+    'quote', 'quot', 'dimension', 'dimens',
+    'retin', 'hatch', 'arred', 'furniture',
+    'figure', 'testi', 'testo', 'text', 'scritte'
+  ].some(token => value.includes(token));
+}
+
+function markDxfImportManual() {
+  if (dxfImportState) dxfImportState.profile = 'manual';
+}
+
 function dxfDialogOptions() {
   return {
     layers: dxfSelectedLayers(),
     unit: dxfDrawingUnit?.value || 'cm',
     curves: Boolean(dxfModeCurves?.checked),
     convertText: Boolean(dxfConvertText?.checked),
-    explodeBlocks: Boolean(dxfExplodeBlocks?.checked)
+    explodeBlocks: Boolean(dxfExplodeBlocks?.checked),
+    profile: dxfImportState?.profile || 'manual'
   };
 }
 
@@ -5355,6 +5371,7 @@ function updateDxfImportSummary() {
     'Entità previste: ' + estimate.selected +
     ' · ignorate: ' + estimate.ignored +
     (estimate.blocks ? ' · blocchi da esplodere: ' + estimate.blocks : '') + '\n' +
+    'Profilo: ' + (options.profile === 'architectural' ? 'pianta architettonica automatica' : 'selezione manuale') + '\n' +
     'Scala automatica: 1 unità DXF = ' + scaleToCm + ' cm Termodel' + '\n' +
     'Calibrazione manuale: non necessaria se unità e DXF sono corretti.';
   if (dxfImportConvert) dxfImportConvert.disabled = options.layers.size === 0;
@@ -5372,7 +5389,7 @@ function closeDxfImportDialog(result = null) {
 function openDxfImportDialog(file, model) {
   return new Promise(resolve => {
     const layers = getDxfLayerSummary(model);
-    dxfImportState = { file, model, layers, resolve };
+    dxfImportState = { file, model, layers, resolve, profile: 'architectural' };
 
     if (dxfImportFileName) dxfImportFileName.textContent = file.name || 'disegno.dxf';
     if (dxfImportInfo) {
@@ -5390,9 +5407,12 @@ function openDxfImportDialog(file, model) {
 
         const check = document.createElement('input');
         check.type = 'checkbox';
-        check.checked = true;
+        check.checked = layer.count > 0 && dxfLayerLooksArchitectural(layer.name);
         check.dataset.dxfLayer = layer.name;
-        check.addEventListener('change', updateDxfImportSummary);
+        check.addEventListener('change', () => {
+          markDxfImportManual();
+          updateDxfImportSummary();
+        });
 
         const name = document.createElement('span');
         name.className = 'dxf-layer-name';
@@ -5410,7 +5430,9 @@ function openDxfImportDialog(file, model) {
     if (dxfDrawingUnit)
       dxfDrawingUnit.value = dxfUnitFromInsUnits(model.header?.insUnits);
     if (dxfModeLines) dxfModeLines.checked = true;
-    if (dxfModeCurves) dxfModeCurves.checked = false;
+    // Il profilo architettonico abilita gli archi per mantenere leggibili
+    // porte, aperture e altre convenzioni grafiche tipiche delle piante.
+    if (dxfModeCurves) dxfModeCurves.checked = true;
     if (dxfConvertText) dxfConvertText.checked = false;
     if (dxfExplodeBlocks) dxfExplodeBlocks.checked = false;
 
@@ -5446,7 +5468,8 @@ async function cadConvertDxfBackground(file) {
           unit: options.unit,
           curves: options.curves,
           convertText: options.convertText,
-          explodeBlocks: options.explodeBlocks
+          explodeBlocks: options.explodeBlocks,
+          profile: options.profile
         })
       },
       120000
@@ -5483,6 +5506,7 @@ async function cadConvertDxfBackground(file) {
       result.stats.converted + ' entità · ' +
       result.realWidthMeters.toFixed(3) + ' × ' +
       result.realHeightMeters.toFixed(3) + ' m · ' +
+      (result.profile === 'architectural' ? 'profilo architettonico · ' : '') +
       'scala automatica ' + result.drawingUnit + ' → cm · Piano ' + cadCurrentPlane() +
       ' · ' + (file.name || 'sfondo.dxf'),
       'dirty'
@@ -9117,16 +9141,22 @@ dxfSelectAll?.addEventListener('click', () => {
   dxfLayerList?.querySelectorAll('input[type="checkbox"][data-dxf-layer]').forEach(input => {
     input.checked = true;
   });
+  markDxfImportManual();
   updateDxfImportSummary();
 });
 dxfSelectNone?.addEventListener('click', () => {
   dxfLayerList?.querySelectorAll('input[type="checkbox"][data-dxf-layer]').forEach(input => {
     input.checked = false;
   });
+  markDxfImportManual();
   updateDxfImportSummary();
 });
-[dxfDrawingUnit, dxfModeLines, dxfModeCurves, dxfConvertText, dxfExplodeBlocks].forEach(control => {
-  control?.addEventListener('change', updateDxfImportSummary);
+dxfDrawingUnit?.addEventListener('change', updateDxfImportSummary);
+[dxfModeLines, dxfModeCurves, dxfConvertText, dxfExplodeBlocks].forEach(control => {
+  control?.addEventListener('change', () => {
+    markDxfImportManual();
+    updateDxfImportSummary();
+  });
 });
 dxfImportConvert?.addEventListener('click', () => closeDxfImportDialog(dxfDialogOptions()));
 dxfImportCancel?.addEventListener('click', () => closeDxfImportDialog(null));
