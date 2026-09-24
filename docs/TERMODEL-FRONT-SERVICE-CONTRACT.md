@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.18**  
+Versione documento: **1.19**  
 Aggiornamento: **24 settembre 2026**  
 Stato: **projectId-only e lock progetto implementati; pretest Render attivo; conversione DXF→SVG spostata nel Core/Service; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati e snapshot diagnostico persistente Render→GitHub implementati; notifica GitHub Actions/telefono implementata**
 
@@ -883,7 +883,8 @@ Payload:
   "unit": "mm",
   "curves": true,
   "convertText": false,
-  "explodeBlocks": false
+  "explodeBlocks": false,
+  "profile": "architectural"
 }
 ```
 
@@ -898,6 +899,15 @@ Regole:
 - `curves` abilita ARC/CIRCLE/ELLIPSE/SPLINE e i bulge delle polilinee;
 - `convertText` abilita TEXT/MTEXT;
 - `explodeBlocks` abilita INSERT e l'esplosione ricorsiva dei blocchi;
+- `profile` ammette `manual` e `architectural`; se omesso resta
+  `manual` per retrocompatibilità;
+- con `architectural` il Core filtra automaticamente layer evidentemente
+  annotativi/non architettonici (quote, retini, testi, arredi, Defpoints),
+  scarta layer in cui quote/testi/retini prevalgono sulla geometria utile e
+  abilita le curve anche se `curves=false`, così porte e aperture restano
+  leggibili;
+- il profilo architettonico applica inoltre una gerarchia grafica leggera:
+  sezioni/muri/strutture più marcati, proiezioni/infissi più leggeri;
 - input non convertibile o selezione che non produce geometria restituiscono
   HTTP `422`;
 - la conversione è headless e vive in `Termodel.Core`: il WebService non
@@ -930,18 +940,35 @@ Risposta JSON:
   "realHeightMeters": 0.00000001,
   "originOffsetCm": { "x": 0, "y": 0 },
   "unitsCode": 4,
-  "unitsLabel": "mm"
+  "unitsLabel": "mm",
+  "profile": "architectural",
+  "appliedLayers": ["0", "01-SEZIONI", "02-PROIEZIONI"]
 }
 ```
 
 Lo `svgText` conserva la convenzione già usata dal CAD Web:
 coordinate in centimetri, origine geometrica normalizzata, gruppi identificati
 con `data-dxf-layer` e metadata
-`data-termodel-dxf-plotter/data-termodel-source-unit`.
+`data-termodel-dxf-plotter/data-termodel-source-unit`. Nel profilo
+architettonico i gruppi possono contenere anche `data-dxf-role` con
+`section`, `projection` o `base`; la radice dichiara
+`data-termodel-dxf-profile="architectural"`.
 
-Il frontend può continuare a usare il parser JS leggero per popolare il dialog
-e stimare le entità prima della conferma; quel parser non è più autorizzato a
-generare lo SVG operativo. La trasformazione effettiva DXF→SVG è server-side.
+Il frontend continua a usare il parser JS leggero soltanto per popolare il
+dialog e stimare le entità prima della conferma; quel parser non è autorizzato
+a generare lo SVG operativo. Il default UI usa il profilo architettonico,
+deseleziona i layer annotativi evidenti e abilita le curve. Se l'utente cambia
+manualmente layer o opzioni grafiche, il frontend passa al profilo `manual`
+e il Service rispetta esattamente la selezione.
+
+Regression fixture reale consolidata:
+`Server/Termodelwebservice/tests/fixtures/Farmacia.dxf.gz.b64`. È la copia
+lossless gzip/base64 del DXF originale SHA-256
+`81b7e14c361b0b5de94a877c715091b77a42f599c6a757ca1fc2906251496adc`.
+Il regression smoke ricostruisce il file byte-per-byte e verifica che il
+profilo architettonico applichi i layer `0`, `01-SEZIONI` e
+`02-PROIEZIONI`, escluda `03-QUOTE` e `04-RETINI`, conservi unità in
+metri e produca una pianta circa 19,05 × 17,153 m.
 
 ## 2.5 projectId persistente del progetto
 
