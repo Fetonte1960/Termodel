@@ -299,14 +299,14 @@ try {
     $circuit = $actual[0]
     $expectedSegments = @($expected.segments).Count
     if ($circuit.segmentCount -ne $expectedSegments) {
-      throw "$wantedId: segmentCount atteso $expectedSegments, ottenuto $($circuit.segmentCount)."
+      throw "${wantedId}: segmentCount atteso $expectedSegments, ottenuto $($circuit.segmentCount)."
     }
     if ([bool]$circuit.branched) { throw "$wantedId risulta ancora ramificato." }
     if ([Math]::Abs([double]$circuit.geometricLengthM - [double]$expected.expectedLengthM) -gt 0.00001) {
-      throw "$wantedId: lunghezza inattesa $($circuit.geometricLengthM) m."
+      throw "${wantedId}: lunghezza inattesa $($circuit.geometricLengthM) m."
     }
     if ([double]$circuit.flowLitersHour -le 0 -or [double]$circuit.pressureLossPa -le 0) {
-      throw "$wantedId: kernel idraulico non ha prodotto valori positivi."
+      throw "${wantedId}: kernel idraulico non ha prodotto valori positivi."
     }
     $total += [double]$circuit.geometricLengthM
   }
