@@ -770,7 +770,11 @@
       font-weight: 700;
     }
     .cad-toolbar .cad-status {
-      min-width: 165px;
+      flex: 0 1 340px;
+      min-width: 120px;
+      max-width: 340px;
+      overflow: hidden;
+      text-overflow: ellipsis;
       font-size: 11px;
       color: #45515c;
       white-space: nowrap;
@@ -2246,6 +2250,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=1.06"></script>
+  <script type="module" src="./app.js?v=1.07"></script>
 </body>
 </html>
