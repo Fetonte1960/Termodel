@@ -109,6 +109,26 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 
+### INCARICO 2026-09-24 — progetto regression reale pannelli radianti
+Stato: COMMISSIONATO
+
+Commissionato:
+- consolidare su GitHub il progetto reale `TERMODEL-PROJECT-TEXT-V1` fornito dall'utente come fixture permanente per il calcolo pannelli radianti;
+- analizzare integralmente progetto, archivi Reti/TipologiePannelli, geometria edificio e rete Tubo Txxx;
+- eseguire il progetto reale contro il Service tramite GitHub Actions, raccogliendo `pannelli.json`, esecutivo SVG/DXF e log;
+- correggere eventuali difetti del progetto fixture quando i dati risultano incoerenti o corrotti;
+- correggere il CAD/frontend se il progetto dimostra che il disegno generato dal CAD 2D è difettoso;
+- introdurre un regression test permanente sul progetto reale, senza modificare `definizionedati.json` né la Library Desktop;
+- seguire le notifiche obbligatorie GitHub Actions tramite `Termodel/job`.
+
+Criteri di completamento:
+- fixture reale versionata lossless con hash dell'originale;
+- analisi geometrica/topologica documentata;
+- esecuzione HTTP reale del Service in GitHub Actions;
+- difetti riproducibili corretti nel progetto e/o nel CAD;
+- regression test verde sugli artifact pannelli;
+- Summary aggiornato a ESEGUITO con commit, build, test e problemi residui.
+
 ### INCARICO 2026-09-24 — selezione e cancellazione Tubo CAD 2D
 Stato: ESEGUITO
 
