@@ -600,3 +600,38 @@ jobs:
       - name: Smoke GitHub session snapshot publisher
         shell: pwsh
         run: ./tools/smoke-github-snapshot.ps1
+
+  ai_fin_orientation_debug:
+    if: ${{ github.ref == 'refs/heads/ai-debug-fin-orientation-20260924' }}
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Server/Termodelwebservice
+
+    steps:
+      - name: Checkout FIN orientation diagnostic branch
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore Termodel.WebService.sln
+
+      - name: Build
+        run: dotnet build Termodel.WebService.sln --configuration Release --no-restore
+
+      - name: Run Appartamento FIN orientation regression
+        shell: pwsh
+        run: ./tools/ai-debug-fin-orientation.ps1 -OutputDirectory "${{ runner.temp }}/termodel-fin-orientation-debug"
+
+      - name: Upload FIN orientation debug files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: termodel-fin-orientation-debug
+          path: ${{ runner.temp }}/termodel-fin-orientation-debug
+          if-no-files-found: warn
+          retention-days: 7
