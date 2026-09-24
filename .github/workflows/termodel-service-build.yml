@@ -252,6 +252,27 @@ jobs:
               throw "Farmacia.dxf: gerarchia grafica architettonica non presente nello SVG."
             }
 
+            $dxfRegressionDir = Join-Path $env:RUNNER_TEMP "TermodelDxfRegression"
+            New-Item -ItemType Directory -Path $dxfRegressionDir -Force | Out-Null
+            [System.IO.File]::WriteAllText(
+              (Join-Path $dxfRegressionDir "Farmacia.architectural.svg"),
+              [string]$farmacia.svgText,
+              [System.Text.UTF8Encoding]::new($false)
+            )
+            @{
+              sourceSha256 = $fixtureSha
+              profile = $farmacia.profile
+              appliedLayers = $farmaciaLayers
+              converted = [int]$farmacia.stats.converted
+              ignored = [int]$farmacia.stats.ignored
+              unsupported = [int]$farmacia.stats.unsupported
+              widthMeters = [double]$farmacia.realWidthMeters
+              heightMeters = [double]$farmacia.realHeightMeters
+              units = $farmacia.drawingUnit
+            } | ConvertTo-Json -Depth 10 | Set-Content (
+              Join-Path $dxfRegressionDir "Farmacia.architectural.json"
+            ) -Encoding utf8
+
             Write-Host "FARMACIA_DXF_ARCHITECTURAL_SMOKE_OK"
             Write-Host "Farmacia layers=$($farmaciaLayers -join ',') converted=$($farmacia.stats.converted) size=$([Math]::Round([double]$farmacia.realWidthMeters,3))x$([Math]::Round([double]$farmacia.realHeightMeters,3))m"
 
@@ -623,6 +644,14 @@ jobs:
           }
 
 
+      - name: Upload DXF regression artifact
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dxf-svg-regression
+          path: ${{ runner.temp }}/TermodelDxfRegression
+          if-no-files-found: error
+          retention-days: 14
       - name: Smoke test GitHub feedback bridge
         shell: pwsh
         run: |
