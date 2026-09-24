@@ -1,8 +1,8 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.17**  
+Versione documento: **1.18**  
 Aggiornamento: **24 settembre 2026**  
-Stato: **projectId-only e lock progetto implementati; pretest Render attivo; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati e snapshot diagnostico persistente Render→GitHub implementati; notifica GitHub Actions/telefono implementata**
+Stato: **projectId-only e lock progetto implementati; pretest Render attivo; conversione DXF→SVG spostata nel Core/Service; feedback utenti verso GitHub Issues implementato; archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati e snapshot diagnostico persistente Render→GitHub implementati; notifica GitHub Actions/telefono implementata**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
 **Termodel.Core / Termodel.WebService** per orchestrare la comunicazione fra
@@ -844,6 +844,104 @@ renderer di `docs/termodel-ui-demo/app.js`. Il contratto resta comunque il
 riferimento comune fra frontend e server.
 
 ---
+
+## 2.3 Conversione DXF → SVG di sfondo
+
+La conversione di un file DXF scelto come sfondo del CAD 2D è una funzione
+derivata e non deve più essere eseguita dal JavaScript del frontend.
+
+Responsabilità correnti:
+
+```text
+frontend
+  legge il DXF solo per mostrare rapidamente layer/opzioni nel dialog
+  invia DXF originale + opzioni
+        |
+        v
+POST /api/dxf/to-svg
+        |
+        v
+Termodel.Core.Cad.DxfSvgConverter
+        |
+        v
+SVG normalizzato in centimetri Termodel
+```
+
+Endpoint:
+
+```http
+POST /api/dxf/to-svg
+Content-Type: application/json
+```
+
+Payload:
+
+```json
+{
+  "dxfText": "0\nSECTION\n...",
+  "layers": ["MURI", "SERRAMENTI"],
+  "unit": "mm",
+  "curves": true,
+  "convertText": false,
+  "explodeBlocks": false
+}
+```
+
+Regole:
+
+- `dxfText` contiene il DXF ASCII originale selezionato dall'utente;
+- `layers` contiene i layer selezionati nel dialog; se omesso il Core usa
+  tutti i layer disponibili, mentre un array esplicitamente vuoto non produce
+  geometria;
+- `unit` ammette `mm`, `cm`, `m`; se omesso viene dedotta da
+  `$INSUNITS`, con fallback storico a centimetri;
+- `curves` abilita ARC/CIRCLE/ELLIPSE/SPLINE e i bulge delle polilinee;
+- `convertText` abilita TEXT/MTEXT;
+- `explodeBlocks` abilita INSERT e l'esplosione ricorsiva dei blocchi;
+- input non convertibile o selezione che non produce geometria restituiscono
+  HTTP `422`;
+- la conversione è headless e vive in `Termodel.Core`: il WebService non
+  contiene un secondo algoritmo CAD;
+- il Core non dipende da WPF o Helix per questa funzione.
+
+Risposta JSON:
+
+```json
+{
+  "svgText": "<svg ...>...</svg>",
+  "stats": {
+    "converted": 1,
+    "ignored": 0,
+    "unsupported": 0,
+    "explodedBlocks": 0
+  },
+  "bounds": {
+    "minX": 0,
+    "minY": 0,
+    "maxX": 100,
+    "maxY": 0,
+    "width": 100,
+    "height": 0.000001
+  },
+  "viewBox": [-2, -2, 104, 4.000001],
+  "drawingUnit": "mm",
+  "unitScaleToCm": 0.1,
+  "realWidthMeters": 1,
+  "realHeightMeters": 0.00000001,
+  "originOffsetCm": { "x": 0, "y": 0 },
+  "unitsCode": 4,
+  "unitsLabel": "mm"
+}
+```
+
+Lo `svgText` conserva la convenzione già usata dal CAD Web:
+coordinate in centimetri, origine geometrica normalizzata, gruppi identificati
+con `data-dxf-layer` e metadata
+`data-termodel-dxf-plotter/data-termodel-source-unit`.
+
+Il frontend può continuare a usare il parser JS leggero per popolare il dialog
+e stimare le entità prima della conferma; quel parser non è più autorizzato a
+generare lo SVG operativo. La trasformazione effettiva DXF→SVG è server-side.
 
 ## 2.5 projectId persistente del progetto
 
