@@ -188,13 +188,56 @@ public static class RadiantPanelCalculator
             if (lines.Count == 0)
                 continue;
 
-            IReadOnlyList<CadCircuitComponent> components = SplitIntoComponents(lines);
+            var circuitItems = new List<(string CircuitCode, CadCircuitComponent Component)>();
+
+            List<Line> declared = lines
+                .Where(line =>
+                    line.UserData is SvgDxfLineMetadata metadata &&
+                    metadata.CircuitCode.Length > 0)
+                .ToList();
+
+            foreach (IGrouping<string, Line> group in declared
+                .GroupBy(
+                    line => ((SvgDxfLineMetadata)line.UserData!).CircuitCode,
+                    StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                IReadOnlyList<CadCircuitComponent> declaredComponents =
+                    SplitIntoComponents(group.ToList());
+
+                if (declaredComponents.Count > 1)
+                {
+                    artifactDiagnostics.Add(
+                        $"Rete {settings.NetworkCode}, piano {floor.Name}, circuito {group.Key}: " +
+                        $"{declaredComponents.Count} componenti geometriche disconnesse; il circuito CAD è stato suddiviso.");
+                }
+
+                int part = 1;
+                foreach (CadCircuitComponent component in declaredComponents)
+                {
+                    string code = declaredComponents.Count == 1
+                        ? group.Key
+                        : $"{group.Key}.{part:00}";
+                    circuitItems.Add((code, component));
+                    part++;
+                }
+            }
+
+            List<Line> legacy = lines
+                .Where(line =>
+                    line.UserData is not SvgDxfLineMetadata metadata ||
+                    metadata.CircuitCode.Length == 0)
+                .ToList();
+
+            foreach (CadCircuitComponent component in SplitIntoComponents(legacy))
+                circuitItems.Add((string.Empty, component));
 
             int ordinal = 1;
-            foreach (CadCircuitComponent component in components)
+            foreach ((string circuitCode, CadCircuitComponent component) in circuitItems)
             {
-                string circuitId =
-                    $"{settings.NetworkCode}/{floor.Name}/C{ordinal:000}";
+                string circuitId = circuitCode.Length > 0
+                    ? $"{settings.NetworkCode}/{floor.Name}/{circuitCode}"
+                    : $"{settings.NetworkCode}/{floor.Name}/C{ordinal:000}";
                 RadiantCircuitResult result = CalculateCircuit(
                     circuitId,
                     floor.Name,
@@ -204,9 +247,12 @@ public static class RadiantPanelCalculator
                 ordinal++;
             }
 
+            int declaredCircuitCount = circuitItems.Count(item => item.CircuitCode.Length > 0);
+            int legacyCircuitCount = circuitItems.Count - declaredCircuitCount;
             artifactDiagnostics.Add(
                 $"Rete {settings.NetworkCode}, piano {floor.Name}: " +
-                $"{lines.Count} segmenti Tubo -> {components.Count} circuiti connessi.");
+                $"{lines.Count} segmenti Tubo -> {circuitItems.Count} circuiti " +
+                $"({declaredCircuitCount} dichiarati dal CAD, {legacyCircuitCount} ricavati per connettività).");
         }
 
         return results;
