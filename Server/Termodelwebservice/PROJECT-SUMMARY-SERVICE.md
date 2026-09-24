@@ -1,6 +1,6 @@
 # TERMODEL CORE + WEBSERVICE — PROJECT SUMMARY
 
-Ultimo aggiornamento: **2026-09-23**  
+Ultimo aggiornamento: **2026-09-24**  
 Branch GitHub di riferimento: **main**  
 Repository: `https://github.com/Fetonte1960/Termodel`
 
@@ -101,7 +101,7 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-24 — debug avanzato esempio Appartamento con GitHub Actions
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - riprodurre con GitHub Actions il difetto corrente per cui l'esempio pubblico `Appartamento` arriva a una vista 3D vuota;
@@ -113,7 +113,18 @@ Commissionato:
 - correggere soltanto la causa dimostrata dal test e ripetere l'Action prima di dichiarare il problema risolto.
 
 Risultato:
-- in corso.
+- branch diagnostico usato: `ai-debug-appartamento-20260924`; la strumentazione temporanea è stata rimossa al termine;
+- input reale: `docs/termodel-ui-demo/examples/appartamento.svg`, con 17 linee parete, 9 blocchi LOC e 9 blocchi FIN; i FIN Web memorizzano le dimensioni in centimetri, per esempio `LARGHEZZA=207.55`, `ALTEZZA=140`, `SOTTOFINESTRA=100`;
+- **riproduzione prima della correzione:** GitHub Actions run **#251**, id `35947608742`, build + Service + POST `/api/calculations` riusciti; l'artifact non era vuoto ma conteneva **438 primitive**. Bounding box complessivo: X `-128.20225..151.31775` m, Y `-0.34117..9.09104` m, Z `-0.1..240` m;
+- analisi per tipo: pareti/pavimenti/soffitti/ponti restavano entro circa 13,5 x 9,4 x 4 m; soltanto le 18 primitive `Finestra` arrivavano a X `-128.20225..151.31775` m e Z `100..240` m. Il frontend `fitView()` inquadra il bounding box completo, quindi l'edificio normale diventava visivamente quasi nullo: questa era la causa della vista 3D apparentemente vuota;
+- **causa dimostrata:** `SvgDxfReader` convertiva correttamente coordinate e inserimenti SVG da cm a m, ma trasferiva senza conversione gli attributi testuali FIN `LARGHEZZA`, `ALTEZZA`, `SOTTOFINESTRA`, `SOPRALUCE`. Il Desktop autorevole dichiara esplicitamente questi quattro campi in metri in `MainWindow.xaml`; il CAD Web li serializza invece in cm, come confermato da `cadMetersToSvgCm(...)` e da `Finestra 2 punti`;
+- **correzione:** `Server/Termodelwebservice/src/Termodel.Core/NetDxfCompat/SvgDxfReader.cs` normalizza ora esclusivamente quei quattro attributi del blocco `FIN` da cm a m al confine Virtual CAD; `NUMEROANTE` e gli altri attributi restano invariati. Il motore Desktop copiato `LeggiDxf/Modello` non è stato modificato;
+- **verifica dopo la correzione:** GitHub Actions run **#252**, id `35947969346`, riuscito. Stesso esempio, stesso flusso HTTP, ancora **438 primitive**, ma bounding box complessivo corretto: X `-2.45163..12.95535` m, Y `-0.34117..9.09104` m, Z `-0.1..3.89` m; le finestre risultano Z `1.0..2.4` m e la prima finestra larga `2.0755` m;
+- contratto Frontend↔Service aggiornato a **v1.16**: nel `TERMODEL-PROJECT-SVG-V1` Web gli attributi dimensionali FIN sono cm e `SvgDxfReader` li converte nei metri attesi dal Desktop;
+- **main:** correzione codice commit `4663054cb7b337e242f6a12ed8864c3ba168a93e` — `Fix Web FIN dimensions at SVG-DXF boundary`; contratto commit `152b4d70a8bd51f898ad421d9341b0f9e2e518d7` — `Document FIN units across Web-Service boundary`;
+- **build/smoke main:** GitHub Actions run **#253**, id `35948090552`, completato con successo: restore/build, storage+lock HTTP, feedback GitHub, pannelli SVG/DXF e snapshot publisher tutti verdi;
+- `definizionedati.json`, Library Desktop e frontend operativo non sono stati modificati;
+- **livello non ancora verificato:** il redeploy Render e la prova visiva sul browser pubblico dopo il nuovo commit; non vengono dichiarati verificati dal solo Action.
 
 ### INCARICO 2026-09-23 — debug Action sul progetto copiato dagli appunti
 Stato: ESEGUITO
