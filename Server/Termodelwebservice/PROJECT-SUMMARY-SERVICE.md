@@ -108,6 +108,24 @@ Regole:
 Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
+### INCARICO 2026-09-24 — spostamento conversione DXF→SVG dal frontend al Service
+Stato: COMMISSIONATO
+
+Commissionato:
+- spostare la conversione DXF→SVG attualmente implementata in `docs/termodel-ui-demo/dxf-plotter.js` dal browser al backend;
+- collocare la logica di conversione headless e riutilizzabile in `Termodel.Core`, lasciando in `Termodel.WebService` soltanto il contratto HTTP/adattatore;
+- mantenere nel frontend soltanto l'interfaccia utente e la chiamata al Service, preservando per quanto possibile opzioni correnti, layer selezionati, unità, curve, testi e blocchi;
+- non introdurre WPF/Helix nel Core e non modificare `definizionedati.json`;
+- aggiornare il contratto Frontend↔Service e la documentazione del Service;
+- verificare con GitHub Actions build reale e smoke HTTP della conversione, distinguendo implementazione, compilazione ed esecuzione.
+
+Criteri di completamento:
+- endpoint server documentato e compatibile CORS con il frontend pubblico;
+- conversione di un DXF ASCII campione in SVG lato server con controllo di layer/unità e contenuto atteso;
+- frontend operativo senza eseguire localmente la conversione DXF→SVG;
+- GitHub Actions riuscita con notifica secondo la policy permanente;
+- Summary aggiornato a `ESEGUITO` soltanto dopo le verifiche reali.
+
 ### INCARICO 2026-09-24 — FIN visibili solo dal lato interno
 Stato: ESEGUITO
 
