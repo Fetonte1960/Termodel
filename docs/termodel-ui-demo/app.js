@@ -65,16 +65,48 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.07';
+const APP_VERSION = '1.08';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
 const TERMODEL_ANDROID_DEVICE = /Android/i.test(navigator.userAgent || '');
+const TERMODEL_DESKTOP_VIEWPORT_WIDTH = 1100;
+let termodelForceDesktopLayout = false;
+
 if (TERMODEL_ANDROID_DEVICE)
   document.documentElement.classList.add('termodel-android');
 
+function clearAndroidViewportOverrides() {
+  document.documentElement.style.removeProperty('height');
+  document.body.style.removeProperty('height');
+  appRoot?.style.removeProperty('height');
+  appRoot?.style.removeProperty('min-height');
+  appRoot?.style.removeProperty('grid-template-rows');
+}
+
+function enableTermodelFullDesktopLayout() {
+  if (!TERMODEL_ANDROID_DEVICE) return;
+
+  termodelForceDesktopLayout = true;
+  document.documentElement.classList.remove('termodel-android');
+  document.documentElement.classList.add('termodel-force-desktop');
+
+  const viewportMeta = document.querySelector('meta[name="viewport"]');
+  viewportMeta?.setAttribute('content', `width=${TERMODEL_DESKTOP_VIEWPORT_WIDTH}`);
+
+  clearAndroidViewportOverrides();
+
+  requestAnimationFrame(() => {
+    if (typeof resize === 'function') resize();
+  });
+}
+
 function syncAndroidViewportLayout() {
   if (!TERMODEL_ANDROID_DEVICE || !appRoot) return;
+  if (termodelForceDesktopLayout) {
+    clearAndroidViewportOverrides();
+    return;
+  }
 
   const viewport = window.visualViewport;
   const width = Math.max(
@@ -1116,6 +1148,23 @@ function installAndroidExploreStyles() {
     .android-explore-main {
       padding: 0 12px;
     }
+    .android-desktop-toggle {
+      width: 38px;
+      min-width: 38px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+    }
+    .android-desktop-toggle svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
     .android-project-plane {
       height: 38px;
       width: 100%;
@@ -1238,6 +1287,13 @@ function createAndroidExploreBox() {
   box.innerHTML = `
     <button id="androidExploreToggle" class="android-explore-main" type="button"
       aria-expanded="false">Esplora</button>
+    <button id="androidFullDesktop" class="android-explore-main android-desktop-toggle" type="button"
+      aria-label="Apri la versione completa desktop" title="Versione completa desktop">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3.5" y="4.5" width="17" height="11.5" rx="1.5"></rect>
+        <path d="M9 20h6M12 16v4"></path>
+      </svg>
+    </button>
     <div id="androidExploreMenu" class="android-explore-menu" hidden>
       <label class="android-explore-field">
         <span>Esempio</span>
@@ -1253,6 +1309,7 @@ function createAndroidExploreBox() {
   modelPage.appendChild(box);
 
   const toggle = box.querySelector('#androidExploreToggle');
+  const desktopToggle = box.querySelector('#androidFullDesktop');
   const menu = box.querySelector('#androidExploreMenu');
   const exampleSelect = box.querySelector('#androidExploreExample');
   const singleLine = box.querySelector('#androidExploreSingleLine');
@@ -1267,6 +1324,12 @@ function createAndroidExploreBox() {
   toggle.addEventListener('click', (event) => {
     event.stopPropagation();
     setOpen(menu.hidden);
+  });
+
+  desktopToggle.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setOpen(false);
+    enableTermodelFullDesktopLayout();
   });
 
   exampleSelect.addEventListener('click', event => {
