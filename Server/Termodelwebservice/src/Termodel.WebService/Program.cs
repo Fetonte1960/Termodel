@@ -465,10 +465,6 @@ app.MapPut("/api/projects/{projectId:guid}/save", async (
             leaseExpiresAtUtc = lease.ExpiresAtUtc
         });
     }
-    catch (ProjectLockRequiredException exception)
-    {
-        return LockedProblem(exception.Message);
-    }
     catch (InvalidDataException exception)
     {
         return InvalidProjectProblem(exception.Message);
@@ -620,7 +616,6 @@ app.MapPost("/api/projects/{projectId:guid}/unlock", async (
 app.MapPost("/api/calculations", async (
     HttpRequest request,
     ProjectStore projects,
-    ProjectLockManager projectLocks,
     CancellationToken cancellationToken) =>
 {
     if (!IsTextProjectRequest(request))
@@ -641,13 +636,10 @@ app.MapPost("/api/calculations", async (
     {
         string projectText = await ReadProjectTextAsync(request, cancellationToken);
         Guid projectId = ProjectRequestIdentity.ReadProjectId(projectText);
-        Guid lockToken = ProjectLockManager.ReadRequiredToken(request);
 
-        ProjectLockLease lease = await projectLocks.ValidateAndRenewAsync(
-            projectId,
-            lockToken,
-            cancellationToken);
-
+        // Il file progetto inviato dal frontend è autorevole per questa
+        // elaborazione. Il workspace Render è ricreabile e può non esistere
+        // dopo un redeploy: AggiornaCalcolo non richiede open/lock preventivi.
         ProjectCalculationData data = await projects.UpdateCurrentAsync(
             projectId,
             projectText,
@@ -758,8 +750,7 @@ app.MapPost("/api/calculations", async (
                 enabled = data.LogEnabled,
                 mode = data.LogMode,
                 categories = data.LogCategories
-            },
-            leaseExpiresAtUtc = lease.ExpiresAtUtc
+            }
         });
     }
     catch (ProjectLockRequiredException exception)
