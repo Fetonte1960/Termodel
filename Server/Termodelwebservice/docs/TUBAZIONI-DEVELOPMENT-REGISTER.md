@@ -1,6 +1,6 @@
 # CALCOLO TUBAZIONI — REGISTRO DI SVILUPPO AUTONOMO
 
-Aggiornamento: **23 settembre 2026**  
+Aggiornamento: **24 settembre 2026**  
 Stato: **PRIMO KERNEL DARCY E ADAPTER PANNELLI IMPLEMENTATI — SOLVER GENERALISTA/ SPIRALI ANCORA PARZIALI**  
 Linea: **TermodelService / libreria di supporto ai pannelli radianti**
 
@@ -583,6 +583,52 @@ scostamento =
 Una soglia verrà definita con i test. Uno scostamento elevato deve segnalare
 possibile corruzione geometrica senza alterare automaticamente il risultato
 idraulico.
+
+
+### 6.2 Identità circuito introdotta dal progetto reale del 24/09/2026
+
+Il progetto reale di regression fornito dall'utente ha evidenziato un limite
+concreto del primo adapter: sei sequenze Tubo distinte condividono lo stesso
+punto di collettore tramite snap. Senza un'identità esplicita della sequenza,
+la sola connettività geometrica fonde i 12 segmenti T002..T013 in un unico
+componente ramificato.
+
+La correzione introduce nello SVG tecnico:
+
+```text
+data-termodel-circuito="C001"
+```
+
+Regola corrente:
+
+- ogni nuova sequenza Tubo del CAD riceve un nuovo codice circuito;
+- tutti i segmenti della stessa sequenza mantengono lo stesso codice;
+- il Virtual CAD conserva il codice in `SvgDxfLineMetadata`;
+- il solver PannelliRadianti raggruppa prima per codice circuito dichiarato;
+- per progetti legacy privi del metadato resta il fallback per connettività
+  geometrica;
+- circuiti distinti possono condividere graficamente il punto di collettore
+  senza essere sommati in un circuito equivalente.
+
+Questa modifica non anticipa il grafo generalista Tubazioni: non calcola
+ancora collettore, percorso sfavorito, portate sui rami, bilanciamento o
+perdite concentrate. Introduce soltanto l'identità minima necessaria affinché
+il CAD manuale e il kernel per-circuito parlino dello stesso oggetto logico.
+
+Fixture permanente:
+
+```text
+Server/Termodelwebservice/tests/fixtures/
+  RadiantPanelsReference.original.part01.txt
+  RadiantPanelsReference.original.part02.txt
+  RadiantPanelsReference.original.part03.txt
+  RadiantPanelsReference.original.part04.txt
+  RadiantPanelsReference.circuit-map.json
+  README-RadiantPanelsReference.md
+```
+
+Atteso dal caso reale corretto: 1 rete `RAD-DEFAULT`, 6 circuiti dichiarati,
+12 segmenti e 19,5997808425 m di centerline complessiva.
 
 
 ## 7. Database Tubazioni indipendente
