@@ -109,6 +109,22 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 
+### INCARICO 2026-09-24 — snap Vicino/Estremo sui tubi CAD 2D
+Stato: COMMISSIONATO
+
+Commissionato:
+- correggere il CAD 2D in modalità `Rete`: durante il disegno `Tubo`, gli snap `Vicino` e `Estremo` devono agganciarsi ai tubi già disegnati sul piano corrente;
+- mantenere invariata la modalità `Edificio`, dove gli snap continuano a usare le pareti E/W;
+- mantenere invariato lo snap allo sfondo vettoriale;
+- applicare la modifica minima al frontend `docs/termodel-ui-demo`, senza toccare Service/Core, contratto API, `definizionedati.json` o Library Desktop;
+- incrementare la versione/cache busting frontend e verificare staticamente il percorso di snap.
+
+Criteri di completamento:
+- in modalità Rete, `Snap Estremo` considera gli estremi Txxx del piano corrente;
+- in modalità Rete, `Snap Vicino` considera la proiezione sul segmento Txxx del piano corrente;
+- in modalità Edificio il comportamento storico E/W resta invariato;
+- Summary aggiornato a ESEGUITO con commit e stato reale delle verifiche.
+
 ### INCARICO 2026-09-24 — pulsante versione desktop completa dalla main mobile
 Stato: ESEGUITO
 
