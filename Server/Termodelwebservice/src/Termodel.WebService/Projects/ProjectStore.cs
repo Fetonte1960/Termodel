@@ -218,12 +218,9 @@ public sealed class ProjectStore
         Func<CancellationToken, Task<ProjectCalculationData>> calculate,
         CancellationToken cancellationToken)
     {
-        if (!IsReserved(projectId))
-        {
-            throw new InvalidDataException(
-                $"Il projectId '{projectId:D}' non è stato allocato dal Service.");
-        }
-
+        // AggiornaCalcolo riceve sempre il file progetto completo. Il projectId
+        // può essere generato dal frontend e il workspace può non esistere
+        // (per esempio dopo un redeploy Render): PublishCurrentAsync lo crea.
         SemaphoreSlim gate = GetGate(projectId);
         await gate.WaitAsync(cancellationToken);
 
