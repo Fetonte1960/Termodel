@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-24 — ritorno apertura/salvataggio progetti al frontend
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - rendere nuovamente `File → Apri`, `Salva` e `Salva con nome` completamente locali al frontend, usando il file unico `TERMODEL-PROJECT-TEXT-V1`;
@@ -82,51 +82,34 @@ Commissionato:
 - mantenere compatibili gli endpoint legacy di gestione progetto senza usarli nel flusso frontend corrente;
 - non modificare `definizionedati.json` né la Library Desktop.
 
-Criteri di completamento:
-- Apri usa il file picker locale e nessuna API progetto;
-- Salva/Salva con nome producono file locale e nessuna API progetto;
-- Aggiorna Modello non richiede lock/open/allocate-id;
-- il Service accetta il progetto completo con un projectId locale e crea/ricrea il workspace tecnico;
-- build/test disponibili completati e contratto + Summary aggiornati allo stato reale.
-
-
-Questo registro serve a garantire continuità anche se una chat termina durante
-un intervento.
-
-Formato obbligatorio per ogni nuovo incarico autorizzato:
-
-```text
-### INCARICO <data/identificativo breve>
-Stato: COMMISSIONATO | ESEGUITO
-
-Commissionato:
-- obiettivo concreto;
-- file/componenti previsti;
-- vincoli da rispettare;
-- criteri di completamento.
-
 Risultato:
-- compilazione;
-- esecuzione;
-- test;
-- confronto con riferimento;
-- commit finali.
-```
+- frontend portato a **v1.12**: `Apri...` usa il file picker locale; `Salva` e `Salva con nome` scaricano localmente il file unico;
+- rimossi dal frontend corrente lock token, heartbeat, close, open/save server e `allocate-id`;
+- il `projectId` viene letto dal manifest oppure generato localmente come UUID tecnico;
+- `Aggiorna Modello` invia direttamente il progetto completo senza header lock;
+- `POST /api/calculations` non richiede più `ProjectLockManager` e `ProjectStore.UpdateCurrentAsync` crea/ricrea il workspace anche per un projectId mai allocato;
+- gli endpoint server legacy di open/save/lock restano disponibili e i relativi smoke test continuano a passare;
+- caricando/creando un progetto locale vengono invalidati soltanto manifest/overlay transienti degli artifact server;
+- il comando CAD per caricare l'esecutivo server resta disabilitato finché la sessione corrente non ha completato un nuovo calcolo;
+- contratto condiviso aggiornato a **v1.21** con file locale come copia autorevole e workspace Render ricreabile.
 
-Regole:
+Verifica:
+- GitHub Actions run `35980223478`, job `107570267161`: **SUCCESS**;
+- `node --check docs/termodel-ui-demo/app.js`: SUCCESS;
+- build Release `Termodel.WebService.sln`: SUCCESS;
+- smoke `LOCAL_PROJECT_CALCULATION_SMOKE_OK`: un projectId locale non allocato, senza open/lock, crea il workspace e rende disponibile `model3d`;
+- smoke legacy `PROJECT_LOCK_SMOKE_OK`: SUCCESS, quindi compatibilità endpoint storici conservata;
+- smoke feedback, esecutivo pannelli SVG/DXF, progetto reale pannelli e snapshot GitHub: SUCCESS;
+- stato finale workflow: `TERMODEL_JOB_STATUS=SUCCESS`; notifica telefono: `PHONE_NOTIFICATION_SENT status=SUCCESS`;
+- prova manuale interattiva Apri/Salva nel browser non eseguita da questa sessione: la verifica raggiunta è sorgente + CI + smoke HTTP.
 
-- `COMMISSIONATO` significa che l'utente ha autorizzato il lavoro ma il
-  risultato non è ancora stato completato/verificato;
-- `ESEGUITO` si usa soltanto quando il lavoro commissionato è terminato;
-- compilazione, esecuzione, test e confronto devono essere descritti
-  separatamente e non dedotti dal solo stato `ESEGUITO`;
-- non creare una nuova voce per ogni commit tecnico dello stesso incarico:
-  aggiornare la voce originaria;
-- una chat nuova deve controllare prima di tutto se esistono incarichi ancora
-  `COMMISSIONATO` e considerarli lavoro pendente autorizzato.
-
-Al momento dell'introduzione di questa regola non risultano incarichi tecnici
-già autorizzati e lasciati incompleti da registrare retroattivamente.
+Commit principali dell'intervento:
+- `c1a0cfcd982e6be4b8569cbee564807820f0766b` — Restore local project open and save;
+- `c6bf70ceefbc8d3662af31230f20ec9859914050` — Make calculations independent of project locks;
+- `c797a5ad3b8c560b60e05b2ee2a0dd8a66a28a3d` — Allow calculations to recreate missing workspaces;
+- `bad21112326440570823f26d41112c1107ed2e5c` — frontend v1.12;
+- `f521c0a04567747046af581e9ba80ce1a8c800c4` / `166189e558a17bd0a50b4b2c5b9970bdd46d5534` — regression CI lock-free e correzione lista legacy;
+- `7a99c29438fd996f9c780b6dd80e7ba242fb9bbe` — contratto v1.21 coerente con autorità locale.
 
 
 ### INCARICO 2026-09-24 — progetto regression reale pannelli radianti
