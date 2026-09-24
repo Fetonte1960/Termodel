@@ -70,6 +70,26 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-24 — ritorno apertura/salvataggio progetti al frontend
+Stato: COMMISSIONATO
+
+Commissionato:
+- rendere nuovamente `File → Apri`, `Salva` e `Salva con nome` completamente locali al frontend, usando il file unico `TERMODEL-PROJECT-TEXT-V1`;
+- eliminare dal frontend corrente la dipendenza da elenco progetti, open/save server, lock, heartbeat e allocate-id;
+- mantenere Render/Termodel.WebService come motore di calcolo e sorgente degli artifact, non come archivio autorevole dei progetti;
+- rendere `POST /api/calculations` autosufficiente anche quando il `projectId` non esiste ancora nel filesystem del Service o è stato perso dopo redeploy;
+- generare localmente un UUID nel frontend quando il manifest non contiene `projectId`;
+- mantenere compatibili gli endpoint legacy di gestione progetto senza usarli nel flusso frontend corrente;
+- non modificare `definizionedati.json` né la Library Desktop.
+
+Criteri di completamento:
+- Apri usa il file picker locale e nessuna API progetto;
+- Salva/Salva con nome producono file locale e nessuna API progetto;
+- Aggiorna Modello non richiede lock/open/allocate-id;
+- il Service accetta il progetto completo con un projectId locale e crea/ricrea il workspace tecnico;
+- build/test disponibili completati e contratto + Summary aggiornati allo stato reale.
+
+
 Questo registro serve a garantire continuità anche se una chat termina durante
 un intervento.
 
