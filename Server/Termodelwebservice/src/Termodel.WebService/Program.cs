@@ -955,7 +955,7 @@ app.MapGet(
 
     response.Headers["X-Termodel-Artifact-Stale"] = stale ? "true" : "false";
     response.Headers["Content-Disposition"] =
-        "inline; filename="pianta-pulita.svg"";
+        "inline; filename=\"pianta-pulita.svg\"";
     response.Headers["X-Content-Type-Options"] = "nosniff";
     response.Headers["Cache-Control"] = "no-store";
     response.Headers["Content-Security-Policy"] =
