@@ -110,6 +110,25 @@ normalizzato in centimetri Termodel con statistiche, bounding box, viewBox e
 informazioni sull'unità di origine. Un DXF non convertibile restituisce HTTP
 `422`.
 
+Il payload supporta inoltre `profile: "architectural"`. In questo profilo il
+Core filtra layer chiaramente annotativi (quote, retini, testi, arredi,
+Defpoints), elimina layer in cui l'annotazione prevale sulla geometria,
+abilita automaticamente le curve per conservare porte/aperture e assegna una
+gerarchia grafica leggera a sezioni/proiezioni. La risposta aggiunge
+`profile` e `appliedLayers`.
+
+Regression fixture reale:
+
+```text
+tests/fixtures/Farmacia.dxf.gz.b64
+```
+
+È la copia lossless gzip/base64 del DXF originale
+(SHA-256 `81b7e14c361b0b5de94a877c715091b77a42f599c6a757ca1fc2906251496adc`).
+Il workflow la ricostruisce byte-per-byte e verifica la produzione della
+pianta architettonica: layer `0`, `01-SEZIONI`, `02-PROIEZIONI`, quote e
+retini esclusi, unità metri e ingombro circa `19,05 × 17,153 m`.
+
 ## Artifact pannelli radianti
 
 `POST /api/calculations` produce anche il primo risultato idraulico dei
