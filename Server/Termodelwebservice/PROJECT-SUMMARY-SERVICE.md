@@ -109,22 +109,72 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 ### INCARICO 2026-09-24 — spostamento conversione DXF→SVG dal frontend al Service
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - spostare la conversione DXF→SVG attualmente implementata in `docs/termodel-ui-demo/dxf-plotter.js` dal browser al backend;
 - collocare la logica di conversione headless e riutilizzabile in `Termodel.Core`, lasciando in `Termodel.WebService` soltanto il contratto HTTP/adattatore;
-- mantenere nel frontend soltanto l'interfaccia utente e la chiamata al Service, preservando per quanto possibile opzioni correnti, layer selezionati, unità, curve, testi e blocchi;
-- non introdurre WPF/Helix nel Core e non modificare `definizionedati.json`;
-- aggiornare il contratto Frontend↔Service e la documentazione del Service;
-- verificare con GitHub Actions build reale e smoke HTTP della conversione, distinguendo implementazione, compilazione ed esecuzione.
+- mantenere nel frontend soltanto l'interfaccia utente e la chiamata al Service, preservando layer selezionati, unità, curve, testi e blocchi;
+- non introdurre WPF/Helix nel Core e non modificare `definizionedati.json`.
 
-Criteri di completamento:
-- endpoint server documentato e compatibile CORS con il frontend pubblico;
-- conversione di un DXF ASCII campione in SVG lato server con controllo di layer/unità e contenuto atteso;
-- frontend operativo senza eseguire localmente la conversione DXF→SVG;
-- GitHub Actions riuscita con notifica secondo la policy permanente;
-- Summary aggiornato a `ESEGUITO` soltanto dopo le verifiche reali.
+Implementato:
+- nuovo motore headless `Termodel.Core.Cad.DxfSvgConverter` in
+  `src/Termodel.Core/Cad/DxfSvgConverter.cs`;
+- parser/converter server-side per DXF ASCII 2D con LINE,
+  LWPOLYLINE/POLYLINE e, su opzione, ARC/CIRCLE/ELLIPSE/SPLINE,
+  TEXT/MTEXT e INSERT/blocchi;
+- conservate le convenzioni del precedente converter Web: scelta layer,
+  `$INSUNITS`, unità `mm/cm/m`, scala in centimetri Termodel, origine
+  normalizzata, `data-dxf-layer`, statistiche, bounds e viewBox;
+- nuovo endpoint `POST /api/dxf/to-svg`; payload JSON con DXF originale,
+  layer e opzioni; input non convertibile restituisce HTTP 422;
+- CORS già globale del Service rende l'endpoint disponibile al frontend
+  pubblico autorizzato;
+- `docs/termodel-ui-demo/dxf-plotter.js` non esporta più
+  `convertDxfToSvg`: resta soltanto l'analizzatore leggero necessario al
+  dialog e alla stima preventiva;
+- `docs/termodel-ui-demo/app.js` dopo la conferma del dialog chiama il
+  Service e usa lo `svgText` restituito per lo sfondo CAD;
+- contratto condiviso aggiornato a v1.18 e README Service aggiornato;
+- `definizionedati.json` non modificato; nessuna dipendenza WPF/Helix
+  introdotta nel Core.
+
+Verifiche reali:
+- prima build del porting, commit `5d0f7618...`: FALLITA correttamente in
+  GitHub Actions per tre usi di `Math.Hypot` non disponibili nel target;
+- correzione distanza con `Math.Sqrt(x*x+y*y)`, commit `1c6cc5e7...`:
+  GitHub Actions SUCCESS;
+- endpoint WebService, commit `de79f22a...`: build e smoke esistenti
+  SUCCESS;
+- workflow specifico DXF→SVG corretto nel commit `ba03a748...`;
+- GitHub Actions run `35964233556`: **SUCCESS**, build Release
+  **0 errori** e smoke HTTP specifico `DXF_TO_SVG_SMOKE_OK`;
+- lo smoke invia un DXF ASCII con una LINE sul layer `WALL`, lunga
+  `1000 mm`, e verifica risposta server con una entità convertita,
+  `drawingUnit=mm`, `unitScaleToCm=0.1`, metadata layer/unità nello SVG
+  e `realWidthMeters=1.0`;
+- notifica/stato permanente `Termodel/job`: SUCCESS sul run
+  `35964233556`.
+
+Stato di verifica:
+- **progettato:** SI;
+- **implementato:** SI;
+- **compilato in GitHub Actions:** SI, 0 errori;
+- **eseguito nel runner Windows:** SI;
+- **testato via HTTP:** SI, DXF→SVG smoke positivo;
+- **frontend privo della conversione SVG locale:** SI;
+- **compilato/eseguito nel Visual Studio locale dell'utente:** NON ancora
+  verificato in questa chat;
+- **confronto golden su DXF reale complesso:** NON ancora eseguito.
+
+Commit principali:
+- `67a34f1c...` — registrazione commissione;
+- `5d0f7618...` / `1c6cc5e7...` — porting Core e fix .NET;
+- `de79f22a...` — endpoint HTTP;
+- `c6b2eae9...` / `245a1a66...` — rimozione conversione JS e chiamata Service;
+- `0acec410...` — contratto Frontend↔Service v1.18;
+- `163ecc67...` / `ba03a748...` — smoke DXF→SVG e correzione workflow;
+- `649a510f...` — README Service.
 
 ### INCARICO 2026-09-24 — FIN visibili solo dal lato interno
 Stato: ESEGUITO
@@ -3057,6 +3107,7 @@ POST /api/projects/{projectId}/heartbeat
 POST /api/projects/{projectId}/close
 POST /api/projects/{projectId}/unlock
 POST /api/model/3d
+POST /api/dxf/to-svg
 POST /api/calculations
 GET  /api/projects/{projectId}/artifacts/model3d
 GET  /api/projects/{projectId}/artifacts/pannelli
@@ -3065,6 +3116,12 @@ GET  /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
 GET  /api/projects/{projectId}/logs/termodel
 POST /api/feedback
 ```
+
+`POST /api/dxf/to-svg` è un servizio stateless di conversione degli sfondi:
+riceve il DXF ASCII originale e le opzioni di importazione, delega la
+trasformazione a `Termodel.Core.Cad.DxfSvgConverter` e restituisce SVG,
+statistiche, bounds/viewBox e metadati di unità. Non crea né modifica un
+workspace progetto e non contiene logica algoritmica duplicata nel WebService.
 
 `POST /api/projects/new` continua a creare il file unico base e non assegna
 silenziosamente un'identità persistente. Il frontend richiede il projectId una
