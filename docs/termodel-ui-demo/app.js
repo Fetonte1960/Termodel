@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.11';
+const APP_VERSION = '1.12';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -281,9 +281,6 @@ let emptyProjectTextPromise = null;
 let currentProjectText = '';
 let currentProjectFileName = '';
 let currentProjectId = '';
-let currentProjectLockToken = '';
-let currentProjectLeaseExpiresAtUtc = '';
-let projectLockHeartbeatTimer = null;
 let currentServiceManifest = null;
 let termodelServiceReadyAt = 0;
 let termodelServiceCapabilities = null;
@@ -380,7 +377,7 @@ const COMMAND_HELP = {
   },
   'Apri...': {
     title: 'File → Apri',
-    body: '<p>Apre una cartella che contiene un progetto Termodel esistente, la rende progetto corrente e ne aggiorna dati e modello.</p>'
+    body: '<p>Apre dal computer un file <code>TERMODEL-PROJECT-TEXT-V1</code> e lo rende progetto corrente. Non richiede il WebService.</p>'
   },
   'Apri esempio...': {
     title: 'File → Apri esempio',
@@ -392,7 +389,7 @@ const COMMAND_HELP = {
   },
   'Salva': {
     title: 'File → Salva',
-    body: '<p>Nel programma desktop il disegno CAD viene salvato in DXF tramite il comando della toolbar CAD. Gli archivi alfanumerici del progetto dispongono invece dei propri comandi di salvataggio.</p>'
+    body: '<p>Ricostruisce il progetto corrente e scarica localmente il file unico <code>TERMODEL-PROJECT-TEXT-V1</code>. Il progetto non viene salvato su Render.</p>'
   },
   'Salva progetto ZIP': {
     title: 'File → Salva progetto ZIP',
@@ -400,7 +397,7 @@ const COMMAND_HELP = {
   },
   'Salva con nome': {
     title: 'File → Salva con nome',
-    body: '<p>Copia il progetto corrente in una nuova cartella/nome, imposta la copia come progetto attivo e rigenera il modello.</p>'
+    body: '<p>Chiede un nuovo nome file e scarica localmente il progetto corrente. Il WebService non viene usato per il salvataggio.</p>'
   },
   'Importa XML nazionale': {
     title: 'File → Importa XML nazionale',
@@ -787,9 +784,6 @@ async function openProjectBrowserExampleFromMenu() {
     throw new Error('Selezione esempio non valida.');
 
   const chosen = examples[index];
-
-  if (currentProjectLockToken)
-    await releaseCurrentProjectLock();
 
   await loadProjectBrowserExample(chosen.id, null);
   setMainAiStatus('✓ Esempio aperto: ' + chosen.name);
@@ -2090,6 +2084,8 @@ async function loadProjectTextIntoFrontend(text, options = {}) {
   const project = await loadTermodelProjectText(text);
   currentProjectText = String(text);
   currentProjectFileName = options.fileName || currentProjectFileName || projectFileNameFromName(project.projectName);
+  syncCurrentProjectIdFromText(currentProjectText);
+  currentServiceManifest = null;
 
   if (project.geometrySvg) {
     const hydratedGeometrySvg = hydrateTermodelBackgrounds(text, project.geometrySvg);
@@ -2141,116 +2137,50 @@ async function buildCurrentProjectText() {
   return result;
 }
 
-async function saveCurrentProject(saveAs = false) {
-  await ensureCurrentProjectLock();
 
-  let text = await buildCurrentProjectText();
-  const state = getArchivioWebState();
-  let projectName = String(state.projectName || 'Progetto Termodel').trim() || 'Progetto Termodel';
-
-  let endpoint = '/api/projects/' + encodeURIComponent(currentProjectId) + '/save';
-  if (saveAs) {
-    const requested = window.prompt('Nome progetto:', projectName);
-    if (requested === null) return;
-    projectName = String(requested).trim() || projectName;
-    text = setProjectManifestIdentity(text, currentProjectId, projectName);
-    currentProjectText = text;
-    endpoint =
-      '/api/projects/' + encodeURIComponent(currentProjectId) +
-      '/save-as?projectName=' + encodeURIComponent(projectName);
-  }
-
-  const response = await fetch(termodelServiceUrl(endpoint), {
-    method: 'PUT',
-    headers: projectLockHeaders({
-      'Content-Type': 'text/plain; charset=utf-8'
-    }),
-    body: text,
-    cache: 'no-store'
-  });
-
-  if (!response.ok)
-    throw new Error(await readTermodelServiceError(response));
-
-  const result = await response.json();
-  currentProjectLeaseExpiresAtUtc = String(result.leaseExpiresAtUtc || currentProjectLeaseExpiresAtUtc);
-  currentProjectText = text;
-  currentProjectFileName = projectFileNameFromName(projectName);
-  markArchivioWebSaved();
-
-  if (saveAs) {
-    await loadProjectTextIntoFrontend(currentProjectText, {
-      fileName: currentProjectFileName,
-      buildPreview: false
-    });
-  }
-
-  setMainAiStatus('✓ Progetto salvato sul Service: ' + projectName);
+function downloadProjectText(text, fileName) {
+  const url = URL.createObjectURL(
+    new Blob([text], { type: 'text/plain;charset=utf-8' })
+  );
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName || 'Progetto Termodel.termodel.txt';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function openProjectFromService() {
-  setMainAiStatus('Connessione al Termodel Service remoto… il primo avvio Render può richiedere circa 50 secondi.');
-  await ensureTermodelServiceReady();
+async function saveCurrentProject(saveAs = false) {
+  const text = await buildCurrentProjectText();
+  const state = getArchivioWebState();
+  let fileName =
+    currentProjectFileName || projectFileNameFromName(state.projectName);
 
-  const listResponse = await fetch(termodelServiceUrl('/api/projects'), {
-    cache: 'no-store'
-  });
-  if (!listResponse.ok)
-    throw new Error(await readTermodelServiceError(listResponse));
-
-  const payload = await listResponse.json();
-  const projects = Array.isArray(payload.projects) ? payload.projects : [];
-  if (!projects.length) {
-    window.alert('Nessun progetto salvato sul Service.');
-    return null;
+  if (saveAs) {
+    const requested = window.prompt('Nome file progetto:', fileName);
+    if (requested === null) return;
+    fileName = String(requested).trim() || fileName;
+    if (!/\.txt$/i.test(fileName)) fileName += '.termodel.txt';
   }
 
-  const lines = projects.map((item, index) => {
-    const name = String(item.projectName || item.projectId || 'Progetto');
-    const flags = [
-      item.locked ? 'IN USO' : '',
-      item.artifactsStale ? 'DA RICALCOLARE' : ''
-    ].filter(Boolean).join(', ');
-    return (index + 1) + '. ' + name + (flags ? ' [' + flags + ']' : '');
-  });
+  currentProjectFileName = fileName;
+  downloadProjectText(text, fileName);
+  markArchivioWebSaved();
+  setMainAiStatus('✓ Progetto salvato localmente: ' + fileName);
+}
 
-  const selected = window.prompt(
-    'Apri progetto dal Termodel Service:\n\n' + lines.join('\n') + '\n\nNumero progetto:',
-    '1'
-  );
-  if (selected === null) return null;
-
-  const index = Number.parseInt(String(selected).trim(), 10) - 1;
-  if (!Number.isInteger(index) || index < 0 || index >= projects.length)
-    throw new Error('Selezione progetto non valida.');
-
-  const chosen = projects[index];
-  if (currentProjectLockToken)
-    await releaseCurrentProjectLock();
-
-  const openResponse = await fetch(
-    termodelServiceUrl('/api/projects/' + encodeURIComponent(chosen.projectId) + '/open'),
-    { method: 'POST', cache: 'no-store' }
-  );
-
-  if (!openResponse.ok)
-    throw new Error(await readTermodelServiceError(openResponse));
-
-  const opened = await openResponse.json();
-  setCurrentProjectLease(
-    opened.projectId,
-    opened.projectLockToken,
-    opened.leaseExpiresAtUtc
-  );
-
-  const project = await loadProjectTextIntoFrontend(opened.projectText, {
-    fileName: projectFileNameFromName(opened.projectName),
+async function openProjectFile(file) {
+  const text = await file.text();
+  const project = await loadProjectTextIntoFrontend(text, {
+    fileName: file.name,
     buildPreview: true
   });
 
   setMainAiStatus(
-    '✓ Progetto aperto dal Service: ' + project.projectName +
-    (opened.artifactsStale ? ' · modello da ricalcolare' : '')
+    '✓ Progetto aperto dal file locale: ' +
+    project.projectName +
+    ' · archivi e CAD attivi'
   );
   activateModelPage();
   requestAnimationFrame(resize);
@@ -2605,179 +2535,46 @@ function setProjectManifestIdentity(projectText, projectId, projectName = undefi
   );
 }
 
-function setCurrentProjectLease(projectId, token, expiresAtUtc) {
-  currentProjectId = String(projectId || '').trim();
-  currentProjectLockToken = String(token || '').trim();
-  currentProjectLeaseExpiresAtUtc = String(expiresAtUtc || '');
-  restartProjectHeartbeat();
+
+function createLocalProjectId() {
+  if (globalThis.crypto?.randomUUID)
+    return globalThis.crypto.randomUUID();
+
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, char => {
+    const value = Math.floor(Math.random() * 16);
+    const nibble = char === 'x' ? value : ((value & 0x3) | 0x8);
+    return nibble.toString(16);
+  });
 }
 
-function clearCurrentProjectLease() {
-  currentProjectId = '';
-  currentProjectLockToken = '';
-  currentProjectLeaseExpiresAtUtc = '';
-  if (projectLockHeartbeatTimer) {
-    clearInterval(projectLockHeartbeatTimer);
-    projectLockHeartbeatTimer = null;
-  }
-}
-
-function projectLockHeaders(extra = {}) {
-  if (!currentProjectLockToken)
-    throw new Error('Il progetto non dispone di un lock Service valido.');
-  return {
-    ...extra,
-    'X-Termodel-Project-Lock': currentProjectLockToken
-  };
-}
-
-async function heartbeatCurrentProjectLock() {
-  if (!currentProjectId || !currentProjectLockToken) return false;
-
+function syncCurrentProjectIdFromText(projectText) {
   try {
-    const response = await fetch(
-      termodelServiceUrl('/api/projects/' + encodeURIComponent(currentProjectId) + '/heartbeat'),
-      {
-        method: 'POST',
-        headers: projectLockHeaders(),
-        cache: 'no-store'
-      }
-    );
-
-    if (!response.ok) {
-      if (response.status === 423)
-        clearCurrentProjectLease();
-      return false;
-    }
-
-    const result = await response.json();
-    currentProjectLeaseExpiresAtUtc = String(result.leaseExpiresAtUtc || '');
-    return true;
-  } catch (error) {
-    console.warn('Heartbeat Termodel Service non riuscito.', error);
-    return false;
+    const manifest = readProjectManifest(projectText);
+    currentProjectId = String(manifest.projectId || '').trim();
+  } catch (_) {
+    currentProjectId = '';
   }
-}
-
-function restartProjectHeartbeat() {
-  if (projectLockHeartbeatTimer)
-    clearInterval(projectLockHeartbeatTimer);
-
-  if (!currentProjectId || !currentProjectLockToken) {
-    projectLockHeartbeatTimer = null;
-    return;
-  }
-
-  projectLockHeartbeatTimer = setInterval(() => {
-    heartbeatCurrentProjectLock();
-  }, 45000);
-}
-
-async function releaseCurrentProjectLock() {
-  if (!currentProjectId || !currentProjectLockToken) {
-    clearCurrentProjectLease();
-    return;
-  }
-
-  const projectId = currentProjectId;
-  const token = currentProjectLockToken;
-  clearCurrentProjectLease();
-
-  try {
-    await fetch(
-      termodelServiceUrl('/api/projects/' + encodeURIComponent(projectId) + '/close'),
-      {
-        method: 'POST',
-        headers: { 'X-Termodel-Project-Lock': token },
-        cache: 'no-store'
-      }
-    );
-  } catch (error) {
-    console.warn('Rilascio lock progetto non riuscito.', error);
-  }
-}
-
-async function ensureCurrentProjectLock() {
-  if (!structuredProjectActive || !currentProjectText)
-    throw new Error('Nessun progetto strutturato aperto.');
-
-  await ensureTermodelServiceReady();
-
-  const manifest = readProjectManifest(currentProjectText);
-  const manifestProjectId = String(manifest.projectId || '').trim();
-
-  if (manifestProjectId &&
-      currentProjectId === manifestProjectId &&
-      currentProjectLockToken) {
-    return currentProjectId;
-  }
-
-  if (currentProjectLockToken)
-    await releaseCurrentProjectLock();
-
-  if (!manifestProjectId) {
-    setMainAiStatus('Assegnazione projectId dal Termodel Service…');
-    const response = await fetch(
-      termodelServiceUrl('/api/projects/allocate-id'),
-      { method: 'POST', cache: 'no-store' }
-    );
-
-    if (!response.ok)
-      throw new Error(await readTermodelServiceError(response));
-
-    const allocated = await response.json();
-    setCurrentProjectLease(
-      allocated.projectId,
-      allocated.projectLockToken,
-      allocated.leaseExpiresAtUtc
-    );
-    currentProjectText = setProjectManifestIdentity(
-      currentProjectText,
-      currentProjectId
-    );
-    return currentProjectId;
-  }
-
-  setMainAiStatus('Apertura progetto sul Termodel Service…');
-  const response = await fetch(
-    termodelServiceUrl('/api/projects/' + encodeURIComponent(manifestProjectId) + '/open'),
-    { method: 'POST', cache: 'no-store' }
-  );
-
-  if (!response.ok) {
-    const detail = await readTermodelServiceError(response);
-    if (response.status === 404) {
-      throw new Error(
-        'Il projectId ' + manifestProjectId +
-        ' non è presente sul Service corrente. Nel pretest Render Free il filesystem può essere stato azzerato da un redeploy.'
-      );
-    }
-    throw new Error(detail);
-  }
-
-  const opened = await response.json();
-  setCurrentProjectLease(
-    opened.projectId,
-    opened.projectLockToken,
-    opened.leaseExpiresAtUtc
-  );
   return currentProjectId;
 }
 
-window.addEventListener('pagehide', () => {
-  if (!currentProjectId || !currentProjectLockToken) return;
-  const projectId = currentProjectId;
-  const token = currentProjectLockToken;
-  fetch(
-    termodelServiceUrl('/api/projects/' + encodeURIComponent(projectId) + '/close'),
-    {
-      method: 'POST',
-      headers: { 'X-Termodel-Project-Lock': token },
-      keepalive: true,
-      cache: 'no-store'
-    }
-  ).catch(() => {});
-});
+function ensureCurrentProjectId() {
+  if (!structuredProjectActive || !currentProjectText)
+    throw new Error('Nessun progetto strutturato aperto.');
+
+  const manifest = readProjectManifest(currentProjectText);
+  let projectId = String(manifest.projectId || '').trim();
+
+  if (!projectId) {
+    projectId = createLocalProjectId();
+    currentProjectText = setProjectManifestIdentity(
+      currentProjectText,
+      projectId
+    );
+  }
+
+  currentProjectId = projectId;
+  return projectId;
+}
 
 let lastTermodelServerExchange = '';
 
@@ -2912,9 +2709,11 @@ async function loadCalculatedModelFromService() {
   };
 
   try {
-    await ensureCurrentProjectLock();
+    await ensureTermodelServiceReady();
 
-    const completeProjectText = await buildCurrentProjectText();
+    let completeProjectText = await buildCurrentProjectText();
+    const projectId = ensureCurrentProjectId();
+    completeProjectText = currentProjectText;
     const serverPayload = await buildTermodelServerPayload(completeProjectText);
 
     const calculationPath = buildTermodelCalculationPath();
@@ -2924,9 +2723,9 @@ async function loadCalculatedModelFromService() {
       termodelServiceUrl(calculationPath),
       {
         method: 'POST',
-        headers: projectLockHeaders({
+        headers: {
           'Content-Type': 'text/plain; charset=utf-8'
-        }),
+        },
         body: serverPayload,
         cache: 'no-store'
       }
@@ -2947,7 +2746,7 @@ async function loadCalculatedModelFromService() {
     if (!calculation.projectId)
       throw new Error('Il WebService non ha restituito projectId.');
 
-    if (String(calculation.projectId) !== String(currentProjectId))
+    if (String(calculation.projectId) !== String(projectId))
       throw new Error('Il WebService ha restituito un projectId inatteso.');
 
     const artifacts = Array.isArray(calculation.artifacts) ? calculation.artifacts : [];
@@ -2981,15 +2780,11 @@ async function loadCalculatedModelFromService() {
       cadShowGeneratedExecutive.checked = false;
       cadShowGeneratedExecutive.disabled = true;
     }
-    currentProjectLeaseExpiresAtUtc = String(
-      calculation.leaseExpiresAtUtc || currentProjectLeaseExpiresAtUtc
-    );
-
     renderModelData(data, {
       mode: 'project',
       label: 'PROGETTO CORRENTE · SERVER',
       renderOrigin: 'service',
-      projectId: currentProjectId
+      projectId
     });
     resetView();
 
@@ -9481,15 +9276,22 @@ projectStartImportAi?.addEventListener('click', async event => {
     await continueAfterProjectStart();
   }
 });
-openProjectButton?.addEventListener('click', async event => {
+openProjectButton?.addEventListener('click', event => {
   event.preventDefault();
   event.stopPropagation();
+  openProjectFileInput?.click();
+});
+
+openProjectFileInput?.addEventListener('change', async () => {
+  const file = openProjectFileInput.files?.[0];
+  openProjectFileInput.value = '';
+  if (!file) return;
 
   try {
-    await openProjectFromService();
+    await openProjectFile(file);
   } catch (error) {
     console.error('Apertura progetto non riuscita:', error);
-    window.alert('Impossibile aprire il progetto Termodel dal Service.\n\n' + error.message);
+    window.alert('Impossibile aprire il progetto Termodel.\n\n' + error.message);
   }
 });
 
