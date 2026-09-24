@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-24 — registro strategie geometriche SpiraliGPT
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - creare un registro Git dedicato alle decisioni strategiche geometriche per pannelli/SpiraliGPT, distinto dal catalogo storico dei pattern difettosi;
@@ -81,12 +81,27 @@ Commissionato:
 - usare il registro come vincolo di regressione per future strategie geometriche;
 - non modificare in questo incarico l'algoritmo SpiraliGPT, la Library Desktop o `definizionedati.json`.
 
-Criteri di completamento:
-- indice del registro creato nel repository;
-- STRATEGY-001 documentata con stato autorevole;
-- screenshot utente conservato nel repository e referenziato dalla scheda;
-- template disponibile per nuovi casi;
-- Summary aggiornati con percorso e ruolo del registro.
+Risultato:
+- creato `Server/Termodelwebservice/docs/spirali-strategy-register/README.md` come indice autorevole;
+- creata `STRATEGY-001-imbottigliamento-selettivo.md` con stato **ATTIVA**;
+- conservato lo screenshot utente in `images/STRATEGY-001-imbottigliamento-selettivo.png`;
+- creato `TEMPLATE.md` per le future decisioni strategiche;
+- formalizzata la distinzione tra area geometricamente raggiungibile e area validamente copribile dalla mandata;
+- formalizzato che il ritorno può attraversare il collo quando dispone di continuità di ingresso/uscita, mentre la mandata deve evitare la regione oltre il collo quando l'ingresso la renderebbe topologicamente intrappolata;
+- specificato che la scheda non impone ancora una soglia numerica o un algoritmo particolare: impone il comportamento da preservare;
+- collegato STRATEGY-001 al progetto regression `RadiantPanelsReference` e al runner `smoke-radiant-reference.ps1`;
+- mantenuto separato il registro strategico dal catalogo consultivo `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/PatternDifettosi/`.
+
+Verifica:
+- file Markdown riletti da `main`;
+- immagine PNG riletta da GitHub come blob base64 valido;
+- nessuna modifica a Core, WebService runtime, frontend, Library Desktop o `definizionedati.json`;
+- non è stato modificato l'algoritmo: questo incarico consolida soltanto la strategia che i successivi interventi dovranno rispettare.
+
+Commit:
+- `99c270f5de712309888631fd07ef2e5544eb79ef` — registrazione incarico;
+- `5911d0977c119b0540851efe8380e98271f0cc8f` — registro, STRATEGY-001, template e immagine.
+
 
 
 ### INCARICO 2026-09-24 — ritorno apertura/salvataggio progetti al frontend
