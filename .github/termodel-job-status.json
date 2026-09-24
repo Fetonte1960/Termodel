@@ -1,0 +1,12 @@
+{
+  "status": "IDLE",
+  "workflow": "TermodelService Build",
+  "runId": null,
+  "runNumber": null,
+  "jobName": null,
+  "branch": "main",
+  "commit": null,
+  "startedAtUtc": null,
+  "completedAtUtc": null,
+  "runUrl": null
+}
