@@ -1,8 +1,8 @@
 name: TermodelService Build
 
 permissions:
-  contents: write
-
+  contents: read
+  statuses: write
 concurrency:
   group: termodel-service-build-${{ github.ref }}
   cancel-in-progress: false
@@ -32,32 +32,24 @@ jobs:
       - name: Mark Termodel job RUNNING
         if: ${{ github.event_name != 'pull_request' }}
         shell: pwsh
-        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = "Stop"
-          $statusPath = Join-Path $env:GITHUB_WORKSPACE ".github\termodel-job-status.json"
-          $now = (Get-Date).ToUniversalTime().ToString("o")
-          $payload = [ordered]@{
-            status = "RUNNING"
-            workflow = "${{ github.workflow }}"
-            runId = "${{ github.run_id }}"
-            runNumber = "${{ github.run_number }}"
-            jobName = "${{ github.job }}"
-            branch = "${{ github.ref_name }}"
-            commit = "${{ github.sha }}"
-            startedAtUtc = $now
-            completedAtUtc = $null
-            runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          } | ConvertTo-Json -Depth 4
-
-          [IO.File]::WriteAllText($statusPath, $payload + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ".github/termodel-job-status.json"
-          git commit -m "ci: Termodel job RUNNING [skip ci]"
-          git push origin "HEAD:${{ github.ref_name }}"
-
+          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+          $body = @{
+            state = "pending"
+            context = "Termodel/job"
+            description = "RUNNING - TermodelService Build #${{ github.run_number }}"
+            target_url = $runUrl
+          } | ConvertTo-Json
+          Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
+          Write-Host "TERMODEL_JOB_STATUS=RUNNING"
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
@@ -643,46 +635,30 @@ jobs:
         shell: pwsh
         continue-on-error: true
         env:
+          GH_TOKEN: ${{ github.token }}
           TERMODEL_NTFY_TOPIC: ${{ secrets.TERMODEL_NTFY_TOPIC }}
         run: |
           $ErrorActionPreference = "Continue"
           $finalStatus = if ("${{ job.status }}" -eq "success") { "SUCCESS" } else { "FAILED" }
-          $statusPath = Join-Path $env:GITHUB_WORKSPACE ".github\termodel-job-status.json"
-          $completed = (Get-Date).ToUniversalTime().ToString("o")
-          $started = $null
-
-          if (Test-Path -LiteralPath $statusPath) {
-            try {
-              $previous = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
-              $started = $previous.startedAtUtc
-            } catch {
-              Write-Warning "Impossibile leggere lo stato RUNNING precedente: $($_.Exception.Message)"
-            }
-          }
-
-          $payload = [ordered]@{
-            status = $finalStatus
-            workflow = "${{ github.workflow }}"
-            runId = "${{ github.run_id }}"
-            runNumber = "${{ github.run_number }}"
-            jobName = "${{ github.job }}"
-            branch = "${{ github.ref_name }}"
-            commit = "${{ github.sha }}"
-            startedAtUtc = $started
-            completedAtUtc = $completed
-            runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          } | ConvertTo-Json -Depth 4
-
-          [IO.File]::WriteAllText($statusPath, $payload + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
+          $githubState = if ($finalStatus -eq "SUCCESS") { "success" } else { "failure" }
+          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           try {
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add ".github/termodel-job-status.json"
-            git commit -m "ci: Termodel job $finalStatus [skip ci]"
-            git push origin "HEAD:${{ github.ref_name }}"
+            $headers = @{
+              "Authorization" = "Bearer $env:GH_TOKEN"
+              "Accept" = "application/vnd.github+json"
+              "X-GitHub-Api-Version" = "2022-11-28"
+            }
+            $body = @{
+              state = $githubState
+              context = "Termodel/job"
+              description = "$finalStatus - TermodelService Build #${{ github.run_number }}"
+              target_url = $runUrl
+            } | ConvertTo-Json
+            Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
+            Write-Host "TERMODEL_JOB_STATUS=$finalStatus"
           } catch {
-            Write-Warning "Stato finale non pubblicato su GitHub: $($_.Exception.Message)"
+            Write-Warning "Impossibile aggiornare il Commit Status GitHub: $($_.Exception.Message)"
           }
 
           if ([string]::IsNullOrWhiteSpace($env:TERMODEL_NTFY_TOPIC)) {
@@ -690,20 +666,19 @@ jobs:
             exit 0
           }
 
-          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           $topic = [uri]::EscapeDataString($env:TERMODEL_NTFY_TOPIC)
           $message = "TermodelService Build #${{ github.run_number }}: $finalStatus" + [Environment]::NewLine + "Commit: ${{ github.sha }}"
           $priority = if ($finalStatus -eq "SUCCESS") { "high" } else { "urgent" }
           $tags = if ($finalStatus -eq "SUCCESS") { "white_check_mark" } else { "rotating_light" }
 
           try {
-            $headers = @{
+            $notifyHeaders = @{
               "Title" = "Termodel"
               "Priority" = $priority
               "Tags" = $tags
               "Actions" = "view, Apri GitHub Action, $runUrl"
             }
-            Invoke-RestMethod -Uri "https://ntfy.sh/$topic" -Method Post -Headers $headers -ContentType "text/plain; charset=utf-8" -Body $message | Out-Null
+            Invoke-RestMethod -Uri "https://ntfy.sh/$topic" -Method Post -Headers $notifyHeaders -ContentType "text/plain; charset=utf-8" -Body $message | Out-Null
             Write-Host "PHONE_NOTIFICATION_SENT status=$finalStatus"
           } catch {
             Write-Warning "Notifica telefono non inviata: $($_.Exception.Message)"
