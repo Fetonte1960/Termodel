@@ -295,9 +295,16 @@ namespace Termodel.utilities
                 }
                 else
                 {
+                    // Come nel DrawBim Desktop, anche i profili orizzontali
+                    // devono ricevere la rotazione in pianta. Le finestre sono
+                    // rappresentate con verticale=false: senza questa rotazione
+                    // la loro larghezza resta parallela all'asse X globale e il
+                    // serramento risulta ortogonale/disallineato rispetto alla parete.
+                    double rotatedX = x * cos - y * sin;
+                    double rotatedY = x * sin + y * cos;
                     result.Add(new Vec3(
-                        insertionPoint.X + x,
-                        insertionPoint.Y + y,
+                        insertionPoint.X + rotatedX,
+                        insertionPoint.Y + rotatedY,
                         insertionPoint.Z + z));
                 }
             }
