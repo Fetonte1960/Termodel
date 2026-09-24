@@ -109,6 +109,25 @@ Al momento dell'introduzione di questa regola non risultano incarichi tecnici
 già autorizzati e lasciati incompleti da registrare retroattivamente.
 
 
+### INCARICO 2026-09-24 — selezione e cancellazione Tubo CAD 2D
+Stato: COMMISSIONATO
+
+Commissionato:
+- in modalità `Rete` rendere selezionabili con click le entità `Tubo` Txxx già disegnate sul piano corrente;
+- abilitare il pulsante `Elimina` quando è selezionato un tubo e cancellare soltanto quel segmento dal `geometry/project.svg`;
+- mantenere invariata la selezione/cancellazione delle pareti E/W in modalità `Edificio`;
+- non estendere implicitamente ai tubi il drag/modifica geometrica delle pareti: l'obiettivo corrente è selezione + cancellazione;
+- preservare undo/redo e il normale flusso `Consolida rete`;
+- modifica limitata al frontend `docs/termodel-ui-demo`, senza toccare Service/Core, contratto API, `definizionedati.json` o Library Desktop;
+- incrementare versione/cache busting frontend e verificare staticamente il percorso.
+
+Criteri di completamento:
+- click su Txxx in modalità Rete evidenzia il tubo;
+- `Elimina` diventa attivo e rimuove Txxx;
+- le pareti non diventano selezionabili per errore in modalità Rete;
+- modalità Edificio invariata;
+- Summary aggiornato a ESEGUITO con commit e verifiche reali disponibili.
+
 ### INCARICO 2026-09-24 — snap Vicino/Estremo sui tubi CAD 2D
 Stato: ESEGUITO
 
