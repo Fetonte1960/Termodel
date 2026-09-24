@@ -37,6 +37,10 @@ stato verificato end-to-end il 24 settembre 2026.
 
 ---
 
+## 0.2 Decisione 2026-09-24 — persistenza progetto locale
+
+La gestione ordinaria dei progetti torna al frontend: `Apri`, `Salva` e `Salva con nome` operano su file locali. Render/Termodel.WebService viene usato per elaborazione e artifact, non come archivio autorevole dei progetti. Un `POST /api/calculations` deve essere autosufficiente e deve funzionare anche dopo la perdita completa del filesystem Render.
+
 ## 1. Obiettivo dell'architettura
 
 Il frontend deve occuparsi principalmente di:
@@ -987,644 +991,69 @@ profilo architettonico applichi i layer `0`, `01-SEZIONI` e
 `02-PROIEZIONI`, escluda `03-QUOTE` e `04-RETINI`, conservi unità in
 metri e produca una pianta circa 19,05 × 17,153 m.
 
-## 2.5 projectId persistente del progetto
 
-Decisione architetturale aggiornata il **2026-09-22**.
+## 2.5 projectId tecnico del progetto
 
-Il contratto corrente usa un solo identificatore operativo e persistente:
+Decisione architetturale aggiornata **24 settembre 2026**:
 
-```text
-projectId
-```
+- il file `TERMODEL-PROJECT-TEXT-V1` salvato dall'utente è la copia autorevole del progetto;
+- `projectId` non identifica più una persistenza autorevole sul Service;
+- il frontend può leggere un `projectId` già presente nel manifest oppure generarne localmente uno UUID quando serve una elaborazione server;
+- il Service usa `projectId` come chiave tecnica per raggruppare gli artifact prodotti dall'ultimo `POST /api/calculations`;
+- dopo un redeploy o una perdita del filesystem Render il frontend deve poter ricalcolare semplicemente reinviando il file progetto completo, senza una preventiva apertura/registrazione sul Service;
+- `POST /api/projects/allocate-id` resta disponibile soltanto per compatibilità con client precedenti e non fa parte del flusso frontend corrente.
 
-Il precedente concetto di identificatore separato per la singola elaborazione è
-**superato** e non deve essere usato nelle nuove implementazioni. Eventuali
-riferimenti storici a `calculationId` presenti in sezioni che descrivono
-versioni precedenti del software non fanno più parte dell'architettura target.
+Il `projectId` può restare nel manifest per continuità e correlazione diagnostica, ma non rende il file locale dipendente dallo stato del server.
 
-Il `projectId`:
-
-- identifica stabilmente il progetto;
-- è assegnato dal **Termodel.WebService**;
-- è opaco per il frontend;
-- deve essere univoco rispetto ai progetti già registrati dal Service;
-- viene consolidato nel `TERMODEL-PROJECT-TEXT-V1` come proprietà top-level
-  di `manifest.json`;
-- non cambia tra elaborazioni successive dello stesso progetto;
-- è la chiave dominante per salvataggio, artifact, log e lettura dei risultati.
-
-Esempio:
-
-```json
-{
-  "format": "TERMODEL-PROJECT-TEXT-V1",
-  "formatVersion": 1,
-  "projectId": "7b30f4f4-...",
-  "projectName": "Appartamento"
-}
-```
-
-### Log Termodel corrente del progetto
-
-Decisione del **2026-09-23**: il log applicativo prodotto dal motore Termodel
-durante `Aggiorna Modello` è un risultato derivato del progetto corrente e
-deve essere conservato nello stesso workspace del `projectId`.
-
-Percorso logico:
-
-```text
-SavedProjects/{projectId}/logs/TermodelLog.md
-```
-
-Endpoint implementato:
-
-```http
-GET /api/projects/{projectId}/logs/termodel
-```
-
-Regole:
-
-- il contenuto deriva dal `TermodelLog` usato dal Core e non da un secondo
-  logger indipendente nel WebService;
-- ogni elaborazione riuscita sostituisce il log corrente insieme agli altri
-  output del workspace;
-- una elaborazione fallita non deve sostituire il log dell'ultimo calcolo
-  riuscito;
-- la lettura del log non deve rilanciare il calcolo;
-- la risposta usa `text/markdown; charset=utf-8`, nome logico
-  `TermodelLog.md` e `X-Termodel-Artifact-Stale` per indicare se un
-  salvataggio successivo ha reso il log riferito a uno stato precedente;
-- `diagnostics.txt` e `calculation.log` restano disponibili internamente
-  per retrocompatibilità e metadati tecnici;
-- il frontend potrà consumare l'endpoint in una fase successiva, ma non è
-  richiesto modificarlo per l'implementazione server.
-
-### Configurazione log di Aggiorna Modello
-
-`POST /api/calculations` mantiene il body tecnico
-`TERMODEL-PROJECT-TEXT-V1` invariato. Le opzioni di log sono parametri di
-esecuzione della singola elaborazione e non vengono inserite nel progetto.
-
-Parametri query implementati:
-
-```text
-logEnabled=true|false
-logCategories=Sempre,colmi,spezza,Error,Svg,RedrawHelix,GeneraModello,Performance,PontiAutomatici
-```
-
-Regole di compatibilità:
-
-- se entrambi i parametri sono omessi, resta attivo il comportamento Service
-  precedente: tutte le chiamate dirette `WriteLog`, `LogOperation` e
-  `LogError` vengono raccolte, mentre i blocchi diagnostici protetti da
-  `IsEnabled(...)` restano disattivati;
-- `logEnabled=false` disabilita completamente la raccolta del log per quella
-  elaborazione;
-- quando `logCategories` è presente, passa a modalità filtrata:
-  `IsEnabled(category)` è vero soltanto per le categorie selezionate e anche
-  le scritture dirette vengono filtrate;
-- `LogOperation` appartiene alla categoria Desktop `Sempre`;
-- `LogError` appartiene alla categoria Desktop `Error`;
-- i nomi categoria sono case-insensitive;
-- `logCategories=all` abilita tutte le categorie;
-- `logCategories=none` abilita nessuna categoria;
-- una categoria sconosciuta è un errore della richiesta e non deve avviare il
-  calcolo;
-- la configurazione deve essere isolata per richiesta/progetto e non deve
-  modificare flag globali condivisi fra utenti.
-
-Esempi:
-
-```http
-POST /api/calculations?logCategories=colmi,spezza
-POST /api/calculations?logCategories=all
-POST /api/calculations?logEnabled=false
-```
-
-La risposta di `POST /api/calculations` riporta in modo additivo la
-configurazione log effettivamente applicata; la stessa configurazione viene
-registrata in `logs/calculation.log`.
-
-**Implementazione frontend v0.99 (PC/Desktop):**
-
-- il menu `Help` espone le nove categorie contrattuali come checkbox;
-- tutte le categorie sono **disattivate di default**;
-- nessuna categoria selezionata → il frontend invia
-  `POST /api/calculations?logEnabled=false`;
-- una o più categorie selezionate → il frontend invia
-  `logEnabled=true` e `logCategories=<elenco>`;
-- la configurazione resta un parametro della singola elaborazione e non entra
-  nel `TERMODEL-PROJECT-TEXT-V1`;
-- nello stesso menu `Help` è disponibile la **Modalità esplorazione**,
-  disattivata di default: questa è esclusivamente una funzione UI e non cambia
-  il contratto Service.
-
-### Assegnazione di un nuovo projectId
-
-Operazione:
-
-```http
-POST /api/projects/allocate-id
-```
-
-La richiesta assegna e riserva soltanto un nuovo identificatore. Non crea un
-progetto Termodel e non modifica implicitamente un file progetto.
-
-Risposta corrente:
-
-```json
-{
-  "contractVersion": "TERMODEL-FRONT-SERVICE-V1",
-  "projectId": "7b30f4f4-...",
-  "projectLockToken": "token-opaco-temporaneo",
-  "leaseExpiresAtUtc": "..."
-}
-```
-
-Nel workflow implementato l'allocazione apre anche la lease iniziale del nuovo
-progetto, così il client può salvarlo o calcolarlo senza una seconda apertura.
-
-Il Service deve verificare/riservare l'unicità rispetto ai projectId già
-presenti e deve gestire correttamente richieste concorrenti.
-
-Flusso frontend:
-
-```text
-apri/crea progetto
-        ↓
-manifest.projectId presente?
-   ├── sì → usa quello esistente
-   └── no
-        ↓
-POST /api/projects/allocate-id
-        ↓
-riceve projectId
-        ↓
-consolida projectId in manifest.json
-        ↓
-ricostruisce TERMODEL-PROJECT-TEXT-V1
-        ↓
-POST /api/calculations
-```
-
-Il Service non deve assegnare silenziosamente un nuovo projectId dentro
-`POST /api/calculations`.
-
-### Persistenza fisica
-
-La persistenza permanente è per progetto:
-
-```text
-SavedProjects/
-└── {projectId}/
-    ├── project.tmdl
-    ├── artifacts/
-    │   ├── model3d.json
-    │   └── ... artifact disponibili
-    └── logs/
-        └── ... diagnostica/log correnti
-```
-
-Ogni nuova elaborazione riuscita dello stesso progetto **sovrascrive
-atomicamente** i valori persistiti dalla precedente elaborazione. Non viene
-mantenuto automaticamente uno storico per-elaborazione.
-
-Il progetto persistito, gli artifact e i log della cartella devono quindi
-rappresentare sempre l'ultima elaborazione riuscita del `projectId`.
-
-Un'elaborazione fallita non deve distruggere l'ultimo stato valido. Può
-aggiornare una diagnostica di errore separata, ma non deve sostituire
-`project.tmdl` e artifact validi con output parziali.
-
----
-
-> **Regola di prevalenza 2026-09-22:** qualunque riferimento storico a `calculationId` nelle note di implementazioni precedenti è superato. La nuova implementazione deve usare `projectId` come unico riferimento pubblico e persistente.
 
 ## 2.6 Operazioni progetto: Apri, Salva, Salva con nome
 
-Decisione architetturale del **22 settembre 2026**.
-
-Nel funzionamento con Termodel.WebService, le operazioni di persistenza del
-progetto non devono essere realizzate dal frontend mediante accesso diretto al
-filesystem o download/upload usati come storage operativo.
-
-Le tre operazioni utente:
-
-```text
-Apri progetto
-Salva progetto
-Salva progetto con nome
-```
-
-sono responsabilità del **WebService**.
-
-Il frontend deve limitarsi a:
-- mostrare la UI di selezione/nome;
-- inviare al Service la richiesta;
-- ricevere il `TERMODEL-PROJECT-TEXT-V1` o l'esito dell'operazione;
-- mantenere in memoria lo stato della pagina.
-
-Il Service è responsabile di:
-- enumerare/selezionare i progetti disponibili sul proprio storage;
-- leggere il progetto richiesto;
-- scrivere il progetto corrente;
-- gestire nome e collocazione logica;
-- applicare controlli sul `projectId`;
-- impedire che due progetti indipendenti condividano accidentalmente la stessa
-  identità.
+Dal **24 settembre 2026** queste operazioni sono responsabilità esclusiva del frontend.
 
 ### Apri progetto
 
-Nel profilo con Service, il progetto viene scelto tramite dati forniti dal
-Service e il file viene letto dal filesystem dal Service stesso.
+`File → Apri...` apre un file locale `.termodel.txt` / testo compatibile tramite il file picker del browser e lo carica con il normale loader `TERMODEL-PROJECT-TEXT-V1`.
 
-Il frontend non deve dipendere dal path fisico del server.
-
-Concettualmente:
-
-```text
-Frontend
-   ↓
-Apri progetto(projectId)
-   ↓
-WebService
-   ↓
-SavedProjects/{projectId}/project.tmdl
-   ↓
-TERMODEL-PROJECT-TEXT-V1
-   ↓
-Frontend
-```
+Non deve interrogare `GET /api/projects` né `POST /api/projects/{projectId}/open`.
 
 ### Salva progetto
 
-`Salva progetto` mantiene lo stesso `projectId` e aggiorna il
-`TERMODEL-PROJECT-TEXT-V1` persistente del progetto.
+`File → Salva` ricostruisce il progetto corrente con `buildCurrentProjectText()` e genera localmente il download del file progetto usando il nome corrente.
 
-Il salvataggio del sorgente progetto e il calcolo degli artifact restano due
-operazioni distinte:
-
-```text
-Salva progetto
-    → aggiorna il progetto persistente
-
-Aggiorna Modello
-    → esegue Termodel.Core e aggiorna gli artifact
-```
-
-Se il progetto viene salvato dopo l'ultimo calcolo, gli artifact esistenti
-devono essere considerati **stale** fino al successivo `Aggiorna Modello`.
-Non devono essere presentati come corrispondenti al nuovo contenuto solo perché
-sono ancora presenti sul filesystem.
+Non deve eseguire `PUT /api/projects/{projectId}/save`.
 
 ### Salva progetto con nome
 
-`Salva progetto con nome` **conserva il projectId**.
+`File → Salva con nome` chiede il nome file e genera localmente un nuovo download del medesimo progetto aggiornato.
 
-Serve a cambiare il nome leggibile e, quando verrà introdotta la gestione di
-cartelle logiche, eventualmente la collocazione mostrata nel ProjectBrowser.
-Non crea automaticamente una seconda identità di progetto.
+Non deve eseguire `PUT /api/projects/{projectId}/save-as`.
 
-Un'eventuale futura operazione:
+Gli endpoint server di apertura/salvataggio possono restare temporaneamente disponibili per compatibilità, ma non sono usati dal frontend Termodel Web corrente e non sono fonte autorevole dei progetti.
 
-```text
-Duplica come nuovo progetto
-```
 
-sarà distinta e dovrà richiedere un nuovo `projectId`.
+## 2.7 Lock progetto e compatibilità legacy
 
-### Mobile senza WebService
+Il frontend corrente non acquisisce lock server, non invia heartbeat e non rilascia lock in chiusura pagina.
 
-Per la versione mobile/serverless viene mantenuta, per questa fase, soltanto:
+Gli endpoint di lock/open/save introdotti nella fase di persistenza server restano **legacy compatibili** finché non verranno deprecati esplicitamente. Non devono però essere richiesti da `Aggiorna Modello`.
 
-```text
-Apri progetto
-```
+L'isolamento delle elaborazioni concorrenti sul Service è gestito internamente per `projectId` dal `ProjectStore`; non richiede un token di modifica dal browser nel flusso corrente.
 
-L'apertura locale è responsabilità dell'host/app mobile (ad esempio tramite
-file picker nativo) e non del JavaScript mediante accesso libero al filesystem.
 
-Nel profilo mobile senza Service non vengono esposte, per ora:
-
-```text
-Salva progetto
-Salva progetto con nome
-gestione catalogo/cartelle server
-```
-
-Questa limitazione riguarda la persistenza dei progetti e non implica che il
-motore locale o le altre funzioni mobile debbano usare il WebService.
-
-Le route implementate sono `GET /api/projects`,
-`POST /api/projects/{projectId}/open`,
-`PUT /api/projects/{projectId}/save` e
-`PUT /api/projects/{projectId}/save-as?projectName=...`.
-Heartbeat, chiusura e sblocco usano rispettivamente `/heartbeat`, `/close` e
-`/unlock` sullo stesso projectId.
-
----
-
-## 2.7 Cartella progetto e apertura esclusiva
-
-Decisione architetturale del **22 settembre 2026**.
-
-I file persistenti appartenenti a un progetto devono essere reperibili nella
-**cartella del progetto** gestita dal Service. La struttura di riferimento
-resta:
-
-```text
-SavedProjects/
-└── {projectId}/
-    ├── project.tmdl
-    ├── artifacts/
-    ├── logs/
-    └── ... eventuali metadati tecnici del Service
-```
-
-Il Service può usare workspace/staging temporanei per garantire aggiornamenti
-sicuri, ma tali directory non costituiscono una seconda copia autorevole del
-progetto e devono essere ripulibili. Il contenuto persistente ufficiale del
-progetto resta sotto `SavedProjects/{projectId}/`.
-
-### Un solo utilizzo in modifica per projectId
-
-Nel profilo Web/PC con Service, un progetto può essere aperto in modifica da
-**una sola pagina/sessione alla volta**.
-
-Alla prima apertura il Service acquisisce un lock esclusivo logico sul
-`projectId`. Una seconda richiesta di apertura dello stesso progetto, finché
-il lock è valido, deve essere rifiutata.
-
-Comportamento utente previsto:
-
-```text
-pagina A apre P123
-        ↓
-lock P123 acquisito
-
-pagina B tenta di aprire P123
-        ↓
-rifiuto
-        ↓
-"Il progetto è già in uso."
-```
-
-L'errore HTTP previsto per un progetto correttamente bloccato è:
-
-```http
-423 Locked
-```
-
-Il lock serve a impedire che due pagine modifichino e salvino contemporaneamente
-lo stesso progetto, evitando la perdita silenziosa delle modifiche dell'una o
-dell'altra.
-
-Progetti differenti restano invece indipendenti e possono essere aperti
-contemporaneamente:
-
-```text
-P123 → pagina A   consentito
-P456 → pagina B   consentito
-P789 → pagina C   consentito
-```
-
-### Token di apertura
-
-L'apertura riuscita può restituire un token temporaneo/opaco di possesso del
-lock, indicato concettualmente come `projectLockToken`.
-
-Questo token:
-- è valido solo per la sessione di apertura;
-- non viene scritto in `manifest.json`;
-- non modifica il `projectId`;
-- non è un nuovo identificatore del progetto né un `calculationId`;
-- serve esclusivamente a dimostrare al Service che la pagina che salva,
-  rinomina, aggiorna o chiude il progetto è quella che ne possiede il lock.
-
-Le future operazioni mutanti del progetto dovranno essere accettate soltanto
-dal possessore del lock valido.
-
-### Chiusura normale
-
-Quando la pagina chiude correttamente il progetto:
-
-```text
-Chiudi progetto
-      ↓
-Service rilascia il lock
-      ↓
-P123 torna apribile
-```
-
-La chiusura del lock non deve modificare `project.tmdl`, artifact o log.
-
-### Blocco improprio
-
-Il lock non deve poter rendere un progetto inutilizzabile indefinitamente.
-
-Situazioni da gestire:
-
-```text
-browser chiuso brutalmente
-scheda terminata
-PC client spento
-rete interrotta
-WebService terminato durante l'uso
-riavvio del WebService
-```
-
-Per questo il lock deve essere una **lease rinnovabile**, non un flag
-permanente senza scadenza.
-
-Il Service deve mantenere almeno:
-- identificativo/token del lock;
-- istante di apertura;
-- ultima attività/heartbeat;
-- stato del lock.
-
-La pagina attiva rinnova periodicamente la lease. Se gli heartbeat cessano per
-un tempo superiore alla soglia configurata, il lock viene classificato
-**stale** e può essere rimosso automaticamente dal Service.
-
-La durata esatta della lease/timeout sarà una configurazione implementativa;
-non deve essere codificata nel formato `TERMODEL-PROJECT-TEXT-V1`.
-
-### Riavvio del Service
-
-Al riavvio, il Service deve riconoscere i lock non più associati a una sessione
-valida e recuperarli senza toccare i file del progetto.
-
-Un lock residuo non è prova che il progetto sia ancora realmente in uso.
-
-La procedura di recovery deve quindi distinguere:
-
-```text
-lock vivo
-    → non aprire
-    → 423 "Il progetto è già in uso"
-
-lock scaduto/abbandonato
-    → rimuovere il lock
-    → consentire apertura
-
-stato dubbio
-    → non cancellare dati progetto
-    → richiedere sblocco esplicito
-```
-
-### Sblocco esplicito
-
-Il ProjectBrowser potrà esporre una funzione controllata:
-
-```text
-Sblocca progetto
-```
-
-destinata ai casi di lock improprio.
-
-Regole:
-- il frontend non elimina direttamente file di lock;
-- decide sempre il Service;
-- se il lock risulta attivo e recente, lo sblocco forzato deve richiedere una
-  conferma esplicita dell'utente;
-- lo sblocco elimina soltanto lo stato di occupazione e gli eventuali workspace
-  temporanei abbandonati;
-- non deve cancellare né modificare `project.tmdl`, gli artifact validi o i
-  log correnti del progetto.
-
-Finché non sarà introdotta autenticazione multiutente, questa funzione è
-pensata per il Service locale controllato dall'utente. In futuro
-l'autorizzazione allo sblocco dovrà rispettare proprietario/ruoli.
-
-### Relazione con Salva e Aggiorna Modello
-
-Con un progetto aperto e bloccato a favore della pagina corrente:
-
-```text
-Apri P123
-   ↓
-lock P123
-
-Salva
-Salva con nome
-Aggiorna Modello
-   ↓
-consentiti solo alla sessione che possiede il lock
-```
-
-`Salva con nome` conserva lo stesso `projectId` e quindi anche la stessa
-occupazione logica del progetto.
-
-Una futura `Duplica come nuovo progetto` produrrà invece un nuovo projectId e
-un lock indipendente.
-
----
 ## 2.8 Profilo di pretest remoto Render
 
-Decisione operativa del **23 settembre 2026**.
+Render ospita il WebService di calcolo, non l'archivio autorevole dei progetti utente.
 
-Per il pretest remoto il Termodel.WebService pubblico è raggiungibile a:
+Con il piano Free il filesystem può essere azzerato da redeploy/rebuild. Questo è accettabile perché:
 
-```text
-https://termodel.onrender.com
-```
+- i progetti vengono aperti e salvati localmente dal frontend;
+- ogni `POST /api/calculations` contiene il progetto tecnico completo necessario al calcolo;
+- gli artifact server sono una cache/istantanea di elaborazione ricreabile;
+- la perdita del workspace Render non impedisce di riaprire il progetto;
+- per ricostruire gli artifact è sufficiente premere nuovamente `Aggiorna Modello`.
 
-Il frontend pubblico resta:
+Il cold start Render resta una caratteristica operativa del Service remoto.
 
-```text
-https://www.termodel.it
-```
-
-Il percorso principale di collaudo frontend ↔ Service usa quindi HTTPS pubblico.
-Il supporto localhost/PNA può restare disponibile per sviluppo e compatibilità,
-ma non è più necessario per il pretest remoto.
-
-Endpoint minimi del pretest:
-
-```http
-GET  /health
-GET  /api/model/capabilities
-GET  /api/projects
-POST /api/projects/allocate-id
-POST /api/projects/{projectId}/open
-PUT  /api/projects/{projectId}/save
-PUT  /api/projects/{projectId}/save-as?projectName=...
-POST /api/projects/{projectId}/heartbeat
-POST /api/projects/{projectId}/close
-POST /api/projects/{projectId}/unlock
-POST /api/calculations
-GET  /api/projects/{projectId}/artifacts/model3d
-GET  /api/projects/{projectId}/artifacts/pannelli
-```
-
-Il client che possiede il lock invia il token nell'header:
-
-```text
-X-Termodel-Project-Lock: <projectLockToken>
-```
-
-Il Service autorizza il frontend pubblico `https://www.termodel.it` tramite CORS.
-Il precedente supporto localhost/PNA può restare per sviluppo locale.
-
-### Hosting indipendente
-
-L'API Termodel non deve dipendere da Render. Il Service deve restare compatibile
-con Linux/.NET 8 in container e non introdurre percorsi Windows locali.
-
-La porta HTTP non deve essere fissata nel codice applicativo. Nel container
-Render la porta viene fornita dalla variabile `PORT`; il Dockerfile deve
-continuare ad adattarsi alla porta assegnata dall'hosting.
-
-### Persistenza nel pretest Free
-
-L'istanza Render Free usa filesystem effimero. Di conseguenza:
-- `SavedProjects` è valido per test funzionali durante la vita dell'istanza;
-- non è storage definitivo dei progetti clienti;
-- restart, redeploy o ricreazione possono eliminare progetto, artifact, lock
-  e altri file locali;
-- questa limitazione non modifica il contratto projectId-only e non giustifica
-  l'introduzione di un nuovo identificatore o di storage alternativi nel frontend.
-
-Un hosting/storage persistente verrà scelto separatamente prima dell'uso
-produttivo.
-
-### Sleep/wakeup Render Free
-
-Dopo inattività l'istanza Free può essere sospesa. La prima richiesta successiva
-può richiedere circa 50 secondi o più. Nel pretest il frontend deve presentare
-uno stato di attesa/connessione e non trattare automaticamente questa latenza
-come errore Termodel.
-
-**Implementazione frontend v0.96:** prima della prima operazione server il
-browser verifica nell'ordine:
-
-```text
-GET /health
-    ↓
-GET /api/model/capabilities
-    ↓
-operazione progetto / Aggiorna Modello
-```
-
-Durante l'attesa mostra una barra di avanzamento con la descrizione
-`Sto avviando Termodel Service…`. Per il wake-up del piano Free il client usa
-un timeout di **90 secondi**; la verifica capabilities successiva usa 30
-secondi. Dopo una verifica riuscita il risultato viene riutilizzato per una
-breve finestra (60 secondi), evitando richieste di readiness ripetitive.
-
-La base URL predefinita è `https://termodel.onrender.com`; resta configurabile
-tramite `globalThis.TERMODEL_SERVICE_BASE_URL`, quindi localhost e altri
-ambienti non richiedono modifiche al contratto.
-
-### Client desktop e mobile
-
-PC, Android, tablet, iPhone e altri client Web che usano il Service remoto
-devono poter utilizzare la stessa base URL HTTPS pubblica. La precedente variante
-mobile completamente serverless può restare una modalità separata, ma il
-ProjectBrowser Web mobile del pretest non deve dipendere dalla presenza di un
-PC locale per raggiungere Termodel.WebService.
-
----
 ## 2.9 Feedback utenti verso GitHub
 
 Decisione architetturale del **23 settembre 2026**.
@@ -1992,42 +1421,25 @@ Le view leggono successivamente gli elaborati già prodotti.
 
 ---
 
-## 4. projectId come riferimento unico del progetto
 
-Il `projectId` è il riferimento dominante sia per la persistenza sia per la
-lettura degli artifact.
+## 4. projectId come riferimento tecnico degli artifact
 
-Non esiste nel contratto corrente un identificatore separato per la singola
-elaborazione.
+Nel flusso corrente `projectId` è una chiave tecnica di correlazione tra una richiesta di calcolo e gli artifact che il Service pubblica nel proprio workspace temporaneo/corrente.
 
-Ogni `AggiornaCalcolo` dello stesso progetto sostituisce il risultato
-precedente:
+Non è la posizione di salvataggio autorevole del progetto utente.
 
-```text
-projectId P123
-    ↓
-AggiornaCalcolo #1
-    ↓
-SavedProjects/P123/ = risultato 1
+Il frontend:
 
-projectId P123
-    ↓
-AggiornaCalcolo #2
-    ↓
-SavedProjects/P123/ = risultato 2
-```
+1. usa l'ID già presente nel manifest, se valido;
+2. altrimenti genera localmente un UUID e lo inserisce nel manifest in memoria;
+3. invia il progetto completo a `POST /api/calculations`.
 
-Il risultato 2 sostituisce il risultato 1 come stato corrente del progetto.
+Il Service deve accettare quel projectId anche se non esiste alcun workspace precedente e deve creare/ricreare il workspace durante il calcolo.
 
-Se in futuro sarà necessaria una cronologia dei calcoli, dovrà essere
-introdotta come funzione esplicita separata.
-
----
 
 ## 5. Risposta di AggiornaCalcolo
 
-Il server risponde quando il nuovo stato del progetto è stato elaborato e
-persistito con successo.
+Il server risponde quando l'elaborazione richiesta è stata completata e gli artifact correnti sono disponibili nel workspace tecnico del `projectId`.
 
 Risposta indicativa:
 
@@ -2036,39 +1448,18 @@ Risposta indicativa:
   "contractVersion": "TERMODEL-FRONT-SERVICE-V1",
   "projectId": "7b30f4f4-...",
   "status": "completed",
-  "savedProject": {
-    "fileName": "project.tmdl"
-  },
   "artifacts": [
     {
       "name": "model3d",
       "contentType": "application/json",
       "href": "/api/projects/7b30f4f4-.../artifacts/model3d"
-    },
-    {
-      "name": "pannelli",
-      "contentType": "application/json",
-      "href": "/api/projects/7b30f4f4-.../artifacts/pannelli"
     }
   ],
   "diagnostics": []
 }
 ```
 
-La risposta non deve introdurre un identificatore per-elaborazione.
-
-Il Service legge `manifest.projectId` dal `TERMODEL-PROJECT-TEXT-V1`.
-Se manca, il nuovo flusso frontend deve prima usare
-`POST /api/projects/allocate-id` e consolidare l'ID nel manifest.
-
-Stati previsti:
-
-- `completed`: nuova elaborazione completata e workspace aggiornato;
-- `completed_with_warnings`: workspace aggiornato con diagnostica non bloccante;
-- errore HTTP: elaborazione non consolidata; l'ultimo workspace valido resta
-  disponibile.
-
----
+Non è richiesto alcun `projectLockToken` e la risposta non deve dipendere da un lease di apertura progetto.
 
 ## 6. Manifest degli artifact
 
@@ -2171,43 +1562,42 @@ rappresentano elaborati grafici 2D come pianta pulita o spirali.
 
 ---
 
+
 ## 9. Orchestrazione lato frontend
 
-Flusso previsto:
+Flusso corrente:
 
 ```text
-utente apre/crea progetto
+utente crea/apre file locale TERMODEL-PROJECT-TEXT-V1
         ↓
-projectId presente nel manifest?
-   ├── no → POST /api/projects/allocate-id
-   │        ↓
-   │      consolida projectId nel progetto
-   └── sì
+frontend modifica CAD e archivi
         ↓
-utente modifica il progetto
+Salva / Salva con nome
         ↓
-frontend marca i risultati server come STALE
+download locale del progetto completo
+
+quando serve il calcolo:
         ↓
-AggiornaCalcolo
+buildCurrentProjectText()
         ↓
-frontend costruisce TERMODEL-PROJECT-TEXT-V1 corrente
+projectId presente?
+   ├── sì → lo mantiene
+   └── no → genera UUID localmente e lo inserisce nel manifest
         ↓
-filtra le sole risorse locali/frontend
+filtra le sole risorse frontend/sfondi
         ↓
 POST /api/calculations
         ↓
-Service aggiorna SavedProjects/{projectId}/
+Service crea o ricrea il workspace tecnico del projectId
         ↓
-riceve projectId + manifest artifact
+riceve manifest artifact
         ↓
 segue href degli artifact correnti
         ↓
 aggiorna viewer e view
 ```
 
-Il `projectId` resta invariato quando il progetto viene salvato o ricalcolato.
-
----
+Non esistono passaggi obbligatori di elenco, apertura, salvataggio, lock o heartbeat sul Service.
 
 ## 10. Orchestrazione interna lato server
 
@@ -2235,9 +1625,10 @@ nuovo stato valido del progetto.
 
 ---
 
-## 11. Workspace persistente per progetto
 
-Il workspace permanente è unico per `projectId`.
+## 11. Workspace tecnico del calcolo
+
+Il Service può continuare a usare internamente:
 
 ```text
 SavedProjects/
@@ -2247,32 +1638,20 @@ SavedProjects/
     └── logs/
 ```
 
-La variabile operativa `TERMODEL_SAVED_PROJECTS_DIR` può continuare a
-configurare la root.
+ma questa directory è un **workspace tecnico ricreabile**, non l'archivio autorevole dell'utente.
 
-Per aggiornare in sicurezza il progetto è ammesso usare una directory
-temporanea durante l'elaborazione, ma al termine deve restare una sola
-directory corrente per il `projectId`.
+`POST /api/calculations` deve poter creare il workspace anche quando `projectId` non era stato precedentemente allocato o aperto sul Service.
 
-Dopo il successo, il nuovo workspace sostituisce atomicamente il precedente.
-Dopo un fallimento, il precedente resta integro.
+La sostituzione del workspace deve restare atomica per evitare artifact parziali.
 
-Non creare automaticamente cartelle storiche per ogni elaborazione.
-
----
 
 ## 12. Durata dei risultati
 
-Il workspace di un progetto è persistente finché non viene esplicitamente
-rimosso da una futura politica di gestione progetti.
+Gli artifact restano disponibili finché il workspace corrente esiste sul Service.
 
-Un riavvio del WebService non deve rendere indisponibili gli artifact già
-persistiti per il `projectId`.
+Su Render Free un redeploy/rebuild può cancellarli. Questo non costituisce perdita del progetto, perché il file autorevole è locale. Il frontend deve semplicemente reinviare il progetto completo con `Aggiorna Modello` per ricrearli.
 
-Non è prevista una retention automatica delle singole elaborazioni, perché
-ogni nuova elaborazione riuscita sostituisce la precedente.
-
----
+La persistenza server multiutente, se introdotta in futuro, sarà una funzione separata e non deve essere confusa con il normale salvataggio locale del progetto.
 
 ## 13. Diagnostica ed errori
 
@@ -2324,67 +1703,40 @@ grafica dell'applicazione Web.
 
 ---
 
+
 ## 15. Compatibilità con le API esistenti
 
-La nuova architettura stabilisce come riferimento pubblico:
+Riferimento operativo corrente del frontend:
 
 ```http
-POST /api/projects/allocate-id
 POST /api/calculations
-GET  /api/projects/{projectId}/artifacts/model3d
+GET  /api/projects/{projectId}/artifacts/...
+GET  /api/projects/{projectId}/generated-files
 ```
 
-e progressivamente gli altri artifact sotto:
+Restano compatibili ma non sono più usati dal frontend corrente per la gestione ordinaria dei progetti:
 
 ```http
-GET /api/projects/{projectId}/artifacts/...
+GET  /api/projects
+POST /api/projects/allocate-id
+POST /api/projects/{projectId}/open
+PUT  /api/projects/{projectId}/save
+PUT  /api/projects/{projectId}/save-as
+POST /api/projects/{projectId}/heartbeat
+POST /api/projects/{projectId}/close
 ```
 
-Le route basate su un identificatore per-elaborazione sono superate dal
-contratto corrente e devono essere rimosse durante questa migrazione.
+Gli endpoint legacy non devono diventare una dipendenza indiretta di `POST /api/calculations`.
 
-Gli endpoint legacy non correlati a questo cambio, come
-`POST /api/model/3d` e `GET /api/model/clean-floor/{floorName}`, restano
-compatibili finché non verranno deprecati esplicitamente.
-
----
 
 ## 16. Nuovo progetto
 
-`NuovoProgetto` resta distinto da `AggiornaCalcolo`.
+`Nuovo` parte dal template locale consolidato del frontend.
 
-La creazione del contenuto base può continuare tramite:
+Non richiede una chiamata al Service e non richiede `allocate-id`.
 
-```http
-POST /api/projects/new
-```
+Il `projectId`, se necessario per un successivo calcolo, viene generato localmente al primo `Aggiorna Modello` e può poi essere conservato nel file salvato.
 
-ma l'identità persistente è gestita tramite:
-
-```http
-POST /api/projects/allocate-id
-```
-
-Flusso previsto:
-
-```text
-crea/apri TERMODEL-PROJECT-TEXT-V1
-        ↓
-projectId mancante?
-        ↓
-allocate-id
-        ↓
-consolida projectId nel manifest
-        ↓
-POST /api/calculations
-        ↓
-SavedProjects/{projectId}/ aggiornato
-```
-
-`Salva con nome` conserva il projectId. Un eventuale futuro comando
-`Duplica come nuovo progetto` dovrà richiederne esplicitamente uno nuovo.
-
----
 
 ## 17. Separazione delle responsabilità
 
@@ -2393,26 +1745,27 @@ SavedProjects/{projectId}/ aggiornato
 Responsabile di:
 
 - UI/UX;
-- editing;
-- CAD 2D;
+- editing e CAD 2D;
 - stato del progetto lato browser;
+- apertura del file progetto locale;
 - costruzione/lettura del file unico;
+- Salva / Salva con nome tramite download locale;
+- generazione locale del projectId quando necessario;
 - richiesta di aggiornamento;
-- scelta di quali artifact caricare;
-- rendering degli artifact nelle view.
+- scelta e rendering degli artifact.
 
 ### Termodel.WebService
 
 Responsabile di:
 
-- API HTTP;
-- Content-Type;
-- CORS;
-- validazione di trasporto;
-- allocazione e validazione `projectId`;
-- persistenza del workspace corrente per progetto;
-- esposizione degli artifact;
+- API HTTP, CORS e validazione di trasporto;
+- ricezione del progetto tecnico completo;
+- calcolo/orchestrazione Core;
+- workspace tecnico ricreabile per projectId;
+- esposizione degli artifact e dei log;
 - mapping errori HTTP.
+
+Il WebService non è la fonte autorevole di persistenza dei progetti nel flusso corrente.
 
 ### Termodel.Core
 
@@ -2426,46 +1779,16 @@ Responsabile di:
 
 ### Desktop / Library
 
-Responsabile come riferimento di:
+Restano riferimento storico per comportamento, algoritmi, formati e risultati.
 
-- comportamento storico;
-- algoritmi;
-- formati;
-- risultati da confrontare.
-
-La Library non viene usata come seconda implementazione runtime del server:
-serve a trasferire progressivamente la logica condivisibile nel Core.
-
----
 
 ## 18. Concorrenza e isolamento
 
-Ogni `projectId` deve avere il proprio workspace e il proprio aggiornamento
-isolato.
+Ogni `projectId` ha un proprio workspace tecnico.
+
+Due richieste concorrenti sullo stesso `projectId` devono essere serializzate o coordinate internamente dal Service. Il frontend non usa lock applicativi per questo scopo.
 
 Due progetti distinti possono essere elaborati contemporaneamente.
-
-Due elaborazioni concorrenti dello stesso `projectId` devono essere
-serializzate o coordinate dal Service in modo deterministico, evitando
-scritture parziali o corruzione.
-
-Non devono esistere endpoint basati su variabili globali equivalenti a:
-
-```text
-LatestModel
-LatestPlan
-LatestReport
-```
-
-Il concetto corretto è:
-
-```text
-SavedProjects/{projectId}/artifacts/...
-```
-
-dove il contenuto rappresenta l'ultimo risultato riuscito di quel progetto.
-
----
 
 ## 19. CORS, localhost e sicurezza
 
@@ -2498,34 +1821,24 @@ prima dell'uso multiutente su server pubblico.
 
 ---
 
+
 ## 20. Sequenza di implementazione concordata
 
-### Fase corrente — identità e persistenza per progetto
+### Fase corrente — progetto locale + Service di calcolo
 
-**Implementata lato Service il 22 settembre 2026** per il progetto tecnico,
-`model3d` e i log correnti:
+Stato deciso il 24 settembre 2026:
 
-- `POST /api/projects/allocate-id`;
-- lettura e validazione di `manifest.projectId` in `POST /api/calculations`;
-- workspace `SavedProjects/{projectId}/`;
-- persistenza `project.tmdl`;
-- persistenza `artifacts/model3d.json`;
-- persistenza `logs/calculation.log` e `logs/diagnostics.txt`;
-- lettura artifact tramite `projectId`;
-- sostituzione transazionale del workspace corrente mediante directory
-  staging/backup, con conservazione dell'ultimo stato valido se il calcolo
-  fallisce;
-- serializzazione delle elaborazioni concorrenti dello stesso projectId nel
-  processo Service;
-- eliminazione del precedente storage RAM e delle route pubbliche basate su
-  identificatore per-elaborazione.
-
-La fase frontend che richiede l'ID una sola volta e lo consolida nel manifest
-resta un adeguamento separato.
+- apertura progetto locale nel browser;
+- salvataggio locale del file unico;
+- nessun elenco/apertura/salvataggio progetto sul Service nel frontend corrente;
+- nessun lock/heartbeat frontend;
+- projectId locale o già presente nel manifest;
+- `POST /api/calculations` autosufficiente: crea/ricrea il workspace tecnico;
+- artifact letti tramite gli href restituiti dal calcolo.
 
 ### Fase successiva — artifact aggiuntivi
 
-Integrare nello stesso workspace:
+Integrare nello stesso workspace tecnico:
 
 - piante pulite;
 - XML nazionale;
@@ -2540,11 +1853,8 @@ Integrare nello stesso workspace:
 - regression test automatici;
 - Golden Results;
 - autenticazione;
-- multiutente;
-- eventuale storico versionato dei calcoli solo se richiesto esplicitamente;
+- eventuale persistenza server multiutente come funzione separata;
 - EnergyPlus / gbXML / IDF.
-
----
 
 ## 21. Test del contratto
 
