@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.09';
+const APP_VERSION = '1.10';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -6270,6 +6270,14 @@ function cadFindSourceLine(id) {
   return line && /^[EW]/i.test(line.id || '') ? line : null;
 }
 
+function cadFindSelectableLine(id) {
+  const line = cadFindAnySourceLine(id);
+  if (!line) return null;
+  if (cadToolbarState?.modalita === 'rete')
+    return cadIsPipeLine(line) ? line : null;
+  return /^[EW]/i.test(line.id || '') ? line : null;
+}
+
 function cadFindSourceSymbol(id) {
   if (!id) return null;
   return cadPlaneScopedEntities().find(element =>
@@ -7326,7 +7334,7 @@ function cadIsDirty() {
 
 function cadUpdateControls() {
   const hasDoc = !!cadWorkingDoc;
-  const selected = !!cadFindSourceLine(cadSelectedLineId);
+  const selected = !!cadFindSelectableLine(cadSelectedLineId);
   const selectedSymbol = cadFindSourceSymbol(cadSelectedSymbolId);
   const dirty = cadIsDirty();
   const drawingLine = cadToolMode === 'line';
@@ -7439,10 +7447,11 @@ function cadUpdateControls() {
   } else if (selectedSymbol) {
     cadSetStatus(cadSelectedSymbolId + ' · ' + cadSymbolInsertLabel(cadSymbolBlockType(selectedSymbol)) + ' selezionato');
   } else if (selected) {
-    const line = cadFindSourceLine(cadSelectedLineId);
+    const line = cadFindSelectableLine(cadSelectedLineId);
     const p1 = cadLinePoint(line, 1);
     const p2 = cadLinePoint(line, 2);
-    cadSetStatus(cadSelectedLineId + ' · (' + p1[0].toFixed(1) + ', ' + p1[1].toFixed(1) + ') → (' + p2[0].toFixed(1) + ', ' + p2[1].toFixed(1) + ')');
+    const entityLabel = cadIsPipeLine(line) ? 'Tubo' : 'Parete';
+    cadSetStatus(entityLabel + ' ' + cadSelectedLineId + ' · (' + p1[0].toFixed(1) + ', ' + p1[1].toFixed(1) + ') → (' + p2[0].toFixed(1) + ', ' + p2[1].toFixed(1) + ')');
   } else {
     cadSetStatus('Piano ' + cadCurrentPlane() + ' · Layer ' + cadCurrentLayer() + ' · seleziona una parete o inserisci una nuova entità');
   }
@@ -8343,7 +8352,7 @@ function cadClientPoint(svg, event) {
 }
 
 function cadSelectLine(id, svg = cadCanvas?.querySelector('svg')) {
-  cadSelectedLineId = cadFindSourceLine(id) ? id : '';
+  cadSelectedLineId = cadFindSelectableLine(id) ? id : '';
   if (cadSelectedLineId) {
     cadSelectedSymbolId = '';
     cadCloseNorthPanel(false);
@@ -8414,7 +8423,7 @@ function cadSyncOverlay(svg) {
 
   svg.querySelectorAll('[data-cad-id]').forEach(displayLine => {
     const id = displayLine.getAttribute('data-cad-id');
-    const source = cadFindSourceLine(id);
+    const source = cadFindSelectableLine(id);
     if (!source) {
       displayLine.remove();
       return;
@@ -8751,7 +8760,10 @@ function renderCadComparison() {
         const y1 = Number(line.getAttribute('y1'));
         const x2 = Number(line.getAttribute('x2'));
         const y2 = Number(line.getAttribute('y2'));
-        const editable = /^[EW]/i.test(id);
+        const editable =
+          cadToolbarState?.modalita === 'rete'
+            ? cadIsPipeLine(line)
+            : /^[EW]/i.test(id);
 
         const displayLine = svgNode('line', {
           x1, y1, x2, y2,
@@ -8855,16 +8867,23 @@ function renderCadComparison() {
 }
 
 function cadDeleteSelected() {
-  const line = cadFindSourceLine(cadSelectedLineId);
+  const line = cadFindSelectableLine(cadSelectedLineId);
   if (!line) return;
 
+  const deletedId = line.id || cadSelectedLineId;
+  const pipe = cadIsPipeLine(line);
   const before = cadSerializeWorkingSvg();
   line.remove();
   cadUndoStack.push(before);
   cadRedoStack = [];
   cadSelectedLineId = '';
   renderCadComparison();
-  cadSetStatus('Parete eliminata · premi Rigenera pianta', 'dirty');
+  cadSetStatus(
+    pipe
+      ? ('Tubo ' + deletedId + ' eliminato · premi Consolida rete')
+      : ('Parete ' + deletedId + ' eliminata · premi Rigenera pianta'),
+    'dirty'
+  );
 }
 
 function cadUndoEdit() {
@@ -8872,7 +8891,7 @@ function cadUndoEdit() {
   cadRedoStack.push(cadSerializeWorkingSvg());
   cadWorkingDoc = cadParseSvg(cadUndoStack.pop());
   cadSyncNorthFromWorkingDoc();
-  if (!cadFindSourceLine(cadSelectedLineId)) cadSelectedLineId = '';
+  if (!cadFindSelectableLine(cadSelectedLineId)) cadSelectedLineId = '';
   if (!cadFindSourceSymbol(cadSelectedSymbolId)) cadSelectedSymbolId = '';
   renderCadComparison();
 }
@@ -8882,7 +8901,7 @@ function cadRedoEdit() {
   cadUndoStack.push(cadSerializeWorkingSvg());
   cadWorkingDoc = cadParseSvg(cadRedoStack.pop());
   cadSyncNorthFromWorkingDoc();
-  if (!cadFindSourceLine(cadSelectedLineId)) cadSelectedLineId = '';
+  if (!cadFindSelectableLine(cadSelectedLineId)) cadSelectedLineId = '';
   if (!cadFindSourceSymbol(cadSelectedSymbolId)) cadSelectedSymbolId = '';
   renderCadComparison();
 }
