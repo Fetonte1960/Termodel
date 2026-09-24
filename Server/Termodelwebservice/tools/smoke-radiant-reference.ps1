@@ -336,7 +336,9 @@ try {
   }
 
   $calculationMeta = Get-Content -LiteralPath $calculationLogPath -Raw
-  if ($calculationMeta -notmatch '(?m)^cleanFloorPlanCount=1\r?
+  if ($calculationMeta -notmatch '(?m)^cleanFloorPlanCount=1\\r?\\n') {
+    throw "calculation.log non registra una Pianta pulita."
+  }
 
   Copy-Item -LiteralPath $cleanFloorPath -Destination (Join-Path $artifactDir "pianta-pulita-Unico.svg") -Force
 
