@@ -89,12 +89,21 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.13';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.14';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.13")) {
-            throw "Cache-busting app.js v1.13 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.14")) {
+            throw "Cache-busting app.js v1.14 non aggiornato."
           }
+
+          if ($app -match 'const height = Math\.max\(\s*320,') {
+            throw "Viewport Android conserva ancora il minimo artificiale di 320 px."
+          }
+          if ($app -notmatch 'const height = Math\.max\(\s*1,') {
+            throw "Viewport Android non usa l'altezza reale con guardia minima a 1 px."
+          }
+
+          Write-Host "ANDROID_LANDSCAPE_VIEWPORT_OK"
 
           Write-Host "RADIANT_EXECUTIVE_AUTOLOAD_FRONTEND_OK"
 

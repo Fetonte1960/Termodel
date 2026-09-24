@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.13';
+const APP_VERSION = '1.14';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -114,8 +114,8 @@ function syncAndroidViewportLayout() {
     Math.round(viewport?.width || window.innerWidth || document.documentElement.clientWidth || 1)
   );
   const height = Math.max(
-    320,
-    Math.round(viewport?.height || window.innerHeight || document.documentElement.clientHeight || 320)
+    1,
+    Math.round(viewport?.height || window.innerHeight || document.documentElement.clientHeight || 1)
   );
 
   // Su alcuni Chrome/Android datati 100%, 100vh e 100dvh non seguono
