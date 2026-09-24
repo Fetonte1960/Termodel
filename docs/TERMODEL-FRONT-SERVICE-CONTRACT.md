@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.22**  
+Versione documento: **1.23**  
 Aggiornamento: **24 settembre 2026**  
 Stato: **progetti autorevoli locali nel frontend; Service Render dedicato a calcolo e artifact con workspace ricreabile per projectId; endpoint legacy open/save/lock mantenuti compatibili; conversione DXF→SVG nel Core/Service; feedback utenti verso GitHub Issues, archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati, snapshot diagnostico Render→GitHub e notifica GitHub Actions/telefono implementati**
 
@@ -40,6 +40,32 @@ stato verificato end-to-end il 24 settembre 2026.
 ## 0.2 Decisione 2026-09-24 — persistenza progetto locale
 
 La gestione ordinaria dei progetti torna al frontend: `Apri`, `Salva` e `Salva con nome` operano su file locali. Render/Termodel.WebService viene usato per elaborazione e artifact, non come archivio autorevole dei progetti. Un `POST /api/calculations` deve essere autosufficiente e deve funzionare anche dopo la perdita completa del filesystem Render.
+
+## 0.3 Decisione 2026-09-24 — artifact Pianta pulita
+
+La **Pianta pulita** è l'elaborato architettonico 2D prodotto dal percorso Core
+`LeggiDxf -> GeneraPianta` per ogni piano calpestabile. Il formato Web
+canonico è SVG `TERMODEL-CLEAN-FLOOR-SVG-V1`, unità centimetri.
+
+Dopo un `POST /api/calculations` riuscito, le piante pulite della stessa
+elaborazione devono essere pubblicate nello stesso workspace atomico del
+`projectId`, sotto `artifacts/pianta-pulita/`, ed essere elencate dal
+catalogo `GET /api/projects/{projectId}/generated-files`.
+
+Lettura canonica per nome piano:
+
+```http
+GET /api/projects/{projectId}/artifacts/pianta-pulita/{piano}
+```
+
+La lettura restituisce `image/svg+xml`, non riesegue il calcolo e segue lo
+stesso stato stale degli altri artifact. Il nome del piano nell'URL è il nome
+logico del piano, mentre il nome fisico del file nel workspace è un dettaglio
+interno del Service.
+
+Il legacy `GET /api/model/clean-floor/{floorName}` resta compatibile, ma non
+deve essere usato dal frontend come riferimento stabile perché non è
+projectId-scoped.
 
 ## 1. Obiettivo dell'architettura
 
