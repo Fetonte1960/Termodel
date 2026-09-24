@@ -89,6 +89,40 @@ Commit principali:
 - `be5da6cbb38784b610af479489ea5c675ed8491f` — regression CI e trigger frontend.
 
 
+## 0.3 Registro strategie geometriche SpiraliGPT
+
+Stato: **ATTIVO** dal 24 settembre 2026.
+
+È stato creato il registro autorevole:
+
+`Server/Termodelwebservice/docs/spirali-strategy-register/`
+
+Scopo:
+- conservare le decisioni strategiche geometriche concordate con testo e immagini;
+- separarle dal catalogo consultivo dei pattern difettosi;
+- usarle come vincoli per qualunque futura modifica al generatore SpiraliGPT;
+- collegare ogni principio, quando possibile, a un progetto regression reale.
+
+Prima regola registrata:
+- **STRATEGY-001 — Imbottigliamento selettivo mandata/ritorno**;
+- progetto di riferimento: `RadiantPanelsReference`;
+- principio: il ritorno blu può superare un collo quando può entrarvi e uscirne mantenendo un percorso valido; la mandata rossa deve evitare di occupare la regione oltre il collo quando, una volta entrata, non dispone della stessa possibilità topologica di prosecuzione/uscita;
+- una regione geometricamente raggiungibile non è quindi automaticamente una regione validamente copribile dalla mandata;
+- la regola non fissa ancora una soglia numerica universale del collo né un algoritmo obbligatorio: definisce il comportamento da preservare.
+
+File principali:
+- `README.md` — indice e regole d'uso;
+- `STRATEGY-001-imbottigliamento-selettivo.md`;
+- `TEMPLATE.md`;
+- `images/STRATEGY-001-imbottigliamento-selettivo.png` — screenshot reale fornito dall'utente.
+
+Commit di introduzione:
+- `5911d0977c119b0540851efe8380e98271f0cc8f` — registro, STRATEGY-001, template e immagine;
+- `649316cebdd600bd09704dd628fa6ee1a6c70fcc` — chiusura incarico nel Summary Service.
+
+Regola per le future modifiche SpiraliGPT: leggere prima tutte le schede **ATTIVE** del registro e verificare che la nuova strategia non ne violi nessuna.
+
+
 ## 1. Regola obbligatoria per nuove chat
 
 Prima di lavorare:
