@@ -12,6 +12,149 @@ New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
 $fixturePath = Join-Path $PSScriptRoot "../tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl"
 $expectedFixtureSha256 = "1a5855490adcbac25e5585f9ba89c624eb2381874eb2de8bdc74821a40d2a9a5"
 
+function Get-ProjectSection([string]$projectText,[string]$sectionName) {
+  $begin = "---BEGIN:$sectionName---"
+  $end = "---END:$sectionName---"
+  $bi = $projectText.IndexOf($begin,[System.StringComparison]::Ordinal)
+  if ($bi -lt 0) { throw "Sezione $sectionName non trovata." }
+  $cs = $bi + $begin.Length
+  while ($cs -lt $projectText.Length -and ($projectText[$cs] -in @([char]13,[char]10))) { $cs++ }
+  $ei = $projectText.IndexOf($end,$cs,[System.StringComparison]::Ordinal)
+  if ($ei -lt 0) { throw "Sezione $sectionName non chiusa." }
+  return $projectText.Substring($cs,$ei-$cs).TrimEnd([char]13,[char]10)
+}
+
+function Set-ProjectSection([string]$projectText,[string]$sectionName,[string]$content) {
+  $begin = "---BEGIN:$sectionName---"
+  $end = "---END:$sectionName---"
+  $bi = $projectText.IndexOf($begin,[System.StringComparison]::Ordinal)
+  if ($bi -lt 0) { throw "Sezione $sectionName non trovata." }
+  $cs = $bi + $begin.Length
+  while ($cs -lt $projectText.Length -and ($projectText[$cs] -in @([char]13,[char]10))) { $cs++ }
+  $ei = $projectText.IndexOf($end,$cs,[System.StringComparison]::Ordinal)
+  if ($ei -lt 0) { throw "Sezione $sectionName non chiusa." }
+  return $projectText.Substring(0,$cs) + $content + "`n" + $projectText.Substring($ei)
+}
+
+function Remove-ProjectSection([string]$projectText,[string]$sectionName) {
+  $begin = "---BEGIN:$sectionName---"
+  $end = "---END:$sectionName---"
+  $bi = $projectText.IndexOf($begin,[System.StringComparison]::Ordinal)
+  if ($bi -lt 0) { return $projectText }
+  $ei = $projectText.IndexOf($end,$bi,[System.StringComparison]::Ordinal)
+  if ($ei -lt 0) { throw "Sezione $sectionName non chiusa." }
+  $after = $ei + $end.Length
+  while ($after -lt $projectText.Length -and ($projectText[$after] -in @([char]13,[char]10))) { $after++ }
+  return $projectText.Substring(0,$bi) + $projectText.Substring($after)
+}
+
+function Get-Sha256Text([string]$value) {
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($value)
+    return ([System.BitConverter]::ToString($sha.ComputeHash($bytes))).Replace("-","").ToLowerInvariant()
+  } finally {
+    $sha.Dispose()
+  }
+}
+
+function Refresh-Manifest([string]$projectText) {
+  $manifest = Get-ProjectSection $projectText "manifest.json" | ConvertFrom-Json
+  $kept = @()
+  $definitionHash = ""
+  foreach ($section in @($manifest.sections)) {
+    $name = [string]$section.name
+    if ($name.StartsWith("assets/backgrounds/",[System.StringComparison]::OrdinalIgnoreCase)) { continue }
+    $body = Get-ProjectSection $projectText $name
+    $section.sha256 = Get-Sha256Text $body
+    if ($name -eq [string]$manifest.databaseDefinition.path) { $definitionHash = [string]$section.sha256 }
+    $kept += $section
+  }
+  $manifest.sections = @($kept)
+  if ($definitionHash -and $manifest.databaseDefinition) {
+    $manifest.databaseDefinition.sha256 = $definitionHash
+  }
+  $json = $manifest | ConvertTo-Json -Depth 100
+  return Set-ProjectSection $projectText "manifest.json" $json
+}
+
+function Build-CanonicalServerProject([string]$projectText) {
+  $manifest = Get-ProjectSection $projectText "manifest.json" | ConvertFrom-Json
+  [xml]$source = Get-ProjectSection $projectText "geometry/project.svg"
+
+  $out = New-Object System.Xml.XmlDocument
+  $root = $out.CreateElement("svg","http://www.w3.org/2000/svg")
+  $root.SetAttribute("version","1.1")
+  $root.SetAttribute("data-termodel-format","TERMODEL-PROJECT-SVG-V1")
+  $root.SetAttribute("data-termodel-units","cm")
+  $out.AppendChild($root) | Out-Null
+
+  $sourceRoot = $source.DocumentElement
+  $legacyGroups = @($sourceRoot.ChildNodes | Where-Object {
+    $_.NodeType -eq [System.Xml.XmlNodeType]::Element -and
+    ($_.GetAttribute("id") -eq "calpestabile" -or $_.GetAttribute("id") -eq "copertura")
+  })
+
+  foreach ($floor in @($manifest.floors | Sort-Object order)) {
+    $group = $out.CreateElement("g","http://www.w3.org/2000/svg")
+    $safeId = ([string]$floor.id) -replace "[^A-Za-z0-9_-]+","_"
+    $group.SetAttribute("id","floor-" + $safeId)
+    $group.SetAttribute("data-termodel-floor-id",[string]$floor.id)
+    $group.SetAttribute("data-termodel-name",[string]$floor.name)
+    $role = if ([string]$floor.type -eq "Copertura") { "copertura" } else { "calpestabile" }
+    $group.SetAttribute("data-termodel-role",$role)
+    $group.SetAttribute("data-termodel-file",[string]$floor.fileName)
+    $group.SetAttribute("data-termodel-layer",[string]$floor.cadLayer)
+    $group.SetAttribute("data-termodel-order",[string]$floor.order)
+
+    foreach ($legacyGroup in $legacyGroups) {
+      foreach ($node in @($legacyGroup.ChildNodes)) {
+        if ($node.NodeType -ne [System.Xml.XmlNodeType]::Element) { continue }
+        if ($node.LocalName -notin @("line","text")) { continue }
+
+        $plane = [string]$node.GetAttribute("data-termodel-piano")
+        if ($plane -and $plane -ne [string]$floor.name -and $plane -ne [string]$floor.id) { continue }
+
+        if ($node.LocalName -eq "text") {
+          $firstTspan = @($node.ChildNodes | Where-Object {
+            $_.NodeType -eq [System.Xml.XmlNodeType]::Element -and $_.LocalName -eq "tspan"
+          } | Select-Object -First 1)
+          if (-not $firstTspan -or [string]$firstTspan.InnerText -notmatch "^\s*BLOCCO\s*,") { continue }
+        }
+
+        $clone = $out.ImportNode($node,$true)
+        if ($clone.LocalName -eq "line") {
+          if ([string]::IsNullOrWhiteSpace($clone.GetAttribute("data-termodel-layer"))) {
+            $clone.SetAttribute("data-termodel-layer",[string]$floor.cadLayer)
+          }
+          if ([string]::IsNullOrWhiteSpace($clone.GetAttribute("data-termodel-linetype"))) {
+            $localType = $clone.GetAttribute("data-termodel-tipo-linea")
+            if ($localType) { $clone.SetAttribute("data-termodel-linetype",$localType) }
+          }
+          if ([string]::IsNullOrWhiteSpace($clone.GetAttribute("data-termodel-color"))) {
+            $localColor = $clone.GetAttribute("data-termodel-colore")
+            if ($localColor -match "^\s*(\d+)") { $clone.SetAttribute("data-termodel-color",$Matches[1]) }
+          }
+        } elseif ([string]::IsNullOrWhiteSpace($clone.GetAttribute("data-termodel-layer"))) {
+          $clone.SetAttribute("data-termodel-layer",[string]$floor.cadLayer)
+        }
+
+        $group.AppendChild($clone) | Out-Null
+      }
+    }
+    $root.AppendChild($group) | Out-Null
+  }
+
+  $projectText = Set-ProjectSection $projectText "geometry/project.svg" $out.OuterXml
+  foreach ($section in @($manifest.sections)) {
+    $name = [string]$section.name
+    if ($name.StartsWith("assets/backgrounds/",[System.StringComparison]::OrdinalIgnoreCase)) {
+      $projectText = Remove-ProjectSection $projectText $name
+    }
+  }
+  return Refresh-Manifest $projectText
+}
+
 function Start-ServiceProcess {
   $outLog = Join-Path $artifactDir "service.stdout.log"
   $errLog = Join-Path $artifactDir "service.stderr.log"
@@ -71,6 +214,17 @@ try {
     throw "Fixture banco prova corrente: projectId inatteso $projectId."
   }
 
+  $serverProject = Build-CanonicalServerProject $projectText
+  if ($serverProject -notmatch 'data-termodel-format="TERMODEL-PROJECT-SVG-V1"' -or
+      $serverProject -notmatch 'data-termodel-units="cm"') {
+    throw "Banco prova appartamento: canonicalizzazione frontend non riuscita."
+  }
+
+  [System.IO.File]::WriteAllText(
+    (Join-Path $artifactDir "server-payload.tmdl"),
+    $serverProject,
+    [System.Text.UTF8Encoding]::new($false))
+
   $service = Start-ServiceProcess
 
   $svgPath = Join-Path $artifactDir "pannelli-esecutivo.svg"
@@ -78,7 +232,7 @@ try {
     -Uri "$base/api/calculations?responseArtifact=pannelli-esecutivo-svg" `
     -Method Post `
     -ContentType "text/plain; charset=utf-8" `
-    -Body $projectText `
+    -Body $serverProject `
     -OutFile $svgPath `
     -PassThru
 
