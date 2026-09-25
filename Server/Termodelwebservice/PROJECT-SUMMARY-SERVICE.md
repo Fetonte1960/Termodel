@@ -130,6 +130,8 @@ Avanzamento iniziale:
 - la rete di collegamento completa alimenterà `LineeMandata` e `LineeRitorno` della struttura geometrica LG-004; algoritmo concreto del ritorno, diramazioni e priorità restano da definire.
 - consolidata `LG-012 — Radice dell'albero di ritorno`: per ogni nodo di mandata d'ingresso, l'algoritmo colloca la radice del ritorno a `0,50 m`; il vettore mandata->ritorno è parallelo alla parete architettonica più vicina e il verso è coerente con il `LatoRitorno` dell'ingresso;
 - restano da definire gestione di pareti equidistanti, dettaglio della distanza da segmenti finiti e comportamento se la posizione teorica della radice viola altri vincoli geometrici.
+- consolidata `LG-013 — Primo tratto a inclinazione libera`: il primo tratto della costruzione può avere inclinazione libera e costituisce deroga al solo requisito di parallelismo; dal secondo tratto in poi si applicano integralmente le regole di parallelismo di LG-007;
+- il primo tratto resta comunque soggetto a validità geometrica, non-intersezione e distanze minime LG-005/LG-006; direzione concreta del primo tratto e rapporto con la direzione principe restano da definire.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -149,6 +151,7 @@ Commit iniziali:
 - `0620f934f4b183f514e8e80ffd436a2008533df1` — LG-010, lato di ritorno indipendente per ogni tubo di collegamento di ingresso.
 - `ae5cab7d3b4581ac652718cb44dc5416c75c7b7e` — LG-011, albero di collegamento idraulico: mandata input utente, ritorno generato dall'algoritmo.
 - `d235a60b89d26dbdaf6198716822659ef1c613e5` — LG-012, radice del ritorno a 0,50 m e parallela alla parete architettonica più vicina.
+- `34a82b9e885a230623509e17fa395d4bd8e2275a` — LG-013, primo tratto a inclinazione libera; parallelismo obbligatorio dal secondo tratto.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
