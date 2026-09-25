@@ -173,6 +173,9 @@ Avanzamento iniziale:
 - audit: consolidata `LG-028 — Ogni terminale della mandata prosegue con il proprio albero dei ritorni`: ciascun terminale mandata conserva il proprio percorso/geometria e avvia una distinta esplorazione del ritorno dalla stessa `OrigineRitorno` del circuito;
 - nessun terminale mandata viene escluso per motivi di ottimizzazione preventiva; il costo computazionale potrà crescere combinatoriamente e dovrà essere misurato sui casi di test tramite numero nodi/terminali, profondità, tempo e memoria;
 - eventuali ottimizzazioni future dovranno preservare lo spazio delle soluzioni ammissibili oppure essere prima formalizzate come nuova regola StrategiaDiego.
+- audit: consolidata `LG-029 — Valutazione preliminare della chiusura e verifica avanzata successiva`: nella prima implementazione la chiusura mandata/ritorno viene valutata tramite segmento rettilineo diretto e non-intersezione;
+- tale esito è solo preliminare: in seguito verrà definita una verifica avanzata delle chiusure realmente realizzabili/irrealizzabili, eventualmente con forme non rettilinee, raccordi e vincoli costruttivi;
+- il test preliminare positivo o negativo non va confuso con una certificazione definitiva della fattibilità della chiusura.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -209,6 +212,7 @@ Commit iniziali:
 - `a680230894848e9c4b1777a0d63b959b863fc7f0` — LG-026, origine della spirale di ritorno dal tubo di collegamento di ritorno già generato.
 - `ff8a1912882d1fa76e4e93db5ad614b094ff3c0a` — LG-027, stessa strategia di nodo condivisa da mandata e ritorno.
 - `837a3148ce97d34d1e97207383fa3da159ed1a74` — LG-028, sottoalbero di ritorno distinto per ogni terminale della mandata e metriche di sostenibilità computazionale.
+- `487553ad051c94f975045c94ced5b14c9920b37d` — LG-029, valutazione preliminare della chiusura tramite segmento diretto e futura verifica avanzata.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
