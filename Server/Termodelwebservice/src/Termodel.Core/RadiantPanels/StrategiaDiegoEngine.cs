@@ -315,7 +315,7 @@ internal static class StrategiaDiegoEngine
                 fixedPath,
                 Array.Empty<GeoSegment>());
 
-        ExtensionResult? first = TryBuildInitialSegment(
+        ExtensionResult? first = TryBuildEntryConnector(
             locale,
             family,
             start,
@@ -486,7 +486,7 @@ internal static class StrategiaDiegoEngine
         return new SearchTree(terminals);
     }
 
-    private static ExtensionResult? TryBuildInitialSegment(
+    private static ExtensionResult? TryBuildEntryConnector(
         LocaleGeometry locale,
         GeoFamily family,
         DPoint start,
@@ -519,7 +519,7 @@ internal static class StrategiaDiegoEngine
         DPoint end = start + unit * travel;
 
         LogDiego(
-            $"INITIAL-SEED {family} entry={Fmt(start)} entryDir={Fmt(unit)} " +
+            $"ENTRY-CONNECTOR {family} entry={Fmt(start)} entryDir={Fmt(unit)} " +
             $"wall={entryWall.Id} wallA={Fmt(entryWall.A)} wallB={Fmt(entryWall.B)} " +
             $"offset={Fmt(offsetDistance)}m sine={Fmt(sine)} travel={Fmt(travel)}m " +
             $"computedEnd={Fmt(end)} step={Fmt(step)}m");
@@ -541,13 +541,13 @@ internal static class StrategiaDiegoEngine
                 allowStartOnBoundary: true))
         {
             LogDiego(
-                $"INITIAL-SEED {family} REJECT candidate={Fmt(candidate.A)}->{Fmt(candidate.B)}");
+                $"ENTRY-CONNECTOR {family} REJECT candidate={Fmt(candidate.A)}->{Fmt(candidate.B)}");
             return null;
         }
 
         LogDiego(
-            $"INITIAL-SEED {family} ACCEPT candidate={Fmt(candidate.A)}->{Fmt(candidate.B)} " +
-            $"note=entry-to-offset-segment");
+            $"ENTRY-CONNECTOR {family} ACCEPT candidate={Fmt(candidate.A)}->{Fmt(candidate.B)} " +
+            $"note=technical-entry-connector");
         return new ExtensionResult(candidate, entryWall);
     }
 
