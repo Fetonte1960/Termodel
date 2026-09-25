@@ -20,7 +20,8 @@ public static class RadiantExecutiveGenerator
 
     public static RadiantExecutiveArtifacts? Generate(
         string projectText,
-        string? panelInputXml)
+        string? panelInputXml,
+        IReadOnlyDictionary<string, string>? cleanFloorPlans = null)
     {
         if (string.IsNullOrWhiteSpace(panelInputXml))
             return null;
@@ -92,10 +93,21 @@ public static class RadiantExecutiveGenerator
             string generatedSvg = engineOutput.Svg;
             selectedStepMeters = engineOutput.StepMeters;
 
-            AddBuildingGeometry(
+            bool cleanFloorAdded = AddCleanFloorGeometry(
                 drawing,
-                sourceFloors,
-                floorName);
+                cleanFloorPlans,
+                floorName,
+                diagnostics);
+
+            if (!cleanFloorAdded)
+            {
+                AddBuildingGeometry(
+                    drawing,
+                    sourceFloors,
+                    floorName);
+                diagnostics.Add(
+                    $"Piano {floorName}: pianta pulita non disponibile; usata geometria edificio a linee come fallback.");
+            }
 
             int before = drawing.Primitives.Count;
             AddSpiralSvgGeometry(
@@ -282,6 +294,172 @@ public static class RadiantExecutiveGenerator
             }
         }
     }
+
+    private static bool AddCleanFloorGeometry(
+        RadiantExecutiveDrawing drawing,
+        IReadOnlyDictionary<string, string>? cleanFloorPlans,
+        string floorName,
+        List<string> diagnostics)
+    {
+        if (cleanFloorPlans is null || cleanFloorPlans.Count == 0)
+            return false;
+
+        KeyValuePair<string, string> plan = cleanFloorPlans
+            .FirstOrDefault(item =>
+                item.Key.Equals(
+                    floorName,
+                    StringComparison.OrdinalIgnoreCase));
+
+        if (string.IsNullOrWhiteSpace(plan.Value))
+            return false;
+
+        XDocument svg;
+        try
+        {
+            svg = XDocument.Parse(
+                plan.Value,
+                LoadOptions.PreserveWhitespace);
+        }
+        catch (Exception exception)
+        {
+            throw new InvalidDataException(
+                $"Piano {floorName}: pianta pulita SVG non valida: {exception.Message}",
+                exception);
+        }
+
+        XElement root = svg.Root
+            ?? throw new InvalidDataException(
+                $"Piano {floorName}: pianta pulita SVG priva di root.");
+
+        string format =
+            ((string?)root.Attribute("data-termodel-format") ?? string.Empty)
+            .Trim();
+        if (!format.Equals(
+                "TERMODEL-CLEAN-FLOOR-SVG-V1",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException(
+                $"Piano {floorName}: formato pianta pulita non riconosciuto: '{format}'.");
+        }
+
+        string units =
+            ((string?)root.Attribute("data-termodel-units") ?? "cm")
+            .Trim();
+        double unitToMeters = units.ToLowerInvariant() switch
+        {
+            "cm" => 0.01,
+            "m" => 1.0,
+            _ => throw new InvalidDataException(
+                $"Piano {floorName}: unita' pianta pulita non supportata: '{units}'.")
+        };
+
+        int before = drawing.Primitives.Count;
+        string boundaryLayer = $"{floorName}_PiantaPulita_Output";
+        string symbolLayer = $"{floorName}_PiantaPulitaSimboli_Output";
+
+        foreach (XElement element in svg.Descendants().Where(element =>
+            element.Name.LocalName.Equals(
+                "polyline",
+                StringComparison.OrdinalIgnoreCase) ||
+            element.Name.LocalName.Equals(
+                "polygon",
+                StringComparison.OrdinalIgnoreCase)))
+        {
+            if (!ContainsCssClass(element, "clean-boundary"))
+                continue;
+
+            List<ExecutivePoint> points = ParsePoints(
+                (string?)element.Attribute("points"));
+            if (points.Count < 2)
+                continue;
+
+            points = points
+                .Select(point => new ExecutivePoint(
+                    point.X * unitToMeters,
+                    point.Y * unitToMeters))
+                .ToList();
+
+            bool closed =
+                element.Name.LocalName.Equals(
+                    "polygon",
+                    StringComparison.OrdinalIgnoreCase) ||
+                (points.Count > 2 &&
+                 NearlySame(points[0], points[^1]));
+
+            if (closed &&
+                points.Count > 2 &&
+                NearlySame(points[0], points[^1]))
+            {
+                points.RemoveAt(points.Count - 1);
+            }
+
+            drawing.Primitives.Add(
+                RadiantExecutivePrimitive.Polyline(
+                    floorName,
+                    boundaryLayer,
+                    8,
+                    points,
+                    closed));
+        }
+
+        foreach (XElement element in svg.Descendants().Where(element =>
+            element.Name.LocalName.Equals(
+                "line",
+                StringComparison.OrdinalIgnoreCase)))
+        {
+            if (!TryNumber(element, "x1", out double x1) ||
+                !TryNumber(element, "y1", out double y1) ||
+                !TryNumber(element, "x2", out double x2) ||
+                !TryNumber(element, "y2", out double y2))
+            {
+                continue;
+            }
+
+            drawing.Primitives.Add(
+                RadiantExecutivePrimitive.Line(
+                    floorName,
+                    symbolLayer,
+                    8,
+                    new ExecutivePoint(
+                        x1 * unitToMeters,
+                        y1 * unitToMeters),
+                    new ExecutivePoint(
+                        x2 * unitToMeters,
+                        y2 * unitToMeters)));
+        }
+
+        int added = drawing.Primitives.Count - before;
+        if (added == 0)
+            return false;
+
+        diagnostics.Add(
+            $"Piano {floorName}: incorporata pianta pulita reale con {added} primitive prima delle spirali.");
+        return true;
+    }
+
+    private static bool ContainsCssClass(
+        XElement element,
+        string className)
+    {
+        string? value = (string?)element.Attribute("class");
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        return value
+            .Split(
+                [' ', '\r', '\n', '\t'],
+                StringSplitOptions.RemoveEmptyEntries)
+            .Any(item =>
+                item.Equals(
+                    className,
+                    StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool NearlySame(
+        ExecutivePoint first,
+        ExecutivePoint second) =>
+        Math.Abs(first.X - second.X) <= 1e-9 &&
+        Math.Abs(first.Y - second.Y) <= 1e-9;
 
     private static void AddBuildingGeometry(
         RadiantExecutiveDrawing drawing,
