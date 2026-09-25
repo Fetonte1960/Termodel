@@ -2794,6 +2794,97 @@ nella fase corretta, non anticipatamente.
 Principio documentale consolidato durante l'audit pre-sviluppo. La generazione
 dei due versi non è ancora implementata nella futura StrategiaDiego.
 
+
+---
+
+## LG-025 — Condizione di terminale dell'albero di mandata
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+Un nodo dell'albero di mandata diventa **terminale** quando, dopo aver
+valutato tutte le alternative previste per quel nodo, nessuna genera un nuovo
+`TrattoPossibile`.
+
+Le alternative da valutare sono:
+
+1. `PROSEGUI_DRITTO` secondo LG-016;
+2. primo verso della nuova parallela determinata da LG-023;
+3. secondo verso della stessa parallela secondo LG-024.
+
+### Regola
+
+Per un nodo `N`:
+
+```text
+Candidati(N) = {
+    PROSEGUI_DRITTO,
+    PARALLELA_VERSO_A,
+    PARALLELA_VERSO_B
+}
+```
+
+Dopo l'applicazione delle regole geometriche:
+
+```text
+se esiste almeno un candidato che produce un TrattoPossibile:
+    N non è terminale
+    ogni candidato valido genera un ramo
+
+se nessun candidato produce un TrattoPossibile:
+    N è terminale dell'albero di mandata
+```
+
+### Commento tecnico
+
+Il terminale non viene deciso per euristica, convenienza o previsione sul
+ritorno. È la completa assenza di prosecuzioni geometricamente ammissibili
+secondo le scelte previste a rendere terminale il nodo.
+
+Questa regola mantiene separati:
+
+- arresto naturale della costruzione della mandata;
+- successiva costruzione della spirale di ritorno;
+- potatura dei rami non ammissibili;
+- valutazione finale dei terminali accettabili.
+
+### Vincoli per la futura implementazione
+
+- tutte e tre le categorie di scelta devono essere valutate prima di
+  dichiarare il nodo terminale;
+- l'ordine di valutazione non deve cambiare il fatto che tutte le alternative
+  ammissibili vengano conservate;
+- un candidato escluso deve avere una motivazione diagnostica;
+- un nodo con almeno un candidato valido non può essere classificato come
+  terminale;
+- la classificazione terminale deve essere riproducibile a parità di stato
+  geometrico.
+
+### Criterio futuro di verifica
+
+Devono essere presenti casi di regression in cui:
+
+```text
+1. solo PROSEGUI_DRITTO è possibile
+   -> nodo non terminale
+
+2. solo uno dei due versi paralleli è possibile
+   -> nodo non terminale
+
+3. più alternative sono possibili
+   -> più rami
+
+4. nessuna alternativa è possibile
+   -> nodo terminale della mandata
+```
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. La condizione
+di terminale dell'albero di mandata non è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -2812,7 +2903,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-025`, `LG-026`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-026`, `LG-027`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
