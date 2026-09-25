@@ -72,7 +72,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-25 — StrategiaDiego regressione geometrie complesse R1
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - riprendere lo sviluppo di StrategiaDiego dal limite residuo registrato dopo
@@ -94,6 +94,38 @@ Criteri di completamento:
 - metriche reali della nuova fixture registrate nel Summary e nel registro di
   sviluppo;
 - commissione marcata `ESEGUITO` soltanto dopo la verifica dell'Action.
+
+Risultato:
+- aggiunte la fixture `tests/fixtures/StrategiaDiegoConcaveL.locale.xml` e la
+  relativa scheda `README-StrategiaDiegoConcaveL.md`;
+- il benchmark genera ora report JSON e SVG nominati in base alla fixture,
+  evitando collisioni fra casi diversi;
+- il workflow esegue 20 iterazioni sia sul quadrato 4x4 sia sul locale concavo
+  e pubblica metriche nel Job Summary e come annotazioni `notice` consultabili
+  senza scaricare artifact autenticati;
+- GitHub Actions `TermodelService Build` run `36097485997`, build #458, job
+  `107952701779`: **SUCCESS**;
+- quadrato 4x4: 104 nodi, 2 terminali accettati, p95 23 ms, 360.576 byte,
+  deterministico;
+- locale concavo a L: 183 nodi, 2 terminali accettati, p95 48 ms,
+  720.896 byte, deterministico;
+- entrambe le fixture rispettano i budget F5 (50.000 nodi, p95 2.000 ms,
+  memoria 128 MiB);
+- nessuna modifica ai motori Vittorio/GPT, al frontend o a
+  `definizionedati.json`.
+
+Valutazione:
+- la sostenibilità di StrategiaDiego è ora verificata anche su una prima
+  geometria concava, oltre al quadrato 4x4;
+- non è ancora dimostrata la gestione selettiva della strettoia di
+  `STRATEGY-001`, né sono coperti più ingressi/circuiti o più locali.
+
+Commit operativi:
+- `78f9f3a5b27e2472fee7686d0ac163eec25aa19b` — registrazione R1;
+- `78b0529ecbbcbe2eda5baa763e74844a9c4ec60e` — fixture concava e doppio
+  benchmark;
+- `cabacac1715c97adf01c22596dfd08032e615c10` — metriche pubbliche nel
+  workflow.
 
 
 ### INCARICO 2026-09-25 — Implementazione, attivazione e benchmark StrategiaDiego

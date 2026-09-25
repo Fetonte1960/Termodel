@@ -221,7 +221,7 @@ Limiti residui:
 - la chiusura avanzata resta successiva alla valutazione preliminare LG-029.
 
 ## R1 — Regressione locale concavo a L
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO**
 
 Obiettivo:
 - verificare il motore su una prima geometria non convessa, mantenendo un solo
@@ -236,3 +236,30 @@ Criteri di completamento:
 - benchmark quadrato e concavo eseguiti dal workflow;
 - Action riuscita e metriche del caso concavo registrate;
 - nessuna modifica ai motori Vittorio/GPT, al frontend o allo schema dati.
+
+Implementazione:
+- aggiunti `tests/fixtures/StrategiaDiegoConcaveL.locale.xml` e
+  `tests/fixtures/README-StrategiaDiegoConcaveL.md`;
+- il perimetro a L introduce una rientranza concava in (3,2), mantenendo un
+  solo ingresso dal lato inferiore;
+- il benchmark nomina report e SVG in base alla fixture;
+- GitHub Actions esegue in sequenza quadrato 4x4 e locale concavo e rende le
+  metriche disponibili nel Job Summary e nelle annotazioni del Check Run.
+
+Verifica reale:
+- run `36097485997`, build #458, job `107952701779`: **SUCCESS**;
+- quadrato 4x4, 20 iterazioni: 104 nodi, 2 terminali accettati, p95 23 ms,
+  360.576 byte, deterministico;
+- locale concavo a L, 20 iterazioni: 183 nodi, 2 terminali accettati, p95
+  48 ms, 720.896 byte, deterministico;
+- build e tutti gli smoke test del Service: SUCCESS;
+- budget F5 rispettati da entrambe le fixture.
+
+Commit:
+- `78f9f3a5b27e2472fee7686d0ac163eec25aa19b` — commissione R1;
+- `78b0529ecbbcbe2eda5baa763e74844a9c4ec60e` — fixture e regressione;
+- `cabacac1715c97adf01c22596dfd08032e615c10` — esposizione metriche.
+
+Limite successivo:
+- costruire una regressione dedicata alla strettoia/imbottigliamento di
+  `STRATEGY-001`, senza confonderla con la sola concavità validata in R1.
