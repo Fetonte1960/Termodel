@@ -71,6 +71,44 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-25 — Banco prova corrente StrategiaDiego: appartamento reale
+Stato: COMMISSIONATO
+
+Commissionato:
+- consolidare su GitHub **senza modificarlo** il progetto
+  `TERMODEL-PROJECT-TEXT-V1` fornito dall'utente il 25/09/2026 come
+  **banco prova corrente autorevole** per lo sviluppo di StrategiaDiego;
+- conservarne una copia immutabile sotto `Server/Termodelwebservice/tests/fixtures/`,
+  con SHA-256 del file originale e istruzioni deterministiche di ricostruzione;
+- il progetto corrente ha piano `Unico`, projectId
+  `07bf8dca-dc86-41ea-8844-1aaca58888f0`, timestamp origine
+  `2026-09-25T06:16:04.350Z`;
+- usare questo progetto come fixture primaria dei successivi test GitHub Actions
+  delle spirali, richiedendo direttamente
+  `POST /api/calculations?responseArtifact=pannelli-esecutivo-svg`;
+- mantenere quadrato 4x4 e concavo a L come regression sintetiche di base,
+  ma **non** usarli più come banco operativo principale;
+- per ogni anomalia reale: screenshot + numero locale -> riproduzione sulla
+  fixture corrente -> individuazione della prima decisione errata ->
+  classificazione come violazione di una LG esistente oppure nuova regola ->
+  correzione minima -> nuova Action/regression;
+- registrare questa direttiva, lo status reale dell'algoritmo e il lavoro in
+  corso anche in
+  `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`
+  e nel registro di sviluppo StrategiaDiego;
+- non modificare frontend, Library Desktop o il contenuto
+  `definition/definizionedati.json` incluso nella fixture.
+
+Criteri di completamento:
+- progetto archiviato e ricostruibile byte-per-byte;
+- hash originale documentato;
+- README fixture con ruolo di banco prova corrente;
+- direttiva e stato algoritmo aggiornati nelle linee guida;
+- registro sviluppo aggiornato con il nuovo ciclo operativo;
+- Summary marcato `ESEGUITO` solo dopo verifica GitHub dei file consolidati.
+
+
+
 ### INCARICO 2026-09-25 — Risposta artifact diretta da Aggiorna Modello
 Stato: ESEGUITO
 
