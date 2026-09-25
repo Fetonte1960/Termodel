@@ -176,6 +176,9 @@ Avanzamento iniziale:
 - audit: consolidata `LG-029 — Valutazione preliminare della chiusura e verifica avanzata successiva`: nella prima implementazione la chiusura mandata/ritorno viene valutata tramite segmento rettilineo diretto e non-intersezione;
 - tale esito è solo preliminare: in seguito verrà definita una verifica avanzata delle chiusure realmente realizzabili/irrealizzabili, eventualmente con forme non rettilinee, raccordi e vincoli costruttivi;
 - il test preliminare positivo o negativo non va confuso con una certificazione definitiva della fattibilità della chiusura.
+- audit: consolidata `LG-030 — StrategiaDiego come strategia computazionalmente pesante e selezionabile`: Diego viene classificata come motore esplorativo pesante, selezionabile esplicitamente dall'utente o utilizzabile/proponibile quando la complessità del progetto è stimata sostenibile;
+- la classificazione di pesantezza governa la selezione del motore, non introduce potature euristiche interne e non modifica le regole geometriche di Diego;
+- restano da definire soglie/metriche concrete di compatibilità, comportamento UI/fallback ed eventuali limiti assoluti di nodi, tempo o memoria.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -213,6 +216,7 @@ Commit iniziali:
 - `ff8a1912882d1fa76e4e93db5ad614b094ff3c0a` — LG-027, stessa strategia di nodo condivisa da mandata e ritorno.
 - `837a3148ce97d34d1e97207383fa3da159ed1a74` — LG-028, sottoalbero di ritorno distinto per ogni terminale della mandata e metriche di sostenibilità computazionale.
 - `487553ad051c94f975045c94ced5b14c9920b37d` — LG-029, valutazione preliminare della chiusura tramite segmento diretto e futura verifica avanzata.
+- `52f42a221bda4f479285d2e6d0654c29c85d0533` — LG-030, classificazione di StrategiaDiego come strategia computazionalmente pesante e selezionabile.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
