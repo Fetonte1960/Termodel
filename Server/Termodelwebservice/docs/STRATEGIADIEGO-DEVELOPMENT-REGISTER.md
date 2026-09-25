@@ -117,6 +117,41 @@ Commit:
 - `4bf2e2b3696b51a04e7d9b964ac4f96fc9cd01ac` — XML caso 4x4;
 - `e07bc1db5e3d2c9b968136913f5b853089c3fba0` — documentazione fixture.
 
+## F1B — Audit di allineamento implementazione vs LG-033..LG-035
+Stato: **ESEGUITO**
+
+Verifica eseguita sul codice corrente dopo la prima implementazione:
+- riesaminati i generatori paralleli Vittorio e GPT e il nuovo `StrategiaDiegoEngine`;
+- confermato che Diego mantiene il proprio albero esplorativo e non modifica semanticamente Vittorio/GPT;
+- confermato che la formula corrente `respect / |cross|` e' la generalizzazione geometrica corretta dello spostamento `±d` nel caso ortogonale;
+- individuato uno scarto rispetto a LG-033/LG-035: quando il ramo sta inseguendo un tratto precedente, il motore corrente cerca ancora la prossima linea frontale fra **tutti** i vincoli; non privilegia/vincola ancora il successore `S_k+1` della stessa evoluzione;
+- il benchmark corrente e' quindi una **baseline pre-allineamento**, non ancora il benchmark finale della specifica completa.
+
+Baseline Action verificata:
+- commit `0a6e58658382e806f80ef975760c2e4b83ab88ff`;
+- run GitHub Actions `36087631862` / build #450: SUCCESS;
+- 20 iterazioni: 1176 nodi, 2 terminali accettati, p95 98 ms,
+  max memory delta 7.408.856 byte;
+- notifica finale telefono: SUCCESS.
+
+Decisione:
+- introdurre una sottofase F2B minima e reversibile che renda esplicito
+  l'inseguimento `S_k -> S_k+1` senza alterare Vittorio/GPT;
+- rieseguire poi build e benchmark prima di chiudere F5.
+
+## F2B — Allineamento inseguimento sequenziale LG-033..LG-035
+Stato: **COMMISSIONATO**
+
+Obiettivo:
+- quando un nodo Diego sta seguendo un segmento di tubo gia' appartenente al
+  path, usare il suo `SequenceIndex` per individuare il successore
+  `S_k+1`;
+- per i rami paralleli, il successore deve essere il riferimento di troncatura
+  strategico quando esiste;
+- `PROSEGUI_DRITTO` resta un'alternativa separata e continua a escludere la
+  linea che ha appena troncato il tratto precedente;
+- nessuna modifica ai motori Vittorio/GPT.
+
 ## F5 — Batteria benchmark GitHub Actions
 Stato: **COMMISSIONATO**
 
