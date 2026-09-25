@@ -385,6 +385,41 @@ try {
     throw "La fixture corretta conserva diagnostica di topologia ramificata."
   }
 
+  # Regression del contratto responseArtifact: una seconda AggiornaCalcolo
+  # restituisce direttamente l'SVG e il body deve coincidere byte-per-byte
+  # con l'artifact persistito da quella medesima elaborazione.
+  $directSvgPath = Join-Path $artifactDir "response-pannelli-esecutivo.svg"
+  $directResponse = Invoke-WebRequest -Uri "$base/api/calculations?responseArtifact=pannelli-esecutivo-svg" -Method Post -ContentType "text/plain; charset=utf-8" -Body $serverProject -OutFile $directSvgPath -PassThru
+
+  if ($directResponse.StatusCode -ne 200) {
+    throw "responseArtifact SVG: HTTP inatteso $($directResponse.StatusCode)."
+  }
+  if ($directResponse.Headers["Content-Type"] -notmatch "^image/svg\+xml" -or
+      $directResponse.Headers["X-Termodel-Response-Artifact"] -ne "pannelli-esecutivo-svg" -or
+      $directResponse.Headers["X-Termodel-Project-Id"] -ne [string]$allocation.projectId -or
+      $directResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false") {
+    throw "responseArtifact SVG: header risposta non coerenti."
+  }
+
+  $persistedDirectSvgPath = Join-Path $projectDir "artifacts\pannelli-esecutivo.svg"
+  if (-not (Test-Path -LiteralPath $persistedDirectSvgPath)) {
+    throw "responseArtifact SVG: artifact persistito mancante."
+  }
+
+  $directHash = (Get-FileHash -LiteralPath $directSvgPath -Algorithm SHA256).Hash
+  $persistedHash = (Get-FileHash -LiteralPath $persistedDirectSvgPath -Algorithm SHA256).Hash
+  if ($directHash -ne $persistedHash) {
+    throw "responseArtifact SVG diverso dall'artifact persistito della stessa elaborazione."
+  }
+
+  $badArtifactResponse = Invoke-WebRequest -Uri "$base/api/calculations?responseArtifact=artifact-inesistente" -Method Post -ContentType "text/plain; charset=utf-8" -Body $serverProject -SkipHttpErrorCheck
+  if ($badArtifactResponse.StatusCode -ne 400) {
+    throw "responseArtifact sconosciuto: atteso HTTP 400, ricevuto $($badArtifactResponse.StatusCode)."
+  }
+
+  Write-Host "CALCULATION_DIRECT_ARTIFACT_OK"
+  Write-Host "directSvgSha256=$directHash"
+
   $expectedGenerated = @("pannelli-esecutivo-svg","pannelli-esecutivo-dxf")
   foreach ($artifactName in $expectedGenerated) {
     if (@($calc.artifacts.name) -notcontains $artifactName) {
