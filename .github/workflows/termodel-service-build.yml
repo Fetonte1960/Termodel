@@ -89,11 +89,11 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.17';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.18';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.17")) {
-            throw "Cache-busting app.js v1.17 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.18")) {
+            throw "Cache-busting app.js v1.18 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -101,7 +101,10 @@ jobs:
             "function beginTermodelServiceRequest()",
             "function endTermodelServiceRequest()",
             "async function fetchTermodelService(path, options = {})",
-            "cadSetStatus(TERMODEL_SERVICE_WAIT_STATUS);"
+            "cadSetStatus(TERMODEL_SERVICE_WAIT_STATUS);",
+            "health?.serviceCommitShort || health?.serviceCommit",
+            "health?.spiralEngine",
+            "'Server '"
           )) {
             if (-not $app.Contains($marker)) {
               throw "Feedback attesa Termodel Service mancante: $marker"
@@ -256,6 +259,21 @@ jobs:
             }
             if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force }
             throw "Termodel.WebService non ha risposto a /health."
+          }
+
+          $health = Invoke-RestMethod -Uri "$base/health" -Method Get
+          if ($health.status -ne "ok") {
+            throw "Health Service non valido."
+          }
+          if ([string]::IsNullOrWhiteSpace([string]$health.serviceCommitShort)) {
+            throw "Health Service privo del commit runtime."
+          }
+          if ([string]$health.spiralEngine -ne "Diego") {
+            throw "Health Service deve esporre Diego come strategia default."
+          }
+          if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_SHA) -and
+              [string]$health.serviceCommitShort -ne $env:GITHUB_SHA.Substring(0,8)) {
+            throw "Commit runtime health non coerente con GITHUB_SHA."
           }
 
           function Stop-ServiceProcess($p) {
