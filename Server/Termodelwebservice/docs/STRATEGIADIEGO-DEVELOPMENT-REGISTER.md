@@ -1,7 +1,7 @@
 # STRATEGIADIEGO — REGISTRO DI SVILUPPO
 
 Data avvio: **25/09/2026**  
-Stato generale: **IN CORSO**
+Stato generale: **COMPLETATO PER IL CASO 4x4 / UN INGRESSO**
 
 Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
@@ -196,8 +196,26 @@ Giudizio:
   servono fixture aggiuntive con concavità, strettoie, più locali/circuiti.
 
 ## F6 — Consolidamento finale
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO**
 
-Obiettivo:
-- aggiornare Summary, linee guida, registro e risultati;
-- distinguere implementato/compilato/eseguito/testato.
+Risultato:
+- Summary Service aggiornato con stato finale dell'incarico;
+- mantenuto distinto il documento vivo delle linee guida StrategiaDiego;
+- registrata separatamente la baseline pre-allineamento e la misura finale;
+- stato reale distinto:
+  - progettato: SI;
+  - implementato: SI;
+  - compilato: SI, GitHub Actions build #453;
+  - eseguito: SI, fixture 4x4/un ingresso;
+  - testato: SI, 20 iterazioni benchmark;
+  - confrontato con riferimento: confronto architetturale/algoritmico con
+    Vittorio e GPT eseguito; non esiste ancora un Golden Result approvato per
+    l'output geometrico Diego.
+
+Commit consolidamento Summary:
+- `0936dcb6a35ea7fd449ee9a98a780893bb51073c`.
+
+Limiti residui:
+- sostenibilità verificata soltanto sul caso quadrato 4x4 con un ingresso;
+- mancano regression dedicati a concavità, strettoie, più circuiti e più locali;
+- la chiusura avanzata resta successiva alla valutazione preliminare LG-029.
