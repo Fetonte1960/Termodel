@@ -77,11 +77,29 @@ Verifica:
 - compilazione reale demandata alla fase F3.
 
 ## F3 — Build reale
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO — COMPILAZIONE RELEASE RIUSCITA**
 
-Obiettivo:
-- compilazione Release della soluzione tramite GitHub Actions;
-- applicazione protocollo `Termodel/job RUNNING -> SUCCESS/FAILED` e notifica telefono.
+Tentativo 1:
+- commit `49e9a61f566e4d05d78de3fff6ab23379d7bedb5`;
+- GitHub Actions run `36086188268`, job `107918524934`, run number 438;
+- `Termodel/job=RUNNING` pubblicato correttamente;
+- build FALLITA con 6 errori C# locali a `StrategiaDiegoEngine.cs`
+  (named argument `SequenceIndex`, accesso nullable `GeoSegment?`,
+  conversione nullable e formattazione SVG);
+- step finale: `TERMODEL_JOB_STATUS=FAILED`;
+- `PHONE_NOTIFICATION_SENT status=FAILED`.
+
+Correzione:
+- commit `32937f99e27342dc53cd8a71c8d40b3363c0f7b4`;
+- corretti esclusivamente errori di tipizzazione/compilazione, senza cambiare
+  le regole geometriche.
+
+Tentativo 2:
+- GitHub Actions run `36086401306`, job `107919165262`, run number 439;
+- restore, controlli frontend e **Build Release completati con successo**;
+- compilazione reale quindi verificata;
+- gli smoke generali della stessa run possono proseguire indipendentemente e
+  non sono usati per dichiarare la sola fase di compilazione.
 
 ## F4 — Fixture quadrato 4x4 m / unico tubo entrante
 Stato: **COMMISSIONATO**
