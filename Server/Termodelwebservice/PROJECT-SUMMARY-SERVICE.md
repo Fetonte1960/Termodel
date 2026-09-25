@@ -123,6 +123,8 @@ Avanzamento iniziale:
 - consolidata `LG-009 — Configurazione iniziale e direzione principe`: l'albero parte dall'estremo interno del tubo di collegamento di mandata che entra nella stanza; sono previste configurazioni ritorno a sinistra/destra;
 - per `RitornoSinistra`, destra/sinistra sono definite esclusivamente rispetto alla direzione convenzionale del tubo di collegamento `esterno -> stanza`; la direzione principe è il tratto parallelo sul lato destro di tale verso;
 - non ancora definita per deduzione la regola `RitornoDestra`; resta da stabilire anche se la direzione principe sia solo priorità di esplorazione o vincolo più forte.
+- consolidata `LG-010 — Lato di ritorno associato al singolo tubo di collegamento`: ogni ingresso conserva il proprio `LatoRitorno = Sinistra | Destra`, indipendente dagli altri ingressi dello stesso progetto;
+- esclusa una configurazione globale unica del lato di ritorno: verso `esterno -> stanza` e lato di ritorno vengono valutati separatamente per ogni tubo di collegamento.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -139,6 +141,7 @@ Commit iniziali:
 - `3dd72b08db5fff5e9a9f3ca1bf29bc6a098c16a4` — precisazione LG-008: valutazione dei terminali accettabili solo a fine costruzione dell'albero.
 - `58dc4cfbe7890a66170f5f03afba05b804c1f3ff` — LG-009, configurazione iniziale e direzione principe per ritorno a sinistra.
 - `7a77cc8fae70d79fcccd1359fbd555fd439f5be7` — precisazione LG-009: destra/sinistra riferite al verso del tubo di collegamento `esterno -> stanza`.
+- `0620f934f4b183f514e8e80ffd436a2008533df1` — LG-010, lato di ritorno indipendente per ogni tubo di collegamento di ingresso.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
