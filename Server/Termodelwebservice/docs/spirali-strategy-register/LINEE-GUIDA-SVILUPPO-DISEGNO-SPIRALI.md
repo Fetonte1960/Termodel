@@ -3478,6 +3478,106 @@ nel ramo B.
 Principio documentale consolidato durante l'audit pre-sviluppo. Lo stato
 geometrico isolato per ramo di mandata non è ancora implementato.
 
+
+---
+## LG-033 — Inseguimento progressivo dell'evoluzione precedente nei percorsi convessi
+
+**Stato:** CONSOLIDATA NEL PRINCIPIO — DETTAGLIO IN AUDIT  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Caso fondamentale
+
+Nei percorsi convessi, dopo che la spirale ha compiuto il primo giro può
+raggiungere nuovamente la propria evoluzione iniziale.
+
+Esempio concettuale:
+
+```text
+tubo di collegamento
+    -> S1
+    -> S2
+    -> S3
+    -> ...
+
+dopo il primo giro:
+    il nuovo tratto raggiunge S1
+    -> segue S1 alla distanza prevista
+    -> successivamente deve inseguire S2
+    -> poi S3
+    -> ...
+```
+
+Il comportamento corretto non è quindi un semplice inseguimento dell'ostacolo
+geometricamente più vicino, ma un **inseguimento progressivo dei tratti della
+precedente evoluzione della spirale**.
+
+### Principio
+
+Quando un ramo convesso rientra verso una propria evoluzione precedente:
+
+1. individua il tratto precedente raggiunto, eventualmente anche tramite il
+   prolungamento geometrico della sua retta;
+2. genera il nuovo tratto parallelo a quello raggiunto, alla distanza di
+   rispetto applicabile;
+3. durante l'avanzamento, il successivo riferimento atteso è il tratto che
+   segue quello appena inseguito nella sequenza della precedente evoluzione;
+4. il processo può continuare progressivamente sui tratti successivi
+   `S1 -> S2 -> S3 -> ...`.
+
+### Significato della troncatura
+
+La linea che determina la troncatura non rappresenta soltanto un ostacolo
+fisico. Nei percorsi convessi può anche rappresentare un **marcatore geometrico
+di aggancio** alla precedente evoluzione della spirale.
+
+Per questo la ricerca può utilizzare:
+
+```text
+segmento reale
++
+prolungamento della retta del segmento
+```
+
+mentre la verifica finale di collisione continua a usare la geometria fisica
+reale.
+
+### Relazione con LG-023
+
+LG-023 resta valida per il cambio direzione locale: il nuovo tratto parallelo
+nasce dal riferimento che ha determinato il troncamento.
+
+LG-033 aggiunge però una nozione di **sequenza dei riferimenti** nei percorsi
+convessi: una volta agganciata una precedente evoluzione, il tracciamento deve
+poter inseguire ordinatamente i suoi tratti successivi.
+
+### Conseguenza per il modello dati
+
+La futura implementazione dovrà poter conservare, oltre alla sola geometria,
+anche l'identità/sequenza dei tratti del percorso già costruito, ad esempio:
+
+```text
+SegmentId
+PrecedenteSegmentId
+SuccessivoSegmentId
+ordine nel Path corrente
+```
+
+in modo da sapere quale tratto viene inseguito e quale rappresenta il
+successivo riferimento naturale.
+
+### Punto ancora da definire
+
+Resta da fissare durante l'audit se, una volta entrati in modalità di
+inseguimento convesso, il **successivo tratto della sequenza precedente** debba
+avere priorità assoluta come riferimento oppure se debba restare una delle
+alternative dell'albero decisionale insieme alle altre scelte geometricamente
+possibili.
+
+### Stato implementativo corrente
+
+Principio strategico consolidato; la regola operativa completa
+dell'inseguimento convesso non è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -3496,7 +3596,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-033`, `LG-034`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-034`, `LG-035`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
