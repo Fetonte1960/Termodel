@@ -72,7 +72,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-25 — Forzatura StrategiaDiego e stato attesa Service nel frontend
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - rendere **StrategiaDiego** il motore spirali usato dal Service quando
@@ -92,8 +92,50 @@ Criteri di completamento:
 - fallback del dispatcher verificato nel sorgente come `Diego`;
 - chiamate Service del frontend instradate attraverso il feedback di attesa;
 - build/check automatici GitHub Actions conclusi con successo;
-- diagnostica dell'esecutivo continua a dichiarare il motore selezionato;
+- diagnostica interna dell'esecutivo continua a costruire il messaggio con il
+  motore selezionato;
 - incarico marcato `ESEGUITO` soltanto dopo verifica reale dell'Action.
+
+Risultato:
+- `RadiantExecutiveGenerator.ResolveSpiralEngine()` restituisce ora
+  `RadiantSpiralEngine.Diego` quando `TERMODEL_SPIRAL_ENGINE` è assente o
+  vuota;
+- l'override esplicito `Vittorio | GPT | Diego` resta disponibile;
+- README Service aggiornato al nuovo default operativo;
+- frontend portato a **v1.17**;
+- tutte le chiamate al Termodel Service nel flusso principale usano il wrapper
+  `fetchTermodelService(...)`;
+- durante una o più richieste pendenti la status bar CAD e lo stato della vista
+  mostrano esattamente **"In Attesa di una risposta del server"**;
+- il wrapper usa un contatore delle richieste pendenti e ripristina lo stato
+  precedente soltanto dopo l'ultima risposta, senza sovrascrivere messaggi più
+  recenti;
+- il workflow protegge con regression statica i marker del nuovo feedback di
+  attesa.
+
+Verifica reale:
+- prima Action #461, run `36099815059`: FAILED nel solo controllo statico
+  frontend perché il cache-busting era stato portato a v1.17 mentre
+  `APP_VERSION`/workflow attendevano ancora v1.16; sintassi JavaScript già
+  SUCCESS; notifica terminale FAILED eseguita;
+- correzione di coerenza versione nel commit
+  `452d8b26b8b2a279a2185d5d2aefdce12165c322`;
+- GitHub Actions **#462**, run `36100018101`, job `107960320636`:
+  **SUCCESS**;
+- SUCCESS: restore, sintassi frontend, wiring frontend, build .NET, benchmark
+  StrategiaDiego, smoke HTTP/storage, feedback, esecutivo pannelli SVG/DXF,
+  progetto radiante reale e snapshot GitHub;
+- il workflow non imposta `TERMODEL_SPIRAL_ENGINE`, quindi gli smoke del
+  Service hanno esercitato il nuovo fallback Diego;
+- step finale Commit Status/notifica telefono: SUCCESS;
+- GitHub Pages run `36100017851`: **SUCCESS** per il frontend v1.17.
+
+Commit operativi:
+- `4cd5cbf22c718f7b8f7e9a7c560f8569e1712716` — registrazione incarico;
+- `9e96b43ce70af9082c3ba3ccdcfb73fad8f5f9e8` — Diego default + wrapper
+  attesa Service + frontend v1.17;
+- `452d8b26b8b2a279a2185d5d2aefdce12165c322` — allineamento APP_VERSION e
+  regression CI del feedback attesa.
 
 
 
@@ -186,7 +228,7 @@ Risultato consolidato:
 - completato audit comparativo sui sorgenti Vittorio/GPT e specifica code-ready;
 - implementato nel Core il terzo motore headless `StrategiaDiegoEngine`;
 - mantenute disponibili le alternative `Vittorio | GPT | Diego`;
-- selezione Service tramite `TERMODEL_SPIRAL_ENGINE`; default invariato a `GPT`;
+- selezione Service tramite `TERMODEL_SPIRAL_ENGINE`; dal commit `9e96b43ce70af9082c3ba3ccdcfb73fad8f5f9e8` il default operativo è `Diego`, con override esplicito `Vittorio | GPT | Diego` ancora disponibile;
 - Vittorio copiato temporaneamente byte-identical nel Core e tracciato in
   `CopiedFromTermodel/TERMODEL-SYNC.md`; Library Desktop non modificata;
 - aggiunta fixture `tests/fixtures/StrategiaDiegoSquare4x4.locale.xml`
