@@ -57,11 +57,13 @@ La prova:
 
 1. verifica l'hash della fixture;
 2. forza `TERMODEL_SPIRAL_ENGINE=Diego`;
-3. avvia `Termodel.WebService` in un workspace temporaneo;
-4. invia la fixture a `POST /api/calculations?responseArtifact=pannelli-esecutivo-svg`;
-5. salva direttamente l'SVG restituito;
-6. raccoglie catalogo `generated-files`, pannelli, DXF e log disponibili;
-7. pubblica il pacchetto diagnostico Action `strategia-diego-current-apartment`.
+3. costruisce da una copia in memoria il payload tecnico canonico equivalente a `buildTermodelServerPayload()`, lasciando la fixture locale immutata;
+4. salva il payload realmente inviato come `server-payload.tmdl`;
+5. avvia `Termodel.WebService` in un workspace temporaneo;
+6. invia il payload canonico a `POST /api/calculations?responseArtifact=pannelli-esecutivo-svg`;
+7. salva direttamente l'SVG restituito;
+8. raccoglie catalogo `generated-files`, pannelli, DXF e log disponibili;
+9. pubblica il pacchetto diagnostico Action `strategia-diego-current-apartment`.
 
 ## Ciclo di sviluppo autorizzato
 
@@ -88,3 +90,23 @@ ancora un Golden geometrico approvato dell'intero appartamento.
 
 Un futuro aggiornamento del banco prova deve essere esplicitamente
 commissionato: questa snapshot non va modificata silenziosamente.
+
+## Verifica iniziale della harness
+
+- Action #473: primo test FAILED con HTTP 422 perché la fixture locale era stata
+  inviata direttamente e `geometry/project.svg` non era ancora nel formato
+  tecnico `TERMODEL-PROJECT-SVG-V1`; questo ha confermato che il banco prova
+  deve riprodurre la canonicalizzazione del normale `Aggiorna Modello`;
+- Action #474, run `36103622680`, job `107971255939`: **SUCCESS** dopo la
+  canonicalizzazione frontend-equivalente;
+- marker: `STRATEGIA_DIEGO_CURRENT_APARTMENT_OK`;
+- fixture SHA-256 verificato:
+  `1a5855490adcbac25e5585f9ba89c624eb2381874eb2de8bdc74821a40d2a9a5`;
+- motore forzato: `Diego`;
+- risposta diretta SVG: HTTP 200;
+- SVG SHA-256 iniziale:
+  `71921972d16085fab3071e56cd53a0695661536436678b2c64e7051f1312ecb8`;
+- `generatedFileCount=8`;
+- calculation: 1 circuito pannelli, 6 primitive esecutivo, 1 piano;
+- artifact CI: `strategia-diego-current-apartment`, id `10850671585`,
+  con `pannelli-esecutivo.svg`, DXF, pannelli JSON, server payload e log.
