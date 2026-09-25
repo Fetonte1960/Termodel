@@ -142,6 +142,8 @@ Avanzamento iniziale:
 - il tratto non interseca la geometria frontale ma si arresta alla distanza minima applicabile secondo LG-006 e genera un ramo solo se resta `TrattoPossibile`/`SceltaNodoPossibile`;
 - restano da definire le altre scelte concorrenti del nodo e l'ordine con cui verranno enumerate.
 - precisata LG-016: `PROSEGUI_DRITTO` deroga esplicitamente al requisito di parallelismo con un'altra linea esistente; la sua ammissibilità deriva dalla continuità della direzione di provenienza, restando soggetta a lunghezza positiva, distanze minime e non-intersezione.
+- consolidata `LG-017 — Ogni nuovo tratto deve avere una linea frontale di arresto`: la semiretta teorica della direzione candidata deve incontrare un'altra linea della struttura geometrica; il segmento reale viene troncato prima dell'intersezione alla distanza di rispetto applicabile;
+- distinta esplicitamente l'intersezione della direzione teorica dalla non-intersezione del segmento costruito; senza linea frontale o con arretramento che produce lunghezza <= 0, il tratto non viene generato.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -166,6 +168,7 @@ Commit iniziali:
 - `e5a25a64eb7b5c1e637c6921ad4362da1834efc3` — LG-015, configurazione terminale mandata/ritorno e derivazione della scelta iniziale della spirale.
 - `1b28cef915a91a19f5a35aeab08c6a86e049211e` — LG-016, scelta di prosecuzione rettilinea nella direzione di provenienza fino al primo ostacolo frontale.
 - `d4918352f17733af8cae7b6d2ff86dea55a7791a` — precisazione LG-016: `PROSEGUI_DRITTO` è deroga esplicita al parallelismo con altre linee.
+- `613dddd87fe4c980378046eaa685276d07aef7c6` — LG-017, linea frontale obbligatoria e troncamento del nuovo tratto alla distanza di rispetto.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
