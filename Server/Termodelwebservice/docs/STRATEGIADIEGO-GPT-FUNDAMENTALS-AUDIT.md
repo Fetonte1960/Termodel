@@ -22,7 +22,7 @@ Classificazione usata:
 |---|---|---|---|---|
 | Contenimento nel locale | offset NTS e controlli di segmento nel perimetro | 24 campioni equidistanti per segmento | fondamentale, LG-005/LG-032 | verifica deterministica di estremi, intersezioni col bordo e punto medio |
 | Lato dell'offset nei cambi obliqui/concavi | offset mitrato sul lato geometrico coerente | scelta `-d` o `+d` derivata dalla sola intersezione fisica | fondamentale, LG-034/LG-035 | tentativo R3 ritirato: lo stato del nodo deve prima conservare esplicitamente `S_k` orientato; usare `node.Front` come sostituto elimina terminali validi |
-| Rete di collegamento come ostacolo | intaglio/margine e rifiuto degli incroci con tutti i tubi | le `Linea` servivano solo a trovare il primo ingresso | fondamentale, LG-011 | tutte le linee diventano vincoli anti-attraversamento, senza diventare fronti strategici |
+| Rete di collegamento come ostacolo | intaglio/margine e rifiuto degli incroci; il collegamento assegnato definisce il proprio varco | le `Linea` servivano solo a trovare il primo ingresso | fondamentale, LG-011 | le linee diverse dall'ingresso assegnato diventano vincoli anti-attraversamento, senza diventare fronti strategici |
 | Tratto terminale d'ingresso | scarta un tratto se il suo estremo interno prosegue in un altro ramo | prima linea che attraversa il perimetro | fondamentale, LG-011 | stessa proprietà topologica, reimplementata in Diego |
 | Esplorazione delle scelte | varianti locali ordinate da un punteggio composito | albero completo e merito massimo di lunghezza | differenza intenzionale, LG-002/LG-003 | nessuna modifica |
 | Versi di percorrenza | prova orario/antiorario | rami `PARALLELA_A/B` | differenza intenzionale equivalente, LG-024 | nessuna modifica |

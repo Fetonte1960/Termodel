@@ -133,9 +133,10 @@ internal static class StrategiaDiegoEngine
         IReadOnlyList<GeoSegment> architecture =
             BuildArchitecture(locale);
         // Modificato da Codex per realizzare: la rete di mandata fornita
-        // dall'utente resta geometria vincolante durante il tracciamento.
+        // dall'utente resta geometria vincolante durante il tracciamento; il
+        // collegamento assegnato al locale definisce invece il proprio varco.
         IReadOnlyList<GeoSegment> connectionConstraints =
-            BuildConnectionConstraints(connections);
+            BuildConnectionConstraints(connections, connection.Id);
 
         SearchTree supplyTree = BuildTree(
             locale,
@@ -821,12 +822,20 @@ internal static class StrategiaDiegoEngine
 
     // Funzione realizzata da Codex in autonomia
     private static IReadOnlyList<GeoSegment> BuildConnectionConstraints(
-        IReadOnlyList<InputLine> connections)
+        IReadOnlyList<InputLine> connections,
+        string selectedConnectionId)
     {
         var result = new List<GeoSegment>(connections.Count);
         for (int i = 0; i < connections.Count; i++)
         {
             InputLine line = connections[i];
+            if (line.Id.Equals(
+                    selectedConnectionId,
+                    StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             result.Add(new GeoSegment(
                 $"C-{line.Id}-{i}",
                 line.P0,
