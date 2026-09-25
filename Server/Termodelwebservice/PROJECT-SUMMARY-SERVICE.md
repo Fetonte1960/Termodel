@@ -70,6 +70,24 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Verifica ottimizzazioni Codex StrategiaDiego su quadrato
+Stato: COMMISSIONATO
+
+Commissionato:
+- verificare le ottimizzazioni realizzate da Codex su `StrategiaDiego`;
+- usare come caso di riscontro il quadrato 4x4 già presente nelle fixture;
+- verificare metriche, determinismo e geometria prodotta;
+- recuperare l'SVG realmente prodotto dalla GitHub Action e mostrarlo all'utente;
+- fornire feedback tecnico distinguendo ciò che è verificato da ciò che resta da validare;
+- non modificare Vittorio/GPT, frontend, fixture autorevoli o `definizionedati.json`.
+
+Criteri di completamento:
+- ultime modifiche Codex identificate e confrontate col Summary/audit;
+- Action reale verificata sul quadrato;
+- `StrategiaDiegoSquare4x4.svg` recuperato dall'artifact;
+- feedback tecnico conclusivo registrato.
+
+
 ### INCARICO 2026-09-25 — Riallineamento fondamentali geometrici GPT in StrategiaDiego
 Stato: ESEGUITO
 
