@@ -826,11 +826,11 @@ jobs:
             if ($errorOnlyLog -match "(?m)^operation:" -or $errorOnlyLog -match "(?m)^info:") { throw "Filtro Error ha lasciato passare categorie non richieste." }
 
             $calcBAll = Invoke-RestMethod -Uri "$base/api/calculations?logCategories=all" -Method Post -Headers $headersB -ContentType "text/plain; charset=utf-8" -Body $projectB
-            if ($calcBAll.logging.mode -ne "filtered" -or @($calcBAll.logging.categories).Count -ne 9) { throw "logCategories=all non abilita tutte le 9 categorie Desktop." }
+            if ($calcBAll.logging.mode -ne "filtered" -or @($calcBAll.logging.categories).Count -ne 10) { throw "logCategories=all non abilita le 9 categorie Desktop + SpiraliDiego Service." }
             $allLog = Get-Content -LiteralPath $termodelLogPathB -Raw
             if ([string]::IsNullOrWhiteSpace($allLog)) { throw "logCategories=all deve produrre un log non vuoto." }
             $calcMetaAll = Get-Content -LiteralPath $calculationLogPathB -Raw
-            if ($calcMetaAll -notmatch "logMode=filtered" -or $calcMetaAll -notmatch "PontiAutomatici") { throw "calculation.log non registra le categorie abilitate." }
+            if ($calcMetaAll -notmatch "logMode=filtered" -or $calcMetaAll -notmatch "PontiAutomatici" -or $calcMetaAll -notmatch "SpiraliDiego") { throw "calculation.log non registra tutte le categorie abilitate." }
 
             $logBHashBeforeInvalid = (Get-FileHash -LiteralPath $termodelLogPathB -Algorithm SHA256).Hash
             $invalidLogConfig = Invoke-WebRequest -Uri "$base/api/calculations?logCategories=colmi,inesistente" -Method Post -ContentType "text/plain; charset=utf-8" -Body $projectB -SkipHttpErrorCheck
