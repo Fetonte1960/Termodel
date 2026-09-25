@@ -94,6 +94,7 @@ Criteri di completamento:
 - la soluzione finale non deve più essere la closure prematura da 4+4 punti
   se esiste una soluzione geometricamente valida più sviluppata;
 - log sufficiente a spiegare la nuova selezione;
+- verificare e, se necessario, correggere il seed iniziale: il tubo di ingresso deve restare connessione al locale e non determinare direttamente la posizione della prima traccia parallela; la prima traccia utile deve essere agganciata alla maglia `distacco iniziale + n*passo`; aggiungere log più dettagliati se necessari per provarlo;
 - Summary aggiornato e Issue #1 chiusa Completed.
 
 
