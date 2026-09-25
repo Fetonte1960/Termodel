@@ -406,7 +406,7 @@ internal static class StrategiaDiegoEngine
                     currentPath);
 
             GeoSegment? sequentialFront =
-                FindSequenceSuccessor(node.Front, constraints);
+                FindSequenceSuccessor(node.Front, constraints, family);
 
             LogDiego(
                 $"TREE {family} NODE depth={node.Depth} end={Fmt(node.End)} " +
@@ -1118,7 +1118,8 @@ internal static class StrategiaDiegoEngine
 
     private static GeoSegment? FindSequenceSuccessor(
         GeoSegment front,
-        IReadOnlyList<GeoSegment> constraints)
+        IReadOnlyList<GeoSegment> constraints,
+        GeoFamily pathFamily)
     {
         if (front.Family == GeoFamily.Architecture ||
             front.SequenceIndex < 0)
@@ -1126,20 +1127,30 @@ internal static class StrategiaDiegoEngine
             return null;
         }
 
+        // Comportamento storico per la mandata e per tutti i casi che non
+        // rappresentano il ritorno che insegue la mandata: il successore è
+        // esattamente SequenceIndex+1. Questo preserva la direzione iniziale e
+        // le regressioni già consolidate dell'appartamento.
+        if (pathFamily != GeoFamily.Return ||
+            front.Family != GeoFamily.Supply)
+        {
+            int nextIndex = front.SequenceIndex + 1;
+            return constraints.FirstOrDefault(candidate =>
+                candidate.Family == front.Family &&
+                candidate.SequenceIndex == nextIndex);
+        }
+
         DVector frontDirection = front.Direction.Normalize();
         if (frontDirection.Length <= Epsilon)
             return null;
 
-        // LG-033/LG-035 ragionano per evoluzioni geometriche. La ricerca può
-        // produrre più segmenti consecutivi collineari appartenenti alla
-        // stessa evoluzione (per esempio dopo PROSEGUI_DRITTO). Usare il solo
-        // SequenceIndex+1 come frontale rende il cambio degenerato: il tratto
-        // che dovrebbe seguire S_k risulta parallelo anche a S_k+1 e non può
-        // incontrarlo. Scorriamo quindi la sequenza fino al primo vero cambio
-        // di direzione, mantenendo intatto l'ordine del path.
+        // LG-014 + LG-033/LG-035: quando il ritorno insegue la mandata,
+        // più segmenti consecutivi collineari sono pezzi della stessa
+        // evoluzione. Il frontale utile è il primo segmento successivo che
+        // introduce un vero cambio di direzione.
         foreach (GeoSegment candidate in constraints
                      .Where(candidate =>
-                         candidate.Family == front.Family &&
+                         candidate.Family == GeoFamily.Supply &&
                          candidate.SequenceIndex > front.SequenceIndex)
                      .OrderBy(candidate => candidate.SequenceIndex))
         {
@@ -1154,13 +1165,13 @@ internal static class StrategiaDiegoEngine
             if (cross <= GeometryTolerance)
             {
                 LogDiego(
-                    $"SEQUENCE skip-collinear family={front.Family} " +
+                    $"SEQUENCE return-follows-supply skip-collinear " +
                     $"from={front.SequenceIndex} skip={candidate.SequenceIndex}");
                 continue;
             }
 
             LogDiego(
-                $"SEQUENCE successor family={front.Family} " +
+                $"SEQUENCE return-follows-supply successor " +
                 $"from={front.SequenceIndex} next={candidate.SequenceIndex}");
             return candidate;
         }
