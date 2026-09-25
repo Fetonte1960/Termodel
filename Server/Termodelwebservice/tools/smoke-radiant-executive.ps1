@@ -2,8 +2,14 @@ $ErrorActionPreference = "Stop"
 
 $base = "http://127.0.0.1:5081"
 $env:ASPNETCORE_URLS = $base
+$env:TERMODEL_SPIRAL_ENGINE = "Diego"
 $env:TERMODEL_SAVED_PROJECTS_DIR = Join-Path $env:RUNNER_TEMP ("TermodelExecutiveSmoke-" + [guid]::NewGuid().ToString("N"))
+$artifactDir = Join-Path $env:RUNNER_TEMP "StrategiaDiegoSquareExecutiveArtifacts"
 New-Item -ItemType Directory -Path $env:TERMODEL_SAVED_PROJECTS_DIR -Force | Out-Null
+if (Test-Path -LiteralPath $artifactDir) {
+  Remove-Item -LiteralPath $artifactDir -Recurse -Force
+}
+New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
 
 function Start-ServiceProcess {
   $p = Start-Process dotnet -ArgumentList @(
@@ -206,6 +212,16 @@ try {
 
   $svgText = [System.IO.File]::ReadAllText($svgPath,[System.Text.UTF8Encoding]::new($false))
   $dxfText = [System.IO.File]::ReadAllText($dxfPath,[System.Text.UTF8Encoding]::new($false))
+
+  # Artifact diagnostico stabile del progetto quadrato 4x4 realmente
+  # elaborato dal Service con StrategiaDiego. Serve alla verifica visuale
+  # senza ricostruzioni esterne del disegno.
+  [System.IO.File]::WriteAllText(
+    (Join-Path $artifactDir "StrategiaDiegoSquare4x4.project.tmdl"),
+    $project,
+    [System.Text.UTF8Encoding]::new($false))
+  Copy-Item -LiteralPath $svgPath -Destination (Join-Path $artifactDir "pannelli-esecutivo.svg") -Force
+  Copy-Item -LiteralPath $dxfPath -Destination (Join-Path $artifactDir "pannelli-esecutivo.dxf") -Force
   if ($svgText -notmatch "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1") {
     throw "Formato SVG esecutivo non riconosciuto."
   }
@@ -287,7 +303,22 @@ try {
     throw "Conteggi esecutivo non coerenti nel calculation.log."
   }
 
+  $metadata = [ordered]@{
+    fixture = "square-4x4-service-project"
+    spiralEngine = $env:TERMODEL_SPIRAL_ENGINE
+    projectId = [string]$allocation.projectId
+    floorName = $floorName
+    svgSha256 = (Get-FileHash -LiteralPath $svgPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    dxfSha256 = (Get-FileHash -LiteralPath $dxfPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    primitiveCount = $svgPrimitiveCount
+    executedAtUtc = [DateTime]::UtcNow.ToString("o")
+  }
+  $metadata | ConvertTo-Json -Depth 20 |
+    Set-Content -LiteralPath (Join-Path $artifactDir "test-metadata.json") -Encoding utf8
+
   Write-Host "RADIANT_EXECUTIVE_SVG_DXF_SMOKE_OK"
+  Write-Host "STRATEGIA_DIEGO_SQUARE_EXECUTIVE_OK"
+  Write-Host "squareExecutiveSvgSha256=$($metadata.svgSha256)"
 }
 finally {
   Stop-ServiceProcess $service
