@@ -70,6 +70,27 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Status bar Server <commit> · <strategia>
+Stato: COMMISSIONATO
+
+Commissionato:
+- esporre dal Service l'identificativo breve del commit realmente in esecuzione;
+- esporre dal Service il motore spirali effettivamente selezionato;
+- far leggere questi dati al frontend all'avvio;
+- mostrare nella status bar, quando il Service è pronto, il formato:
+  `Server fc287c9b · Diego`;
+- preferire il commit runtime fornito dall'ambiente Render quando disponibile;
+- mantenere fallback locale/CI senza inventare un commit;
+- non modificare il contratto dei calcoli né gli algoritmi Vittorio/GPT/Diego.
+
+Criteri di completamento:
+- endpoint/metadata Service espone commit e strategia effettiva;
+- frontend mostra il testo richiesto;
+- GitHub Actions SUCCESS;
+- compatibilità con ambiente locale/CI verificata;
+- Summary aggiornato e Issue #1 chiusa Completed.
+
+
 ### INCARICO 2026-09-25 — Verifica ottimizzazioni Codex StrategiaDiego su quadrato
 Stato: ESEGUITO
 
