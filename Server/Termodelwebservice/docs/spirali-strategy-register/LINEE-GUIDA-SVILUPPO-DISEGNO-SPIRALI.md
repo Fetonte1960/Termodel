@@ -1920,6 +1920,148 @@ LG-016 non stabilisce ancora:
 Principio documentale consolidato. La scelta `PROSEGUI_DRITTO` non è ancora
 implementata nella futura StrategiaDiego.
 
+
+---
+
+## LG-017 — Ogni nuovo tratto deve avere una linea frontale di arresto
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Ogni nuovo tratto candidato deve essere orientato in modo tale che la sua
+**direzione teorica** incontri un'altra linea della struttura geometrica.
+
+Il tratto reale non deve però intersecare tale linea: deve essere **troncato**
+prima dell'intersezione, alla distanza di rispetto applicabile.
+
+### Commento tecnico
+
+LG-017 distingue due oggetti geometrici diversi:
+
+1. **semiretta/direzione teorica** del candidato;
+2. **segmento realmente generato**.
+
+La semiretta deve intersecare una linea frontale. Questa intersezione teorica
+fornisce il limite verso cui il tratto si sviluppa.
+
+Il segmento reale termina invece prima della linea frontale:
+
+```text
+NODO ---------------------- X  linea frontale
+       tratto reale      |
+                         | distanza di rispetto
+
+direzione teorica ---------------------------->
+                         intersezione teorica X
+```
+
+Quindi non vi è contraddizione con le precedenti regole di non-intersezione:
+l'intersezione è richiesta alla **direzione prolungata**, non al segmento
+fisicamente prodotto.
+
+### Regola
+
+Siano:
+
+- `N` = nodo di partenza;
+- `v` = direzione candidata;
+- `r(t) = N + t*v`, con `t > 0` = semiretta teorica;
+- `F` = prima linea incontrata dalla semiretta nella direzione `v`;
+- `dRispetto(F)` = distanza minima applicabile secondo LG-006.
+
+Un nuovo tratto può essere generato soltanto se:
+
+```text
+esiste F tale che r interseca F frontalmente
+```
+
+e il segmento reale `S` viene costruito lungo `v` con estremo finale posto
+prima di `F` alla distanza:
+
+```text
+distanza(S, F) = dRispetto(F)
+```
+
+Il segmento `S` deve poi superare tutte le altre verifiche di
+`TrattoPossibile`.
+
+### Conseguenza generale
+
+La costruzione di un nuovo tratto segue quindi sempre lo schema:
+
+```text
+scegli direzione
+      |
+      v
+cerca prima linea frontale
+      |
+   nessuna
+      +--> nessun tratto generabile in quella direzione
+      |
+   trovata
+      |
+      v
+calcola punto teorico di intersezione
+      |
+      v
+arretra alla distanza di rispetto
+      |
+      v
+costruisci segmento reale
+      |
+      v
+verifica TrattoPossibile
+```
+
+### Relazione con LG-016
+
+`PROSEGUI_DRITTO` è un caso particolare di LG-017:
+
+- la direzione `v` coincide con quella di provenienza;
+- non è richiesto il parallelismo con un'altra linea;
+- deve comunque esistere una linea frontale;
+- il tratto viene troncato alla distanza di rispetto.
+
+LG-017 estende lo stesso principio di arresto anche alle altre scelte di nodo.
+
+### Vincoli per la futura implementazione
+
+- nessun nuovo tratto può estendersi indefinitamente senza una linea frontale
+  di arresto;
+- deve essere identificata la prima linea incontrata lungo la semiretta;
+- il punto teorico di intersezione deve essere distinto dall'estremo reale del
+  segmento;
+- la distanza di rispetto deve dipendere dalla famiglia della linea frontale
+  e dal colore/famiglia del tratto candidato, secondo LG-006;
+- se l'arretramento alla distanza di rispetto produce lunghezza <= 0, il
+  tratto non è possibile;
+- il segmento reale non deve attraversare la linea frontale né altre linee;
+- la diagnostica deve riportare direzione, linea frontale, intersezione
+  teorica, distanza di rispetto ed estremo reale.
+
+### Criterio futuro di verifica
+
+Devono essere verificati almeno i casi:
+
+```text
+direzione con linea frontale e spazio sufficiente
+-> segmento generato e troncato alla distanza corretta
+
+direzione senza alcuna linea frontale
+-> nessun tratto
+
+linea frontale troppo vicina
+-> arretramento produce lunghezza <= 0
+-> nessun tratto
+```
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. La regola generale di linea frontale e
+troncamento non è ancora implementata nella futura StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -1938,7 +2080,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-017`, `LG-018`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-018`, `LG-019`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
