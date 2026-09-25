@@ -72,7 +72,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-25 — Risposta artifact diretta da Aggiorna Modello
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - estendere `POST /api/calculations` con il parametro query opzionale
@@ -93,14 +93,49 @@ Commissionato:
   successive possono esaminare l'esecutivo prodotto senza una seconda GET;
 - non modificare frontend, `definizionedati.json` o Library Desktop.
 
-Criteri di completamento:
-- contratto condiviso aggiornato in modo retrocompatibile;
-- default senza parametro verificato invariato;
-- risposta diretta SVG verificata byte-per-byte rispetto all'artifact
-  persistito dello stesso calcolo;
-- build e smoke GitHub Actions riusciti;
-- artifact CI della risposta diretta disponibile;
-- incarico marcato `ESEGUITO` solo dopo verifica reale.
+Risultato:
+- contratto condiviso aggiornato a **v1.24**;
+- implementato `responseArtifact` su `POST /api/calculations`;
+- valori correnti:
+  `model3d | pannelli | pannelli-esecutivo-svg | pannelli-esecutivo-dxf | pianta-pulita`;
+- `pianta-pulita` richiede anche `responseFloor=<nomePiano>`;
+- senza parametro la risposta resta il manifest JSON
+  `TERMODEL-FRONT-SERVICE-V1`, quindi il frontend corrente è retrocompatibile
+  e non è stato modificato;
+- con parametro il Service completa e pubblica comunque l'intero workspace
+  atomico, poi restituisce direttamente il body dell'artifact selezionato;
+- le risposte dirette espongono `X-Termodel-Project-Id`,
+  `X-Termodel-Response-Artifact` e `X-Termodel-Artifact-Stale: false`;
+- artifact sconosciuto: HTTP 400; artifact conosciuto ma non prodotto: HTTP 404;
+- il regression reale pannelli salva la risposta diretta come
+  `response-pannelli-esecutivo.svg` nell'artifact CI
+  `radiant-reference-regression`.
+
+Verifica reale:
+- GitHub Actions **#466**, run `36100728060`, job `107962873006`:
+  **SUCCESS**;
+- build .NET: SUCCESS;
+- benchmark StrategiaDiego: SUCCESS;
+- smoke HTTP/storage, feedback, esecutivo SVG/DXF, progetto radiante reale e
+  snapshot: SUCCESS;
+- chiamata diretta
+  `POST /api/calculations?responseArtifact=pannelli-esecutivo-svg`: SUCCESS;
+- marker CI: `CALCULATION_DIRECT_ARTIFACT_OK`;
+- SHA-256 della risposta SVG:
+  `A51BB21F38293D4E6538FEE241C8AFE7A225D7A126A2978FE101320D46D1A9D3`;
+- lo SHA-256 coincide byte-per-byte con
+  `artifacts/pannelli-esecutivo.svg` persistito dalla stessa elaborazione;
+- richiesta `responseArtifact=artifact-inesistente`: HTTP 400 verificato;
+- artifact Actions `radiant-reference-regression`, id `10848733383`,
+  contiene realmente `response-pannelli-esecutivo.svg` (5.921 byte);
+- Commit Status finale `SUCCESS` e notifica telefono `SUCCESS`.
+
+Commit operativi:
+- `d46bd3945c6c12a7f669e9cddcf296c685b18f67` — registrazione incarico;
+- `2446cace1620e2f33772a7615dceb8e21a92ca9c` — contratto v1.24;
+- `6de84b2af2f700ab1c2eafd10704f1ae8eeb01b4` — implementazione endpoint;
+- `2e6085ede366ce62b1a85e24da311917443cd48c` — documentazione README;
+- `66a5e2d2724f7006fa47613461e91c0f54bd43e2` — regression risposta SVG diretta.
 
 
 
