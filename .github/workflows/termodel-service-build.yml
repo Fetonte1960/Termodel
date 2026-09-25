@@ -995,6 +995,15 @@ jobs:
         shell: pwsh
         run: ./tools/smoke-radiant-executive.ps1
 
+      - name: Upload StrategiaDiego square executive
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: strategia-diego-square-executive
+          path: ${{ runner.temp }}/StrategiaDiegoSquareExecutiveArtifacts
+          if-no-files-found: warn
+          retention-days: 90
+
       - name: Smoke real radiant reference project
         shell: pwsh
         run: ./tools/smoke-radiant-reference.ps1
