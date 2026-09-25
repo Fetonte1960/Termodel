@@ -102,11 +102,20 @@ Tentativo 2:
   non sono usati per dichiarare la sola fase di compilazione.
 
 ## F4 — Fixture quadrato 4x4 m / unico tubo entrante
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO**
 
-Obiettivo:
-- fixture minima riproducibile e leggibile;
-- input unico e risultato Diego diagnosticabile.
+Risultato:
+- creata `tests/fixtures/StrategiaDiegoSquare4x4.locale.xml`;
+- locale `R001` quadrato 4,00 x 4,00 m;
+- unico tubo `T1` da `(2,-1)` a `(2,1)`, quindi ingresso centrato
+  sulla parete inferiore e direzione entrante `+Y`;
+- creata `tests/fixtures/README-StrategiaDiegoSquare4x4.md` con geometria,
+  radici teoriche ritorno e obiettivi del test;
+- la fixture non contiene Golden Result prematuri.
+
+Commit:
+- `4bf2e2b3696b51a04e7d9b964ac4f96fc9cd01ac` — XML caso 4x4;
+- `e07bc1db5e3d2c9b968136913f5b853089c3fba0` — documentazione fixture.
 
 ## F5 — Batteria benchmark GitHub Actions
 Stato: **COMMISSIONATO**
