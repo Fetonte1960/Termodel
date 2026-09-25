@@ -261,21 +261,6 @@ jobs:
             throw "Termodel.WebService non ha risposto a /health."
           }
 
-          $health = Invoke-RestMethod -Uri "$base/health" -Method Get
-          if ($health.status -ne "ok") {
-            throw "Health Service non valido."
-          }
-          if ([string]::IsNullOrWhiteSpace([string]$health.serviceCommitShort)) {
-            throw "Health Service privo del commit runtime."
-          }
-          if ([string]$health.spiralEngine -ne "Diego") {
-            throw "Health Service deve esporre Diego come strategia default."
-          }
-          if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_SHA) -and
-              [string]$health.serviceCommitShort -ne $env:GITHUB_SHA.Substring(0,8)) {
-            throw "Commit runtime health non coerente con GITHUB_SHA."
-          }
-
           function Stop-ServiceProcess($p) {
             if (-not $p) { return }
             if (-not $p.HasExited) {
@@ -313,6 +298,23 @@ jobs:
           $service = $null
           try {
             $service = Start-ServiceProcess
+
+            $health = Invoke-RestMethod -Uri "$base/health" -Method Get
+            if ($health.status -ne "ok") {
+              throw "Health Service non valido."
+            }
+            if ([string]::IsNullOrWhiteSpace([string]$health.serviceCommitShort)) {
+              throw "Health Service privo del commit runtime."
+            }
+            if ([string]$health.spiralEngine -ne "Diego") {
+              throw "Health Service deve esporre Diego come strategia default."
+            }
+            if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_SHA) -and
+                [string]$health.serviceCommitShort -ne $env:GITHUB_SHA.Substring(0,8)) {
+              throw "Commit runtime health non coerente con GITHUB_SHA."
+            }
+            Write-Host "SERVICE_RUNTIME_IDENTITY_SMOKE_OK"
+            Write-Host "service=$($health.serviceCommitShort) engine=$($health.spiralEngine)"
 
             # DXF -> SVG: prova reale dell'endpoint server-side con un segmento
             # lungo 1000 mm. Il risultato deve conservare layer e scala: 1,000 m.
