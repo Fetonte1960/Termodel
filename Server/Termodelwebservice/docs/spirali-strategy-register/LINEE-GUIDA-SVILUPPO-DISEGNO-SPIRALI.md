@@ -1189,6 +1189,138 @@ Principio documentale consolidato. Nessuna proprietà runtime del lato di
 ritorno per singolo ingresso è ancora implementata nella futura
 StrategiaDiego.
 
+
+---
+
+## LG-011 — Albero di collegamento idraulico collettore-ingressi
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Il primo passo reale della costruzione delle spirali è la costruzione della
+rete dei tubi di collegamento dal **collettore** fino ai **tratti di entrata**
+nelle stanze.
+
+Questa rete viene trattata come un **albero di collegamento idraulico**,
+distinto dall'albero decisionale di StrategiaDiego definito in LG-002.
+
+La rete di collegamento è composta da due parti con origine differente:
+
+- **rete/albero di mandata**: fornita come input dall'utente;
+- **rete/albero di ritorno**: costruita dall'algoritmo.
+
+### Commento tecnico
+
+Questa regola stabilisce che StrategiaDiego non parte direttamente dal primo
+segmento interno della spirale.
+
+Prima deve esistere una struttura di collegamento coerente fra collettore e
+ingressi dei circuiti. La mandata costituisce un vincolo geometrico già dato,
+mentre il ritorno è una geometria da determinare algoritmicamente.
+
+Per evitare ambiguità terminologiche:
+
+```text
+AlberoDecisionale
+    = struttura delle scelte StrategiaDiego (LG-002)
+
+AlberoCollegamentoIdraulico
+    = struttura fisica dei tubi collettore -> ingressi / ritorni
+```
+
+Le due strutture sono concettualmente diverse anche se entrambe possono essere
+rappresentate come alberi.
+
+### Sequenza generale
+
+```text
+input utente: rete di mandata dal collettore
+        |
+        v
+identificazione dei tratti di entrata
+        |
+        v
+costruzione algoritmica dell'albero di ritorno
+        |
+        v
+rete di collegamento idraulico completa
+        |
+        v
+costruzione degli alberi decisionali delle spirali
+```
+
+### Regola
+
+La rete di mandata è **autorevole come input utente** e non deve essere
+ridisegnata o ottimizzata implicitamente da StrategiaDiego.
+
+L'algoritmo deve invece costruire l'albero di ritorno necessario a collegare
+i ritorni dei circuiti al collettore, nel rispetto delle regole geometriche e
+strategiche che verranno definite.
+
+Il risultato di questa fase deve rendere disponibili, per ciascun tubo/tratto
+di ingresso, almeno:
+
+```text
+- tratto di mandata di ingresso
+- direzione convenzionale esterno -> stanza
+- lato di ritorno associato (LG-010)
+- collegamento di ritorno determinato dall'algoritmo
+```
+
+### Relazione con LG-004
+
+Una volta costruita la rete di collegamento idraulico:
+
+- la mandata entra nelle `LineeMandata` della struttura geometrica;
+- il ritorno generato entra nelle `LineeRitorno`;
+- entrambe diventano vincoli geometrici per la successiva costruzione delle
+  spirali.
+
+### Vincoli per la futura implementazione
+
+- la rete di mandata deve essere acquisita senza modificarne arbitrariamente
+  la topologia definita dall'utente;
+- l'albero di ritorno deve essere prodotto dall'algoritmo e mantenuto distinto
+  dalla mandata;
+- ogni tratto di entrata deve essere riconducibile al proprio percorso di
+  mandata dal collettore;
+- ogni ritorno generato deve essere riconducibile al collettore;
+- la costruzione dell'albero di ritorno deve precedere la generazione vera e
+  propria delle spirali interne;
+- la diagnostica deve distinguere chiaramente geometria di mandata fornita
+  dall'utente e geometria di ritorno generata dall'algoritmo.
+
+### Criterio futuro di verifica
+
+Un caso di regression con più ingressi deve permettere di verificare:
+
+```text
+mandata input utente: invariata
+tratti di entrata: identificati
+ritorno: generato dall'algoritmo
+ogni ingresso: collegato logicamente al collettore
+rete di collegamento completa prima della costruzione spirali
+```
+
+### Punti ancora da definire
+
+LG-011 non stabilisce ancora:
+
+- l'algoritmo concreto di costruzione dell'albero di ritorno;
+- i criteri di diramazione/condivisione dei tratti di ritorno;
+- le priorità con cui più ritorni vengono instradati;
+- il modo con cui il lato di ritorno LG-010 condiziona la topologia
+  dell'albero di ritorno;
+- eventuali vincoli di lunghezza o bilanciamento della rete di collegamento.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. L'albero di ritorno StrategiaDiego non è
+ancora implementato.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -1207,7 +1339,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-011`, `LG-012`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-012`, `LG-013`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
