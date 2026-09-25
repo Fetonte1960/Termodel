@@ -118,6 +118,8 @@ Avanzamento iniziale:
 - consolidata `LG-008 — Terminale accettabile`: un terminale è accettabile quando l'estremo della mandata e l'estremo della ripresa/ritorno possono essere collegati senza intersecare altre linee già presenti;
 - distinto il semplice terminale dell'albero dal terminale accettabile; solo i terminali accettabili partecipano alla selezione per massimo fattore di merito di LG-003;
 - LG-008 introduce soltanto il vincolo di non-intersezione del collegamento finale; forma del collegamento, eventuali distanze minime e caso senza terminali accettabili restano da definire.
+- precisata LG-008: la valutazione `TerminaleAccettabile` avviene soltanto dopo il completamento dell'intero albero decisionale; l'accettabilità non viene usata per scegliere o potare anticipatamente i rami;
+- sequenza consolidata: costruzione completa albero -> raccolta terminali -> valutazione accettabilità -> filtro terminali accettabili -> confronto fattore di merito -> scelta terminale vincente.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -131,6 +133,7 @@ Commit iniziali:
 - `9020b095e11b1c5dfda2ccbcb7d56ab838008b0c` — LG-006, passo `p` e distanze minime architettura/stesso colore/colore diverso.
 - `75723ee7b6b08a5f278fd488d7ecbaf59ca89dd6` — LG-007, definizione di scelta di nodo possibile.
 - `d4df535a993a5c2c03773f408b4f33c1f7e99de5` — LG-008, definizione di terminale accettabile.
+- `3dd72b08db5fff5e9a9f3ca1bf29bc6a098c16a4` — precisazione LG-008: valutazione dei terminali accettabili solo a fine costruzione dell'albero.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
