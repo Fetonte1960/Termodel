@@ -1851,8 +1851,9 @@ e con estremo finale posto prima di `F` alla distanza minima di tracciamento
 applicabile secondo la famiglia geometrica di `F` e LG-006.
 
 Il candidato diventa ramo dell'albero soltanto se il segmento risultante è
-un `TrattoPossibile` e soddisfa le altre condizioni di
-`SceltaNodoPossibile`.
+un `TrattoPossibile` e soddisfa le condizioni applicabili di
+`SceltaNodoPossibile`, **con deroga esplicita al requisito di parallelismo
+con un'altra linea esistente**.
 
 ### Conseguenza sull'albero decisionale
 
@@ -1868,6 +1869,11 @@ oltre alle altre scelte che verranno definite.
 Se il tratto rettilineo risultante ha lunghezza nulla, interseca linee già
 generate o viola una distanza minima, questa alternativa non genera un ramo.
 
+La scelta `PROSEGUI_DRITTO` costituisce quindi una deroga specifica alla
+regola generale di parallelismo di LG-007: la sua ammissibilità deriva dalla
+continuità della direzione di provenienza, non dal parallelismo con una diversa
+linea di riferimento già esistente.
+
 ### Vincoli per la futura implementazione
 
 - la direzione di provenienza deve essere conservata nello stato del nodo;
@@ -1877,6 +1883,7 @@ generate o viola una distanza minima, questa alternativa non genera un ramo.
   semiretta orientata dal nodo;
 - il segmento deve terminare prima della geometria frontale alla distanza
   minima corretta (`p/2`, `p` o `2p` secondo LG-006);
+- `PROSEGUI_DRITTO` non richiede il parallelismo con un'altra linea esistente;
 - il candidato resta soggetto a tutte le regole di non-intersezione;
 - la diagnostica deve indicare almeno nodo, direzione di provenienza,
   geometria frontale trovata, distanza applicata e lunghezza del candidato.
