@@ -249,6 +249,28 @@ try {
 
   $svgText = Get-Content -LiteralPath $svgPath -Raw
   if ($svgText -notmatch "<svg") { throw "Banco prova appartamento: risposta priva di SVG." }
+  if ($svgText -notmatch 'data-layer="Unico_PiantaPulita_Output"') {
+    throw "Banco prova appartamento: esecutivo privo della pianta pulita incorporata."
+  }
+  if ($svgText -match 'data-layer="Unico_Edificio_Output"') {
+    throw "Banco prova appartamento: usato il vecchio fallback edificio a linee invece della pianta pulita."
+  }
+
+  [xml]$svgDocument = $svgText
+  $cleanFloorGroup = @($svgDocument.DocumentElement.ChildNodes | Where-Object {
+    $_.NodeType -eq [System.Xml.XmlNodeType]::Element -and
+    $_.GetAttribute("data-layer") -eq "Unico_PiantaPulita_Output"
+  } | Select-Object -First 1)
+  if (-not $cleanFloorGroup) {
+    throw "Banco prova appartamento: gruppo pianta pulita non trovato nell'SVG."
+  }
+  $cleanBoundaries = @($cleanFloorGroup.ChildNodes | Where-Object {
+    $_.NodeType -eq [System.Xml.XmlNodeType]::Element -and
+    $_.LocalName -in @("polyline","polygon")
+  })
+  if ($cleanBoundaries.Count -lt 2) {
+    throw "Banco prova appartamento: la pianta pulita deve mostrare almeno due contorni per rendere visibile lo spessore delle pareti."
+  }
 
   $generated = Invoke-RestMethod -Uri "$base/api/projects/$projectId/generated-files" -Method Get
   $generated | ConvertTo-Json -Depth 100 |
@@ -260,6 +282,7 @@ try {
   foreach ($relative in @(
     "artifacts/pannelli.json",
     "artifacts/pannelli-esecutivo.dxf",
+    "artifacts/pianta-pulita/Unico.svg",
     "logs/TermodelLog.md",
     "logs/diagnostics.txt",
     "logs/calculation.log"
