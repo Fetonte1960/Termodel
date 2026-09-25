@@ -1595,6 +1595,45 @@ direzione nota
 - la diagnostica deve distinguere chiaramente:
   `DirezionePrimoTratto` e `PuntoFinalePrimoTratto`.
 
+### Precisazione runtime 25/09/2026 — prima svolta dopo il collegamento
+
+Sul banco appartamento reale è emersa una precisazione operativa fondamentale.
+
+Il tratto di ingresso porta il percorso sulla **prima evoluzione geometrica**
+alla distanza prevista dalla parete di ingresso. Quando questa evoluzione
+effettua la **prima svolta** e diventa parallela alla parete, il tratto appena
+generato non deve essere prolungato fino al solo minimo generale `p/2` dalla
+parete successiva.
+
+Deve invece essere **accorciato conservando l'offset della prima evoluzione**:
+
+```text
+dIngresso = distanza raggiunta dal tratto entrante rispetto alla parete
+prima svolta -> stessa distanza dIngresso dalla parete successiva
+```
+
+Nel banco corrente con `p = 0,30 m`:
+
+```text
+mandata: dIngresso = 1,5p = 0,45 m
+parete destra interna x = 8,13148 m
+terminale corretto prima svolta x = 8,13148 - 0,45 = 7,68148 m
+```
+
+La precedente terminazione a `x = 7,98148 m` corrispondeva invece a soli
+`p/2 = 0,15 m` ed era errata per questa prima evoluzione.
+
+Il confronto con Vittorio e GPT conferma il principio geometrico: i loro
+generatori costruiscono gli offset e determinano il cambio di lato tramite la
+geometria dell'offset/intersezione, ottenendo quindi l'accorciamento del tratto
+prima della parete successiva. StrategiaDiego applica lo stesso **principio**,
+senza copiare i loro algoritmi.
+
+Questa eccezione è attualmente limitata alla **prima svolta dopo il tubo di
+collegamento**. Estenderla automaticamente a tutte le evoluzioni ha reso
+troppo restrittivi locali complessi e ha fallito la regression reale; le
+evoluzioni successive continuano quindi a seguire LG-006/LG-017/LG-034.
+
 ### Criterio futuro di verifica
 
 Un caso di regression deve verificare che:
@@ -1602,6 +1641,7 @@ Un caso di regression deve verificare che:
 ```text
 primo tratto non allineato al tubo entrante -> non ammesso
 primo tratto allineato al tubo entrante     -> candidato valido
+prima svolta                                -> conserva offset iniziale
 punto finale                                -> determinato dal troncamento
 ```
 
