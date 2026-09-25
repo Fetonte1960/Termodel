@@ -72,41 +72,95 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-25 — Banco prova corrente StrategiaDiego: appartamento reale
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - consolidare su GitHub **senza modificarlo** il progetto
   `TERMODEL-PROJECT-TEXT-V1` fornito dall'utente il 25/09/2026 come
   **banco prova corrente autorevole** per lo sviluppo di StrategiaDiego;
 - conservarne una copia immutabile sotto `Server/Termodelwebservice/tests/fixtures/`,
-  con SHA-256 del file originale e istruzioni deterministiche di ricostruzione;
-- il progetto corrente ha piano `Unico`, projectId
-  `07bf8dca-dc86-41ea-8844-1aaca58888f0`, timestamp origine
-  `2026-09-25T06:16:04.350Z`;
-- usare questo progetto come fixture primaria dei successivi test GitHub Actions
-  delle spirali, richiedendo direttamente
-  `POST /api/calculations?responseArtifact=pannelli-esecutivo-svg`;
-- mantenere quadrato 4x4 e concavo a L come regression sintetiche di base,
-  ma **non** usarli più come banco operativo principale;
-- per ogni anomalia reale: screenshot + numero locale -> riproduzione sulla
-  fixture corrente -> individuazione della prima decisione errata ->
-  classificazione come violazione di una LG esistente oppure nuova regola ->
-  correzione minima -> nuova Action/regression;
-- registrare questa direttiva, lo status reale dell'algoritmo e il lavoro in
-  corso anche in
-  `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`
-  e nel registro di sviluppo StrategiaDiego;
-- non modificare frontend, Library Desktop o il contenuto
-  `definition/definizionedati.json` incluso nella fixture.
+  con SHA-256 del file originale;
+- usarlo come fixture primaria dei successivi test GitHub Actions delle
+  spirali con risposta diretta `pannelli-esecutivo-svg`;
+- mantenere quadrato 4x4 e concavo a L come regression sintetiche rapide,
+  non più come banco operativo principale;
+- registrare direttiva, stato algoritmo e lavoro corrente nelle Linee guida
+  spirali e nel registro sviluppo StrategiaDiego;
+- non modificare frontend, Library Desktop o `definition/definizionedati.json`.
 
-Criteri di completamento:
-- progetto archiviato e ricostruibile byte-per-byte;
-- hash originale documentato;
-- README fixture con ruolo di banco prova corrente;
-- direttiva e stato algoritmo aggiornati nelle linee guida;
-- registro sviluppo aggiornato con il nuovo ciclo operativo;
-- Summary marcato `ESEGUITO` solo dopo verifica GitHub dei file consolidati.
+Risultato consolidato:
+- fixture autorevole:
+  `tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl`;
+- snapshot originale conservata senza modifiche; confronto testo sorgente/GitHub
+  verificato identico;
+- SHA-256 originale:
+  `1a5855490adcbac25e5585f9ba89c624eb2381874eb2de8bdc74821a40d2a9a5`;
+- projectId originale:
+  `07bf8dca-dc86-41ea-8844-1aaca58888f0`;
+- piano: `Unico`; timestamp manifest: `2026-09-25T06:16:04.350Z`;
+- README dedicato:
+  `tests/fixtures/README-StrategiaDiegoCurrentApartment.md`;
+- harness dedicata:
+  `tools/smoke-strategia-diego-current-apartment.ps1`;
+- workflow standard pubblica l'artifact
+  `strategia-diego-current-apartment` con retention 90 giorni;
+- harness forza `TERMODEL_SPIRAL_ENGINE=Diego` e usa
+  `responseArtifact=pannelli-esecutivo-svg`;
+- la fixture locale resta immutata; soltanto una copia temporanea viene
+  canonicalizzata come `buildTermodelServerPayload()` prima del Service;
+- le Linee guida Spirali contengono ora una sezione autorevole
+  `Stato operativo corrente — 25/09/2026` con stato algoritmo, banco prova e
+  ciclo locale-per-locale;
+- il registro StrategiaDiego è passato allo stato generale
+  `IN SVILUPPO — BANCO PROVA APPARTAMENTO REALE CORRENTE` e contiene R2
+  ancora `IN CORSO`, perché la validazione geometrica continua.
 
+Verifica reale:
+- Action #468, run `36102716657`: SUCCESS sulla fixture consolidata;
+- Action #473, run `36103180758`: primo collaudo harness FAILED con HTTP 422
+  perché la snapshot locale era stata inviata direttamente e mancava la
+  canonicalizzazione `TERMODEL-PROJECT-SVG-V1`; nessun difetto Diego dimostrato;
+- correzione harness commit
+  `a789f85f433959dddeeff9e60a65a180d69416f5`, senza modificare fixture;
+- GitHub Actions **#474**, run `36103622680`, job `107971255939`: **SUCCESS**;
+- build Release, benchmark sintetici, smoke Service precedenti e banco
+  appartamento: SUCCESS;
+- marker: `STRATEGIA_DIEGO_CURRENT_APARTMENT_OK`;
+- fixture SHA verificato uguale all'originale;
+- `spiralEngine=Diego`; risposta diretta SVG HTTP 200;
+- SVG baseline SHA-256:
+  `71921972d16085fab3071e56cd53a0695661536436678b2c64e7051f1312ecb8`;
+- `generatedFileCount=8`; calculation: 1 circuito pannelli, 6 primitive
+  esecutivo, 1 piano;
+- artifact CI `strategia-diego-current-apartment`, id `10850671585`,
+  dimensione archivio 163.814 byte, ispezionato: contiene
+  `server-payload.tmdl`, `pannelli-esecutivo.svg`, DXF, `pannelli.json`,
+  `generated-files.json`, `test-metadata.json`, TermodelLog/diagnostics,
+  calculation log e stdout/stderr Service;
+- Commit Status finale `SUCCESS` e notifica telefono `SUCCESS`.
+
+Direttiva operativa da proseguire:
+1. screenshot utente + numero locale;
+2. riproduzione sulla fixture corrente;
+3. individuazione della prima decisione strategica errata;
+4. distinguere violazione di una LG esistente da regola mancante;
+5. se manca, consolidare LG-036 o successiva prima della correzione;
+6. correzione minima soltanto su StrategiaDiego salvo diversa decisione;
+7. rieseguire la stessa Action e confrontare prima/dopo;
+8. trasformare i casi significativi in regression permanenti.
+
+Nota: l'SVG della #474 è una **baseline tecnica**, non un Golden geometrico
+approvato dell'intero progetto.
+
+Commit principali:
+- `997356301df3bff63a73118dd778c8d479f0a72d` — commissione;
+- `7110bec407d1d3426483c4bc05747b8f7a253ac8` — fixture;
+- `3fd40ddf849d9b895792374907babb374d3a4786` — README fixture;
+- `7d74c5dcc3888468a5ba7e339fb8ae6b7c094e55` — harness iniziale;
+- `6c5c8664b7e1298dc0f26d50a1eda4fcaea5704a` — integrazione workflow;
+- `ebf749cb41622a23451bfb0244bd7692d9d61107` — Linee guida;
+- `3a5ca15c02ff48ac2c7b11278fcb4494b33132f8` — apertura R2;
+- `a789f85f433959dddeeff9e60a65a180d69416f5` — canonicalizzazione harness.
 
 
 ### INCARICO 2026-09-25 — Risposta artifact diretta da Aggiorna Modello
