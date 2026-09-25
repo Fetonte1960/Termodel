@@ -3359,6 +3359,85 @@ selezione automatica.
 Principio documentale consolidato durante l'audit pre-sviluppo. Nessuna logica
 di stima automatica della complessità è ancora implementata.
 
+
+---
+
+## LG-031 — Geometria vincolante durante la costruzione del ritorno
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+Durante la costruzione dell'albero di ritorno associato a uno specifico
+terminale della mandata, la geometria vincolante è costituita da:
+
+- tutte le linee architettoniche;
+- l'intero ramo di mandata che conduce a quel terminale;
+- tutti i tratti di ritorno già generati lungo il ramo di ritorno corrente.
+
+### Regola
+
+Per un dato terminale mandata `Tm` e per un nodo corrente del ritorno:
+
+```text
+GeometriaVincolanteRitorno =
+    LineeArchitettoniche
+    + PathMandata(Tm)
+    + PathRitornoCorrente
+```
+
+Ogni nuovo candidato di ritorno deve essere verificato rispetto a questa
+geometria completa, applicando le distanze di rispetto previste dalle regole
+già consolidate.
+
+### Commento tecnico
+
+Il ramo di mandata selezionato per quel terminale viene quindi congelato come
+geometria fisica già costruita durante l'intera esplorazione dei possibili
+ritorni.
+
+Analogamente, ogni nuovo tratto di ritorno diventa immediatamente parte della
+geometria vincolante dei nodi successivi dello stesso ramo.
+
+Non devono invece essere considerate come ostacoli le geometrie appartenenti
+a rami alternativi della mandata o del ritorno che non fanno parte del
+percorso corrente.
+
+### Distanze applicabili
+
+Per un nuovo tratto di ritorno:
+
+```text
+rispetto a linea architettonica -> p/2
+rispetto a linea di mandata     -> p
+rispetto a linea di ritorno     -> 2p
+```
+
+oltre alle verifiche di intersezione, linea frontale e `TrattoPossibile`.
+
+### Vincoli per la futura implementazione
+
+- ogni stato del ritorno deve mantenere il riferimento al proprio
+  `PathMandata(Tm)`;
+- ogni ramo di ritorno deve possedere il proprio `PathRitornoCorrente`;
+- la verifica geometrica deve essere locale allo stato del ramo corrente;
+- geometrie appartenenti a rami alternativi non devono contaminare il ramo
+  in esame;
+- la diagnostica deve permettere di ricostruire quali linee erano vincolanti
+  per ogni candidato valutato.
+
+### Criterio futuro di verifica
+
+Un regression test deve verificare che due alberi di ritorno derivati da due
+terminali mandata differenti vedano geometrie vincolanti differenti, ciascuna
+coerente con il proprio ramo di mandata.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. La gestione
+dello stato geometrico per ramo non è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -3377,7 +3456,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-031`, `LG-032`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-032`, `LG-033`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
