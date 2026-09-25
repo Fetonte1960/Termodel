@@ -160,6 +160,9 @@ Avanzamento iniziale:
 - audit: rettificata `LG-021` tramite `LG-023 — Linea di riferimento determinata dal troncamento del tratto precedente`; per un cambio di direzione ordinario non si enumerano più tutte le linee come riferimenti di parallelismo;
 - la nuova linea deve essere la parallela alla linea frontale che ha troncato il tratto precedente e deve passare per il terminale di quel tratto; questo determina univocamente il lato della parallela;
 - `PROSEGUI_DRITTO` resta l'eccezione: usa `DirezioneProvenienza` e non richiede parallelismo con la linea di troncamento; la struttura geometrica completa resta comunque usata per trovare ostacolo frontale, distanze e intersezioni.
+- audit: consolidata `LG-024 — Entrambi i versi della nuova parallela generano rami`: una volta determinata la parallela di LG-023, vengono esplorati entrambi i versi come rami distinti se immediatamente geometricamente ammissibili;
+- vietata la potatura anticipata basata sulla previsione che un ramo possa bloccare il ritorno: anche scelte potenzialmente catastrofiche devono essere costruite e potranno essere eliminate solo quando il blocco viene realmente verificato nella costruzione del ritorno/potatura/accettabilità terminale;
+- previsto regression case con un ramo di mandata inizialmente valido ma successivamente incompatibile con il ritorno, che deve sopravvivere fino alla fase corretta di esclusione.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -191,6 +194,7 @@ Commit iniziali:
 - `9da82a4b2ebe7da71913dd8d862a86414744352b` — LG-021, enumerazione completa delle linee di riferimento a ogni nodo.
 - `0b001e6d3ca2c8b4122523fffb5023fb059822bf` — LG-022, direzione di provenienza ed estremo libero del tubo di collegamento.
 - `fa8fc74265bbebc95b4416578bcda2ffd530b8e2` — LG-023, riferimento di parallelismo vincolato alla linea che ha troncato il tratto precedente; LG-021 rettificata.
+- `ac362fc3ac48e038d919e9d368382cef22085115` — LG-024, generazione di entrambi i versi della nuova parallela senza potatura predittiva.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
