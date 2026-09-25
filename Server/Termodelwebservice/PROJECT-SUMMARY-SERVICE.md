@@ -70,6 +70,28 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Logging diagnostico SpiraliDiego + Copia log
+Stato: COMMISSIONATO
+
+Commissionato:
+- introdurre una categoria log dedicata **SpiraliDiego** nei punti strategici di `StrategiaDiegoEngine`;
+- registrare almeno: ingresso locale, radice mandata/ritorno, espansione nodo, scelte candidate, rifiuti geometrici principali, terminali, closure preliminari, scelta finale;
+- integrare la categoria `SpiraliDiego` nelle opzioni log già esposte dal Service;
+- aggiornare il frontend affinché mostri la nuova voce nel menu Help > LOG AGGIORNA MODELLO;
+- aggiungere al frontend il comando **Copia log negli appunti**, abilitato quando è disponibile un log aggiornato;
+- preservare le categorie log esistenti e la retrocompatibilità del contratto;
+- usare GitHub Actions per eseguire un test con log SpiraliDiego attivo sul caso quadrato e recuperare l'artefatto log reale;
+- non modificare gli algoritmi Vittorio/GPT/Diego in questa attività oltre all'instrumentazione diagnostica.
+
+Criteri di completamento:
+- categoria SpiraliDiego selezionabile dal frontend;
+- log Diego realmente scritto dal Service;
+- Copia log negli appunti operativa;
+- GitHub Actions SUCCESS;
+- artifact log recuperato e ispezionato;
+- Summary aggiornato e Issue #1 chiusa Completed.
+
+
 ### INCARICO 2026-09-25 — Secondo esempio frontend “Quadrato con pannelli”
 Stato: ESEGUITO
 
