@@ -181,6 +181,8 @@ Avanzamento iniziale:
 - restano da definire soglie/metriche concrete di compatibilità, comportamento UI/fallback ed eventuali limiti assoluti di nodi, tempo o memoria.
 - audit: consolidata `LG-031 — Geometria vincolante durante la costruzione del ritorno`: per ogni terminale mandata, il relativo ritorno viene valutato contro `LineeArchitettoniche + intero PathMandata del terminale + PathRitornoCorrente`;
 - geometrie appartenenti a rami alternativi non contaminano lo stato corrente; per il ritorno valgono distanze `p/2` da architettura, `p` da mandata e `2p` da ritorno.
+- audit: consolidata `LG-032 — Geometria vincolante durante la costruzione della mandata`: ogni ramo mandata vede soltanto `LineeArchitettoniche + PathMandataCorrente`; i rami alternativi sono scenari indipendenti e non costituiscono ostacoli reciproci;
+- ogni nuovo tratto valido entra subito nello stato geometrico del proprio ramo; per la mandata valgono `p/2` da architettura e `2p` da mandata già presente.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -220,6 +222,7 @@ Commit iniziali:
 - `487553ad051c94f975045c94ced5b14c9920b37d` — LG-029, valutazione preliminare della chiusura tramite segmento diretto e futura verifica avanzata.
 - `52f42a221bda4f479285d2e6d0654c29c85d0533` — LG-030, classificazione di StrategiaDiego come strategia computazionalmente pesante e selezionabile.
 - `6c209c4db9c44ac8db05cfafb9eb9992fe6b6e76` — LG-031, geometria vincolante per ciascun ramo di ritorno.
+- `34f691165cfd6a0e9f6509162e51ad455cf78013` — LG-032, geometria vincolante isolata per ciascun ramo di mandata.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
