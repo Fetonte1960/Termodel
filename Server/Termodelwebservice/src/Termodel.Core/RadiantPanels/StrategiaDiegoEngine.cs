@@ -133,7 +133,7 @@ internal static class StrategiaDiegoEngine
             architecture,
             Array.Empty<GeoSegment>(),
             directed.EntryWall,
-            initialOffsetDistance: null,
+            step * 1.5,
             step,
             counters,
             countAsSupply: true);
@@ -172,7 +172,7 @@ internal static class StrategiaDiegoEngine
                     architecture,
                     supplySegments,
                     directed.EntryWall,
-                    initialOffsetDistance: step / 2.0,
+                    step / 2.0,
                     step,
                     counters,
                     countAsSupply: false);
@@ -245,7 +245,7 @@ internal static class StrategiaDiegoEngine
         IReadOnlyList<GeoSegment> architecture,
         IReadOnlyList<GeoSegment> fixedPath,
         GeoSegment initialFront,
-        double? initialOffsetDistance,
+        double initialOffsetDistance,
         double step,
         SearchCounters counters,
         bool countAsSupply)
@@ -321,11 +321,22 @@ internal static class StrategiaDiegoEngine
 
             var children = new List<SearchNode>();
             foreach ((
-                string _,
+                string choiceName,
                 DVector direction,
                 string? excludedFront,
                 string? requiredFront) in directions)
             {
+                double? inheritedArchitectureOffset =
+                    choiceName.StartsWith(
+                        "PARALLELA",
+                        StringComparison.Ordinal) &&
+                    node.Front.Family == GeoFamily.Architecture
+                        ? Distance(
+                            node.End,
+                            node.Front.A,
+                            node.Front.B)
+                        : null;
+
                 ExtensionResult? extension = TryExtend(
                     locale,
                     family,
@@ -336,7 +347,8 @@ internal static class StrategiaDiegoEngine
                     excludedFront,
                     requiredFront,
                     step,
-                    allowStartOnBoundary: false);
+                    allowStartOnBoundary: false,
+                    inheritedArchitectureOffset);
 
                 if (extension is null)
                     continue;
@@ -379,38 +391,10 @@ internal static class StrategiaDiegoEngine
         DPoint start,
         DVector direction,
         GeoSegment entryWall,
-        double? initialOffsetDistance,
+        double offsetDistance,
         IReadOnlyList<GeoSegment> constraints,
         double step)
     {
-        if (initialOffsetDistance is null)
-        {
-            // LG-013 + LG-017, applicazione mirata alla mandata: il primo
-            // tratto conserva la direzione del tubo entrante, ma il suo
-            // estremo NON ha una lunghezza preassegnata. La semiretta cerca
-            // la prima geometria frontale e il segmento reale viene accorciato
-            // della distanza di rispetto LG-006.
-            //
-            // Il principio è lo stesso usato dai motori GPT/Vittorio:
-            // intersezione teorica con guida/offset, poi troncamento del tratto
-            // fisico prima del limite geometrico.
-            return TryExtend(
-                locale,
-                family,
-                start,
-                direction,
-                constraints,
-                previousSegment: null,
-                excludedFrontId: entryWall.Id,
-                requiredFrontId: null,
-                step,
-                allowStartOnBoundary: true);
-        }
-
-        // Il ritorno conserva temporaneamente il comportamento precedente:
-        // questa patch corregge soltanto l'anomalia di mandata osservata nel
-        // banco appartamento, evitando di introdurre una seconda variazione
-        // geometrica non ancora collaudata.
         DVector unit = direction.Normalize();
         DVector wallUnit = entryWall.Direction.Normalize();
         double sine = Math.Abs(DVector.Cross(unit, wallUnit));
@@ -418,12 +402,14 @@ internal static class StrategiaDiegoEngine
         if (unit.Length <= Epsilon ||
             wallUnit.Length <= Epsilon ||
             sine <= Epsilon ||
-            initialOffsetDistance.Value <= GeometryTolerance)
+            offsetDistance <= GeometryTolerance)
         {
             return null;
         }
 
-        double travel = initialOffsetDistance.Value / sine;
+        // Il tratto di ingresso porta il percorso sulla prima evoluzione:
+        // mandata a 1,5p dalla parete e ritorno a p/2.
+        double travel = offsetDistance / sine;
         DPoint end = start + unit * travel;
 
         var candidate = new GeoSegment(
@@ -458,7 +444,8 @@ internal static class StrategiaDiegoEngine
         string? excludedFrontId,
         string? requiredFrontId,
         double step,
-        bool allowStartOnBoundary)
+        bool allowStartOnBoundary,
+        double? inheritedArchitectureOffset = null)
     {
         DVector unit = direction.Normalize();
         if (unit.Length <= Epsilon)
@@ -519,6 +506,18 @@ internal static class StrategiaDiegoEngine
                 family,
                 reference.Family,
                 step);
+
+            // Quando una scelta PARALLELA segue una parete architettonica,
+            // conserva la distanza della stessa evoluzione anche alla parete
+            // successiva. È la costruzione geometrica degli offset usata
+            // concettualmente anche da Vittorio/GPT: il terminale nasce
+            // dall'intersezione con la parallela offset della parete seguente,
+            // non dal solo minimo generale p/2.
+            if (reference.Family == GeoFamily.Architecture &&
+                inheritedArchitectureOffset is double inherited)
+            {
+                respect = Math.Max(respect, inherited);
+            }
 
             double alongRay = respect / Math.Abs(cross);
             double tEnd = physicalHit
