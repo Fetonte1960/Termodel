@@ -132,6 +132,8 @@ internal static class StrategiaDiegoEngine
             directed.Direction,
             architecture,
             Array.Empty<GeoSegment>(),
+            directed.EntryWall,
+            step * 1.5,
             step,
             counters,
             countAsSupply: true);
@@ -169,6 +171,8 @@ internal static class StrategiaDiegoEngine
                     directed.Direction,
                     architecture,
                     supplySegments,
+                    directed.EntryWall,
+                    step / 2.0,
                     step,
                     counters,
                     countAsSupply: false);
@@ -240,6 +244,8 @@ internal static class StrategiaDiegoEngine
         DVector initialDirection,
         IReadOnlyList<GeoSegment> architecture,
         IReadOnlyList<GeoSegment> fixedPath,
+        GeoSegment initialFront,
+        double initialOffsetDistance,
         double step,
         SearchCounters counters,
         bool countAsSupply)
@@ -250,16 +256,15 @@ internal static class StrategiaDiegoEngine
         List<GeoSegment> initialConstraints =
             CombineConstraints(architecture, fixedPath, Array.Empty<GeoSegment>());
 
-        ExtensionResult? first = TryExtend(
+        ExtensionResult? first = TryBuildInitialSegment(
             locale,
             family,
             start,
             initialDirection,
+            initialFront,
+            initialOffsetDistance,
             initialConstraints,
-            previousSegment: null,
-            excludedFrontId: null,
-            step,
-            allowStartOnBoundary: true);
+            step);
 
         if (first is null)
             return new SearchTree(terminals);
@@ -345,6 +350,56 @@ internal static class StrategiaDiegoEngine
         }
 
         return new SearchTree(terminals);
+    }
+
+    private static ExtensionResult? TryBuildInitialSegment(
+        LocaleGeometry locale,
+        GeoFamily family,
+        DPoint start,
+        DVector direction,
+        GeoSegment entryWall,
+        double offsetDistance,
+        IReadOnlyList<GeoSegment> constraints,
+        double step)
+    {
+        DVector unit = direction.Normalize();
+        DVector wallUnit = entryWall.Direction.Normalize();
+        double sine = Math.Abs(DVector.Cross(unit, wallUnit));
+
+        if (unit.Length <= Epsilon ||
+            wallUnit.Length <= Epsilon ||
+            sine <= Epsilon ||
+            offsetDistance <= GeometryTolerance)
+        {
+            return null;
+        }
+
+        // Il tubo entrante conserva la propria direzione. Il suo estremo
+        // interno viene determinato dall'intersezione con il primo offset
+        // della parete d'ingresso, non dalla parete opposta.
+        double travel = offsetDistance / sine;
+        DPoint end = start + unit * travel;
+
+        var candidate = new GeoSegment(
+            $"D-INITIAL-{family}-{Guid.NewGuid():N}",
+            start,
+            end,
+            family,
+            SequenceIndex: 0);
+
+        if (!IsSegmentValid(
+                locale,
+                candidate,
+                constraints,
+                previousSegment: null,
+                entryWall,
+                step,
+                allowStartOnBoundary: true))
+        {
+            return null;
+        }
+
+        return new ExtensionResult(candidate, entryWall);
     }
 
     private static ExtensionResult? TryExtend(
