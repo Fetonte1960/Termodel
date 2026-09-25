@@ -28,8 +28,13 @@ long memoryBudgetBytes = ReadPositiveLong(
     128L * 1024 * 1024);
 
 Directory.CreateDirectory(outputDir);
-string reportPath = Path.Combine(outputDir, "strategia-diego-benchmark.json");
-string svgPath = Path.Combine(outputDir, "strategia-diego-square4x4.svg");
+// Modificato da Codex per realizzare: artifact benchmark distinti per ogni fixture.
+string fixtureName = Path.GetFileNameWithoutExtension(
+    Path.GetFileNameWithoutExtension(fixturePath));
+string reportPath = Path.Combine(
+    outputDir,
+    $"{fixtureName}.benchmark.json");
+string svgPath = Path.Combine(outputDir, $"{fixtureName}.svg");
 
 var report = new BenchmarkReport
 {

@@ -173,13 +173,14 @@ jobs:
 
       - name: Build
         run: dotnet build Termodel.WebService.sln --configuration Release --no-restore
-      - name: Benchmark StrategiaDiego square 4x4
+      - name: Benchmark StrategiaDiego regression fixtures
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           $benchmarkDir = Join-Path $env:RUNNER_TEMP "StrategiaDiegoBenchmark"
           New-Item -ItemType Directory -Path $benchmarkDir -Force | Out-Null
           dotnet run --project tests/StrategiaDiego.Benchmark/StrategiaDiego.Benchmark.csproj --configuration Release -- tests/fixtures/StrategiaDiegoSquare4x4.locale.xml $benchmarkDir 20
+          dotnet run --project tests/StrategiaDiego.Benchmark/StrategiaDiego.Benchmark.csproj --configuration Release -- tests/fixtures/StrategiaDiegoConcaveL.locale.xml $benchmarkDir 20
 
       - name: Upload StrategiaDiego benchmark
         if: ${{ always() }}
