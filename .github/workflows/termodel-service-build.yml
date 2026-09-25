@@ -191,10 +191,29 @@ jobs:
           $ErrorActionPreference = "Stop"
           $benchmarkDir = Join-Path $env:RUNNER_TEMP "StrategiaDiegoBenchmark"
           New-Item -ItemType Directory -Path $benchmarkDir -Force | Out-Null
-          dotnet run --project tests/StrategiaDiego.Benchmark/StrategiaDiego.Benchmark.csproj --configuration Release -- tests/fixtures/StrategiaDiegoSquare4x4.locale.xml $benchmarkDir 20
-          dotnet run --project tests/StrategiaDiego.Benchmark/StrategiaDiego.Benchmark.csproj --configuration Release -- tests/fixtures/StrategiaDiegoConcaveL.locale.xml $benchmarkDir 20
-          dotnet run --project tests/StrategiaDiego.Benchmark/StrategiaDiego.Benchmark.csproj --configuration Release -- tests/fixtures/StrategiaDiegoObliqueTrapezoid.locale.xml $benchmarkDir 20
-          dotnet run --project tests/StrategiaDiego.Benchmark/StrategiaDiego.Benchmark.csproj --configuration Release -- tests/fixtures/StrategiaDiegoConnectionTerminal.locale.xml $benchmarkDir 20
+
+          function Invoke-DiegoBenchmark([string]$fixturePath) {
+            dotnet run --project tests/StrategiaDiego.Benchmark/StrategiaDiego.Benchmark.csproj --configuration Release -- $fixturePath $benchmarkDir 20
+            $exitCode = $LASTEXITCODE
+            $fixtureName = [System.IO.Path]::GetFileNameWithoutExtension(
+              [System.IO.Path]::GetFileNameWithoutExtension($fixturePath))
+            $reportPath = Join-Path $benchmarkDir "$fixtureName.benchmark.json"
+
+            if ($exitCode -ne 0) {
+              $details = "report non disponibile"
+              if (Test-Path -LiteralPath $reportPath) {
+                $failedReport = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+                $details = (@($failedReport.errors) -join " | ")
+              }
+              Write-Host "::error title=StrategiaDiego benchmark ${fixtureName}::$details"
+              throw "Benchmark $fixtureName fallito con exit code $exitCode."
+            }
+          }
+
+          Invoke-DiegoBenchmark "tests/fixtures/StrategiaDiegoSquare4x4.locale.xml"
+          Invoke-DiegoBenchmark "tests/fixtures/StrategiaDiegoConcaveL.locale.xml"
+          Invoke-DiegoBenchmark "tests/fixtures/StrategiaDiegoObliqueTrapezoid.locale.xml"
+          Invoke-DiegoBenchmark "tests/fixtures/StrategiaDiegoConnectionTerminal.locale.xml"
 
           "## StrategiaDiego benchmark" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
           "| Fixture | Iterazioni | Nodi | Terminali accettati | P95 ms | Memoria byte | Deterministico |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
