@@ -100,6 +100,9 @@ Avanzamento iniziale:
 - consolidata e successivamente rettificata `LG-002 — StrategiaDiego come albero decisionale`: nodi = situazioni con scelta strategica, rami = alternative esplicite, foglie/terminali = situazioni senza ulteriori scelte strategiche e con esito/comportamento deterministico;
 - la rettifica esclude il modello a grafo generico: ogni nodo non radice ha un solo padre, rami distinti non si ricongiungono e non sono ammessi cicli;
 - richiesto che il percorso radice -> nodi -> rami -> foglia sia diagnosticabile e riproducibile nei regression test.
+- consolidata `LG-003 — Fattore di merito dei terminali e scelta della soluzione`: per ogni terminale valido il merito è la lunghezza totale di tubo producibile; viene selezionato il terminale con lunghezza massima;
+- separata concettualmente la fase di esplorazione/valutazione dell'albero dalla materializzazione finale: la spirale definitiva viene prodotta ripercorrendo dalla radice il cammino del terminale vincente e applicando nell'ordine le scelte registrate nei nodi;
+- esclusi dal confronto i terminali geometricamente invalidi; parità di merito e dettaglio di misura di raccordi/tratti tecnici restano da definire.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -107,6 +110,7 @@ Commit iniziali:
 - `8866e03763010c1c003f524e1e4239375eca748c` — collegamento dal registro strategie.
 - `3d7ed48b8259b03d6ad959552e7521b951aeefb3` — LG-002, struttura a grafo decisionale.
 - `ca6d8e6999496f6c4b03e4d27556039dc2ce7854` — rettifica LG-002 da grafo ad albero decisionale.
+- `a9bede514fba3016caa33662d4e21eb0ac40c0e8` — LG-003, fattore di merito dei terminali e selezione per massima lunghezza tubo valida.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
