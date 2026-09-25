@@ -1,7 +1,7 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.23**  
-Aggiornamento: **24 settembre 2026**  
+Versione documento: **1.24**  
+Aggiornamento: **25 settembre 2026**  
 Stato: **progetti autorevoli locali nel frontend; Service Render dedicato a calcolo e artifact con workspace ricreabile per projectId; endpoint legacy open/save/lock mantenuti compatibili; conversione DXF→SVG nel Core/Service; Pianta pulita SVG persistente e projectId-scoped; feedback utenti verso GitHub Issues, archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati, snapshot diagnostico Render→GitHub e notifica GitHub Actions/telefono implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
@@ -1496,6 +1496,51 @@ Risposta indicativa:
 ```
 
 Non è richiesto alcun `projectLockToken` e la risposta non deve dipendere da un lease di apertura progetto.
+
+### 5.1 Risposta diretta di un artifact richiesta dal chiamante
+
+`POST /api/calculations` accetta il parametro query opzionale
+`responseArtifact`.
+
+Senza il parametro il comportamento resta invariato e la risposta è il
+manifest JSON descritto sopra.
+
+Con il parametro, il Service esegue **la stessa unica elaborazione completa**,
+pubblica atomicamente tutti gli artifact nel workspace corrente e restituisce
+nel body direttamente l'artifact richiesto. Questa modalità è pensata anche
+per regression e debug GitHub Actions, senza introdurre un secondo calcolo.
+
+Valori correnti:
+
+```text
+responseArtifact=model3d
+responseArtifact=pannelli
+responseArtifact=pannelli-esecutivo-svg
+responseArtifact=pannelli-esecutivo-dxf
+responseArtifact=pianta-pulita&responseFloor=<nome piano>
+```
+
+Esempio per le spirali:
+
+```http
+POST /api/calculations?responseArtifact=pannelli-esecutivo-svg
+Content-Type: text/plain; charset=utf-8
+```
+
+La risposta usa il Content-Type proprio dell'artifact e include gli header:
+
+```text
+X-Termodel-Project-Id
+X-Termodel-Response-Artifact
+X-Termodel-Artifact-Stale: false
+```
+
+Un nome `responseArtifact` non riconosciuto produce HTTP 400. Un artifact
+riconosciuto ma non generato dal progetto produce HTTP 404. Per
+`pianta-pulita` `responseFloor` è obbligatorio.
+
+Questa estensione è retrocompatibile: il frontend corrente può continuare a
+omettere `responseArtifact` e ricevere il manifest come prima.
 
 ## 6. Manifest degli artifact
 
