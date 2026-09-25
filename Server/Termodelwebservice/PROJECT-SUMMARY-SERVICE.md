@@ -163,6 +163,8 @@ Avanzamento iniziale:
 - audit: consolidata `LG-024 — Entrambi i versi della nuova parallela generano rami`: una volta determinata la parallela di LG-023, vengono esplorati entrambi i versi come rami distinti se immediatamente geometricamente ammissibili;
 - vietata la potatura anticipata basata sulla previsione che un ramo possa bloccare il ritorno: anche scelte potenzialmente catastrofiche devono essere costruite e potranno essere eliminate solo quando il blocco viene realmente verificato nella costruzione del ritorno/potatura/accettabilità terminale;
 - previsto regression case con un ramo di mandata inizialmente valido ma successivamente incompatibile con il ritorno, che deve sopravvivere fino alla fase corretta di esclusione.
+- audit: consolidata `LG-025 — Condizione di terminale dell'albero di mandata`: un nodo è terminale solo quando, dopo aver valutato `PROSEGUI_DRITTO` e i due versi della parallela di LG-023/LG-024, nessuna alternativa produce un `TrattoPossibile`;
+- la terminalità deriva quindi dall'assenza completa di prosecuzioni ammissibili, non da euristiche o previsioni sul ritorno; se almeno un candidato è valido il nodo resta non terminale e ogni candidato valido genera un ramo.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -195,6 +197,7 @@ Commit iniziali:
 - `0b001e6d3ca2c8b4122523fffb5023fb059822bf` — LG-022, direzione di provenienza ed estremo libero del tubo di collegamento.
 - `fa8fc74265bbebc95b4416578bcda2ffd530b8e2` — LG-023, riferimento di parallelismo vincolato alla linea che ha troncato il tratto precedente; LG-021 rettificata.
 - `ac362fc3ac48e038d919e9d368382cef22085115` — LG-024, generazione di entrambi i versi della nuova parallela senza potatura predittiva.
+- `1ddaa84f865d1c3db1a0096a1b66bc901f9a8a4b` — LG-025, condizione di terminale dell'albero di mandata.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
