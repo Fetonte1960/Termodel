@@ -6,6 +6,36 @@ Stato generale: **IN SVILUPPO — BANCO PROVA APPARTAMENTO REALE CORRENTE**
 Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
+
+## R4 — Uniformità evoluzioni e inversione corsie iniziali mandata/ritorno
+Stato: **IMPLEMENTATO SU GIT — NON COMPILATO / NON ESEGUITO**
+
+Decisione utente 26/09/2026:
+- eliminato il concetto di una "prima evoluzione" con distanza propria;
+- il solo elemento distinto resta il raccordo tecnico proveniente dal tubo di
+  collegamento;
+- tutte le evoluzioni usano la stessa matrice di distanze;
+- mandata rossa a `p/2` dalla parete;
+- ritorno blu a `p` dalla mandata, quindi `1,5p` dalla parete nel corridoio
+  iniziale ordinario;
+- con `p=0,30 m`: mandata 0,15 m, ritorno 0,45 m, separazione 0,30 m.
+
+Implementazione:
+- `StrategiaDiegoEngine.BuildTree` non riceve più una quota iniziale
+  arbitraria diversa per mandata e ritorno;
+- il raccordo tecnico usa `EntryConnectorTargetDistance()`, che deriva le
+  quote dalla funzione generale `RequiredDistance()`;
+- aggiornate LG-013 e nuova LG-037;
+- aggiornato il regression harness dell'appartamento: attese 0,15 m per il
+  raccordo mandata e 0,45 m per il raccordo ritorno.
+
+Verifica:
+- per richiesta esplicita dell'utente, **nessuna compilazione, GitHub Action o
+  verifica SVG è stata eseguita in questa fase**;
+- pertanto la modifica è soltanto implementata/pubblicata e non va considerata
+  compilata, eseguita, testata o visualmente approvata.
+
+
 ## R3 — Riallineamento fondamentali geometrici GPT
 Stato: **ESEGUITO — FONDAMENTALI COMPATIBILI CON LE LG ALLINEATI**
 
