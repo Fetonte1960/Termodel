@@ -133,6 +133,7 @@ internal static class StrategiaDiegoEngine
             architecture,
             Array.Empty<GeoSegment>(),
             directed.EntryWall,
+            initialOffsetDistance: null,
             step,
             counters,
             countAsSupply: true);
@@ -171,6 +172,7 @@ internal static class StrategiaDiegoEngine
                     architecture,
                     supplySegments,
                     directed.EntryWall,
+                    initialOffsetDistance: step / 2.0,
                     step,
                     counters,
                     countAsSupply: false);
@@ -243,6 +245,7 @@ internal static class StrategiaDiegoEngine
         IReadOnlyList<GeoSegment> architecture,
         IReadOnlyList<GeoSegment> fixedPath,
         GeoSegment initialFront,
+        double? initialOffsetDistance,
         double step,
         SearchCounters counters,
         bool countAsSupply)
@@ -259,6 +262,7 @@ internal static class StrategiaDiegoEngine
             start,
             initialDirection,
             initialFront,
+            initialOffsetDistance,
             initialConstraints,
             step);
 
@@ -375,28 +379,73 @@ internal static class StrategiaDiegoEngine
         DPoint start,
         DVector direction,
         GeoSegment entryWall,
+        double? initialOffsetDistance,
         IReadOnlyList<GeoSegment> constraints,
         double step)
     {
-        // LG-013 + LG-017: il primo tratto conserva la direzione del tubo
-        // entrante, ma il suo estremo NON ha una lunghezza preassegnata.
-        // Si prolunga la semiretta fino alla prima geometria frontale utile e
-        // si tronca alla distanza di rispetto prevista da LG-006.
-        //
-        // GPT/Vittorio seguono lo stesso principio geometrico di fondo:
-        // prima individuano l'intersezione con la guida/offset e poi
-        // accorciano il tratto reale rispetto al limite teorico.
-        return TryExtend(
-            locale,
-            family,
+        if (initialOffsetDistance is null)
+        {
+            // LG-013 + LG-017, applicazione mirata alla mandata: il primo
+            // tratto conserva la direzione del tubo entrante, ma il suo
+            // estremo NON ha una lunghezza preassegnata. La semiretta cerca
+            // la prima geometria frontale e il segmento reale viene accorciato
+            // della distanza di rispetto LG-006.
+            //
+            // Il principio è lo stesso usato dai motori GPT/Vittorio:
+            // intersezione teorica con guida/offset, poi troncamento del tratto
+            // fisico prima del limite geometrico.
+            return TryExtend(
+                locale,
+                family,
+                start,
+                direction,
+                constraints,
+                previousSegment: null,
+                excludedFrontId: entryWall.Id,
+                requiredFrontId: null,
+                step,
+                allowStartOnBoundary: true);
+        }
+
+        // Il ritorno conserva temporaneamente il comportamento precedente:
+        // questa patch corregge soltanto l'anomalia di mandata osservata nel
+        // banco appartamento, evitando di introdurre una seconda variazione
+        // geometrica non ancora collaudata.
+        DVector unit = direction.Normalize();
+        DVector wallUnit = entryWall.Direction.Normalize();
+        double sine = Math.Abs(DVector.Cross(unit, wallUnit));
+
+        if (unit.Length <= Epsilon ||
+            wallUnit.Length <= Epsilon ||
+            sine <= Epsilon ||
+            initialOffsetDistance.Value <= GeometryTolerance)
+        {
+            return null;
+        }
+
+        double travel = initialOffsetDistance.Value / sine;
+        DPoint end = start + unit * travel;
+
+        var candidate = new GeoSegment(
+            $"D-INITIAL-{family}-{Guid.NewGuid():N}",
             start,
-            direction,
-            constraints,
-            previousSegment: null,
-            excludedFrontId: entryWall.Id,
-            requiredFrontId: null,
-            step,
-            allowStartOnBoundary: true);
+            end,
+            family,
+            SequenceIndex: 0);
+
+        if (!IsSegmentValid(
+                locale,
+                candidate,
+                constraints,
+                previousSegment: null,
+                entryWall,
+                step,
+                allowStartOnBoundary: true))
+        {
+            return null;
+        }
+
+        return new ExtensionResult(candidate, entryWall);
     }
 
     private static ExtensionResult? TryExtend(
