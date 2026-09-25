@@ -615,6 +615,7 @@ app.MapPost("/api/projects/{projectId:guid}/unlock", async (
 // Funzione realizzata da Codex in autonomia
 app.MapPost("/api/calculations", async (
     HttpRequest request,
+    HttpResponse response,
     ProjectStore projects,
     CancellationToken cancellationToken) =>
 {
@@ -629,6 +630,19 @@ app.MapPost("/api/calculations", async (
         return Results.ValidationProblem(new Dictionary<string, string[]>
         {
             ["log"] = [logConfigurationError ?? "Configurazione log non valida."]
+        });
+    }
+
+    if (!TryReadCalculationResponseArtifact(
+            request,
+            out string? responseArtifact,
+            out string? responseFloor,
+            out string? responseArtifactError))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["responseArtifact"] =
+                [responseArtifactError ?? "Artifact di risposta non valido."]
         });
     }
 
@@ -689,6 +703,16 @@ app.MapPost("/api/calculations", async (
                     logCategories);
             },
             cancellationToken);
+
+        if (responseArtifact is not null)
+        {
+            return BuildCalculationArtifactResponse(
+                data,
+                projectId,
+                responseArtifact,
+                responseFloor,
+                response);
+        }
 
         string generatedFilesHref =
             $"/api/projects/{projectId:D}/generated-files";
@@ -1293,6 +1317,153 @@ static string[] GetLogCategoryNames(TermodelLog.LogConfiguration configuration) 
         .OrderBy(category => (int)category)
         .Select(category => category.ToString())
         .ToArray() ?? [];
+
+static bool TryReadCalculationResponseArtifact(
+    HttpRequest request,
+    out string? artifact,
+    out string? floor,
+    out string? error)
+{
+    artifact = null;
+    floor = null;
+    error = null;
+
+    if (!request.Query.TryGetValue("responseArtifact", out var artifactValues))
+        return true;
+
+    string rawArtifact = artifactValues.ToString().Trim();
+    if (rawArtifact.Length == 0)
+    {
+        error = "responseArtifact non può essere vuoto.";
+        return false;
+    }
+
+    artifact = rawArtifact.ToLowerInvariant() switch
+    {
+        "model3d" => "model3d",
+        "pannelli" => "pannelli",
+        "pannelli-esecutivo-svg" => "pannelli-esecutivo-svg",
+        "pannelli-esecutivo-dxf" => "pannelli-esecutivo-dxf",
+        "pianta-pulita" => "pianta-pulita",
+        _ => null
+    };
+
+    if (artifact is null)
+    {
+        error =
+            $"responseArtifact non riconosciuto: '{rawArtifact}'. " +
+            "Valori ammessi: model3d, pannelli, pannelli-esecutivo-svg, " +
+            "pannelli-esecutivo-dxf, pianta-pulita.";
+        return false;
+    }
+
+    if (!artifact.Equals("pianta-pulita", StringComparison.Ordinal))
+        return true;
+
+    if (!request.Query.TryGetValue("responseFloor", out var floorValues) ||
+        string.IsNullOrWhiteSpace(floorValues.ToString()))
+    {
+        error =
+            "responseFloor è obbligatorio quando responseArtifact=pianta-pulita.";
+        return false;
+    }
+
+    floor = floorValues.ToString().Trim();
+    return true;
+}
+
+static IResult BuildCalculationArtifactResponse(
+    ProjectCalculationData data,
+    Guid projectId,
+    string artifact,
+    string? floor,
+    HttpResponse response)
+{
+    byte[]? content = null;
+    string contentType;
+    string? fileName = null;
+
+    switch (artifact)
+    {
+        case "model3d":
+            content = data.Model3DJson;
+            contentType = "application/json; charset=utf-8";
+            break;
+
+        case "pannelli":
+            content = data.RadiantPanelsJson;
+            contentType = "application/json; charset=utf-8";
+            break;
+
+        case "pannelli-esecutivo-svg":
+            content = data.RadiantExecutiveSvg;
+            contentType = "image/svg+xml; charset=utf-8";
+            fileName = "pannelli-esecutivo.svg";
+            break;
+
+        case "pannelli-esecutivo-dxf":
+            content = data.RadiantExecutiveDxf;
+            contentType = "application/dxf";
+            fileName = "pannelli-esecutivo.dxf";
+            break;
+
+        case "pianta-pulita":
+            contentType = "image/svg+xml; charset=utf-8";
+            fileName = "pianta-pulita.svg";
+            if (floor is not null &&
+                data.CleanFloorPlans.TryGetValue(floor, out string? cleanSvg))
+            {
+                content = Encoding.UTF8.GetBytes(cleanSvg);
+            }
+            break;
+
+        default:
+            throw new InvalidOperationException(
+                $"Artifact di risposta validato ma non gestito: {artifact}.");
+    }
+
+    if (content is null)
+    {
+        string floorDetail =
+            floor is null ? string.Empty : $" del piano '{floor}'";
+        return Results.Problem(
+            title: "Artifact richiesto non disponibile",
+            detail:
+                $"Il calcolo del projectId '{projectId:D}' non ha prodotto " +
+                $"l'artifact '{artifact}'{floorDetail}.",
+            statusCode: StatusCodes.Status404NotFound);
+    }
+
+    response.Headers["X-Termodel-Project-Id"] = projectId.ToString("D");
+    response.Headers["X-Termodel-Response-Artifact"] = artifact;
+    response.Headers["X-Termodel-Artifact-Stale"] = "false";
+    response.Headers["Cache-Control"] = "no-store";
+    response.Headers["X-Content-Type-Options"] = "nosniff";
+
+    if (floor is not null)
+        response.Headers["X-Termodel-Response-Floor"] = floor;
+
+    if (fileName is not null)
+    {
+        string disposition = artifact.EndsWith(
+            "-dxf",
+            StringComparison.OrdinalIgnoreCase)
+            ? "attachment"
+            : "inline";
+        response.Headers["Content-Disposition"] =
+            $"{disposition}; filename=\"{fileName}\"";
+    }
+
+    if (contentType.StartsWith(
+            "image/svg+xml",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        response.Headers["Content-Security-Policy"] =
+            "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:";
+    }
+
+    return Results.Bytes(content, contentType: contentType);
+}
 
 static bool IsTextProjectRequest(HttpRequest request) =>
     request.ContentType is not null &&
