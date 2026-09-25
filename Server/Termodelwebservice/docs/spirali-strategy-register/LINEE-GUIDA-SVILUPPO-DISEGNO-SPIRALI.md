@@ -53,6 +53,20 @@ POST /api/calculations?responseArtifact=pannelli-esecutivo-svg
 
 e forzando `TERMODEL_SPIRAL_ENGINE=Diego`.
 
+Verifica operativa iniziale del banco:
+
+- Action #474, run `36103622680`, job `107971255939`: **SUCCESS**;
+- la fixture locale viene verificata col suo SHA-256 originale e resta immutata;
+- una copia temporanea viene canonicalizzata come il normale `Aggiorna Modello`
+  prima di essere inviata al Service;
+- risposta `pannelli-esecutivo-svg`: HTTP 200;
+- artifact diagnostico `strategia-diego-current-apartment`, id `10850671585`;
+- SVG iniziale SHA-256
+  `71921972d16085fab3071e56cd53a0695661536436678b2c64e7051f1312ecb8`;
+- output corrente del banco: 1 circuito, 6 primitive esecutivo, 1 piano;
+- questo SUCCESS verifica la **riproducibilità tecnica del banco**, non
+  l'approvazione geometrica dell'intero output.
+
 ### Lavoro in corso
 
 Il ciclo di sviluppo corrente è locale-per-locale:
