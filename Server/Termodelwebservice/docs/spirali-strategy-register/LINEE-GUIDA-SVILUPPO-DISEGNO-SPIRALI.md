@@ -828,6 +828,114 @@ LG-007 non stabilisce ancora:
 Principio documentale consolidato. Nessuna funzione
 `SceltaNodoPossibile` è ancora implementata in StrategiaDiego.
 
+
+---
+
+## LG-008 — Terminale accettabile
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Si definisce **terminale accettabile** un terminale dell'albero nel quale
+l'estremo della mandata e l'estremo della ripresa/ritorno possono essere
+collegati fra loro senza che il collegamento intersechi altre linee.
+
+### Commento tecnico
+
+LG-008 distingue quindi fra:
+
+- **terminale dell'albero**: una foglia nella quale non esistono ulteriori
+  scelte strategiche;
+- **terminale accettabile**: una foglia che consente anche la chiusura
+  geometrica fra mandata e ripresa senza intersezioni.
+
+La sola condizione definita in questa linea guida è la non-intersezione del
+collegamento finale con le altre linee già presenti. Non vengono introdotti
+implicitamente ulteriori vincoli di distanza o parallelismo: se necessari,
+dovranno essere definiti esplicitamente in una linea guida successiva.
+
+### Regola
+
+Siano:
+
+- `M` = estremo corrente della mandata;
+- `R` = estremo corrente della ripresa/ritorno;
+- `c(M,R)` = collegamento fra i due estremi.
+
+Il terminale è accettabile se e solo se:
+
+```text
+TerminaleAccettabile =
+    Terminale
+    AND
+    EsisteCollegamento(M, R)
+    AND
+    NonIntersecaAltreLinee(c(M,R))
+```
+
+### Relazione con LG-003
+
+Il fattore di merito e la selezione finale devono essere applicati soltanto ai
+terminali accettabili.
+
+Quindi l'insieme dei candidati alla massimizzazione diventa:
+
+```text
+T_acc = { terminali accettabili }
+
+t* = arg max LunghezzaTubo(t),  con t appartenente a T_acc
+```
+
+Un terminale non accettabile non può essere scelto come soluzione finale,
+indipendentemente dalla lunghezza di tubo prodotta.
+
+### Vincoli per la futura implementazione
+
+- ogni terminale deve conoscere l'estremo corrente della mandata e quello
+  della ripresa/ritorno;
+- il collegamento finale candidato deve essere geometricamente costruibile;
+- il controllo di intersezione deve essere effettuato contro le altre linee
+  già presenti nello stato del terminale;
+- un terminale con collegamento finale intersecante è non accettabile;
+- l'accettabilità deve essere diagnosticabile separatamente dal fattore di
+  merito;
+- la fase di selezione di LG-003 deve ignorare i terminali non accettabili.
+
+### Criterio futuro di verifica
+
+Per ogni terminale deve essere possibile diagnosticare almeno:
+
+```text
+estremo mandata
+estremo ripresa/ritorno
+collegamento finale candidato
+intersezioni rilevate
+TerminaleAccettabile = SI / NO
+```
+
+Devono essere presenti casi di regression con almeno:
+
+- collegamento finale libero -> terminale accettabile;
+- collegamento finale che interseca una linea -> terminale non accettabile.
+
+### Punti ancora da definire
+
+LG-008 non stabilisce ancora:
+
+- la forma geometrica del collegamento finale se non fosse un singolo
+  segmento;
+- eventuali distanze minime da rispettare durante la chiusura;
+- il trattamento dei contatti esatti agli estremi;
+- il comportamento nel caso in cui nessun terminale dell'albero risulti
+  accettabile.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Nessuna funzione
+`TerminaleAccettabile` è ancora implementata in StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -846,7 +954,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-008`, `LG-009`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-009`, `LG-010`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
