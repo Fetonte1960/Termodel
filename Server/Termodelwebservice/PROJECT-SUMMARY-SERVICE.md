@@ -147,6 +147,9 @@ Avanzamento iniziale:
 - consolidata `LG-018 — Flusso generale della StrategiaDiego`: 1) costruzione ritorno dei tubi di collegamento, 2) costruzione spirali di mandata, 3) costruzione spirali di ritorno, 4) potatura dei rami non ammissibili dell'albero, 5) generazione definitiva;
 - dopo la potatura si valutano i terminali accettabili (LG-008), quindi si seleziona quello con massimo fattore di merito (LG-003), infine si genera la soluzione definitiva ripercorrendo deterministicamente il cammino radice->terminale vincente;
 - il termine operativo resta `albero decisionale` secondo LG-002; criteri completi di potatura e regole specifiche della spirale di ritorno restano da definire.
+- consolidata `LG-019 — Evoluzione delle linee guida attraverso i casi di test`: il documento resta una specifica viva, da correggere/estendere quando i casi reali o di regression evidenziano ambiguità, limiti o regole mancanti;
+- i casi `STRATEGY-NNN` devono alimentare le regole generali `LG-NNN`; una differenza osservata va compresa prima di aggiornare risultati attesi o comportamento;
+- le rettifiche strategiche devono essere documentate esplicitamente prima dell'implementazione, mantenendo tracciabilità e trasformando i casi significativi in regression test quando possibile.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -173,6 +176,7 @@ Commit iniziali:
 - `d4918352f17733af8cae7b6d2ff86dea55a7791a` — precisazione LG-016: `PROSEGUI_DRITTO` è deroga esplicita al parallelismo con altre linee.
 - `613dddd87fe4c980378046eaa685276d07aef7c6` — LG-017, linea frontale obbligatoria e troncamento del nuovo tratto alla distanza di rispetto.
 - `d56f19c963a0a2fd350f019df7f7189f4d06e64d` — LG-018, flusso generale StrategiaDiego dalla rete di ritorno alla generazione definitiva.
+- `f998d9a814cbc018c2ea5bcf64d25cd840af9226` — LG-019, evoluzione test-driven delle linee guida StrategiaDiego.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
