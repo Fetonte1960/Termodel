@@ -481,6 +481,17 @@ internal static class StrategiaDiegoEngine
             bool isFront =
                 other.Id.Equals(front.Id, StringComparison.Ordinal);
 
+            if (allowStartOnBoundary &&
+                other.Family == GeoFamily.Architecture &&
+                Distance(candidate.A, other.A, other.B) <= GeometryTolerance)
+            {
+                // Il tubo di collegamento entra dalla parete: il solo contatto
+                // iniziale e' ammesso. Questa eccezione deve precedere il test
+                // di intersezione, perche il punto d'ingresso appartiene
+                // all'interno del segmento parete e non a un suo estremo.
+                continue;
+            }
+
             if (SegmentsProperlyIntersect(candidate, other))
                 return false;
 
@@ -490,15 +501,6 @@ internal static class StrategiaDiegoEngine
                 step);
 
             double distance = SegmentDistance(candidate, other);
-
-            if (allowStartOnBoundary &&
-                other.Family == GeoFamily.Architecture &&
-                Distance(candidate.A, other.A, other.B) <= GeometryTolerance)
-            {
-                // Il tubo di collegamento entra dalla parete: il solo contatto
-                // iniziale e' ammesso. I campioni successivi devono restare interni.
-                continue;
-            }
 
             if (isFront)
             {
