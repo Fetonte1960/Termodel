@@ -71,8 +71,40 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
-### INCARICO 2026-09-25 — Visualizzazione esecutivo StrategiaDiego quadrato 4x4
+### INCARICO 2026-09-25 — Forzatura StrategiaDiego e stato attesa Service nel frontend
 Stato: COMMISSIONATO
+
+Commissionato:
+- rendere **StrategiaDiego** il motore spirali usato dal Service quando
+  `TERMODEL_SPIRAL_ENGINE` non è configurata;
+- mantenere l'override esplicito `Vittorio | GPT | Diego` tramite variabile
+  d'ambiente, così la scelta resta reversibile;
+- aggiornare la documentazione Service che descrive ancora GPT come default;
+- nel frontend `docs/termodel-ui-demo`, mostrare nella status bar CAD il
+  testo esatto **"In Attesa di una risposta del server"** mentre è pendente
+  una chiamata al Termodel Service;
+- applicare il feedback di attesa in modo centralizzato alle chiamate Service
+  e gestire correttamente eventuali richieste concorrenti;
+- non modificare `definizionedati.json`, Library Desktop o il contratto
+  `TERMODEL-PROJECT-TEXT-V1`.
+
+Criteri di completamento:
+- fallback del dispatcher verificato nel sorgente come `Diego`;
+- chiamate Service del frontend instradate attraverso il feedback di attesa;
+- build/check automatici GitHub Actions conclusi con successo;
+- diagnostica dell'esecutivo continua a dichiarare il motore selezionato;
+- incarico marcato `ESEGUITO` soltanto dopo verifica reale dell'Action.
+
+
+
+### INCARICO 2026-09-25 — Visualizzazione esecutivo StrategiaDiego quadrato 4x4
+Stato: SUPERATO
+
+Nota:
+- l'utente ha cambiato strategia di verifica: i test proseguono sul corrente
+  esempio appartamento, analizzando screenshot e numero locale;
+- l'eventuale Action già avviata per il quadrato resta una prova tecnica, ma
+  non costituisce più il criterio operativo richiesto dall'utente.
 
 Commissionato:
 - rieseguire tramite GitHub Actions il caso test `StrategiaDiegoSquare4x4.locale.xml`;
