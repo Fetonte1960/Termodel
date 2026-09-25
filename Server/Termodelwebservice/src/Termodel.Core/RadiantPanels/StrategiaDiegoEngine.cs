@@ -1199,7 +1199,7 @@ internal static class StrategiaDiegoEngine
 
         LogDiego(
             $"SEQUENCE return-follows-supply geometric-continuation " +
-            $"from={front.SequenceIndex} next={best.SequenceIndex} " +
+            $"from={front.SequenceIndex} next={best.Value.SequenceIndex} " +
             $"start={Fmt(start)} dir={Fmt(travel)} rayTravel={Fmt(bestTravel)}m");
         return best;
     }
