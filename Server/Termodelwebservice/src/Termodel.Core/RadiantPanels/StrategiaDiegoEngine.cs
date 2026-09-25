@@ -324,10 +324,9 @@ internal static class StrategiaDiegoEngine
                 string Name,
                 DVector Direction,
                 string? ExcludedFrontId,
-                string? RequiredFrontId,
-                GeoSegment? PursuitFront)>
+                string? RequiredFrontId)>
             {
-                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null, null)
+                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null)
             };
 
             DVector parallel = node.Front.Direction.Normalize();
@@ -336,22 +335,19 @@ internal static class StrategiaDiegoEngine
                 "PARALLELA_A",
                 parallel,
                 null,
-                requiredSequentialFrontId,
-                sequentialFront is null ? null : node.Front));
+                requiredSequentialFrontId));
             directions.Add((
                 "PARALLELA_B",
                 -parallel,
                 null,
-                requiredSequentialFrontId,
-                sequentialFront is null ? null : node.Front));
+                requiredSequentialFrontId));
 
             var children = new List<SearchNode>();
             foreach ((
                 string _,
                 DVector direction,
                 string? excludedFront,
-                string? requiredFront,
-                GeoSegment? pursuitFront) in directions)
+                string? requiredFront) in directions)
             {
                 ExtensionResult? extension = TryExtend(
                     locale,
@@ -362,7 +358,6 @@ internal static class StrategiaDiegoEngine
                     node.Segment,
                     excludedFront,
                     requiredFront,
-                    pursuitFront,
                     step,
                     allowStartOnBoundary: false);
 
@@ -461,7 +456,6 @@ internal static class StrategiaDiegoEngine
         GeoSegment? previousSegment,
         string? excludedFrontId,
         string? requiredFrontId,
-        GeoSegment? pursuitFront,
         double step,
         bool allowStartOnBoundary)
     {
@@ -531,39 +525,12 @@ internal static class StrategiaDiegoEngine
                 step);
 
             double alongRay = respect / Math.Abs(cross);
-            double tBefore = tIntersection - alongRay;
-            double tAfter = tIntersection + alongRay;
-
-            // Modificato da Codex per realizzare: LG-034/LG-035 richiedono
-            // di classificare il cambio usando S_k, S_k+1, verso corrente e
-            // lato dell'offset; il solo lato rispetto a S_k+1 non basta.
-            double tEnd = tBefore;
-            if (!physicalHit)
-            {
-                if (pursuitFront is GeoSegment followed)
-                {
-                    DVector followedUnit =
-                        followed.Direction.Normalize();
-                    double q = Math.Sign(DVector.Dot(unit, followedUnit));
-                    double side = Math.Sign(DVector.Cross(
-                        followedUnit,
-                        start - followed.A));
-                    double turn = Math.Sign(DVector.Cross(
-                        followedUnit,
-                        refUnit));
-                    double classification = q * side * turn;
-
-                    tEnd = classification > 0
-                        ? tBefore
-                        : tAfter;
-                }
-                else
-                {
-                    // Senza una coppia S_k/S_k+1 non esiste classificazione
-                    // LG-035: si conserva il comportamento teorico precedente.
-                    tEnd = tAfter;
-                }
-            }
+            // Modificato da Codex per realizzare: non applicare LG-035 finche'
+            // il nodo non conserva esplicitamente S_k orientato. Usare
+            // node.Front come sostituto ha eliminato le chiusure del quadrato.
+            double tEnd = physicalHit
+                ? tIntersection - alongRay
+                : tIntersection + alongRay;
 
             if (tEnd <= GeometryTolerance)
                 continue;
