@@ -8,7 +8,8 @@ using Termodel.Impianti.Pannelli;
 namespace Termodel.Core.RadiantPanels;
 
 /// <summary>
-/// Genera l'esecutivo pannelli con il motore SpiraliGPT Desktop corrente.
+/// Genera l'esecutivo pannelli con un motore selezionabile
+/// Vittorio | GPT | Diego. Il default resta GPT per compatibilita.
 /// DXF e SVG vengono serializzati dallo stesso modello grafico neutro.
 /// Il grafo/collettore resta intenzionalmente fuori scope: senza
 /// retePannelli.xml le corrispondenti routine Desktop sono no-op.
@@ -56,7 +57,11 @@ public static class RadiantExecutiveGenerator
 
         var drawing = new RadiantExecutiveDrawing();
         var diagnostics = new List<string>();
+        RadiantSpiralEngine selectedEngine = ResolveSpiralEngine();
+        double selectedStepMeters = SpiralHeatingGPT.Program.PassoTubi;
         int generatedFloors = 0;
+
+        diagnostics.Add($"Motore spirali selezionato: {selectedEngine}.");
 
         foreach (XElement floorNode in floorNodes)
         {
@@ -80,9 +85,12 @@ public static class RadiantExecutiveGenerator
                 continue;
             }
 
-            string generatedSvg = RunDefaultSpiralEngine(
+            SpiralEngineOutput engineOutput = RunSpiralEngine(
                 floorInput,
-                floorName);
+                floorName,
+                selectedEngine);
+            string generatedSvg = engineOutput.Svg;
+            selectedStepMeters = engineOutput.StepMeters;
 
             AddBuildingGeometry(
                 drawing,
@@ -100,14 +108,15 @@ public static class RadiantExecutiveGenerator
             if (generatedPrimitives == 0)
             {
                 throw new InvalidDataException(
-                    $"Piano {floorName}: il motore SpiraliGPT non ha prodotto primitive esecutive.");
+                    $"Piano {floorName}: il motore {selectedEngine} non ha prodotto primitive esecutive.");
             }
 
             generatedFloors++;
             diagnostics.Add(
-                $"Piano {floorName}: esecutivo generato con SpiraliGPT, " +
-                $"passo default {SpiralHeatingGPT.Program.PassoTubi:0.###} m, " +
+                $"Piano {floorName}: esecutivo generato con {selectedEngine}, " +
+                $"passo {engineOutput.StepMeters:0.###} m, " +
                 $"{generatedPrimitives} primitive pannelli.");
+            diagnostics.AddRange(engineOutput.Diagnostics);
         }
 
         if (generatedFloors == 0)
@@ -123,7 +132,7 @@ public static class RadiantExecutiveGenerator
             dxf,
             drawing.Primitives.Count,
             generatedFloors,
-            SpiralHeatingGPT.Program.PassoTubi,
+            selectedStepMeters,
             diagnostics);
     }
 
@@ -166,10 +175,43 @@ public static class RadiantExecutiveGenerator
             root);
     }
 
-    private static string RunDefaultSpiralEngine(
-        XDocument floorInput,
-        string floorName)
+    private static RadiantSpiralEngine ResolveSpiralEngine()
     {
+        string? configured =
+            Environment.GetEnvironmentVariable("TERMODEL_SPIRAL_ENGINE");
+
+        if (string.IsNullOrWhiteSpace(configured))
+            return RadiantSpiralEngine.GPT;
+
+        if (Enum.TryParse(
+                configured.Trim(),
+                ignoreCase: true,
+                out RadiantSpiralEngine engine))
+        {
+            return engine;
+        }
+
+        throw new InvalidDataException(
+            $"TERMODEL_SPIRAL_ENGINE non riconosciuto: '{configured}'. " +
+            "Valori ammessi: Vittorio, GPT, Diego.");
+    }
+
+    private static SpiralEngineOutput RunSpiralEngine(
+        XDocument floorInput,
+        string floorName,
+        RadiantSpiralEngine engine)
+    {
+        if (engine == RadiantSpiralEngine.Diego)
+        {
+            StrategiaDiegoResult result =
+                StrategiaDiegoEngine.Generate(floorInput);
+
+            return new SpiralEngineOutput(
+                result.Svg,
+                result.StepMeters,
+                result.Diagnostics);
+        }
+
         string tempRoot = Path.Combine(
             Path.GetTempPath(),
             "TermodelRadiantExecutive",
@@ -190,7 +232,11 @@ public static class RadiantExecutiveGenerator
                 try
                 {
                     Directory.SetCurrentDirectory(tempRoot);
-                    SpiralHeatingGPT.Program.AggiornaSpirali();
+
+                    if (engine == RadiantSpiralEngine.Vittorio)
+                        SpiralHeating.Program.AggiornaSpirali();
+                    else
+                        SpiralHeatingGPT.Program.AggiornaSpirali();
                 }
                 finally
                 {
@@ -201,12 +247,17 @@ public static class RadiantExecutiveGenerator
             if (!File.Exists(localeSvgPath))
             {
                 throw new InvalidDataException(
-                    $"Piano {floorName}: SpiraliGPT non ha prodotto locale.svg.");
+                    $"Piano {floorName}: {engine} non ha prodotto locale.svg.");
             }
 
-            return File.ReadAllText(
-                localeSvgPath,
-                Encoding.UTF8);
+            double step = engine == RadiantSpiralEngine.Vittorio
+                ? SpiralHeating.Program.PassoTubi
+                : SpiralHeatingGPT.Program.PassoTubi;
+
+            return new SpiralEngineOutput(
+                File.ReadAllText(localeSvgPath, Encoding.UTF8),
+                step,
+                Array.Empty<string>());
         }
         catch (InvalidDataException)
         {
@@ -215,7 +266,7 @@ public static class RadiantExecutiveGenerator
         catch (Exception exception)
         {
             throw new InvalidDataException(
-                $"Piano {floorName}: generazione spirali non completata: {exception.Message}",
+                $"Piano {floorName}: generazione spirali {engine} non completata: {exception.Message}",
                 exception);
         }
         finally
@@ -469,6 +520,20 @@ public static class RadiantExecutiveGenerator
     private static int NormalizeColor(int color) =>
         color is >= 1 and <= 255 ? color : 7;
 }
+
+
+internal enum RadiantSpiralEngine
+{
+    Vittorio,
+    GPT,
+    Diego
+}
+
+internal sealed record SpiralEngineOutput(
+    string Svg,
+    double StepMeters,
+    IReadOnlyList<string> Diagnostics);
+
 
 public sealed record RadiantExecutiveArtifacts(
     byte[] Svg,
