@@ -18,12 +18,40 @@ Commit incarico:
 - `885f375cb92dee96e8764af051b9d798159cc6f3`
 
 ## F1 — Audit finale Vittorio/GPT e specifica code-ready
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO**
 
-Obiettivo:
-- confrontare i sorgenti paralleli Vittorio/GPT rilevanti per generazione,
-  offset, raccordi, ingresso e chiusura;
-- fissare ciò che StrategiaDiego riusa come principio e ciò che deve differire.
+Sorgenti esaminati:
+- `SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/Program.cs`;
+- `.../Spiralgenerator.cs`;
+- `.../ChiudiSpirale.cs`;
+- `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/Program.cs`;
+- `.../Spiralgenerator.cs`;
+- `.../ChiudiSpirale.cs`;
+- `SorgentiTermodel/Library/Impianti/Pannelli/IoPannelli.cs`.
+
+Conclusioni:
+- Desktop possiede già il selettore `Vittorio|GPT`, con GPT default;
+- Vittorio genera anelli successivi mediante offset con normali/bisettrici,
+  aggancio al segmento dell'offset e chiusura separata;
+- GPT mantiene lo stesso contratto `locale.xml -> locale.svg`, ma usa offset
+  robusti NetTopologySuite, conserva più candidati di raccordo, controlla
+  strettoie/intersezioni e costruisce il ritorno in modo più esplicito;
+- StrategiaDiego non deve essere una variante interna di GPT: deve essere un
+  terzo motore headless con proprio albero decisionale e proprie metriche;
+- il punto comune da riusare è il **contratto geometrico**, non l'euristica di
+  scelta: input locale/perimetro/tubi, output mandata+ritorno e diagnostica;
+- la geometria offset mitrata di GPT è il riferimento preferibile per la
+  robustezza numerica, mentre la semantica Diego resta quella consolidata nelle
+  LG-001..LG-035;
+- il Service oggi incorpora solo copie temporanee GPT; per rendere realmente
+  selezionabile Vittorio senza modificare la Library, la sua implementazione
+  Desktop verrà copiata byte-identical nel Core e tracciata in
+  `CopiedFromTermodel/TERMODEL-SYNC.md` finché non esisterà un package/core
+  condiviso stabile.
+
+Esito:
+- audit sufficiente per passare all'implementazione;
+- nessuna modifica ai sorgenti Desktop Vittorio/GPT.
 
 ## F2 — Implementazione e dispatcher Vittorio|GPT|Diego
 Stato: **COMMISSIONATO**
