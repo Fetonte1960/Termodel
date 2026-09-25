@@ -294,17 +294,37 @@ internal static class StrategiaDiegoEngine
             List<GeoSegment> constraints =
                 CombineConstraints(architecture, fixedPath, currentPath);
 
-            var directions = new List<(string Name, DVector Direction, string? ExcludedFrontId)>
+            GeoSegment? sequentialFront =
+                FindSequenceSuccessor(node.Front, constraints);
+
+            var directions = new List<(
+                string Name,
+                DVector Direction,
+                string? ExcludedFrontId,
+                string? RequiredFrontId)>
             {
-                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id)
+                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null)
             };
 
             DVector parallel = node.Front.Direction.Normalize();
-            directions.Add(("PARALLELA_A", parallel, null));
-            directions.Add(("PARALLELA_B", -parallel, null));
+            string? requiredSequentialFrontId = sequentialFront?.Id;
+            directions.Add((
+                "PARALLELA_A",
+                parallel,
+                null,
+                requiredSequentialFrontId));
+            directions.Add((
+                "PARALLELA_B",
+                -parallel,
+                null,
+                requiredSequentialFrontId));
 
             var children = new List<SearchNode>();
-            foreach ((string _, DVector direction, string? excludedFront) in directions)
+            foreach ((
+                string _,
+                DVector direction,
+                string? excludedFront,
+                string? requiredFront) in directions)
             {
                 ExtensionResult? extension = TryExtend(
                     locale,
@@ -314,6 +334,7 @@ internal static class StrategiaDiegoEngine
                     constraints,
                     node.Segment,
                     excludedFront,
+                    requiredFront,
                     step,
                     allowStartOnBoundary: false);
 
@@ -410,6 +431,7 @@ internal static class StrategiaDiegoEngine
         IReadOnlyList<GeoSegment> constraints,
         GeoSegment? previousSegment,
         string? excludedFrontId,
+        string? requiredFrontId,
         double step,
         bool allowStartOnBoundary)
     {
@@ -421,6 +443,12 @@ internal static class StrategiaDiegoEngine
 
         foreach (GeoSegment reference in constraints)
         {
+            if (requiredFrontId is not null &&
+                !reference.Id.Equals(requiredFrontId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             if (excludedFrontId is not null &&
                 reference.Id.Equals(excludedFrontId, StringComparison.Ordinal))
             {
@@ -869,6 +897,29 @@ internal static class StrategiaDiegoEngine
         result.AddRange(fixedPath);
         result.AddRange(currentPath);
         return result;
+    }
+
+    private static GeoSegment? FindSequenceSuccessor(
+        GeoSegment front,
+        IReadOnlyList<GeoSegment> constraints)
+    {
+        if (front.Family == GeoFamily.Architecture ||
+            front.SequenceIndex < 0)
+        {
+            return null;
+        }
+
+        int nextIndex = front.SequenceIndex + 1;
+        foreach (GeoSegment candidate in constraints)
+        {
+            if (candidate.Family == front.Family &&
+                candidate.SequenceIndex == nextIndex)
+            {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     private static List<GeoSegment> ReconstructSegments(SearchNode node)
