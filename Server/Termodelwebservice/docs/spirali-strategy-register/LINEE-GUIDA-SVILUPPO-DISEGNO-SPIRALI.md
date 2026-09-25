@@ -2978,6 +2978,97 @@ LG-026 non stabilisce ancora:
 Principio documentale consolidato durante l'audit pre-sviluppo. La costruzione
 della spirale di ritorno dalla propria origine non è ancora implementata.
 
+
+---
+
+## LG-027 — Mandata e ritorno usano la stessa strategia di nodo
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+La costruzione della spirale di ritorno usa la **stessa strategia di nodo**
+della spirale di mandata.
+
+Le due costruzioni differiscono per:
+
+- origine geometrica;
+- famiglia/colore del tubo;
+- geometria già presente nello stato;
+
+ma non per il meccanismo con cui vengono generate le alternative di ciascun
+nodo.
+
+### Regola
+
+Per mandata e ritorno, a ogni nodo vengono considerate le stesse categorie di
+scelta:
+
+```text
+1. PROSEGUI_DRITTO
+2. PARALLELA_VERSO_A
+3. PARALLELA_VERSO_B
+```
+
+con le stesse regole generali già consolidate:
+
+- direzione di provenienza esplicita;
+- linea frontale di arresto;
+- troncamento alla distanza di rispetto;
+- riferimento di parallelismo determinato dalla linea che ha troncato il
+  tratto precedente;
+- entrambi i versi della nuova parallela;
+- nessuna potatura predittiva;
+- terminale quando nessuna alternativa produce un `TrattoPossibile`.
+
+### Commento tecnico
+
+Il comportamento geometrico resta quindi simmetrico a livello di algoritmo.
+
+Le differenze emergono automaticamente dalla struttura di contenimento:
+
+```text
+nuovo tratto mandata:
+  stessa famiglia -> 2p
+  ritorno         -> p
+
+nuovo tratto ritorno:
+  stessa famiglia -> 2p
+  mandata         -> p
+```
+
+Non serve quindi introdurre un secondo algoritmo decisionale specifico per il
+ritorno.
+
+### Relazione con LG-026
+
+LG-026 stabilisce che il ritorno parte dal proprio tubo di collegamento.
+
+LG-027 stabilisce che, una volta definita tale origine, lo sviluppo successivo
+usa la stessa logica della mandata.
+
+### Vincoli per la futura implementazione
+
+- la logica di generazione delle scelte di nodo deve essere condivisibile fra
+  mandata e ritorno;
+- il tipo/famiglia del tubo corrente deve essere un parametro dello stato;
+- le distanze di rispetto devono essere calcolate in funzione della famiglia
+  corrente, non mediante due algoritmi separati;
+- eventuali future eccezioni specifiche del ritorno dovranno essere dichiarate
+  esplicitamente da una nuova linea guida.
+
+### Criterio futuro di verifica
+
+Uno stesso stato geometrico equivalente, scambiando coerentemente i ruoli
+mandata/ritorno, deve produrre la stessa struttura di scelte di nodo, salvo le
+differenze di distanza derivanti dalla famiglia delle linee presenti.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. La logica
+condivisa mandata/ritorno non è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -2996,7 +3087,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-027`, `LG-028`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-028`, `LG-029`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
