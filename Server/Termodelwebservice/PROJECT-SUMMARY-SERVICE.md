@@ -72,34 +72,61 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-25 — Implementazione, attivazione e benchmark StrategiaDiego
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
-Commissionato:
-- completare l'audit pre-sviluppo confrontando i sorgenti paralleli Vittorio e GPT e registrare le conclusioni operative;
-- implementare nel Service/Core una strategia selezionabile `Diego`, mantenendo disponibili e non modificando semanticamente le alternative `Vittorio` e `GPT`;
-- introdurre una selezione esplicita del motore compatibile con `Vittorio | GPT | Diego`, preservando il comportamento corrente se Diego non è selezionata;
-- compilare realmente la soluzione tramite GitHub Actions;
-- creare un progetto/caso di prova quadrato `4 x 4 m` con un unico tubo di collegamento entrante;
-- eseguire una batteria di test GitHub Actions sul caso di prova per verificare correttezza di base, crescita dell'albero, tempo di calcolo e sostenibilità computazionale;
-- applicare integralmente il protocollo `.github/TERMODEL-ACTION-NOTIFICATIONS.md`;
-- registrare ogni fase in `docs/STRATEGIADIEGO-DEVELOPMENT-REGISTER.md` con stato indipendente, commit e risultato reale, così il lavoro è recuperabile dopo un'interruzione della chat.
+Risultato consolidato:
+- completato audit comparativo sui sorgenti Vittorio/GPT e specifica code-ready;
+- implementato nel Core il terzo motore headless `StrategiaDiegoEngine`;
+- mantenute disponibili le alternative `Vittorio | GPT | Diego`;
+- selezione Service tramite `TERMODEL_SPIRAL_ENGINE`; default invariato a `GPT`;
+- Vittorio copiato temporaneamente byte-identical nel Core e tracciato in
+  `CopiedFromTermodel/TERMODEL-SYNC.md`; Library Desktop non modificata;
+- aggiunta fixture `tests/fixtures/StrategiaDiegoSquare4x4.locale.xml`
+  (quadrato 4x4 m, unico tubo entrante);
+- aggiunto benchmark ripetuto e integrato nel workflow GitHub Actions;
+- completato allineamento LG-033..LG-035: i rami paralleli che inseguono un
+  tratto precedente usano il successore `S_k+1` tramite `SequenceIndex`;
+  `PROSEGUI_DRITTO` resta alternativa separata;
+- nessuna modifica a frontend o `definizionedati.json`.
 
 Fasi:
-- F0 — registrazione incarico e registro di sviluppo: COMMISSIONATO;
-- F1 — audit finale Vittorio/GPT e specifica code-ready: ESEGUITO (`a8d19a2d9cb8bd014b4fecd9607b383a839a86d8`);
-- F2 — implementazione/dispatcher `Vittorio|GPT|Diego`: COMMISSIONATO;
-- F3 — build reale della soluzione: COMMISSIONATO;
-- F4 — fixture quadrato 4x4 m / un ingresso: COMMISSIONATO;
-- F5 — batteria benchmark GitHub Actions e metriche: COMMISSIONATO;
-- F6 — consolidamento Summary e stato finale: COMMISSIONATO.
+- F0 — registrazione incarico e registro di sviluppo: ESEGUITO;
+- F1 — audit finale Vittorio/GPT e specifica code-ready: ESEGUITO;
+- F1B — audit implementazione vs LG-033..LG-035: ESEGUITO;
+- F2 — implementazione/dispatcher `Vittorio|GPT|Diego`: ESEGUITO;
+- F2B — allineamento inseguimento sequenziale `S_k -> S_k+1`: ESEGUITO
+  (`90f76ff47e4822b00d7ba3d57b524017e377f092`);
+- F3 — build reale della soluzione: ESEGUITO;
+- F4 — fixture quadrato 4x4 m / un ingresso: ESEGUITO;
+- F5 — batteria benchmark GitHub Actions e metriche: ESEGUITO
+  (`64177c1651ef36dfddd6eb92c1973ea7c16691a5`);
+- F6 — consolidamento Summary e stato finale: ESEGUITO.
 
-Criteri di completamento:
-- nessuna modifica a `definizionedati.json` o frontend;
-- Vittorio/GPT restano disponibili e separati;
-- Diego è selezionabile e non sostituisce silenziosamente il default corrente;
-- build e test vengono dichiarati riusciti solo sulla base di una GitHub Action reale;
-- metriche di benchmark vengono conservate come artifact/log o documento di test;
-- ogni fase conclusa viene marcata `ESEGUITO` nel registro prima di procedere alla successiva.
+Verifica reale finale:
+- GitHub Actions `TermodelService Build` run `36096201896`, build #453;
+- job build `107949117086`: SUCCESS;
+- Commit Status `Termodel/job=SUCCESS`;
+- notifica telefono finale: SUCCESS;
+- benchmark: 20 iterazioni sulla fixture 4x4;
+- nodi totali massimi: **104**;
+- terminali preliminarmente accettati: **2**;
+- p95: **22 ms**;
+- max memory delta: **368.800 byte**;
+- output deterministico verificato;
+- budget benchmark rispettati (50.000 nodi, p95 2.000 ms, memoria 128 MiB).
+
+Baseline precedente all'allineamento sequenziale:
+- run #450: 1176 nodi, p95 98 ms, 7.408.856 byte, 2 terminali;
+- il passaggio a `S_k -> S_k+1` riduce fortemente lo spazio di ricerca senza
+  introdurre potatura predittiva.
+
+Valutazione:
+- StrategiaDiego è **implementata, compilata, eseguita e testata** sul caso
+  campione 4x4/un ingresso;
+- la sostenibilità è verificata per questo caso, non ancora generalizzabile a
+  geometrie complesse;
+- prossimi regression necessari: concavità, strettoie/imbottigliamenti,
+  più ingressi/circuiti e più locali.
 
 
 
