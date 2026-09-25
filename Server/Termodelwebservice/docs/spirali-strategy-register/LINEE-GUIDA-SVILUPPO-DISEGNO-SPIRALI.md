@@ -1524,101 +1524,43 @@ ritorno non è ancora implementata in StrategiaDiego.
 ---
 
 
-## LG-013 — Primo tratto nella direzione del tubo di collegamento
+## LG-013 — Raccordo tecnico di ingresso e prima traccia utile
 
-**Stato:** CONSOLIDATA — RETTIFICATA 25/09/2026  
-**Origine:** decisione utente del 25/09/2026; rettifica durante audit pre-sviluppo
+**Stato:** CONSOLIDATA — RETTIFICATA 26/09/2026  
+**Origine:** decisione utente del 25/09/2026; rettifica utente del 26/09/2026
 
 ### Proposta
 
-Il **primo tratto** della spirale, sia di mandata sia di ritorno, non ha
-inclinazione libera.
+L'ingresso nella spirale contiene due oggetti distinti:
 
-La sua direzione coincide con la direzione del rispettivo **tubo di
-collegamento entrante**.
+1. il **raccordo tecnico di ingresso**, che prolunga il tubo di collegamento
+   nella sua direzione entrante;
+2. la **prima traccia utile della spirale**, che è una normale evoluzione e
+   non possiede regole speciali rispetto alle evoluzioni successive.
 
-Il suo punto finale interno è inizialmente **libero** e viene determinato dalla
-prima condizione geometrica di arresto utile secondo le regole di tracciamento.
+Il raccordo tecnico non è una evoluzione della spirale.
 
 ### Regola
 
-Per entrambe le famiglie:
+La direzione del raccordo coincide con quella del rispettivo tubo di
+collegamento:
 
 ```text
-DirezionePrimoTrattoMandata = DirezioneTuboCollegamentoMandata
-DirezionePrimoTrattoRitorno = DirezioneTuboCollegamentoRitorno
+DirezioneRaccordoMandata = DirezioneTuboCollegamentoMandata
+DirezioneRaccordoRitorno = DirezioneTuboCollegamentoRitorno
 ```
 
-L'estremo finale del primo tratto non è fissato a priori:
+Il punto finale del raccordo è il punto nel quale viene raggiunta la prima
+traccia utile, la cui posizione deriva dalle **normali regole di distanza**.
+
+Per il corridoio di ingresso ordinario:
 
 ```text
-PuntoFinalePrimoTratto = libero
+mandata rispetto alla parete = p/2
+ritorno rispetto alla mandata = p
 ```
 
-Il primo tratto viene quindi prolungato nella direzione del tubo entrante fino
-alla linea frontale che ne determina il troncamento alla distanza di rispetto
-applicabile.
-
-### Commento tecnico
-
-La precedente formulazione di LG-013, che ammetteva una **inclinazione libera**
-del primo tratto, è superata.
-
-L'ingresso nella spirale è una prosecuzione direzionale del tubo di
-collegamento. La libertà iniziale riguarda il **punto finale**, non la
-direzione.
-
-Questo rende simmetrici mandata e ritorno e fornisce una condizione iniziale
-deterministica alla costruzione dell'albero.
-
-### Relazione con LG-016 e LG-017
-
-Il primo tratto può essere visto come una prosecuzione nella
-`DirezioneProvenienza`, coerente con il principio di `PROSEGUI_DRITTO`.
-
-La sua estensione viene determinata applicando LG-017:
-
-```text
-direzione nota
--> ricerca prima linea frontale
--> troncamento alla distanza di rispetto
--> determinazione del punto finale
-```
-
-### Vincoli per la futura implementazione
-
-- la direzione del tubo di collegamento entrante deve essere nota e orientata;
-- la stessa regola vale per mandata e ritorno;
-- il punto finale del primo tratto non deve essere preassegnato;
-- il primo tratto deve rispettare intersezioni, distanze e tutte le altre
-  regole di `TrattoPossibile`;
-- la diagnostica deve distinguere chiaramente:
-  `DirezionePrimoTratto` e `PuntoFinalePrimoTratto`.
-
-### Rettifica 26/09/2026 — nessuna "prima evoluzione" speciale
-
-La formulazione precedente che attribuiva alla **prima evoluzione di mandata**
-una quota speciale di `1,5p` è **superata**.
-
-Occorre distinguere il **raccordo tecnico d'ingresso** dalle evoluzioni vere e
-proprie della spirale.
-
-Il raccordo tecnico prolunga il tubo di collegamento nella sua direzione
-entrante fino alla traccia utile successiva. Non è una evoluzione e non
-introduce una nuova legge di distanza.
-
-Le evoluzioni della spirale sono tutte soggette alle medesime regole
-geometriche, indipendentemente dal fatto che siano la prima, la seconda o una
-successiva.
-
-Le quote iniziali derivano quindi dalle regole generali già consolidate:
-
-```text
-mandata rispetto alla parete architettonica = p/2
-ritorno rispetto alla mandata               = p
-```
-
-Nel corridoio d'ingresso ordinario ne consegue:
+e quindi:
 
 ```text
 parete -> p/2 -> mandata rossa -> p -> ritorno blu
@@ -1631,42 +1573,69 @@ distanza mandata-ritorno   = p
 Con `p = 0,30 m`:
 
 ```text
-mandata = 0,15 m dalla parete
-ritorno = 0,45 m dalla parete
-distanza fra i due = 0,30 m
+mandata = 0,15 m
+ritorno = 0,45 m
+separazione = 0,30 m
 ```
 
-I valori `0,5p` e `1,5p` non definiscono quindi due classi speciali di
-"prima evoluzione": sono il risultato dell'applicazione delle normali distanze
-alla geometria presente.
+### Commento tecnico
 
-Quando qualunque tratto, iniziale o successivo, incontra frontalmente una
-parete architettonica, continua ad applicarsi LG-006:
+La formulazione precedente che parlava di "prima evoluzione" a quota speciale
+è superata.
+
+Non è l'ordine dell'evoluzione a determinare la distanza. La distanza nasce
+dalla famiglia della linea di riferimento secondo LG-006.
+
+Il raccordo tecnico ha soltanto il compito di collegare l'estremo del tubo
+entrante alla traccia utile così determinata. Una volta raggiunta tale traccia,
+l'albero StrategiaDiego applica le normali regole di nodo alle due direzioni
+parallele possibili e alle evoluzioni successive.
+
+Il raccordo tecnico non deve essere trattato come `PROSEGUI_DRITTO` della
+spirale: è una connessione preliminare alla maglia delle evoluzioni.
+
+### Relazione con LG-006, LG-017, LG-023 e LG-037
+
+- LG-006 determina le distanze fra famiglie geometriche;
+- LG-017 governa l'arresto frontale dei **tratti di evoluzione**;
+- LG-023 determina il riferimento delle evoluzioni successive;
+- LG-037 stabilisce che tutte le evoluzioni sono soggette alle stesse regole.
+
+La quota del raccordo non deve essere trasferita come distanza di arresto da
+una parete frontale successiva. Quando una evoluzione incontra architettura,
+la distanza resta `p/2`.
+
+### Vincoli per l'implementazione
+
+- il raccordo deve conservare la direzione del tubo entrante;
+- il raccordo non è conteggiato concettualmente come evoluzione speciale;
+- la quota della prima traccia utile deve essere derivata dalla matrice comune
+  delle distanze e non da costanti motivate dal numero dell'evoluzione;
+- per mandata su parete: `p/2`;
+- per ritorno rispetto alla mandata: `p`, quindi nel corridoio ordinario
+  `1,5p` dalla parete;
+- dopo il raccordo, le evoluzioni usano le stesse regole delle successive;
+- intersezioni e impossibilità geometriche restano affidate ai normali
+  controlli dell'albero.
+
+### Criterio di verifica
+
+Con ingresso ortogonale e `p=0,30 m`:
 
 ```text
-distanza minima tubo-parete = p/2
+raccordo mandata -> raggiunge traccia a 0,15 m dalla parete
+raccordo ritorno -> raggiunge traccia a 0,45 m dalla parete
+tracce mandata-ritorno -> distanza 0,30 m
 ```
 
-Il raccordo d'ingresso deve essere considerato soltanto il collegamento fra il
-tubo entrante e la prima traccia utile così determinata. Dopo tale raccordo
-l'albero usa senza eccezioni le normali regole di nodo, frontale, troncamento,
-parallelismo e distanza.
-
-### Criterio futuro di verifica
-
-Un caso di regression deve verificare che:
-
-```text
-primo tratto non allineato al tubo entrante -> non ammesso
-primo tratto allineato al tubo entrante     -> candidato valido
-prima svolta                                -> conserva offset iniziale
-punto finale                                -> determinato dal troncamento
-```
+La prima traccia utile e una traccia successiva devono essere valutate con la
+stessa funzione di distanza e con le stesse regole di validità.
 
 ### Stato implementativo corrente
 
-Principio documentale rettificato durante l'audit pre-sviluppo. Nessuna logica
-specifica della futura StrategiaDiego è ancora implementata.
+Recepita in `StrategiaDiegoEngine.cs` il 26/09/2026. La modifica è pubblicata
+su Git ma, per richiesta esplicita dell'utente, non viene dichiarata compilata,
+eseguita o verificata visualmente in questo incarico.
 
 ---
 
@@ -2279,10 +2248,11 @@ necessarie per iniziare le spirali (LG-015).
 Per ogni ingresso vengono costruiti i possibili sviluppi della mandata
 secondo le regole di nodo già definite:
 
+- raccordo tecnico di ingresso secondo LG-013;
+- prima traccia utile determinata dalle distanze comuni;
 - tratti possibili;
 - distanze minime;
 - scelte di nodo;
-- primo tratto libero;
 - prosecuzione dritta;
 - linea frontale e troncamento.
 
@@ -2611,10 +2581,10 @@ enumerazione completa non è ancora implementata.
 ---
 
 
-## LG-022 — Direzione di provenienza ed estremo libero del primo tratto
+## LG-022 — Direzione di provenienza e ruolo del raccordo di ingresso
 
-**Stato:** CONSOLIDATA — RETTIFICATA 25/09/2026  
-**Origine:** audit pre-sviluppo del 25/09/2026
+**Stato:** CONSOLIDATA — RETTIFICATA 26/09/2026  
+**Origine:** audit pre-sviluppo del 25/09/2026; rettifica utente del 26/09/2026
 
 ### Proposta
 
@@ -2627,53 +2597,55 @@ DirezioneProvenienza
 che rappresenta la direzione orientata con cui il percorso corrente arriva al
 nodo.
 
-Nella condizione iniziale, sia per mandata sia per ritorno, il **primo tratto**
-mantiene la stessa direzione del rispettivo tubo di collegamento entrante.
-
-Il suo punto finale interno è invece **libero** e viene determinato soltanto
-dalla successiva condizione geometrica di arresto.
+Nella condizione iniziale la direzione del tubo di collegamento determina la
+direzione del **raccordo tecnico di ingresso**. Il raccordo non è la prima
+evoluzione.
 
 ### Regola
 
 ```text
-DirezionePrimoTratto = DirezioneProvenienza
-PuntoFinalePrimoTratto = non ancora fissato
+DirezioneRaccordoIngresso = DirezioneTuboCollegamento
 ```
 
-Il punto finale viene determinato quando la semiretta orientata incontra la
-prima linea frontale valida e il tratto viene troncato alla distanza di rispetto
-applicabile.
+Il raccordo termina quando raggiunge la prima traccia utile determinata dalle
+regole di distanza LG-006/LG-013.
+
+Da quel punto in poi la `DirezioneProvenienza` appartiene ai normali nodi
+dell'albero e governa `PROSEGUI_DRITTO` secondo LG-016.
 
 ### Commento tecnico
 
-Questa regola separa nettamente:
+La precedente formulazione:
 
-1. **direzione**, già determinata dal tubo di collegamento;
-2. **lunghezza/punto finale**, ancora da determinare geometricamente.
+```text
+PuntoFinalePrimoTratto = libero
+```
 
-Non è quindi necessario scegliere una nuova inclinazione per entrare nella
-spirale.
+è superata per l'ingresso.
 
-### Relazione con LG-013, LG-016 e LG-017
+Essa confondeva il raccordo di collegamento con una evoluzione della spirale.
+Il raccordo ha invece un compito geometrico preciso: raggiungere la prima
+traccia utile collocata dalle stesse distanze applicate a tutte le evoluzioni.
 
-- LG-013 stabilisce che il primo tratto prosegue nella direzione del tubo
-  entrante;
-- LG-016 descrive la prosecuzione nella direzione di provenienza;
-- LG-017 determina il punto finale tramite linea frontale e troncamento.
+LG-017 resta integralmente valida per i tratti di evoluzione: scelta una
+direzione di un nodo, la semiretta cerca la linea frontale e il segmento reale
+viene troncato alla distanza di rispetto.
 
-### Vincoli per la futura implementazione
+### Vincoli per l'implementazione
 
-- `DirezioneProvenienza` deve essere un dato orientato;
-- mandata e ritorno seguono la stessa regola iniziale;
-- il primo tratto deve poter esistere con punto finale non ancora determinato;
-- il punto finale viene materializzato solo dopo l'individuazione della linea
-  frontale e del relativo troncamento;
-- la diagnostica deve distinguere direzione nota ed estremo ancora libero.
+- `DirezioneProvenienza` resta un dato orientato dei nodi;
+- mandata e ritorno usano la direzione dei rispettivi tubi entranti per il
+  raccordo tecnico;
+- il raccordo non deve essere confuso con `PROSEGUI_DRITTO`;
+- il suo estremo è determinato dalla posizione della prima traccia utile;
+- la prima traccia utile non possiede distanze proprie e segue LG-006/LG-037;
+- la diagnostica deve distinguere `ENTRY-CONNECTOR` dai normali segmenti
+  dell'evoluzione.
 
 ### Stato implementativo corrente
 
-Principio documentale rettificato durante l'audit pre-sviluppo. La gestione
-runtime non è ancora implementata.
+Rettifica recepita nel sorgente il 26/09/2026; non compilata né eseguita in
+questo incarico per esplicita richiesta dell'utente.
 
 ---
 
