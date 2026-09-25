@@ -70,6 +70,23 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Pubblicazione Render ultima build riuscita
+Stato: COMMISSIONATO
+
+Commissionato:
+- pubblicare su Render la revisione più recente di TermodelService che risulta compilata e verificata con successo su GitHub Actions;
+- revisione sorgente individuata prima del deploy: `1187212c5dfef1430a4ab66b366bc2a5a67e9c2d`, Commit Status `Termodel/job=success`, run `36161472437`;
+- non modificare algoritmi, frontend, Library Desktop o `definizionedati.json` per questo incarico;
+- usare il normale auto-deploy Render collegato a `main` e verificare l'esito disponibile;
+- al termine aggiornare questa voce con l'esito reale e chiudere la Issue #1 come `Completed` se riuscito, `Not planned` se fallito.
+
+Criteri di completamento:
+- commit di deploy su `main` senza modifiche funzionali al motore;
+- GitHub Actions SUCCESS sul commit pubblicato;
+- deploy Render avviato dalla nuova revisione e, se interrogabile dalla sessione, `/health` coerente con il commit runtime;
+- Issue #1 aggiornata e chiusa con esito coerente.
+
+
 ### INCARICO 2026-09-25 — Correzione selezione closure StrategiaDiego sul quadrato
 Stato: COMMISSIONATO
 
