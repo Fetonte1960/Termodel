@@ -1098,7 +1098,7 @@ internal static class StrategiaDiegoEngine
         builder.AppendLine(
             string.Create(
                 CultureInfo.InvariantCulture,
-                $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{minX} {minY} {maxX - minX} {maxY - minY}\" data-termodel-engine=\"Diego\" data-diego-nodes=\"{metrics.TotalNodes}\" data-diego-elapsed-ms=\"{metrics.ElapsedMilliseconds}\">"));
+                $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{minX} {minY} {maxX - minX} {maxY - minY}\" data-termodel-engine=\"Diego\" data-diego-nodes=\"{metrics.TotalNodes}\">"));
 
         foreach (LocaleSolution solution in solutions)
         {
