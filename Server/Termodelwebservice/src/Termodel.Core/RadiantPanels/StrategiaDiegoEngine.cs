@@ -154,11 +154,37 @@ internal static class StrategiaDiegoEngine
 
         IReadOnlyList<GeoSegment> architecture =
             BuildArchitecture(locale);
-        // Modificato da Codex per realizzare: la rete di mandata fornita
-        // dall'utente resta geometria vincolante durante il tracciamento; il
-        // collegamento assegnato al locale definisce invece il proprio varco.
+        // La rete di mandata fornita dall'utente resta geometria vincolante
+        // durante il tracciamento; il collegamento assegnato al locale
+        // definisce invece il proprio varco.
         IReadOnlyList<GeoSegment> connectionConstraints =
             BuildConnectionConstraints(connections, connection.Id);
+
+        // LG-024/LG-028: la mandata va esplorata senza potatura predittiva
+        // basata sul futuro ritorno. Ogni suo terminale viene poi proseguito
+        // con il proprio albero dei ritorni.
+        SearchTree supplyTree = BuildTree(
+            locale,
+            GeoFamily.Supply,
+            directed.EntryPoint,
+            directed.Direction,
+            architecture,
+            connectionConstraints,
+            Array.Empty<GeoSegment>(),
+            directed.EntryWall,
+            step * 1.5,
+            step,
+            counters,
+            countAsSupply: true);
+
+        LogDiego(
+            $"LOCALE {locale.Id} SUPPLY tree terminals={supplyTree.Terminals.Count}");
+
+        if (supplyTree.Terminals.Count == 0)
+        {
+            throw new InvalidDataException(
+                $"StrategiaDiego/{locale.Id}: nessun terminale mandata.");
+        }
 
         List<ReturnRoot> returnRoots = BuildReturnRoots(
             locale,
@@ -176,71 +202,14 @@ internal static class StrategiaDiegoEngine
         }
 
         CombinedCandidate? best = null;
-        int totalSupplyTerminals = 0;
 
-        // La configurazione terminale mandata/ritorno è nota prima della
-        // spirale (LG-015). Il primo tratto del ritorno è deterministico
-        // (LG-013) e deve quindi entrare nella struttura di contenimento
-        // mentre viene esplorata la mandata. In precedenza la mandata poteva
-        // chiudere il corridoio del ritorno; il quadrato 4x4 mostrava una
-        // distanza di 0,10 m dove LG-006 ne richiede 0,30 m.
-        foreach (ReturnRoot returnRoot in returnRoots)
+        foreach (SearchNode supplyTerminal in supplyTree.Terminals)
         {
-            List<GeoSegment> seedConstraints =
-                CombineConstraints(
-                    architecture,
-                    connectionConstraints,
-                    Array.Empty<GeoSegment>(),
-                    Array.Empty<GeoSegment>());
+            List<GeoSegment> supplySegments =
+                ReconstructSegments(supplyTerminal);
 
-            ExtensionResult? returnSeed = TryBuildInitialSegment(
-                locale,
-                GeoFamily.Return,
-                returnRoot.EntryPoint,
-                directed.Direction,
-                directed.EntryWall,
-                step / 2.0,
-                seedConstraints,
-                step);
-
-            if (returnSeed is null)
+            foreach (ReturnRoot returnRoot in returnRoots)
             {
-                LogDiego(
-                    $"LOCALE {locale.Id} CONFIG {returnRoot.Side} REJECT return-seed");
-                continue;
-            }
-
-            GeoSegment reservedReturnSeed =
-                returnSeed.Segment with { SequenceIndex = 0 };
-
-            LogDiego(
-                $"LOCALE {locale.Id} CONFIG {returnRoot.Side} " +
-                $"reserveReturn={Fmt(reservedReturnSeed.A)}->{Fmt(reservedReturnSeed.B)}");
-
-            SearchTree supplyTree = BuildTree(
-                locale,
-                GeoFamily.Supply,
-                directed.EntryPoint,
-                directed.Direction,
-                architecture,
-                connectionConstraints,
-                new[] { reservedReturnSeed },
-                directed.EntryWall,
-                step * 1.5,
-                step,
-                counters,
-                countAsSupply: true);
-
-            totalSupplyTerminals += supplyTree.Terminals.Count;
-            LogDiego(
-                $"LOCALE {locale.Id} SUPPLY config={returnRoot.Side} " +
-                $"terminals={supplyTree.Terminals.Count}");
-
-            foreach (SearchNode supplyTerminal in supplyTree.Terminals)
-            {
-                List<GeoSegment> supplySegments =
-                    ReconstructSegments(supplyTerminal);
-
                 SearchTree returnTree = BuildTree(
                     locale,
                     GeoFamily.Return,
@@ -306,12 +275,6 @@ internal static class StrategiaDiegoEngine
                     }
                 }
             }
-        }
-
-        if (totalSupplyTerminals == 0)
-        {
-            throw new InvalidDataException(
-                $"StrategiaDiego/{locale.Id}: nessun terminale mandata compatibile col ritorno.");
         }
 
         if (best is null)
