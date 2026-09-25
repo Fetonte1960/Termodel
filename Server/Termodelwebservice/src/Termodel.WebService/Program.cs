@@ -81,10 +81,17 @@ app.MapGet("/", () => Results.Ok(new
 }));
 
 // Funzione realizzata da Codex in autonomia
-app.MapGet("/health", () => Results.Ok(new
+app.MapGet("/health", () =>
 {
-    status = "ok"
-}));
+    string serviceCommit = ResolveServiceCommit();
+    return Results.Ok(new
+    {
+        status = "ok",
+        serviceCommit,
+        serviceCommitShort = ShortCommit(serviceCommit),
+        spiralEngine = RadiantExecutiveGenerator.GetSelectedSpiralEngineName()
+    });
+});
 
 // Funzione realizzata da Codex in autonomia
 app.MapGet("/api/model/capabilities", () => Results.Ok(CoreInformation.GetCapabilities()));
@@ -1535,3 +1542,24 @@ public sealed record DxfToSvgRequest(
     bool ConvertText = false,
     bool ExplodeBlocks = false,
     string? Profile = null);
+
+
+static string ResolveServiceCommit()
+{
+    return
+        Environment.GetEnvironmentVariable("RENDER_GIT_COMMIT")?.Trim()
+        ?? Environment.GetEnvironmentVariable("GITHUB_SHA")?.Trim()
+        ?? Environment.GetEnvironmentVariable("SOURCE_VERSION")?.Trim()
+        ?? string.Empty;
+}
+
+static string ShortCommit(string commit)
+{
+    if (string.IsNullOrWhiteSpace(commit))
+        return string.Empty;
+
+    string trimmed = commit.Trim();
+    return trimmed.Length <= 8
+        ? trimmed
+        : trimmed[..8];
+}
