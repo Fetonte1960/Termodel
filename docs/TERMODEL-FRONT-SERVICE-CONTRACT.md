@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.24**  
+Versione documento: **1.25**  
 Aggiornamento: **25 settembre 2026**  
 Stato: **progetti autorevoli locali nel frontend; Service Render dedicato a calcolo e artifact con workspace ricreabile per projectId; endpoint legacy open/save/lock mantenuti compatibili; conversione DXF→SVG nel Core/Service; Pianta pulita SVG persistente e projectId-scoped; feedback utenti verso GitHub Issues, archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati, snapshot diagnostico Render→GitHub e notifica GitHub Actions/telefono implementati**
 
@@ -66,6 +66,35 @@ interno del Service.
 Il legacy `GET /api/model/clean-floor/{floorName}` resta compatibile, ma non
 deve essere usato dal frontend come riferimento stabile perché non è
 projectId-scoped.
+
+## 0.4 Decisione 2026-09-25 — identità runtime Service nel frontend
+
+`GET /health` resta l'endpoint leggero di disponibilità, ma espone anche
+l'identità del Service realmente in esecuzione:
+
+```json
+{
+  "status": "ok",
+  "serviceCommit": "<sha completo o stringa vuota>",
+  "serviceCommitShort": "<prime 8 cifre o stringa vuota>",
+  "spiralEngine": "Diego"
+}
+```
+
+Il commit runtime viene risolto, in ordine, da
+`RENDER_GIT_COMMIT -> GITHUB_SHA -> SOURCE_VERSION`. Il motore spirali
+viene invece letto dal resolver autorevole del Core; se
+`TERMODEL_SPIRAL_ENGINE` non è configurata il default corrente è `Diego`.
+
+Il frontend v1.18 usa questi dati per mostrare nella status bar:
+
+```text
+Server fc287c9b · Diego
+```
+
+In ambiente locale privo di identificatore commit usa `Server locale · ...`.
+Il testo non deve essere costruito da una versione hard-coded del frontend:
+deve rappresentare il Service realmente contattato.
 
 ## 1. Obiettivo dell'architettura
 
