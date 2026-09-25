@@ -272,11 +272,12 @@ try {
     throw "Banco prova appartamento: la pianta pulita deve mostrare almeno due contorni per rendere visibile lo spessore delle pareti."
   }
 
-  # Regression LG-013/LG-017: il primo tratto Diego non deve avere una
-  # lunghezza prefissata (prima era 1,5p = 0,45 m). Deve proseguire nella
-  # direzione del collegamento fino alla geometria frontale e fermarsi al
-  # distacco architettonico p/2. Sulla fixture immutabile corrente il primo
-  # gomito atteso cade a y=0,28 m (parete interna y=0,13 + p/2=0,15).
+  # Regression del primo giro mandata: l'ingresso porta la mandata a 1,5p
+  # dalla parete superiore; quando il percorso gira a destra deve conservare
+  # lo stesso offset anche rispetto alla parete destra. Prima della correzione
+  # il secondo tratto terminava a soli p/2 dalla parete destra (x=7,98148).
+  # Sulla fixture immutabile il punto corretto è x=7,68148:
+  # 8,13148 - 0,45 m.
   $supplyGroup = @($svgDocument.DocumentElement.ChildNodes | Where-Object {
     $_.NodeType -eq [System.Xml.XmlNodeType]::Element -and
     $_.GetAttribute("data-layer") -eq "Unico_PannelliMandata_Output"
@@ -294,8 +295,8 @@ try {
 
   $supplyPoints = @($supplyPolyline.GetAttribute("points") -split "\s+" |
     Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-  if ($supplyPoints.Count -lt 2) {
-    throw "Banco prova appartamento: mandata priva del primo tratto."
+  if ($supplyPoints.Count -lt 3) {
+    throw "Banco prova appartamento: mandata priva del primo cambio direzione."
   }
 
   function Parse-SvgPoint([string]$token) {
@@ -309,16 +310,18 @@ try {
 
   $p0 = Parse-SvgPoint $supplyPoints[0]
   $p1 = Parse-SvgPoint $supplyPoints[1]
-  $firstSegmentLength = [Math]::Sqrt(
+  $p2 = Parse-SvgPoint $supplyPoints[2]
+
+  $firstEntryLength = [Math]::Sqrt(
     [Math]::Pow($p1[0]-$p0[0],2) +
     [Math]::Pow($p1[1]-$p0[1],2))
+  if ([Math]::Abs($firstEntryLength - 0.45) -gt 0.02) {
+    throw "Banco prova appartamento: ingresso mandata inatteso ($firstEntryLength m), atteso circa 0,45 m."
+  }
+  if ([Math]::Abs($p2[0] - 7.68148) -gt 0.02) {
+    throw "Banco prova appartamento: primo tratto dopo la svolta termina a x=$($p2[0]) m; atteso circa 7,68148 m, cioe' 0,45 m dalla parete destra."
+  }
 
-  if ($firstSegmentLength -lt 2.0) {
-    throw "Banco prova appartamento: primo tratto Diego ancora preassegnato/corto ($firstSegmentLength m), violazione LG-013/LG-017."
-  }
-  if ([Math]::Abs($p1[1] - 0.28) -gt 0.02) {
-    throw "Banco prova appartamento: primo gomito mandata a y=$($p1[1]) m; atteso circa 0,28 m per arresto a p/2 dalla parete frontale."
-  }
 
   $generated = Invoke-RestMethod -Uri "$base/api/projects/$projectId/generated-files" -Method Get
   $generated | ConvertTo-Json -Depth 100 |
