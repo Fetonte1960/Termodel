@@ -1321,6 +1321,110 @@ LG-011 non stabilisce ancora:
 Principio documentale consolidato. L'albero di ritorno StrategiaDiego non è
 ancora implementato.
 
+
+---
+
+## LG-012 — Radice dell'albero di ritorno
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Per ogni tubo/nodo di mandata d'ingresso, l'algoritmo costruisce il **nodo
+radice dell'albero di ritorno** a una distanza di **0,50 m** dal nodo di
+mandata.
+
+Il vettore che unisce il nodo di mandata al nodo radice del ritorno deve essere
+**parallelo alla parete architettonica più vicina**.
+
+### Commento tecnico
+
+La posizione iniziale del ritorno non è quindi arbitraria e non viene ricavata
+da un offset globale rispetto agli assi del disegno.
+
+Per ogni ingresso la procedura geometrica è locale:
+
+1. si identifica il nodo di mandata di ingresso;
+2. si individua la parete architettonica più vicina;
+3. si costruisce una direzione parallela a tale parete;
+4. lungo tale direzione si colloca la radice del ritorno a 0,50 m dal nodo di
+   mandata;
+5. il verso concreto della traslazione deve essere coerente con il
+   `LatoRitorno` associato a quell'ingresso secondo LG-010.
+
+### Regola
+
+Siano:
+
+- `M` = nodo di mandata dell'ingresso;
+- `P` = parete architettonica più vicina a `M`;
+- `R0` = nodo radice dell'albero di ritorno.
+
+Deve valere:
+
+```text
+|M R0| = 0,50 m
+
+vettore(M -> R0) // P
+
+verso(M -> R0) coerente con LatoRitorno(M)
+```
+
+dove `//` indica parallelismo geometrico.
+
+### Relazione con LG-010 e LG-011
+
+LG-010 stabilisce che ogni ingresso possiede un proprio lato di ritorno.
+
+LG-011 stabilisce che l'albero di ritorno è costruito dall'algoritmo.
+
+LG-012 definisce la prima costruzione geometrica concreta dell'albero di
+ritorno: la posizione della sua radice rispetto al nodo di mandata.
+
+### Vincoli per la futura implementazione
+
+- la distanza 0,50 m deve essere misurata nelle unità geometriche reali del
+  modello;
+- la parete di riferimento deve essere selezionata fra le linee
+  architettoniche della struttura LG-004;
+- il parallelismo deve essere calcolato geometricamente;
+- il verso scelto deve rispettare il `LatoRitorno` del singolo ingresso;
+- ingressi differenti possono quindi produrre radici del ritorno su lati
+  differenti;
+- la parete più vicina e la radice ottenuta devono essere diagnosticabili.
+
+### Criterio futuro di verifica
+
+Per ogni ingresso devono poter essere verificati almeno:
+
+```text
+nodo mandata M
+parete architettonica più vicina P
+LatoRitorno
+nodo radice ritorno R0
+distanza(M,R0) = 0,50 m
+parallelismo(M->R0, P) = vero
+```
+
+Ruotando l'intera geometria del locale, la costruzione deve restare invariata
+dal punto di vista geometrico relativo.
+
+### Punti ancora da definire
+
+LG-012 non stabilisce ancora:
+
+- come risolvere il caso di due o più pareti equidistanti dal nodo di mandata;
+- quale punto o distanza dalla parete usare per definire 'parete più vicina'
+  quando la parete è un segmento finito;
+- se la distanza fissa di 0,50 m debba in futuro essere parametrica;
+- cosa fare se la posizione teorica di `R0` viola altre regole geometriche.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. La costruzione della radice dell'albero di
+ritorno non è ancora implementata in StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -1339,7 +1443,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-012`, `LG-013`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-013`, `LG-014`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
