@@ -2681,6 +2681,119 @@ salvo il ramo `PROSEGUI_DRITTO`.
 Principio documentale consolidato durante l'audit pre-sviluppo. LG-021 è
 rettificata su questo punto; la logica runtime non è ancora implementata.
 
+
+---
+
+## LG-024 — Entrambi i versi della nuova parallela generano rami
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+Una volta determinata la nuova linea parallela passante per il terminale del
+tratto precedente, StrategiaDiego deve considerare **entrambi i versi** lungo
+tale linea.
+
+I due versi generano due alternative distinte dell'albero decisionale, purché
+il tratto risultante soddisfi le condizioni geometriche minime applicabili.
+
+### Commento tecnico
+
+La strategia non deve eliminare anticipatamente un verso soltanto perché
+appare sfavorevole o perché si prevede che possa bloccare successivamente lo
+sviluppo del ritorno.
+
+Anche una scelta potenzialmente 'catastrofica' deve essere esplorata come ramo
+se, nel momento in cui viene generata, è geometricamente ammissibile.
+
+L'eventuale impossibilità futura viene rilevata nelle fasi successive:
+
+- sviluppo della spirale di ritorno;
+- potatura dei rami non ammissibili;
+- valutazione dei terminali accettabili.
+
+### Regola
+
+Siano:
+
+- `Tprev` = terminale del tratto precedente;
+- `Lnew` = nuova parallela determinata secondo LG-023;
+- `v` e `-v` = i due versi possibili lungo `Lnew`.
+
+StrategiaDiego genera e valuta:
+
+```text
+candidato A = da Tprev lungo +v
+candidato B = da Tprev lungo -v
+```
+
+Per ciascun candidato si applicano indipendentemente:
+
+- ricerca della linea frontale;
+- troncamento alla distanza di rispetto;
+- controllo `TrattoPossibile`;
+- controllo di non-intersezione.
+
+Ogni candidato che supera i controlli correnti genera un ramo distinto.
+
+### Divieto di potatura anticipata per previsione
+
+Non è ammesso eliminare un ramo soltanto perché:
+
+```text
+'probabilmente il ritorno non passerà'
+```
+
+oppure perché una euristica prevede un esito sfavorevole.
+
+La potatura deve basarsi su una condizione geometrica/strategica realmente
+verificata nelle fasi previste dal flusso LG-018.
+
+### Relazione con LG-018
+
+LG-024 rafforza il carattere esplorativo della fase di costruzione della
+mandata:
+
+```text
+costruzione mandata
+-> conserva tutti i rami attualmente ammissibili
+-> costruzione ritorno
+-> emergono eventuali blocchi
+-> potatura
+-> terminali accettabili
+-> scelta per fattore di merito
+```
+
+### Vincoli per la futura implementazione
+
+- i due versi devono essere rappresentati come alternative indipendenti;
+- nessuna euristica di convenienza può sostituire i controlli geometrici
+  effettivi;
+- se entrambi i versi sono possibili devono sopravvivere entrambi fino alle
+  fasi successive;
+- se uno dei due versi è immediatamente impossibile secondo le regole già
+  consolidate, soltanto quello viene scartato;
+- la diagnostica deve riportare entrambi i candidati e il motivo dell'eventuale
+  esclusione di ciascuno.
+
+### Criterio futuro di verifica
+
+Un caso di regression deve includere almeno una situazione in cui:
+
+```text
+verso A -> mandata geometricamente possibile ma ritorno successivamente bloccato
+verso B -> mandata e ritorno completabili
+```
+
+e verificare che il ramo A venga inizialmente costruito e venga eliminato solo
+nella fase corretta, non anticipatamente.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. La generazione
+dei due versi non è ancora implementata nella futura StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -2699,7 +2812,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-024`, `LG-025`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-025`, `LG-026`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
