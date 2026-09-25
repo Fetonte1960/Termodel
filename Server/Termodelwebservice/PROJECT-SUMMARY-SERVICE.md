@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-25 — Logging diagnostico SpiraliDiego + Copia log
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - introdurre una categoria log dedicata **SpiraliDiego** nei punti strategici di `StrategiaDiegoEngine`;
@@ -91,6 +91,81 @@ Criteri di completamento:
 - artifact log recuperato e ispezionato;
 - Summary aggiornato e Issue #1 chiusa Completed.
 
+
+
+Risultato reale:
+- aggiunta nel Core headless la categoria Service-only `SpiraliDiego`;
+- la Library Desktop resta invariata con le nove categorie storiche;
+- `StrategiaDiegoEngine` registra, quando la categoria è attiva:
+  - START e parametri ricerca;
+  - locale e tubo di collegamento;
+  - ENTRY con punto/direzione/parete;
+  - radice iniziale mandata e ritorno;
+  - espansione nodi e scelte `PROSEGUI_DRITTO/PARALLELA_A/PARALLELA_B`;
+  - candidati accettati/rifiutati;
+  - motivi geometrici principali di rifiuto;
+  - terminali;
+  - closure accettate/rifiutate;
+  - aggiornamenti BEST;
+  - soluzione SELECT finale;
+- scoperto durante la prima Action che il buffer AsyncLocal di
+  `GeneraModello` non può essere riletto dal chiamante dopo l'await:
+  corretto il wiring inizializzando un secondo buffer, con la stessa
+  configurazione, esclusivamente per l'esecutivo/StrategiaDiego e concatenando
+  poi `result.Diagnostics + executiveDiagnostics`;
+- `logCategories=all` abilita ora 10 categorie headless:
+  9 Desktop + `SpiraliDiego`;
+- frontend portato a **v1.19**:
+  - checkbox Help > LOG AGGIORNA MODELLO > `spiralidiego`;
+  - comando `Copia log negli appunti`;
+  - il comando resta disabilitato finché non esiste un log aggiornato per il
+    projectId corrente;
+  - dopo `Aggiorna Modello` con almeno una categoria selezionata, il frontend
+    legge `GET /api/projects/{projectId}/logs/termodel`, conserva il testo in
+    cache e abilita il comando;
+  - il click copia il buffer già recuperato, senza richiedere una nuova fetch
+    asincrona prima dell'accesso clipboard;
+- contratto Frontend-Service aggiornato a v1.26;
+- documentata esplicitamente in `docs/copied-from-termodel.md` la natura
+  Service-only della categoria.
+
+Verifica reale:
+- GitHub Actions finale run `36153837051`, job `108134090327`:
+  **SUCCESS**;
+- SUCCESS: frontend syntax/wiring, build Release, benchmark StrategiaDiego,
+  smoke HTTP/log, feedback bridge, esecutivo quadrato, progetto radiante reale,
+  appartamento corrente, snapshot e notifica terminale;
+- smoke quadrato eseguito con
+  `logEnabled=true&logCategories=SpiraliDiego`;
+- artifact `strategia-diego-square-executive`, id `10872328670`,
+  retention 90 giorni;
+- artifact contiene:
+  `StrategiaDiegoSquare4x4.project.tmdl`,
+  `pannelli-esecutivo.svg`,
+  `pannelli-esecutivo.dxf`,
+  `TermodelLog-SpiraliDiego.md`,
+  `test-metadata.json`;
+- log reale recuperato: 1493 righe, 190239 byte,
+  SHA-256 `58f705155feacc02564011393b7db2cb0531125fc20afd405f20831214e66a08`;
+- marker reali del quadrato:
+  90 scelte mandata, 222 scelte ritorno, 38 terminali,
+  28 closure rifiutate, 2 closure accettate, 1 BEST update, 1 SELECT finale;
+- il log rende immediatamente visibile la causa del risultato geometrico
+  corrente: la soluzione finale scelta ha
+  `merit=3.84m supplyPoints=4 returnPoints=4`, nonostante l'albero esplori
+  percorsi molto più estesi; questo dato sarà il punto di partenza del prossimo
+  audit della selezione/closure, senza modifiche algoritmiche in questo incarico.
+
+Commit principali:
+- `b4f7724df5a4f3604e3afc9f41c1c24e4b72fd3f` — categoria;
+- `891148d3f1fbe7e2549cbdfcb5e4052595fddb14` — instrumentazione Diego;
+- `8dcd1855ca40454b7465cdd80c9d84267ba6e64d` — buffer log esecutivo;
+- `e4263cb7908f4223eb233729c434b6120085784f` /
+  `dc64d3d2d8e3fa0a4cf84d7678a9bd00cd82f07a` — frontend v1.19;
+- `6c5704ce01c5f8a99b2e5f7d5c9410452cf60d03` /
+  `9e053ebc20d9afad5bdc66ada5ec86e547625a29` — smoke/artifact quadrato;
+- `61a04038d3336bf9d87d0c1264d731d59a49f6a6` — all=10 categorie;
+- `7e011b74b4b136ff4ae17a9058d868aa51159d25` — contratto v1.26.
 
 ### INCARICO 2026-09-25 — Secondo esempio frontend “Quadrato con pannelli”
 Stato: ESEGUITO
