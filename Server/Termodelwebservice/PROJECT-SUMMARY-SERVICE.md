@@ -70,6 +70,25 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Pubblicazione ultima build + direttive anti-timeout
+Stato: COMMISSIONATO
+
+Commissionato:
+- pubblicare su Render l'ultima revisione del Service che risulta compilata con successo;
+- propagare nel repository una regola permanente anti-timeout per le chat operative Termodel;
+- usare GitHub come stato persistente del lavoro e GitHub Actions per build/test/elaborazioni lunghe;
+- prevedere checkpoint frequenti e ripresa sicura dopo interruzione della chat;
+- non modificare algoritmi, frontend, Library Desktop o `definizionedati.json` per questo incarico;
+- verificare build GitHub Actions e, quando interrogabile, il commit realmente esposto da Render;
+- al termine aggiornare questa voce con l'esito reale e chiudere la Issue #1 come `Completed` se riuscito, `Not planned` se fallito.
+
+Criteri di completamento:
+- direttive anti-timeout pubblicate e richiamate dal Summary Service;
+- commit finale su `main`;
+- GitHub Actions SUCCESS sul commit finale;
+- Render esegue la revisione pubblicata oppure viene documentato con precisione l'ultimo commit runtime osservato;
+- Issue #1 aggiornata e chiusa con esito coerente.
+
 ### INCARICO 2026-09-25 — Pubblicazione Render ultima build riuscita
 Stato: ESEGUITO
 
