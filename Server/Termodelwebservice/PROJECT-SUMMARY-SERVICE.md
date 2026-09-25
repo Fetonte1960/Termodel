@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-25 — Riallineamento fondamentali geometrici GPT in StrategiaDiego
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - confrontare sistematicamente il motore `SpiraliGPT` con
@@ -94,6 +94,55 @@ Criteri di completamento:
 - benchmark quadrato/concavo e banco appartamento conclusi con successo;
 - SVG reale prodotto dalla Action recuperato e condiviso con l'utente;
 - stato `ESEGUITO` soltanto dopo verifica tecnica e visuale disponibile.
+
+Risultato:
+- creato `docs/STRATEGIADIEGO-GPT-FUNDAMENTALS-AUDIT.md` con classificazione
+  `fondamentale | differenza intenzionale | ancora da definire`;
+- sostituito il campionamento fisso a 24 punti con controllo deterministico di
+  estremi, intersezioni col bordo e punto medio del segmento;
+- la selezione dell'ingresso scarta ora i tratti che proseguono in un altro
+  ramo e sceglie il terminale della rete LG-011;
+- i tubi diversi dal collegamento assegnato sono vincoli
+  anti-attraversamento; il collegamento assegnato resta il varco del locale;
+- mantenuti invariati albero Diego, merito massimo LG-003, Vittorio e GPT;
+- aggiunte fixture `StrategiaDiegoObliqueTrapezoid.locale.xml` e
+  `StrategiaDiegoConnectionTerminal.locale.xml`;
+- il benchmark verifica anche `ExpectedConnectionId` e il workflow fallisce
+  realmente quando un `dotnet run` restituisce exit code non zero;
+- nessuna modifica a frontend, fixture appartamento o
+  `definizionedati.json`.
+
+Verifica reale finale:
+- GitHub Actions `TermodelService Build` run `36133802860`, build #495, job
+  `108066963980`: **SUCCESS**;
+- quadrato 4x4: 20 iterazioni, 104 nodi, 2 terminali, p95 8 ms,
+  deterministico;
+- concavo a L: 20 iterazioni, 183 nodi, 2 terminali, p95 21 ms,
+  deterministico;
+- trapezio obliquo: 20 iterazioni, 104 nodi, 2 terminali, p95 9 ms,
+  deterministico;
+- rete ramificata: 20 iterazioni, 56 nodi, 4 terminali, p95 5 ms,
+  `T-B` selezionato come ingresso terminale, deterministico;
+- build, smoke HTTP, esecutivo SVG/DXF, progetto radiante reale e banco
+  appartamento StrategiaDiego: SUCCESS;
+- artifact visuale `strategia-diego-current-apartment`, id `10862238283`,
+  contenente il `pannelli-esecutivo.svg` realmente prodotto.
+
+Diagnostica e correzioni intermedie:
+- run #491 ha rivelato che PowerShell non propagava il fallimento dei
+  benchmark nativi; il workflow è stato reso bloccante;
+- run #492 ha quindi esposto correttamente la perdita dei terminali;
+- run #493/#494 hanno dimostrato che applicare LG-035 usando `node.Front` come
+  sostituto di `S_k` orientato è scorretto;
+- il criterio offset precedente è stato conservato finché il nodo non
+  memorizzerà esplicitamente lo stato orientato richiesto da LG-035;
+- run #495 ha validato la correzione del varco di ingresso e l'intera suite.
+
+Limiti dichiarati:
+- R3 non copia da GPT arrotondamento, punteggio composito, offset concentrici
+  o forcina avanzata, perché violerebbe LG-001/LG-003 o anticiperebbe LG-029;
+- `STRATEGY-001`, chiusura avanzata e stato orientato completo LG-035 restano
+  incarichi successivi dedicati.
 
 ### INCARICO 2026-09-25 — Rettifica arresto frontale Diego: 15 cm; quota ingresso mandata 45 cm
 Stato: ESEGUITO

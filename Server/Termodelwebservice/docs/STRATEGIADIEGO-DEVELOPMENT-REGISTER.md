@@ -7,7 +7,7 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 ## R3 — Riallineamento fondamentali geometrici GPT
-Stato: **COMMISSIONATO — AUDIT IN CORSO**
+Stato: **ESEGUITO — FONDAMENTALI COMPATIBILI CON LE LG ALLINEATI**
 
 Obiettivo:
 - recuperare in Diego le garanzie geometriche fondamentali già maturate in
@@ -24,6 +24,44 @@ Vincoli:
 - una regola non coperta dalle LG viene documentata prima di essere
   implementata;
 - ogni cambiamento grafico segue LG-036.
+
+Audit:
+- documento: `docs/STRATEGIADIEGO-GPT-FUNDAMENTALS-AUDIT.md`;
+- fondamentali corretti: contenimento deterministico, terminale d'ingresso
+  LG-011, rete diversa dall'ingresso come ostacolo anti-attraversamento;
+- differenze intenzionali conservate: albero, merito massimo, alternative
+  `PARALLELA_A/B`, distanze esplicite LG-006;
+- rinviati perché richiedono regole/stato dedicati: arrotondamento, forcina
+  avanzata, strettoia `STRATEGY-001`, stato orientato completo LG-035.
+
+Regression aggiunte:
+- `StrategiaDiegoObliqueTrapezoid.locale.xml`;
+- `StrategiaDiegoConnectionTerminal.locale.xml`, con
+  `ExpectedConnectionId="T-B"` verificato dal benchmark;
+- il workflow ora propaga realmente gli exit code dei benchmark e pubblica
+  l'errore nel Check Run.
+
+Verifica finale:
+- run `36133802860`, build #495, job `108066963980`: **SUCCESS**;
+- quadrato: 104 nodi, 2 terminali, p95 8 ms;
+- concavo L: 183 nodi, 2 terminali, p95 21 ms;
+- trapezio obliquo: 104 nodi, 2 terminali, p95 9 ms;
+- rete ramificata: 56 nodi, 4 terminali, p95 5 ms;
+- tutte le fixture: 20 iterazioni, deterministiche e nei budget;
+- smoke esecutivo, progetto reale e banco appartamento: SUCCESS;
+- artifact LG-036: `strategia-diego-current-apartment`, id `10862238283`.
+
+Iterazioni diagnostiche:
+- #491: falso verde dei benchmark nativi individuato;
+- #492: workflow bloccante, perdita terminali riprodotta;
+- #493/#494: tentativo LG-035 con stato incompleto scartato;
+- #495: varco del collegamento assegnato corretto e suite completa riuscita.
+
+Commit principali:
+- `f7a4fe82405c2690f972b3af59f9ff95331e4da5` — audit, fondamentali e fixture;
+- `057575228ac6d910b3c894a3b8ef8c361fcd4078` — benchmark bloccanti;
+- `efccddddd569ddcf28e39704d46640c15cfeb05a` — rinvio prudenziale LG-035;
+- `fc287c9b7ae9cfe30f8bfa1c7a8818962e54d392` — varco ingresso assegnato.
 
 ## F0 — Registrazione incarico e registro di sviluppo
 Stato: **ESEGUITO**
