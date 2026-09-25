@@ -54,12 +54,27 @@ Esito:
 - nessuna modifica ai sorgenti Desktop Vittorio/GPT.
 
 ## F2 — Implementazione e dispatcher Vittorio|GPT|Diego
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO — IMPLEMENTATO, NON ANCORA COMPILATO**
 
-Obiettivo:
-- aggiungere Diego nel Core;
-- preservare GPT e Vittorio come motori distinti;
-- selezione esplicita senza cambio silenzioso del default.
+Risultato:
+- aggiunto `RadiantPanels/StrategiaDiegoEngine.cs` con albero mandata, sottoalberi
+  ritorno, metriche e limiti tecnici espliciti;
+- aggiunto dispatcher nel `RadiantExecutiveGenerator` con selezione tramite
+  `TERMODEL_SPIRAL_ENGINE=Vittorio|GPT|Diego`;
+- default lasciato a `GPT` per retrocompatibilita;
+- aggiunte nel Core copie temporanee **byte-identical** del motore Vittorio,
+  senza modificare la Library Desktop;
+- aggiornato `CopiedFromTermodel/TERMODEL-SYNC.md`.
+
+Commit principali:
+- `79ad50c9ce9720219d2c05e2814fbafed2ad4534` — motore Diego;
+- `8c34e10b2db8a07ca8342097122d2cc67480540c` — dispatcher;
+- `e665f9d4`, `d7987644`, `475b998f`, `c51f481e` — copie Vittorio;
+- `23a2d6ee9fdd8d7c592f26d358a333621b0c760b` — tracciatura sync.
+
+Verifica:
+- implementato su Git;
+- compilazione reale demandata alla fase F3.
 
 ## F3 — Build reale
 Stato: **COMMISSIONATO**
