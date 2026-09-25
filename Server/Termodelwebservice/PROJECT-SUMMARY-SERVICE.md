@@ -71,6 +71,44 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-25 — Direttiva verifica visuale obbligatoria StrategiaDiego
+Stato: COMMISSIONATO
+
+Commissionato:
+- aggiungere alle **Linee guida per lo sviluppo del disegno spirali** una
+  direttiva permanente per tutte le modifiche che possono cambiare il disegno
+  prodotto da StrategiaDiego;
+- ogni modifica a codice, regole strategiche, geometria, troncature, distanze,
+  selezione dei rami o altri parametri capaci di alterare l'esecutivo deve
+  essere verificata tramite **GitHub Actions** sul banco prova operativo
+  corrente `tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl`;
+- la verifica deve forzare `TERMODEL_SPIRAL_ENGINE=Diego` e produrre la
+  risposta/artifact reale `pannelli-esecutivo.svg` usando
+  `responseArtifact=pannelli-esecutivo-svg`;
+- al termine della modifica la chat deve recuperare e **restituire all'utente
+  un SVG visualizzabile** del risultato, non limitarsi a hash, metriche o log;
+- una modifica che può cambiare il disegno non può essere dichiarata
+  verificata/completata se la relativa Action non è riuscita oppure se l'SVG
+  reale non è stato recuperato;
+- quando utile, conservare e confrontare SVG prima/dopo; l'SVG prodotto è
+  evidenza visuale del test ma non diventa automaticamente un Golden
+  geometrico approvato;
+- le sole modifiche documentali o tecniche che non possono alterare il disegno
+  non richiedono questo ciclo visuale;
+- la fixture autorevole resta immutabile: eventuale canonicalizzazione avviene
+  soltanto sulla copia temporanea già prevista dall'harness.
+
+Criteri di completamento:
+- nuova regola consolidata come `LG-036`;
+- documento operativo aggiornato da `LG-001..LG-035` a
+  `LG-001..LG-036`;
+- banco prova, Action e restituzione SVG esplicitamente vincolanti per i
+  futuri cambiamenti visuali;
+- nessuna modifica a motore, frontend, Library Desktop o
+  `definizionedati.json` in questo incarico esclusivamente documentale.
+
+
+
 ### INCARICO 2026-09-25 — Banco prova corrente StrategiaDiego: appartamento reale
 Stato: ESEGUITO
 
