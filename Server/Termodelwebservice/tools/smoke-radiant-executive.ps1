@@ -219,37 +219,30 @@ try {
 
   $ns = New-Object System.Xml.XmlNamespaceManager($svgXml.NameTable)
   $ns.AddNamespace("s","http://www.w3.org/2000/svg")
-  $buildingLayer = $floorName + "_Edificio_Output"
+  $cleanFloorLayer = $floorName + "_PiantaPulita_Output"
   $mandataLayer = $floorName + "_PannelliMandata_Output"
   $ritornoLayer = $floorName + "_PannelliRitorno_Output"
 
-  $buildingGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$buildingLayer']",$ns)
+  $cleanFloorGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$cleanFloorLayer']",$ns)
   $mandataGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$mandataLayer']",$ns)
   $ritornoGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$ritornoLayer']",$ns)
-  if (-not $buildingGroup -or -not $mandataGroup -or -not $ritornoGroup) {
-    throw "SVG esecutivo privo dei gruppi edificio/mandata/ritorno."
+  if (-not $cleanFloorGroup -or -not $mandataGroup -or -not $ritornoGroup) {
+    throw "SVG esecutivo privo dei gruppi pianta-pulita/mandata/ritorno."
   }
   if ($mandataGroup.ChildNodes.Count -lt 1 -or $ritornoGroup.ChildNodes.Count -lt 1) {
     throw "SVG esecutivo non contiene geometria spirale mandata/ritorno."
   }
 
-  $buildingLines = @($buildingGroup.SelectNodes("./s:line",$ns))
-  if ($buildingLines.Count -lt 4) {
-    throw "SVG esecutivo non contiene il perimetro edificio 4x4 dello smoke."
+  $cleanBoundaries = @($cleanFloorGroup.SelectNodes("./s:polyline | ./s:polygon",$ns))
+  if ($cleanBoundaries.Count -lt 2) {
+    throw "SVG esecutivo non contiene almeno due contorni della pianta pulita per rappresentare lo spessore pareti."
   }
-  $xs = @()
-  $ys = @()
-  foreach ($line in $buildingLines) {
-    $xs += [double]::Parse($line.GetAttribute("x1"),[Globalization.CultureInfo]::InvariantCulture)
-    $xs += [double]::Parse($line.GetAttribute("x2"),[Globalization.CultureInfo]::InvariantCulture)
-    $ys += [double]::Parse($line.GetAttribute("y1"),[Globalization.CultureInfo]::InvariantCulture)
-    $ys += [double]::Parse($line.GetAttribute("y2"),[Globalization.CultureInfo]::InvariantCulture)
-  }
-  if ([Math]::Abs(($xs | Measure-Object -Minimum).Minimum - 0.0) -gt 0.001 -or
-      [Math]::Abs(($xs | Measure-Object -Maximum).Maximum - 4.0) -gt 0.001 -or
-      [Math]::Abs(($ys | Measure-Object -Minimum).Minimum - 0.0) -gt 0.001 -or
-      [Math]::Abs(($ys | Measure-Object -Maximum).Maximum - 4.0) -gt 0.001) {
-    throw "Scala geometrica SVG esecutivo non coerente col locale 4x4 m."
+
+  $distinctBoundaryPoints = @($cleanBoundaries | ForEach-Object {
+    $_.GetAttribute("points")
+  } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+  if ($distinctBoundaryPoints.Count -lt 2) {
+    throw "SVG esecutivo contiene contorni pianta pulita coincidenti: spessore parete non verificabile."
   }
 
   if ($genericSvgResponse.Content -notmatch "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1") {
@@ -259,7 +252,7 @@ try {
   Write-Host "RADIANT_EXECUTIVE_SVG_GEOMETRY_SMOKE_OK"
 
   foreach ($layer in @(
-    ($floorName + "_Edificio_Output"),
+    ($floorName + "_PiantaPulita_Output"),
     ($floorName + "_PannelliMandata_Output"),
     ($floorName + "_PannelliRitorno_Output")
   )) {
