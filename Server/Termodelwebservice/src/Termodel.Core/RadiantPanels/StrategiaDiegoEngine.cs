@@ -1126,14 +1126,43 @@ internal static class StrategiaDiegoEngine
             return null;
         }
 
-        int nextIndex = front.SequenceIndex + 1;
-        foreach (GeoSegment candidate in constraints)
+        DVector frontDirection = front.Direction.Normalize();
+        if (frontDirection.Length <= Epsilon)
+            return null;
+
+        // LG-033/LG-035 ragionano per evoluzioni geometriche. La ricerca può
+        // produrre più segmenti consecutivi collineari appartenenti alla
+        // stessa evoluzione (per esempio dopo PROSEGUI_DRITTO). Usare il solo
+        // SequenceIndex+1 come frontale rende il cambio degenerato: il tratto
+        // che dovrebbe seguire S_k risulta parallelo anche a S_k+1 e non può
+        // incontrarlo. Scorriamo quindi la sequenza fino al primo vero cambio
+        // di direzione, mantenendo intatto l'ordine del path.
+        foreach (GeoSegment candidate in constraints
+                     .Where(candidate =>
+                         candidate.Family == front.Family &&
+                         candidate.SequenceIndex > front.SequenceIndex)
+                     .OrderBy(candidate => candidate.SequenceIndex))
         {
-            if (candidate.Family == front.Family &&
-                candidate.SequenceIndex == nextIndex)
+            DVector candidateDirection =
+                candidate.Direction.Normalize();
+            if (candidateDirection.Length <= Epsilon)
+                continue;
+
+            double cross = Math.Abs(
+                DVector.Cross(frontDirection, candidateDirection));
+
+            if (cross <= GeometryTolerance)
             {
-                return candidate;
+                LogDiego(
+                    $"SEQUENCE skip-collinear family={front.Family} " +
+                    $"from={front.SequenceIndex} skip={candidate.SequenceIndex}");
+                continue;
             }
+
+            LogDiego(
+                $"SEQUENCE successor family={front.Family} " +
+                $"from={front.SequenceIndex} next={candidate.SequenceIndex}");
+            return candidate;
         }
 
         return null;
