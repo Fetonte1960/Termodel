@@ -185,6 +185,9 @@ Avanzamento iniziale:
 - ogni nuovo tratto valido entra subito nello stato geometrico del proprio ramo; per la mandata valgono `p/2` da architettura e `2p` da mandata già presente.
 - audit: rettificate `LG-013` e `LG-022`: il primo tratto, sia di mandata sia di ritorno, **non ha inclinazione libera** ma mantiene la direzione del rispettivo tubo di collegamento entrante; è libero il punto finale, non la direzione;
 - il punto finale del primo tratto viene determinato dalla prima linea frontale utile e dal conseguente troncamento alla distanza di rispetto; la regola vale simmetricamente per mandata e ritorno.
+- audit: consolidato il principio `LG-033 — Inseguimento progressivo dell'evoluzione precedente nei percorsi convessi`: dopo il primo giro, la spirale può riagganciarsi alla propria evoluzione precedente e seguirne ordinatamente i tratti `S1 -> S2 -> S3 -> ...`;
+- la troncatura può usare anche il prolungamento geometrico di un tratto precedente come marcatore di aggancio, mentre le collisioni restano verificate sulla geometria fisica reale;
+- per supportare l'inseguimento convesso la futura implementazione dovrà mantenere identità e sequenza dei segmenti del path; resta da definire se il successivo segmento della sequenza precedente abbia priorità assoluta o resti una delle alternative dell'albero.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -226,6 +229,7 @@ Commit iniziali:
 - `6c209c4db9c44ac8db05cfafb9eb9992fe6b6e76` — LG-031, geometria vincolante per ciascun ramo di ritorno.
 - `34f691165cfd6a0e9f6509162e51ad455cf78013` — LG-032, geometria vincolante isolata per ciascun ramo di mandata.
 - `6d14e0f98141f97a08fabd1401bd5ea1302ece17` — rettifica LG-013/LG-022: primo tratto allineato al tubo di collegamento entrante, con punto finale libero, per mandata e ritorno.
+- `b21f2810bcb2fe2cf941539dc7c7c9f9fec6dd21` — LG-033, principio di inseguimento progressivo dei tratti della precedente evoluzione nei percorsi convessi.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
