@@ -71,6 +71,31 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-25 — StrategiaDiego regressione geometrie complesse R1
+Stato: COMMISSIONATO
+
+Commissionato:
+- riprendere lo sviluppo di StrategiaDiego dal limite residuo registrato dopo
+  F6;
+- introdurre una fixture minima riproducibile con locale concavo a L e un
+  unico ingresso;
+- eseguire sulla nuova fixture lo stesso benchmark ripetuto, deterministico e
+  soggetto ai budget già adottati per il caso quadrato 4x4;
+- integrare la regressione nel workflow GitHub Actions senza modificare i
+  motori Vittorio/GPT, il frontend o `definizionedati.json`;
+- mantenere distinta questa prova di concavità dalla futura regressione reale
+  di strettoia/imbottigliamento collegata a `STRATEGY-001`.
+
+Criteri di completamento:
+- fixture e relativa scheda documentale presenti nel repository;
+- benchmark capace di produrre artifact distinguibili per più fixture;
+- build e benchmark quadrato + concavo conclusi con successo in GitHub
+  Actions;
+- metriche reali della nuova fixture registrate nel Summary e nel registro di
+  sviluppo;
+- commissione marcata `ESEGUITO` soltanto dopo la verifica dell'Action.
+
+
 ### INCARICO 2026-09-25 — Implementazione, attivazione e benchmark StrategiaDiego
 Stato: ESEGUITO
 

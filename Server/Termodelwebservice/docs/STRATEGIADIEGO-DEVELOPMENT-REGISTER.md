@@ -219,3 +219,20 @@ Limiti residui:
 - sostenibilità verificata soltanto sul caso quadrato 4x4 con un ingresso;
 - mancano regression dedicati a concavità, strettoie, più circuiti e più locali;
 - la chiusura avanzata resta successiva alla valutazione preliminare LG-029.
+
+## R1 — Regressione locale concavo a L
+Stato: **COMMISSIONATO**
+
+Obiettivo:
+- verificare il motore su una prima geometria non convessa, mantenendo un solo
+  locale e un solo ingresso per isolare l'effetto della concavità;
+- riutilizzare i controlli di determinismo e i budget del benchmark F5;
+- produrre artifact con nomi distinti da quelli del quadrato 4x4;
+- non assimilare questa prova alla strettoia reale di `STRATEGY-001`, che
+  richiederà una regressione dedicata successiva.
+
+Criteri di completamento:
+- fixture concava e README tracciati;
+- benchmark quadrato e concavo eseguiti dal workflow;
+- Action riuscita e metriche del caso concavo registrate;
+- nessuna modifica ai motori Vittorio/GPT, al frontend o allo schema dati.
