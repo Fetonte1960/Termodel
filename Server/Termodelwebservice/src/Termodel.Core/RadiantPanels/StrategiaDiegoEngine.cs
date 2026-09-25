@@ -327,6 +327,11 @@ internal static class StrategiaDiegoEngine
                 string? requiredFront) in directions)
             {
                 double? inheritedArchitectureOffset =
+                    // L'accorciamento speciale vale solo sul primo tratto
+                    // tracciato dopo il collegamento (root depth=1). Estenderlo
+                    // a tutte le evoluzioni irrigidisce impropriamente i
+                    // percorsi complessi e può eliminare terminali validi.
+                    node.Depth == 1 &&
                     choiceName.StartsWith(
                         "PARALLELA",
                         StringComparison.Ordinal) &&
@@ -507,12 +512,12 @@ internal static class StrategiaDiegoEngine
                 reference.Family,
                 step);
 
-            // Quando una scelta PARALLELA segue una parete architettonica,
-            // conserva la distanza della stessa evoluzione anche alla parete
-            // successiva. È la costruzione geometrica degli offset usata
-            // concettualmente anche da Vittorio/GPT: il terminale nasce
-            // dall'intersezione con la parallela offset della parete seguente,
-            // non dal solo minimo generale p/2.
+            // Sul primo tratto dopo il collegamento, una scelta PARALLELA
+            // conserva la distanza raggiunta dall'ingresso anche rispetto alla
+            // parete successiva. È l'accorciamento geometrico osservato nei
+            // motori Vittorio/GPT: il terminale nasce dall'intersezione con la
+            // parallela offset della parete seguente, non dal solo minimo p/2.
+            // Le evoluzioni successive usano nuovamente le regole ordinarie.
             if (reference.Family == GeoFamily.Architecture &&
                 inheritedArchitectureOffset is double inherited)
             {
