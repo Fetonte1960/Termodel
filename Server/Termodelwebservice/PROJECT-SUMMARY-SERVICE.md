@@ -103,6 +103,9 @@ Avanzamento iniziale:
 - consolidata `LG-003 — Fattore di merito dei terminali e scelta della soluzione`: per ogni terminale valido il merito è la lunghezza totale di tubo producibile; viene selezionato il terminale con lunghezza massima;
 - separata concettualmente la fase di esplorazione/valutazione dell'albero dalla materializzazione finale: la spirale definitiva viene prodotta ripercorrendo dalla radice il cammino del terminale vincente e applicando nell'ordine le scelte registrate nei nodi;
 - esclusi dal confronto i terminali geometricamente invalidi; parità di merito e dettaglio di misura di raccordi/tratti tecnici restano da definire.
+- consolidata `LG-004 — Struttura geometrica di contenimento`: lo stato geometrico minimo di StrategiaDiego è composto da tre famiglie semanticamente distinte, `LineeArchitettoniche`, `LineeMandata` e `LineeRitorno`;
+- registrato che i nodi devono poter interrogare separatamente le tre famiglie e che i nuovi tratti generati aggiornano la famiglia mandata/ritorno corrispondente;
+- non ancora definite in LG-004 regole di collisione, attraversamento, distanze di rispetto o precedenze fra le tre famiglie.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -111,6 +114,7 @@ Commit iniziali:
 - `3d7ed48b8259b03d6ad959552e7521b951aeefb3` — LG-002, struttura a grafo decisionale.
 - `ca6d8e6999496f6c4b03e4d27556039dc2ce7854` — rettifica LG-002 da grafo ad albero decisionale.
 - `a9bede514fba3016caa33662d4e21eb0ac40c0e8` — LG-003, fattore di merito dei terminali e selezione per massima lunghezza tubo valida.
+- `e420174d26b232c6ee6c7f170a7de2bd47ee0a32` — LG-004, struttura geometrica di contenimento con linee architettoniche, mandata e ritorno.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
