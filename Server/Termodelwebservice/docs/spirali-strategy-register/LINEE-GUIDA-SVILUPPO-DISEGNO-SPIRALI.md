@@ -2885,6 +2885,99 @@ Devono essere presenti casi di regression in cui:
 Principio documentale consolidato durante l'audit pre-sviluppo. La condizione
 di terminale dell'albero di mandata non è ancora implementata.
 
+
+---
+
+## LG-026 — Origine della costruzione della spirale di ritorno
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+La costruzione della **spirale di ritorno** non parte dal terminale raggiunto
+dalla spirale di mandata.
+
+Essa parte invece dal **tubo di collegamento di ritorno** già generato nella
+fase iniziale di costruzione della rete dei tubi di collegamento.
+
+### Commento tecnico
+
+Questa regola mantiene separate le due origini fisiche del circuito:
+
+```text
+mandata  -> parte dal tubo di collegamento di mandata
+ritorno  -> parte dal tubo di collegamento di ritorno
+```
+
+Il tubo di collegamento di ritorno è quindi la condizione iniziale autorevole
+per lo sviluppo della spirale di ritorno interna alla stanza.
+
+Il terminale della mandata non è il punto di partenza del ritorno: resta una
+geometria già costruita con cui la successiva evoluzione del ritorno dovrà
+risultare compatibile e, nella soluzione finale, richiudibile secondo le
+regole dei terminali accettabili.
+
+### Regola
+
+Per ogni ingresso/circuito `i`:
+
+```text
+OrigineMandata(i) = tubo di collegamento mandata(i)
+
+OrigineRitorno(i) = tubo di collegamento ritorno(i)
+                    generato nella fase LG-011/LG-012/LG-014
+```
+
+La costruzione della spirale di ritorno deve quindi iniziare dalla geometria
+terminale del tubo di collegamento di ritorno già disponibile dopo la fase 1
+del flusso generale LG-018.
+
+### Relazione con LG-018
+
+La sequenza viene precisata come:
+
+```text
+FASE 1  costruzione ritorno tubi di collegamento
+        -> definisce OrigineRitorno
+
+FASE 2  costruzione spirale di mandata
+        -> produce i rami/terminali della mandata
+
+FASE 3  costruzione spirale di ritorno
+        -> parte da OrigineRitorno
+        -> si sviluppa rispetto alla geometria già presente
+```
+
+### Vincoli per la futura implementazione
+
+- ogni circuito deve mantenere il riferimento al proprio tubo di collegamento
+  di ritorno;
+- l'estremo interno di tale tubo costituisce l'origine geometrica della
+  spirale di ritorno;
+- la spirale di ritorno non deve essere inizializzata dal terminale della
+  mandata;
+- geometria di mandata e ritorno devono restare distinte durante la
+  costruzione;
+- la diagnostica deve riportare per ogni circuito l'origine della mandata e
+  l'origine del ritorno.
+
+### Punti ancora da definire
+
+LG-026 non stabilisce ancora:
+
+- le scelte di nodo specifiche della spirale di ritorno;
+- la direzione iniziale concreta del ritorno a partire dal tubo di
+  collegamento;
+- il criterio con cui il ritorno si avvicina e si richiude verso la mandata;
+- se le stesse regole di esplorazione della mandata si applichino integralmente
+  anche alla costruzione del ritorno.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. La costruzione
+della spirale di ritorno dalla propria origine non è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -2903,7 +2996,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-026`, `LG-027`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-027`, `LG-028`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
