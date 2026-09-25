@@ -1,0 +1,41 @@
+name: Termodel Issue Work Completed
+
+on:
+  issues:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify phone
+        env:
+          TERMODEL_NTFY_TOPIC: ${{ secrets.TERMODEL_NTFY_TOPIC }}
+          STATE_REASON: ${{ github.event.issue.state_reason }}
+        run: |
+          if [ -z "$TERMODEL_NTFY_TOPIC" ]; then
+            echo "TERMODEL_NTFY_TOPIC non configurato: notifica non inviata."
+            exit 0
+          fi
+
+          if [ "$STATE_REASON" = "completed" ]; then
+            MESSAGE="Incarico completato con successo"
+            PRIORITY="high"
+            TAGS="white_check_mark"
+          else
+            MESSAGE="Incarico completato con insuccesso"
+            PRIORITY="urgent"
+            TAGS="rotating_light"
+          fi
+
+          curl --fail-with-body --silent --show-error \
+            -H "Title: Termodel" \
+            -H "Priority: $PRIORITY" \
+            -H "Tags: $TAGS" \
+            -d "$MESSAGE" \
+            "https://ntfy.sh/$TERMODEL_NTFY_TOPIC"
+
+          echo "PHONE_NOTIFICATION_SENT: $MESSAGE"
