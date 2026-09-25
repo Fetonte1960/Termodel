@@ -98,3 +98,13 @@ PHONE_NOTIFICATION_SENT status=SUCCESS
 
 La notifica è stata ricevuta sul telefono Android configurato dall'utente.
 Il sistema è quindi **operativo**, non sperimentale.
+
+
+## Resilienza della chat
+
+Per gli incarichi lunghi questa specifica va usata insieme a
+`.github/TERMODEL-CHAT-ANTI-TIMEOUT.md`.
+
+La notifica terminale e il Commit Status sono parte del checkpoint persistente:
+un timeout o una sospensione della pagina ChatGPT non cambia l'esito tecnico
+dell'Action e non deve obbligare a rifare il lavoro già registrato su GitHub.
