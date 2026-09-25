@@ -133,7 +133,6 @@ internal static class StrategiaDiegoEngine
             architecture,
             Array.Empty<GeoSegment>(),
             directed.EntryWall,
-            step * 1.5,
             step,
             counters,
             countAsSupply: true);
@@ -172,7 +171,6 @@ internal static class StrategiaDiegoEngine
                     architecture,
                     supplySegments,
                     directed.EntryWall,
-                    step / 2.0,
                     step,
                     counters,
                     countAsSupply: false);
@@ -245,7 +243,6 @@ internal static class StrategiaDiegoEngine
         IReadOnlyList<GeoSegment> architecture,
         IReadOnlyList<GeoSegment> fixedPath,
         GeoSegment initialFront,
-        double initialOffsetDistance,
         double step,
         SearchCounters counters,
         bool countAsSupply)
@@ -262,7 +259,6 @@ internal static class StrategiaDiegoEngine
             start,
             initialDirection,
             initialFront,
-            initialOffsetDistance,
             initialConstraints,
             step);
 
@@ -379,48 +375,28 @@ internal static class StrategiaDiegoEngine
         DPoint start,
         DVector direction,
         GeoSegment entryWall,
-        double offsetDistance,
         IReadOnlyList<GeoSegment> constraints,
         double step)
     {
-        DVector unit = direction.Normalize();
-        DVector wallUnit = entryWall.Direction.Normalize();
-        double sine = Math.Abs(DVector.Cross(unit, wallUnit));
-
-        if (unit.Length <= Epsilon ||
-            wallUnit.Length <= Epsilon ||
-            sine <= Epsilon ||
-            offsetDistance <= GeometryTolerance)
-        {
-            return null;
-        }
-
-        // Il tubo entrante conserva la propria direzione. Il suo estremo
-        // interno viene determinato dall'intersezione con il primo offset
-        // della parete d'ingresso, non dalla parete opposta.
-        double travel = offsetDistance / sine;
-        DPoint end = start + unit * travel;
-
-        var candidate = new GeoSegment(
-            $"D-INITIAL-{family}-{Guid.NewGuid():N}",
-            start,
-            end,
+        // LG-013 + LG-017: il primo tratto conserva la direzione del tubo
+        // entrante, ma il suo estremo NON ha una lunghezza preassegnata.
+        // Si prolunga la semiretta fino alla prima geometria frontale utile e
+        // si tronca alla distanza di rispetto prevista da LG-006.
+        //
+        // GPT/Vittorio seguono lo stesso principio geometrico di fondo:
+        // prima individuano l'intersezione con la guida/offset e poi
+        // accorciano il tratto reale rispetto al limite teorico.
+        return TryExtend(
+            locale,
             family,
-            SequenceIndex: 0);
-
-        if (!IsSegmentValid(
-                locale,
-                candidate,
-                constraints,
-                previousSegment: null,
-                entryWall,
-                step,
-                allowStartOnBoundary: true))
-        {
-            return null;
-        }
-
-        return new ExtensionResult(candidate, entryWall);
+            start,
+            direction,
+            constraints,
+            previousSegment: null,
+            excludedFrontId: entryWall.Id,
+            requiredFrontId: null,
+            step,
+            allowStartOnBoundary: true);
     }
 
     private static ExtensionResult? TryExtend(
