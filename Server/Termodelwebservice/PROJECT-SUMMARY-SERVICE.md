@@ -183,6 +183,8 @@ Avanzamento iniziale:
 - geometrie appartenenti a rami alternativi non contaminano lo stato corrente; per il ritorno valgono distanze `p/2` da architettura, `p` da mandata e `2p` da ritorno.
 - audit: consolidata `LG-032 — Geometria vincolante durante la costruzione della mandata`: ogni ramo mandata vede soltanto `LineeArchitettoniche + PathMandataCorrente`; i rami alternativi sono scenari indipendenti e non costituiscono ostacoli reciproci;
 - ogni nuovo tratto valido entra subito nello stato geometrico del proprio ramo; per la mandata valgono `p/2` da architettura e `2p` da mandata già presente.
+- audit: rettificate `LG-013` e `LG-022`: il primo tratto, sia di mandata sia di ritorno, **non ha inclinazione libera** ma mantiene la direzione del rispettivo tubo di collegamento entrante; è libero il punto finale, non la direzione;
+- il punto finale del primo tratto viene determinato dalla prima linea frontale utile e dal conseguente troncamento alla distanza di rispetto; la regola vale simmetricamente per mandata e ritorno.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -202,7 +204,7 @@ Commit iniziali:
 - `0620f934f4b183f514e8e80ffd436a2008533df1` — LG-010, lato di ritorno indipendente per ogni tubo di collegamento di ingresso.
 - `ae5cab7d3b4581ac652718cb44dc5416c75c7b7e` — LG-011, albero di collegamento idraulico: mandata input utente, ritorno generato dall'algoritmo.
 - `d235a60b89d26dbdaf6198716822659ef1c613e5` — LG-012, radice del ritorno a 0,50 m e parallela alla parete architettonica più vicina.
-- `34a82b9e885a230623509e17fa395d4bd8e2275a` — LG-013, primo tratto a inclinazione libera; parallelismo obbligatorio dal secondo tratto.
+- `34a82b9e885a230623509e17fa395d4bd8e2275a` — LG-013, primo tratto nella direzione del tubo di collegamento (rettifica LG-013); parallelismo obbligatorio dal secondo tratto.
 - `ed9ae3ce976969623b3dae9ecd33540ff1589cb1` — LG-014, ritorno nel corridoio segue la mandata quando possibile e salta le evoluzioni impossibili.
 - `e5a25a64eb7b5c1e637c6921ad4362da1834efc3` — LG-015, configurazione terminale mandata/ritorno e derivazione della scelta iniziale della spirale.
 - `1b28cef915a91a19f5a35aeab08c6a86e049211e` — LG-016, scelta di prosecuzione rettilinea nella direzione di provenienza fino al primo ostacolo frontale.
@@ -223,6 +225,7 @@ Commit iniziali:
 - `52f42a221bda4f479285d2e6d0654c29c85d0533` — LG-030, classificazione di StrategiaDiego come strategia computazionalmente pesante e selezionabile.
 - `6c209c4db9c44ac8db05cfafb9eb9992fe6b6e76` — LG-031, geometria vincolante per ciascun ramo di ritorno.
 - `34f691165cfd6a0e9f6509162e51ad455cf78013` — LG-032, geometria vincolante isolata per ciascun ramo di mandata.
+- `6d14e0f98141f97a08fabd1401bd5ea1302ece17` — rettifica LG-013/LG-022: primo tratto allineato al tubo di collegamento entrante, con punto finale libero, per mandata e ritorno.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
