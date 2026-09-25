@@ -675,21 +675,32 @@ app.MapPost("/api/calculations", async (
                 RadiantPanelsArtifact panels =
                     RadiantPanelCalculator.Calculate(projectText);
 
+                // GeneraModello gestisce un proprio scope AsyncLocal e
+                // restituisce il buffer in result.Diagnostics. L'esecutivo
+                // viene eseguito nel chiamante: inizializziamo quindi un
+                // secondo buffer con la stessa configurazione, destinato a
+                // StrategiaDiego e alle future diagnostiche dell'esecutivo.
+                TermodelLog.InitializeLog(logConfiguration);
+
                 RadiantExecutiveArtifacts? executive =
                     RadiantExecutiveGenerator.Generate(
                         projectText,
                         result.RadiantPanelInputXml,
                         result.CleanFloorPlans);
 
+                IReadOnlyList<string> executiveDiagnostics =
+                    TermodelLog.Messages.ToArray();
+
                 string logMode = GetLogMode(logConfiguration);
                 string[] logCategories = GetLogCategoryNames(logConfiguration);
 
-                // Le diagnostiche idrauliche appartengono all'artifact pannelli.
-                // Il campo top-level diagnostics segue TermodelLog e viene letto
-                // DOPO la generazione dell'esecutivo, così include anche
-                // l'instrumentazione StrategiaDiego della stessa richiesta.
+                // Conserva integralmente le diagnostiche GeneraModello e
+                // aggiunge quelle prodotte durante l'esecutivo nella stessa
+                // richiesta, rispettando logEnabled/logCategories.
                 IReadOnlyList<string> combinedDiagnostics =
-                    TermodelLog.Messages.ToArray();
+                    result.Diagnostics
+                        .Concat(executiveDiagnostics)
+                        .ToArray();
 
                 var artifactJsonOptions =
                     new JsonSerializerOptions(JsonSerializerDefaults.Web)
