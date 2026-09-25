@@ -71,6 +71,26 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Rettifica evoluzioni iniziali StrategiaDiego
+Stato: COMMISSIONATO
+
+Commissionato:
+- rettificare la specifica StrategiaDiego eliminando il concetto di una "prima evoluzione" con regola speciale: tutte le evoluzioni della spirale devono seguire le stesse regole geometriche e di distanza;
+- distinguere soltanto il raccordo iniziale proveniente dal tubo di collegamento dalla successiva evoluzione utile della spirale;
+- consolidare la geometria corretta all'ingresso: mandata rossa a distanza `p/2` dalla parete, ritorno blu a distanza `1,5p` dalla parete, quindi distanza mandata-ritorno pari a `p`;
+- fare derivare tali quote dalle regole generali di distanza (LG-006 e regole correlate), non da uno status speciale della prima evoluzione;
+- aggiornare coerentemente il sorgente `StrategiaDiegoEngine.cs` e le Linee guida sviluppo spirali;
+- non modificare Vittorio, GPT, frontend, Library Desktop o `definizionedati.json`;
+- per esplicita modalità di lavoro richiesta dall'utente, pubblicare su GitHub senza compilare né eseguire GitHub Actions in questo incarico; lo stato finale dovrà quindi distinguere chiaramente implementato da compilato/testato.
+
+Criteri di completamento:
+- direttive aggiornate senza ambiguità su "prima evoluzione";
+- sorgente Diego aggiornato in coerenza con le direttive;
+- nessuna compilazione o Action avviata;
+- Summary aggiornato con commit e stato reale;
+- Issue #1 chiusa `Completed` a pubblicazione Git conclusa.
+
+
 ### INCARICO 2026-09-25 — Pubblicazione ultima build + direttive anti-timeout
 Stato: ESEGUITO
 
