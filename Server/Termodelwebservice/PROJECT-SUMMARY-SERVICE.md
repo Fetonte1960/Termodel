@@ -165,6 +165,9 @@ Avanzamento iniziale:
 - previsto regression case con un ramo di mandata inizialmente valido ma successivamente incompatibile con il ritorno, che deve sopravvivere fino alla fase corretta di esclusione.
 - audit: consolidata `LG-025 — Condizione di terminale dell'albero di mandata`: un nodo è terminale solo quando, dopo aver valutato `PROSEGUI_DRITTO` e i due versi della parallela di LG-023/LG-024, nessuna alternativa produce un `TrattoPossibile`;
 - la terminalità deriva quindi dall'assenza completa di prosecuzioni ammissibili, non da euristiche o previsioni sul ritorno; se almeno un candidato è valido il nodo resta non terminale e ogni candidato valido genera un ramo.
+- audit: consolidata `LG-026 — Origine della costruzione della spirale di ritorno`: la spirale di ritorno non parte dal terminale della mandata ma dall'estremo interno del tubo di collegamento di ritorno già generato nella fase iniziale della rete di collegamento;
+- per ogni circuito restano quindi distinte `OrigineMandata` e `OrigineRitorno`; il terminale della mandata rimane geometria da raggiungere/chiudere compatibilmente nelle fasi successive, non origine del ritorno;
+- restano da definire le scelte di nodo specifiche del ritorno, la sua direzione iniziale e quanto riusi le regole di esplorazione della mandata.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -198,6 +201,7 @@ Commit iniziali:
 - `fa8fc74265bbebc95b4416578bcda2ffd530b8e2` — LG-023, riferimento di parallelismo vincolato alla linea che ha troncato il tratto precedente; LG-021 rettificata.
 - `ac362fc3ac48e038d919e9d368382cef22085115` — LG-024, generazione di entrambi i versi della nuova parallela senza potatura predittiva.
 - `1ddaa84f865d1c3db1a0096a1b66bc901f9a8a4b` — LG-025, condizione di terminale dell'albero di mandata.
+- `a680230894848e9c4b1777a0d63b959b863fc7f0` — LG-026, origine della spirale di ritorno dal tubo di collegamento di ritorno già generato.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
