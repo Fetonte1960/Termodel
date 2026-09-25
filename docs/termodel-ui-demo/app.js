@@ -65,7 +65,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'Performance',
   'PontiAutomatici'
 ];
-const APP_VERSION = '1.17';
+const APP_VERSION = '1.18';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -300,6 +300,7 @@ let currentProjectId = '';
 let currentServiceManifest = null;
 let termodelServiceReadyAt = 0;
 let termodelServiceCapabilities = null;
+let termodelServiceRuntimeLabel = '';
 let termodelServiceProgressHideTimer = null;
 let projectBrowserExamples = [];
 let projectBrowserExamplesPromise = null;
@@ -2652,6 +2653,16 @@ async function ensureTermodelServiceReady(force = false) {
     if (String(health?.status || '').toLowerCase() !== 'ok')
       throw new Error('Health Service non valido.');
 
+    const serviceCommit = String(
+      health?.serviceCommitShort || health?.serviceCommit || ''
+    ).trim();
+    const spiralEngine = String(health?.spiralEngine || '').trim();
+    termodelServiceRuntimeLabel =
+      'Server ' +
+      (serviceCommit ? serviceCommit.slice(0, 8) : 'locale') +
+      ' · ' +
+      (spiralEngine || 'n/d');
+
     clearInterval(wakeTimer);
     setTermodelServiceProgress('Service attivo · verifico le capacità…', 72);
 
@@ -2667,8 +2678,8 @@ async function ensureTermodelServiceReady(force = false) {
     termodelServiceCapabilities = await capabilitiesResponse.json();
     termodelServiceReadyAt = Date.now();
 
-    setTermodelServiceProgress('Termodel Service pronto', 100);
-    status.textContent = 'Termodel Service pronto · ' + TERMODEL_SERVICE_BASE_URL;
+    setTermodelServiceProgress(termodelServiceRuntimeLabel, 100);
+    status.textContent = termodelServiceRuntimeLabel;
     hideTermodelServiceProgress(520);
 
     return termodelServiceCapabilities;
@@ -2676,6 +2687,7 @@ async function ensureTermodelServiceReady(force = false) {
     clearInterval(wakeTimer);
     termodelServiceReadyAt = 0;
     termodelServiceCapabilities = null;
+    termodelServiceRuntimeLabel = '';
     setTermodelServiceProgress(
       'Service non disponibile: ' + (error?.message || error),
       100
