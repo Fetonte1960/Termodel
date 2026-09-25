@@ -70,6 +70,26 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+
+### INCARICO 2026-09-25 — Linee guida sviluppo disegno spirali / futura StrategiaDiego
+Stato: COMMISSIONATO
+
+Commissionato:
+- creare un documento vivo denominato **Linee guida per lo sviluppo del disegno spirali**, costruito progressivamente durante il confronto con l'utente;
+- per ogni nuovo punto proposto dall'utente, aggiungere commento tecnico, formulazione verificabile e registrazione Git;
+- usare il documento come specifica funzionale della futura classe/strategia **StrategiaDiego**;
+- mantenere StrategiaDiego concorrente, e non sostitutiva, rispetto ai motori/strategie **Vittorio** e **GPT** già conservati nel progetto;
+- prevedere come obiettivo architetturale una selezione esplicita della strategia richiesta: `Vittorio | GPT | Diego`, con input/output confrontabili;
+- non implementare ancora StrategiaDiego né modificare gli algoritmi Vittorio/GPT in questa fase documentale;
+- collegare le linee guida al registro strategie geometriche già presente in `docs/spirali-strategy-register/`;
+- non modificare Library Desktop, frontend, `definizionedati.json` o contratto HTTP finché la discussione non produce una richiesta esplicita di implementazione.
+
+Criteri di avanzamento:
+- il documento deve distinguere chiaramente principi consolidati, commenti tecnici e punti ancora da definire;
+- ogni principio dovrà essere traducibile in un criterio di test/regressione per la futura StrategiaDiego;
+- le tre strategie dovranno restare confrontabili sullo stesso caso geometrico senza alterarsi reciprocamente.
+
+
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
 Stato: ESEGUITO
 
