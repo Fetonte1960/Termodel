@@ -72,7 +72,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-25 — Direttiva verifica visuale obbligatoria StrategiaDiego
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - aggiungere alle **Linee guida per lo sviluppo del disegno spirali** una
@@ -108,6 +108,32 @@ Criteri di completamento:
   `definizionedati.json` in questo incarico esclusivamente documentale.
 
 
+
+Risultato:
+- consolidata `LG-036 — Verifica visuale obbligatoria delle modifiche che
+  cambiano il disegno` in
+  `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`;
+- lo stato operativo della specifica è aggiornato a `LG-001..LG-036`;
+- per ogni futura modifica con possibile impatto geometrico sono ora
+  obbligatori: GitHub Actions sul banco appartamento corrente, motore Diego,
+  produzione/retrieval di `pannelli-esecutivo.svg` e restituzione
+  dell'SVG visualizzabile all'utente;
+- esplicitato che SUCCESS, hash, metriche e log non sostituiscono la verifica
+  visuale del disegno;
+- esplicitato che un SVG di test non diventa automaticamente Golden geometrico;
+- le modifiche esclusivamente documentali o tecniche senza possibile impatto
+  sul disegno sono escluse dal ciclo Action+SVG;
+- nessuna modifica a Core, WebService runtime, frontend, Library Desktop o
+  `definizionedati.json`.
+
+Verifica:
+- file Linee guida riletto da `main` dopo il commit e LG-036 presente con
+  stato `CONSOLIDATA`;
+- questa commissione è esclusivamente documentale e **non modifica il
+  disegno**, quindi non è stata eseguita una GitHub Action: LG-036 si applica
+  dalla prossima modifica capace di alterare l'output grafico;
+- commit Linee guida:
+  `2461d63de20e6c2bd777f8ed63b67982ca1ab40b`.
 
 ### INCARICO 2026-09-25 — Banco prova corrente StrategiaDiego: appartamento reale
 Stato: ESEGUITO
