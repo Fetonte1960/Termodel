@@ -54,6 +54,7 @@ const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
 const helpExplorationMode = document.getElementById('helpExplorationMode');
 const helpCopyProjectClipboard = document.getElementById('helpCopyProjectClipboard');
+const helpCopyLogClipboard = document.getElementById('helpCopyLogClipboard');
 const TERMODEL_LOG_CATEGORIES = [
   'Sempre',
   'colmi',
@@ -63,9 +64,10 @@ const TERMODEL_LOG_CATEGORIES = [
   'RedrawHelix',
   'GeneraModello',
   'Performance',
-  'PontiAutomatici'
+  'PontiAutomatici',
+  'SpiraliDiego'
 ];
-const APP_VERSION = '1.18';
+const APP_VERSION = '1.19';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -298,6 +300,8 @@ let currentProjectText = '';
 let currentProjectFileName = '';
 let currentProjectId = '';
 let currentServiceManifest = null;
+let lastTermodelLogText = '';
+let lastTermodelLogProjectId = '';
 let termodelServiceReadyAt = 0;
 let termodelServiceCapabilities = null;
 let termodelServiceRuntimeLabel = '';
@@ -703,6 +707,56 @@ function buildTermodelCalculationPath() {
     query.set('logCategories', categories.join(','));
   }
   return '/api/calculations?' + query.toString();
+}
+
+function syncCopyTermodelLogAvailability() {
+  if (!helpCopyLogClipboard) return;
+  helpCopyLogClipboard.disabled =
+    !lastTermodelLogText ||
+    !currentProjectId ||
+    lastTermodelLogProjectId !== currentProjectId;
+}
+
+function clearCurrentTermodelLogCache() {
+  lastTermodelLogText = '';
+  lastTermodelLogProjectId = '';
+  syncCopyTermodelLogAvailability();
+}
+
+async function refreshCurrentTermodelLog(projectId) {
+  clearCurrentTermodelLogCache();
+
+  if (!projectId || selectedTermodelLogCategories().length === 0)
+    return '';
+
+  const response = await fetchTermodelService(
+    '/api/projects/' + encodeURIComponent(projectId) + '/logs/termodel',
+    { cache: 'no-store' }
+  );
+  if (!response.ok)
+    return '';
+
+  const text = await response.text();
+  if (!text.trim())
+    return '';
+
+  lastTermodelLogText = text;
+  lastTermodelLogProjectId = String(projectId);
+  syncCopyTermodelLogAvailability();
+  return text;
+}
+
+async function copyCurrentTermodelLogToClipboard() {
+  syncCopyTermodelLogAvailability();
+  if (!lastTermodelLogText || lastTermodelLogProjectId !== currentProjectId)
+    throw new Error('Nessun log aggiornato disponibile per il progetto corrente.');
+
+  const copied = await copyTextToClipboard(lastTermodelLogText, 'il log Termodel');
+  if (!copied)
+    throw new Error('Il browser non ha consentito la copia del log negli appunti.');
+
+  setMainAiStatus('✓ Log Termodel copiato negli appunti.');
+  return lastTermodelLogText;
 }
 
 function projectBrowserResourceUrl(path) {
@@ -2880,6 +2934,7 @@ async function loadCalculatedModelFromService() {
   }
 
   loading = true;
+  clearCurrentTermodelLogCache();
   status.textContent = 'Connessione al Termodel Service remoto…';
 
   const exchange = {
@@ -2978,6 +3033,8 @@ async function loadCalculatedModelFromService() {
       automatic: true,
       silentMissing: true
     });
+
+    await refreshCurrentTermodelLog(projectId);
 
     const diagnostics = Array.isArray(calculation.diagnostics)
       ? calculation.diagnostics.filter(Boolean)
@@ -9557,6 +9614,19 @@ helpCopyProjectClipboard?.addEventListener('click', async event => {
   }
 });
 
+helpCopyLogClipboard?.addEventListener('click', async event => {
+  event.preventDefault();
+  event.stopPropagation();
+  helpCopyLogClipboard.closest('.menu')?.classList.remove('open');
+
+  try {
+    await copyCurrentTermodelLogToClipboard();
+  } catch (error) {
+    console.error('Copia log negli appunti non riuscita:', error);
+    window.alert('Impossibile copiare il log negli appunti.\n\n' + error.message);
+  }
+});
+
 newProjectButton?.addEventListener('click', event => {
   event.preventDefault();
   event.stopPropagation();
@@ -9564,6 +9634,7 @@ newProjectButton?.addEventListener('click', event => {
 });
 
 setStructuredProjectState(false);
+syncCopyTermodelLogAvailability();
 
 if (TERMODEL_ANDROID_DEVICE) {
   createAndroidExploreBox();
