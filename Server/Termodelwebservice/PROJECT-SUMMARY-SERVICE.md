@@ -70,6 +70,33 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Correzione selezione closure StrategiaDiego sul quadrato
+Stato: COMMISSIONATO
+
+Commissionato:
+- usare il log reale `SpiraliDiego` del quadrato 4x4 per individuare perché
+  le soluzioni più sviluppate vengono scartate mentre sopravvive una closure
+  prematura con pochi punti;
+- correggere esclusivamente `StrategiaDiego`, mantenendo invariati GPT e
+  Vittorio;
+- non introdurre euristiche specifiche del solo quadrato se il difetto può
+  essere corretto con una regola generale di terminale/closure;
+- preservare le linee guida già consolidate, inclusi vincoli geometrici,
+  troncature e comportamento concavo/convesso;
+- eseguire GitHub Actions sul banco quadrato con categoria
+  `SpiraliDiego` attiva;
+- recuperare e confrontare `pannelli-esecutivo.svg` e
+  `TermodelLog-SpiraliDiego.md` reali prima/dopo.
+
+Criteri di completamento:
+- Action SUCCESS;
+- SVG quadrato realmente recuperato;
+- la soluzione finale non deve più essere la closure prematura da 4+4 punti
+  se esiste una soluzione geometricamente valida più sviluppata;
+- log sufficiente a spiegare la nuova selezione;
+- Summary aggiornato e Issue #1 chiusa Completed.
+
+
 ### INCARICO 2026-09-25 — Logging diagnostico SpiraliDiego + Copia log
 Stato: ESEGUITO
 
