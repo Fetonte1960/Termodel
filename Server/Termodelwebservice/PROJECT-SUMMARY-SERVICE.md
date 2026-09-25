@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-25 — Correzione primo tratto StrategiaDiego secondo LG-013/LG-017
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - correggere StrategiaDiego sul primo tratto che prosegue dal tubo di collegamento dentro il locale;
@@ -89,6 +89,61 @@ Criteri di completamento:
 - banco appartamento corrente SUCCESS;
 - SVG reale recuperato e mostrato all'utente.
 
+
+
+Risultato reale:
+- l'anomalia è stata localizzata nel **primo tratto tracciato dopo il tubo di
+  collegamento**, non nella pianta pulita;
+- sul banco appartamento la mandata entra portandosi a `1,5p = 0,45 m`
+  dalla parete superiore, ma alla prima svolta Diego usava il minimo
+  architettonico generale `p/2 = 0,15 m` anche verso la parete destra;
+- il tratto orizzontale terminava quindi a `x=7,98148 m`, cioè 0,15 m dalla
+  parete interna destra `x=8,13148 m`;
+- confrontati i motori Vittorio e GPT: entrambi ottengono il cambio di lato
+  attraverso la geometria degli offset/intersezioni e quindi accorciano il
+  tratto mantenendo l'offset dell'evoluzione;
+- StrategiaDiego ora, **soltanto sulla prima svolta dopo il collegamento**,
+  eredita la distanza architettonica raggiunta dal tratto di ingresso e la
+  usa come distanza di troncamento rispetto alla parete successiva;
+- sul banco corrente il terminale della prima svolta passa quindi a
+  `x=7,68148 m`, pari a `8,13148 - 0,45`, mantenendo 45 cm dalla parete;
+- l'estensione iniziale della stessa regola a tutte le evoluzioni è stata
+  provata e scartata perché rendeva troppo restrittivo il progetto radiante
+  reale (`locale_8` senza terminale accettabile);
+- la correzione finale è pertanto minima e specifica della prima svolta;
+- LG-013 è stata precisata con questo comportamento runtime e con il confronto
+  concettuale Vittorio/GPT;
+- nessuna modifica a fixture autorevole, frontend, Library Desktop o
+  `definizionedati.json`.
+
+Verifica reale:
+- build Release GitHub Actions: SUCCESS;
+- benchmark sintetici StrategiaDiego: SUCCESS;
+- smoke esecutivo SVG/DXF: SUCCESS;
+- progetto radiante reale: SUCCESS;
+- banco appartamento corrente StrategiaDiego: SUCCESS;
+- GitHub Actions finale run `36121714784`, job `108028934122`:
+  **SUCCESS**;
+- regression banco appartamento verifica:
+  - primo ingresso mandata circa `0,45 m`;
+  - primo tratto dopo la svolta termina a `x≈7,68148 m`, quindi a 0,45 m
+    dalla parete destra;
+- artifact `strategia-diego-current-apartment`, id `10857442717`;
+- SVG reale prodotto dal Service:
+  SHA-256 `af73fe2fda67423339b62df5d55f2c50d7d0e327f8a3ffad197c0889f31c1515`;
+- Commit Status finale e notifica telefono: SUCCESS.
+
+Iterazioni diagnostiche:
+- `83d87dd1f6d04489fda78b3c02db54f65b883c71`:
+  prima interpretazione troppo estesa del primo tratto, regression sintetiche
+  fallite;
+- `f9c49f1076c5e5ab743099f7edf6ad83099e3369`:
+  conservazione offset su tutte le svolte, sintetiche riuscite ma progetto
+  radiante reale fallito su `locale_8`;
+- `cd208c8c629c018bd34794c2ec722343b5edb877`:
+  correzione finale limitata alla prima svolta, suite completa SUCCESS;
+- `08cc65df25ce89f8553a3dcd0640c2363cf952a2`:
+  precisazione documentale LG-013.
 
 ### INCARICO 2026-09-25 — Esecutivo pannelli con pianta pulita spessorata
 Stato: ESEGUITO
