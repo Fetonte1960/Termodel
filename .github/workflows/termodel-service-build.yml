@@ -89,11 +89,23 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.16';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.17';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.16")) {
-            throw "Cache-busting app.js v1.16 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.17")) {
+            throw "Cache-busting app.js v1.17 non aggiornato."
+          }
+
+          foreach ($marker in @(
+            "const TERMODEL_SERVICE_WAIT_STATUS = 'In Attesa di una risposta del server';",
+            "function beginTermodelServiceRequest()",
+            "function endTermodelServiceRequest()",
+            "async function fetchTermodelService(path, options = {})",
+            "cadSetStatus(TERMODEL_SERVICE_WAIT_STATUS);"
+          )) {
+            if (-not $app.Contains($marker)) {
+              throw "Feedback attesa Termodel Service mancante: $marker"
+            }
           }
 
           if ($app -match 'const height = Math\.max\(\s*320,') {
