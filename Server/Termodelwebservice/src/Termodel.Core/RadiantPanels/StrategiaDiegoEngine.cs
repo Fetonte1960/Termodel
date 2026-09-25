@@ -133,7 +133,7 @@ internal static class StrategiaDiegoEngine
             architecture,
             Array.Empty<GeoSegment>(),
             directed.EntryWall,
-            step / 2.0,
+            step * 1.5,
             step,
             counters,
             countAsSupply: true);
@@ -395,9 +395,10 @@ internal static class StrategiaDiegoEngine
             return null;
         }
 
-        // LG-006 + rettifica utente 25/09/2026:
-        // il primo tratto dentro il locale rispetta la distanza minima
-        // architettonica p/2 sia per mandata sia per ritorno.
+        // La mandata entra sulla prima evoluzione a 1,5p dalla parete
+        // d'ingresso, lasciando all'esterno la guida del ritorno a p/2.
+        // Questa quota NON deve essere ereditata come distanza di arresto
+        // dalle pareti frontali successive: lì vale il minimo LG-006 p/2.
         double travel = offsetDistance / sine;
         DPoint end = start + unit * travel;
 
