@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-25 — Verifica ottimizzazioni Codex StrategiaDiego su quadrato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - verificare le ottimizzazioni realizzate da Codex su `StrategiaDiego`;
@@ -87,6 +87,72 @@ Criteri di completamento:
 - `StrategiaDiegoSquare4x4.svg` recuperato dall'artifact;
 - feedback tecnico conclusivo registrato.
 
+
+
+Risultato reale:
+- confrontato il delta Codex da `845bdcdd63e8c3f17979c517653fd643f329aea2`
+  a `fc287c9b7ae9cfe30f8bfa1c7a8818962e54d392`: 7 commit, con modifiche
+  concentrate su `StrategiaDiegoEngine`, benchmark, nuove fixture e workflow;
+- audit `STRATEGIADIEGO-GPT-FUNDAMENTALS-AUDIT.md` verificato coerente con
+  il codice: controllo segmento deterministico al posto dei 24 campioni,
+  selezione del tratto terminale della rete di ingresso, linee di collegamento
+  non assegnate come vincoli anti-attraversamento;
+- confermata come scelta corretta la rinuncia ad applicare LG-035 tramite
+  `node.Front`: senza uno stato orientato esplicito `S_k`, i run intermedi
+  eliminavano terminali validi;
+- l'albero Diego e il criterio di merito massimo LG-003 non sono stati
+  sostituiti da euristiche GPT.
+
+Verifica benchmark quadrato:
+- rerun reale della build #495, run `36133802860`, nuovo job
+  `108073316238`: **SUCCESS**;
+- artifact nuovo `strategia-diego-benchmark`, id `10865175059`;
+- fixture `StrategiaDiegoSquare4x4.locale.xml`, 20/20 iterazioni;
+- 104 nodi massimi, 2 terminali accettati, profondità massima 10;
+- p95 8 ms, memoria massima circa 508 kB;
+- output deterministico e dentro tutti i budget;
+- SHA-256 SVG motore:
+  `257a97a5e831a5a56827dec6dd0ba3a22d26a20ca61aee76f40f99a314043df7`;
+- hash identico alla precedente esecuzione #495: nessuna regressione
+  geometrica sul quadrato causata dalle ottimizzazioni Codex.
+
+Verifica esecutivo Service quadrato:
+- esteso esclusivamente il test harness, senza modificare l'algoritmo, per
+  pubblicare il vero `pannelli-esecutivo.svg` del progetto quadrato 4x4;
+- commit harness `b8cd3f7589ac25db1ac52248bd410da435065ecb`;
+- commit workflow `a2eec9074de9161e76b743531f6a7e6265cb5a99`;
+- GitHub Actions run `36136180456`, job `108075400109`: **SUCCESS** su
+  tutta la suite;
+- artifact `strategia-diego-square-executive`, id `10865521237`, contiene
+  il progetto TMDL realmente usato, SVG e DXF esecutivi;
+- SVG esecutivo SHA-256:
+  `26b202d7c9e923b542574499d46b06511f007e3ae324de71efca8da9cedf6aed`;
+- l'esecutivo contiene 4 primitive: 2 contorni pianta pulita + mandata +
+  ritorno; parete esterna 13 cm visibile;
+- verifica distanze sul risultato reale:
+  - prima evoluzione mandata: 0,45 m dalla faccia interna di ingresso;
+  - arresto rosso rispetto alla parete frontale: 0,15 m = p/2;
+  - ritorno blu rispetto alla parete laterale: 0,15 m = p/2.
+
+Feedback tecnico:
+- le ottimizzazioni Codex sui fondamentali geometrici sono confermate come
+  miglioramenti di robustezza e non introducono regressioni sul quadrato;
+- il quadrato a singolo ingresso non esercita da solo le due novità sulla rete
+  ramificata; queste restano coperte dalle fixture
+  `StrategiaDiegoConnectionTerminal` e dal progetto reale, entrambi SUCCESS;
+- il disegno 4x4 mostra però chiaramente che **la strategia di copertura non è
+  ancora completa**: la soluzione selezionata percorre soltanto una zona
+  laterale del locale e chiude presto mandata/ritorno, lasciando gran parte
+  del quadrato senza spirale;
+- questo non è un difetto delle ottimizzazioni R3, che agiscono su
+  `TrattoPossibile?` e vincoli geometrici; è un limite residuo del livello
+  strategico/terminale/chiusura e non va trasformato in Golden Result;
+- prossima analisi consigliata: capire perché sul quadrato il criterio
+  terminale + chiusura preliminare accetta una soluzione con merito 4,1 m
+  invece di proseguire nella copertura dell'intero locale.
+
+Nessuna modifica a Vittorio/GPT, frontend, fixture autorevoli o
+`definizionedati.json`.
 
 ### INCARICO 2026-09-25 — Riallineamento fondamentali geometrici GPT in StrategiaDiego
 Stato: ESEGUITO
