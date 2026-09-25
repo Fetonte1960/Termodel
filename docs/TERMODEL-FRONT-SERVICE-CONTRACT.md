@@ -483,9 +483,10 @@ kernel Darcy per circuito resta parte stabile e riusabile del Core.
 
 ### Esecutivo pannelli con default corrente
 
-Per la milestone corrente è stato attivato il motore grafico Desktop
-`SpiraliGPT` con il **default storico attuale di 0,30 m**, coerente con il
-progetto iniziale `RAD-DEFAULT` che seleziona 300 mm.
+Il Service usa **StrategiaDiego** come motore spirali di default; gli override
+espliciti `Vittorio | GPT | Diego` restano disponibili tramite
+`TERMODEL_SPIRAL_ENGINE`. Il passo corrente del banco prova resta 0,30 m,
+coerente con il progetto iniziale `RAD-DEFAULT` che seleziona 300 mm.
 
 `POST /api/calculations`, quando dispone di locali e tubi pannelli idonei,
 può quindi pubblicare anche:
@@ -507,11 +508,23 @@ ricalcolati separatamente**. Il Core costruisce un unico modello grafico
 esecutivo neutro e lo serializza nei due formati. Il contenuto equivalente
 comprende, per il perimetro supportato:
 
-- geometria base del piano sul layer `<Piano>_Edificio_Output`;
+- **pianta pulita reale del piano** prodotta dal percorso headless
+  `GeneraPianta`, importata nello stesso modello esecutivo prima delle
+  spirali; i suoi contorni conservano gli offset ricavati dagli spessori
+  effettivi delle pareti del progetto e vengono pubblicati sul layer
+  `<Piano>_PiantaPulita_Output`;
+- simboli/linee della pianta pulita, quando presenti, su
+  `<Piano>_PiantaPulitaSimboli_Output`;
 - andata/mandata rossa sul layer `<Piano>_PannelliMandata_Output`;
 - ritorno blu sul layer `<Piano>_PannelliRitorno_Output`;
 - box e numero circuito verdi su `<Piano>_NumeriCircuiti_Output`, quando
-  prodotti da `ChiusuraGPT`.
+  prodotti dal motore selezionato.
+
+La precedente geometria base a linee `<Piano>_Edificio_Output` resta solo
+fallback di compatibilità se, per un progetto legacy, la pianta pulita non è
+disponibile. L'esecutivo non deve ricostruire artificialmente gli spessori:
+riusa l'SVG canonico `TERMODEL-CLEAN-FLOOR-SVG-V1` generato nella stessa
+elaborazione.
 
 Il formato SVG dichiara:
 
