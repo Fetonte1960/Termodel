@@ -97,15 +97,16 @@ Avanzamento iniziale:
 - collegato il documento all'indice `docs/spirali-strategy-register/README.md`;
 - nessuna classe StrategiaDiego o modifica algoritmica implementata in questa fase;
 - incarico mantenuto **COMMISSIONATO** perché il documento deve continuare a ricevere i punti successivi dall'utente.
-- consolidata `LG-002 — StrategiaDiego come grafo decisionale`: nodi = situazioni con scelta strategica, archi = alternative esplicite, terminali = situazioni senza ulteriori scelte strategiche e con esito/comportamento deterministico;
-- registrato che il grafo non è ancora vincolato a essere un albero e che l'eventuale presenza di cicli resta da definire;
-- richiesto che il percorso decisionale sia diagnosticabile e riproducibile nei regression test.
+- consolidata e successivamente rettificata `LG-002 — StrategiaDiego come albero decisionale`: nodi = situazioni con scelta strategica, rami = alternative esplicite, foglie/terminali = situazioni senza ulteriori scelte strategiche e con esito/comportamento deterministico;
+- la rettifica esclude il modello a grafo generico: ogni nodo non radice ha un solo padre, rami distinti non si ricongiungono e non sono ammessi cicli;
+- richiesto che il percorso radice -> nodi -> rami -> foglia sia diagnosticabile e riproducibile nei regression test.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
 - `a7d1b5f0558bd4d4f4ed03f392a6866d305ce0ea` — creazione Linee guida e LG-001;
 - `8866e03763010c1c003f524e1e4239375eca748c` — collegamento dal registro strategie.
 - `3d7ed48b8259b03d6ad959552e7521b951aeefb3` — LG-002, struttura a grafo decisionale.
+- `ca6d8e6999496f6c4b03e4d27556039dc2ce7854` — rettifica LG-002 da grafo ad albero decisionale.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
