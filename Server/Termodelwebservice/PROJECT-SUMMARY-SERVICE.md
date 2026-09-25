@@ -70,6 +70,25 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Esecutivo pannelli con pianta pulita spessorata
+Stato: COMMISSIONATO
+
+Commissionato:
+- modificare il Service/Core affinché l'artifact `pannelli-esecutivo.svg` non contenga più soltanto spirali e geometria edilizia a linee, ma inglobi come sfondo la **pianta pulita reale** prodotta dal percorso headless `GeneraPianta`;
+- la pianta pulita incorporata deve conservare gli **spessori reali delle pareti** ricavati dai dati del progetto/archivi, così l'esecutivo consente di valutare direttamente i distacchi delle tubazioni dai muri;
+- mantenere spirali e pianta pulita nello stesso sistema di coordinate, senza ricostruzioni grafiche occasionali esterne al Service;
+- non modificare la fixture autorevole dell'appartamento, `definizionedati.json`, frontend o Library Desktop;
+- mantenere invariato il nome/contratto dell'artifact `pannelli-esecutivo-svg`; cambia soltanto il suo contenuto, che diventa composito;
+- eseguire GitHub Actions sul banco prova corrente StrategiaDiego e recuperare l'SVG realmente restituito dal Service, da mostrare all'utente come verifica visuale.
+
+Criteri di completamento:
+- `pannelli-esecutivo.svg` contiene la pianta pulita spessorata sotto le spirali;
+- gli spessori derivano dal progetto e non da valori grafici inventati nell'esecutivo;
+- build e smoke GitHub Actions SUCCESS;
+- test appartamento corrente con `TERMODEL_SPIRAL_ENGINE=Diego` SUCCESS;
+- SVG prodotto dalla Action recuperato e restituito all'utente.
+
+
 
 ### INCARICO 2026-09-25 — Direttiva verifica visuale obbligatoria StrategiaDiego
 Stato: ESEGUITO
