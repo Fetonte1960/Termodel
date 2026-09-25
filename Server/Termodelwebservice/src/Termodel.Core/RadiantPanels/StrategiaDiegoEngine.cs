@@ -324,9 +324,10 @@ internal static class StrategiaDiegoEngine
                 string Name,
                 DVector Direction,
                 string? ExcludedFrontId,
-                string? RequiredFrontId)>
+                string? RequiredFrontId,
+                GeoSegment? PursuitFront)>
             {
-                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null)
+                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null, null)
             };
 
             DVector parallel = node.Front.Direction.Normalize();
@@ -335,19 +336,22 @@ internal static class StrategiaDiegoEngine
                 "PARALLELA_A",
                 parallel,
                 null,
-                requiredSequentialFrontId));
+                requiredSequentialFrontId,
+                sequentialFront is null ? null : node.Front));
             directions.Add((
                 "PARALLELA_B",
                 -parallel,
                 null,
-                requiredSequentialFrontId));
+                requiredSequentialFrontId,
+                sequentialFront is null ? null : node.Front));
 
             var children = new List<SearchNode>();
             foreach ((
                 string _,
                 DVector direction,
                 string? excludedFront,
-                string? requiredFront) in directions)
+                string? requiredFront,
+                GeoSegment? pursuitFront) in directions)
             {
                 ExtensionResult? extension = TryExtend(
                     locale,
@@ -358,6 +362,7 @@ internal static class StrategiaDiegoEngine
                     node.Segment,
                     excludedFront,
                     requiredFront,
+                    pursuitFront,
                     step,
                     allowStartOnBoundary: false);
 
@@ -456,6 +461,7 @@ internal static class StrategiaDiegoEngine
         GeoSegment? previousSegment,
         string? excludedFrontId,
         string? requiredFrontId,
+        GeoSegment? pursuitFront,
         double step,
         bool allowStartOnBoundary)
     {
@@ -529,28 +535,33 @@ internal static class StrategiaDiegoEngine
             double tAfter = tIntersection + alongRay;
 
             // Modificato da Codex per realizzare: LG-034/LG-035 richiedono
-            // la parallela offset sul lato coerente col ramo corrente. Il
-            // precedente +/- scelto dalla sola presenza dell'intersezione
-            // fisica poteva cambiare lato nei vertici concavi o obliqui.
+            // di classificare il cambio usando S_k, S_k+1, verso corrente e
+            // lato dell'offset; il solo lato rispetto a S_k+1 non basta.
             double tEnd = tBefore;
             if (!physicalHit)
             {
-                double startSide = DVector.Cross(
-                    refUnit,
-                    start - reference.A);
-                if (Math.Abs(startSide) <= GeometryTolerance)
+                if (pursuitFront is GeoSegment followed)
                 {
-                    tEnd = tAfter;
+                    DVector followedUnit =
+                        followed.Direction.Normalize();
+                    double q = Math.Sign(DVector.Dot(unit, followedUnit));
+                    double side = Math.Sign(DVector.Cross(
+                        followedUnit,
+                        start - followed.A));
+                    double turn = Math.Sign(DVector.Cross(
+                        followedUnit,
+                        refUnit));
+                    double classification = q * side * turn;
+
+                    tEnd = classification > 0
+                        ? tBefore
+                        : tAfter;
                 }
                 else
                 {
-                    DPoint beforePoint = start + unit * tBefore;
-                    double beforeSide = DVector.Cross(
-                        refUnit,
-                        beforePoint - reference.A);
-                    tEnd = Math.Sign(beforeSide) == Math.Sign(startSide)
-                        ? tBefore
-                        : tAfter;
+                    // Senza una coppia S_k/S_k+1 non esiste classificazione
+                    // LG-035: si conserva il comportamento teorico precedente.
+                    tEnd = tAfter;
                 }
             }
 
