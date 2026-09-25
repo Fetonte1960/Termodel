@@ -377,10 +377,24 @@ internal static class StrategiaDiegoEngine
                 string Name,
                 DVector Direction,
                 string? ExcludedFrontId,
-                string? RequiredFrontId)>
+                string? RequiredFrontId)>();
+
+            // Il segmento iniziale e' soltanto il raccordo ingresso -> maglia.
+            // Non puo' diventare la prima traccia utile proseguendo diritto,
+            // altrimenti la quota dell'ingresso determina direttamente una
+            // linea della spirale. Dal seed iniziale si entra nella maglia
+            // esclusivamente girando paralleli alla parete di ingresso.
+            if (node.Depth > 1)
             {
-                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null)
-            };
+                directions.Add(
+                    ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null));
+            }
+            else
+            {
+                LogDiego(
+                    $"TREE {family} INITIAL-CONNECTOR suppress-straight " +
+                    $"at={Fmt(node.End)}; first-useful-trace=parallel-to-entry-wall");
+            }
 
             DVector parallel = node.Front.Direction.Normalize();
             GeoSegment? continuationA =
