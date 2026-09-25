@@ -70,27 +70,52 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
-### INCARICO 2026-09-25 — Rettifica definitiva primo tratto Diego: p/2 = 0,15 m
-Stato: COMMISSIONATO
+### INCARICO 2026-09-25 — Rettifica arresto frontale Diego: 15 cm; quota ingresso mandata 45 cm
+Stato: ESEGUITO
 
-Rettifica utente:
-- la precedente interpretazione a 0,45 m è errata;
-- la distanza corretta tubo-parete per il primo tratto dentro il locale è la minima architettonica LG-006, cioè `p/2`;
-- con `p=0,30 m` il valore corretto è quindi **0,15 m**;
-- il primo tratto di mandata dopo il tubo di collegamento deve essere accorciato fino a questa distanza minima;
-- rimuovere la logica speciale introdotta per conservare 0,45 m alla prima svolta;
-- aggiornare regression e documentazione;
-- rieseguire GitHub Actions sul banco appartamento corrente e sul progetto radiante reale.
+Rettifica utente consolidata dopo verifica:
+- **0,45 m = 1,5p** resta la quota della prima evoluzione di mandata rispetto
+  alla parete d'ingresso; serve a lasciare all'esterno la guida del ritorno;
+- **0,15 m = p/2** è invece la distanza corretta di arresto del primo tratto
+  quando questo arriva frontalmente a una parete architettonica;
+- il bug introdotto nella correzione precedente consisteva nell'ereditare
+  erroneamente i 0,45 m anche rispetto alla parete frontale successiva;
+- rimossa quindi la logica speciale di "offset ereditato" alla prima svolta;
+- il normale troncamento LG-006/LG-017 torna ad arrestare il tratto a p/2.
 
 Criterio di completamento:
-- ingresso mandata Diego a circa 0,15 m dalla parete;
-- prima svolta non forza 0,45 m;
+- ingresso mandata sul banco appartamento: circa 0,45 m dalla parete d'ingresso;
+- primo tratto verso la parete destra: arresto a circa 0,15 m dalla parete;
+- nessuna propagazione dei 0,45 m alla parete frontale;
 - suite completa GitHub Actions SUCCESS;
 - SVG reale del banco appartamento recuperato.
 
+Risultato reale:
+- codice finale: `d7c90f6b44d8153322548a37c115e0555bc46b4c`;
+- regression finale: `c3f9409dd63169d4176c67dedeeb693668d2566b`;
+- documentazione LG-013 rettificata in
+  `bdf9e4b9bf350e3200d8d780ac00b03e27113744`;
+- GitHub Actions run `36124421565`, job `108037147214`: **SUCCESS**;
+- SUCCESS: build Release, benchmark StrategiaDiego, smoke HTTP, smoke
+  esecutivo SVG/DXF, progetto radiante reale, banco appartamento corrente,
+  snapshot e notifica finale;
+- SVG reale: SHA-256
+  `cd7d3d3c110c5f8f93c9f22b3b0323a483710aa46468c4e1002353bdcb83a28b`;
+- artifact `strategia-diego-current-apartment`, id `10859711767`;
+- geometria verificata nell'SVG reale:
+  - parete destra interna: `x=8,13148`;
+  - terminale rosso del primo tratto verso destra: `x=7,98148`;
+  - distanza reale dalla parete destra: **0,15 m**;
+  - tratto d'ingresso rosso: da `y=2,70628` a `y=2,25628`,
+    quindi lunghezza **0,45 m**;
+- fixture autorevole invariata; nessuna modifica a frontend, Library Desktop o
+  `definizionedati.json`.
+
 
 ### INCARICO 2026-09-25 — Correzione primo tratto StrategiaDiego secondo LG-013/LG-017
-Stato: ESEGUITO
+Stato: SUPERATO — rettificato dall'incarico successivo sui 15 cm
+
+**NOTA AUTOREVOLE DI RETTIFICA:** le conclusioni di questo blocco che indicano 0,45 m come distanza corretta dalla parete frontale sono errate e non devono più essere usate. Il valore corretto di arresto dalla parete frontale è `p/2 = 0,15 m`; i 0,45 m restano soltanto la quota della prima evoluzione di mandata rispetto alla parete d'ingresso.
 
 Commissionato:
 - correggere StrategiaDiego sul primo tratto che prosegue dal tubo di collegamento dentro il locale;
