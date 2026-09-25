@@ -22,6 +22,11 @@ restare minima, commentata e confrontabile con il riferimento indicato.
 | `SpiraliGPT/Spiralgenerator.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/Spiralgenerator.cs` | PENDING — BYTE-IDENTICAL, Git blob `1c890127b32591bf33c253f0135222313be6dab3` |
 | `SpiraliGPT/Utilityfunctions.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/SpiraliGPT/Utilityfunctions.cs` | PENDING — BYTE-IDENTICAL, Git blob `99c4d2487e7fe590736a39eb3e824300d0ed1b92` |
 
+| `SpiraliVittorio/Program.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/Program.cs` | PENDING — BYTE-IDENTICAL, Git blob `6adf6b75c0e41ffe29d4bd1b30a5957def51b019` |
+| `SpiraliVittorio/Spiralgenerator.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/Spiralgenerator.cs` | PENDING — BYTE-IDENTICAL, Git blob `d80d13b535581030f1bd6a3599cee96d203681a4` |
+| `SpiraliVittorio/Utilityfunctions.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/Utilityfunctions.cs` | PENDING — BYTE-IDENTICAL, Git blob `fc233a9d72a3a93326dbb00ddd3ecde9157d984e` |
+| `SpiraliVittorio/ChiudiSpirale.cs` | `SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/ChiudiSpirale.cs` | PENDING — BYTE-IDENTICAL, Git blob `765b08c3edb90f14a2bbee5255a911b509b01774` |
+
 Il sorgente autorevole Desktop di `TermodelLog` è ora disponibile come copia
 non adattata in `SorgentiTermodel/Library/utilities/TermodelLog.cs`:
 
@@ -74,6 +79,9 @@ Riferimenti integrati il 21 settembre 2026:
 Riferimento integrato il 23 settembre 2026:
 
 - `utilities/TermodelLog.cs`: `79C4143C34407575C70DD22E8279F1FFE0F078B55CA095549A31A4E6174B4218`.
+
+Copie temporanee integrate il 25 settembre 2026 per rendere selezionabile il motore Vittorio nel Service senza modificare la Library Desktop:
+- `SpiraliVittorio/*.cs`: copie byte-identical dei quattro sorgenti necessari (`Program.cs`, `Spiralgenerator.cs`, `Utilityfunctions.cs`, `ChiudiSpirale.cs`); nessun adattamento applicato. La duplicazione e' temporanea e resta `PENDING`.
 
 Copie temporanee integrate il 23 settembre 2026 per attivare l'esecutivo pannelli con il motore GPT Desktop corrente:
 - `SpiraliGPT/*.cs`: copie byte-identical dei cinque sorgenti elencati nella tabella; nessuna modifica al motore in questa milestone. Il Service li usa con il default Desktop corrente `PassoTubi=0,30 m`. La duplicazione resta `PENDING` e dovrà essere eliminata quando il motore condiviso avrà un ingresso headless stabile.
