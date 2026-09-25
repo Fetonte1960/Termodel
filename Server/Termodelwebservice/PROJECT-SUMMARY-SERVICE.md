@@ -115,6 +115,9 @@ Avanzamento iniziale:
 - consolidata `LG-007 — Scelta di nodo possibile`: una scelta di nodo è un `TrattoPossibile` che non interseca linee già generate, è parallelo a una linea esistente di riferimento e si trova alla distanza minima applicabile di LG-006;
 - distinto esplicitamente `TrattoPossibile` da `SceltaNodoPossibile`: non ogni tratto geometricamente ammesso costituisce automaticamente un ramo dell'albero;
 - restano da definire selezione della linea di riferimento, ordinamento di più scelte ammissibili e tolleranze su parallelismo/distanza/intersezioni agli estremi.
+- consolidata `LG-008 — Terminale accettabile`: un terminale è accettabile quando l'estremo della mandata e l'estremo della ripresa/ritorno possono essere collegati senza intersecare altre linee già presenti;
+- distinto il semplice terminale dell'albero dal terminale accettabile; solo i terminali accettabili partecipano alla selezione per massimo fattore di merito di LG-003;
+- LG-008 introduce soltanto il vincolo di non-intersezione del collegamento finale; forma del collegamento, eventuali distanze minime e caso senza terminali accettabili restano da definire.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -127,6 +130,7 @@ Commit iniziali:
 - `484a961e977505d703b7e3f67a99c553e919bd8f` — LG-005, definizione di tratto possibile.
 - `9020b095e11b1c5dfda2ccbcb7d56ab838008b0c` — LG-006, passo `p` e distanze minime architettura/stesso colore/colore diverso.
 - `75723ee7b6b08a5f278fd488d7ecbaf59ca89dd6` — LG-007, definizione di scelta di nodo possibile.
+- `d4df535a993a5c2c03773f408b4f33c1f7e99de5` — LG-008, definizione di terminale accettabile.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
