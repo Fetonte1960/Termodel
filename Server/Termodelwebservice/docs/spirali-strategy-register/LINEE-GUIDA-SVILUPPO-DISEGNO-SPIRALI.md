@@ -4,6 +4,87 @@ Classificazione: **SPECIFICA VIVA — IN DEFINIZIONE**
 Ambito: Termodel / pannelli radianti / generazione geometrica spirali  
 Destinazione prevista: futura strategia/classe **StrategiaDiego**
 
+## Stato operativo corrente — 25/09/2026
+
+> **Questa sezione è autorevole sullo stato runtime corrente.**
+> Le frasi "non ancora implementata" presenti nelle sezioni storiche delle
+> singole LG descrivono lo stato al momento in cui la regola fu definita e non
+> devono essere interpretate come stato attuale del motore.
+
+### Stato dell'algoritmo
+
+StrategiaDiego è oggi:
+
+- **progettata:** sì, specifica viva LG-001..LG-035;
+- **implementata:** sì, come terzo motore headless distinto da Vittorio e GPT;
+- **selezionabile:** sì, tramite `TERMODEL_SPIRAL_ENGINE=Vittorio|GPT|Diego`;
+- **default Service:** Diego quando la variabile non è impostata; per i test
+  dedicati viene comunque forzato esplicitamente `Diego`;
+- **compilata:** sì, build Release GitHub Actions verificata;
+- **testata sinteticamente:** sì, quadrato 4x4/un ingresso e concavo a L;
+- **inseguimento LG-033..LG-035:** implementato tramite sequenza `S_k -> S_k+1`;
+- **sostenibilità computazionale sintetica:** verificata sui casi correnti;
+- **Golden geometrico completo:** non ancora approvato;
+- **validazione su progetto reale complesso:** **in corso**.
+
+### Direttiva permanente — banco prova operativo corrente
+
+Dal 25/09/2026 il banco prova primario dello sviluppo spirali è:
+
+```text
+tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl
+```
+
+SHA-256 della snapshot originale:
+
+```text
+1a5855490adcbac25e5585f9ba89c624eb2381874eb2de8bdc74821a40d2a9a5
+```
+
+Il quadrato 4x4 e il locale concavo a L restano regression sintetiche rapide,
+ma **non sono più il banco operativo principale**.
+
+La fixture appartamento deve essere usata con GitHub Actions richiedendo
+direttamente:
+
+```http
+POST /api/calculations?responseArtifact=pannelli-esecutivo-svg
+```
+
+e forzando `TERMODEL_SPIRAL_ENGINE=Diego`.
+
+### Lavoro in corso
+
+Il ciclo di sviluppo corrente è locale-per-locale:
+
+```text
+screenshot utente + numero locale
+        ↓
+riproduzione sulla fixture appartamento corrente
+        ↓
+individuazione della PRIMA decisione strategica errata
+        ↓
+regola LG esistente violata?
+  sì -> correggere il codice affinché la rispetti
+  no -> definire e consolidare una nuova LG
+        ↓
+correzione minima
+        ↓
+GitHub Action sulla stessa fixture
+        ↓
+confronto prima/dopo e nuovo regression
+```
+
+Ogni caso reale significativo deve quindi diventare progressivamente una
+verifica riproducibile. Non si aggiorna un Golden Result per far sparire una
+differenza: prima si comprende e si approva la causa.
+
+La fixture corrente è una snapshot: non va modificata silenziosamente.
+Un nuovo progetto corrente può sostituirla solo su direttiva esplicita,
+mantenendo tracciabilità della versione precedente quando necessario.
+
+---
+
 ## Scopo
 
 Questo documento viene costruito progressivamente durante il confronto tecnico
