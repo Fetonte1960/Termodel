@@ -2312,6 +2312,87 @@ Principio metodologico consolidato. Il documento resta intenzionalmente
 **SPECIFICA VIVA — IN DEFINIZIONE** e continuerà a evolvere insieme ai casi
 di test della StrategiaDiego.
 
+
+---
+
+## LG-020 — Riferimento sussidiario a Spirali Vittorio e Spirali GPT
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Per tutti gli aspetti della StrategiaDiego **non ancora definiti
+esplicitamente** nelle presenti linee guida, si assumono come riferimento i
+comportamenti già esistenti nei motori:
+
+- **Spirali Vittorio**;
+- **Spirali GPT**.
+
+### Commento tecnico
+
+Questa regola evita vuoti interpretativi durante la fase di definizione
+progressiva della StrategiaDiego.
+
+Il riferimento a Vittorio e GPT è però **sussidiario**:
+
+- una regola Diego esplicita prevale sempre;
+- Vittorio/GPT servono solo dove Diego non ha ancora definito il
+  comportamento;
+- il riferimento non implica che i due motori debbano essere copiati o
+  modificati;
+- se Vittorio e GPT si comportano in modo diverso sullo stesso punto non
+  definito, la differenza deve essere resa esplicita e risolta con una nuova
+  linea guida Diego.
+
+### Regola
+
+```text
+se esiste una regola LG-NNN applicabile:
+    usare StrategiaDiego
+
+altrimenti:
+    consultare Spirali Vittorio e Spirali GPT come riferimento
+
+se Vittorio e GPT concordano:
+    usare quel comportamento come riferimento provvisorio
+
+se Vittorio e GPT divergono:
+    non scegliere implicitamente
+    documentare il caso
+    definire una nuova regola StrategiaDiego
+```
+
+### Gerarchia delle fonti
+
+La priorità interpretativa è:
+
+```text
+1. regole esplicite StrategiaDiego LG-NNN
+2. casi attivi STRATEGY-NNN collegati
+3. riferimento Spirali Vittorio / Spirali GPT
+4. nuova decisione da consolidare se permane ambiguità
+```
+
+### Vincoli
+
+- Vittorio e GPT restano strategie concorrenti e indipendenti;
+- nessun comportamento non definito deve essere inventato senza prima
+  verificare i due riferimenti esistenti;
+- una divergenza fra Vittorio e GPT deve produrre una decisione esplicita
+  prima di essere consolidata in StrategiaDiego;
+- il riferimento sussidiario non deve introdurre modifiche silenziose alle
+  regole Diego già consolidate;
+- quando un comportamento provvisorio viene successivamente formalizzato in
+  una LG-NNN, la nuova regola sostituisce il riferimento sussidiario per quel
+  punto.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Questa regola governa l'interpretazione
+della specifica durante la fase di definizione e futura implementazione della
+StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -2330,7 +2411,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-020`, `LG-021`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-021`, `LG-022`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
