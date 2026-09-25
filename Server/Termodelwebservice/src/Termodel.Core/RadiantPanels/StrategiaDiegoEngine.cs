@@ -133,7 +133,7 @@ internal static class StrategiaDiegoEngine
             architecture,
             Array.Empty<GeoSegment>(),
             directed.EntryWall,
-            step * 1.5,
+            step / 2.0,
             step,
             counters,
             countAsSupply: true);
@@ -321,27 +321,11 @@ internal static class StrategiaDiegoEngine
 
             var children = new List<SearchNode>();
             foreach ((
-                string choiceName,
+                string _,
                 DVector direction,
                 string? excludedFront,
                 string? requiredFront) in directions)
             {
-                double? inheritedArchitectureOffset =
-                    // L'accorciamento speciale vale solo sul primo tratto
-                    // tracciato dopo il collegamento (root depth=1). Estenderlo
-                    // a tutte le evoluzioni irrigidisce impropriamente i
-                    // percorsi complessi e può eliminare terminali validi.
-                    node.Depth == 1 &&
-                    choiceName.StartsWith(
-                        "PARALLELA",
-                        StringComparison.Ordinal) &&
-                    node.Front.Family == GeoFamily.Architecture
-                        ? Distance(
-                            node.End,
-                            node.Front.A,
-                            node.Front.B)
-                        : null;
-
                 ExtensionResult? extension = TryExtend(
                     locale,
                     family,
@@ -352,8 +336,7 @@ internal static class StrategiaDiegoEngine
                     excludedFront,
                     requiredFront,
                     step,
-                    allowStartOnBoundary: false,
-                    inheritedArchitectureOffset);
+                    allowStartOnBoundary: false);
 
                 if (extension is null)
                     continue;
@@ -412,8 +395,9 @@ internal static class StrategiaDiegoEngine
             return null;
         }
 
-        // Il tratto di ingresso porta il percorso sulla prima evoluzione:
-        // mandata a 1,5p dalla parete e ritorno a p/2.
+        // LG-006 + rettifica utente 25/09/2026:
+        // il primo tratto dentro il locale rispetta la distanza minima
+        // architettonica p/2 sia per mandata sia per ritorno.
         double travel = offsetDistance / sine;
         DPoint end = start + unit * travel;
 
@@ -449,8 +433,7 @@ internal static class StrategiaDiegoEngine
         string? excludedFrontId,
         string? requiredFrontId,
         double step,
-        bool allowStartOnBoundary,
-        double? inheritedArchitectureOffset = null)
+        bool allowStartOnBoundary)
     {
         DVector unit = direction.Normalize();
         if (unit.Length <= Epsilon)
@@ -511,18 +494,6 @@ internal static class StrategiaDiegoEngine
                 family,
                 reference.Family,
                 step);
-
-            // Sul primo tratto dopo il collegamento, una scelta PARALLELA
-            // conserva la distanza raggiunta dall'ingresso anche rispetto alla
-            // parete successiva. È l'accorciamento geometrico osservato nei
-            // motori Vittorio/GPT: il terminale nasce dall'intersezione con la
-            // parallela offset della parete seguente, non dal solo minimo p/2.
-            // Le evoluzioni successive usano nuovamente le regole ordinarie.
-            if (reference.Family == GeoFamily.Architecture &&
-                inheritedArchitectureOffset is double inherited)
-            {
-                respect = Math.Max(respect, inherited);
-            }
 
             double alongRay = respect / Math.Abs(cross);
             double tEnd = physicalHit
