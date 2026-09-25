@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-25 — Esecutivo pannelli con pianta pulita spessorata
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - modificare il Service/Core affinché l'artifact `pannelli-esecutivo.svg` non contenga più soltanto spirali e geometria edilizia a linee, ma inglobi come sfondo la **pianta pulita reale** prodotta dal percorso headless `GeneraPianta`;
@@ -89,6 +89,57 @@ Criteri di completamento:
 - SVG prodotto dalla Action recuperato e restituito all'utente.
 
 
+
+
+Risultato reale:
+- `RadiantExecutiveGenerator.Generate(...)` riceve ora le
+  `CleanFloorPlans` prodotte dalla stessa elaborazione `GeneraModello`;
+- per ogni piano l'esecutivo importa l'SVG canonico
+  `TERMODEL-CLEAN-FLOOR-SVG-V1` prima delle spirali, convertendo le unità
+  della pianta pulita in metri e mantenendo lo stesso modello grafico neutro
+  usato sia dall'SVG sia dal DXF;
+- i contorni architettonici sono pubblicati su
+  `<Piano>_PiantaPulita_Output` e gli eventuali simboli lineari su
+  `<Piano>_PiantaPulitaSimboli_Output`;
+- `<Piano>_Edificio_Output` resta esclusivamente fallback per progetti
+  legacy nei quali la pianta pulita non sia disponibile;
+- lo spessore non viene inventato nell'esecutivo: la pianta pulita deriva dal
+  percorso headless `GeneraPianta -> GeometriaHelper.ParalleloPoligono ->
+  DXFLineCheck.SpessoreParete`, che legge il valore dell'archivio Pareti
+  associato alle linee del progetto;
+- la fixture autorevole non è stata modificata e non sono stati modificati
+  frontend, Library Desktop o `definizionedati.json`;
+- sul banco prova corrente la parete `Parete esterna isolata` dell'archivio
+  operativo risulta spessa 13 cm; l'SVG finale contiene due contorni della
+  pianta pulita separati coerentemente di 0,13 m, quindi lo spessore è
+  effettivamente visibile sotto le spirali.
+
+Verifica reale:
+- le prime Action hanno evidenziato due aspettative obsolete nei regression
+  test (richiesta del vecchio layer `Edificio_Output` e soglia fissa di
+  primitive); i test sono stati aggiornati alla nuova semantica composita;
+- GitHub Actions finale run `36115694955`, job `108009152767`:
+  **SUCCESS**;
+- SUCCESS: restore, build Release, benchmark StrategiaDiego, smoke esecutivo
+  SVG/DXF, progetto radiante reale, banco appartamento corrente StrategiaDiego
+  e snapshot;
+- il banco appartamento verifica esplicitamente la presenza di
+  `Unico_PiantaPulita_Output`, l'assenza del fallback
+  `Unico_Edificio_Output` e almeno due contorni distinti della pianta pulita;
+- artifact CI `strategia-diego-current-apartment`, id `10854544021`;
+- SVG reale `pannelli-esecutivo.svg` recuperato dall'Action, SHA-256
+  `cd7d3d3c110c5f8f93c9f22b3b0323a483710aa46468c4e1002353bdcb83a28b`;
+- Commit Status finale e notifica telefono: SUCCESS.
+
+Commit principali:
+- `7a2a46f0aad16950f82428fb657c06cb80e60a6e` — commissione;
+- `92e327001597813370fbbf4c554295e0a0d44514` — contratto;
+- `d957fa371b5ea9d9a13960968785485654eaaa95` — import pianta pulita nel Core;
+- `e5b61b8cca935e82edc7f0e070f4c1137f1a6071` — wiring WebService;
+- `e64e9f7fc89b15e7de49443627f447e2b40e6eaf` — regression banco appartamento;
+- `1256c6ab202105937d765a17328c2c1e9a564485` e
+  `f189a3dae9d846fcef24452ea98be794d7839316` — adeguamento regression
+  esecutivo composito.
 
 ### INCARICO 2026-09-25 — Direttiva verifica visuale obbligatoria StrategiaDiego
 Stato: ESEGUITO
