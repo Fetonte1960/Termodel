@@ -1791,6 +1791,128 @@ Principio documentale consolidato. La derivazione della scelta iniziale dalla
 configurazione terminale mandata/ritorno non è ancora implementata in
 StrategiaDiego.
 
+
+---
+
+## LG-016 — Scelta di prosecuzione nella direzione di provenienza
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Tra le scelte possibili di un nodo deve essere considerata anche la
+**prosecuzione nella stessa direzione di provenienza**.
+
+Il nuovo tratto candidato parte dal nodo corrente e prosegue lungo la stessa
+direzione del tratto con cui si è arrivati al nodo, fino a incontrare
+frontalmente un'altra linea/tratto della struttura geometrica.
+
+### Commento tecnico
+
+Questa scelta rappresenta il caso naturale di avanzamento rettilineo:
+
+```text
+tratto precedente ---> [NODO] -------------------->
+                          stessa direzione
+```
+
+La direzione del candidato è quindi determinata dal vettore del tratto
+precedente e non richiede la ricerca di un nuovo orientamento.
+
+Per coerenza con LG-005, LG-006 e LG-007, il termine 'incontrare frontalmente'
+non autorizza l'intersezione geometrica con la linea incontrata. La linea
+frontale individua il limite geometrico del candidato; il segmento prodotto
+deve arrestarsi alla distanza minima applicabile rispetto alla linea
+incontrata.
+
+### Regola
+
+Siano:
+
+- `N` = nodo corrente;
+- `v` = direzione orientata del tratto con cui si è arrivati a `N`;
+- `F` = prima linea/tratto incontrato frontalmente lungo la semiretta
+  `N + t*v`, con `t > 0`.
+
+Si costruisce un candidato:
+
+```text
+StraightCandidate(N,v,F)
+```
+
+con:
+
+```text
+direzione(StraightCandidate) = v
+```
+
+e con estremo finale posto prima di `F` alla distanza minima di tracciamento
+applicabile secondo la famiglia geometrica di `F` e LG-006.
+
+Il candidato diventa ramo dell'albero soltanto se il segmento risultante è
+un `TrattoPossibile` e soddisfa le altre condizioni di
+`SceltaNodoPossibile`.
+
+### Conseguenza sull'albero decisionale
+
+Ad ogni nodo non terminale, quando esiste una direzione di provenienza,
+StrategiaDiego deve valutare almeno la possibilità:
+
+```text
+PROSEGUI_DRITTO
+```
+
+oltre alle altre scelte che verranno definite.
+
+Se il tratto rettilineo risultante ha lunghezza nulla, interseca linee già
+generate o viola una distanza minima, questa alternativa non genera un ramo.
+
+### Vincoli per la futura implementazione
+
+- la direzione di provenienza deve essere conservata nello stato del nodo;
+- deve essere individuata la prima geometria effettivamente frontale lungo
+  tale direzione;
+- la ricerca frontale deve ignorare geometrie che non intersecano la
+  semiretta orientata dal nodo;
+- il segmento deve terminare prima della geometria frontale alla distanza
+  minima corretta (`p/2`, `p` o `2p` secondo LG-006);
+- il candidato resta soggetto a tutte le regole di non-intersezione;
+- la diagnostica deve indicare almeno nodo, direzione di provenienza,
+  geometria frontale trovata, distanza applicata e lunghezza del candidato.
+
+### Criterio futuro di verifica
+
+Devono essere presenti casi di regression in cui:
+
+```text
+1. esiste spazio frontale sufficiente
+   -> PROSEGUI_DRITTO genera un ramo;
+
+2. la geometria frontale è già alla distanza minima
+   -> lunghezza prodotta = 0
+   -> nessun ramo;
+
+3. il candidato violerebbe un'altra linea laterale/intermedia
+   -> tratto non possibile
+   -> nessun ramo.
+```
+
+### Punti ancora da definire
+
+LG-016 non stabilisce ancora:
+
+- quali altre scelte debbano essere valutate nello stesso nodo;
+- l'ordine con cui le scelte vengono enumerate;
+- come risolvere eventuali casi con più geometrie frontali alla stessa
+  distanza;
+- le tolleranze numeriche per la ricerca della geometria frontale.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. La scelta `PROSEGUI_DRITTO` non è ancora
+implementata nella futura StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -1809,7 +1931,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-016`, `LG-017`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-017`, `LG-018`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
