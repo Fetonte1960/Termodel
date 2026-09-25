@@ -2396,9 +2396,9 @@ StrategiaDiego.
 
 ---
 
-## LG-021 — Enumerazione completa delle linee di riferimento a ogni nodo
+## LG-021 — Enumerazione completa delle linee di riferimento a ogni nodo [SUPERATA DA LG-023]
 
-**Stato:** CONSOLIDATA  
+**Stato:** RETTIFICATA DA LG-023  
 **Origine:** audit pre-sviluppo del 25/09/2026
 
 ### Proposta
@@ -2563,6 +2563,124 @@ LG-022 non stabilisce ancora:
 Principio documentale consolidato durante l'audit pre-sviluppo. La gestione
 dell'estremo libero del tubo di collegamento non è ancora implementata.
 
+
+---
+
+## LG-023 — Linea di riferimento determinata dal troncamento del tratto precedente
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026; rettifica LG-021
+
+### Proposta
+
+Una nuova linea non ha un vincolo di orientamento rispetto alla
+`DirezioneProvenienza`.
+
+Per le scelte ordinarie basate sul parallelismo, però, non devono essere
+provate tutte le linee della struttura geometrica.
+
+Sono candidabili soltanto le linee che possono generare, alla distanza di
+rispetto applicabile, una parallela che abbia come **punto di partenza il
+terminale del tratto precedente**.
+
+Da questa condizione consegue che, salvo il caso `PROSEGUI_DRITTO`, la linea
+di riferimento possibile è normalmente una sola: **la linea che ha troncato
+il tratto precedente**.
+
+### Commento tecnico
+
+Il terminale del tratto precedente nasce precisamente perché la sua direzione
+teorica ha incontrato una linea frontale ed è stata arrestata alla distanza
+di rispetto da quella linea (LG-017).
+
+Quella stessa linea frontale diventa quindi il riferimento naturale per la
+scelta successiva: la nuova parallela alla distanza richiesta passa per il
+terminale già determinato.
+
+Non è necessario, né corretto, enumerare tutte le altre linee della struttura
+alla ricerca di parallele arbitrarie.
+
+### Regola
+
+Siano:
+
+- `Sprev` = tratto precedente;
+- `Tprev` = terminale di `Sprev`;
+- `Fprev` = linea frontale che ha troncato `Sprev`;
+- `d` = distanza di rispetto applicabile rispetto a `Fprev`.
+
+Per una scelta ordinaria con cambio direzione:
+
+```text
+NuovaLinea = parallela(Fprev, distanza d) passante per Tprev
+```
+
+Se tale costruzione geometrica non è possibile o non produce un
+`TrattoPossibile`, non si apre il ramo corrispondente.
+
+Non esiste una scelta fra due parallele arbitrarie: il fatto che la nuova
+linea debba passare per `Tprev` determina il lato corretto rispetto a
+`Fprev`.
+
+### Eccezione — PROSEGUI_DRITTO
+
+La scelta `PROSEGUI_DRITTO` non usa `Fprev` come riferimento di parallelismo.
+
+In quel caso:
+
+```text
+NuovaDirezione = DirezioneProvenienza
+```
+
+e si applica la deroga al parallelismo già consolidata in LG-016.
+
+### Relazione con LG-021
+
+LG-023 **rettifica LG-021**.
+
+La precedente formulazione che prevedeva di considerare tutte le linee della
+struttura come riferimenti di parallelismo non è più valida.
+
+La struttura completa resta comunque necessaria per:
+
+- individuare la prima linea frontale;
+- verificare distanze e intersezioni;
+- determinare se il nuovo tratto è possibile.
+
+Ma il riferimento per il cambio di direzione è vincolato dalla geometria del
+troncamento precedente.
+
+### Vincoli per la futura implementazione
+
+- ogni tratto deve conservare quale linea frontale lo ha troncato;
+- il terminale del tratto precedente deve essere noto prima di costruire la
+  scelta successiva;
+- la nuova parallela deve passare per tale terminale;
+- non si devono generare parallele rispetto a linee che non soddisfano questa
+  condizione;
+- `PROSEGUI_DRITTO` resta l'unica scelta corrente che deroga a questa regola
+  di riferimento;
+- la diagnostica deve riportare almeno `Fprev`, `Tprev`, distanza applicata e
+  nuova linea generata.
+
+### Criterio futuro di verifica
+
+Per un nodo successivo a un tratto troncato da una linea `Fprev`, deve essere
+verificabile che:
+
+```text
+riferimento del cambio direzione = Fprev
+nuova parallela passa per Tprev
+nessun'altra linea viene usata come riferimento alternativo
+```
+
+salvo il ramo `PROSEGUI_DRITTO`.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. LG-021 è
+rettificata su questo punto; la logica runtime non è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -2581,7 +2699,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-023`, `LG-024`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-024`, `LG-025`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
