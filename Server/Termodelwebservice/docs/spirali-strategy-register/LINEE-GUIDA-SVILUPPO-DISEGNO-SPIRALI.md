@@ -3578,6 +3578,99 @@ possibili.
 Principio strategico consolidato; la regola operativa completa
 dell'inseguimento convesso non è ancora implementata.
 
+
+---
+## LG-034 — Troncatura con segno opposto nei casi concavi e convessi
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Principio
+
+Dato un tratto in evoluzione con:
+
+- `I` = intersezione teorica fra la `DirezioneProvenienza` e la linea di
+  riferimento/troncamento, anche ottenuta tramite prolungamento geometrico;
+- `d` = distanza di rispetto applicabile rispetto alla linea di riferimento;
+- verso positivo = verso della `DirezioneProvenienza`;
+
+il punto reale di troncatura dipende dalla natura locale del percorso:
+
+```text
+caso concavo  -> T = I - d
+caso convesso -> T = I + d
+```
+
+dove `+d` e `-d` sono misurati lungo la direzione orientata del tratto
+corrente.
+
+### Interpretazione geometrica
+
+Nel caso **concavo** il tratto deve arrestarsi prima dell'intersezione teorica,
+mantenendosi all'interno della distanza di rispetto:
+
+```text
+DirezioneProvenienza ->
+                 T ---- d ---- I
+```
+
+Nel caso **convesso**, invece, il tratto deve oltrepassare l'intersezione
+teorica di una quantità `d`, così da potersi posizionare correttamente per
+inseguire la successiva evoluzione parallela:
+
+```text
+DirezioneProvenienza ->
+                 I ---- d ---- T
+```
+
+### Relazione con LG-033
+
+LG-034 formalizza il meccanismo geometrico che rende possibile
+l'inseguimento progressivo dei percorsi convessi definito in LG-033.
+
+Quando la spirale deve seguire una propria evoluzione precedente, l'intersezione
+con il segmento o con il suo prolungamento identifica il cambio di riferimento;
+nel caso convesso il terminale viene posto oltre tale intersezione di `d`.
+
+### Relazione con LG-017
+
+LG-017 viene precisata: il troncamento non è sempre un arretramento rispetto
+all'intersezione teorica.
+
+La formula generale diventa:
+
+```text
+T = I + segno * d
+```
+
+con:
+
+```text
+segno = -1  per concavo
+segno = +1  per convesso
+```
+
+### Vincoli per la futura implementazione
+
+- il nodo deve poter classificare localmente la situazione come concava o
+  convessa;
+- `d` deve essere la distanza di rispetto prevista dalla famiglia della linea;
+- il segno deve essere applicato lungo la `DirezioneProvenienza`, non rispetto
+  ad assi globali;
+- segmento reale e prolungamento possono concorrere a determinare `I`;
+- dopo il calcolo di `T`, il tratto reale deve comunque superare tutte le
+  verifiche di validità, distanza e non-intersezione.
+
+### Punto ancora da definire
+
+Resta da formalizzare il criterio computabile con cui classificare in modo
+univoco una configurazione locale come **concava** oppure **convessa**.
+
+### Stato implementativo corrente
+
+Principio geometrico consolidato durante l'audit pre-sviluppo. Nessuna logica
+runtime è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -3596,7 +3689,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-034`, `LG-035`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-035`, `LG-036`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
