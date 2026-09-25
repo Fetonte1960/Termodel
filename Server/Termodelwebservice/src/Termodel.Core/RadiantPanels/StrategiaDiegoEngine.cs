@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
+using Termodel.utilities;
 
 namespace Termodel.Core.RadiantPanels;
 
@@ -48,19 +49,31 @@ internal static class StrategiaDiegoEngine
             .Cast<InputLine>()
             .ToList();
 
+        LogDiego(
+            $"START step={Fmt(stepMeters)}m maxNodes={maxNodes} maxDepth={maxDepth} " +
+            $"connections={connections.Count}");
+
         foreach (XElement localeElement in floorInput.Descendants("Locale"))
         {
             LocaleGeometry? locale = ParseLocale(localeElement);
             if (locale is null)
                 continue;
 
+            LogDiego(
+                $"LOCALE {locale.Id} perimeterPoints={locale.Perimeter.Count}");
+
             InputLine? connection = FindConnection(locale, connections);
             if (connection is null)
             {
+                LogDiego($"LOCALE {locale.Id} REJECT no incoming connection");
                 diagnostics.Add(
                     $"Diego/{locale.Id}: nessun tubo di collegamento entrante.");
                 continue;
             }
+
+            LogDiego(
+                $"LOCALE {locale.Id} connection={connection.Id} " +
+                $"p0={Fmt(connection.P0)} p1={Fmt(connection.P1)}");
 
             LocaleSolution solution = GenerateLocale(
                 locale,
@@ -84,6 +97,12 @@ internal static class StrategiaDiegoEngine
                 $"accepted={solution.Metrics.AcceptedTerminals}, " +
                 $"maxDepth={solution.Metrics.MaxDepth}, " +
                 $"merit={solution.MeritMeters.ToString("0.###", CultureInfo.InvariantCulture)} m.");
+
+            LogDiego(
+                $"LOCALE {locale.Id} SELECT merit={Fmt(solution.MeritMeters)}m " +
+                $"supplyPoints={solution.SupplyPoints.Count} " +
+                $"returnPoints={solution.ReturnPoints.Count} " +
+                $"returnRoot={solution.ReturnRoot.Side}");
         }
 
         if (solutions.Count == 0)
@@ -129,6 +148,9 @@ internal static class StrategiaDiegoEngine
         SearchCounters counters)
     {
         DirectedConnection directed = DirectConnection(locale, connection);
+        LogDiego(
+            $"LOCALE {locale.Id} ENTRY point={Fmt(directed.EntryPoint)} " +
+            $"dir={Fmt(directed.Direction)} wall={directed.EntryWall.Id}");
 
         IReadOnlyList<GeoSegment> architecture =
             BuildArchitecture(locale);
@@ -152,6 +174,9 @@ internal static class StrategiaDiegoEngine
             counters,
             countAsSupply: true);
 
+        LogDiego(
+            $"LOCALE {locale.Id} SUPPLY tree terminals={supplyTree.Terminals.Count}");
+
         if (supplyTree.Terminals.Count == 0)
         {
             throw new InvalidDataException(
@@ -162,6 +187,10 @@ internal static class StrategiaDiegoEngine
             locale,
             directed,
             step);
+
+        LogDiego(
+            $"LOCALE {locale.Id} RETURN roots=" +
+            string.Join(",", returnRoots.Select(root => $"{root.Side}:{Fmt(root.EntryPoint)}")));
 
         if (returnRoots.Count == 0)
         {
@@ -212,10 +241,16 @@ internal static class StrategiaDiegoEngine
                             supplySegments,
                             returnSegments))
                     {
+                        LogDiego(
+                            $"LOCALE {locale.Id} CLOSURE reject " +
+                            $"{Fmt(closure.A)}->{Fmt(closure.B)}");
                         continue;
                     }
 
                     counters.AcceptedTerminals++;
+                    LogDiego(
+                        $"LOCALE {locale.Id} CLOSURE accept " +
+                        $"{Fmt(closure.A)}->{Fmt(closure.B)}");
 
                     double merit =
                         supplyTerminal.LengthMeters +
@@ -224,6 +259,9 @@ internal static class StrategiaDiegoEngine
 
                     if (best is null || merit > best.MeritMeters + Epsilon)
                     {
+                        LogDiego(
+                            $"LOCALE {locale.Id} BEST update merit={Fmt(merit)}m " +
+                            $"supplyDepth={supplyTerminal.Depth} returnDepth={returnTerminal.Depth}");
                         best = new CombinedCandidate(
                             supplyTerminal,
                             returnTerminal,
@@ -287,7 +325,15 @@ internal static class StrategiaDiegoEngine
             step);
 
         if (first is null)
+        {
+            LogDiego(
+                $"TREE {family} initial REJECT start={Fmt(start)} dir={Fmt(initialDirection)}");
             return new SearchTree(terminals);
+        }
+
+        LogDiego(
+            $"TREE {family} initial ACCEPT {Fmt(first.Segment.A)}->{Fmt(first.Segment.B)} " +
+            $"front={first.Front.Id}");
 
         SearchNode root = new(
             parent: null,
@@ -321,6 +367,11 @@ internal static class StrategiaDiegoEngine
             GeoSegment? sequentialFront =
                 FindSequenceSuccessor(node.Front, constraints);
 
+            LogDiego(
+                $"TREE {family} NODE depth={node.Depth} end={Fmt(node.End)} " +
+                $"dir={Fmt(node.Direction)} front={node.Front.Id} " +
+                $"pathLen={Fmt(node.LengthMeters)}m");
+
             var directions = new List<(
                 string Name,
                 DVector Direction,
@@ -345,7 +396,7 @@ internal static class StrategiaDiegoEngine
 
             var children = new List<SearchNode>();
             foreach ((
-                string _,
+                string choiceName,
                 DVector direction,
                 string? excludedFront,
                 string? requiredFront) in directions)
@@ -363,7 +414,17 @@ internal static class StrategiaDiegoEngine
                     allowStartOnBoundary: false);
 
                 if (extension is null)
+                {
+                    LogDiego(
+                        $"TREE {family} CHOICE {choiceName} REJECT start={Fmt(node.End)} " +
+                        $"dir={Fmt(direction)} requiredFront={requiredFront ?? "-"}");
                     continue;
+                }
+
+                LogDiego(
+                    $"TREE {family} CHOICE {choiceName} ACCEPT " +
+                    $"{Fmt(extension.Segment.A)}->{Fmt(extension.Segment.B)} " +
+                    $"front={extension.Front.Id}");
 
                 if (children.Any(existing =>
                     SegmentsEquivalent(existing.Segment, extension.Segment)))
@@ -387,6 +448,9 @@ internal static class StrategiaDiegoEngine
             {
                 terminals.Add(node);
                 counters.AddTerminal(countAsSupply);
+                LogDiego(
+                    $"TREE {family} TERMINAL depth={node.Depth} end={Fmt(node.End)} " +
+                    $"length={Fmt(node.LengthMeters)}m");
                 continue;
             }
 
@@ -583,6 +647,9 @@ internal static class StrategiaDiegoEngine
                 candidate,
                 allowStartOnBoundary))
         {
+            LogDiego(
+                $"VALIDATE {candidate.Family} REJECT outside locale={locale.Id} " +
+                $"{Fmt(candidate.A)}->{Fmt(candidate.B)}");
             return false;
         }
 
@@ -609,7 +676,12 @@ internal static class StrategiaDiegoEngine
             }
 
             if (SegmentsProperlyIntersect(candidate, other))
+            {
+                LogDiego(
+                    $"VALIDATE {candidate.Family} REJECT intersection other={other.Id} " +
+                    $"{Fmt(candidate.A)}->{Fmt(candidate.B)}");
                 return false;
+            }
 
             double required = RequiredDistance(
                 candidate.Family,
@@ -621,12 +693,22 @@ internal static class StrategiaDiegoEngine
             if (isFront)
             {
                 if (distance < required - GeometryTolerance)
+                {
+                    LogDiego(
+                        $"VALIDATE {candidate.Family} REJECT frontDistance={Fmt(distance)} " +
+                        $"required={Fmt(required)} other={other.Id}");
                     return false;
+                }
                 continue;
             }
 
             if (distance < required - GeometryTolerance)
+            {
+                LogDiego(
+                    $"VALIDATE {candidate.Family} REJECT distance={Fmt(distance)} " +
+                    $"required={Fmt(required)} other={other.Id} family={other.Family}");
                 return false;
+            }
         }
 
         return true;
@@ -1292,6 +1374,25 @@ internal static class StrategiaDiegoEngine
 
     private static string Escape(string value) =>
         System.Security.SecurityElement.Escape(value) ?? string.Empty;
+
+    private static void LogDiego(string message)
+    {
+        if (!TermodelLog.IsEnabled(TermodelLog.LogCategory.SpiraliDiego))
+            return;
+
+        TermodelLog.WriteLog(
+            "[SpiraliDiego] " + message,
+            TermodelLog.LogCategory.SpiraliDiego);
+    }
+
+    private static string Fmt(double value) =>
+        value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    private static string Fmt(DPoint point) =>
+        $"({Fmt(point.X)},{Fmt(point.Y)})";
+
+    private static string Fmt(DVector vector) =>
+        $"({Fmt(vector.X)},{Fmt(vector.Y)})";
 
     private static int ReadPositiveEnvironmentInt(
         string name,
