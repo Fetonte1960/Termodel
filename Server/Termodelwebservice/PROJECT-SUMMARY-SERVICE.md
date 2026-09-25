@@ -188,6 +188,9 @@ Avanzamento iniziale:
 - audit: consolidato il principio `LG-033 — Inseguimento progressivo dell'evoluzione precedente nei percorsi convessi`: dopo il primo giro, la spirale può riagganciarsi alla propria evoluzione precedente e seguirne ordinatamente i tratti `S1 -> S2 -> S3 -> ...`;
 - la troncatura può usare anche il prolungamento geometrico di un tratto precedente come marcatore di aggancio, mentre le collisioni restano verificate sulla geometria fisica reale;
 - per supportare l'inseguimento convesso la futura implementazione dovrà mantenere identità e sequenza dei segmenti del path; resta da definire se il successivo segmento della sequenza precedente abbia priorità assoluta o resti una delle alternative dell'albero.
+- audit: consolidata `LG-034 — Troncatura con segno opposto nei casi concavi e convessi`: rispetto all'intersezione teorica `I`, misurando lungo `DirezioneProvenienza`, il terminale vale `I - d` nei casi concavi e `I + d` nei casi convessi;
+- LG-017 viene quindi precisata: il troncamento non è sempre un arretramento; nei percorsi convessi l'avanzamento oltre l'intersezione permette l'inseguimento progressivo della precedente evoluzione definito in LG-033;
+- resta da formalizzare un criterio computabile e univoco per classificare la configurazione locale come concava o convessa.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -230,6 +233,7 @@ Commit iniziali:
 - `34f691165cfd6a0e9f6509162e51ad455cf78013` — LG-032, geometria vincolante isolata per ciascun ramo di mandata.
 - `6d14e0f98141f97a08fabd1401bd5ea1302ece17` — rettifica LG-013/LG-022: primo tratto allineato al tubo di collegamento entrante, con punto finale libero, per mandata e ritorno.
 - `b21f2810bcb2fe2cf941539dc7c7c9f9fec6dd21` — LG-033, principio di inseguimento progressivo dei tratti della precedente evoluzione nei percorsi convessi.
+- `3d2f21e49fae63ba36c5f60625d79089dfea4ce3` — LG-034, troncatura `-d` nei casi concavi e `+d` nei casi convessi lungo la direzione di provenienza.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
