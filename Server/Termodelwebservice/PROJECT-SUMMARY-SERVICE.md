@@ -138,6 +138,9 @@ Avanzamento iniziale:
 - consolidata `LG-015 — Configurazione terminale mandata/ritorno e scelta iniziale della spirale`: solo dopo il completamento della rete di ritorno, per ogni ingresso terminale viene determinato se la mandata è a destra o a sinistra nel riferimento locale `esterno -> stanza`;
 - tale configurazione terminale costituisce l'input per la scelta iniziale della spirale; `MandataDestra <=> RitornoSinistra` e `MandataSinistra <=> RitornoDestra` descrivono la stessa coppia geometrica;
 - la tabella completa che traduce il lato della mandata nella concreta prima scelta geometrica della spirale resta da definire.
+- consolidata `LG-016 — Scelta di prosecuzione nella direzione di provenienza`: ad ogni nodo con direzione entrante viene valutata l'alternativa `PROSEGUI_DRITTO`, cioè continuare lungo la stessa direzione fino alla prima geometria frontale;
+- il tratto non interseca la geometria frontale ma si arresta alla distanza minima applicabile secondo LG-006 e genera un ramo solo se resta `TrattoPossibile`/`SceltaNodoPossibile`;
+- restano da definire le altre scelte concorrenti del nodo e l'ordine con cui verranno enumerate.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -160,6 +163,7 @@ Commit iniziali:
 - `34a82b9e885a230623509e17fa395d4bd8e2275a` — LG-013, primo tratto a inclinazione libera; parallelismo obbligatorio dal secondo tratto.
 - `ed9ae3ce976969623b3dae9ecd33540ff1589cb1` — LG-014, ritorno nel corridoio segue la mandata quando possibile e salta le evoluzioni impossibili.
 - `e5a25a64eb7b5c1e637c6921ad4362da1834efc3` — LG-015, configurazione terminale mandata/ritorno e derivazione della scelta iniziale della spirale.
+- `1b28cef915a91a19f5a35aeab08c6a86e049211e` — LG-016, scelta di prosecuzione rettilinea nella direzione di provenienza fino al primo ostacolo frontale.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
