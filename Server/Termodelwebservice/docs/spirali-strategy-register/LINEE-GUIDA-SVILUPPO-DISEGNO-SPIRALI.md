@@ -1517,6 +1517,151 @@ LG-013 non stabilisce ancora:
 Principio documentale consolidato. Nessuna logica specifica per il primo
 tratto a inclinazione libera è ancora implementata in StrategiaDiego.
 
+
+---
+
+## LG-014 — Il ritorno segue la mandata nel corridoio quando possibile
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+L'utente può usare il tubo di collegamento di mandata per coprire anche aree
+del **corridoio**, cioè della stanza nella quale è collocato il nodo radice
+del sistema/collettore.
+
+Nelle evoluzioni geometriche della mandata all'interno del corridoio,
+l'algoritmo del ritorno deve tentare di **seguire la mandata**.
+
+Il ritorno segue una determinata evoluzione soltanto se il corrispondente
+tratto può essere costruito senza intersecare altre linee e nel rispetto delle
+regole geometriche applicabili.
+
+Se un'evoluzione della mandata non può essere seguita, quella linea viene
+**saltata** e l'algoritmo prosegue la ricerca lungo le evoluzioni successive
+della mandata, riprendendo a seguirla dalla prima linea successiva per la
+quale esiste un tratto possibile.
+
+### Commento tecnico
+
+Questa regola permette alla mandata utente di svolgere una doppia funzione:
+
+1. collegare il collettore agli ingressi dei circuiti;
+2. contribuire alla copertura termica del corridoio mediante il proprio
+   percorso.
+
+Il ritorno non deve però replicare meccanicamente tutta la mandata.
+Ogni evoluzione della mandata è un riferimento candidato che deve essere
+verificato rispetto allo stato geometrico corrente.
+
+La logica è quindi:
+
+```text
+segmento/evoluzione mandata
+        |
+        v
+esiste tratto di ritorno possibile che la segue?
+        |
+     SI +--> genera il tratto di ritorno corrispondente
+        |
+     NO +--> non forza il tratto
+               |
+               v
+          salta questa evoluzione
+               |
+               v
+          prova la successiva
+```
+
+Il concetto di 'seguire la mandata' deve essere letto insieme alle regole di
+parallelismo e distanza già definite: il ritorno cerca un tratto parallelo
+alla geometria della mandata alla distanza applicabile, senza creare
+intersezioni.
+
+### Regola
+
+Data la sequenza ordinata delle evoluzioni della mandata nel corridoio:
+
+```text
+M1, M2, M3, ... Mn
+```
+
+per ciascuna `Mi` l'algoritmo valuta un tratto candidato di ritorno `Ri`.
+
+```text
+se Ri è possibile:
+    Ri viene accettato come evoluzione del ritorno
+
+se Ri non è possibile:
+    Mi viene saltata per il ritorno
+    la ricerca prosegue con Mi+1
+```
+
+Il fallimento su una singola evoluzione della mandata **non interrompe** la
+costruzione dell'albero/rete di ritorno e non rende automaticamente impossibili
+le evoluzioni successive.
+
+### Relazione con LG-005, LG-006, LG-007 e LG-011
+
+- LG-005 definisce quando un tratto è possibile;
+- LG-006 definisce le distanze minime;
+- LG-007 definisce le condizioni ordinarie di una scelta di nodo;
+- LG-011 stabilisce che la mandata è input utente mentre il ritorno viene
+  costruito dall'algoritmo.
+
+LG-014 aggiunge la strategia di **follow-if-possible / skip-if-impossible**
+per le evoluzioni della mandata nel corridoio.
+
+### Vincoli per la futura implementazione
+
+- l'ordine delle evoluzioni della mandata deve essere noto e percorribile dal
+  collettore verso gli ingressi;
+- ogni evoluzione deve essere valutata separatamente;
+- un tratto di ritorno che interseca altre linee non deve essere forzato;
+- il fallimento di una singola evoluzione non deve arrestare la scansione
+  delle evoluzioni successive;
+- la diagnostica deve indicare per ogni evoluzione almeno:
+  `seguita`, `saltata`, e il motivo dell'eventuale impossibilità;
+- una linea saltata non deve essere considerata implicitamente coperta da un
+  tratto di ritorno inesistente.
+
+### Criterio futuro di verifica
+
+Un caso di regression nel corridoio deve includere una sequenza del tipo:
+
+```text
+M1 -> seguibile
+M2 -> impossibile per intersezione
+M3 -> seguibile
+```
+
+e verificare che il ritorno:
+
+```text
+segua M1
+salti M2
+riprenda da M3
+```
+
+senza forzare il tratto corrispondente a M2.
+
+### Punti ancora da definire
+
+LG-014 non stabilisce ancora:
+
+- come venga realizzata geometricamente la continuità del ritorno fra due
+  evoluzioni seguibili separate da una o più evoluzioni saltate;
+- se un salto possa richiedere un tratto a inclinazione libera;
+- come scegliere fra più possibili modalità di ricongiungimento;
+- come trattare una sequenza finale nella quale nessuna delle evoluzioni
+  successive risulti più seguibile.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. La strategia di inseguimento selettivo
+della mandata nel corridoio non è ancora implementata in StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -1535,7 +1680,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-014`, `LG-015`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-015`, `LG-016`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
