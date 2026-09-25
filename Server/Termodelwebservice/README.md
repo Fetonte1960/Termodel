@@ -178,9 +178,11 @@ GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
 ```
 
 DXF e SVG derivano dallo **stesso modello grafico esecutivo** del Core. Il
-motore geometrico è il `SpiraliGPT` Desktop corrente, usato con il default
-storico `PassoTubi=0,30 m`. Il grafo/collettore resta fuori scope e viene
-rimandato a Tubi universale.
+motore geometrico è selezionabile tramite `TERMODEL_SPIRAL_ENGINE` con i
+valori `Vittorio | GPT | Diego`; quando la variabile non è configurata il
+Service usa **StrategiaDiego**. L'override esplicito resta disponibile per
+confronti e rollback. Il passo corrente resta 0,30 m. Il grafo/collettore
+resta fuori scope e viene rimandato a Tubi universale.
 
 ## Canale universale file generati
 

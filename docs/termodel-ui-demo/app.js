@@ -2403,12 +2403,63 @@ function termodelServiceUrl(path) {
   return TERMODEL_SERVICE_BASE_URL + (value.startsWith('/') ? value : '/' + value);
 }
 
+const TERMODEL_SERVICE_WAIT_STATUS = 'In Attesa di una risposta del server';
+let termodelServicePendingRequests = 0;
+let termodelServicePreviousViewportStatus = '';
+let termodelServicePreviousCadStatus = null;
+
+function beginTermodelServiceRequest() {
+  if (termodelServicePendingRequests === 0) {
+    termodelServicePreviousViewportStatus = status ? status.textContent : '';
+    termodelServicePreviousCadStatus = cadEditStatus
+      ? {
+          text: cadEditStatus.textContent || '',
+          kind: cadEditStatus.classList.contains('error')
+            ? 'error'
+            : (cadEditStatus.classList.contains('dirty') ? 'dirty' : '')
+        }
+      : null;
+
+    if (status) status.textContent = TERMODEL_SERVICE_WAIT_STATUS;
+    cadSetStatus(TERMODEL_SERVICE_WAIT_STATUS);
+  }
+
+  termodelServicePendingRequests += 1;
+}
+
+function endTermodelServiceRequest() {
+  termodelServicePendingRequests = Math.max(0, termodelServicePendingRequests - 1);
+  if (termodelServicePendingRequests !== 0) return;
+
+  if (status && status.textContent === TERMODEL_SERVICE_WAIT_STATUS)
+    status.textContent = termodelServicePreviousViewportStatus || '';
+
+  if (cadEditStatus && cadEditStatus.textContent === TERMODEL_SERVICE_WAIT_STATUS) {
+    cadSetStatus(
+      termodelServicePreviousCadStatus?.text || '',
+      termodelServicePreviousCadStatus?.kind || ''
+    );
+  }
+
+  termodelServicePreviousViewportStatus = '';
+  termodelServicePreviousCadStatus = null;
+}
+
+async function fetchTermodelService(path, options = {}) {
+  beginTermodelServiceRequest();
+  try {
+    return await fetch(termodelServiceUrl(path), options);
+  } finally {
+    endTermodelServiceRequest();
+  }
+}
+
 async function termodelGeneratedFilesCatalog(projectId) {
   const id = String(projectId || '').trim();
   if (!id) throw new Error('ProjectId non disponibile.');
 
-  const response = await fetch(
-    termodelServiceUrl('/api/projects/' + encodeURIComponent(id) + '/generated-files'),
+  const response = await fetchTermodelService(
+    '/api/projects/' + encodeURIComponent(id) + '/generated-files',
     { cache: 'no-store' }
   );
 
@@ -2430,7 +2481,7 @@ async function termodelGeneratedFileText(fileRecord) {
   const href = String(fileRecord?.href || '').trim();
   if (!href) throw new Error('Href file generato mancante.');
 
-  const response = await fetch(termodelServiceUrl(href), {
+  const response = await fetchTermodelService(href, {
     cache: 'no-store'
   });
   if (!response.ok) {
@@ -2548,7 +2599,7 @@ async function fetchTermodelServiceWithTimeout(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    return await fetch(termodelServiceUrl(path), {
+    return await fetchTermodelService(path, {
       ...options,
       signal: controller.signal,
       cache: options.cache || 'no-store'
@@ -2839,8 +2890,8 @@ async function loadCalculatedModelFromService() {
     const calculationPath = buildTermodelCalculationPath();
     exchange.postUrl = calculationPath;
     status.textContent = 'AggiornaCalcolo: elaborazione TermodelService...';
-    const calculationResponse = await fetch(
-      termodelServiceUrl(calculationPath),
+    const calculationResponse = await fetchTermodelService(
+      calculationPath,
       {
         method: 'POST',
         headers: {
@@ -2878,7 +2929,7 @@ async function loadCalculatedModelFromService() {
 
     exchange.modelUrl = String(modelArtifact.href);
     status.textContent = 'Ricezione TermodelWebModel v3...';
-    const modelResponse = await fetch(termodelServiceUrl(modelArtifact.href), {
+    const modelResponse = await fetchTermodelService(modelArtifact.href, {
       cache: 'no-store'
     });
 
