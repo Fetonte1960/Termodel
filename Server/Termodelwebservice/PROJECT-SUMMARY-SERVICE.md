@@ -70,6 +70,25 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Rettifica definitiva primo tratto Diego: p/2 = 0,15 m
+Stato: COMMISSIONATO
+
+Rettifica utente:
+- la precedente interpretazione a 0,45 m è errata;
+- la distanza corretta tubo-parete per il primo tratto dentro il locale è la minima architettonica LG-006, cioè `p/2`;
+- con `p=0,30 m` il valore corretto è quindi **0,15 m**;
+- il primo tratto di mandata dopo il tubo di collegamento deve essere accorciato fino a questa distanza minima;
+- rimuovere la logica speciale introdotta per conservare 0,45 m alla prima svolta;
+- aggiornare regression e documentazione;
+- rieseguire GitHub Actions sul banco appartamento corrente e sul progetto radiante reale.
+
+Criterio di completamento:
+- ingresso mandata Diego a circa 0,15 m dalla parete;
+- prima svolta non forza 0,45 m;
+- suite completa GitHub Actions SUCCESS;
+- SVG reale del banco appartamento recuperato.
+
+
 ### INCARICO 2026-09-25 — Correzione primo tratto StrategiaDiego secondo LG-013/LG-017
 Stato: ESEGUITO
 
