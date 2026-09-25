@@ -316,3 +316,33 @@ Metodo di lavoro R2:
 Il **R2 resta IN CORSO** finché procede l'analisi locale-per-locale:
 l'esito positivo della harness non significa che l'intero appartamento sia
 geometricamente approvato.
+
+Verifica infrastruttura R2:
+- Action #473, run `36103180758`: build e regression precedenti SUCCESS, ma
+  nuovo banco FAILED con HTTP 422 `data-termodel-units='cm'` mancante;
+- causa: la snapshot è correttamente un **progetto locale**, mentre
+  `POST /api/calculations` riceve il payload tecnico prodotto da
+  `buildTermodelServerPayload()`; nessun difetto StrategiaDiego dimostrato;
+- harness corretta senza modificare la fixture: canonicalizzazione applicata
+  soltanto alla copia temporanea inviata al Service;
+- commit correzione harness:
+  `a789f85f433959dddeeff9e60a65a180d69416f5`;
+- Action #474, run `36103622680`, job `107971255939`: **SUCCESS**;
+- marker `STRATEGIA_DIEGO_CURRENT_APARTMENT_OK`;
+- fixture SHA verificato:
+  `1a5855490adcbac25e5585f9ba89c624eb2381874eb2de8bdc74821a40d2a9a5`;
+- motore della prova: `Diego` forzato esplicitamente;
+- risposta SVG diretta: HTTP 200;
+- SHA-256 SVG baseline del banco:
+  `71921972d16085fab3071e56cd53a0695661536436678b2c64e7051f1312ecb8`;
+- `generatedFileCount=8`; calculation: `radiantPanelCircuitCount=1`,
+  `radiantExecutivePrimitiveCount=6`, `radiantExecutiveFloorCount=1`;
+- artifact diagnostico `strategia-diego-current-apartment`, id `10850671585`,
+  verificato e contenente 10 file: server payload, SVG, DXF, pannelli JSON,
+  generated-files, metadati e log;
+- Commit Status finale e notifica telefono della #474: SUCCESS.
+
+Conclusione R2 corrente:
+- il banco prova è tecnicamente operativo e riproducibile in GitHub Actions;
+- l'analisi geometrica locale-per-locale resta il lavoro in corso;
+- la baseline SVG corrente non è un Golden Result approvato.
