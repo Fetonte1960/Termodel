@@ -83,12 +83,12 @@ app.MapGet("/", () => Results.Ok(new
 // Funzione realizzata da Codex in autonomia
 app.MapGet("/health", () =>
 {
-    string serviceCommit = ResolveServiceCommit();
+    string serviceCommit = ServiceRuntimeInfo.ResolveCommit();
     return Results.Ok(new
     {
         status = "ok",
         serviceCommit,
-        serviceCommitShort = ShortCommit(serviceCommit),
+        serviceCommitShort = ServiceRuntimeInfo.ShortCommit(serviceCommit),
         spiralEngine = RadiantExecutiveGenerator.GetSelectedSpiralEngineName()
     });
 });
@@ -1543,23 +1543,25 @@ public sealed record DxfToSvgRequest(
     bool ExplodeBlocks = false,
     string? Profile = null);
 
-
-static string ResolveServiceCommit()
+internal static class ServiceRuntimeInfo
 {
-    return
-        Environment.GetEnvironmentVariable("RENDER_GIT_COMMIT")?.Trim()
-        ?? Environment.GetEnvironmentVariable("GITHUB_SHA")?.Trim()
-        ?? Environment.GetEnvironmentVariable("SOURCE_VERSION")?.Trim()
-        ?? string.Empty;
-}
+    public static string ResolveCommit()
+    {
+        return
+            Environment.GetEnvironmentVariable("RENDER_GIT_COMMIT")?.Trim()
+            ?? Environment.GetEnvironmentVariable("GITHUB_SHA")?.Trim()
+            ?? Environment.GetEnvironmentVariable("SOURCE_VERSION")?.Trim()
+            ?? string.Empty;
+    }
 
-static string ShortCommit(string commit)
-{
-    if (string.IsNullOrWhiteSpace(commit))
-        return string.Empty;
+    public static string ShortCommit(string commit)
+    {
+        if (string.IsNullOrWhiteSpace(commit))
+            return string.Empty;
 
-    string trimmed = commit.Trim();
-    return trimmed.Length <= 8
-        ? trimmed
-        : trimmed[..8];
+        string trimmed = commit.Trim();
+        return trimmed.Length <= 8
+            ? trimmed
+            : trimmed[..8];
+    }
 }
