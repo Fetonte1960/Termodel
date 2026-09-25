@@ -503,6 +503,12 @@ internal static class StrategiaDiegoEngine
         double travel = offsetDistance / sine;
         DPoint end = start + unit * travel;
 
+        LogDiego(
+            $"INITIAL-SEED {family} entry={Fmt(start)} entryDir={Fmt(unit)} " +
+            $"wall={entryWall.Id} wallA={Fmt(entryWall.A)} wallB={Fmt(entryWall.B)} " +
+            $"offset={Fmt(offsetDistance)}m sine={Fmt(sine)} travel={Fmt(travel)}m " +
+            $"computedEnd={Fmt(end)} step={Fmt(step)}m");
+
         var candidate = new GeoSegment(
             $"D-INITIAL-{family}-{Guid.NewGuid():N}",
             start,
@@ -519,9 +525,14 @@ internal static class StrategiaDiegoEngine
                 step,
                 allowStartOnBoundary: true))
         {
+            LogDiego(
+                $"INITIAL-SEED {family} REJECT candidate={Fmt(candidate.A)}->{Fmt(candidate.B)}");
             return null;
         }
 
+        LogDiego(
+            $"INITIAL-SEED {family} ACCEPT candidate={Fmt(candidate.A)}->{Fmt(candidate.B)} " +
+            $"note=entry-to-offset-segment");
         return new ExtensionResult(candidate, entryWall);
     }
 
