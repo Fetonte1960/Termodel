@@ -3438,6 +3438,90 @@ coerente con il proprio ramo di mandata.
 Principio documentale consolidato durante l'audit pre-sviluppo. La gestione
 dello stato geometrico per ramo non è ancora implementata.
 
+
+---
+
+## LG-032 — Geometria vincolante durante la costruzione della mandata
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+Durante la costruzione di uno specifico ramo dell'albero di mandata, la
+geometria vincolante è costituita da:
+
+- tutte le linee architettoniche;
+- i soli tratti di mandata già generati lungo il ramo corrente.
+
+I rami alternativi dell'albero di mandata non devono essere considerati come
+ostacoli reciproci.
+
+### Regola
+
+Per un nodo corrente della mandata:
+
+```text
+GeometriaVincolanteMandata =
+    LineeArchitettoniche
+    + PathMandataCorrente
+```
+
+Ogni nuovo candidato di mandata viene verificato rispetto a tale geometria
+locale di ramo.
+
+### Commento tecnico
+
+Ogni ramo dell'albero rappresenta una soluzione alternativa e indipendente.
+
+Le geometrie appartenenti a rami fratelli non esistono nello stesso scenario
+fisico e quindi non devono influenzare collisioni, distanze o linee frontali
+del ramo in esame.
+
+Ogni nuovo tratto valido entra immediatamente nel `PathMandataCorrente` del
+proprio ramo e diventa vincolante per i nodi successivi di quel ramo.
+
+### Distanze applicabili
+
+Per un nuovo tratto di mandata:
+
+```text
+rispetto a linea architettonica -> p/2
+rispetto a linea di mandata     -> 2p
+```
+
+Il ritorno non è ancora presente nella fase di costruzione della mandata e
+quindi non entra nella geometria vincolante di questa fase.
+
+### Relazione con LG-031
+
+LG-032 è la regola simmetrica di LG-031:
+
+```text
+mandata -> architettura + PathMandataCorrente
+ritorno -> architettura + PathMandata(Tm) + PathRitornoCorrente
+```
+
+### Vincoli per la futura implementazione
+
+- ogni nodo di mandata deve possedere il proprio stato geometrico di ramo;
+- rami alternativi non devono condividere mutazioni geometriche;
+- collisioni e distanze devono essere calcolate solo contro la geometria
+  appartenente allo scenario corrente;
+- la diagnostica deve identificare il percorso di mandata associato a ogni
+  nodo/candidato.
+
+### Criterio futuro di verifica
+
+Un regression test con biforcazione della mandata deve verificare che un
+segmento generato nel ramo A non impedisca una scelta geometricamente valida
+nel ramo B.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. Lo stato
+geometrico isolato per ramo di mandata non è ancora implementato.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -3456,7 +3540,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-032`, `LG-033`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-033`, `LG-034`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
