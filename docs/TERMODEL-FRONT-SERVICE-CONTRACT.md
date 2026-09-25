@@ -1,6 +1,6 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.25**  
+Versione documento: **1.26**  
 Aggiornamento: **25 settembre 2026**  
 Stato: **progetti autorevoli locali nel frontend; Service Render dedicato a calcolo e artifact con workspace ricreabile per projectId; endpoint legacy open/save/lock mantenuti compatibili; conversione DXF→SVG nel Core/Service; Pianta pulita SVG persistente e projectId-scoped; feedback utenti verso GitHub Issues, archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati, snapshot diagnostico Render→GitHub e notifica GitHub Actions/telefono implementati**
 
@@ -86,7 +86,7 @@ Il commit runtime viene risolto, in ordine, da
 viene invece letto dal resolver autorevole del Core; se
 `TERMODEL_SPIRAL_ENGINE` non è configurata il default corrente è `Diego`.
 
-Il frontend v1.18 usa questi dati per mostrare nella status bar:
+Il frontend v1.19 usa questi dati per mostrare nella status bar:
 
 ```text
 Server fc287c9b · Diego
@@ -95,6 +95,47 @@ Server fc287c9b · Diego
 In ambiente locale privo di identificatore commit usa `Server locale · ...`.
 Il testo non deve essere costruito da una versione hard-coded del frontend:
 deve rappresentare il Service realmente contattato.
+
+## 0.5 Decisione 2026-09-25 — diagnostica selettiva StrategiaDiego
+
+Il Service estende il contratto log headless con la categoria specifica:
+
+```text
+SpiraliDiego
+```
+
+È una categoria **Service/Core**, aggiuntiva rispetto alle nove categorie
+storiche Desktop. La Library Desktop non viene modificata.
+
+Richiesta:
+
+```http
+POST /api/calculations?logEnabled=true&logCategories=SpiraliDiego
+```
+
+La categoria raccoglie le decisioni strategiche del motore Diego:
+ingresso locale, radici mandata/ritorno, espansione dell'albero, scelte
+accettate/rifiutate, motivi geometrici principali di rifiuto, terminali,
+closure preliminari e aggiornamenti della soluzione migliore.
+
+Il log completo dell'ultima elaborazione valida resta leggibile tramite:
+
+```http
+GET /api/projects/{projectId}/logs/termodel
+```
+
+Il frontend v1.19 aggiunge nel menu Help:
+- checkbox `spiralidiego`, che invia la categoria `SpiraliDiego`;
+- comando `Copia log negli appunti`.
+
+Il comando di copia resta disabilitato finché non esiste un log aggiornato
+per il `projectId` corrente. Dopo un `Aggiorna Modello` riuscito con almeno
+una categoria log attiva, il frontend legge e mantiene in cache il log
+corrente; il click successivo esegue soltanto la copia negli appunti, evitando
+di dipendere da autorizzazioni clipboard dopo una fetch asincrona.
+
+`logCategories=all` abilita ora dieci categorie headless:
+le nove categorie Desktop più `SpiraliDiego`.
 
 ## 1. Obiettivo dell'architettura
 
