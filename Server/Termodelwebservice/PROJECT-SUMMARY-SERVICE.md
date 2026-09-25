@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-25 — Pubblicazione Render ultima build riuscita
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - pubblicare su Render la revisione più recente di TermodelService che risulta compilata e verificata con successo su GitHub Actions;
@@ -85,6 +85,16 @@ Criteri di completamento:
 - GitHub Actions SUCCESS sul commit pubblicato;
 - deploy Render avviato dalla nuova revisione e, se interrogabile dalla sessione, `/health` coerente con il commit runtime;
 - Issue #1 aggiornata e chiusa con esito coerente.
+
+
+Risultato reale:
+- revisione funzionale di partenza: `1187212c5dfef1430a4ab66b366bc2a5a67e9c2d`, già verificata `Termodel/job=SUCCESS` nel run `36161472437`;
+- creato commit documentale di deploy `af4462ecf1a6c6d70f3fd77c5285296bfeccbf99`, senza modifiche funzionali al motore, per pubblicare la stessa revisione runtime tramite il normale auto-deploy Render collegato a `main`;
+- GitHub Actions run `36163775436`, job `108166428280`: **SUCCESS**;
+- SUCCESS: build Release, benchmark StrategiaDiego, smoke HTTP/storage, feedback, esecutivo SVG/DXF, progetto radiante reale, banco appartamento corrente, snapshot e step finale di notifica;
+- Commit Status finale `Termodel/job=SUCCESS`;
+- il push su `main` ha attivato il normale percorso di auto-deploy Render; il runtime pubblico `/health` non è interrogabile dagli strumenti di rete disponibili in questa sessione, quindi non viene dichiarata una verifica HTTP indipendente del deploy;
+- nessuna modifica a algoritmi, frontend, Library Desktop o `definizionedati.json`.
 
 
 ### INCARICO 2026-09-25 — Correzione selezione closure StrategiaDiego sul quadrato
