@@ -3186,6 +3186,87 @@ Principio documentale consolidato durante l'audit pre-sviluppo. La sostenibilit�
 computazionale dovrà essere misurata sui casi di test prima di introdurre
 eventuali ottimizzazioni.
 
+
+---
+
+## LG-029 — Valutazione preliminare della chiusura e verifica avanzata successiva
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+In fase preliminare, l'accettabilità della chiusura fra estremo mandata ed
+estremo ritorno viene valutata con un criterio semplice e rapido.
+
+Il test preliminare usa il **collegamento rettilineo diretto** fra i due
+estremi e verifica che tale segmento non intersechi altre linee.
+
+In una fase successiva verrà definita una valutazione più approfondita delle
+chiusure possibili, distinguendo quelle realmente realizzabili da quelle che
+devono essere considerate irrealizzabili.
+
+### Regola preliminare
+
+Siano:
+
+- `Mend` = estremo terminale della mandata;
+- `Rend` = estremo terminale del ritorno;
+- `C0` = segmento rettilineo diretto `Mend -> Rend`.
+
+In fase preliminare:
+
+```text
+ChiusuraPreliminarePossibile =
+    EsisteSegmento(Mend, Rend)
+    AND
+    NonIntersecaAltreLinee(C0)
+```
+
+Se il test è positivo, il terminale può essere considerato preliminarmente
+accettabile ai fini dell'audit e della prima implementazione.
+
+### Valutazione avanzata futura
+
+La futura verifica avanzata potrà considerare, tra l'altro:
+
+- forme di chiusura non rettilinee;
+- raccordi geometrici;
+- raggi minimi o curvature;
+- distanze di rispetto lungo tutta la chiusura;
+- interferenze locali;
+- fattibilità costruttiva reale;
+- casi in cui il segmento diretto fallisce ma esiste una chiusura alternativa;
+- casi in cui il segmento diretto passa ma la chiusura reale non è comunque
+  realizzabile.
+
+Questi criteri non sono ancora definiti e non devono essere inventati
+implicitamente nella prima implementazione.
+
+### Relazione con LG-008
+
+LG-029 precisa che la definizione corrente di `TerminaleAccettabile` di LG-008
+va interpretata, nella prima implementazione, come **valutazione preliminare**.
+
+La classificazione definitiva delle chiusure verrà raffinata quando saranno
+definite le regole avanzate.
+
+### Vincoli
+
+- la prima implementazione deve mantenere separati il test preliminare e la
+  futura verifica avanzata;
+- il risultato diagnostico deve indicare che l'accettabilità è preliminare;
+- un esito negativo del test diretto non deve essere considerato per sempre
+  una prova assoluta di irrealizzabilità: potrà essere rivalutato quando
+  esisteranno le regole avanzate;
+- allo stesso modo, un esito positivo preliminare non sostituisce la futura
+  verifica costruttiva dettagliata.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. La verifica
+avanzata delle chiusure resta da progettare.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -3204,7 +3285,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-029`, `LG-030`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-030`, `LG-031`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
