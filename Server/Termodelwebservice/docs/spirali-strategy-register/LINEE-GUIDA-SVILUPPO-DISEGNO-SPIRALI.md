@@ -3267,6 +3267,98 @@ definite le regole avanzate.
 Principio documentale consolidato durante l'audit pre-sviluppo. La verifica
 avanzata delle chiusure resta da progettare.
 
+
+---
+
+## LG-030 — StrategiaDiego come strategia computazionalmente pesante e selezionabile
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+StrategiaDiego viene classificata come strategia **computazionalmente
+pesante**, perché esplora in modo esteso l'albero delle alternative di mandata
+e, per ogni terminale di mandata, i relativi alberi di ritorno.
+
+Non deve quindi essere necessariamente la strategia predefinita per ogni
+progetto.
+
+### Modalità di selezione
+
+StrategiaDiego può essere attivata in almeno due casi:
+
+1. **scelta esplicita dell'utente**;
+2. **progetto compatibile**, quando una valutazione preliminare della
+   complessità indica che l'esplorazione completa è sostenibile.
+
+### Regola
+
+```text
+se utente seleziona Diego:
+    usa StrategiaDiego
+
+altrimenti se progetto è classificato compatibile con StrategiaDiego:
+    StrategiaDiego può essere resa disponibile/proposta secondo la politica
+    di selezione dell'applicazione
+
+altrimenti:
+    usare una strategia alternativa più leggera (Vittorio o GPT)
+    secondo la scelta/configurazione disponibile
+```
+
+### Commento tecnico
+
+La classificazione 'pesante' non modifica le regole geometriche della
+StrategiaDiego e non autorizza potature euristiche interne.
+
+Serve invece a governare **quando** conviene usare questo motore rispetto alle
+strategie alternative.
+
+In particolare, la selezione esterna della strategia deve restare separata
+dalla logica interna dell'albero decisionale.
+
+### Metriche candidate per la compatibilità del progetto
+
+La soglia concreta non è ancora definita. La futura valutazione potrà
+considerare, ad esempio:
+
+- numero di circuiti;
+- numero di locali;
+- complessità geometrica della pianta;
+- numero di segmenti architettonici;
+- numero stimato di nodi/rami;
+- limiti di tempo e memoria disponibili;
+- storico misurato sui regression test.
+
+Queste metriche sono candidate e non costituiscono ancora una regola di
+selezione automatica.
+
+### Vincoli per la futura implementazione
+
+- `Vittorio`, `GPT` e `Diego` devono restare strategie selezionabili in modo
+  esplicito;
+- l'utente deve poter forzare `Diego` anche quando il progetto è stimato
+  pesante, salvo eventuali limiti tecnici assoluti da definire;
+- la classificazione automatica del progetto non deve cambiare il risultato
+  di StrategiaDiego, ma solo la sua disponibilità/proposta;
+- eventuali limiti assoluti di sicurezza computazionale devono essere
+  documentati separatamente e non introdotti implicitamente;
+- le decisioni automatiche di selezione devono essere diagnostiche e
+  tracciabili.
+
+### Punti ancora da definire
+
+- soglia concreta che distingue un progetto compatibile/non compatibile;
+- comportamento dell'interfaccia quando Diego è stimata troppo onerosa;
+- eventuale fallback automatico oppure richiesta di scelta utente;
+- limiti massimi di nodi, tempo o memoria.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. Nessuna logica
+di stima automatica della complessità è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -3285,7 +3377,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-030`, `LG-031`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-031`, `LG-032`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
