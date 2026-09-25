@@ -671,7 +671,8 @@ app.MapPost("/api/calculations", async (
                 RadiantExecutiveArtifacts? executive =
                     RadiantExecutiveGenerator.Generate(
                         projectText,
-                        result.RadiantPanelInputXml);
+                        result.RadiantPanelInputXml,
+                        result.CleanFloorPlans);
 
                 string logMode = GetLogMode(logConfiguration);
                 string[] logCategories = GetLogCategoryNames(logConfiguration);
