@@ -167,7 +167,9 @@ Avanzamento iniziale:
 - la terminalità deriva quindi dall'assenza completa di prosecuzioni ammissibili, non da euristiche o previsioni sul ritorno; se almeno un candidato è valido il nodo resta non terminale e ogni candidato valido genera un ramo.
 - audit: consolidata `LG-026 — Origine della costruzione della spirale di ritorno`: la spirale di ritorno non parte dal terminale della mandata ma dall'estremo interno del tubo di collegamento di ritorno già generato nella fase iniziale della rete di collegamento;
 - per ogni circuito restano quindi distinte `OrigineMandata` e `OrigineRitorno`; il terminale della mandata rimane geometria da raggiungere/chiudere compatibilmente nelle fasi successive, non origine del ritorno;
-- restano da definire le scelte di nodo specifiche del ritorno, la sua direzione iniziale e quanto riusi le regole di esplorazione della mandata.
+- audit: consolidata `LG-027 — Mandata e ritorno usano la stessa strategia di nodo`: una volta definita la rispettiva origine, entrambe le famiglie valutano `PROSEGUI_DRITTO` e i due versi della parallela determinata dal troncamento precedente;
+- la logica decisionale deve essere condivisa; cambiano soltanto origine, famiglia/colore e quindi le distanze applicabili rispetto alla geometria presente;
+- eventuali future eccezioni specifiche del ritorno dovranno essere introdotte esplicitamente con nuove linee guida.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -202,6 +204,7 @@ Commit iniziali:
 - `ac362fc3ac48e038d919e9d368382cef22085115` — LG-024, generazione di entrambi i versi della nuova parallela senza potatura predittiva.
 - `1ddaa84f865d1c3db1a0096a1b66bc901f9a8a4b` — LG-025, condizione di terminale dell'albero di mandata.
 - `a680230894848e9c4b1777a0d63b959b863fc7f0` — LG-026, origine della spirale di ritorno dal tubo di collegamento di ritorno già generato.
+- `ff8a1912882d1fa76e4e93db5ad614b094ff3c0a` — LG-027, stessa strategia di nodo condivisa da mandata e ritorno.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
