@@ -103,9 +103,12 @@ Entrambe le implementazioni espongono il nucleo usato dalle classi migrate:
   una configurazione diagnostica della singola richiesta;
 - `AsyncLocal<List<string>?>` isola i messaggi e un secondo `AsyncLocal`
   isola la configurazione log della richiesta corrente;
-- i nomi di `LogCategory` dell'adattatore coincidono ora con quelli
-  autorevoli Desktop: `Sempre`, `colmi`, `spezza`, `Error`, `Svg`,
-  `RedrawHelix`, `GeneraModello`, `Performance`, `PontiAutomatici`;
+- l'adattatore conserva le nove categorie autorevoli Desktop:
+  `Sempre`, `colmi`, `spezza`, `Error`, `Svg`, `RedrawHelix`,
+  `GeneraModello`, `Performance`, `PontiAutomatici`;
+- il Service aggiunge la categoria headless `SpiraliDiego`, usata solo per
+  l'instrumentazione del motore sperimentale Diego; questa estensione non
+  modifica la Library Desktop e non va sincronizzata indietro nel sorgente storico;
 - senza configurazione esplicita viene mantenuta la compatibilità Service già
   verificata: le scritture dirette vengono raccolte, mentre
   `IsEnabled(...)` resta falso;
