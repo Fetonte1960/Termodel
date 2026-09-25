@@ -1428,95 +1428,92 @@ ritorno non è ancora implementata in StrategiaDiego.
 
 ---
 
-## LG-013 — Primo tratto a inclinazione libera
 
-**Stato:** CONSOLIDATA  
-**Origine:** decisione utente del 25/09/2026
+## LG-013 — Primo tratto nella direzione del tubo di collegamento
+
+**Stato:** CONSOLIDATA — RETTIFICATA 25/09/2026  
+**Origine:** decisione utente del 25/09/2026; rettifica durante audit pre-sviluppo
 
 ### Proposta
 
-Nella costruzione della spirale, il **primo tratto** può avere
-**inclinazione libera**.
+Il **primo tratto** della spirale, sia di mandata sia di ritorno, non ha
+inclinazione libera.
 
-A partire dal **secondo tratto**, le nuove scelte devono invece rispettare le
-regole di parallelismo previste dalla StrategiaDiego.
+La sua direzione coincide con la direzione del rispettivo **tubo di
+collegamento entrante**.
 
-### Commento tecnico
-
-LG-013 introduce un'eccezione esplicita alla regola generale di LG-007.
-
-Il primo tratto serve a portare la costruzione dalla condizione iniziale verso
-la geometria utile alla spirale e non è obbligato a essere parallelo a una
-linea esistente.
-
-Dal secondo tratto in poi, invece, ogni scelta torna nel regime ordinario:
-
-```text
-tratto n = 1  -> inclinazione libera
-tratto n >= 2 -> parallelismo obbligatorio secondo LG-007
-```
-
-L'inclinazione libera del primo tratto non significa assenza di regole:
-il segmento deve comunque rispettare tutte le altre condizioni applicabili,
-in particolare validità geometrica, non intersezione e distanze minime.
+Il suo punto finale interno è inizialmente **libero** e viene determinato dalla
+prima condizione geometrica di arresto utile secondo le regole di tracciamento.
 
 ### Regola
 
-Per il tratto candidato `s_n` in posizione `n` lungo il percorso:
+Per entrambe le famiglie:
 
 ```text
-se n = 1:
-    parallelismo non obbligatorio
-    restano obbligatorie le altre regole di tracciamento
-
-se n >= 2:
-    parallelismo obbligatorio
-    SceltaNodoPossibile secondo LG-007
+DirezionePrimoTrattoMandata = DirezioneTuboCollegamentoMandata
+DirezionePrimoTrattoRitorno = DirezioneTuboCollegamentoRitorno
 ```
 
-### Relazione con LG-005, LG-006 e LG-007
+L'estremo finale del primo tratto non è fissato a priori:
 
-Il primo tratto deve comunque essere un `TrattoPossibile` secondo LG-005 e
-rispettare le distanze minime di LG-006.
+```text
+PuntoFinalePrimoTratto = libero
+```
 
-L'unica deroga introdotta da LG-013 riguarda il requisito di parallelismo di
-LG-007.
+Il primo tratto viene quindi prolungato nella direzione del tubo entrante fino
+alla linea frontale che ne determina il troncamento alla distanza di rispetto
+applicabile.
 
-Dal secondo tratto in poi LG-007 torna applicabile integralmente.
+### Commento tecnico
+
+La precedente formulazione di LG-013, che ammetteva una **inclinazione libera**
+del primo tratto, è superata.
+
+L'ingresso nella spirale è una prosecuzione direzionale del tubo di
+collegamento. La libertà iniziale riguarda il **punto finale**, non la
+direzione.
+
+Questo rende simmetrici mandata e ritorno e fornisce una condizione iniziale
+deterministica alla costruzione dell'albero.
+
+### Relazione con LG-016 e LG-017
+
+Il primo tratto può essere visto come una prosecuzione nella
+`DirezioneProvenienza`, coerente con il principio di `PROSEGUI_DRITTO`.
+
+La sua estensione viene determinata applicando LG-017:
+
+```text
+direzione nota
+-> ricerca prima linea frontale
+-> troncamento alla distanza di rispetto
+-> determinazione del punto finale
+```
 
 ### Vincoli per la futura implementazione
 
-- la posizione del tratto nella sequenza deve essere nota;
-- soltanto il primo tratto può essere esentato dal requisito di parallelismo;
-- il primo tratto non può bypassare controlli di intersezione o distanze;
-- dal secondo tratto in poi ogni ramo deve essere generato rispetto a una
-  linea di riferimento valida;
-- la diagnostica deve indicare esplicitamente quando viene applicata
-  l'eccezione `PrimoTrattoInclinazioneLibera`.
+- la direzione del tubo di collegamento entrante deve essere nota e orientata;
+- la stessa regola vale per mandata e ritorno;
+- il punto finale del primo tratto non deve essere preassegnato;
+- il primo tratto deve rispettare intersezioni, distanze e tutte le altre
+  regole di `TrattoPossibile`;
+- la diagnostica deve distinguere chiaramente:
+  `DirezionePrimoTratto` e `PuntoFinalePrimoTratto`.
 
 ### Criterio futuro di verifica
 
-Un caso di regression deve verificare almeno:
+Un caso di regression deve verificare che:
 
 ```text
-tratto 1 non parallelo ma geometricamente valido -> ammesso
-tratto 2 non parallelo                         -> non ammesso
-tratto 2 parallelo e conforme                  -> ammesso
+primo tratto non allineato al tubo entrante -> non ammesso
+primo tratto allineato al tubo entrante     -> candidato valido
+punto finale                                -> determinato dal troncamento
 ```
-
-### Punti ancora da definire
-
-LG-013 non stabilisce ancora:
-
-- come venga scelta l'inclinazione concreta del primo tratto;
-- se esistano direzioni preferenziali per il primo tratto;
-- come l'inclinazione iniziale interagisca con la direzione principe LG-009.
 
 ### Stato implementativo corrente
 
-Principio documentale consolidato. Nessuna logica specifica per il primo
-tratto a inclinazione libera è ancora implementata in StrategiaDiego.
-
+Principio documentale rettificato durante l'audit pre-sviluppo. Nessuna logica
+specifica della futura StrategiaDiego è ancora implementata.
 
 ---
 
@@ -2460,9 +2457,10 @@ enumerazione completa non è ancora implementata.
 
 ---
 
-## LG-022 — Direzione di provenienza ed estremo libero del tubo di collegamento
 
-**Stato:** CONSOLIDATA  
+## LG-022 — Direzione di provenienza ed estremo libero del primo tratto
+
+**Stato:** CONSOLIDATA — RETTIFICATA 25/09/2026  
 **Origine:** audit pre-sviluppo del 25/09/2026
 
 ### Proposta
@@ -2473,96 +2471,56 @@ Ogni stato/nodo della StrategiaDiego dispone di un parametro esplicito:
 DirezioneProvenienza
 ```
 
-che rappresenta la direzione orientata con cui il percorso corrente arriva
-al nodo.
+che rappresenta la direzione orientata con cui il percorso corrente arriva al
+nodo.
 
-Nel caso iniziale del **tubo di collegamento**, la direzione è nota ma il suo
-punto finale interno non è ancora fissato: tale estremo è **libero** e viene
-determinato in funzione della geometria del prossimo tratto scelto.
+Nella condizione iniziale, sia per mandata sia per ritorno, il **primo tratto**
+mantiene la stessa direzione del rispettivo tubo di collegamento entrante.
 
-### Commento tecnico
-
-Questa precisazione separa due informazioni che non devono essere confuse:
-
-1. la **direzione di provenienza**, già nota;
-2. l'**estremo effettivo del tratto di provenienza**, che può essere determinato
-   successivamente.
-
-Nel caso del tubo di collegamento iniziale, esso va quindi interpretato come
-una linea/semiretta orientata che entra nella stanza, non necessariamente come
-un segmento già chiuso nel suo estremo interno.
-
-Quando viene scelta la direzione del prossimo tratto, l'intersezione geometrica
-fra:
-
-- la linea della direzione di provenienza;
-- la linea/direzione del nuovo tratto;
-
-determina il punto di raccordo e quindi l'estremo effettivo del tratto di
-provenienza.
+Il suo punto finale interno è invece **libero** e viene determinato soltanto
+dalla successiva condizione geometrica di arresto.
 
 ### Regola
 
-Siano:
-
-- `Lprov` = linea orientata associata a `DirezioneProvenienza`;
-- `Lnext` = linea geometrica del prossimo tratto scelto;
-- `I = Intersezione(Lprov, Lnext)`.
-
-Nel caso iniziale del tubo di collegamento:
-
 ```text
-DirezioneProvenienza = nota
-EstremoInternoTuboCollegamento = non ancora fissato
-
-dopo la scelta di Lnext:
-    I = intersezione(Lprov, Lnext)
-    EstremoInternoTuboCollegamento = I
+DirezionePrimoTratto = DirezioneProvenienza
+PuntoFinalePrimoTratto = non ancora fissato
 ```
 
-Il punto `I` diventa quindi il nodo geometrico di raccordo tra tratto di
-provenienza e nuovo tratto.
+Il punto finale viene determinato quando la semiretta orientata incontra la
+prima linea frontale valida e il tratto viene troncato alla distanza di rispetto
+applicabile.
 
-### Relazione con LG-013 e LG-016
+### Commento tecnico
 
-LG-013 consente al primo tratto una inclinazione libera.
+Questa regola separa nettamente:
 
-LG-022 precisa che, proprio per questo primo passaggio, l'estremo del tubo di
-collegamento non deve essere necessariamente noto prima della scelta del
-nuovo tratto.
+1. **direzione**, già determinata dal tubo di collegamento;
+2. **lunghezza/punto finale**, ancora da determinare geometricamente.
 
-LG-016 usa invece `DirezioneProvenienza` per la scelta `PROSEGUI_DRITTO`: in
-quel caso la nuova direzione coincide con quella di provenienza.
+Non è quindi necessario scegliere una nuova inclinazione per entrare nella
+spirale.
+
+### Relazione con LG-013, LG-016 e LG-017
+
+- LG-013 stabilisce che il primo tratto prosegue nella direzione del tubo
+  entrante;
+- LG-016 descrive la prosecuzione nella direzione di provenienza;
+- LG-017 determina il punto finale tramite linea frontale e troncamento.
 
 ### Vincoli per la futura implementazione
 
-- `DirezioneProvenienza` deve essere un dato esplicito dello stato del nodo;
-- la direzione deve essere orientata, non soltanto una retta non orientata;
-- il tubo di collegamento iniziale deve poter essere rappresentato con estremo
-  interno non ancora determinato;
-- la scelta del nuovo tratto deve poter determinare il punto di intersezione
-  con la linea di provenienza;
-- l'estremo del tratto di provenienza deve essere materializzato soltanto
-  quando la geometria del tratto successivo lo rende determinabile;
-- la diagnostica deve distinguere fra direzione nota ed estremo ancora libero.
-
-### Punti ancora da definire
-
-LG-022 non stabilisce ancora:
-
-- cosa fare se `Lprov` e `Lnext` sono parallele e quindi non hanno
-  intersezione finita;
-- come gestire intersezioni che cadono dalla parte opposta rispetto al verso
-  orientato della provenienza;
-- eventuali raccordi/arrotondamenti successivi al calcolo dell'intersezione;
-- se l'intersezione geometrica debba essere poi corretta da una distanza di
-  rispetto in casi particolari.
+- `DirezioneProvenienza` deve essere un dato orientato;
+- mandata e ritorno seguono la stessa regola iniziale;
+- il primo tratto deve poter esistere con punto finale non ancora determinato;
+- il punto finale viene materializzato solo dopo l'individuazione della linea
+  frontale e del relativo troncamento;
+- la diagnostica deve distinguere direzione nota ed estremo ancora libero.
 
 ### Stato implementativo corrente
 
-Principio documentale consolidato durante l'audit pre-sviluppo. La gestione
-dell'estremo libero del tubo di collegamento non è ancora implementata.
-
+Principio documentale rettificato durante l'audit pre-sviluppo. La gestione
+runtime non è ancora implementata.
 
 ---
 
@@ -2967,8 +2925,6 @@ FASE 3  costruzione spirale di ritorno
 LG-026 non stabilisce ancora:
 
 - le scelte di nodo specifiche della spirale di ritorno;
-- la direzione iniziale concreta del ritorno a partire dal tubo di
-  collegamento;
 - il criterio con cui il ritorno si avvicina e si richiude verso la mandata;
 - se le stesse regole di esplorazione della mandata si applichino integralmente
   anche alla costruzione del ritorno.
