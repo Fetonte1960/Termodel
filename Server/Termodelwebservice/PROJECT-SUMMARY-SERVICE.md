@@ -170,6 +170,9 @@ Avanzamento iniziale:
 - audit: consolidata `LG-027 — Mandata e ritorno usano la stessa strategia di nodo`: una volta definita la rispettiva origine, entrambe le famiglie valutano `PROSEGUI_DRITTO` e i due versi della parallela determinata dal troncamento precedente;
 - la logica decisionale deve essere condivisa; cambiano soltanto origine, famiglia/colore e quindi le distanze applicabili rispetto alla geometria presente;
 - eventuali future eccezioni specifiche del ritorno dovranno essere introdotte esplicitamente con nuove linee guida.
+- audit: consolidata `LG-028 — Ogni terminale della mandata prosegue con il proprio albero dei ritorni`: ciascun terminale mandata conserva il proprio percorso/geometria e avvia una distinta esplorazione del ritorno dalla stessa `OrigineRitorno` del circuito;
+- nessun terminale mandata viene escluso per motivi di ottimizzazione preventiva; il costo computazionale potrà crescere combinatoriamente e dovrà essere misurato sui casi di test tramite numero nodi/terminali, profondità, tempo e memoria;
+- eventuali ottimizzazioni future dovranno preservare lo spazio delle soluzioni ammissibili oppure essere prima formalizzate come nuova regola StrategiaDiego.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -205,6 +208,7 @@ Commit iniziali:
 - `1ddaa84f865d1c3db1a0096a1b66bc901f9a8a4b` — LG-025, condizione di terminale dell'albero di mandata.
 - `a680230894848e9c4b1777a0d63b959b863fc7f0` — LG-026, origine della spirale di ritorno dal tubo di collegamento di ritorno già generato.
 - `ff8a1912882d1fa76e4e93db5ad614b094ff3c0a` — LG-027, stessa strategia di nodo condivisa da mandata e ritorno.
+- `837a3148ce97d34d1e97207383fa3da159ed1a74` — LG-028, sottoalbero di ritorno distinto per ogni terminale della mandata e metriche di sostenibilità computazionale.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
