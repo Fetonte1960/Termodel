@@ -15,7 +15,7 @@ Destinazione prevista: futura strategia/classe **StrategiaDiego**
 
 StrategiaDiego è oggi:
 
-- **progettata:** sì, specifica viva LG-001..LG-035;
+- **progettata:** sì, specifica viva LG-001..LG-036;
 - **implementata:** sì, come terzo motore headless distinto da Vittorio e GPT;
 - **selezionabile:** sì, tramite `TERMODEL_SPIRAL_ENGINE=Vittorio|GPT|Diego`;
 - **default Service:** Diego quando la variabile non è impostata; per i test
@@ -3956,6 +3956,103 @@ della futura StrategiaDiego. Non ancora implementata, compilata o testata.
 
 ---
 
+## LG-036 — Verifica visuale obbligatoria delle modifiche che cambiano il disegno
+
+**Stato:** CONSOLIDATA  
+**Origine:** direttiva operativa utente del 25/09/2026
+
+### Proposta
+
+Ogni modifica a StrategiaDiego che possa alterare il disegno prodotto deve
+essere verificata sul banco prova corrente tramite GitHub Actions e deve
+produrre un SVG reale che l'utente possa esaminare visivamente.
+
+### Commento tecnico
+
+Per StrategiaDiego la sola riuscita della compilazione o dei test numerici non
+è sufficiente a dimostrare che una modifica geometrica sia corretta.
+
+Una modifica può rispettare invarianti, limiti computazionali e validazioni
+automatiche e produrre comunque un percorso geometricamente indesiderato.
+Per questo motivo l'output grafico costituisce una prova obbligatoria aggiuntiva
+ogni volta che il cambiamento può influire su mandata, ritorno, troncature,
+inseguimenti, raccordi, scelta dei rami, distanze o disposizione finale dei
+tubi.
+
+### Regola consolidata
+
+Il banco prova operativo autorevole è:
+
+```text
+tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl
+```
+
+Ogni modifica che **può cambiare il disegno** deve seguire il ciclo:
+
+```text
+modifica
+  ↓
+GitHub Actions
+  ↓
+fixture StrategiaDiegoCurrentApartment.project.tmdl
+  ↓
+TERMODEL_SPIRAL_ENGINE=Diego
+  ↓
+POST /api/calculations?responseArtifact=pannelli-esecutivo-svg
+  ↓
+pannelli-esecutivo.svg reale
+  ↓
+restituzione dell'SVG all'utente per verifica visuale
+```
+
+La chat non deve limitarsi a comunicare SUCCESS, hash, numero di primitive,
+metriche o log: deve recuperare l'**SVG effettivamente prodotto dalla Action**
+e renderlo disponibile all'utente in forma visualizzabile.
+
+### Vincoli
+
+- la fixture autorevole non viene modificata dal test;
+- l'eventuale canonicalizzazione viene applicata soltanto alla copia temporanea
+  preparata dall'harness;
+- il test deve usare esplicitamente StrategiaDiego;
+- se la Action fallisce, la modifica non è verificata;
+- se la Action riesce ma l'SVG non è recuperabile, la verifica visuale non è
+  completata;
+- quando esiste una baseline precedente pertinente, il nuovo SVG deve poter
+  essere confrontato con il precedente;
+- il nuovo SVG **non diventa automaticamente un Golden geometrico**: la sua
+  approvazione visuale resta distinta dalla semplice riuscita tecnica;
+- modifiche esclusivamente documentali o tecniche che non possono cambiare il
+  disegno non richiedono l'esecuzione di questo ciclo.
+
+### Criterio di verifica
+
+Per ogni futuro incarico con impatto possibile sul disegno devono risultare
+tutti presenti:
+
+1. commit della modifica;
+2. GitHub Action conclusa con successo sul banco prova corrente;
+3. esecuzione con `TERMODEL_SPIRAL_ENGINE=Diego`;
+4. produzione reale di `pannelli-esecutivo.svg`;
+5. recupero dell'SVG prodotto dalla stessa Action;
+6. restituzione dell'SVG all'utente per l'esame visuale;
+7. eventuale confronto prima/dopo quando utile alla diagnosi.
+
+In assenza di uno di questi elementi la modifica non va dichiarata
+**verificata visualmente**.
+
+### Stato implementativo corrente
+
+La procedura tecnica necessaria esiste già: il banco prova appartamento,
+l'harness `tools/smoke-strategia-diego-current-apartment.ps1`, la risposta
+diretta `responseArtifact=pannelli-esecutivo-svg` e l'artifact CI
+`strategia-diego-current-apartment` sono operativi.
+
+LG-036 rende obbligatorio usare tale percorso e restituire l'SVG all'utente
+per ogni successiva modifica con possibile effetto sul disegno.
+
+---
+
 ## Collegamento con il registro dei casi
 
 La futura StrategiaDiego dovrà rispettare tutte le schede del registro con
@@ -3972,7 +4069,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-036`, `LG-037`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-037`, `LG-038`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
