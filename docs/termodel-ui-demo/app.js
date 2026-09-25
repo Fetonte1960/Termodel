@@ -2791,6 +2791,7 @@ function syncCurrentProjectIdFromText(projectText) {
   } catch (_) {
     currentProjectId = '';
   }
+  syncCopyTermodelLogAvailability();
   return currentProjectId;
 }
 
@@ -2810,6 +2811,7 @@ function ensureCurrentProjectId() {
   }
 
   currentProjectId = projectId;
+  syncCopyTermodelLogAvailability();
   return projectId;
 }
 
