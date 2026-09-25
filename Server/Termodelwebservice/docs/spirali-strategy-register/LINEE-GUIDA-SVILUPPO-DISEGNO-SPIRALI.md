@@ -1595,44 +1595,45 @@ direzione nota
 - la diagnostica deve distinguere chiaramente:
   `DirezionePrimoTratto` e `PuntoFinalePrimoTratto`.
 
-### Precisazione runtime 25/09/2026 — prima svolta dopo il collegamento
+### Rettifica runtime 25/09/2026 — primo tratto a distanza minima p/2
 
-Sul banco appartamento reale è emersa una precisazione operativa fondamentale.
+La precedente interpretazione che portava la mandata a `1,5p = 0,45 m`
+dalla parete è **superata**.
 
-Il tratto di ingresso porta il percorso sulla **prima evoluzione geometrica**
-alla distanza prevista dalla parete di ingresso. Quando questa evoluzione
-effettua la **prima svolta** e diventa parallela alla parete, il tratto appena
-generato non deve essere prolungato fino al solo minimo generale `p/2` dalla
-parete successiva.
+La regola autorevole è LG-006: la distanza minima da una linea
+architettonica è `p/2`. Il primo tratto tracciato dentro il locale, subito
+dopo il tubo di collegamento, deve quindi essere accorciato fino a rispettare
+questa distanza minima.
 
-Deve invece essere **accorciato conservando l'offset della prima evoluzione**:
-
-```text
-dIngresso = distanza raggiunta dal tratto entrante rispetto alla parete
-prima svolta -> stessa distanza dIngresso dalla parete successiva
-```
-
-Nel banco corrente con `p = 0,30 m`:
+Con il passo corrente:
 
 ```text
-mandata: dIngresso = 1,5p = 0,45 m
-parete destra interna x = 8,13148 m
-terminale corretto prima svolta x = 8,13148 - 0,45 = 7,68148 m
+p = 0,30 m
+distanza tubo-parete = p/2 = 0,15 m
 ```
 
-La precedente terminazione a `x = 7,98148 m` corrispondeva invece a soli
-`p/2 = 0,15 m` ed era errata per questa prima evoluzione.
+Pertanto:
 
-Il confronto con Vittorio e GPT conferma il principio geometrico: i loro
-generatori costruiscono gli offset e determinano il cambio di lato tramite la
-geometria dell'offset/intersezione, ottenendo quindi l'accorciamento del tratto
-prima della parete successiva. StrategiaDiego applica lo stesso **principio**,
-senza copiare i loro algoritmi.
+```text
+primo tratto mandata dentro il locale -> 0,15 m dalla parete
+prima svolta verso altra parete       -> resta valido il minimo p/2
+nessuna regola speciale a 0,45 m
+```
 
-Questa eccezione è attualmente limitata alla **prima svolta dopo il tubo di
-collegamento**. Estenderla automaticamente a tutte le evoluzioni ha reso
-troppo restrittivi locali complessi e ha fallito la regression reale; le
-evoluzioni successive continuano quindi a seguire LG-006/LG-017/LG-034.
+Sul banco appartamento corrente la parete destra interna è a
+`x = 8,13148 m`; il terminale corretto del primo tratto dopo la svolta è
+quindi:
+
+```text
+8,13148 - 0,15 = 7,98148 m
+```
+
+La precedente modifica che forzava `x = 7,68148 m`, cioè 0,45 m dalla
+parete, era una interpretazione errata ed è stata rimossa.
+
+Il confronto con Vittorio e GPT resta utile soltanto per il principio
+geometrico dell'accorciamento tramite intersezione/offset; **non** implica che
+StrategiaDiego debba adottare il loro valore di offset della mandata.
 
 ### Criterio futuro di verifica
 
