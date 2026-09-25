@@ -104,65 +104,46 @@ saranno state definite e verrà commissionata esplicitamente.
 
 ---
 
-## LG-002 — StrategiaDiego come grafo decisionale
+## LG-002 — StrategiaDiego come albero decisionale
 
 **Stato:** CONSOLIDATA  
-**Origine:** decisione utente del 25/09/2026
+**Origine:** decisione utente del 25/09/2026, rettificata da grafo ad **albero**
 
 ### Proposta
 
-La struttura fondamentale della **StrategiaDiego** è un **grafo**.
+La struttura fondamentale della **StrategiaDiego** è un **albero decisionale**.
 
 - i **nodi** rappresentano situazioni in cui esiste una scelta strategica;
-- i **terminali** rappresentano situazioni in cui non esiste più una scelta
-  strategica da compiere.
+- i **rami** rappresentano le alternative possibili a partire da quella scelta;
+- le **foglie/terminali** rappresentano situazioni in cui non esiste più una
+  scelta strategica da compiere.
 
 ### Commento tecnico
 
-Questa impostazione separa in modo netto due concetti:
+La rettifica da grafo ad albero è sostanziale.
 
-1. **riconoscere lo stato geometrico corrente**;
-2. **decidere fra alternative ammissibili**.
+Ogni esecuzione parte da una radice e procede soltanto verso il basso,
+attraversando una sequenza di decisioni. Due rami distinti non si
+ricongiungono successivamente nello stesso nodo e non sono ammessi cicli.
 
-La StrategiaDiego non deve quindi diventare una sequenza opaca di condizioni
-annidate. Le decisioni devono essere rappresentabili come nodi espliciti del
-grafo, con archi che descrivono le alternative selezionabili a partire da
-quella situazione.
-
-Un terminale non significa necessariamente soltanto "spirale completata".
-Significa più precisamente **assenza di scelta strategica**. Una volta
-raggiunto un terminale, l'esito o l'azione successiva è deterministica: per
-esempio completamento del percorso, applicazione di una costruzione obbligata
-oppure dichiarazione che non esiste una prosecuzione valida.
-
-Non viene ancora imposto che il grafo sia un albero. La forma a grafo permette,
-se utile, che decisioni differenti confluiscano successivamente nella stessa
-situazione strategica. L'eventuale ammissibilità di cicli verrà definita in una
-linea guida successiva e non è stabilita da LG-002.
-
-### Modello concettuale
+Questo rende la strategia leggibile come una sequenza gerarchica di scelte:
 
 ```text
-                [stato geometrico]
-                        |
-                 scelta necessaria
-                        |
-                    [NODO]
-                   /  |   \
-                  /   |    \
-             scelta A | scelta C
-                /     |       \
-             [...]  [...]     [...]
-                \     |       /
-                 \    |      /
-                 [nuovo stato]
-                        |
-               scelta necessaria?
-                  /           \
-                SI             NO
-                |               |
-             [NODO]       [TERMINALE]
+                 [RADICE]
+                    |
+                 [NODO]
+                /      \
+          scelta A      scelta B
+             |             |
+          [NODO]         [NODO]
+          /   \             \
+       ...    ...         [TERMINALE]
+        |
+   [TERMINALE]
 ```
+
+Ogni percorso completo dall'origine a una foglia descrive una strategia
+concreta applicata a quella situazione geometrica.
 
 ### Regola
 
@@ -172,73 +153,72 @@ strategiche fondamentali:
 **Nodo decisionale**
 - descrive una situazione riconoscibile;
 - dispone di almeno due alternative strategiche ammissibili;
-- ogni alternativa è rappresentata da un arco del grafo;
-- la scelta deve essere motivabile usando dati geometrici/stato disponibili.
+- ogni alternativa apre un ramo distinto dell'albero;
+- la scelta deve essere motivabile usando dati geometrici e stato disponibili.
 
-**Terminale**
+**Foglia / terminale**
 - descrive una situazione riconoscibile;
-- non presenta alternative strategiche da confrontare;
-- non possiede archi di scelta in uscita;
-- attiva un comportamento deterministico o produce un esito determinato.
+- non presenta ulteriori alternative strategiche;
+- non apre nuovi rami;
+- determina l'azione finale o una prosecuzione obbligata e priva di scelta.
 
-La domanda che separa le due categorie è:
+La domanda che separa nodo e terminale è:
 
 ```text
 "In questa situazione esistono almeno due comportamenti strategicamente
 ammissibili fra cui scegliere?"
 
 SI  -> nodo
-NO  -> terminale
+NO  -> foglia / terminale
 ```
 
 ### Vincoli per la futura implementazione
 
+- deve esistere una radice riconoscibile dell'albero;
 - ogni nodo deve avere un'identità stabile e leggibile;
-- ogni arco deve corrispondere a una scelta esplicita e descrivibile;
-- la condizione che porta a un nodo o a un terminale deve essere verificabile;
+- ogni ramo deve corrispondere a una scelta esplicita e descrivibile;
+- ogni nodo non radice deve avere un solo padre;
+- due rami differenti non devono ricongiungersi in uno stesso nodo;
+- non sono ammessi cicli;
+- la condizione che porta a un nodo o a una foglia deve essere verificabile;
 - la decisione presa deve poter essere registrata in diagnostica;
-- la stessa situazione strategica non deve essere implementata in più punti
-  nascosti del codice se può essere rappresentata da un unico nodo;
-- i terminali non devono introdurre nuove scelte non dichiarate internamente:
-  ciò che accade dopo il terminale deve essere deterministico rispetto allo
-  stato ricevuto;
-- il grafo decisionale deve essere separato dalla geometria di basso livello:
-  le funzioni geometriche possono misurare, verificare e costruire, ma non
-  devono nascondere decisioni strategiche che appartengono al grafo.
+- le funzioni geometriche possono misurare, verificare e costruire, ma non
+  devono nascondere decisioni strategiche che appartengono all'albero.
 
 ### Criterio futuro di verifica
 
-Durante l'esecuzione di StrategiaDiego deve essere possibile ricostruire almeno
-la sequenza:
+Durante l'esecuzione di StrategiaDiego deve essere possibile ricostruire
+integralmente il percorso:
 
 ```text
-stato iniziale
+radice
 -> nodo visitato
--> scelta/arco selezionato
+-> ramo selezionato
+-> nodo successivo
 -> ...
--> terminale raggiunto
+-> foglia / terminale
 -> esito deterministico
 ```
 
-Per un caso di regression, a parità di input e parametri, il percorso nel grafo
-deve essere riproducibile e diagnosticabile.
+Per uno stesso input e gli stessi parametri, il percorso radice-foglia deve
+essere riproducibile e diagnosticabile.
 
 ### Punti ancora da definire
 
 LG-002 non stabilisce ancora:
 
-- quali siano i primi nodi concreti;
-- quali dati compongano lo "stato" passato fra i nodi;
+- quale sia il contenuto concreto della radice;
+- quali siano i primi nodi decisionali;
+- quali dati compongano lo stato trasmesso lungo i rami;
 - la regola con cui una scelta viene preferita alle altre;
-- se il grafo possa contenere cicli;
-- quali tipi di terminale debbano essere formalizzati.
+- quali tipi di foglia/terminale debbano essere formalizzati.
 
 Questi elementi verranno definiti con le successive linee guida.
 
 ### Stato implementativo corrente
 
-Principio documentale consolidato. Nessuna struttura dati del grafo e nessuna
-classe StrategiaDiego sono ancora implementate.
+Principio documentale consolidato. Nessuna struttura dati dell'albero e
+nessuna classe StrategiaDiego sono ancora implementate.
 
 ---
 
