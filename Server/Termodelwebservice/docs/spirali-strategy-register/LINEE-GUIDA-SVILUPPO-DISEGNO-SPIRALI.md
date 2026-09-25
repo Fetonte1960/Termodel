@@ -1662,6 +1662,135 @@ LG-014 non stabilisce ancora:
 Principio documentale consolidato. La strategia di inseguimento selettivo
 della mandata nel corridoio non è ancora implementata in StrategiaDiego.
 
+
+---
+
+## LG-015 — Configurazione terminale mandata/ritorno e scelta iniziale della spirale
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Una volta completata la costruzione della **rete di ritorno**, per ogni tubo di
+collegamento terminale è nota la configurazione geometrica della coppia:
+
+- mandata;
+- ritorno.
+
+Rispetto alla direzione convenzionale del tubo di collegamento
+`esterno -> stanza`, sarà quindi possibile determinare se la **mandata si trova
+a destra oppure a sinistra**.
+
+Questa informazione viene usata per determinare la **scelta iniziale** della
+costruzione della spirale relativa a quell'ingresso.
+
+### Commento tecnico
+
+LG-015 stabilisce il punto di passaggio fra le due fasi principali:
+
+```text
+costruzione rete di collegamento idraulico
+        |
+        v
+rete di ritorno completata
+        |
+        v
+configurazione locale mandata/ritorno nota
+        |
+        v
+MandataDestra oppure MandataSinistra
+        |
+        v
+determinazione della scelta iniziale della spirale
+        |
+        v
+costruzione albero decisionale della spirale
+```
+
+La configurazione non deve quindi essere ipotizzata in anticipo quando ancora
+la rete di ritorno non è stata costruita. È la geometria risultante della rete
+di collegamento a rendere nota la posizione relativa dei due tubi terminali.
+
+### Regola
+
+Per ogni ingresso terminale `i`, dopo il completamento della rete di ritorno:
+
+```text
+ConfigurazioneTerminale(i) =
+    MandataDestra
+    oppure
+    MandataSinistra
+```
+
+dove destra/sinistra sono definite secondo LG-009 rispetto al verso
+`esterno -> stanza`.
+
+La `ConfigurazioneTerminale(i)` costituisce un dato di ingresso per la
+determinazione del primo orientamento/scelta della spirale associata a `i`.
+
+### Relazione con LG-009, LG-010 e LG-011
+
+- LG-009 definisce il riferimento locale `esterno -> stanza` e il concetto di
+  destra/sinistra;
+- LG-010 stabilisce che ogni ingresso possiede una configurazione locale
+  indipendente dagli altri;
+- LG-011 stabilisce che il ritorno viene costruito dall'algoritmo;
+- LG-015 precisa che, **a costruzione del ritorno terminata**, la geometria
+  effettiva della coppia terminale permette di determinare il lato della
+  mandata e quindi la scelta iniziale della spirale.
+
+Le descrizioni `MandataDestra/MandataSinistra` e
+`RitornoSinistra/RitornoDestra` sono complementari per la stessa coppia
+terminale:
+
+```text
+MandataDestra  <=> RitornoSinistra
+MandataSinistra <=> RitornoDestra
+```
+
+### Vincoli per la futura implementazione
+
+- la configurazione terminale deve essere calcolata soltanto dopo che il
+  ritorno relativo all'ingresso è geometricamente definito;
+- la configurazione deve essere determinata separatamente per ogni ingresso;
+- il calcolo deve usare il riferimento locale `esterno -> stanza` e non gli
+  assi globali del disegno;
+- la scelta iniziale della spirale deve usare la configurazione geometrica
+  effettivamente ottenuta, non un valore globale o presunto;
+- la diagnostica deve riportare per ogni ingresso almeno:
+  identificativo, lato mandata, lato ritorno e scelta iniziale derivata.
+
+### Criterio futuro di verifica
+
+Per un caso con più ingressi deve essere possibile ottenere, per esempio:
+
+```text
+Ingresso A:
+  MandataDestra
+  RitornoSinistra
+  -> scelta iniziale A
+
+Ingresso B:
+  MandataSinistra
+  RitornoDestra
+  -> scelta iniziale B
+```
+
+senza che la configurazione di un ingresso influenzi quella degli altri.
+
+### Punti ancora da definire
+
+LG-015 non stabilisce ancora la tabella completa che traduce
+`MandataDestra/MandataSinistra` nella concreta prima scelta geometrica della
+spirale. Tale corrispondenza sarà definita dalle successive linee guida.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. La derivazione della scelta iniziale dalla
+configurazione terminale mandata/ritorno non è ancora implementata in
+StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -1680,7 +1809,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-015`, `LG-016`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-016`, `LG-017`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
