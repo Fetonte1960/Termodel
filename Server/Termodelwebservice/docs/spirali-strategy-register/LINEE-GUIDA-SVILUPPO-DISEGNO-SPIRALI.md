@@ -458,6 +458,123 @@ LG-004 non stabilisce ancora:
 Principio documentale consolidato. Nessuna nuova struttura dati geometrica è
 ancora implementata in StrategiaDiego.
 
+
+---
+
+## LG-005 — Concetto di tratto possibile
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Si definisce **tratto possibile** un tratto che:
+
+1. rispetta tutte le regole di tracciamento applicabili;
+2. genera un segmento di lunghezza strettamente maggiore di zero.
+
+### Commento tecnico
+
+Il concetto di tratto possibile diventa il filtro elementare usato dai nodi
+dell'albero quando devono stabilire quali alternative possano realmente essere
+aperte.
+
+Non basta che due punti definiscano matematicamente un segmento: quel segmento
+deve anche rispettare le regole geometriche e strategiche di tracciamento
+valide nello stato corrente.
+
+La condizione di lunghezza positiva evita di considerare come alternative
+effettive segmenti degeneri, coincidenti o ridotti a un punto.
+
+LG-005 non definisce ancora l'elenco completo delle regole di tracciamento:
+stabilisce soltanto il criterio generale con cui un candidato viene
+classificato come possibile o non possibile.
+
+### Regola
+
+Dato un segmento candidato `s`:
+
+```text
+TrattoPossibile(s) =
+    RispettaRegoleDiTracciamento(s)
+    AND
+    Lunghezza(s) > 0
+```
+
+Se una delle due condizioni è falsa, il tratto non è possibile.
+
+### Conseguenza sull'albero decisionale
+
+Un nodo può aprire un ramo associato a un nuovo tratto soltanto se quel tratto
+è possibile secondo LG-005.
+
+Quindi:
+
+```text
+tratto candidato
+      |
+      v
+rispetta regole di tracciamento?
+      |
+   NO +--> ramo non ammissibile
+      |
+     SI
+      |
+lunghezza > 0?
+      |
+   NO +--> ramo non ammissibile
+      |
+     SI
+      |
+      v
+tratto possibile
+```
+
+### Vincoli per la futura implementazione
+
+- il controllo di possibilità deve essere eseguibile in modo deterministico;
+- la lunghezza deve essere calcolata nella stessa unità geometrica usata dalla
+  StrategiaDiego;
+- un segmento di lunghezza zero non deve generare un ramo dell'albero;
+- un segmento che viola anche una sola regola di tracciamento applicabile non
+  deve generare un ramo valido;
+- la diagnostica dovrebbe poter indicare perché un tratto è stato rifiutato:
+  lunghezza nulla oppure violazione di una specifica regola di tracciamento;
+- le regole di tracciamento dovranno essere definite separatamente e potranno
+  dipendere dalla famiglia geometrica coinvolta
+  (architettura, mandata, ritorno).
+
+### Criterio futuro di verifica
+
+Per ogni tratto candidato deve essere possibile verificare almeno:
+
+```text
+lunghezza segmento
+regole di tracciamento controllate
+esito di ciascun controllo
+TrattoPossibile = SI / NO
+```
+
+Un tratto con lunghezza nulla deve risultare sempre non possibile.
+
+Un tratto di lunghezza positiva deve risultare possibile soltanto se supera
+tutte le regole di tracciamento applicabili.
+
+### Punti ancora da definire
+
+LG-005 non stabilisce ancora:
+
+- quali siano tutte le regole di tracciamento;
+- se esista una tolleranza numerica sotto la quale una lunghezza positiva venga
+  comunque considerata nulla;
+- se il concetto debba estendersi in futuro a polilinee o curve oltre al
+  singolo segmento.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Nessuna funzione `TrattoPossibile` è
+ancora implementata in StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -476,7 +593,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-005`, `LG-006`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-006`, `LG-007`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
