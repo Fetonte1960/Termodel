@@ -125,6 +125,9 @@ Avanzamento iniziale:
 - non ancora definita per deduzione la regola `RitornoDestra`; resta da stabilire anche se la direzione principe sia solo priorità di esplorazione o vincolo più forte.
 - consolidata `LG-010 — Lato di ritorno associato al singolo tubo di collegamento`: ogni ingresso conserva il proprio `LatoRitorno = Sinistra | Destra`, indipendente dagli altri ingressi dello stesso progetto;
 - esclusa una configurazione globale unica del lato di ritorno: verso `esterno -> stanza` e lato di ritorno vengono valutati separatamente per ogni tubo di collegamento.
+- consolidata `LG-011 — Albero di collegamento idraulico collettore-ingressi`: prima della costruzione delle spirali interne viene definita la rete fisica di collegamento dal collettore ai tratti di entrata;
+- distinta tale rete dall'albero decisionale LG-002: la rete/albero di mandata è input autorevole dell'utente, mentre l'albero di ritorno viene costruito dall'algoritmo;
+- la rete di collegamento completa alimenterà `LineeMandata` e `LineeRitorno` della struttura geometrica LG-004; algoritmo concreto del ritorno, diramazioni e priorità restano da definire.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -142,6 +145,7 @@ Commit iniziali:
 - `58dc4cfbe7890a66170f5f03afba05b804c1f3ff` — LG-009, configurazione iniziale e direzione principe per ritorno a sinistra.
 - `7a77cc8fae70d79fcccd1359fbd555fd439f5be7` — precisazione LG-009: destra/sinistra riferite al verso del tubo di collegamento `esterno -> stanza`.
 - `0620f934f4b183f514e8e80ffd436a2008533df1` — LG-010, lato di ritorno indipendente per ogni tubo di collegamento di ingresso.
+- `ae5cab7d3b4581ac652718cb44dc5416c75c7b7e` — LG-011, albero di collegamento idraulico: mandata input utente, ritorno generato dall'algoritmo.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
