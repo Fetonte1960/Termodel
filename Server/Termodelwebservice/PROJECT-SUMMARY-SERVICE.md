@@ -7,7 +7,7 @@
 > `Termodel/job` con `RUNNING -> SUCCESS/FAILED` e push telefono a
 > SUCCESS/FAILED. La regola è permanente e già verificata end-to-end.
 
-Ultimo aggiornamento: **2026-09-24**  
+Ultimo aggiornamento: **2026-09-25**  
 Branch GitHub di riferimento: **main**  
 Repository: `https://github.com/Fetonte1960/Termodel`
 
@@ -88,6 +88,20 @@ Criteri di avanzamento:
 - il documento deve distinguere chiaramente principi consolidati, commenti tecnici e punti ancora da definire;
 - ogni principio dovrà essere traducibile in un criterio di test/regressione per la futura StrategiaDiego;
 - le tre strategie dovranno restare confrontabili sullo stesso caso geometrico senza alterarsi reciprocamente.
+
+Avanzamento iniziale:
+- creato `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md` come specifica viva;
+- consolidata `LG-001 — Strategie concorrenti e selezionabili`;
+- definito l'obiettivo futuro `Vittorio | GPT | Diego` con selezione esplicita e output confrontabile;
+- registrato che StrategiaDiego non deve sovrascrivere né modificare silenziosamente Vittorio/GPT;
+- collegato il documento all'indice `docs/spirali-strategy-register/README.md`;
+- nessuna classe StrategiaDiego o modifica algoritmica implementata in questa fase;
+- incarico mantenuto **COMMISSIONATO** perché il documento deve continuare a ricevere i punti successivi dall'utente.
+
+Commit iniziali:
+- `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
+- `a7d1b5f0558bd4d4f4ed03f392a6866d305ce0ea` — creazione Linee guida e LG-001;
+- `8866e03763010c1c003f524e1e4239375eca748c` — collegamento dal registro strategie.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
