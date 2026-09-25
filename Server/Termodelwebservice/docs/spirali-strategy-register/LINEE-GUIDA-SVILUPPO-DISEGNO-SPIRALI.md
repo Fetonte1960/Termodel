@@ -2457,6 +2457,112 @@ locale troppo anticipata.
 Principio documentale consolidato durante l'audit pre-sviluppo. La logica di
 enumerazione completa non è ancora implementata.
 
+
+---
+
+## LG-022 — Direzione di provenienza ed estremo libero del tubo di collegamento
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+Ogni stato/nodo della StrategiaDiego dispone di un parametro esplicito:
+
+```text
+DirezioneProvenienza
+```
+
+che rappresenta la direzione orientata con cui il percorso corrente arriva
+al nodo.
+
+Nel caso iniziale del **tubo di collegamento**, la direzione è nota ma il suo
+punto finale interno non è ancora fissato: tale estremo è **libero** e viene
+determinato in funzione della geometria del prossimo tratto scelto.
+
+### Commento tecnico
+
+Questa precisazione separa due informazioni che non devono essere confuse:
+
+1. la **direzione di provenienza**, già nota;
+2. l'**estremo effettivo del tratto di provenienza**, che può essere determinato
+   successivamente.
+
+Nel caso del tubo di collegamento iniziale, esso va quindi interpretato come
+una linea/semiretta orientata che entra nella stanza, non necessariamente come
+un segmento già chiuso nel suo estremo interno.
+
+Quando viene scelta la direzione del prossimo tratto, l'intersezione geometrica
+fra:
+
+- la linea della direzione di provenienza;
+- la linea/direzione del nuovo tratto;
+
+determina il punto di raccordo e quindi l'estremo effettivo del tratto di
+provenienza.
+
+### Regola
+
+Siano:
+
+- `Lprov` = linea orientata associata a `DirezioneProvenienza`;
+- `Lnext` = linea geometrica del prossimo tratto scelto;
+- `I = Intersezione(Lprov, Lnext)`.
+
+Nel caso iniziale del tubo di collegamento:
+
+```text
+DirezioneProvenienza = nota
+EstremoInternoTuboCollegamento = non ancora fissato
+
+dopo la scelta di Lnext:
+    I = intersezione(Lprov, Lnext)
+    EstremoInternoTuboCollegamento = I
+```
+
+Il punto `I` diventa quindi il nodo geometrico di raccordo tra tratto di
+provenienza e nuovo tratto.
+
+### Relazione con LG-013 e LG-016
+
+LG-013 consente al primo tratto una inclinazione libera.
+
+LG-022 precisa che, proprio per questo primo passaggio, l'estremo del tubo di
+collegamento non deve essere necessariamente noto prima della scelta del
+nuovo tratto.
+
+LG-016 usa invece `DirezioneProvenienza` per la scelta `PROSEGUI_DRITTO`: in
+quel caso la nuova direzione coincide con quella di provenienza.
+
+### Vincoli per la futura implementazione
+
+- `DirezioneProvenienza` deve essere un dato esplicito dello stato del nodo;
+- la direzione deve essere orientata, non soltanto una retta non orientata;
+- il tubo di collegamento iniziale deve poter essere rappresentato con estremo
+  interno non ancora determinato;
+- la scelta del nuovo tratto deve poter determinare il punto di intersezione
+  con la linea di provenienza;
+- l'estremo del tratto di provenienza deve essere materializzato soltanto
+  quando la geometria del tratto successivo lo rende determinabile;
+- la diagnostica deve distinguere fra direzione nota ed estremo ancora libero.
+
+### Punti ancora da definire
+
+LG-022 non stabilisce ancora:
+
+- cosa fare se `Lprov` e `Lnext` sono parallele e quindi non hanno
+  intersezione finita;
+- come gestire intersezioni che cadono dalla parte opposta rispetto al verso
+  orientato della provenienza;
+- eventuali raccordi/arrotondamenti successivi al calcolo dell'intersezione;
+- se l'intersezione geometrica debba essere poi corretta da una distanza di
+  rispetto in casi particolari.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. La gestione
+dell'estremo libero del tubo di collegamento non è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -2475,7 +2581,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-022`, `LG-023`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-023`, `LG-024`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
