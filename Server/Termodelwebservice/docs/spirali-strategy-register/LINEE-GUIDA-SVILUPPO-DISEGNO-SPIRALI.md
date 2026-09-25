@@ -3069,6 +3069,123 @@ differenze di distanza derivanti dalla famiglia delle linee presenti.
 Principio documentale consolidato durante l'audit pre-sviluppo. La logica
 condivisa mandata/ritorno non è ancora implementata.
 
+
+---
+
+## LG-028 — Ogni terminale della mandata prosegue con il proprio albero dei ritorni
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+Ogni terminale dell'albero di mandata non conclude l'esplorazione complessiva.
+
+Da ciascun terminale di mandata deve proseguire la costruzione di un
+**albero dei possibili ritorni**, usando come geometria già presente e vincolo
+fisico il ramo di mandata che ha condotto a quel terminale.
+
+### Regola
+
+Siano:
+
+- `Tm1, Tm2, ... Tmn` = terminali dell'albero di mandata;
+- `Path(Tmi)` = percorso di mandata radice -> Tmi.
+
+Per ogni terminale:
+
+```text
+Tm_i
+  -> mantiene fissa la geometria Path(Tm_i)
+  -> inizializza il ritorno dalla OrigineRitorno del circuito (LG-026)
+  -> costruisce tutte le prosecuzioni di ritorno con la strategia LG-027
+  -> produce uno o più terminali complessivi mandata+ritorno
+```
+
+L'albero complessivo può quindi essere visto come:
+
+```text
+albero mandata
+   |
+   +-- terminale mandata A
+   |      +-- albero ritorno A
+   |
+   +-- terminale mandata B
+   |      +-- albero ritorno B
+   |
+   +-- ...
+```
+
+### Commento tecnico
+
+Questa scelta rende la StrategiaDiego esaustiva rispetto alle combinazioni
+mandata/ritorno: una mandata apparentemente buona può produrre ritorni
+impossibili, mentre una mandata meno intuitiva può consentire un ritorno più
+lungo o più completo.
+
+Il costo computazionale può crescere rapidamente, perché il numero totale di
+soluzioni candidate è approssimativamente il prodotto fra:
+
+```text
+numero di terminali mandata
+x
+numero medio di sviluppi del ritorno per terminale
+```
+
+e ciascuna delle due fasi può a sua volta avere crescita combinatoria per
+effetto dei rami multipli.
+
+### Sostenibilità computazionale
+
+La strategia resta considerata corretta e da implementare in forma esaustiva.
+Non vengono introdotte potature predittive o euristiche solo per ridurre il
+calcolo, perché violerebbero LG-024.
+
+Durante lo sviluppo dovranno però essere misurati almeno:
+
+```text
+numero nodi mandata
+numero terminali mandata
+numero nodi ritorno per terminale mandata
+numero terminali complessivi
+profondità massima
+tempo di calcolo
+memoria utilizzata
+```
+
+Se i casi di test dimostreranno una crescita non sostenibile, l'ottimizzazione
+dovrà preservare esattamente lo spazio delle soluzioni ammissibili oppure
+essere prima definita come nuova regola StrategiaDiego.
+
+### Vincoli per la futura implementazione
+
+- ogni terminale mandata deve mantenere il proprio stato geometrico completo;
+- il ritorno relativo a un terminale non deve usare la geometria di un altro
+  ramo di mandata;
+- ogni albero di ritorno parte dalla stessa OrigineRitorno del circuito, ma
+  viene valutato contro la specifica geometria del ramo mandata associato;
+- nessun terminale mandata può essere escluso solo per ridurre il numero di
+  combinazioni;
+- la diagnostica deve permettere di ricondurre ogni terminale complessivo al
+  terminale mandata da cui deriva.
+
+### Criterio futuro di verifica
+
+Un regression test con almeno due terminali mandata deve verificare che:
+
+```text
+terminale mandata A -> proprio insieme di ritorni
+terminale mandata B -> proprio insieme di ritorni
+```
+
+e che nessuno dei due venga saltato per ragioni di ottimizzazione preventiva.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. La sostenibilità
+computazionale dovrà essere misurata sui casi di test prima di introdurre
+eventuali ottimizzazioni.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -3087,7 +3204,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-028`, `LG-029`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-029`, `LG-030`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
