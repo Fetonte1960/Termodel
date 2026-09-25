@@ -157,6 +157,9 @@ Avanzamento iniziale:
 - nessun filtro preliminare per sola vicinanza: le alternative vengono eliminate dalle successive verifiche geometriche; resta aperta la gestione di candidati equivalenti generati da riferimenti diversi.
 - consolidata `LG-022 — Direzione di provenienza ed estremo libero del tubo di collegamento`: ogni nodo dispone di `DirezioneProvenienza`; nel caso iniziale il tubo di collegamento ha direzione nota ma estremo interno libero, determinato dall'intersezione con la direzione del prossimo tratto scelto;
 - resta da definire la gestione dei casi in cui direzione di provenienza e nuovo tratto risultino paralleli, dell'intersezione posta dietro al verso orientato e di eventuali correzioni/raccordi sul punto geometrico di intersezione.
+- audit: rettificata `LG-021` tramite `LG-023 — Linea di riferimento determinata dal troncamento del tratto precedente`; per un cambio di direzione ordinario non si enumerano più tutte le linee come riferimenti di parallelismo;
+- la nuova linea deve essere la parallela alla linea frontale che ha troncato il tratto precedente e deve passare per il terminale di quel tratto; questo determina univocamente il lato della parallela;
+- `PROSEGUI_DRITTO` resta l'eccezione: usa `DirezioneProvenienza` e non richiede parallelismo con la linea di troncamento; la struttura geometrica completa resta comunque usata per trovare ostacolo frontale, distanze e intersezioni.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -187,6 +190,7 @@ Commit iniziali:
 - `6d799d813e48a7d3871f3e5c7e995caacc62fe8e` — LG-020, riferimento sussidiario a Spirali Vittorio e Spirali GPT per aspetti non ancora definiti.
 - `9da82a4b2ebe7da71913dd8d862a86414744352b` — LG-021, enumerazione completa delle linee di riferimento a ogni nodo.
 - `0b001e6d3ca2c8b4122523fffb5023fb059822bf` — LG-022, direzione di provenienza ed estremo libero del tubo di collegamento.
+- `fa8fc74265bbebc95b4416578bcda2ffd530b8e2` — LG-023, riferimento di parallelismo vincolato alla linea che ha troncato il tratto precedente; LG-021 rettificata.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
