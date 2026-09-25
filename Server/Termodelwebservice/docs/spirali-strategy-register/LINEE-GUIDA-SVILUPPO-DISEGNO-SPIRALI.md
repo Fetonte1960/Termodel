@@ -875,15 +875,44 @@ TerminaleAccettabile =
     NonIntersecaAltreLinee(c(M,R))
 ```
 
+### Momento della valutazione
+
+La valutazione di accettabilità dei terminali viene eseguita **soltanto alla
+fine della costruzione completa dell'albero decisionale**.
+
+La sequenza logica è quindi:
+
+```text
+costruzione completa dell'albero
+        |
+        v
+raccolta di tutte le foglie / terminali
+        |
+        v
+valutazione TerminaleAccettabile per ogni terminale
+        |
+        v
+insieme dei terminali accettabili
+        |
+        v
+confronto del fattore di merito
+        |
+        v
+scelta del terminale vincente
+```
+
+L'accettabilità non deve quindi essere usata anticipatamente per decidere quale
+ramo costruire o per interrompere la costruzione dell'albero.
+
 ### Relazione con LG-003
 
 Il fattore di merito e la selezione finale devono essere applicati soltanto ai
-terminali accettabili.
+terminali accettabili, **dopo che l'albero è stato costruito completamente**.
 
 Quindi l'insieme dei candidati alla massimizzazione diventa:
 
 ```text
-T_acc = { terminali accettabili }
+T_acc = { terminali accettabili valutati a fine costruzione }
 
 t* = arg max LunghezzaTubo(t),  con t appartenente a T_acc
 ```
@@ -901,6 +930,9 @@ indipendentemente dalla lunghezza di tubo prodotta.
 - un terminale con collegamento finale intersecante è non accettabile;
 - l'accettabilità deve essere diagnosticabile separatamente dal fattore di
   merito;
+- la verifica di accettabilità deve essere differita fino al completamento
+  della costruzione dell'albero;
+- l'accettabilità non deve essere usata per potare anticipatamente i rami;
 - la fase di selezione di LG-003 deve ignorare i terminali non accettabili.
 
 ### Criterio futuro di verifica
