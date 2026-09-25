@@ -968,6 +968,132 @@ LG-008 non stabilisce ancora:
 Principio documentale consolidato. Nessuna funzione
 `TerminaleAccettabile` è ancora implementata in StrategiaDiego.
 
+
+---
+
+## LG-009 — Configurazione iniziale e direzione principe
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+La costruzione dell'albero StrategiaDiego parte da un **tubo di collegamento**
+che entra nella stanza.
+
+Il tubo di collegamento di partenza appartiene alla **mandata**.
+
+Sono previste almeno due configurazioni iniziali:
+
+- ritorno a sinistra;
+- ritorno a destra.
+
+Per la configurazione **ritorno a sinistra**, la costruzione dell'albero inizia
+dall'estremo del tubo di collegamento di mandata e assume come
+**direzione principe** il tratto parallelo disposto verso destra.
+
+### Commento tecnico
+
+Per rendere la regola non ambigua, destra e sinistra devono essere interpretate
+rispetto al tubo di collegamento orientato nel verso con cui la mandata entra
+nella stanza.
+
+Quindi il riferimento locale è:
+
+```text
+verso del tubo di mandata -> avanti
+lato destro del verso     -> destra
+lato sinistro del verso   -> sinistra
+```
+
+Nella configurazione definita da LG-009:
+
+```text
+ritorno = lato sinistro
+partenza costruzione = estremo interno della mandata
+direzione principe = tratto parallelo sul lato destro
+```
+
+La nozione di direzione principe identifica l'orientamento prioritario con cui
+vengono generate/considerate le prime scelte dell'albero. Non implica ancora
+che eventuali altre scelte geometricamente ammissibili debbano essere escluse:
+la relazione fra direzione principe e rami alternativi sarà definita da regole
+successive.
+
+### Regola
+
+Data una mandata di collegamento orientata verso l'interno della stanza:
+
+```text
+se Configurazione = RitornoSinistra:
+    Radice = estremo interno della mandata
+    DirezionePrincipe = parallela sul lato destro
+```
+
+Il tratto generato nella direzione principe deve comunque soddisfare tutte le
+regole già consolidate di `TrattoPossibile` e `SceltaNodoPossibile`.
+
+### Relazione con LG-007
+
+La direzione principe non crea automaticamente un ramo valido.
+
+Il tratto candidato verso destra deve essere verificato come:
+
+```text
+TrattoPossibile
+AND
+SceltaNodoPossibile
+```
+
+prima di diventare un ramo effettivo dell'albero.
+
+### Vincoli per la futura implementazione
+
+- il tubo di collegamento deve avere un verso definito verso l'interno della
+  stanza;
+- la configurazione iniziale deve identificare esplicitamente il lato del
+  ritorno;
+- destra/sinistra devono essere calcolate rispetto al verso della mandata e
+  non rispetto agli assi globali del disegno;
+- la radice dell'albero deve essere associata all'estremo interno della
+  mandata;
+- la direzione principe deve essere registrabile nella diagnostica;
+- la direzione principe non deve bypassare le verifiche geometriche di LG-005,
+  LG-006 e LG-007.
+
+### Criterio futuro di verifica
+
+Per un caso con ritorno a sinistra devono essere diagnosticabili almeno:
+
+```text
+verso tubo di collegamento mandata
+lato identificato come sinistro
+lato identificato come destro
+configurazione = RitornoSinistra
+radice = estremo interno mandata
+direzione principe = destra
+```
+
+Ruotando geometricamente l'intero locale, la definizione di destra/sinistra
+deve seguire il verso della mandata e non cambiare per effetto degli assi
+globali.
+
+### Punti ancora da definire
+
+LG-009 non stabilisce ancora:
+
+- la regola esplicita per la configurazione `RitornoDestra`;
+- se la direzione principe abbia precedenza assoluta o solo priorità di
+  esplorazione;
+- come venga identificato geometricamente il primo tratto parallelo quando
+  più linee possano fungere da riferimento;
+- cosa accada se nessun tratto verso la direzione principe è possibile.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Nessuna logica di orientamento iniziale
+della futura StrategiaDiego è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -986,7 +1112,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-009`, `LG-010`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-010`, `LG-011`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
