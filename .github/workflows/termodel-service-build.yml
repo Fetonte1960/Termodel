@@ -173,6 +173,22 @@ jobs:
 
       - name: Build
         run: dotnet build Termodel.WebService.sln --configuration Release --no-restore
+      - name: Benchmark StrategiaDiego square 4x4
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $benchmarkDir = Join-Path $env:RUNNER_TEMP "StrategiaDiegoBenchmark"
+          New-Item -ItemType Directory -Path $benchmarkDir -Force | Out-Null
+          dotnet run --project tests/StrategiaDiego.Benchmark/StrategiaDiego.Benchmark.csproj --configuration Release -- tests/fixtures/StrategiaDiegoSquare4x4.locale.xml $benchmarkDir 20
+
+      - name: Upload StrategiaDiego benchmark
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: strategia-diego-benchmark
+          path: ${{ runner.temp }}/StrategiaDiegoBenchmark
+          if-no-files-found: warn
+          retention-days: 30
       - name: Smoke test HTTP project storage and exclusive locks
         shell: pwsh
         run: |
