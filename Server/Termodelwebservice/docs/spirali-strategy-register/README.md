@@ -30,6 +30,16 @@ Prima di modificare la strategia geometrica di SpiraliGPT:
 Le schede non impongono necessariamente una specifica implementazione:
 descrivono il **risultato strategico da preservare**.
 
+## Linee guida generali
+
+La specifica viva della futura **StrategiaDiego** è mantenuta in
+[LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md](LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md).
+
+La StrategiaDiego è prevista come terza strategia concorrente rispetto a
+Vittorio e GPT, selezionabile esplicitamente e verificabile sugli stessi casi
+di regression. Le schede di questo registro restano i vincoli geometrici
+puntuali che la futura strategia dovrà rispettare.
+
 ## Indice
 
 | ID | Titolo | Stato | Progetto di riferimento |
