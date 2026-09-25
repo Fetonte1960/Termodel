@@ -86,7 +86,7 @@ Commissionato:
 
 Fasi:
 - F0 — registrazione incarico e registro di sviluppo: COMMISSIONATO;
-- F1 — audit finale Vittorio/GPT e specifica code-ready: COMMISSIONATO;
+- F1 — audit finale Vittorio/GPT e specifica code-ready: ESEGUITO (`a8d19a2d9cb8bd014b4fecd9607b383a839a86d8`);
 - F2 — implementazione/dispatcher `Vittorio|GPT|Diego`: COMMISSIONATO;
 - F3 — build reale della soluzione: COMMISSIONATO;
 - F4 — fixture quadrato 4x4 m / un ingresso: COMMISSIONATO;
