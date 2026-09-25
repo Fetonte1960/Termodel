@@ -575,6 +575,119 @@ LG-005 non stabilisce ancora:
 Principio documentale consolidato. Nessuna funzione `TrattoPossibile` è
 ancora implementata in StrategiaDiego.
 
+
+---
+
+## LG-006 — Passo p e distanze minime di tracciamento
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Si definisce il **passo `p`** come distanza minima di riferimento tubo-tubo.
+
+Le distanze minime di tracciamento sono:
+
+- distanza minima da una linea architettonica: `p / 2`;
+- distanza minima fra tubi dello stesso colore: `2p`;
+- distanza minima fra tubi di colore diverso: `p`.
+
+Nel modello corrente, i due colori corrispondono alle due famiglie di tubo:
+
+- mandata;
+- ritorno.
+
+### Commento tecnico
+
+Il passo `p` diventa l'unità geometrica fondamentale con cui StrategiaDiego
+valuta la possibilità di tracciare nuovi segmenti.
+
+Le tre regole non sono equivalenti:
+
+1. la parete architettonica impone un margine minimo pari a metà passo;
+2. due tratti appartenenti alla stessa famiglia/colore richiedono una
+   separazione più ampia, pari a due passi;
+3. mandata e ritorno possono avvicinarsi fino a un passo.
+
+Questa asimmetria è intenzionale e deve essere mantenuta esplicitamente nelle
+regole di `TrattoPossibile`.
+
+Per evitare ambiguità implementative, salvo diversa futura decisione, le
+distanze vengono intese fra le linee geometriche/assi con cui i tubi sono
+rappresentati nella StrategiaDiego, non fra le superfici fisiche esterne del
+tubo.
+
+### Regola
+
+Per un nuovo tratto candidato `s`:
+
+```text
+dist(s, LineeArchitettoniche) >= p/2
+
+dist(s, tubi stesso colore)   >= 2p
+
+dist(s, tubi colore diverso)  >= p
+```
+
+dove `dist` indica la distanza geometrica minima fra il segmento candidato e
+la geometria già presente nella corrispondente famiglia.
+
+Un tratto che non rispetta anche una sola delle distanze minime applicabili
+non è un `TrattoPossibile` ai sensi di LG-005.
+
+### Relazione con la struttura di contenimento
+
+Le tre famiglie di LG-004 vengono quindi usate con regole differenti:
+
+```text
+LineeArchitettoniche  -> distanza minima p/2
+LineeMandata          -> 2p rispetto a nuova mandata
+                       p  rispetto a nuovo ritorno
+LineeRitorno          -> 2p rispetto a nuovo ritorno
+                       p  rispetto a nuova mandata
+```
+
+### Vincoli per la futura implementazione
+
+- `p` deve essere un parametro geometrico esplicito della strategia;
+- il valore di `p` deve essere positivo;
+- tutte le verifiche devono usare la stessa unità geometrica;
+- il colore/famiglia del tratto candidato deve essere noto prima della
+  verifica delle distanze tubo-tubo;
+- le verifiche devono considerare la distanza minima lungo tutto il segmento,
+  non soltanto agli estremi;
+- il rispetto di `p/2`, `p` o `2p` deve entrare direttamente nelle regole di
+  `TrattoPossibile`;
+- eventuali eccezioni locali a queste distanze dovranno essere autorizzate da
+  una linea guida successiva e non possono essere introdotte implicitamente.
+
+### Criterio futuro di verifica
+
+Per ogni tratto candidato devono poter essere diagnosticati almeno:
+
+```text
+colore/famiglia del tratto
+valore di p
+distanza minima da architettura
+distanza minima da tubi dello stesso colore
+distanza minima da tubi di colore diverso
+esito TrattoPossibile
+```
+
+Devono essere presenti casi di regression almeno sulle soglie:
+
+```text
+architettura:  < p/2, = p/2, > p/2
+stesso colore: < 2p,  = 2p,  > 2p
+colore diverso:< p,   = p,   > p
+```
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Le distanze minime definite da LG-006 non
+sono ancora implementate nella futura StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -593,7 +706,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-006`, `LG-007`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-007`, `LG-008`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
