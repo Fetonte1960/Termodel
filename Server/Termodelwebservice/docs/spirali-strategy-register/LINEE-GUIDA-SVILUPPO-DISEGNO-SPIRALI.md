@@ -994,16 +994,17 @@ dall'estremo del tubo di collegamento di mandata e assume come
 
 ### Commento tecnico
 
-Per rendere la regola non ambigua, destra e sinistra devono essere interpretate
-rispetto al tubo di collegamento orientato nel verso con cui la mandata entra
-nella stanza.
+Per rendere la regola non ambigua, destra e sinistra sono definite rispetto
+alla **direzione del tubo di collegamento dall'esterno verso la stanza**. Questo
+verso `esterno -> stanza` costituisce il riferimento locale convenzionale della
+StrategiaDiego.
 
 Quindi il riferimento locale è:
 
 ```text
-verso del tubo di mandata -> avanti
-lato destro del verso     -> destra
-lato sinistro del verso   -> sinistra
+direzione tubo di collegamento: esterno -> stanza
+lato destro di questo verso              -> destra
+lato sinistro di questo verso            -> sinistra
 ```
 
 Nella configurazione definita da LG-009:
@@ -1053,8 +1054,9 @@ prima di diventare un ramo effettivo dell'albero.
   stanza;
 - la configurazione iniziale deve identificare esplicitamente il lato del
   ritorno;
-- destra/sinistra devono essere calcolate rispetto al verso della mandata e
-  non rispetto agli assi globali del disegno;
+- destra/sinistra devono essere calcolate esclusivamente rispetto alla
+  direzione convenzionale del tubo di collegamento `esterno -> stanza` e non
+  rispetto agli assi globali del disegno;
 - la radice dell'albero deve essere associata all'estremo interno della
   mandata;
 - la direzione principe deve essere registrabile nella diagnostica;
@@ -1075,8 +1077,8 @@ direzione principe = destra
 ```
 
 Ruotando geometricamente l'intero locale, la definizione di destra/sinistra
-deve seguire il verso della mandata e non cambiare per effetto degli assi
-globali.
+deve seguire sempre la direzione convenzionale del tubo di collegamento
+`esterno -> stanza` e non cambiare per effetto degli assi globali.
 
 ### Punti ancora da definire
 
