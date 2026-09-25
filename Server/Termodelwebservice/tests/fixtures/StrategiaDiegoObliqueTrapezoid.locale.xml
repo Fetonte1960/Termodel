@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Locali Versione="1.0" TestCase="StrategiaDiego-ObliqueTrapezoid-OneEntry">
+  <Locale Id="R001" Piano="Test">
+    <PerimetroInterno>
+      <Punto X="0" Y="0" />
+      <Punto X="6" Y="0" />
+      <Punto X="5" Y="4" />
+      <Punto X="1" Y="4" />
+      <Punto X="0" Y="0" />
+    </PerimetroInterno>
+  </Locale>
+  <Piano Nome="Test" Quota="0">
+    <Tubi>
+      <Linea Id="T1">
+        <P0 X="3" Y="-1" Z="0" />
+        <P1 X="3" Y="1" Z="0" />
+      </Linea>
+    </Tubi>
+  </Piano>
+</Locali>

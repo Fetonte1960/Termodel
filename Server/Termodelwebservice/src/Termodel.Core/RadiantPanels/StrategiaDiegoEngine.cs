@@ -65,9 +65,16 @@ internal static class StrategiaDiegoEngine
             LocaleSolution solution = GenerateLocale(
                 locale,
                 connection,
+                connections,
                 stepMeters,
                 counters);
             solutions.Add(solution);
+
+            // Modificato da Codex per realizzare: rendere diagnosticabile il
+            // tratto terminale scelto nella rete di collegamento LG-011.
+            diagnostics.Add(
+                $"Diego/{locale.Id}: connection={connection.Id}, " +
+                $"connectionConstraints={connections.Count}.");
 
             diagnostics.Add(
                 $"Diego/{locale.Id}: supplyNodes={solution.Metrics.SupplyNodes}, " +
@@ -117,6 +124,7 @@ internal static class StrategiaDiegoEngine
     private static LocaleSolution GenerateLocale(
         LocaleGeometry locale,
         InputLine connection,
+        IReadOnlyList<InputLine> connections,
         double step,
         SearchCounters counters)
     {
@@ -124,6 +132,10 @@ internal static class StrategiaDiegoEngine
 
         IReadOnlyList<GeoSegment> architecture =
             BuildArchitecture(locale);
+        // Modificato da Codex per realizzare: la rete di mandata fornita
+        // dall'utente resta geometria vincolante durante il tracciamento.
+        IReadOnlyList<GeoSegment> connectionConstraints =
+            BuildConnectionConstraints(connections);
 
         SearchTree supplyTree = BuildTree(
             locale,
@@ -131,6 +143,7 @@ internal static class StrategiaDiegoEngine
             directed.EntryPoint,
             directed.Direction,
             architecture,
+            connectionConstraints,
             Array.Empty<GeoSegment>(),
             directed.EntryWall,
             step * 1.5,
@@ -170,6 +183,7 @@ internal static class StrategiaDiegoEngine
                     returnRoot.EntryPoint,
                     directed.Direction,
                     architecture,
+                    connectionConstraints,
                     supplySegments,
                     directed.EntryWall,
                     step / 2.0,
@@ -243,6 +257,7 @@ internal static class StrategiaDiegoEngine
         DPoint start,
         DVector initialDirection,
         IReadOnlyList<GeoSegment> architecture,
+        IReadOnlyList<GeoSegment> connectionConstraints,
         IReadOnlyList<GeoSegment> fixedPath,
         GeoSegment initialFront,
         double initialOffsetDistance,
@@ -254,7 +269,11 @@ internal static class StrategiaDiegoEngine
         var stack = new Stack<SearchNode>();
 
         List<GeoSegment> initialConstraints =
-            CombineConstraints(architecture, fixedPath, Array.Empty<GeoSegment>());
+            CombineConstraints(
+                architecture,
+                connectionConstraints,
+                fixedPath,
+                Array.Empty<GeoSegment>());
 
         ExtensionResult? first = TryBuildInitialSegment(
             locale,
@@ -292,7 +311,11 @@ internal static class StrategiaDiegoEngine
 
             List<GeoSegment> currentPath = ReconstructSegments(node);
             List<GeoSegment> constraints =
-                CombineConstraints(architecture, fixedPath, currentPath);
+                CombineConstraints(
+                    architecture,
+                    connectionConstraints,
+                    fixedPath,
+                    currentPath);
 
             GeoSegment? sequentialFront =
                 FindSequenceSuccessor(node.Front, constraints);
@@ -444,6 +467,11 @@ internal static class StrategiaDiegoEngine
 
         foreach (GeoSegment reference in constraints)
         {
+            // Modificato da Codex per realizzare: i tubi di collegamento sono
+            // ostacoli fisici, non linee strategiche sulle quali svoltare.
+            if (reference.Family == GeoFamily.Connection)
+                continue;
+
             if (requiredFrontId is not null &&
                 !reference.Id.Equals(requiredFrontId, StringComparison.Ordinal))
             {
@@ -497,9 +525,34 @@ internal static class StrategiaDiegoEngine
                 step);
 
             double alongRay = respect / Math.Abs(cross);
-            double tEnd = physicalHit
-                ? tIntersection - alongRay
-                : tIntersection + alongRay;
+            double tBefore = tIntersection - alongRay;
+            double tAfter = tIntersection + alongRay;
+
+            // Modificato da Codex per realizzare: LG-034/LG-035 richiedono
+            // la parallela offset sul lato coerente col ramo corrente. Il
+            // precedente +/- scelto dalla sola presenza dell'intersezione
+            // fisica poteva cambiare lato nei vertici concavi o obliqui.
+            double tEnd = tBefore;
+            if (!physicalHit)
+            {
+                double startSide = DVector.Cross(
+                    refUnit,
+                    start - reference.A);
+                if (Math.Abs(startSide) <= GeometryTolerance)
+                {
+                    tEnd = tAfter;
+                }
+                else
+                {
+                    DPoint beforePoint = start + unit * tBefore;
+                    double beforeSide = DVector.Cross(
+                        refUnit,
+                        beforePoint - reference.A);
+                    tEnd = Math.Sign(beforeSide) == Math.Sign(startSide)
+                        ? tBefore
+                        : tAfter;
+                }
+            }
 
             if (tEnd <= GeometryTolerance)
                 continue;
@@ -605,18 +658,34 @@ internal static class StrategiaDiegoEngine
         GeoSegment segment,
         bool allowStartOnBoundary)
     {
-        const int Samples = 24;
-        for (int i = 0; i <= Samples; i++)
+        // Modificato da Codex per realizzare: sostituire il campionamento a
+        // 24 punti con una verifica geometrica deterministica. Un segmento
+        // poteva uscire e rientrare da una concavita' stretta fra due campioni.
+        if (!allowStartOnBoundary &&
+            !PointInOrOnPolygon(segment.A, locale.Perimeter))
         {
-            if (i == 0 && allowStartOnBoundary)
-                continue;
+            return false;
+        }
 
-            double t = (double)i / Samples;
-            DPoint point = DPoint.Lerp(segment.A, segment.B, t);
-            if (!PointInOrOnPolygon(point, locale.Perimeter))
+        if (!PointInOrOnPolygon(segment.B, locale.Perimeter))
+            return false;
+
+        IReadOnlyList<GeoSegment> walls = BuildArchitecture(locale);
+        foreach (GeoSegment wall in walls)
+        {
+            if (allowStartOnBoundary &&
+                Distance(segment.A, wall.A, wall.B) <= GeometryTolerance)
+            {
+                continue;
+            }
+
+            if (SegmentsProperlyIntersect(segment, wall))
                 return false;
         }
-        return true;
+
+        return PointInOrOnPolygon(
+            DPoint.Lerp(segment.A, segment.B, 0.5),
+            locale.Perimeter);
     }
 
     private static bool IsPreliminaryClosureAcceptable(
@@ -772,6 +841,24 @@ internal static class StrategiaDiegoEngine
         return result;
     }
 
+    // Funzione realizzata da Codex in autonomia
+    private static IReadOnlyList<GeoSegment> BuildConnectionConstraints(
+        IReadOnlyList<InputLine> connections)
+    {
+        var result = new List<GeoSegment>(connections.Count);
+        for (int i = 0; i < connections.Count; i++)
+        {
+            InputLine line = connections[i];
+            result.Add(new GeoSegment(
+                $"C-{line.Id}-{i}",
+                line.P0,
+                line.P1,
+                GeoFamily.Connection,
+                i));
+        }
+        return result;
+    }
+
     private static InputLine? FindConnection(
         LocaleGeometry locale,
         IReadOnlyList<InputLine> lines)
@@ -783,7 +870,19 @@ internal static class StrategiaDiegoEngine
             bool p1Inside =
                 PointStrictlyInsidePolygon(line.P1, locale.Perimeter);
 
-            if (p0Inside != p1Inside)
+            if (p0Inside == p1Inside)
+                continue;
+
+            DPoint innerPoint = p0Inside ? line.P0 : line.P1;
+            // Modificato da Codex per realizzare: come nel riferimento GPT,
+            // un tratto che prosegue in un altro ramo non e' ancora il tratto
+            // terminale d'ingresso del circuito LG-011.
+            bool sharedInnerPoint = lines.Any(other =>
+                !ReferenceEquals(other, line) &&
+                (innerPoint.DistanceTo(other.P0) <= GeometryTolerance ||
+                 innerPoint.DistanceTo(other.P1) <= GeometryTolerance));
+
+            if (!sharedInnerPoint)
                 return line;
         }
 
@@ -883,18 +982,25 @@ internal static class StrategiaDiegoEngine
         referenceFamily switch
         {
             GeoFamily.Architecture => step / 2.0,
+            // Modificato da Codex per realizzare: la rete di collegamento e'
+            // un ostacolo anti-attraversamento; le distanze LG-006 restano
+            // definite fra architettura, mandata e ritorno interni.
+            GeoFamily.Connection => 0.0,
             _ when newFamily == referenceFamily => step * 2.0,
             _ => step
         };
 
     private static List<GeoSegment> CombineConstraints(
         IReadOnlyList<GeoSegment> architecture,
+        IReadOnlyList<GeoSegment> connectionConstraints,
         IReadOnlyList<GeoSegment> fixedPath,
         IReadOnlyList<GeoSegment> currentPath)
     {
         var result = new List<GeoSegment>(
-            architecture.Count + fixedPath.Count + currentPath.Count);
+            architecture.Count + connectionConstraints.Count +
+            fixedPath.Count + currentPath.Count);
         result.AddRange(architecture);
+        result.AddRange(connectionConstraints);
         result.AddRange(fixedPath);
         result.AddRange(currentPath);
         return result;
@@ -1377,6 +1483,7 @@ internal static class StrategiaDiegoEngine
     private enum GeoFamily
     {
         Architecture,
+        Connection,
         Supply,
         Return
     }

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Xml.Linq;
 using Termodel.Core.RadiantPanels;
 
 if (args.Length < 1)
@@ -53,6 +54,20 @@ try
     StrategiaDiegoBenchmarkSample warmup =
         StrategiaDiegoBenchmark.Run(fixture);
     report.Warmup = ToIteration(0, warmup);
+
+    // Modificato da Codex per realizzare: le fixture possono dichiarare il
+    // tratto terminale della rete LG-011 che Diego deve scegliere.
+    XDocument fixtureDocument = XDocument.Parse(fixture);
+    string? expectedConnectionId =
+        (string?)fixtureDocument.Root?.Attribute("ExpectedConnectionId");
+    if (!string.IsNullOrWhiteSpace(expectedConnectionId) &&
+        !warmup.Diagnostics.Any(message => message.Contains(
+            $"connection={expectedConnectionId}",
+            StringComparison.Ordinal)))
+    {
+        report.Errors.Add(
+            $"Tratto terminale atteso '{expectedConnectionId}' non selezionato.");
+    }
 
     string? expectedSignature = null;
     string? expectedSvgHash = null;

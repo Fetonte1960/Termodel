@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Locali Versione="1.0"
+        TestCase="StrategiaDiego-ConnectionTerminal"
+        ExpectedConnectionId="T-B">
+  <Locale Id="R001" Piano="Test">
+    <PerimetroInterno>
+      <Punto X="0" Y="0" />
+      <Punto X="8" Y="0" />
+      <Punto X="8" Y="6" />
+      <Punto X="0" Y="6" />
+      <Punto X="0" Y="0" />
+    </PerimetroInterno>
+  </Locale>
+  <Piano Nome="Test" Quota="0">
+    <Tubi>
+      <Linea Id="T-A">
+        <P0 X="1" Y="-1" Z="0" />
+        <P1 X="1" Y="1" Z="0" />
+      </Linea>
+      <Linea Id="T-A-PROSEGUE">
+        <P0 X="1" Y="1" Z="0" />
+        <P1 X="2" Y="1" Z="0" />
+      </Linea>
+      <Linea Id="T-B">
+        <P0 X="4" Y="-1" Z="0" />
+        <P1 X="4" Y="1" Z="0" />
+      </Linea>
+    </Tubi>
+  </Piano>
+</Locali>
