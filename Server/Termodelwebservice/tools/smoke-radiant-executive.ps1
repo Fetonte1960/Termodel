@@ -130,7 +130,7 @@ try {
   $project = Add-ExecutiveFixture $project $floorName
   $headers = @{ "X-Termodel-Project-Lock" = [string]$allocation.projectLockToken }
 
-  $calculation = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -Headers $headers -ContentType "text/plain; charset=utf-8" -Body $project
+  $calculation = Invoke-RestMethod -Uri "$base/api/calculations?logEnabled=true&logCategories=SpiraliDiego" -Method Post -Headers $headers -ContentType "text/plain; charset=utf-8" -Body $project
   if (@($calculation.artifacts.name) -notcontains "pannelli-esecutivo-svg" -or
       @($calculation.artifacts.name) -notcontains "pannelli-esecutivo-dxf") {
     throw "Manifest calcolo privo degli artifact esecutivi."
@@ -188,6 +188,27 @@ try {
       $genericLogResponse.Headers["Content-Type"] -notmatch "^text/markdown") {
     throw "Content-Type del canale universale non coerenti."
   }
+
+  $diegoLogText = [string]$genericLogResponse.Content
+  foreach ($marker in @(
+    "[SpiraliDiego] START",
+    "[SpiraliDiego] LOCALE",
+    "[SpiraliDiego] ENTRY",
+    "[SpiraliDiego] TREE Supply initial ACCEPT",
+    "[SpiraliDiego] TREE Supply CHOICE",
+    "[SpiraliDiego] CLOSURE",
+    "[SpiraliDiego] BEST update",
+    "[SpiraliDiego] LOCALE"
+  )) {
+    if (-not $diegoLogText.Contains($marker)) {
+      throw "Log SpiraliDiego privo del marker strategico: $marker"
+    }
+  }
+  [System.IO.File]::WriteAllText(
+    (Join-Path $artifactDir "TermodelLog-SpiraliDiego.md"),
+    $diegoLogText,
+    [System.Text.UTF8Encoding]::new($false))
+  Write-Host "STRATEGIA_DIEGO_LOG_SMOKE_OK"
   if ($genericSvgResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false" -or
       $genericSvgResponse.Headers["X-Termodel-Generated-File"] -ne "artifacts/pannelli-esecutivo.svg") {
     throw "Header del GET universale SVG non coerenti."
@@ -306,6 +327,7 @@ try {
   $metadata = [ordered]@{
     fixture = "square-4x4-service-project"
     spiralEngine = $env:TERMODEL_SPIRAL_ENGINE
+    logCategory = "SpiraliDiego"
     projectId = [string]$allocation.projectId
     floorName = $floorName
     svgSha256 = (Get-FileHash -LiteralPath $svgPath -Algorithm SHA256).Hash.ToLowerInvariant()
