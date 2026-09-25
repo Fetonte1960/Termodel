@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-25 — Status bar Server <commit> · <strategia>
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - esporre dal Service l'identificativo breve del commit realmente in esecuzione;
@@ -90,6 +90,47 @@ Criteri di completamento:
 - compatibilità con ambiente locale/CI verificata;
 - Summary aggiornato e Issue #1 chiusa Completed.
 
+
+
+Risultato reale:
+- `GET /health` espone ora:
+  `serviceCommit`, `serviceCommitShort` e `spiralEngine`;
+- il commit runtime viene risolto nell'ordine
+  `RENDER_GIT_COMMIT -> GITHUB_SHA -> SOURCE_VERSION`;
+- il motore spirali è letto dal resolver autorevole del Core tramite
+  `RadiantExecutiveGenerator.GetSelectedSpiralEngineName()`;
+- il frontend è stato portato a **v1.18** e, dopo il collegamento al Service,
+  mostra nella status bar il formato:
+  `Server <8-char-commit> · <strategia>`;
+- in ambiente senza commit runtime il fallback visuale è
+  `Server locale · <strategia>`;
+- contratto Frontend↔Service aggiornato a v1.25.
+
+Verifica reale:
+- GitHub Actions run `36138057522`, job `108080839413`: **SUCCESS**;
+- build Release: SUCCESS;
+- regression frontend: SUCCESS;
+- smoke runtime identity: SUCCESS;
+- output smoke:
+  `service=20c9057a engine=Diego`;
+- benchmark StrategiaDiego, smoke HTTP/storage, esecutivo SVG/DXF,
+  progetto radiante reale, banco appartamento e snapshot: tutti SUCCESS;
+- notifica terminale GitHub Actions: SUCCESS.
+
+Commit principali:
+- `1e0d7b3aef98c4fa6348f0b9ab7e8ba603c030e7` — espone strategia runtime;
+- `aa168760340313c00b12d8cb065f2a450b37774a` — health commit + strategia;
+- `049cdc6a8bb2955c0514a566908de27361c401a8` — status bar frontend;
+- `200053dcd181e9726043a7692a9e013bfc397bbc` — frontend v1.18;
+- `73128b8df4e37344ddd80da415e7c354098154c0` e
+  `20c9057a9d2b2f5d4fb056b452b38ab57c7910dd` — regression CI finale;
+- `bdad003838c391c0ecf38153ebafa66dc3eed182` — contratto v1.25.
+
+Nota deploy pubblico:
+- la modifica è consolidata su `main`;
+- il comportamento runtime è verificato in GitHub Actions;
+- il redeploy Render/GitHub Pages resta dipendente dai rispettivi sistemi di
+  deploy e non viene dichiarato verificato dal solo CI.
 
 ### INCARICO 2026-09-25 — Verifica ottimizzazioni Codex StrategiaDiego su quadrato
 Stato: ESEGUITO
