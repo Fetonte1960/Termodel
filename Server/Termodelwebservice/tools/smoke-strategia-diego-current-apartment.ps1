@@ -273,10 +273,11 @@ try {
   }
 
   # Regression definitiva primo tratto mandata (rettifica utente 25/09/2026):
-  # la distanza minima tubo-parete e' p/2. Con p=0,30 m il primo tratto
-  # dentro il locale deve quindi fermarsi a 0,15 m dalla parete di ingresso.
-  # Anche alla prima svolta verso la parete destra resta valida la distanza
-  # architettonica minima p/2; non va forzato l'offset errato di 0,45 m.
+  # la prima evoluzione di mandata viene collocata a 1,5p = 0,45 m dalla
+  # parete d'ingresso per lasciare la guida esterna del ritorno a p/2.
+  # Quando il primo tratto tracciato verso la parete frontale arriva alla
+  # parete destra, deve pero' fermarsi alla distanza minima architettonica
+  # LG-006: p/2 = 0,15 m. Non deve ereditare i 0,45 m dell'evoluzione.
   $supplyGroup = @($svgDocument.DocumentElement.ChildNodes | Where-Object {
     $_.NodeType -eq [System.Xml.XmlNodeType]::Element -and
     $_.GetAttribute("data-layer") -eq "Unico_PannelliMandata_Output"
@@ -314,11 +315,11 @@ try {
   $firstEntryLength = [Math]::Sqrt(
     [Math]::Pow($p1[0]-$p0[0],2) +
     [Math]::Pow($p1[1]-$p0[1],2))
-  if ([Math]::Abs($firstEntryLength - 0.15) -gt 0.02) {
-    throw "Banco prova appartamento: ingresso mandata inatteso ($firstEntryLength m), atteso circa 0,15 m = p/2."
+  if ([Math]::Abs($firstEntryLength - 0.45) -gt 0.02) {
+    throw "Banco prova appartamento: ingresso mandata inatteso ($firstEntryLength m), atteso circa 0,45 m = 1,5p."
   }
   if ([Math]::Abs($p2[0] - 7.98148) -gt 0.02) {
-    throw "Banco prova appartamento: primo tratto dopo la svolta termina a x=$($p2[0]) m; atteso circa 7,98148 m, cioe' 0,15 m dalla parete destra."
+    throw "Banco prova appartamento: primo tratto verso la parete destra termina a x=$($p2[0]) m; atteso circa 7,98148 m, cioe' 0,15 m = p/2 dalla parete."
   }
 
 
