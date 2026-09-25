@@ -1096,6 +1096,99 @@ LG-009 non stabilisce ancora:
 Principio documentale consolidato. Nessuna logica di orientamento iniziale
 della futura StrategiaDiego è ancora implementata.
 
+
+---
+
+## LG-010 — Lato di ritorno associato al singolo tubo di collegamento
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Ogni tubo di collegamento di entrata possiede un proprio **lato di ritorno**.
+
+Il lato di ritorno non è una proprietà globale della stanza o del progetto:
+è associato al singolo tubo di collegamento.
+
+Di conseguenza, due tubi di collegamento differenti possono avere
+configurazioni differenti, per esempio:
+
+```text
+TuboIngresso A -> RitornoSinistra
+TuboIngresso B -> RitornoDestra
+```
+
+### Commento tecnico
+
+Questa regola rende la configurazione iniziale locale a ciascun ingresso.
+
+La StrategiaDiego deve quindi determinare destra/sinistra e direzione principe
+separatamente per ogni tubo di collegamento, usando per ciascuno:
+
+1. il proprio verso convenzionale `esterno -> stanza`;
+2. il proprio lato di ritorno associato.
+
+Non è ammesso dedurre il lato di ritorno di un ingresso da quello usato da un
+altro ingresso.
+
+### Regola
+
+Per ogni tubo di collegamento `i` deve esistere una proprietà:
+
+```text
+LatoRitorno(i) = Sinistra | Destra
+```
+
+e tutte le decisioni iniziali relative a quell'ingresso devono usare
+esclusivamente `LatoRitorno(i)`.
+
+### Relazione con LG-009
+
+LG-009 continua a definire il sistema locale destra/sinistra rispetto al verso
+`esterno -> stanza`.
+
+LG-010 precisa che la configurazione:
+
+```text
+RitornoSinistra
+oppure
+RitornoDestra
+```
+
+deve essere valutata **per ogni singolo tubo di collegamento**.
+
+### Vincoli per la futura implementazione
+
+- ogni tubo di collegamento deve conservare esplicitamente il proprio lato di
+  ritorno;
+- il lato di ritorno deve essere leggibile dalla logica StrategiaDiego prima
+  della costruzione dell'albero relativo a quell'ingresso;
+- ingressi differenti devono poter usare lati di ritorno differenti nello
+  stesso progetto;
+- nessuna variabile globale deve imporre un unico lato di ritorno a tutti gli
+  ingressi;
+- la diagnostica deve riportare, per ogni ingresso, almeno identificativo del
+  tubo, verso `esterno -> stanza` e lato di ritorno associato.
+
+### Criterio futuro di verifica
+
+Un caso di regression con almeno due tubi di ingresso deve poter verificare:
+
+```text
+Ingresso A -> RitornoSinistra
+Ingresso B -> RitornoDestra
+```
+
+senza che la configurazione del primo modifichi o sovrascriva quella del
+secondo.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Nessuna proprietà runtime del lato di
+ritorno per singolo ingresso è ancora implementata nella futura
+StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -1114,7 +1207,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-010`, `LG-011`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-011`, `LG-012`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
