@@ -101,6 +101,145 @@ Questa linea guida è **documentale**. Non viene ancora creata
 L'implementazione partirà soltanto quando le regole sufficienti della strategia
 saranno state definite e verrà commissionata esplicitamente.
 
+
+---
+
+## LG-002 — StrategiaDiego come grafo decisionale
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+La struttura fondamentale della **StrategiaDiego** è un **grafo**.
+
+- i **nodi** rappresentano situazioni in cui esiste una scelta strategica;
+- i **terminali** rappresentano situazioni in cui non esiste più una scelta
+  strategica da compiere.
+
+### Commento tecnico
+
+Questa impostazione separa in modo netto due concetti:
+
+1. **riconoscere lo stato geometrico corrente**;
+2. **decidere fra alternative ammissibili**.
+
+La StrategiaDiego non deve quindi diventare una sequenza opaca di condizioni
+annidate. Le decisioni devono essere rappresentabili come nodi espliciti del
+grafo, con archi che descrivono le alternative selezionabili a partire da
+quella situazione.
+
+Un terminale non significa necessariamente soltanto "spirale completata".
+Significa più precisamente **assenza di scelta strategica**. Una volta
+raggiunto un terminale, l'esito o l'azione successiva è deterministica: per
+esempio completamento del percorso, applicazione di una costruzione obbligata
+oppure dichiarazione che non esiste una prosecuzione valida.
+
+Non viene ancora imposto che il grafo sia un albero. La forma a grafo permette,
+se utile, che decisioni differenti confluiscano successivamente nella stessa
+situazione strategica. L'eventuale ammissibilità di cicli verrà definita in una
+linea guida successiva e non è stabilita da LG-002.
+
+### Modello concettuale
+
+```text
+                [stato geometrico]
+                        |
+                 scelta necessaria
+                        |
+                    [NODO]
+                   /  |   \
+                  /   |    \
+             scelta A | scelta C
+                /     |       \
+             [...]  [...]     [...]
+                \     |       /
+                 \    |      /
+                 [nuovo stato]
+                        |
+               scelta necessaria?
+                  /           \
+                SI             NO
+                |               |
+             [NODO]       [TERMINALE]
+```
+
+### Regola
+
+Un elemento della StrategiaDiego appartiene a una delle due categorie
+strategiche fondamentali:
+
+**Nodo decisionale**
+- descrive una situazione riconoscibile;
+- dispone di almeno due alternative strategiche ammissibili;
+- ogni alternativa è rappresentata da un arco del grafo;
+- la scelta deve essere motivabile usando dati geometrici/stato disponibili.
+
+**Terminale**
+- descrive una situazione riconoscibile;
+- non presenta alternative strategiche da confrontare;
+- non possiede archi di scelta in uscita;
+- attiva un comportamento deterministico o produce un esito determinato.
+
+La domanda che separa le due categorie è:
+
+```text
+"In questa situazione esistono almeno due comportamenti strategicamente
+ammissibili fra cui scegliere?"
+
+SI  -> nodo
+NO  -> terminale
+```
+
+### Vincoli per la futura implementazione
+
+- ogni nodo deve avere un'identità stabile e leggibile;
+- ogni arco deve corrispondere a una scelta esplicita e descrivibile;
+- la condizione che porta a un nodo o a un terminale deve essere verificabile;
+- la decisione presa deve poter essere registrata in diagnostica;
+- la stessa situazione strategica non deve essere implementata in più punti
+  nascosti del codice se può essere rappresentata da un unico nodo;
+- i terminali non devono introdurre nuove scelte non dichiarate internamente:
+  ciò che accade dopo il terminale deve essere deterministico rispetto allo
+  stato ricevuto;
+- il grafo decisionale deve essere separato dalla geometria di basso livello:
+  le funzioni geometriche possono misurare, verificare e costruire, ma non
+  devono nascondere decisioni strategiche che appartengono al grafo.
+
+### Criterio futuro di verifica
+
+Durante l'esecuzione di StrategiaDiego deve essere possibile ricostruire almeno
+la sequenza:
+
+```text
+stato iniziale
+-> nodo visitato
+-> scelta/arco selezionato
+-> ...
+-> terminale raggiunto
+-> esito deterministico
+```
+
+Per un caso di regression, a parità di input e parametri, il percorso nel grafo
+deve essere riproducibile e diagnosticabile.
+
+### Punti ancora da definire
+
+LG-002 non stabilisce ancora:
+
+- quali siano i primi nodi concreti;
+- quali dati compongano lo "stato" passato fra i nodi;
+- la regola con cui una scelta viene preferita alle altre;
+- se il grafo possa contenere cicli;
+- quali tipi di terminale debbano essere formalizzati.
+
+Questi elementi verranno definiti con le successive linee guida.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Nessuna struttura dati del grafo e nessuna
+classe StrategiaDiego sono ancora implementate.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -119,7 +258,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-002`, `LG-003`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-003`, `LG-004`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
