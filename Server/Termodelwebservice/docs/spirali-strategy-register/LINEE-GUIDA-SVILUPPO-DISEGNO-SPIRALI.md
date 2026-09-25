@@ -688,6 +688,146 @@ colore diverso:< p,   = p,   > p
 Principio documentale consolidato. Le distanze minime definite da LG-006 non
 sono ancora implementate nella futura StrategiaDiego.
 
+
+---
+
+## LG-007 — Scelta di nodo possibile
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Si definisce **scelta di nodo possibile** un tratto che:
+
+1. è un `TrattoPossibile` secondo LG-005;
+2. non interseca altre linee già generate;
+3. genera una linea parallela a un'altra linea già esistente;
+4. mantiene rispetto alla linea di riferimento la distanza minima di
+   tracciamento applicabile secondo LG-006.
+
+### Commento tecnico
+
+La nozione di `SceltaNodoPossibile` è più restrittiva di `TrattoPossibile`.
+
+`TrattoPossibile` risponde alla domanda:
+
+```text
+questo segmento può esistere senza violare le regole generali di tracciamento?
+```
+
+`SceltaNodoPossibile` risponde invece alla domanda:
+
+```text
+questo segmento può costituire una concreta alternativa di costruzione
+all'interno di un nodo dell'albero?
+```
+
+Per essere una scelta di nodo, il segmento deve quindi essere costruito in
+relazione esplicita a una linea di riferimento già presente e deve svilupparsi
+parallelamente ad essa alla distanza minima prevista.
+
+La condizione di non intersezione impedisce che una scelta candidata attraversi
+tratti già costruiti della spirale.
+
+### Regola
+
+Dato un segmento candidato `s` e una linea di riferimento esistente `r`:
+
+```text
+SceltaNodoPossibile(s, r) =
+    TrattoPossibile(s)
+    AND NonIntersecaLineeGenerate(s)
+    AND Parallelo(s, r)
+    AND Distanza(s, r) = DistanzaMinimaApplicabile
+```
+
+dove `DistanzaMinimaApplicabile` deriva da LG-006 in funzione delle famiglie
+coinvolte:
+
+```text
+r architettonica                -> p/2
+r tubo stesso colore di s       -> 2p
+r tubo colore diverso da s      -> p
+```
+
+### Conseguenza sull'albero decisionale
+
+Un ramo di un nodo può essere creato soltanto a partire da una
+`SceltaNodoPossibile`.
+
+Quindi:
+
+```text
+linea di riferimento esistente
+          |
+          v
+costruisci candidata parallela alla distanza minima
+          |
+          v
+interseca linee già generate?
+     |              |
+    SI             NO
+     |              |
+ scarta      TrattoPossibile?
+                    |
+               NO   |   SI
+                |   |    |
+              scarta    ramo del nodo
+```
+
+### Vincoli per la futura implementazione
+
+- ogni scelta deve conservare il riferimento alla linea rispetto alla quale è
+  stata generata;
+- il parallelismo deve essere verificato geometricamente e non dedotto soltanto
+  da come il segmento è stato costruito;
+- la distanza dalla linea di riferimento deve corrispondere alla distanza
+  minima applicabile di LG-006;
+- il controllo di intersezione deve considerare le linee già generate prima
+  dell'apertura del nuovo ramo;
+- una scelta che interseca una linea già generata non può essere ammessa come
+  ramo del nodo;
+- una scelta ammessa deve essere diagnosticabile indicando almeno linea di
+  riferimento, famiglia/colore, distanza applicata e risultato dei controlli.
+
+### Criterio futuro di verifica
+
+Per ogni scelta candidata deve essere possibile verificare:
+
+```text
+segmento candidato
+linea di riferimento
+parallelismo
+distanza richiesta
+distanza effettiva
+intersezioni con linee già generate
+TrattoPossibile
+SceltaNodoPossibile = SI / NO
+```
+
+Un candidato che sia geometricamente valido ma non parallelo a una linea
+esistente non è una scelta di nodo possibile.
+
+Un candidato parallelo e alla distanza corretta ma che interseca una linea
+già generata non è una scelta di nodo possibile.
+
+### Punti ancora da definire
+
+LG-007 non stabilisce ancora:
+
+- quale linea esistente debba essere scelta come riferimento quando ve ne sono
+  più di una;
+- come ordinare più scelte di nodo possibili;
+- quali tolleranze numeriche usare per parallelismo e distanza;
+- se e come i punti di contatto agli estremi vengano trattati come
+  intersezioni proibite.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Nessuna funzione
+`SceltaNodoPossibile` è ancora implementata in StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -706,7 +846,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-007`, `LG-008`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-008`, `LG-009`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
