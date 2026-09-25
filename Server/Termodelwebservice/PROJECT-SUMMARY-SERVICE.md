@@ -128,6 +128,8 @@ Avanzamento iniziale:
 - consolidata `LG-011 — Albero di collegamento idraulico collettore-ingressi`: prima della costruzione delle spirali interne viene definita la rete fisica di collegamento dal collettore ai tratti di entrata;
 - distinta tale rete dall'albero decisionale LG-002: la rete/albero di mandata è input autorevole dell'utente, mentre l'albero di ritorno viene costruito dall'algoritmo;
 - la rete di collegamento completa alimenterà `LineeMandata` e `LineeRitorno` della struttura geometrica LG-004; algoritmo concreto del ritorno, diramazioni e priorità restano da definire.
+- consolidata `LG-012 — Radice dell'albero di ritorno`: per ogni nodo di mandata d'ingresso, l'algoritmo colloca la radice del ritorno a `0,50 m`; il vettore mandata->ritorno è parallelo alla parete architettonica più vicina e il verso è coerente con il `LatoRitorno` dell'ingresso;
+- restano da definire gestione di pareti equidistanti, dettaglio della distanza da segmenti finiti e comportamento se la posizione teorica della radice viola altri vincoli geometrici.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -146,6 +148,7 @@ Commit iniziali:
 - `7a77cc8fae70d79fcccd1359fbd555fd439f5be7` — precisazione LG-009: destra/sinistra riferite al verso del tubo di collegamento `esterno -> stanza`.
 - `0620f934f4b183f514e8e80ffd436a2008533df1` — LG-010, lato di ritorno indipendente per ogni tubo di collegamento di ingresso.
 - `ae5cab7d3b4581ac652718cb44dc5416c75c7b7e` — LG-011, albero di collegamento idraulico: mandata input utente, ritorno generato dall'algoritmo.
+- `d235a60b89d26dbdaf6198716822659ef1c613e5` — LG-012, radice del ritorno a 0,50 m e parallela alla parete architettonica più vicina.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
