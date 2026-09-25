@@ -144,6 +144,9 @@ Avanzamento iniziale:
 - precisata LG-016: `PROSEGUI_DRITTO` deroga esplicitamente al requisito di parallelismo con un'altra linea esistente; la sua ammissibilità deriva dalla continuità della direzione di provenienza, restando soggetta a lunghezza positiva, distanze minime e non-intersezione.
 - consolidata `LG-017 — Ogni nuovo tratto deve avere una linea frontale di arresto`: la semiretta teorica della direzione candidata deve incontrare un'altra linea della struttura geometrica; il segmento reale viene troncato prima dell'intersezione alla distanza di rispetto applicabile;
 - distinta esplicitamente l'intersezione della direzione teorica dalla non-intersezione del segmento costruito; senza linea frontale o con arretramento che produce lunghezza <= 0, il tratto non viene generato.
+- consolidata `LG-018 — Flusso generale della StrategiaDiego`: 1) costruzione ritorno dei tubi di collegamento, 2) costruzione spirali di mandata, 3) costruzione spirali di ritorno, 4) potatura dei rami non ammissibili dell'albero, 5) generazione definitiva;
+- dopo la potatura si valutano i terminali accettabili (LG-008), quindi si seleziona quello con massimo fattore di merito (LG-003), infine si genera la soluzione definitiva ripercorrendo deterministicamente il cammino radice->terminale vincente;
+- il termine operativo resta `albero decisionale` secondo LG-002; criteri completi di potatura e regole specifiche della spirale di ritorno restano da definire.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -169,6 +172,7 @@ Commit iniziali:
 - `1b28cef915a91a19f5a35aeab08c6a86e049211e` — LG-016, scelta di prosecuzione rettilinea nella direzione di provenienza fino al primo ostacolo frontale.
 - `d4918352f17733af8cae7b6d2ff86dea55a7791a` — precisazione LG-016: `PROSEGUI_DRITTO` è deroga esplicita al parallelismo con altre linee.
 - `613dddd87fe4c980378046eaa685276d07aef7c6` — LG-017, linea frontale obbligatoria e troncamento del nuovo tratto alla distanza di rispetto.
+- `d56f19c963a0a2fd350f019df7f7189f4d06e64d` — LG-018, flusso generale StrategiaDiego dalla rete di ritorno alla generazione definitiva.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
