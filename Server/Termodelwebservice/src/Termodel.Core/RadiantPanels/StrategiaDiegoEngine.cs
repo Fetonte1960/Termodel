@@ -399,12 +399,14 @@ internal static class StrategiaDiegoEngine
             DVector parallel = node.Front.Direction.Normalize();
             GeoSegment? continuationA =
                 FindSequenceContinuation(
+                    node.End,
                     node.Front,
                     constraints,
                     family,
                     parallel);
             GeoSegment? continuationB =
                 FindSequenceContinuation(
+                    node.End,
                     node.Front,
                     constraints,
                     family,
@@ -1125,6 +1127,7 @@ internal static class StrategiaDiegoEngine
     }
 
     private static GeoSegment? FindSequenceContinuation(
+        DPoint start,
         GeoSegment front,
         IReadOnlyList<GeoSegment> constraints,
         GeoFamily pathFamily,
@@ -1136,78 +1139,69 @@ internal static class StrategiaDiegoEngine
             return null;
         }
 
-        // Per i casi storici diversi dal ritorno che insegue la mandata,
-        // conserva esattamente la semantica precedente: SequenceIndex+1.
-        // La correzione direzionale è confinata alla relazione esplicita
-        // Return -> Supply di LG-014/LG-033.
+        // Per i casi diversi dal ritorno che insegue la mandata conserva la
+        // semantica storica: il successore e' SequenceIndex+1.
         if (pathFamily != GeoFamily.Return ||
             front.Family != GeoFamily.Supply)
         {
-            int nextIndex = front.SequenceIndex + 1;
             return constraints.FirstOrDefault(candidate =>
                 candidate.Family == front.Family &&
-                candidate.SequenceIndex == nextIndex);
+                candidate.SequenceIndex == front.SequenceIndex + 1);
         }
 
-        DVector frontDirection = front.Direction.Normalize();
         DVector travel = travelDirection.Normalize();
-        if (frontDirection.Length <= Epsilon ||
-            travel.Length <= Epsilon)
-        {
+        if (travel.Length <= Epsilon)
             return null;
-        }
 
-        // Se il ritorno percorre la linea di mandata nello stesso verso,
-        // prosegue verso SequenceIndex+1. Se la percorre nel verso opposto,
-        // deve proseguire verso SequenceIndex-1. Il vecchio +1 fisso rendeva
-        // una delle due alternative geometricamente incoerente.
-        int sequenceStep =
-            DVector.Dot(travel, frontDirection) >= 0
-                ? 1
-                : -1;
+        // Il ritorno e' una curva parallela alla mandata: la prossima svolta
+        // non si deduce dal verso A->B del segmento di mandata, perche' il
+        // ritorno puo' trovarsi sul suo prolungamento. Si sceglie quindi il
+        // primo segmento della stessa mandata la cui retta viene incontrata
+        // DAVANTI lungo la direzione corrente. Questo realizza l'inseguimento
+        // geometrico della traccia invece di forzare +1/-1 dall'orientamento.
+        GeoSegment? best = null;
+        double bestTravel = double.PositiveInfinity;
 
-        IEnumerable<GeoSegment> ordered = constraints
-            .Where(candidate =>
-                candidate.Family == GeoFamily.Supply &&
-                (sequenceStep > 0
-                    ? candidate.SequenceIndex > front.SequenceIndex
-                    : candidate.SequenceIndex < front.SequenceIndex))
-            .OrderBy(candidate =>
-                sequenceStep > 0
-                    ? candidate.SequenceIndex
-                    : -candidate.SequenceIndex);
-
-        foreach (GeoSegment candidate in ordered)
+        foreach (GeoSegment candidate in constraints.Where(candidate =>
+                     candidate.Family == GeoFamily.Supply &&
+                     candidate.SequenceIndex >= 0 &&
+                     candidate.SequenceIndex != front.SequenceIndex))
         {
-            DVector candidateDirection =
-                candidate.Direction.Normalize();
+            DVector candidateDirection = candidate.Direction.Normalize();
             if (candidateDirection.Length <= Epsilon)
                 continue;
 
-            // Segmenti consecutivi paralleli/collineari sono pezzi della
-            // stessa evoluzione. Il frontale utile è il primo vero cambio.
-            double cross = Math.Abs(
-                DVector.Cross(frontDirection, candidateDirection));
-            if (cross <= GeometryTolerance)
-            {
-                LogDiego(
-                    $"SEQUENCE return-follows-supply skip-collinear " +
-                    $"from={front.SequenceIndex} skip={candidate.SequenceIndex} " +
-                    $"step={sequenceStep}");
+            double denominator = DVector.Cross(travel, candidateDirection);
+            if (Math.Abs(denominator) <= GeometryTolerance)
                 continue;
-            }
 
+            DVector delta = candidate.A - start;
+            double rayTravel =
+                DVector.Cross(delta, candidateDirection) / denominator;
+
+            if (rayTravel <= GeometryTolerance)
+                continue;
+
+            if (rayTravel < bestTravel - GeometryTolerance)
+            {
+                bestTravel = rayTravel;
+                best = candidate;
+            }
+        }
+
+        if (best is null)
+        {
             LogDiego(
-                $"SEQUENCE return-follows-supply continuation " +
-                $"from={front.SequenceIndex} next={candidate.SequenceIndex} " +
-                $"step={sequenceStep}");
-            return candidate;
+                $"SEQUENCE return-follows-supply no-forward-front " +
+                $"from={front.SequenceIndex} start={Fmt(start)} dir={Fmt(travel)}");
+            return null;
         }
 
         LogDiego(
-            $"SEQUENCE return-follows-supply end " +
-            $"from={front.SequenceIndex} step={sequenceStep}");
-        return null;
+            $"SEQUENCE return-follows-supply geometric-continuation " +
+            $"from={front.SequenceIndex} next={best.SequenceIndex} " +
+            $"start={Fmt(start)} dir={Fmt(travel)} rayTravel={Fmt(bestTravel)}m");
+        return best;
     }
 
     private static List<GeoSegment> ReconstructSegments(SearchNode node)
