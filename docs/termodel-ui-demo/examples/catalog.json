@@ -8,6 +8,14 @@
       "project": "./examples/pannelli-radianti.tmdl.txt",
       "executive": true,
       "default": true
+    },
+    {
+      "id": "quadrato-con-pannelli",
+      "name": "Quadrato con pannelli",
+      "description": "Quadrato 4×4 m con un tubo di ingresso, banco rapido StrategiaDiego",
+      "geometry": "./examples/quadrato-con-pannelli.svg",
+      "executive": true,
+      "default": false
     }
   ]
 }
