@@ -272,12 +272,12 @@ try {
     throw "Banco prova appartamento: la pianta pulita deve mostrare almeno due contorni per rendere visibile lo spessore delle pareti."
   }
 
-  # Regression definitiva primo tratto mandata (rettifica utente 25/09/2026):
-  # la prima evoluzione di mandata viene collocata a 1,5p = 0,45 m dalla
-  # parete d'ingresso per lasciare la guida esterna del ritorno a p/2.
-  # Quando il primo tratto tracciato verso la parete frontale arriva alla
-  # parete destra, deve pero' fermarsi alla distanza minima architettonica
-  # LG-006: p/2 = 0,15 m. Non deve ereditare i 0,45 m dell'evoluzione.
+  # Regression geometria ingresso StrategiaDiego (rettifica utente 26/09/2026):
+  # non esiste una "prima evoluzione" con regola speciale.
+  # Il raccordo tecnico porta la mandata sulla traccia ordinaria a p/2 dalla
+  # parete; il ritorno resta a p dalla mandata e quindi, nel corridoio
+  # iniziale ortogonale di questa fixture, a 1,5p dalla parete.
+  # Ogni arresto frontale contro architettura continua a usare LG-006: p/2.
   $supplyGroup = @($svgDocument.DocumentElement.ChildNodes | Where-Object {
     $_.NodeType -eq [System.Xml.XmlNodeType]::Element -and
     $_.GetAttribute("data-layer") -eq "Unico_PannelliMandata_Output"
@@ -315,11 +315,43 @@ try {
   $firstEntryLength = [Math]::Sqrt(
     [Math]::Pow($p1[0]-$p0[0],2) +
     [Math]::Pow($p1[1]-$p0[1],2))
-  if ([Math]::Abs($firstEntryLength - 0.45) -gt 0.02) {
-    throw "Banco prova appartamento: ingresso mandata inatteso ($firstEntryLength m), atteso circa 0,45 m = 1,5p."
+  if ([Math]::Abs($firstEntryLength - 0.15) -gt 0.02) {
+    throw "Banco prova appartamento: raccordo ingresso mandata inatteso ($firstEntryLength m), atteso circa 0,15 m = p/2."
   }
   if ([Math]::Abs($p2[0] - 7.98148) -gt 0.02) {
     throw "Banco prova appartamento: primo tratto verso la parete destra termina a x=$($p2[0]) m; atteso circa 7,98148 m, cioe' 0,15 m = p/2 dalla parete."
+  }
+
+  $returnGroup = @($svgDocument.DocumentElement.ChildNodes | Where-Object {
+    $_.NodeType -eq [System.Xml.XmlNodeType]::Element -and
+    $_.GetAttribute("data-layer") -eq "Unico_PannelliRitorno_Output"
+  } | Select-Object -First 1)
+  if (-not $returnGroup) {
+    throw "Banco prova appartamento: gruppo ritorno non trovato nell'SVG."
+  }
+  $returnPolyline = @($returnGroup.ChildNodes | Where-Object {
+    $_.NodeType -eq [System.Xml.XmlNodeType]::Element -and
+    $_.LocalName -eq "polyline"
+  } | Select-Object -First 1)
+  if (-not $returnPolyline) {
+    throw "Banco prova appartamento: polilinea ritorno non trovata."
+  }
+  $returnPoints = @($returnPolyline.GetAttribute("points") -split "\s+" |
+    Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+  if ($returnPoints.Count -lt 2) {
+    throw "Banco prova appartamento: ritorno privo del raccordo iniziale."
+  }
+
+  $r0 = Parse-SvgPoint $returnPoints[0]
+  $r1 = Parse-SvgPoint $returnPoints[1]
+  $firstReturnEntryLength = [Math]::Sqrt(
+    [Math]::Pow($r1[0]-$r0[0],2) +
+    [Math]::Pow($r1[1]-$r0[1],2))
+  if ([Math]::Abs($firstReturnEntryLength - 0.45) -gt 0.02) {
+    throw "Banco prova appartamento: raccordo ingresso ritorno inatteso ($firstReturnEntryLength m), atteso circa 0,45 m = 1,5p."
+  }
+  if ([Math]::Abs(($firstReturnEntryLength - $firstEntryLength) - 0.30) -gt 0.03) {
+    throw "Banco prova appartamento: distanza normale ritorno-mandata inattesa; atteso p = 0,30 m."
   }
 
 
