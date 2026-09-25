@@ -141,6 +141,7 @@ Avanzamento iniziale:
 - consolidata `LG-016 — Scelta di prosecuzione nella direzione di provenienza`: ad ogni nodo con direzione entrante viene valutata l'alternativa `PROSEGUI_DRITTO`, cioè continuare lungo la stessa direzione fino alla prima geometria frontale;
 - il tratto non interseca la geometria frontale ma si arresta alla distanza minima applicabile secondo LG-006 e genera un ramo solo se resta `TrattoPossibile`/`SceltaNodoPossibile`;
 - restano da definire le altre scelte concorrenti del nodo e l'ordine con cui verranno enumerate.
+- precisata LG-016: `PROSEGUI_DRITTO` deroga esplicitamente al requisito di parallelismo con un'altra linea esistente; la sua ammissibilità deriva dalla continuità della direzione di provenienza, restando soggetta a lunghezza positiva, distanze minime e non-intersezione.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -164,6 +165,7 @@ Commit iniziali:
 - `ed9ae3ce976969623b3dae9ecd33540ff1589cb1` — LG-014, ritorno nel corridoio segue la mandata quando possibile e salta le evoluzioni impossibili.
 - `e5a25a64eb7b5c1e637c6921ad4362da1834efc3` — LG-015, configurazione terminale mandata/ritorno e derivazione della scelta iniziale della spirale.
 - `1b28cef915a91a19f5a35aeab08c6a86e049211e` — LG-016, scelta di prosecuzione rettilinea nella direzione di provenienza fino al primo ostacolo frontale.
+- `d4918352f17733af8cae7b6d2ff86dea55a7791a` — precisazione LG-016: `PROSEGUI_DRITTO` è deroga esplicita al parallelismo con altre linee.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
