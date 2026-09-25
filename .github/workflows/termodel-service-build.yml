@@ -140,8 +140,11 @@ jobs:
 
           $catalogPath = "..\..\docs\termodel-ui-demo\examples\catalog.json"
           $radiantExamplePath = "..\..\docs\termodel-ui-demo\examples\pannelli-radianti.tmdl.txt"
+          $squareExamplePath = "..\..\docs\termodel-ui-demo\examples\quadrato-con-pannelli.svg"
           $catalog = Get-Content -LiteralPath $catalogPath -Raw
+          $catalogJson = $catalog | ConvertFrom-Json
           $radiantExample = Get-Content -LiteralPath $radiantExamplePath -Raw
+          $squareExample = Get-Content -LiteralPath $squareExamplePath -Raw
 
           foreach ($marker in @(
             '"id": "pannelli-radianti"',
@@ -155,6 +158,32 @@ jobs:
           if ($catalog.Contains('"id": "appartamento"')) {
             throw "Il catalogo espone ancora Appartamento come esempio corrente."
           }
+
+          if (@($catalogJson.examples).Count -lt 2) {
+            throw "Il catalogo deve contenere almeno due esempi."
+          }
+          $squareCatalog = @($catalogJson.examples)[1]
+          if ([string]$squareCatalog.id -ne "quadrato-con-pannelli" -or
+              [string]$squareCatalog.name -ne "Quadrato con pannelli" -or
+              [string]$squareCatalog.geometry -ne "./examples/quadrato-con-pannelli.svg" -or
+              $squareCatalog.executive -ne $true) {
+            throw "Quadrato con pannelli non e' il secondo esempio consolidato del catalogo."
+          }
+
+          foreach ($marker in @(
+            'data-termodel-format="TERMODEL-PROJECT-SVG-V1"',
+            'id="E001" x1="0" y1="0" x2="400" y2="0"',
+            'id="E002" x1="400" y1="0" x2="400" y2="400"',
+            'id="T001" x1="-50" y1="200" x2="50" y2="200"',
+            'data-termodel-layer="Unico_tubipannelli"',
+            'data-termodel-rete="RAD-DEFAULT"',
+            'DESCR.,Quadrato con pannelli'
+          )) {
+            if (-not $squareExample.Contains($marker)) {
+              throw "Esempio Quadrato con pannelli incompleto: $marker"
+            }
+          }
+          Write-Host "RADIANT_SQUARE_PUBLIC_EXAMPLE_OK"
 
           foreach ($marker in @(
             "[TERMODEL-PROJECT-TEXT-V1]",
