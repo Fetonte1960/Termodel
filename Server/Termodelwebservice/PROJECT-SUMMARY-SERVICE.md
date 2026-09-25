@@ -155,6 +155,8 @@ Avanzamento iniziale:
 - il fallback documentale non autorizza copie o modifiche dei motori Vittorio/GPT e decade sul singolo punto quando StrategiaDiego lo formalizza esplicitamente.
 - audit pre-sviluppo avviato un quesito alla volta; consolidata `LG-021 — Enumerazione completa delle linee di riferimento a ogni nodo`: ogni nodo considera tutte le linee architettoniche, di mandata e di ritorno come riferimenti candidati, applicando rispettivamente le distanze `p/2`, `2p` o `p` secondo famiglia/colore del nuovo tratto;
 - nessun filtro preliminare per sola vicinanza: le alternative vengono eliminate dalle successive verifiche geometriche; resta aperta la gestione di candidati equivalenti generati da riferimenti diversi.
+- consolidata `LG-022 — Direzione di provenienza ed estremo libero del tubo di collegamento`: ogni nodo dispone di `DirezioneProvenienza`; nel caso iniziale il tubo di collegamento ha direzione nota ma estremo interno libero, determinato dall'intersezione con la direzione del prossimo tratto scelto;
+- resta da definire la gestione dei casi in cui direzione di provenienza e nuovo tratto risultino paralleli, dell'intersezione posta dietro al verso orientato e di eventuali correzioni/raccordi sul punto geometrico di intersezione.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -184,6 +186,7 @@ Commit iniziali:
 - `f998d9a814cbc018c2ea5bcf64d25cd840af9226` — LG-019, evoluzione test-driven delle linee guida StrategiaDiego.
 - `6d799d813e48a7d3871f3e5c7e995caacc62fe8e` — LG-020, riferimento sussidiario a Spirali Vittorio e Spirali GPT per aspetti non ancora definiti.
 - `9da82a4b2ebe7da71913dd8d862a86414744352b` — LG-021, enumerazione completa delle linee di riferimento a ogni nodo.
+- `0b001e6d3ca2c8b4122523fffb5023fb059822bf` — LG-022, direzione di provenienza ed estremo libero del tubo di collegamento.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
