@@ -70,6 +70,26 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Correzione primo tratto StrategiaDiego secondo LG-013/LG-017
+Stato: COMMISSIONATO
+
+Commissionato:
+- correggere StrategiaDiego sul primo tratto che prosegue dal tubo di collegamento dentro il locale;
+- applicare la regola già consolidata in LG-013: direzione uguale al tubo entrante, **estremo finale non preassegnato**;
+- il primo tratto deve essere prolungato fino alla prima geometria frontale e poi troncato alla distanza di rispetto applicabile secondo LG-017/LG-006, invece di usare una lunghezza fissa;
+- confrontare i motori GPT e Vittorio come riferimento algoritmico per il principio intersezione/offset + accorciamento, senza modificarli;
+- aggiungere regression sul banco appartamento corrente affinché il primo tratto non torni a una lunghezza fissa `1,5p`;
+- eseguire GitHub Actions con StrategiaDiego e restituire l'SVG reale prodotto dal Service.
+
+Criteri di completamento:
+- eliminata dal primo tratto la lunghezza iniziale preassegnata;
+- prima linea frontale realmente ricercata nella direzione del collegamento;
+- estremo reale arretrato della distanza prevista;
+- build e smoke GitHub Actions SUCCESS;
+- banco appartamento corrente SUCCESS;
+- SVG reale recuperato e mostrato all'utente.
+
+
 ### INCARICO 2026-09-25 — Esecutivo pannelli con pianta pulita spessorata
 Stato: ESEGUITO
 
