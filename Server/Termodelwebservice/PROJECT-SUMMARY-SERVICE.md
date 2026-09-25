@@ -67,6 +67,7 @@ Prima di intervenire:
    o a un impedimento concreto. Al termine rimuovere la strumentazione
    occasionale e lasciare solo correzioni/regression test utili.
 14. **Notifica GitHub Actions — IMPORTANTE:** ogni Action usata per un incarico operativo o debug deve seguire `.github/TERMODEL-ACTION-NOTIFICATIONS.md`. All'avvio pubblicare `RUNNING` nel Commit Status `Termodel/job`; nello step finale `always()` pubblicare `SUCCESS` o `FAILED` e inviare una sola notifica push tramite il secret `TERMODEL_NTFY_TOPIC`. Non usare polling e non esporre mai il valore del secret.
+15. **Protocollo anti-timeout chat — IMPORTANTE:** per incarichi lunghi applicare `.github/TERMODEL-CHAT-ANTI-TIMEOUT.md`. La chat è il punto di comando, GitHub è lo stato persistente: registrare subito `COMMISSIONATO`, lavorare per checkpoint piccoli, demandare build/test lunghi a GitHub Actions, evitare di riversare log enormi nella chat e riprendere dopo timeout da Summary, commit, status e artifact senza rifare lavoro già verificato.
 
 ## 1.1 Registro incarichi autorizzati
 
