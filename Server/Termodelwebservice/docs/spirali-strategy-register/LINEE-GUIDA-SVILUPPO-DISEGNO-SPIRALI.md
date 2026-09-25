@@ -220,6 +220,135 @@ Questi elementi verranno definiti con le successive linee guida.
 Principio documentale consolidato. Nessuna struttura dati dell'albero e
 nessuna classe StrategiaDiego sono ancora implementate.
 
+
+---
+
+## LG-003 — Fattore di merito dei terminali e scelta della soluzione
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Ogni foglia/terminale dell'albero StrategiaDiego possiede un **fattore di
+merito**.
+
+Il fattore di merito è definito come:
+
+```text
+fattore_di_merito(terminale) = lunghezza totale di tubo prodotta
+```
+
+Al termine della costruzione/esplorazione dell'albero, l'algoritmo sceglie il
+terminale valido con il fattore di merito maggiore.
+
+La spirale definitiva viene quindi prodotta percorrendo l'albero dalla radice
+al terminale selezionato e applicando, nell'ordine, le scelte registrate nei
+nodi attraversati.
+
+### Commento tecnico
+
+Questa regola separa nettamente due fasi:
+
+1. **fase di ricerca/valutazione**
+   - si costruiscono i rami candidati;
+   - si raggiungono uno o più terminali;
+   - per ogni terminale si determina la lunghezza di tubo ottenibile;
+   - si registra il percorso decisionale che ha portato al terminale;
+
+2. **fase di materializzazione**
+   - si sceglie il terminale con merito massimo;
+   - si risale logicamente al percorso radice -> terminale;
+   - si riapplicano in ordine le scelte dei nodi;
+   - si produce la geometria definitiva delle spirali.
+
+Il criterio di merito non sostituisce i vincoli di validità geometrica.
+Un terminale può partecipare al confronto soltanto se il percorso che lo ha
+generato è considerato valido dalle regole StrategiaDiego applicabili.
+
+### Regola
+
+Dato l'insieme dei terminali validi:
+
+```text
+T = { t1, t2, ..., tn }
+```
+
+per ciascun terminale:
+
+```text
+M(ti) = lunghezza_tubo(ti)
+```
+
+il terminale selezionato è:
+
+```text
+t* = arg max M(ti)
+```
+
+La soluzione finale è il percorso unico:
+
+```text
+radice -> nodo1 -> ramo scelto -> nodo2 -> ... -> t*
+```
+
+e la geometria finale deve derivare dall'applicazione ordinata delle scelte
+contenute in quel percorso.
+
+### Vincoli per la futura implementazione
+
+- il fattore di merito deve essere espresso in una unità di lunghezza coerente
+  e non dipendente dalla visualizzazione;
+- la lunghezza deve riferirsi alla geometria di tubo effettivamente producibile,
+  non a una stima puramente grafica priva di corrispondenza con il risultato;
+- terminali invalidi non partecipano alla massimizzazione;
+- ogni terminale deve conservare il riferimento al proprio percorso
+  radice -> foglia;
+- ogni scelta effettuata in un nodo deve essere registrabile e riapplicabile;
+- la fase finale non deve inventare nuove decisioni: deve soltanto riprodurre
+  quelle del percorso vincente;
+- il risultato finale deve poter indicare almeno il terminale selezionato, il
+  suo fattore di merito e la sequenza dei nodi/rami attraversati;
+- il comportamento in caso di parità fra due o più terminali con identico
+  fattore di merito non è ancora definito e richiederà una linea guida
+  successiva.
+
+### Criterio futuro di verifica
+
+Per un caso di regression con più terminali validi, la diagnostica deve
+permettere di verificare:
+
+```text
+terminale A -> lunghezza A
+terminale B -> lunghezza B
+...
+terminale selezionato -> massima lunghezza valida
+percorso selezionato -> radice ... terminale
+spirale finale -> ottenuta applicando esattamente quel percorso
+```
+
+A parità di input e parametri, sia la selezione del terminale sia la geometria
+finale devono essere riproducibili.
+
+### Punti ancora da definire
+
+LG-003 non stabilisce ancora:
+
+- come risolvere le parità di fattore di merito;
+- se in futuro il fattore di merito potrà diventare composito o includere
+  penalità/premi oltre alla lunghezza;
+- il dettaglio esatto con cui viene calcolata la lunghezza in presenza di
+  raccordi, arrotondamenti o tratti tecnici.
+
+Finché queste regole non verranno estese, il principio base resta:
+**massimizzare la lunghezza di tubo fra i terminali validi**.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Nessun algoritmo di esplorazione,
+valutazione dei terminali o replay del percorso vincente è ancora implementato
+in StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -238,7 +367,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-003`, `LG-004`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-004`, `LG-005`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
