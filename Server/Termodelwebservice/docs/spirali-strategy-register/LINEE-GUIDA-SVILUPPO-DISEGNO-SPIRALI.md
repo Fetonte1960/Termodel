@@ -2062,6 +2062,177 @@ linea frontale troppo vicina
 Principio documentale consolidato. La regola generale di linea frontale e
 troncamento non è ancora implementata nella futura StrategiaDiego.
 
+
+---
+
+## LG-018 — Flusso generale della StrategiaDiego
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Il flusso generale di costruzione deve seguire queste fasi:
+
+1. costruzione del **ritorno dei tubi di collegamento**;
+2. costruzione delle **spirali di mandata**;
+3. costruzione delle **spirali di ritorno**;
+4. **potatura dei rami non ammissibili** dell'albero;
+5. **generazione definitiva** della soluzione scelta.
+
+### Commento tecnico
+
+Il termine corretto, secondo LG-002, è **albero decisionale** e non grafo.
+
+Le fasi sono concettualmente separate:
+
+```text
+rete mandata utente
+      |
+      v
+[1] costruzione ritorno tubi di collegamento
+      |
+      v
+[2] costruzione candidati spirale di mandata
+      |
+      v
+[3] costruzione candidati spirale di ritorno
+      |
+      v
+[4] potatura rami non ammissibili
+      |
+      v
+valutazione terminali accettabili
+      |
+      v
+scelta terminale a massimo fattore di merito
+      |
+      v
+[5] generazione definitiva
+```
+
+La fase di generazione definitiva non deve introdurre nuove decisioni:
+riproduce il percorso radice -> terminale vincente già determinato.
+
+### Regola
+
+#### Fase 1 — Ritorno dei tubi di collegamento
+
+Partendo dalla rete di mandata fornita dall'utente, l'algoritmo costruisce
+l'albero/rete di ritorno secondo LG-011, LG-012 e LG-014.
+
+Al termine di questa fase sono note le configurazioni terminali mandata/ritorno
+necessarie per iniziare le spirali (LG-015).
+
+#### Fase 2 — Spirali di mandata
+
+Per ogni ingresso vengono costruiti i possibili sviluppi della mandata
+secondo le regole di nodo già definite:
+
+- tratti possibili;
+- distanze minime;
+- scelte di nodo;
+- primo tratto libero;
+- prosecuzione dritta;
+- linea frontale e troncamento.
+
+Le alternative ammissibili generano i rami dell'albero.
+
+#### Fase 3 — Spirali di ritorno
+
+Sui rami costruiti per la mandata vengono sviluppati i corrispondenti
+possibili percorsi di ritorno, mantenendo separata la geometria di ritorno
+da quella di mandata e rispettando i vincoli geometrici consolidati.
+
+LG-018 fissa l'esistenza e l'ordine di questa fase, ma non introduce ancora
+regole ulteriori specifiche per il tracciamento interno del ritorno oltre a
+quelle già consolidate o che saranno definite successivamente.
+
+#### Fase 4 — Potatura
+
+Una volta costruite le alternative geometriche previste, vengono eliminati
+i rami che risultano non ammissibili.
+
+Un ramo può essere potato quando viola una regola geometrica o strategica
+consolidata oppure conduce a una configurazione che non può costituire una
+soluzione valida secondo le regole applicabili.
+
+La potatura deve essere diagnosticabile: per ogni ramo eliminato deve essere
+possibile conoscere il motivo dell'esclusione.
+
+#### Valutazione finale dei terminali
+
+Dopo la costruzione dell'albero e la potatura, si applica LG-008:
+
+```text
+terminali rimasti
+      |
+      v
+valutazione TerminaleAccettabile
+      |
+      v
+filtro terminali accettabili
+```
+
+Fra i terminali accettabili si applica quindi LG-003:
+
+```text
+terminale vincente = massimo fattore di merito
+```
+
+#### Fase 5 — Generazione definitiva
+
+Individuato il terminale vincente, la geometria definitiva viene prodotta
+ripercorrendo il cammino unico:
+
+```text
+radice -> ... -> terminale vincente
+```
+
+e applicando nell'ordine le scelte memorizzate nei nodi.
+
+### Vincoli per la futura implementazione
+
+- le cinque fasi devono essere riconoscibili e diagnosticabili;
+- la rete di ritorno dei collegamenti deve essere completata prima della
+  costruzione delle spirali;
+- mandata e ritorno della spirale devono restare geometricamente distinguibili;
+- la potatura non deve modificare retroattivamente le regole con cui i rami
+  sono stati generati;
+- la valutazione dei terminali accettabili avviene dopo la costruzione
+  dell'albero, secondo LG-008;
+- la generazione definitiva deve essere un replay deterministico del percorso
+  vincente e non una nuova ricerca.
+
+### Criterio futuro di verifica
+
+Per ogni elaborazione deve essere possibile produrre una diagnostica del tipo:
+
+```text
+FASE 1  ritorno collegamenti       -> completata
+FASE 2  spirali mandata            -> N rami/candidati
+FASE 3  spirali ritorno            -> N sviluppi
+FASE 4  potatura                   -> X rami eliminati, motivazioni
+        terminali accettabili      -> Y
+        terminale vincente         -> id + fattore di merito
+FASE 5  generazione definitiva     -> percorso radice/terminale riprodotto
+```
+
+### Punti ancora da definire
+
+LG-018 non stabilisce ancora:
+
+- le regole specifiche complete di costruzione della spirale di ritorno;
+- tutti i criteri che rendono un ramo non ammissibile in fase di potatura;
+- l'eventuale momento esatto in cui alcune invalidità manifeste possano essere
+  riconosciute prima della potatura finale senza alterare l'esplorazione
+  richiesta dall'albero.
+
+### Stato implementativo corrente
+
+Flusso generale documentale consolidato. Le fasi StrategiaDiego non sono
+ancora implementate come nuovo motore runtime.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -2080,7 +2251,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-018`, `LG-019`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-019`, `LG-020`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
