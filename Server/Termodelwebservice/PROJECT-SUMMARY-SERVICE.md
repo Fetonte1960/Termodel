@@ -71,6 +71,25 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-25 — Visualizzazione esecutivo StrategiaDiego quadrato 4x4
+Stato: COMMISSIONATO
+
+Commissionato:
+- rieseguire tramite GitHub Actions il caso test `StrategiaDiegoSquare4x4.locale.xml`;
+- usare la StrategiaDiego corrente senza modificare Vittorio/GPT;
+- recuperare l'SVG prodotto dalla Action per il quadrato 4x4 con unico tubo entrante;
+- mostrare all'utente il disegno prodotto, insieme all'esito reale del benchmark;
+- non modificare frontend, `definizionedati.json` o Library Desktop.
+
+Criteri di completamento:
+- GitHub Action conclusa;
+- artifact `strategia-diego-benchmark` recuperato;
+- `StrategiaDiegoSquare4x4.svg` estratto e visualizzato;
+- metriche della nuova esecuzione registrate;
+- incarico marcato `ESEGUITO` soltanto dopo verifica reale dell'Action.
+
+
+
 ### INCARICO 2026-09-25 — StrategiaDiego regressione geometrie complesse R1
 Stato: ESEGUITO
 
