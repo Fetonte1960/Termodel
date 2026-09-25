@@ -2233,6 +2233,85 @@ LG-018 non stabilisce ancora:
 Flusso generale documentale consolidato. Le fasi StrategiaDiego non sono
 ancora implementate come nuovo motore runtime.
 
+
+---
+
+## LG-019 — Evoluzione delle linee guida attraverso i casi di test
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Il presente documento è una specifica viva e verrà progressivamente
+**migliorato, corretto e aggiornato attraverso la valutazione dei casi di test**.
+
+I casi reali e di regression non servono soltanto a verificare
+l'implementazione: possono evidenziare limiti, ambiguità o regole mancanti
+della stessa StrategiaDiego.
+
+### Regola
+
+Per ogni caso di test significativo:
+
+```text
+caso geometrico
+      |
+      v
+applicazione delle linee guida correnti
+      |
+      v
+valutazione del risultato
+      |
+      +--> comportamento corretto
+      |       -> il caso diventa regression test
+      |
+      +--> comportamento incompleto/errato/ambiguo
+              -> analisi della causa
+              -> modifica o nuova linea guida
+              -> nuovo test
+```
+
+Le linee guida devono quindi precedere e governare le modifiche algoritmiche:
+se un caso richiede un nuovo comportamento strategico, la regola deve essere
+prima esplicitata o corretta nel documento e poi implementata.
+
+### Collegamento con il registro dei casi
+
+I casi geometrici concreti continuano a essere registrati in:
+
+`docs/spirali-strategy-register/`
+
+Le schede `STRATEGY-NNN` costituiscono esempi verificabili delle situazioni
+reali; le regole `LG-NNN` estraggono e consolidano i principi generali che
+StrategiaDiego deve rispettare.
+
+Un singolo caso può quindi:
+
+- confermare una linea guida esistente;
+- richiedere una precisazione;
+- produrre una nuova linea guida;
+- dimostrare che una regola precedente deve essere corretta.
+
+### Vincoli
+
+- non aggiornare automaticamente un risultato atteso solo perché cambia
+  l'algoritmo;
+- prima comprendere la differenza osservata;
+- distinguere sempre difetto dell'implementazione da difetto/incompletezza
+  della strategia documentata;
+- mantenere tracciabili le rettifiche delle linee guida;
+- trasformare i casi significativi in regression test riproducibili quando
+  possibile;
+- un caso di test non deve modificare silenziosamente una regola consolidata:
+  la modifica deve essere registrata esplicitamente.
+
+### Stato implementativo corrente
+
+Principio metodologico consolidato. Il documento resta intenzionalmente
+**SPECIFICA VIVA — IN DEFINIZIONE** e continuerà a evolvere insieme ai casi
+di test della StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -2251,7 +2330,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-019`, `LG-020`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-020`, `LG-021`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
