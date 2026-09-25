@@ -140,7 +140,7 @@ Decisione:
 - rieseguire poi build e benchmark prima di chiudere F5.
 
 ## F2B — Allineamento inseguimento sequenziale LG-033..LG-035
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO — IMPLEMENTATO, DA RIVERIFICARE IN BUILD/BENCHMARK**
 
 Obiettivo:
 - quando un nodo Diego sta seguendo un segmento di tubo gia' appartenente al
@@ -151,6 +151,15 @@ Obiettivo:
 - `PROSEGUI_DRITTO` resta un'alternativa separata e continua a escludere la
   linea che ha appena troncato il tratto precedente;
 - nessuna modifica ai motori Vittorio/GPT.
+
+Risultato:
+- aggiunta ricerca del successore geometrico `S_k+1` tramite `SequenceIndex`;
+- i rami `PARALLELA_A/B` usano `S_k+1` come frontale richiesta quando disponibile;
+- `PROSEGUI_DRITTO` resta separato ed esclude la frontale appena usata;
+- Vittorio/GPT non modificati.
+
+Commit:
+- `90f76ff47e4822b00d7ba3d57b524017e377f092`.
 
 ## F5 — Batteria benchmark GitHub Actions
 Stato: **COMMISSIONATO**
