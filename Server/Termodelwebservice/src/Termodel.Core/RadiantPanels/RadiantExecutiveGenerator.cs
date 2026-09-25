@@ -189,6 +189,9 @@ public static class RadiantExecutiveGenerator
             root);
     }
 
+    public static string GetSelectedSpiralEngineName() =>
+        ResolveSpiralEngine().ToString();
+
     private static RadiantSpiralEngine ResolveSpiralEngine()
     {
         string? configured =
