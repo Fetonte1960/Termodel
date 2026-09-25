@@ -182,6 +182,20 @@ jobs:
           dotnet run --project tests/StrategiaDiego.Benchmark/StrategiaDiego.Benchmark.csproj --configuration Release -- tests/fixtures/StrategiaDiegoSquare4x4.locale.xml $benchmarkDir 20
           dotnet run --project tests/StrategiaDiego.Benchmark/StrategiaDiego.Benchmark.csproj --configuration Release -- tests/fixtures/StrategiaDiegoConcaveL.locale.xml $benchmarkDir 20
 
+          "## StrategiaDiego benchmark" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "| Fixture | Iterazioni | Nodi | Terminali accettati | P95 ms | Memoria byte | Deterministico |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "|---|---:|---:|---:|---:|---:|:---:|" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+          Get-ChildItem -LiteralPath $benchmarkDir -Filter "*.benchmark.json" |
+            Sort-Object Name |
+            ForEach-Object {
+              $report = Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
+              $fixture = $_.BaseName -replace '\.benchmark$', ''
+              $message = "iterations=$($report.iterationsCompleted), nodes=$($report.maxTotalNodes), accepted=$($report.acceptedTerminals), p95Ms=$($report.p95ElapsedMs), memoryBytes=$($report.maxMemoryDeltaBytes), deterministic=$($report.deterministic)"
+              Write-Host "::notice title=StrategiaDiego benchmark ${fixture}::$message"
+              "| $fixture | $($report.iterationsCompleted) | $($report.maxTotalNodes) | $($report.acceptedTerminals) | $($report.p95ElapsedMs) | $($report.maxMemoryDeltaBytes) | $($report.deterministic) |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+            }
+
       - name: Upload StrategiaDiego benchmark
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
