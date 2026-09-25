@@ -1425,6 +1425,98 @@ LG-012 non stabilisce ancora:
 Principio documentale consolidato. La costruzione della radice dell'albero di
 ritorno non è ancora implementata in StrategiaDiego.
 
+
+---
+
+## LG-013 — Primo tratto a inclinazione libera
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+Nella costruzione della spirale, il **primo tratto** può avere
+**inclinazione libera**.
+
+A partire dal **secondo tratto**, le nuove scelte devono invece rispettare le
+regole di parallelismo previste dalla StrategiaDiego.
+
+### Commento tecnico
+
+LG-013 introduce un'eccezione esplicita alla regola generale di LG-007.
+
+Il primo tratto serve a portare la costruzione dalla condizione iniziale verso
+la geometria utile alla spirale e non è obbligato a essere parallelo a una
+linea esistente.
+
+Dal secondo tratto in poi, invece, ogni scelta torna nel regime ordinario:
+
+```text
+tratto n = 1  -> inclinazione libera
+tratto n >= 2 -> parallelismo obbligatorio secondo LG-007
+```
+
+L'inclinazione libera del primo tratto non significa assenza di regole:
+il segmento deve comunque rispettare tutte le altre condizioni applicabili,
+in particolare validità geometrica, non intersezione e distanze minime.
+
+### Regola
+
+Per il tratto candidato `s_n` in posizione `n` lungo il percorso:
+
+```text
+se n = 1:
+    parallelismo non obbligatorio
+    restano obbligatorie le altre regole di tracciamento
+
+se n >= 2:
+    parallelismo obbligatorio
+    SceltaNodoPossibile secondo LG-007
+```
+
+### Relazione con LG-005, LG-006 e LG-007
+
+Il primo tratto deve comunque essere un `TrattoPossibile` secondo LG-005 e
+rispettare le distanze minime di LG-006.
+
+L'unica deroga introdotta da LG-013 riguarda il requisito di parallelismo di
+LG-007.
+
+Dal secondo tratto in poi LG-007 torna applicabile integralmente.
+
+### Vincoli per la futura implementazione
+
+- la posizione del tratto nella sequenza deve essere nota;
+- soltanto il primo tratto può essere esentato dal requisito di parallelismo;
+- il primo tratto non può bypassare controlli di intersezione o distanze;
+- dal secondo tratto in poi ogni ramo deve essere generato rispetto a una
+  linea di riferimento valida;
+- la diagnostica deve indicare esplicitamente quando viene applicata
+  l'eccezione `PrimoTrattoInclinazioneLibera`.
+
+### Criterio futuro di verifica
+
+Un caso di regression deve verificare almeno:
+
+```text
+tratto 1 non parallelo ma geometricamente valido -> ammesso
+tratto 2 non parallelo                         -> non ammesso
+tratto 2 parallelo e conforme                  -> ammesso
+```
+
+### Punti ancora da definire
+
+LG-013 non stabilisce ancora:
+
+- come venga scelta l'inclinazione concreta del primo tratto;
+- se esistano direzioni preferenziali per il primo tratto;
+- come l'inclinazione iniziale interagisca con la direzione principe LG-009.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Nessuna logica specifica per il primo
+tratto a inclinazione libera è ancora implementata in StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -1443,7 +1535,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-013`, `LG-014`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-014`, `LG-015`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
