@@ -180,7 +180,8 @@ namespace Termodel.utilities
             RedrawHelix,
             GeneraModello,
             Performance,
-            PontiAutomatici
+            PontiAutomatici,
+            SpiraliDiego
         }
 
         public sealed record LogConfiguration(
