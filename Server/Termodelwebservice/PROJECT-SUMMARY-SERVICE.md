@@ -135,6 +135,9 @@ Avanzamento iniziale:
 - consolidata `LG-014 — Il ritorno segue la mandata nel corridoio quando possibile`: la mandata utente può coprire aree del corridoio; il ritorno tenta di seguirne ordinatamente le evoluzioni con tratti paralleli ammessi;
 - se una specifica evoluzione della mandata non può essere seguita senza intersezioni o viola le regole geometriche, il ritorno non viene forzato: quella evoluzione viene saltata e la ricerca riprende dalla successiva evoluzione seguibile;
 - il fallimento su una singola evoluzione non interrompe l'intera costruzione del ritorno; resta da definire come assicurare geometricamente la continuità fra due tratti seguibili separati da evoluzioni saltate.
+- consolidata `LG-015 — Configurazione terminale mandata/ritorno e scelta iniziale della spirale`: solo dopo il completamento della rete di ritorno, per ogni ingresso terminale viene determinato se la mandata è a destra o a sinistra nel riferimento locale `esterno -> stanza`;
+- tale configurazione terminale costituisce l'input per la scelta iniziale della spirale; `MandataDestra <=> RitornoSinistra` e `MandataSinistra <=> RitornoDestra` descrivono la stessa coppia geometrica;
+- la tabella completa che traduce il lato della mandata nella concreta prima scelta geometrica della spirale resta da definire.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -156,6 +159,7 @@ Commit iniziali:
 - `d235a60b89d26dbdaf6198716822659ef1c613e5` — LG-012, radice del ritorno a 0,50 m e parallela alla parete architettonica più vicina.
 - `34a82b9e885a230623509e17fa395d4bd8e2275a` — LG-013, primo tratto a inclinazione libera; parallelismo obbligatorio dal secondo tratto.
 - `ed9ae3ce976969623b3dae9ecd33540ff1589cb1` — LG-014, ritorno nel corridoio segue la mandata quando possibile e salta le evoluzioni impossibili.
+- `e5a25a64eb7b5c1e637c6921ad4362da1834efc3` — LG-015, configurazione terminale mandata/ritorno e derivazione della scelta iniziale della spirale.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
