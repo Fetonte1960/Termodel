@@ -179,6 +179,8 @@ Avanzamento iniziale:
 - audit: consolidata `LG-030 — StrategiaDiego come strategia computazionalmente pesante e selezionabile`: Diego viene classificata come motore esplorativo pesante, selezionabile esplicitamente dall'utente o utilizzabile/proponibile quando la complessità del progetto è stimata sostenibile;
 - la classificazione di pesantezza governa la selezione del motore, non introduce potature euristiche interne e non modifica le regole geometriche di Diego;
 - restano da definire soglie/metriche concrete di compatibilità, comportamento UI/fallback ed eventuali limiti assoluti di nodi, tempo o memoria.
+- audit: consolidata `LG-031 — Geometria vincolante durante la costruzione del ritorno`: per ogni terminale mandata, il relativo ritorno viene valutato contro `LineeArchitettoniche + intero PathMandata del terminale + PathRitornoCorrente`;
+- geometrie appartenenti a rami alternativi non contaminano lo stato corrente; per il ritorno valgono distanze `p/2` da architettura, `p` da mandata e `2p` da ritorno.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -217,6 +219,7 @@ Commit iniziali:
 - `837a3148ce97d34d1e97207383fa3da159ed1a74` — LG-028, sottoalbero di ritorno distinto per ogni terminale della mandata e metriche di sostenibilità computazionale.
 - `487553ad051c94f975045c94ced5b14c9920b37d` — LG-029, valutazione preliminare della chiusura tramite segmento diretto e futura verifica avanzata.
 - `52f42a221bda4f479285d2e6d0654c29c85d0533` — LG-030, classificazione di StrategiaDiego come strategia computazionalmente pesante e selezionabile.
+- `6c209c4db9c44ac8db05cfafb9eb9992fe6b6e76` — LG-031, geometria vincolante per ciascun ramo di ritorno.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
