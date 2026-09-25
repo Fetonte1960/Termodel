@@ -71,7 +71,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-25 — Secondo esempio frontend “Quadrato con pannelli”
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - consolidare il quadrato 4x4 già usato come test pannelli come esempio frontend stabile;
@@ -90,6 +90,40 @@ Criteri di completamento:
 - Summary aggiornato;
 - Issue #1 chiusa `Completed` per notifica ntfy.
 
+
+
+Risultato reale:
+- aggiunto `docs/termodel-ui-demo/examples/quadrato-con-pannelli.svg`;
+- la geometria coincide con il banco rapido 4x4:
+  - pareti E001..E004, quadrato 400×400 cm;
+  - tubo T001 da (-50,200) a (50,200) cm;
+  - layer `Unico_tubipannelli`;
+  - rete `RAD-DEFAULT`;
+  - locale R001 `Quadrato con pannelli`;
+- il catalogo `docs/termodel-ui-demo/examples/catalog.json` espone ora:
+  1. `Pannelli radianti`;
+  2. **`Quadrato con pannelli`**;
+- il secondo esempio usa `geometry: ./examples/quadrato-con-pannelli.svg`
+  ed `executive: true`, quindi viene aperto dal percorso frontend
+  `createStructuredProjectFromSvg()` e può richiedere l'esecutivo pannelli;
+- nessuna copia concorrente della logica pannelli è stata introdotta;
+- `definizionedati.json` e Library Desktop invariati.
+
+Verifica reale:
+- GitHub Actions run `36148860861`, job `108117367303`: **SUCCESS**;
+- frontend JavaScript syntax: SUCCESS;
+- regression catalogo: SUCCESS, inclusa posizione esatta come secondo esempio;
+- build Release: SUCCESS;
+- benchmark StrategiaDiego: SUCCESS;
+- smoke esecutivo SVG/DXF: SUCCESS;
+- progetto radiante reale: SUCCESS;
+- banco appartamento corrente: SUCCESS;
+- snapshot e notifica terminale: SUCCESS.
+
+Commit principali:
+- `e4e7d4e8809891640699bb448d4510cd01fe0576` — SVG esempio;
+- `ee6ef269bf51ea6fa34d2aa67087b6c585420fc0` — secondo elemento catalogo;
+- `1477c454f56cb0bf79db974f0dd4aed1426e85e4` — regression CI.
 
 ### INCARICO 2026-09-25 — Status bar Server <commit> · <strategia>
 Stato: ESEGUITO
