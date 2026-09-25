@@ -172,7 +172,6 @@ internal static class StrategiaDiegoEngine
             connectionConstraints,
             Array.Empty<GeoSegment>(),
             directed.EntryWall,
-            step * 1.5,
             step,
             counters,
             countAsSupply: true);
@@ -219,7 +218,6 @@ internal static class StrategiaDiegoEngine
                     connectionConstraints,
                     supplySegments,
                     directed.EntryWall,
-                    step / 2.0,
                     step,
                     counters,
                     countAsSupply: false);
@@ -303,7 +301,6 @@ internal static class StrategiaDiegoEngine
         IReadOnlyList<GeoSegment> connectionConstraints,
         IReadOnlyList<GeoSegment> fixedPath,
         GeoSegment initialFront,
-        double initialOffsetDistance,
         double step,
         SearchCounters counters,
         bool countAsSupply)
@@ -324,7 +321,6 @@ internal static class StrategiaDiegoEngine
             start,
             initialDirection,
             initialFront,
-            initialOffsetDistance,
             initialConstraints,
             step);
 
@@ -496,13 +492,20 @@ internal static class StrategiaDiegoEngine
         DPoint start,
         DVector direction,
         GeoSegment entryWall,
-        double offsetDistance,
         IReadOnlyList<GeoSegment> constraints,
         double step)
     {
         DVector unit = direction.Normalize();
         DVector wallUnit = entryWall.Direction.Normalize();
         double sine = Math.Abs(DVector.Cross(unit, wallUnit));
+
+        // Il raccordo iniziale non e' una "prima evoluzione" speciale.
+        // Serve soltanto a portare il tubo entrante sulla prima traccia utile,
+        // la cui quota deriva dalle normali distanze LG-006:
+        // mandata = p/2 dalla parete; ritorno = p oltre la mandata,
+        // quindi 1,5p dalla parete nel corridoio iniziale ordinario.
+        double offsetDistance =
+            EntryConnectorTargetDistance(family, step);
 
         if (unit.Length <= Epsilon ||
             wallUnit.Length <= Epsilon ||
@@ -512,10 +515,6 @@ internal static class StrategiaDiegoEngine
             return null;
         }
 
-        // La mandata entra sulla prima evoluzione a 1,5p dalla parete
-        // d'ingresso, lasciando all'esterno la guida del ritorno a p/2.
-        // Questa quota NON deve essere ereditata come distanza di arresto
-        // dalle pareti frontali successive: lì vale il minimo LG-006 p/2.
         double travel = offsetDistance / sine;
         DPoint end = start + unit * travel;
 
@@ -1093,6 +1092,30 @@ internal static class StrategiaDiegoEngine
         }
 
         return result;
+    }
+
+    private static double EntryConnectorTargetDistance(
+        GeoFamily family,
+        double step)
+    {
+        // Nessuna evoluzione riceve una quota speciale perche' e' "prima".
+        // Questa funzione determina esclusivamente quanto deve avanzare il
+        // raccordo tecnico d'ingresso per raggiungere la prima traccia utile.
+        // Le quote sono derivate dalla stessa matrice di distanze usata per
+        // tutte le altre evoluzioni.
+        double wallDistance =
+            RequiredDistance(family, GeoFamily.Architecture, step);
+
+        if (family == GeoFamily.Return)
+        {
+            return wallDistance +
+                   RequiredDistance(
+                       GeoFamily.Return,
+                       GeoFamily.Supply,
+                       step);
+        }
+
+        return wallDistance;
     }
 
     private static double RequiredDistance(
