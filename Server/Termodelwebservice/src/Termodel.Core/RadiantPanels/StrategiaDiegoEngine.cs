@@ -185,7 +185,7 @@ internal static class StrategiaDiegoEngine
                         returnTerminal.End,
                         supplyTerminal.End,
                         GeoFamily.Return,
-                        sequenceIndex: returnSegments.Count);
+                        SequenceIndex: returnSegments.Count);
 
                     if (!IsPreliminaryClosureAcceptable(
                             closure,
@@ -372,8 +372,8 @@ internal static class StrategiaDiegoEngine
                 continue;
             }
 
-            if (previousSegment is not null &&
-                reference.Id.Equals(previousSegment.Id, StringComparison.Ordinal))
+            if (previousSegment is GeoSegment previous &&
+                reference.Id.Equals(previous.Id, StringComparison.Ordinal))
             {
                 continue;
             }
@@ -426,7 +426,7 @@ internal static class StrategiaDiegoEngine
                 start,
                 end,
                 family,
-                sequenceIndex: -1);
+                SequenceIndex: -1);
 
             if (candidate.Length <= GeometryTolerance)
                 continue;
@@ -472,8 +472,8 @@ internal static class StrategiaDiegoEngine
 
         foreach (GeoSegment other in constraints)
         {
-            if (previousSegment is not null &&
-                other.Id.Equals(previousSegment.Id, StringComparison.Ordinal))
+            if (previousSegment is GeoSegment previous &&
+                other.Id.Equals(previous.Id, StringComparison.Ordinal))
             {
                 continue;
             }
@@ -667,7 +667,7 @@ internal static class StrategiaDiegoEngine
                 $"StrategiaDiego/{locale.Id}: ingresso non interseca il perimetro.");
         }
 
-        return (bestPoint.Value, bestWall);
+        return (bestPoint.Value, bestWall.Value);
     }
 
     private static IReadOnlyList<GeoSegment> BuildArchitecture(
@@ -1039,12 +1039,9 @@ internal static class StrategiaDiegoEngine
         var builder = new StringBuilder();
         builder.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         builder.AppendLine(
-            FormattableString.Invariant(
-                $"<svg xmlns=\"http://www.w3.org/2000/svg\" " +
-                $"viewBox=\"{minX} {minY} {maxX - minX} {maxY - minY}\" " +
-                $"data-termodel-engine=\"Diego\" " +
-                $"data-diego-nodes=\"{metrics.TotalNodes}\" " +
-                $"data-diego-elapsed-ms=\"{metrics.ElapsedMilliseconds}\">"));
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{minX} {minY} {maxX - minX} {maxY - minY}\" data-termodel-engine=\"Diego\" data-diego-nodes=\"{metrics.TotalNodes}\" data-diego-elapsed-ms=\"{metrics.ElapsedMilliseconds}\">"));
 
         foreach (LocaleSolution solution in solutions)
         {
