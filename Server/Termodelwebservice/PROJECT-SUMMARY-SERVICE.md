@@ -71,6 +71,38 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-25 — Implementazione, attivazione e benchmark StrategiaDiego
+Stato: COMMISSIONATO
+
+Commissionato:
+- completare l'audit pre-sviluppo confrontando i sorgenti paralleli Vittorio e GPT e registrare le conclusioni operative;
+- implementare nel Service/Core una strategia selezionabile `Diego`, mantenendo disponibili e non modificando semanticamente le alternative `Vittorio` e `GPT`;
+- introdurre una selezione esplicita del motore compatibile con `Vittorio | GPT | Diego`, preservando il comportamento corrente se Diego non è selezionata;
+- compilare realmente la soluzione tramite GitHub Actions;
+- creare un progetto/caso di prova quadrato `4 x 4 m` con un unico tubo di collegamento entrante;
+- eseguire una batteria di test GitHub Actions sul caso di prova per verificare correttezza di base, crescita dell'albero, tempo di calcolo e sostenibilità computazionale;
+- applicare integralmente il protocollo `.github/TERMODEL-ACTION-NOTIFICATIONS.md`;
+- registrare ogni fase in `docs/STRATEGIADIEGO-DEVELOPMENT-REGISTER.md` con stato indipendente, commit e risultato reale, così il lavoro è recuperabile dopo un'interruzione della chat.
+
+Fasi:
+- F0 — registrazione incarico e registro di sviluppo: COMMISSIONATO;
+- F1 — audit finale Vittorio/GPT e specifica code-ready: COMMISSIONATO;
+- F2 — implementazione/dispatcher `Vittorio|GPT|Diego`: COMMISSIONATO;
+- F3 — build reale della soluzione: COMMISSIONATO;
+- F4 — fixture quadrato 4x4 m / un ingresso: COMMISSIONATO;
+- F5 — batteria benchmark GitHub Actions e metriche: COMMISSIONATO;
+- F6 — consolidamento Summary e stato finale: COMMISSIONATO.
+
+Criteri di completamento:
+- nessuna modifica a `definizionedati.json` o frontend;
+- Vittorio/GPT restano disponibili e separati;
+- Diego è selezionabile e non sostituisce silenziosamente il default corrente;
+- build e test vengono dichiarati riusciti solo sulla base di una GitHub Action reale;
+- metriche di benchmark vengono conservate come artifact/log o documento di test;
+- ogni fase conclusa viene marcata `ESEGUITO` nel registro prima di procedere alla successiva.
+
+
+
 ### INCARICO 2026-09-25 — Linee guida sviluppo disegno spirali / futura StrategiaDiego
 Stato: COMMISSIONATO
 
