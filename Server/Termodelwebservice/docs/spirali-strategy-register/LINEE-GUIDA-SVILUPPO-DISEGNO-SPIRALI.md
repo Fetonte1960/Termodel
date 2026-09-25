@@ -349,6 +349,115 @@ Principio documentale consolidato. Nessun algoritmo di esplorazione,
 valutazione dei terminali o replay del percorso vincente è ancora implementato
 in StrategiaDiego.
 
+
+---
+
+## LG-004 — Struttura geometrica di contenimento
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 25/09/2026
+
+### Proposta
+
+La StrategiaDiego opera all'interno di una **struttura geometrica di
+contenimento** composta da tre famiglie di linee:
+
+1. **linee architettoniche della stanza**;
+2. **linee della mandata**;
+3. **linee del ritorno**.
+
+Queste tre famiglie costituiscono il riferimento geometrico rispetto al quale
+vengono riconosciute le situazioni, costruiti i nodi dell'albero e valutate le
+alternative.
+
+### Commento tecnico
+
+La struttura di contenimento rappresenta lo **stato geometrico fisico** entro
+cui si sviluppano le decisioni di StrategiaDiego.
+
+Le tre famiglie devono restare semanticamente distinte anche se, dal punto di
+vista matematico, possono essere rappresentate con primitive geometriche
+simili o identiche.
+
+In particolare:
+
+- le **linee architettoniche** descrivono i limiti e gli ostacoli derivati
+  dalla geometria della stanza;
+- le **linee di mandata** descrivono la geometria già appartenente al percorso
+  di mandata;
+- le **linee di ritorno** descrivono la geometria già appartenente al percorso
+  di ritorno.
+
+LG-004 definisce soltanto la composizione della struttura geometrica. Non
+stabilisce ancora quali linee possano essere attraversate, affiancate,
+aggirate o usate come vincolo nei singoli nodi decisionali.
+
+### Regola
+
+Lo stato geometrico minimo della StrategiaDiego deve poter essere espresso come:
+
+```text
+ContenimentoGeometrico =
+{
+    LineeArchitettoniche,
+    LineeMandata,
+    LineeRitorno
+}
+```
+
+Ogni linea deve conservare almeno l'informazione necessaria a distinguere la
+famiglia cui appartiene.
+
+Le decisioni dell'albero non devono trattare implicitamente tutte le linee come
+un unico insieme indistinto: il ruolo geometrico della linea deve essere
+conoscibile quando un nodo valuta una scelta.
+
+### Vincoli per la futura implementazione
+
+- le tre famiglie devono essere mantenute distinguibili nello stato;
+- la classificazione di una linea deve essere esplicita e diagnosticabile;
+- un nodo deve poter interrogare separatamente linee architettoniche, mandata e
+  ritorno;
+- l'aggiunta progressiva di nuovi tratti di mandata o ritorno deve aggiornare
+  la corrispondente famiglia della struttura di contenimento;
+- le linee architettoniche non devono essere confuse con le linee generate
+  dalla spirale;
+- LG-004 non autorizza ancora alcuna regola di collisione, attraversamento,
+  distanza minima o precedenza fra le tre famiglie: tali comportamenti saranno
+  definiti separatamente.
+
+### Criterio futuro di verifica
+
+Per ogni nodo della StrategiaDiego deve essere possibile diagnosticare la
+struttura geometrica ricevuta distinguendo almeno:
+
+```text
+numero/insieme linee architettoniche
+numero/insieme linee mandata
+numero/insieme linee ritorno
+```
+
+Dopo l'applicazione di una scelta che genera nuovi tratti, il nodo successivo
+deve ricevere una struttura coerentemente aggiornata.
+
+### Punti ancora da definire
+
+LG-004 non stabilisce ancora:
+
+- la rappresentazione concreta di una linea o polilinea;
+- se le linee architettoniche coincidano sempre con il contorno netto del
+  locale o includano anche ostacoli interni;
+- le distanze di rispetto;
+- le regole di intersezione o attraversamento;
+- le differenti proprietà strategiche di mandata e ritorno;
+- il modo in cui la struttura viene copiata o derivata lungo i rami
+  dell'albero.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato. Nessuna nuova struttura dati geometrica è
+ancora implementata in StrategiaDiego.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -367,7 +476,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-004`, `LG-005`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-005`, `LG-006`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
