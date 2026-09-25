@@ -71,6 +71,39 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-25 — Risposta artifact diretta da Aggiorna Modello
+Stato: COMMISSIONATO
+
+Commissionato:
+- estendere `POST /api/calculations` con il parametro query opzionale
+  `responseArtifact`;
+- in assenza di `responseArtifact` mantenere **identica** la risposta corrente:
+  manifest JSON `TERMODEL-FRONT-SERVICE-V1` con `projectId`, artifact e href;
+- se `responseArtifact` è presente, eseguire comunque una sola elaborazione
+  completa e atomica del progetto, quindi restituire direttamente nel body
+  l'artifact richiesto;
+- supportare almeno `model3d`, `pannelli`,
+  `pannelli-esecutivo-svg`, `pannelli-esecutivo-dxf` e
+  `pianta-pulita`; per `pianta-pulita` usare anche `responseFloor`;
+- restituire HTTP 400 per nomi artifact non riconosciuti e HTTP 404 quando
+  l'artifact richiesto è riconosciuto ma non prodotto da quel progetto;
+- aggiungere header di correlazione con projectId e nome artifact;
+- usare questa modalità nei regression GitHub Actions dei pannelli/spirali e
+  conservare come artifact CI almeno la risposta SVG diretta, così le chat
+  successive possono esaminare l'esecutivo prodotto senza una seconda GET;
+- non modificare frontend, `definizionedati.json` o Library Desktop.
+
+Criteri di completamento:
+- contratto condiviso aggiornato in modo retrocompatibile;
+- default senza parametro verificato invariato;
+- risposta diretta SVG verificata byte-per-byte rispetto all'artifact
+  persistito dello stesso calcolo;
+- build e smoke GitHub Actions riusciti;
+- artifact CI della risposta diretta disponibile;
+- incarico marcato `ESEGUITO` solo dopo verifica reale.
+
+
+
 ### INCARICO 2026-09-25 — Forzatura StrategiaDiego e stato attesa Service nel frontend
 Stato: ESEGUITO
 
