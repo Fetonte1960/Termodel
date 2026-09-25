@@ -11,6 +11,8 @@ namespace Termodel.Core.RadiantPanels;
 /// Genera l'esecutivo pannelli con un motore selezionabile
 /// Vittorio | GPT | Diego. Il default operativo e' Diego.
 /// DXF e SVG vengono serializzati dallo stesso modello grafico neutro.
+/// La pianta pulita generata nella stessa elaborazione viene incorporata
+/// come base architettonica prima delle primitive delle spirali.
 /// Il grafo/collettore resta intenzionalmente fuori scope: senza
 /// retePannelli.xml le corrispondenti routine Desktop sono no-op.
 /// </summary>
