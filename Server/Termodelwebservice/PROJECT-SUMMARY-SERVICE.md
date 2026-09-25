@@ -70,6 +70,27 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Secondo esempio frontend “Quadrato con pannelli”
+Stato: COMMISSIONATO
+
+Commissionato:
+- consolidare il quadrato 4x4 già usato come test pannelli come esempio frontend stabile;
+- esporlo nell'elenco `Apri esempio` con nome **Quadrato con pannelli**;
+- posizionarlo come **secondo esempio** dell'elenco;
+- riutilizzare il progetto/test autorevole esistente, evitando di creare un modello divergente;
+- preservare il primo esempio esistente e la compatibilità degli altri esempi;
+- verificare tramite GitHub Actions che il catalogo esempi e il caricamento frontend restino validi;
+- non modificare `definizionedati.json` né la Library Desktop.
+
+Criteri di completamento:
+- “Quadrato con pannelli” compare come secondo elemento;
+- il progetto si apre rapidamente dal frontend;
+- il progetto contiene la geometria 4x4 e il tubo/rete pannelli necessari al calcolo;
+- frontend build/smoke SUCCESS;
+- Summary aggiornato;
+- Issue #1 chiusa `Completed` per notifica ntfy.
+
+
 ### INCARICO 2026-09-25 — Status bar Server <commit> · <strategia>
 Stato: ESEGUITO
 
