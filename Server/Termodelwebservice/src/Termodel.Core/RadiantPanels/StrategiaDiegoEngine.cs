@@ -798,8 +798,19 @@ internal static class StrategiaDiegoEngine
             if (SharesEndpoint(closure, obstacle))
                 continue;
             if (SegmentsProperlyIntersect(closure, obstacle))
+            {
+                LogDiego(
+                    $"CLOSURE-DETAIL reject crossing obstacle={obstacle.Id} " +
+                    $"family={obstacle.Family} seq={obstacle.SequenceIndex} " +
+                    $"obstacle={Fmt(obstacle.A)}->{Fmt(obstacle.B)} " +
+                    $"closure={Fmt(closure.A)}->{Fmt(closure.B)}");
                 return false;
+            }
         }
+
+        LogDiego(
+            $"CLOSURE-DETAIL accept no-proper-crossing " +
+            $"closure={Fmt(closure.A)}->{Fmt(closure.B)}");
         return true;
     }
 
