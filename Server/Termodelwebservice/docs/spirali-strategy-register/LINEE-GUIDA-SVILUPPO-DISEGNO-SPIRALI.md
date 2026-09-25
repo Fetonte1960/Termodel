@@ -1595,45 +1595,51 @@ direzione nota
 - la diagnostica deve distinguere chiaramente:
   `DirezionePrimoTratto` e `PuntoFinalePrimoTratto`.
 
-### Rettifica runtime 25/09/2026 — primo tratto a distanza minima p/2
+### Rettifica runtime 25/09/2026 — distinguere quota di ingresso e arresto frontale
 
-La precedente interpretazione che portava la mandata a `1,5p = 0,45 m`
-dalla parete è **superata**.
+La precedente correzione che imponeva 0,45 m anche come distanza dalla parete
+frontale è **superata**.
 
-La regola autorevole è LG-006: la distanza minima da una linea
-architettonica è `p/2`. Il primo tratto tracciato dentro il locale, subito
-dopo il tubo di collegamento, deve quindi essere accorciato fino a rispettare
-questa distanza minima.
+Occorre distinguere due grandezze diverse:
 
-Con il passo corrente:
+1. **quota della prima evoluzione di mandata rispetto alla parete d'ingresso**;
+2. **distanza di arresto del tratto quando incontra una parete frontale**.
+
+Nel motore corrente la prima evoluzione di mandata viene collocata a
+`1,5p = 0,45 m` dalla parete d'ingresso, lasciando all'esterno la guida del
+ritorno a `p/2 = 0,15 m`.
+
+Questa quota di 0,45 m **non deve però essere ereditata** come distanza di
+arresto rispetto alle pareti successive.
+
+Quando il primo tratto tracciato verso una parete frontale incontra
+l'architettura, si applica LG-006:
 
 ```text
-p = 0,30 m
-distanza tubo-parete = p/2 = 0,15 m
+distanza minima tubo-parete = p/2
 ```
 
-Pertanto:
+Con `p = 0,30 m`:
 
 ```text
-primo tratto mandata dentro il locale -> 0,15 m dalla parete
-prima svolta verso altra parete       -> resta valido il minimo p/2
-nessuna regola speciale a 0,45 m
+quota prima evoluzione mandata dalla parete d'ingresso = 0,45 m
+arresto del tratto rispetto alla parete frontale       = 0,15 m
 ```
 
 Sul banco appartamento corrente la parete destra interna è a
-`x = 8,13148 m`; il terminale corretto del primo tratto dopo la svolta è
-quindi:
+`x = 8,13148 m`; il terminale corretto del primo tratto verso destra è:
 
 ```text
 8,13148 - 0,15 = 7,98148 m
 ```
 
-La precedente modifica che forzava `x = 7,68148 m`, cioè 0,45 m dalla
-parete, era una interpretazione errata ed è stata rimossa.
+Il valore `x = 7,68148 m`, che lasciava 0,45 m dalla parete destra, era
+quindi errato.
 
-Il confronto con Vittorio e GPT resta utile soltanto per il principio
-geometrico dell'accorciamento tramite intersezione/offset; **non** implica che
-StrategiaDiego debba adottare il loro valore di offset della mandata.
+Il confronto con Vittorio e GPT resta utile per il principio geometrico:
+il tratto reale viene accorciato rispetto alla geometria teorica/offset fino a
+rispettare la distanza applicabile. Non si deve però trasferire automaticamente
+la quota di ingresso della mandata alla parete frontale successiva.
 
 ### Criterio futuro di verifica
 
