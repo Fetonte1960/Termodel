@@ -6,6 +6,25 @@ Stato generale: **IN SVILUPPO — BANCO PROVA APPARTAMENTO REALE CORRENTE**
 Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
+## R3 — Riallineamento fondamentali geometrici GPT
+Stato: **COMMISSIONATO — AUDIT IN CORSO**
+
+Obiettivo:
+- recuperare in Diego le garanzie geometriche fondamentali già maturate in
+  SpiraliGPT, senza importarne le euristiche locali e senza indebolire albero,
+  esplorazione completa o merito massimo definiti dalle LG;
+- classificare ogni differenza prima della modifica;
+- rendere ogni correzione verificabile sul banco appartamento corrente e con
+  regression isolate.
+
+Vincoli:
+- LG-001..LG-036 restano l'autorità;
+- Vittorio e GPT sono riferimenti consultivi e non vengono modificati;
+- una differenza intenzionale Diego non viene "corretta" per imitazione;
+- una regola non coperta dalle LG viene documentata prima di essere
+  implementata;
+- ogni cambiamento grafico segue LG-036.
+
 ## F0 — Registrazione incarico e registro di sviluppo
 Stato: **ESEGUITO**
 

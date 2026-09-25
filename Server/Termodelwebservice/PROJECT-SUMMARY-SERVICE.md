@@ -70,6 +70,31 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-25 — Riallineamento fondamentali geometrici GPT in StrategiaDiego
+Stato: COMMISSIONATO
+
+Commissionato:
+- confrontare sistematicamente il motore `SpiraliGPT` con
+  `StrategiaDiegoEngine` usando LG-001..LG-036 come specifica autorevole;
+- distinguere i fondamentali geometrici riutilizzabili dalle euristiche di
+  scelta che devono restare proprie dell'albero Diego;
+- correggere esclusivamente StrategiaDiego affinché ogni ramo operi su
+  geometria interna robusta, raccordi validi, distanze reali e continuità
+  topologica, senza sostituire il criterio di merito massimo LG-003;
+- aggiungere regression automatiche per ogni differenza corretta;
+- non modificare i motori Vittorio/GPT, il frontend, la fixture appartamento o
+  `definizionedati.json`;
+- eseguire la suite GitHub Actions e la verifica visuale obbligatoria LG-036
+  sul banco appartamento corrente.
+
+Criteri di completamento:
+- inventario differenze documentato con classificazione
+  `fondamentale | differenza intenzionale | ancora da definire`;
+- correzioni conformi alle LG e commentate secondo le regole del repository;
+- benchmark quadrato/concavo e banco appartamento conclusi con successo;
+- SVG reale prodotto dalla Action recuperato e condiviso con l'utente;
+- stato `ESEGUITO` soltanto dopo verifica tecnica e visuale disponibile.
+
 ### INCARICO 2026-09-25 — Rettifica arresto frontale Diego: 15 cm; quota ingresso mandata 45 cm
 Stato: ESEGUITO
 
