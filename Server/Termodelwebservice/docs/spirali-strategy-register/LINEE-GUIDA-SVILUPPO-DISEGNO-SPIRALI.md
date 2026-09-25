@@ -3580,96 +3580,284 @@ dell'inseguimento convesso non è ancora implementata.
 
 
 ---
-## LG-034 — Troncatura con segno opposto nei casi concavi e convessi
 
-**Stato:** CONSOLIDATA  
+## LG-034 — Troncatura concava/convessa: regola ortogonale e generalizzazione geometrica
+
+**Stato:** CONSOLIDATA — PRECISATA DOPO CONFRONTO VITTORIO/GPT  
 **Origine:** audit pre-sviluppo del 25/09/2026
 
-### Principio
+### Principio iniziale
 
-Dato un tratto in evoluzione con:
+Nel caso ortogonale, dato:
 
-- `I` = intersezione teorica fra la `DirezioneProvenienza` e la linea di
-  riferimento/troncamento, anche ottenuta tramite prolungamento geometrico;
-- `d` = distanza di rispetto applicabile rispetto alla linea di riferimento;
-- verso positivo = verso della `DirezioneProvenienza`;
+- `I` = intersezione teorica con la linea di riferimento, anche ottenuta tramite
+  il suo prolungamento;
+- `d` = distanza di rispetto;
+- verso positivo = `DirezioneProvenienza`;
 
-il punto reale di troncatura dipende dalla natura locale del percorso:
+vale:
 
 ```text
 caso concavo  -> T = I - d
 caso convesso -> T = I + d
 ```
 
-dove `+d` e `-d` sono misurati lungo la direzione orientata del tratto
-corrente.
+Questa resta la regola intuitiva e il caso di test fondamentale a 90 gradi.
 
-### Interpretazione geometrica
+### Precisazione derivata dai motori esistenti
 
-Nel caso **concavo** il tratto deve arrestarsi prima dell'intersezione teorica,
-mantenendosi all'interno della distanza di rispetto:
+Il confronto con i motori esistenti mostra che `I ± d` non deve essere usato
+come formula universale per angoli arbitrari.
 
-```text
-DirezioneProvenienza ->
-                 T ---- d ---- I
-```
+**Vittorio** costruisce i vertici degli offset usando normali ai segmenti e
+bisettrice del vertice. La distanza del vertice offset dipende quindi
+dall'angolo fra i segmenti e non coincide in generale con un semplice
+spostamento `d` lungo il tratto entrante.
 
-Nel caso **convesso**, invece, il tratto deve oltrepassare l'intersezione
-teorica di una quantità `d`, così da potersi posizionare correttamente per
-inseguire la successiva evoluzione parallela:
+**SpiraliGPT** rende questo principio più robusto costruendo gli offset tramite
+buffer negativo NetTopologySuite con `JoinStyle.Mitre`. Il vertice di cambio
+è quindi ottenuto geometricamente dall'incontro delle linee parallele offset,
+anche in presenza di lati inclinati e concavità.
 
-```text
-DirezioneProvenienza ->
-                 I ---- d ---- T
-```
+StrategiaDiego adotta questa proprietà geometrica come principio, senza copiare
+l'algoritmo di nessuno dei due motori.
 
-### Relazione con LG-033
+### Regola generale
 
-LG-034 formalizza il meccanismo geometrico che rende possibile
-l'inseguimento progressivo dei percorsi convessi definito in LG-033.
+Nel caso di inseguimento di una precedente evoluzione:
 
-Quando la spirale deve seguire una propria evoluzione precedente, l'intersezione
-con il segmento o con il suo prolungamento identifica il cambio di riferimento;
-nel caso convesso il terminale viene posto oltre tale intersezione di `d`.
+- `S_k` = segmento precedente attualmente inseguito;
+- `S_{k+1}` = segmento successivo della stessa evoluzione;
+- `Lcur` = retta del tratto Diego corrente, parallela a `S_k`;
+- `LnextOffset` = retta parallela a `S_{k+1}` posta alla distanza di
+  rispetto applicabile sul lato coerente con l'offset corrente.
 
-### Relazione con LG-017
-
-LG-017 viene precisata: il troncamento non è sempre un arretramento rispetto
-all'intersezione teorica.
-
-La formula generale diventa:
+Il punto reale di cambio è:
 
 ```text
-T = I + segno * d
+T = Intersezione(Lcur, LnextOffset)
 ```
 
-con:
+Il punto teorico senza offset è:
 
 ```text
-segno = -1  per concavo
-segno = +1  per convesso
+I = Intersezione(Lcur, Retta(S_{k+1}))
 ```
+
+La classificazione rispetto al verso corrente è determinata da:
+
+```text
+delta = dot(T - I, DirezioneProvenienzaNormalizzata)
+
+delta < 0 -> CONCAVO
+delta > 0 -> CONVESSO
+|delta| <= tolleranza -> NEUTRO / DEGENERE
+```
+
+Quindi la proprietà fondamentale è il **segno** dello spostamento rispetto a
+`I`, non il fatto che il suo modulo sia sempre uguale a `d`.
+
+### Caso ortogonale
+
+Se `S_k` e `S_{k+1}` sono ortogonali, la costruzione geometrica si riduce
+esattamente a:
+
+```text
+CONCAVO  -> delta = -d
+CONVESSO -> delta = +d
+```
+
+e quindi recupera integralmente la formulazione originaria.
+
+### Angoli non ortogonali
+
+Per angoli diversi da 90 gradi il modulo di `delta` dipende dall'angolo.
+
+Non deve essere forzato a `d`: il punto corretto è sempre l'intersezione
+delle parallele offset. Questo preserva la distanza normale `d` dai segmenti
+di riferimento ed evita errori sui tratti inclinati.
+
+### Relazione con LG-017 e LG-033
+
+LG-017 viene precisata: la linea di troncamento può essere individuata anche
+tramite il prolungamento geometrico della linea di riferimento.
+
+LG-033 fornisce l'ordine `S_k -> S_{k+1}` della precedente evoluzione da
+inseguire.
+
+LG-034 stabilisce dove collocare il terminale del tratto corrente quando si
+passa dal riferimento `S_k` al riferimento `S_{k+1}`.
 
 ### Vincoli per la futura implementazione
 
-- il nodo deve poter classificare localmente la situazione come concava o
-  convessa;
-- `d` deve essere la distanza di rispetto prevista dalla famiglia della linea;
-- il segno deve essere applicato lungo la `DirezioneProvenienza`, non rispetto
-  ad assi globali;
-- segmento reale e prolungamento possono concorrere a determinare `I`;
-- dopo il calcolo di `T`, il tratto reale deve comunque superare tutte le
-  verifiche di validità, distanza e non-intersezione.
-
-### Punto ancora da definire
-
-Resta da formalizzare il criterio computabile con cui classificare in modo
-univoco una configurazione locale come **concava** oppure **convessa**.
+- non usare un semplice `I ± d` per geometrie oblique;
+- costruire la parallela offset del segmento successivo alla distanza corretta;
+- usare segmenti e loro prolungamenti per la costruzione teorica;
+- usare la geometria fisica reale per collisioni e intersezioni vietate;
+- classificare concavo/convesso rispetto alla `DirezioneProvenienza`;
+- mantenere una tolleranza esplicita per casi quasi paralleli o degeneri;
+- la diagnostica deve registrare almeno `S_k`, `S_{k+1}`, `I`, `T`,
+  `delta`, distanza di rispetto e classificazione.
 
 ### Stato implementativo corrente
 
-Principio geometrico consolidato durante l'audit pre-sviluppo. Nessuna logica
-runtime è ancora implementata.
+Principio geometrico consolidato durante l'audit pre-sviluppo dopo confronto
+con i motori Vittorio e GPT. Nessuna logica runtime StrategiaDiego è ancora
+implementata.
+
+
+---
+## LG-035 — Criterio computabile di inseguimento concavo/convesso
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026, confronto diretto con Spirali Vittorio e Spirali GPT
+
+### Conclusioni del confronto
+
+Il motore Vittorio e il motore GPT non espongono una variabile esplicita
+`Concavo/Convesso`, ma entrambi contengono il principio geometrico necessario:
+
+- **Vittorio** genera offset tramite normali e bisettrici e percorre in sequenza
+  i vertici dell'offset;
+- **GPT** genera offset robusti tramite buffer negativo con giunzione
+  `Mitre`, conserva la continuità della componente e sceglie raccordi
+  geometricamente validi;
+- entrambi confermano che il cambio fra due evoluzioni deve essere definito
+  dalla geometria delle **parallele offset**, non da una correzione cartesiana
+  fissa;
+- GPT conferma inoltre la necessità di trattare correttamente lati inclinati,
+  concavità, strettoie e raccordi senza introdurre diagonali arbitrarie.
+
+StrategiaDiego rende esplicito e tracciabile questo principio all'interno
+dell'albero decisionale.
+
+### Dati necessari
+
+Per un inseguimento della precedente evoluzione devono essere noti:
+
+```text
+S_k          segmento di riferimento attualmente seguito
+S_k+1        successivo segmento della stessa precedente evoluzione
+Ucur         DirezioneProvenienza normalizzata del nuovo tratto
+d            distanza di rispetto applicabile
+latoOffset   lato geometrico sul quale corre il nuovo tratto rispetto a S_k
+```
+
+L'identità di `S_k` e `S_k+1` deriva dalla sequenza del path richiesta da
+LG-033.
+
+### Costruzione code-ready
+
+1. Costruire la retta infinita di `S_k+1`.
+2. Costruire la sua parallela alla distanza `d`, scegliendo il lato coerente
+   con l'offset sul quale il nuovo tubo sta già inseguendo `S_k`.
+3. Intersecare tale parallela con la retta corrente `Lcur`.
+4. Il risultato è il punto reale di cambio `T`.
+5. Intersecare `Lcur` anche con la retta non offset di `S_k+1`, ottenendo
+   il punto teorico `I`.
+6. Calcolare:
+
+```text
+delta = dot(T - I, Ucur)
+```
+
+7. Classificare:
+
+```text
+delta < -eps -> CONCAVO
+delta > +eps -> CONVESSO
+altrimenti   -> NEUTRO/DEGENERE
+```
+
+### Criterio equivalente tramite orientamento
+
+Quando serve diagnosticare il motivo della classificazione, si può usare anche
+il prodotto vettoriale 2D.
+
+Siano:
+
+- `Uk` = verso orientato di `S_k` nella precedente evoluzione;
+- `Uk1` = verso orientato di `S_k+1`;
+- `q = sign(dot(Ucur, Uk))` = indica se il nuovo tubo sta seguendo `S_k`
+  nello stesso verso oppure nel verso opposto;
+- `side` = segno del lato sul quale il nuovo tubo si trova rispetto a
+  `S_k`;
+- `turn = sign(cross(Uk, Uk1))`.
+
+Allora, fuori dai casi degeneri:
+
+```text
+q * side * turn > 0 -> CONCAVO
+q * side * turn < 0 -> CONVESSO
+```
+
+La costruzione tramite intersezione delle parallele resta comunque la fonte
+geometrica autorevole per il punto `T`.
+
+### Perché non basta la linea più vicina
+
+Nel percorso convesso il prossimo riferimento non è scelto solo per distanza.
+Una volta agganciato `S_k`, il riferimento naturale è `S_k+1`, cioè il
+segmento successivo della precedente evoluzione.
+
+Il suo prolungamento può determinare il cambio anche se il segmento fisico non
+raggiunge ancora la retta corrente.
+
+Questa distinzione è indispensabile per il caso:
+
+```text
+ingresso -> primo giro -> riaggancio S1 -> inseguimento S1
+         -> cambio su S2 -> inseguimento S2 -> cambio su S3 -> ...
+```
+
+### Geometria teorica e geometria fisica
+
+Devono essere mantenuti due ruoli distinti:
+
+```text
+geometria teorica:
+    segmenti + prolungamenti
+    serve a determinare I, T e il riferimento successivo
+
+geometria fisica:
+    soli segmenti realmente presenti
+    serve per collisioni, distanze e validità del TrattoPossibile
+```
+
+Una intersezione con un prolungamento può quindi creare un nodo strategico
+senza rappresentare una collisione fisica.
+
+### Casi degeneri da gestire
+
+La futura implementazione deve trattare esplicitamente:
+
+- `S_k` e `S_k+1` quasi collineari;
+- parallela offset di `S_k+1` parallela a `Lcur`;
+- distanza nulla o inferiore alla tolleranza;
+- cambio che produce `T` dietro il punto corrente;
+- miter geometricamente molto lungo per angoli prossimi a 180 gradi;
+- punto `T` geometricamente definito ma tratto reale non valido per
+  collisioni/distanze.
+
+Questi casi non autorizzano correzioni euristiche silenziose: devono essere
+diagnosticati e sottoposti alle normali regole dell'albero.
+
+### Riferimento ai motori esistenti
+
+Per questa specifica regola:
+
+- da **Vittorio** si conserva il principio delle normali/bisettrici e della
+  sequenza ordinata dell'offset;
+- da **GPT** si assume come riferimento preferibile la geometria robusta
+  dell'offset mitrato e la validazione dei raccordi;
+- StrategiaDiego non riusa i loro algoritmi di scelta locale: rende invece
+  esplicite tutte le alternative nell'albero e conserva la tracciabilità del
+  riferimento `S_k -> S_k+1`.
+
+### Stato implementativo corrente
+
+Definizione sufficientemente precisa per progettare le primitive geometriche
+della futura StrategiaDiego. Non ancora implementata, compilata o testata.
 
 ---
 
@@ -3689,7 +3877,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-035`, `LG-036`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-036`, `LG-037`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
