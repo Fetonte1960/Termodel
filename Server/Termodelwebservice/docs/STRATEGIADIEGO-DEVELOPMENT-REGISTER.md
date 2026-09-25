@@ -1,7 +1,7 @@
 # STRATEGIADIEGO — REGISTRO DI SVILUPPO
 
 Data avvio: **25/09/2026**  
-Stato generale: **COMPLETATO PER IL CASO 4x4 / UN INGRESSO**
+Stato generale: **IN SVILUPPO — BANCO PROVA APPARTAMENTO REALE CORRENTE**
 
 Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
@@ -263,3 +263,56 @@ Commit:
 Limite successivo:
 - costruire una regressione dedicata alla strettoia/imbottigliamento di
   `STRATEGY-001`, senza confonderla con la sola concavità validata in R1.
+
+## R2 — Banco prova appartamento reale corrente
+Stato: **IN CORSO — FIXTURE CONSOLIDATA, CICLO DI MIGLIORAMENTO APERTO**
+
+Direttiva:
+- il progetto fornito dall'utente il 25/09/2026 diventa il banco prova
+  operativo primario di StrategiaDiego;
+- fixture:
+  `tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl`;
+- SHA-256 originale:
+  `1a5855490adcbac25e5585f9ba89c624eb2381874eb2de8bdc74821a40d2a9a5`;
+- projectId originale:
+  `07bf8dca-dc86-41ea-8844-1aaca58888f0`;
+- il contenuto della fixture, incluso `definition/definizionedati.json`,
+  resta immutato.
+
+Uso Action:
+- harness:
+  `tools/smoke-strategia-diego-current-apartment.ps1`;
+- motore forzato:
+  `TERMODEL_SPIRAL_ENGINE=Diego`;
+- risposta richiesta direttamente:
+  `responseArtifact=pannelli-esecutivo-svg`;
+- artifact diagnostico previsto:
+  `strategia-diego-current-apartment`;
+- devono essere conservati almeno SVG, catalogo generated-files, metadati del
+  test e log/artifact pannelli disponibili.
+
+Stato algoritmo all'apertura di R2:
+- motore Diego implementato e compilato;
+- dispatcher Vittorio|GPT|Diego attivo;
+- Diego default Service quando non esiste override;
+- LG-033..LG-035 allineate nel codice tramite successore `S_k+1`;
+- regression 4x4: riuscita;
+- regression concavo a L: riuscita;
+- prestazioni sintetiche entro budget;
+- nessun Golden geometrico completo approvato;
+- casi complessi reali, strettoie e interazioni fra più locali/circuiti:
+  validazione ancora aperta.
+
+Metodo di lavoro R2:
+1. l'utente fornisce screenshot e numero locale;
+2. si riproduce il caso sul banco prova corrente con Action;
+3. si individua la prima scelta strategica errata;
+4. si stabilisce se è una violazione di LG esistente o una regola mancante;
+5. se manca una regola, si aggiunge LG-036 o successiva prima della correzione;
+6. si modifica solo StrategiaDiego salvo diversa decisione esplicita;
+7. si riesegue la stessa fixture e si confrontano gli artifact prima/dopo;
+8. il caso significativo diventa regression permanente quando isolabile.
+
+Il **R2 resta IN CORSO** finché procede l'analisi locale-per-locale:
+l'esito positivo della harness non significa che l'intero appartamento sia
+geometricamente approvato.
