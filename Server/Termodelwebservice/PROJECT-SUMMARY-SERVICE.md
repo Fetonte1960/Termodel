@@ -132,6 +132,9 @@ Avanzamento iniziale:
 - restano da definire gestione di pareti equidistanti, dettaglio della distanza da segmenti finiti e comportamento se la posizione teorica della radice viola altri vincoli geometrici.
 - consolidata `LG-013 — Primo tratto a inclinazione libera`: il primo tratto della costruzione può avere inclinazione libera e costituisce deroga al solo requisito di parallelismo; dal secondo tratto in poi si applicano integralmente le regole di parallelismo di LG-007;
 - il primo tratto resta comunque soggetto a validità geometrica, non-intersezione e distanze minime LG-005/LG-006; direzione concreta del primo tratto e rapporto con la direzione principe restano da definire.
+- consolidata `LG-014 — Il ritorno segue la mandata nel corridoio quando possibile`: la mandata utente può coprire aree del corridoio; il ritorno tenta di seguirne ordinatamente le evoluzioni con tratti paralleli ammessi;
+- se una specifica evoluzione della mandata non può essere seguita senza intersezioni o viola le regole geometriche, il ritorno non viene forzato: quella evoluzione viene saltata e la ricerca riprende dalla successiva evoluzione seguibile;
+- il fallimento su una singola evoluzione non interrompe l'intera costruzione del ritorno; resta da definire come assicurare geometricamente la continuità fra due tratti seguibili separati da evoluzioni saltate.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -152,6 +155,7 @@ Commit iniziali:
 - `ae5cab7d3b4581ac652718cb44dc5416c75c7b7e` — LG-011, albero di collegamento idraulico: mandata input utente, ritorno generato dall'algoritmo.
 - `d235a60b89d26dbdaf6198716822659ef1c613e5` — LG-012, radice del ritorno a 0,50 m e parallela alla parete architettonica più vicina.
 - `34a82b9e885a230623509e17fa395d4bd8e2275a` — LG-013, primo tratto a inclinazione libera; parallelismo obbligatorio dal secondo tratto.
+- `ed9ae3ce976969623b3dae9ecd33540ff1589cb1` — LG-014, ritorno nel corridoio segue la mandata quando possibile e salta le evoluzioni impossibili.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
