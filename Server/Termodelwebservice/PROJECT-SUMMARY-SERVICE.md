@@ -190,7 +190,10 @@ Avanzamento iniziale:
 - per supportare l'inseguimento convesso la futura implementazione dovrà mantenere identità e sequenza dei segmenti del path; resta da definire se il successivo segmento della sequenza precedente abbia priorità assoluta o resti una delle alternative dell'albero.
 - audit: consolidata `LG-034 — Troncatura con segno opposto nei casi concavi e convessi`: rispetto all'intersezione teorica `I`, misurando lungo `DirezioneProvenienza`, il terminale vale `I - d` nei casi concavi e `I + d` nei casi convessi;
 - LG-017 viene quindi precisata: il troncamento non è sempre un arretramento; nei percorsi convessi l'avanzamento oltre l'intersezione permette l'inseguimento progressivo della precedente evoluzione definito in LG-033;
-- resta da formalizzare un criterio computabile e univoco per classificare la configurazione locale come concava o convessa.
+- audit: confronto diretto eseguito sui motori Desktop `Termodel-Vittorio-main/Termodel_new/Spiralgenerator.cs` e `SpiraliGPT/Spiralgenerator.cs`; Vittorio costruisce gli offset mediante normali/bisettrici, GPT mediante buffer negativo NetTopologySuite con `JoinStyle.Mitre` e validazione dei raccordi;
+- precisata `LG-034`: la formula `I-d` concavo / `I+d` convesso resta esatta nel caso ortogonale, ma per angoli arbitrari il terminale va ottenuto come intersezione fra la linea corrente e la parallela offset del segmento successivo della precedente evoluzione; il modulo dello spostamento non è in generale `d`;
+- consolidata `LG-035 — Criterio computabile di inseguimento concavo/convesso`: dato `S_k -> S_k+1`, si costruiscono `I` (intersezione con la retta non offset) e `T` (intersezione con la parallela offset), quindi `delta = dot(T-I, DirezioneProvenienza)`; `delta<0` concavo, `delta>0` convesso, con criterio equivalente `q*side*turn` per diagnostica;
+- separati esplicitamente geometria teorica (segmenti + prolungamenti per aggancio/troncatura) e geometria fisica (segmenti reali per collisioni e validità); la sequenza ordinata `S_k -> S_k+1` è autorevole nell'inseguimento convesso.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -233,7 +236,8 @@ Commit iniziali:
 - `34f691165cfd6a0e9f6509162e51ad455cf78013` — LG-032, geometria vincolante isolata per ciascun ramo di mandata.
 - `6d14e0f98141f97a08fabd1401bd5ea1302ece17` — rettifica LG-013/LG-022: primo tratto allineato al tubo di collegamento entrante, con punto finale libero, per mandata e ritorno.
 - `b21f2810bcb2fe2cf941539dc7c7c9f9fec6dd21` — LG-033, principio di inseguimento progressivo dei tratti della precedente evoluzione nei percorsi convessi.
-- `3d2f21e49fae63ba36c5f60625d79089dfea4ce3` — LG-034, troncatura `-d` nei casi concavi e `+d` nei casi convessi lungo la direzione di provenienza.
+- `3d2f21e49fae63ba36c5f60625d79089dfea4ce3` — prima formulazione LG-034, troncatura `-d/+d` per concavo/convesso; successivamente precisata per geometrie non ortogonali.
+- `f51c468fc58cd42a48a18f5dc6696322ebcf07b0` — precisazione LG-034 e nuova LG-035 dopo confronto Vittorio/GPT: costruzione esatta tramite parallele offset e classificazione code-ready concavo/convesso.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
