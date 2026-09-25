@@ -270,8 +270,12 @@ try {
     $dxfText,
     '(?m)^0\r?\n(?:LINE|LWPOLYLINE|TEXT)\r?$')).Count
 
-  if ($svgPrimitiveCount -le 4) {
-    throw "Esecutivo non contiene primitive pannelli oltre alla pianta base."
+  $minimumExpectedPrimitives =
+    $cleanBoundaries.Count +
+    $mandataGroup.ChildNodes.Count +
+    $ritornoGroup.ChildNodes.Count
+  if ($svgPrimitiveCount -lt $minimumExpectedPrimitives) {
+    throw "Conteggio primitive esecutivo inferiore alla somma pianta pulita + mandata + ritorno."
   }
   if ($svgPrimitiveCount -ne $dxfPrimitiveCount) {
     throw "Primitive SVG/DXF differenti: SVG=$svgPrimitiveCount DXF=$dxfPrimitiveCount."
