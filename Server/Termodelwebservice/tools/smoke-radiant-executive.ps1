@@ -193,12 +193,12 @@ try {
   foreach ($marker in @(
     "[SpiraliDiego] START",
     "[SpiraliDiego] LOCALE",
-    "[SpiraliDiego] ENTRY",
+    " ENTRY point=",
     "[SpiraliDiego] TREE Supply initial ACCEPT",
     "[SpiraliDiego] TREE Supply CHOICE",
-    "[SpiraliDiego] CLOSURE",
-    "[SpiraliDiego] BEST update",
-    "[SpiraliDiego] LOCALE"
+    " CLOSURE ",
+    " BEST update ",
+    " SELECT merit="
   )) {
     if (-not $diegoLogText.Contains($marker)) {
       throw "Log SpiraliDiego privo del marker strategico: $marker"
