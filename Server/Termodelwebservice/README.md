@@ -44,6 +44,25 @@ POST /api/dxf/to-svg
 POST /api/feedback
 ```
 
+### Risposta artifact diretta da Aggiorna Modello
+
+`POST /api/calculations` mantiene come default la risposta manifest JSON
+`TERMODEL-FRONT-SERVICE-V1`. Per test, debug o client che vogliono ricevere
+subito un elaborato specifico, è disponibile il parametro query opzionale:
+
+```http
+POST /api/calculations?responseArtifact=pannelli-esecutivo-svg
+```
+
+Valori correnti: `model3d`, `pannelli`, `pannelli-esecutivo-svg`,
+`pannelli-esecutivo-dxf`, `pianta-pulita`. Per `pianta-pulita` aggiungere
+`responseFloor=<nomePiano>`.
+
+Il calcolo resta unico: tutti gli artifact vengono comunque persistiti
+atomicamente nel workspace e il body della POST contiene direttamente
+l'artifact selezionato. In assenza del parametro il comportamento precedente
+non cambia.
+
 `POST /api/model/3d` riceve nel body il file unico completo
 `TERMODEL-PROJECT-TEXT-V1` con `Content-Type: text/plain; charset=utf-8` e
 restituisce direttamente `TermodelWebModel` versione 3 in JSON. La generazione
