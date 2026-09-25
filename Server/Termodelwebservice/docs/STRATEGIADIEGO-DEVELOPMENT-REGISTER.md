@@ -162,13 +162,38 @@ Commit:
 - `90f76ff47e4822b00d7ba3d57b524017e377f092`.
 
 ## F5 — Batteria benchmark GitHub Actions
-Stato: **COMMISSIONATO**
+Stato: **ESEGUITO — SOSTENIBILE SUL CASO 4x4**
 
-Obiettivo:
-- test funzionali e ripetuti;
-- metriche: nodi mandata, terminali mandata, nodi ritorno, terminali complessivi,
-  profondità, tempo, memoria;
-- giudizio di sostenibilità basato su misure, non ipotesi.
+Verifica finale:
+- commit HEAD testato: `77c7d44f1b089dc302b49bbd6f86af4f2a330863`;
+- GitHub Actions `TermodelService Build` run `36096201896`, build #453;
+- job build `107949117086`: SUCCESS;
+- `Termodel/job=SUCCESS`;
+- notifica telefono: `PHONE_NOTIFICATION_SENT status=SUCCESS`;
+- build Release completata con successo;
+- benchmark eseguito per 20 iterazioni sulla fixture
+  `tests/fixtures/StrategiaDiegoSquare4x4.locale.xml`.
+
+Metriche finali:
+- nodi totali massimi: **104**;
+- terminali preliminarmente accettati: **2**;
+- p95: **22 ms**;
+- max memory delta: **368.800 byte**;
+- output deterministico verificato dal benchmark tramite firma strutturale e
+  SHA-256 SVG costante fra le iterazioni;
+- budget benchmark rispettati: 50.000 nodi, p95 2.000 ms, memoria 128 MiB.
+
+Confronto con baseline pre-F2B:
+- baseline run #450: 1176 nodi, p95 98 ms, 7.408.856 byte, 2 terminali;
+- dopo inseguimento sequenziale LG-033..LG-035: 104 nodi, p95 22 ms,
+  368.800 byte, 2 terminali;
+- la riduzione deriva dall'eliminazione di frontali non appartenenti alla
+  sequenza `S_k -> S_k+1`, non da potatura euristica predittiva.
+
+Giudizio:
+- **sostenibile sul caso campione 4x4 / un ingresso**;
+- il giudizio non viene esteso automaticamente a progetti più complessi:
+  servono fixture aggiuntive con concavità, strettoie, più locali/circuiti.
 
 ## F6 — Consolidamento finale
 Stato: **COMMISSIONATO**
