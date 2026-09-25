@@ -2393,6 +2393,70 @@ Principio documentale consolidato. Questa regola governa l'interpretazione
 della specifica durante la fase di definizione e futura implementazione della
 StrategiaDiego.
 
+
+---
+
+## LG-021 — Enumerazione completa delle linee di riferimento a ogni nodo
+
+**Stato:** CONSOLIDATA  
+**Origine:** audit pre-sviluppo del 25/09/2026
+
+### Proposta
+
+Ad ogni nodo dell'albero decisionale, StrategiaDiego deve considerare come
+possibili riferimenti **tutte le linee presenti nella struttura geometrica di
+contenimento**.
+
+Per ciascuna linea candidata si applica la distanza di rispetto prevista dalla
+sua famiglia e dal colore/famiglia del nuovo tratto.
+
+### Regola
+
+Per ogni nodo `N`:
+
+```text
+per ogni linea L in LineeArchitettoniche:
+    genera/valuta candidato alla distanza p/2
+
+per ogni linea L in LineeMandata:
+    se nuovo tratto = mandata -> distanza 2p
+    se nuovo tratto = ritorno -> distanza p
+
+per ogni linea L in LineeRitorno:
+    se nuovo tratto = ritorno -> distanza 2p
+    se nuovo tratto = mandata -> distanza p
+```
+
+Ogni candidato viene poi sottoposto alle restanti regole di
+`TrattoPossibile`, `SceltaNodoPossibile`, linea frontale e non-intersezione.
+
+### Commento tecnico
+
+Non viene quindi applicato un filtro preliminare del tipo 'solo linea più
+vicina' o 'solo linee locali'. L'enumerazione dei riferimenti è completa;
+sono le verifiche geometriche successive a eliminare le alternative non
+ammissibili.
+
+Questo rende l'albero esaustivo rispetto alle linee disponibili nello stato
+corrente e riduce il rischio di perdere una soluzione valida per una scelta
+locale troppo anticipata.
+
+### Vincoli
+
+- la struttura di contenimento del nodo deve esporre tutte le linee correnti;
+- ogni linea deve mantenere la propria famiglia semantica;
+- la distanza di rispetto deve essere calcolata per ogni coppia
+  candidato/riferimento;
+- candidati equivalenti generati da riferimenti diversi potranno richiedere in
+  futuro una regola di deduplicazione, non ancora definita;
+- l'enumerazione completa non autorizza la generazione di rami che violano le
+  altre regole consolidate.
+
+### Stato implementativo corrente
+
+Principio documentale consolidato durante l'audit pre-sviluppo. La logica di
+enumerazione completa non è ancora implementata.
+
 ---
 
 ## Collegamento con il registro dei casi
@@ -2411,7 +2475,7 @@ stessa soluzione algoritmica.
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-021`, `LG-022`, ecc., mantenendo per ciascuno:
+saranno aggiunti come `LG-022`, `LG-023`, ecc., mantenendo per ciascuno:
 
 - proposta;
 - commento tecnico;
