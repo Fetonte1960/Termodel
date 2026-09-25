@@ -109,6 +109,9 @@ Avanzamento iniziale:
 - consolidata `LG-005 — Concetto di tratto possibile`: un tratto è possibile solo se rispetta tutte le regole di tracciamento applicabili e genera un segmento con lunghezza strettamente maggiore di zero;
 - un tratto non possibile non deve aprire un ramo valido dell'albero; diagnostica futura distinta fra lunghezza nulla e violazione di una regola di tracciamento;
 - elenco completo delle regole di tracciamento e tolleranza numerica sulla lunghezza restano da definire.
+- consolidata `LG-006 — Passo p e distanze minime di tracciamento`: `p` è la distanza minima tubo-tubo di riferimento; distanza minima da linee architettoniche `p/2`, fra tubi dello stesso colore `2p`, fra tubi di colore diverso `p`;
+- interpretazione corrente: colori = famiglie mandata/ritorno e distanze misurate fra le linee/assi geometrici rappresentativi dei tubi;
+- queste soglie diventano regole applicabili a `TrattoPossibile`; previste regression sulle condizioni `<`, `=` e `>` rispetto a `p/2`, `p`, `2p`.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -119,6 +122,7 @@ Commit iniziali:
 - `a9bede514fba3016caa33662d4e21eb0ac40c0e8` — LG-003, fattore di merito dei terminali e selezione per massima lunghezza tubo valida.
 - `e420174d26b232c6ee6c7f170a7de2bd47ee0a32` — LG-004, struttura geometrica di contenimento con linee architettoniche, mandata e ritorno.
 - `484a961e977505d703b7e3f67a99c553e919bd8f` — LG-005, definizione di tratto possibile.
+- `9020b095e11b1c5dfda2ccbcb7d56ab838008b0c` — LG-006, passo `p` e distanze minime architettura/stesso colore/colore diverso.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
