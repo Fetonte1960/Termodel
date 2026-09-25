@@ -1595,51 +1595,62 @@ direzione nota
 - la diagnostica deve distinguere chiaramente:
   `DirezionePrimoTratto` e `PuntoFinalePrimoTratto`.
 
-### Rettifica runtime 25/09/2026 — distinguere quota di ingresso e arresto frontale
+### Rettifica 26/09/2026 — nessuna "prima evoluzione" speciale
 
-La precedente correzione che imponeva 0,45 m anche come distanza dalla parete
-frontale è **superata**.
+La formulazione precedente che attribuiva alla **prima evoluzione di mandata**
+una quota speciale di `1,5p` è **superata**.
 
-Occorre distinguere due grandezze diverse:
+Occorre distinguere il **raccordo tecnico d'ingresso** dalle evoluzioni vere e
+proprie della spirale.
 
-1. **quota della prima evoluzione di mandata rispetto alla parete d'ingresso**;
-2. **distanza di arresto del tratto quando incontra una parete frontale**.
+Il raccordo tecnico prolunga il tubo di collegamento nella sua direzione
+entrante fino alla traccia utile successiva. Non è una evoluzione e non
+introduce una nuova legge di distanza.
 
-Nel motore corrente la prima evoluzione di mandata viene collocata a
-`1,5p = 0,45 m` dalla parete d'ingresso, lasciando all'esterno la guida del
-ritorno a `p/2 = 0,15 m`.
+Le evoluzioni della spirale sono tutte soggette alle medesime regole
+geometriche, indipendentemente dal fatto che siano la prima, la seconda o una
+successiva.
 
-Questa quota di 0,45 m **non deve però essere ereditata** come distanza di
-arresto rispetto alle pareti successive.
-
-Quando il primo tratto tracciato verso una parete frontale incontra
-l'architettura, si applica LG-006:
+Le quote iniziali derivano quindi dalle regole generali già consolidate:
 
 ```text
-distanza minima tubo-parete = p/2
+mandata rispetto alla parete architettonica = p/2
+ritorno rispetto alla mandata               = p
+```
+
+Nel corridoio d'ingresso ordinario ne consegue:
+
+```text
+parete -> p/2 -> mandata rossa -> p -> ritorno blu
+
+mandata rossa dalla parete = 0,5p
+ritorno blu dalla parete   = 1,5p
+distanza mandata-ritorno   = p
 ```
 
 Con `p = 0,30 m`:
 
 ```text
-quota prima evoluzione mandata dalla parete d'ingresso = 0,45 m
-arresto del tratto rispetto alla parete frontale       = 0,15 m
+mandata = 0,15 m dalla parete
+ritorno = 0,45 m dalla parete
+distanza fra i due = 0,30 m
 ```
 
-Sul banco appartamento corrente la parete destra interna è a
-`x = 8,13148 m`; il terminale corretto del primo tratto verso destra è:
+I valori `0,5p` e `1,5p` non definiscono quindi due classi speciali di
+"prima evoluzione": sono il risultato dell'applicazione delle normali distanze
+alla geometria presente.
+
+Quando qualunque tratto, iniziale o successivo, incontra frontalmente una
+parete architettonica, continua ad applicarsi LG-006:
 
 ```text
-8,13148 - 0,15 = 7,98148 m
+distanza minima tubo-parete = p/2
 ```
 
-Il valore `x = 7,68148 m`, che lasciava 0,45 m dalla parete destra, era
-quindi errato.
-
-Il confronto con Vittorio e GPT resta utile per il principio geometrico:
-il tratto reale viene accorciato rispetto alla geometria teorica/offset fino a
-rispettare la distanza applicabile. Non si deve però trasferire automaticamente
-la quota di ingresso della mandata alla parete frontale successiva.
+Il raccordo d'ingresso deve essere considerato soltanto il collegamento fra il
+tubo entrante e la prima traccia utile così determinata. Dopo tale raccordo
+l'albero usa senza eccezioni le normali regole di nodo, frontale, troncamento,
+parallelismo e distanza.
 
 ### Criterio futuro di verifica
 
@@ -4099,6 +4110,87 @@ LG-036 rende obbligatorio usare tale percorso e restituire l'SVG all'utente
 per ogni successiva modifica con possibile effetto sul disegno.
 
 ---
+
+
+## LG-037 — Uniformità delle evoluzioni e distinzione dal raccordo di ingresso
+
+**Stato:** CONSOLIDATA  
+**Origine:** rettifica utente del 26/09/2026
+
+### Proposta
+
+Non esiste una categoria geometrica denominata "prima evoluzione" con regole
+proprie. Tutte le evoluzioni della spirale, dalla prima utile alle successive,
+sono governate dalle stesse regole StrategiaDiego.
+
+L'unico elemento iniziale distinto è il **raccordo tecnico d'ingresso**, che
+prolunga il tubo di collegamento fino alla prima traccia utile. Il raccordo non
+è una evoluzione della spirale.
+
+### Regola
+
+Per ogni evoluzione `E_i`:
+
+```text
+Regole(E_i) = regole comuni di tracciamento
+```
+
+senza dipendenza dall'indice `i`.
+
+In particolare restano valide le distanze generali LG-006:
+
+```text
+tubo - architettura         = p/2
+tubo - tubo stesso colore   = 2p
+tubo - tubo colore diverso  = p
+```
+
+Nel semplice ingresso affiancato alla parete:
+
+```text
+mandata rossa = p/2 dalla parete
+ritorno blu   = p dalla mandata = 1,5p dalla parete
+```
+
+Questa relazione è una **conseguenza** delle distanze comuni, non una
+prescrizione speciale legata al numero dell'evoluzione.
+
+### Vincoli per l'implementazione
+
+- non introdurre costanti geometriche motivate dal solo fatto che una
+  evoluzione sia la prima;
+- il raccordo tecnico d'ingresso può avere logica di connessione propria, ma
+  la posizione della traccia che raggiunge deve essere derivata dalle regole
+  geometriche comuni;
+- mandata e ritorno mantengono le stesse regole di nodo LG-027;
+- la mandata deve trovarsi a `p/2` dalla parete quando la parete è il suo
+  riferimento architettonico;
+- il ritorno deve mantenere `p` dalla mandata e, nel corridoio iniziale
+  ordinario, risulta quindi a `1,5p` dalla parete;
+- eventuali impossibilità geometriche vengono gestite dall'albero e dai
+  normali controlli di validità, non cambiando la distanza perché si tratta
+  dell'ingresso.
+
+### Criterio di verifica
+
+Con `p = 0,30 m` e ingresso ortogonale a una parete deve risultare:
+
+```text
+parete -> mandata = 0,15 m
+mandata -> ritorno = 0,30 m
+parete -> ritorno = 0,45 m
+```
+
+e le evoluzioni successive devono essere generate dalle stesse primitive e
+dalla stessa matrice di distanze della prima evoluzione utile.
+
+### Stato implementativo corrente
+
+Rettifica consolidata il 26/09/2026 e recepita nel sorgente
+`StrategiaDiegoEngine.cs`. La pubblicazione di questa rettifica è stata
+richiesta esplicitamente **senza compilazione né esecuzione GitHub Actions**;
+la verifica runtime/visuale resta quindi da eseguire in un incarico successivo.
+
 
 ## Collegamento con il registro dei casi
 
