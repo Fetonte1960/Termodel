@@ -120,6 +120,9 @@ Avanzamento iniziale:
 - LG-008 introduce soltanto il vincolo di non-intersezione del collegamento finale; forma del collegamento, eventuali distanze minime e caso senza terminali accettabili restano da definire.
 - precisata LG-008: la valutazione `TerminaleAccettabile` avviene soltanto dopo il completamento dell'intero albero decisionale; l'accettabilità non viene usata per scegliere o potare anticipatamente i rami;
 - sequenza consolidata: costruzione completa albero -> raccolta terminali -> valutazione accettabilità -> filtro terminali accettabili -> confronto fattore di merito -> scelta terminale vincente.
+- consolidata `LG-009 — Configurazione iniziale e direzione principe`: l'albero parte dall'estremo interno del tubo di collegamento di mandata che entra nella stanza; sono previste configurazioni ritorno a sinistra/destra;
+- per `RitornoSinistra`, destra/sinistra sono riferite al verso della mandata verso l'interno della stanza e la direzione principe è il tratto parallelo sul lato destro;
+- non ancora definita per deduzione la regola `RitornoDestra`; resta da stabilire anche se la direzione principe sia solo priorità di esplorazione o vincolo più forte.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -134,6 +137,7 @@ Commit iniziali:
 - `75723ee7b6b08a5f278fd488d7ecbaf59ca89dd6` — LG-007, definizione di scelta di nodo possibile.
 - `d4df535a993a5c2c03773f408b4f33c1f7e99de5` — LG-008, definizione di terminale accettabile.
 - `3dd72b08db5fff5e9a9f3ca1bf29bc6a098c16a4` — precisazione LG-008: valutazione dei terminali accettabili solo a fine costruzione dell'albero.
+- `58dc4cfbe7890a66170f5f03afba05b804c1f3ff` — LG-009, configurazione iniziale e direzione principe per ritorno a sinistra.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
