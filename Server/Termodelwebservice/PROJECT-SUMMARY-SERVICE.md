@@ -112,6 +112,9 @@ Avanzamento iniziale:
 - consolidata `LG-006 — Passo p e distanze minime di tracciamento`: `p` è la distanza minima tubo-tubo di riferimento; distanza minima da linee architettoniche `p/2`, fra tubi dello stesso colore `2p`, fra tubi di colore diverso `p`;
 - interpretazione corrente: colori = famiglie mandata/ritorno e distanze misurate fra le linee/assi geometrici rappresentativi dei tubi;
 - queste soglie diventano regole applicabili a `TrattoPossibile`; previste regression sulle condizioni `<`, `=` e `>` rispetto a `p/2`, `p`, `2p`.
+- consolidata `LG-007 — Scelta di nodo possibile`: una scelta di nodo è un `TrattoPossibile` che non interseca linee già generate, è parallelo a una linea esistente di riferimento e si trova alla distanza minima applicabile di LG-006;
+- distinto esplicitamente `TrattoPossibile` da `SceltaNodoPossibile`: non ogni tratto geometricamente ammesso costituisce automaticamente un ramo dell'albero;
+- restano da definire selezione della linea di riferimento, ordinamento di più scelte ammissibili e tolleranze su parallelismo/distanza/intersezioni agli estremi.
 
 Commit iniziali:
 - `4b7be0d6762fec6baad84fda2d7fe9f226684042` — registrazione incarico;
@@ -123,6 +126,7 @@ Commit iniziali:
 - `e420174d26b232c6ee6c7f170a7de2bd47ee0a32` — LG-004, struttura geometrica di contenimento con linee architettoniche, mandata e ritorno.
 - `484a961e977505d703b7e3f67a99c553e919bd8f` — LG-005, definizione di tratto possibile.
 - `9020b095e11b1c5dfda2ccbcb7d56ab838008b0c` — LG-006, passo `p` e distanze minime architettura/stesso colore/colore diverso.
+- `75723ee7b6b08a5f278fd488d7ecbaf59ca89dd6` — LG-007, definizione di scelta di nodo possibile.
 
 
 ### INCARICO 2026-09-24 — Pianta pulita persistente come artifact di progetto
