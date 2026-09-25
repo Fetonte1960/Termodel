@@ -368,9 +368,6 @@ internal static class StrategiaDiegoEngine
                     fixedPath,
                     currentPath);
 
-            GeoSegment? sequentialFront =
-                FindSequenceSuccessor(node.Front, constraints, family);
-
             LogDiego(
                 $"TREE {family} NODE depth={node.Depth} end={Fmt(node.End)} " +
                 $"dir={Fmt(node.Direction)} front={node.Front.Id} " +
@@ -386,17 +383,29 @@ internal static class StrategiaDiegoEngine
             };
 
             DVector parallel = node.Front.Direction.Normalize();
-            string? requiredSequentialFrontId = sequentialFront?.Id;
+            GeoSegment? continuationA =
+                FindSequenceContinuation(
+                    node.Front,
+                    constraints,
+                    family,
+                    parallel);
+            GeoSegment? continuationB =
+                FindSequenceContinuation(
+                    node.Front,
+                    constraints,
+                    family,
+                    -parallel);
+
             directions.Add((
                 "PARALLELA_A",
                 parallel,
                 null,
-                requiredSequentialFrontId));
+                continuationA?.Id));
             directions.Add((
                 "PARALLELA_B",
                 -parallel,
                 null,
-                requiredSequentialFrontId));
+                continuationB?.Id));
 
             var children = new List<SearchNode>();
             foreach ((
@@ -1079,10 +1088,11 @@ internal static class StrategiaDiegoEngine
         return result;
     }
 
-    private static GeoSegment? FindSequenceSuccessor(
+    private static GeoSegment? FindSequenceContinuation(
         GeoSegment front,
         IReadOnlyList<GeoSegment> constraints,
-        GeoFamily pathFamily)
+        GeoFamily pathFamily,
+        DVector travelDirection)
     {
         if (front.Family == GeoFamily.Architecture ||
             front.SequenceIndex < 0)
@@ -1090,10 +1100,10 @@ internal static class StrategiaDiegoEngine
             return null;
         }
 
-        // Comportamento storico per la mandata e per tutti i casi che non
-        // rappresentano il ritorno che insegue la mandata: il successore è
-        // esattamente SequenceIndex+1. Questo preserva la direzione iniziale e
-        // le regressioni già consolidate dell'appartamento.
+        // Per i casi storici diversi dal ritorno che insegue la mandata,
+        // conserva esattamente la semantica precedente: SequenceIndex+1.
+        // La correzione direzionale è confinata alla relazione esplicita
+        // Return -> Supply di LG-014/LG-033.
         if (pathFamily != GeoFamily.Return ||
             front.Family != GeoFamily.Supply)
         {
@@ -1104,41 +1114,63 @@ internal static class StrategiaDiegoEngine
         }
 
         DVector frontDirection = front.Direction.Normalize();
-        if (frontDirection.Length <= Epsilon)
+        DVector travel = travelDirection.Normalize();
+        if (frontDirection.Length <= Epsilon ||
+            travel.Length <= Epsilon)
+        {
             return null;
+        }
 
-        // LG-014 + LG-033/LG-035: quando il ritorno insegue la mandata,
-        // più segmenti consecutivi collineari sono pezzi della stessa
-        // evoluzione. Il frontale utile è il primo segmento successivo che
-        // introduce un vero cambio di direzione.
-        foreach (GeoSegment candidate in constraints
-                     .Where(candidate =>
-                         candidate.Family == GeoFamily.Supply &&
-                         candidate.SequenceIndex > front.SequenceIndex)
-                     .OrderBy(candidate => candidate.SequenceIndex))
+        // Se il ritorno percorre la linea di mandata nello stesso verso,
+        // prosegue verso SequenceIndex+1. Se la percorre nel verso opposto,
+        // deve proseguire verso SequenceIndex-1. Il vecchio +1 fisso rendeva
+        // una delle due alternative geometricamente incoerente.
+        int sequenceStep =
+            DVector.Dot(travel, frontDirection) >= 0
+                ? 1
+                : -1;
+
+        IEnumerable<GeoSegment> ordered = constraints
+            .Where(candidate =>
+                candidate.Family == GeoFamily.Supply &&
+                (sequenceStep > 0
+                    ? candidate.SequenceIndex > front.SequenceIndex
+                    : candidate.SequenceIndex < front.SequenceIndex))
+            .OrderBy(candidate =>
+                sequenceStep > 0
+                    ? candidate.SequenceIndex
+                    : -candidate.SequenceIndex);
+
+        foreach (GeoSegment candidate in ordered)
         {
             DVector candidateDirection =
                 candidate.Direction.Normalize();
             if (candidateDirection.Length <= Epsilon)
                 continue;
 
+            // Segmenti consecutivi paralleli/collineari sono pezzi della
+            // stessa evoluzione. Il frontale utile è il primo vero cambio.
             double cross = Math.Abs(
                 DVector.Cross(frontDirection, candidateDirection));
-
             if (cross <= GeometryTolerance)
             {
                 LogDiego(
                     $"SEQUENCE return-follows-supply skip-collinear " +
-                    $"from={front.SequenceIndex} skip={candidate.SequenceIndex}");
+                    $"from={front.SequenceIndex} skip={candidate.SequenceIndex} " +
+                    $"step={sequenceStep}");
                 continue;
             }
 
             LogDiego(
-                $"SEQUENCE return-follows-supply successor " +
-                $"from={front.SequenceIndex} next={candidate.SequenceIndex}");
+                $"SEQUENCE return-follows-supply continuation " +
+                $"from={front.SequenceIndex} next={candidate.SequenceIndex} " +
+                $"step={sequenceStep}");
             return candidate;
         }
 
+        LogDiego(
+            $"SEQUENCE return-follows-supply end " +
+            $"from={front.SequenceIndex} step={sequenceStep}");
         return null;
     }
 
