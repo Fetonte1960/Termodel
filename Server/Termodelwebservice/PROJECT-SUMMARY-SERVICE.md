@@ -71,6 +71,21 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Analisi distanza 45→47 rispetto a 1→3
+Stato: ESEGUITO — DIAGNOSI / NESSUNA MODIFICA CODICE
+
+Risultato:
+- percorso selezionato: nodo 45 `(0.15,0.15)` -> nodo 47 `(0.75,0.15)`, collineare al tratto iniziale nodo 1 `(2.00,0.15)` -> nodo 3 `(3.85,0.15)`;
+- il vuoto fra nodo 47 e nodo 1 è `1,25 m`, quindi maggiore dei `2p=0,60 m` attesi;
+- al nodo 47 il motore genera e accetta correttamente `PROSEGUI_DRITTO 47->48`, con 48 `(1.40,0.15)`: distanza da nodo 1 esattamente `0,60 m = 2p`;
+- nello stesso nodo viene accettato anche `PARALLELA_B 47->49`, `(0.75,0.15)->(0.75,0.75)`;
+- il sottoalbero via 47->48 raggiunge al meglio activeLength `25,45 m`, goodness `0,954`;
+- il sottoalbero via 47->49 raggiunge activeLength `28,05 m`, goodness `1,052` e produce il terminale Supply selezionato 123;
+- quindi la distanza non è calcolata male e il ramo corretto non è scartato geometricamente: perde per il merito finale, che premia la maggiore copertura e non impone di completare il tratto diritto prima di una nuova svolta;
+- diagnosi registrata nel registro R17, commit `49c4bb8feb56a751359b44139e73c4ee2fcc87e0`;
+- nessuna modifica al prototipo in questa fase.
+
+
 ### INCARICO 2026-09-26 — Correzione cambio guida prematuro su catena collineare
 Stato: ESEGUITO — SIMULAZIONE POSITIVA / NON INTEGRATA
 
