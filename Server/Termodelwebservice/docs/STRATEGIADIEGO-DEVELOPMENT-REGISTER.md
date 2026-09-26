@@ -8,42 +8,54 @@ attivazione e benchmark della StrategiaDiego.
 
 
 ## R6 — Riaggancio geometrico della mandata dopo il primo giro
-Stato: **IMPLEMENTATO SU BRANCH — BUILD/REGRESSION DA ESEGUIRE**
+Stato: **ESEGUITO — COMPILATO / REGRESSION SUCCESS / PUBBLICATO SU MAIN**
 
 Decisione utente 26/09/2026:
 - sul quadrato reale la mandata arriva al nodo 8 dopo un giro completo e si
-  arresta prematuramente pur esistendo spazio per il secondo giro;
-- la causa individuata è l'uso rigido di `SequenceIndex+1` per scegliere il
+  arrestava prematuramente pur esistendo spazio per il secondo giro;
+- la causa individuata era l'uso rigido di `SequenceIndex+1` per scegliere il
   riferimento successivo durante l'inseguimento della propria evoluzione;
 - il successore deve essere la prima retta pertinente incontrata **davanti**
   nella direzione corrente;
 - la geometria teorica può usare i prolungamenti delle rette, mentre collisioni
   e distanze continuano a usare i segmenti fisici reali;
-- la regola viene applicata alla propria famiglia sia per mandata sia per
-  ritorno; resta invariato il caso ritorno che insegue la mandata.
+- la regola è applicata alla propria famiglia sia per mandata sia per ritorno;
+  resta invariato il caso ritorno che insegue la mandata.
 
 Implementazione:
-- `StrategiaDiegoEngine.FindSequenceContinuation()` usa ora la ricerca
-  geometrica orientata per `pathFamily == front.Family`;
+- `StrategiaDiegoEngine.FindSequenceContinuation()` usa la ricerca geometrica
+  orientata per `pathFamily == front.Family`;
 - mantenuta la ricerca geometrica per `Return -> Supply`;
 - gli altri casi conservano il comportamento sequenziale precedente;
-- log introdotto/esteso con marker
-  `SEQUENCE own-family geometric-continuation`;
+- log esteso con marker `SEQUENCE own-family geometric-continuation`;
 - LG-033/LG-035 chiarite: “successivo” è geometrico-orientato e non equivale
-  automaticamente a `SequenceIndex+1`.
+  automaticamente a `SequenceIndex+1`;
+- smoke quadrato bloccante: almeno 10 tratti attivi e bontà mandata >= 0,80.
 
-Regression:
-- lo smoke del quadrato richiede almeno un inseguimento `own-family`;
-- il miglior terminale di mandata deve avere almeno 10 tratti attivi;
-- il relativo Fattore di Bontà deve essere almeno 0,80;
-- verranno registrati valori reali di tratti, lunghezza, area coperta,
-  superficie locale e fattore dopo GitHub Actions.
+Verifica reale:
+- PR #3 head `820a390cee4184d888af6d7149a2b567f932e5eb`;
+- PR Action `36207700577` (#562), job `108307606275`: **SUCCESS**;
+- merge su `main`: `599a980aca95af14d982e25911a1507aece0c21c`;
+- main Action `36207858838`, job `108308085490`: **SUCCESS**;
+- Commit Status `Termodel/job=SUCCESS`;
+- artifact main `strategia-diego-square-executive`, id `10894901931`;
+- miglior terminale mandata reale, per entrambi i lati ritorno:
+  **10 tratti attivi**, `19,96 m`, area empirica `11,976 m²`,
+  superficie locale `13,988 m²`, Fattore di Bontà **0,856**;
+- la soluzione complessiva selezionata dal criterio di merito corrente usa
+  mandata attiva `17,72 m` con bontà `0,760` e ritorno attivo
+  `11,88 m` con bontà `0,510`; merito complessivo `32,758 m`;
+- SVG SHA-256
+  `5e5e04b7c1f88956bd9dbef14e1b8e8eb3981b9ee430551ac03458c63b0f50d4`;
+- DXF SHA-256
+  `d70039f2504f18fe7148179b141adab22ca1f905cfa0d722ef0187ffd02ac1e1`;
+- numerazione diagnostica SVG: 19 nodi;
+- smoke progetto radiante reale e banco appartamento corrente: **SUCCESS**.
 
-Verifica prevista:
-- PR Action completa;
-- artifact `strategia-diego-square-executive` con SVG/log reale;
-- controllo visuale utente secondo LG-036;
-- merge su `main` e normale auto-deploy Render solo dopo SUCCESS.
+Pubblicazione:
+- il merge su `main` ha attivato il normale auto-deploy Render;
+- l'artifact SVG reale è disponibile per la verifica visuale dell'utente,
+  distinta dalla verifica automatica SUCCESS.
 
 ## R5 — Consolidamento debug in memoria: ritorno preliminare, bontà e node-id
 Stato: **ESEGUITO — COMPILATO / REGRESSION SUCCESS / ARTIFACT REALE DISPONIBILE**
