@@ -7,6 +7,44 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+
+## R8 — Procedura di scavalcamento tubo entrante
+Stato: **IN IMPLEMENTAZIONE / VERIFICA ACTION PENDENTE**
+
+Decisione utente 26/09/2026:
+- il raccordo entrante del ritorno deve troncare fisicamente la mandata a
+  distanza `p`, senza essere confuso con una evoluzione strategica;
+- il precedente caso `I+2p` sul prolungamento non deve fermare prematuramente
+  il tratto quando il raccordo fisico entrante deve ancora essere scavalcato;
+- dopo il troncamento si conserva il flusso ad albero: il nodo può agganciare
+  la corsia parallela alla precedente mandata a distanza `2p`;
+- dopo l'aggancio, il primo tratto sulla corsia deve avere verso opposto al
+  segmento di riferimento orientato;
+- il principio viene confrontato con Vittorio solo come riferimento
+  geometrico; non viene introdotto un generatore globale di offset.
+
+Implementazione proposta:
+- `ReturnConnection` ammesso in `TryExtend()` soltanto come front fisico
+  reale, mai sul proprio prolungamento;
+- a parità di validità, il raccordo fisico entrante prevale sui marcatori
+  virtuali `I+2p`;
+- il nodo successivo usa temporaneamente il raccordo come orientamento del
+  cambio di corsia;
+- quando il ramo aggancia una `Supply/Return` della propria famiglia viene
+  registrato `SCAVALCAMENTO lane-attach`;
+- il nodo appena agganciato genera `SCAVALCAMENTO_OPPOSTA`, con direzione
+  opposta a quella del riferimento orientato;
+- marker diagnostici: `SCAVALCAMENTO physical-limit`,
+  `SCAVALCAMENTO lane-attach`, `SCAVALCAMENTO opposite-lane`.
+
+Verifica richiesta:
+- build Release;
+- smoke quadrato con i tre marker;
+- metriche reali del miglior terminale;
+- SVG/log reale per verifica LG-036;
+- integrazione su main solo dopo Action SUCCESS.
+
+
 ## R7 — LG-034/LG-035: oltre linea estesa dal nodo corrente
 Stato: **ESEGUITO — COMPILATO / REGRESSION SUCCESS / PUBBLICATO SU MAIN**
 
