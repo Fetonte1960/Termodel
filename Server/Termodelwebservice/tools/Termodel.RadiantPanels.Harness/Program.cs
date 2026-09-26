@@ -21,8 +21,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--out <dir>]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>]");
+    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--supply-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--supply-top N] [--supply-rank N]");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
 }
@@ -36,6 +36,8 @@ static int Run(string[] args)
         string? outputArg = Arg(args, "--out");
         string? idArg = Arg(args, "--id");
         string? stepArg = Arg(args, "--p");
+        int? supplyTop = PositiveIntArg(args, "--supply-top");
+        int? supplyRank = PositiveIntArg(args, "--supply-rank");
 
         HarnessCase? testCase = null;
         if (!string.IsNullOrWhiteSpace(casePath))
@@ -87,6 +89,23 @@ static int Run(string[] args)
         Directory.CreateDirectory(outputDir);
 
         string localeXml = File.ReadAllText(fullInputPath, Encoding.UTF8);
+
+        if (supplyTop is not null || supplyRank is not null)
+        {
+            int requestedTop = Math.Max(
+                supplyTop ?? 0,
+                supplyRank ?? 0);
+            requestedTop = Math.Max(requestedTop, 1);
+
+            return RunSupplyExplorer(
+                localeXml,
+                stepMeters,
+                caseId,
+                outputDir,
+                requestedTop,
+                supplyRank);
+        }
+
         StrategiaDiegoBenchmarkSample sample =
             StrategiaDiegoBenchmark.Run(
                 localeXml,
@@ -147,6 +166,162 @@ static int Run(string[] args)
     }
 }
 
+static int RunSupplyExplorer(
+    string localeXml,
+    double stepMeters,
+    string caseId,
+    string outputDir,
+    int topCount,
+    int? selectedRank)
+{
+    StrategiaDiegoSupplyExplorerSample explorer =
+        StrategiaDiegoBenchmark.ExploreSupply(
+            localeXml,
+            stepMeters,
+            topCount);
+
+    string explorerDir = Path.Combine(
+        outputDir,
+        caseId + ".supply-explorer");
+    Directory.CreateDirectory(explorerDir);
+
+    IEnumerable<StrategiaDiegoSupplyExplorerEntry> entries =
+        selectedRank is null
+            ? explorer.Items
+            : explorer.Items.Where(item => item.Rank == selectedRank.Value);
+
+    StrategiaDiegoSupplyExplorerEntry[] selected = entries.ToArray();
+    if (selected.Length == 0)
+        throw new InvalidDataException(
+            $"Supply rank {selectedRank} non disponibile; terminali={explorer.SupplyTerminals}.");
+
+    foreach (StrategiaDiegoSupplyExplorerEntry entry in selected)
+    {
+        string svgPath = Path.Combine(
+            explorerDir,
+            $"supply-rank-{entry.Rank:000}.svg");
+        File.WriteAllText(
+            svgPath,
+            entry.Svg,
+            new UTF8Encoding(false));
+    }
+
+    var manifest = new
+    {
+        caseId,
+        explorer.LocaleId,
+        explorer.StepMeters,
+        explorer.SupplyNodes,
+        explorer.SupplyTerminals,
+        requestedTop = topCount,
+        selectedRank,
+        solutions = selected.Select(entry => new
+        {
+            entry.Rank,
+            entry.TerminalNodeId,
+            entry.Depth,
+            entry.ActiveLengthMeters,
+            entry.Goodness,
+            entry.TotalLengthMeters,
+            nodeIds = entry.NodeIds,
+            contains47To48 = ContainsEdge(entry.NodeIds, 47, 48),
+            svg = $"supply-rank-{entry.Rank:000}.svg"
+        }).ToArray()
+    };
+
+    string manifestPath = Path.Combine(explorerDir, "solutions.json");
+    File.WriteAllText(
+        manifestPath,
+        JsonSerializer.Serialize(
+            manifest,
+            new JsonSerializerOptions { WriteIndented = true }),
+        new UTF8Encoding(false));
+
+    string html = BuildSupplyExplorerHtml(
+        caseId,
+        explorer,
+        selected);
+    string htmlPath = Path.Combine(explorerDir, "index.html");
+    File.WriteAllText(
+        htmlPath,
+        html,
+        new UTF8Encoding(false));
+
+    Console.WriteLine("RADIANT_HARNESS_SUPPLY_EXPLORER_OK");
+    Console.WriteLine($"case={caseId}");
+    Console.WriteLine($"supplyNodes={explorer.SupplyNodes}");
+    Console.WriteLine($"supplyTerminals={explorer.SupplyTerminals}");
+    Console.WriteLine($"exported={selected.Length}");
+    Console.WriteLine($"manifest={manifestPath}");
+    Console.WriteLine($"index={htmlPath}");
+
+    foreach (StrategiaDiegoSupplyExplorerEntry entry in selected)
+    {
+        Console.WriteLine(
+            $"SUPPLY_RANK rank={entry.Rank} node={entry.TerminalNodeId} " +
+            $"active={entry.ActiveLengthMeters.ToString("0.###", CultureInfo.InvariantCulture)} " +
+            $"goodness={entry.Goodness.ToString("0.###", CultureInfo.InvariantCulture)} " +
+            $"total={entry.TotalLengthMeters.ToString("0.###", CultureInfo.InvariantCulture)} " +
+            $"contains47To48={ContainsEdge(entry.NodeIds, 47, 48)}");
+    }
+
+    return 0;
+}
+
+static bool ContainsEdge(
+    IReadOnlyList<int> nodeIds,
+    int from,
+    int to)
+{
+    for (int i = 0; i < nodeIds.Count - 1; i++)
+    {
+        if (nodeIds[i] == from && nodeIds[i + 1] == to)
+            return true;
+    }
+    return false;
+}
+
+static string BuildSupplyExplorerHtml(
+    string caseId,
+    StrategiaDiegoSupplyExplorerSample explorer,
+    IReadOnlyList<StrategiaDiegoSupplyExplorerEntry> entries)
+{
+    var builder = new StringBuilder();
+    builder.AppendLine("<!doctype html><html><head><meta charset=\"utf-8\">");
+    builder.AppendLine("<title>StrategiaDiego Supply Explorer</title>");
+    builder.AppendLine("<style>body{font-family:Arial,sans-serif;margin:20px} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}.card{border:1px solid #bbb;padding:10px;border-radius:8px}.card img{width:100%;height:auto;border:1px solid #ddd}.meta{font-family:monospace;white-space:pre-wrap}</style></head><body>");
+    builder.AppendLine($"<h1>{System.Net.WebUtility.HtmlEncode(caseId)} — Supply Explorer</h1>");
+    builder.AppendLine($"<p>Supply nodes: {explorer.SupplyNodes} | terminals: {explorer.SupplyTerminals} | p={explorer.StepMeters.ToString("0.###", CultureInfo.InvariantCulture)} m</p>");
+    builder.AppendLine("<div class=\"grid\">");
+
+    foreach (StrategiaDiegoSupplyExplorerEntry entry in entries)
+    {
+        string svg = $"supply-rank-{entry.Rank:000}.svg";
+        builder.AppendLine("<div class=\"card\">");
+        builder.AppendLine($"<h2>Rank #{entry.Rank}</h2>");
+        builder.AppendLine($"<a href=\"{svg}\"><img src=\"{svg}\" alt=\"rank {entry.Rank}\"></a>");
+        builder.AppendLine("<div class=\"meta\">");
+        builder.AppendLine($"terminal={entry.TerminalNodeId}<br>");
+        builder.AppendLine($"active={entry.ActiveLengthMeters.ToString("0.###", CultureInfo.InvariantCulture)} m<br>");
+        builder.AppendLine($"goodness={entry.Goodness.ToString("0.###", CultureInfo.InvariantCulture)}<br>");
+        builder.AppendLine($"total={entry.TotalLengthMeters.ToString("0.###", CultureInfo.InvariantCulture)} m<br>");
+        builder.AppendLine($"contains 47→48={ContainsEdge(entry.NodeIds, 47, 48)}");
+        builder.AppendLine("</div></div>");
+    }
+
+    builder.AppendLine("</div></body></html>");
+    return builder.ToString();
+}
+
+static int? PositiveIntArg(string[] args, string name)
+{
+    string? raw = Arg(args, name);
+    if (raw is null)
+        return null;
+    if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) || value <= 0)
+        throw new ArgumentException($"{name} deve essere un intero positivo.");
+    return value;
+}
 static async Task<int> PrepareAsync(string[] args)
 {
     try
