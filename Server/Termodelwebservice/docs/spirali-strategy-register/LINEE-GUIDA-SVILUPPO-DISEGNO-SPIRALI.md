@@ -5105,8 +5105,9 @@ Per ogni tratto attivo Supply `s_i`, nell'ordine in cui viene generato:
 
 1. calcolare il punto medio `m_i` del tratto;
 2. calcolare i punti medi di tutte le pareti delimitanti del locale;
-3. calcolare i punti medi dei soli tratti Supply precedenti
-   `s_1 ... s_(i-1)`;
+3. calcolare i punti medi dei tratti Supply precedenti, **escludendo sempre il
+   tratto immediatamente precedente** `s_(i-1)`; i candidati Supply sono quindi
+   `s_1 ... s_(i-2)`;
 4. misurare le distanze euclidee punto-punto da `m_i` a tutti questi punti
    medi;
 5. assumere come contributo `d_i` la distanza minima trovata;
@@ -5117,14 +5118,21 @@ Formula:
 ```text
 d_i = min(
     min distanza(m_i, puntoMedio(parete)),
-    min distanza(m_i, puntoMedio(s_j)) per ogni j < i
+    min distanza(m_i, puntoMedio(s_j)) per ogni j < i - 1
 )
 
 MeritoSecondarioSupply = somma(d_i)
 ```
 
 Per il primo tratto attivo, in assenza di tratti Supply precedenti, il minimo
-viene calcolato sulle sole pareti delimitanti.
+viene calcolato sulle sole pareti delimitanti. Anche per il secondo tratto
+attivo il riferimento Supply immediatamente precedente è escluso, quindi il
+minimo viene ancora calcolato sulle sole pareti.
+
+L'esclusione del tratto padre evita un minimo improprio: due tratti consecutivi
+sono collegati per costruzione e la loro vicinanza locale non dimostra che il
+nuovo tratto stia realmente inseguendo il profilo o una parte già sviluppata
+della mandata.
 
 Il raccordo tecnico iniziale non partecipa alla somma: come per la lunghezza
 attiva usata da LG-038, serve a raggiungere la prima traccia utile e non
@@ -5172,7 +5180,8 @@ decisione esplicita.
   pari lunghezza;
 - il valore deve essere cumulabile nel nodo di ricerca: il figlio eredita il
   totale del padre e aggiunge il solo `d_i` del nuovo tratto;
-- il calcolo iniziale può esaminare pareti e antenati Supply in modo diretto;
+- il calcolo iniziale può esaminare pareti e antenati Supply in modo diretto,
+  saltando obbligatoriamente il padre immediato del nuovo tratto;
   un indice spaziale sarà valutato soltanto se i benchmark grandi lo
   richiederanno;
 - il log diagnostico deve esporre almeno lunghezza primaria, merito secondario
@@ -6417,7 +6426,8 @@ Ordine corrente, obbligatorio finché non viene aggiornato questo checkpoint:
 
 1. aggiungere al nodo Supply il merito secondario cumulativo LG-047;
 2. calcolare per ogni nuovo tratto la distanza minima fra il proprio punto
-   medio e i punti medi di pareti e soli tratti Supply antenati;
+   medio e i punti medi di pareti e tratti Supply antenati, escludendo il
+   tratto padre immediato;
 3. ordinare i terminali per primario decrescente e, soltanto a parità,
    secondario crescente;
 4. costruire il Return della sola mandata prevalente e usare la successiva
