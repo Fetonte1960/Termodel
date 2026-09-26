@@ -133,6 +133,23 @@ jobs:
           $logText = Get-Content -LiteralPath $log -Raw
           if ($logText -notmatch "DIEGO_DECISION_REPLAY REJECT_BY_INPUT") { throw "REJECT_BY_INPUT non registrato nel log." }
           if ($logText -notmatch "PRUNED_BY_REPLAY") { throw "PRUNED_BY_REPLAY non registrato nel log." }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-REPLAY-FILE `
+            --out $out `
+            --reject-decisions $rejects
+
+          $fileSvg = Join-Path $out "LG041-REPLAY-FILE.svg"
+          $fileLog = Join-Path $out "LG041-REPLAY-FILE.log.txt"
+          if (-not (Test-Path $fileSvg)) { throw "Replay da file: SVG mancante." }
+          if (-not (Test-Path $fileLog)) { throw "Replay da file: log mancante." }
+          $hashDirect = (Get-FileHash -LiteralPath $svg -Algorithm SHA256).Hash
+          $hashFile = (Get-FileHash -LiteralPath $fileSvg -Algorithm SHA256).Hash
+          if ($hashDirect -ne $hashFile) { throw "Replay da file non riproduce lo stesso SVG del reject corrente." }
+          if ((Get-Content -LiteralPath $fileLog -Raw) -notmatch "DIEGO_DECISION_REPLAY REJECT_BY_INPUT") {
+            throw "Replay da file: REJECT_BY_INPUT non registrato."
+          }
           Write-Host "RADIANT_HARNESS_DECISION_REPLAY_OK"
       - name: Run supply explorer skip top 20
         shell: pwsh
