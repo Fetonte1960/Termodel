@@ -71,6 +71,27 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Return/Return a passo p
+Stato: COMMISSIONATO
+
+Commissionato:
+- proseguire la simulazione sul prototipo `experiment/lg041-supply-first-return-after` / PR #8, senza merge in `main`;
+- modificare la matrice delle distanze StrategiaDiego secondo il ruolo delle due famiglie:
+  - Supply/Supply = `2p`;
+  - Return/Return = `p`;
+  - Supply/Return = `p`;
+  - Return/Supply = `p`;
+  - qualunque tubo rispetto all'architettura = `p/2`;
+- mantenere LG-042 supply-first: il ritorno viene costruito solo dopo la mandata completa;
+- mantenere LG-043: raccordo entrante promosso a normale `Return sequence 0`;
+- usare la nuova distanza Return/Return anche nei candidati LG-041 e nelle normali validazioni geometriche;
+- verificare sul quadrato se il ritorno riempie più naturalmente le anse lasciate dalla mandata;
+- confrontare nodi, terminali, activeLength/goodness, SVG e log con LG-045;
+- eseguire appartamento preconfezionato e regression completa senza alzare limiti o introdurre potature;
+- nessuna modifica a frontend, Library Desktop, Vittorio/GPT o `definizionedati.json`;
+- Issue #1 aperta durante il lavoro e chiusa `Completed` al termine della simulazione.
+
+
 ### INCARICO 2026-09-26 — Analisi efficienza ramo 47→49 rispetto a 47→48
 Stato: ESEGUITO — DIAGNOSI / NESSUNA MODIFICA CODICE
 
