@@ -7,6 +7,48 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R21 — Solution Explorer combinato: rank Supply + miglior Return
+Stato: **ESEGUITO — STRUMENTO DIAGNOSTICO VERIFICATO**
+
+Decisione utente 26/09/2026:
+- mantenere il rank della mandata pura come asse principale del debug;
+- per ogni rank Supply visualizzare il miglior ritorno compatibile, senza far rimescolare la classifica dal Return;
+- mantenere disponibili anche le modalità Supply-only.
+
+Implementazione sperimentale:
+- branch `experiment/lg041-supply-first-return-after`, PR #8;
+- estratta routine condivisa `TryFindBestReturnForSupply()` usata sia dal normale flusso supply-first sia dall'Explorer, evitando una seconda implementazione dell'algoritmo Return;
+- aggiunto `StrategiaDiegoEngine.ExploreRankedSolutions()`;
+- aggiunta facciata `StrategiaDiegoBenchmark.ExploreRankedSolutions()`;
+- Harness esteso con:
+  - `--solution-top N`;
+  - `--skip-top N --solution-top M`;
+  - `--solution-rank N`;
+- output per rank: SVG rosso+blu, manifest JSON e index HTML;
+- se il Return non è fattibile o supera un limite, la mandata resta esportata con stato diagnostico esplicito.
+
+Verifica reale:
+- Harness run `36231049216`, job `108374280776`: **SUCCESS**;
+- `--solution-top 3`: rank 1, 2, 3 combinati esportati e verificati;
+- `--solution-rank 21`: esportato il primo rank Supply contenente `47->48` col miglior Return associato;
+- artifact finale `radiant-harness-fast`, id `10902548566`.
+
+Risultati quadrato:
+- rank Supply 1: terminale 123, active `28,05 m`, goodness `1,051875`; Best Return terminale 43, active `21,05 m`, goodness `0,789375`, total Return `21,50 m`, closure `0,30 m`, combined merit `50,00 m`, 43.670 nodi Return esplorati;
+- rank Supply 2: stessa qualità Supply/Return del rank 1, soluzione speculare con radice Return `Destra`;
+- rank Supply 3: Supply active `27,95 m`, goodness `1,048125`; Best Return active `5,60 m`, goodness `0,21`, closure `1,030776 m`, combined merit `35,1808 m`; il deterioramento è prevalentemente lato Return;
+- rank Supply 21, primo con `47->48`: Supply active `25,45 m`, goodness `0,954375`; Best Return active `14,90 m`, goodness `0,55875`, total Return `15,35 m`, closure `1,030776 m`, combined merit `41,9808 m`; 90.901 nodi Return esplorati;
+- quindi il rank 21 perde due volte: la mandata è più corta e anche il miglior ritorno compatibile riempie peggio le anse rispetto al rank 1.
+
+Build completa:
+- compilazione Release SUCCESS;
+- benchmark quadrato ancora `not-sustainable` per il problema già noto LG-046: 44.044 nodi, P95 `4.197 ms` > budget `2.000 ms`, 8.192 terminali accettati;
+- il failure non è causato dal Solution Explorer, che è diagnostico e viene eseguito solo dal Harness.
+
+Decisione:
+- Solution Explorer combinato adottato come strumento preferenziale per confrontare rank Supply con il relativo miglior Return;
+- nessun cambiamento alla funzione di merito o all'ordinamento Supply;
+- PR #8 resta sperimentale e non integrata in `main` per le modifiche algoritmiche ancora non sostenibili.
 ## R20 — Solution Explorer delle mandate pure
 Stato: **ESEGUITO — STRUMENTO DIAGNOSTICO VERIFICATO**
 
