@@ -23,13 +23,15 @@ jobs:
 
           if [ "$STATE_REASON" = "completed" ]; then
             MESSAGE="Incarico completato con successo"
-            PRIORITY="high"
             TAGS="white_check_mark"
           else
             MESSAGE="Incarico completato con insuccesso"
-            PRIORITY="urgent"
             TAGS="rotating_light"
           fi
+
+          # La chiusura dell'incarico e' l'unica notifica a massima intensita,
+          # indipendentemente dall'esito.
+          PRIORITY="urgent"
 
           curl --fail-with-body --silent --show-error \
             -H "Title: Termodel" \
