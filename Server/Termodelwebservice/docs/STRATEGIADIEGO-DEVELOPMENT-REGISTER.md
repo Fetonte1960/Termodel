@@ -7,6 +7,40 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R14 — Eco 1→3: esclusione del segmento di arrivo
+Stato: **ESEGUITO — SIMULAZIONE GEOMETRICA POSITIVA / REGRESSION NON SOSTENIBILE**
+
+Decisione utente 26/09/2026:
+- usare i log per determinare se la parallela a `1->3` veniva generata e poi scartata oppure non arrivava alla valutazione;
+- diagnosi: `node.Front` conservava già il riferimento guida, ma `FindSequenceContinuation()` selezionava il segmento appena percorso perché intersecava il nodo a distanza zero;
+- approvata la correzione minima: escludere sempre il segmento corrente/di arrivo dalla ricerca della continuazione;
+- nessun nuovo `GuideReference` se non necessario; nessun merge in main senza verifica visuale.
+
+Implementazione sperimentale:
+- branch `experiment/lg041-supply-first-return-after`, commit `8664e780dc810d6d9ff34cbaa7c9b82e671a2fcf`, PR #8;
+- `FindSequenceContinuation()` riceve il segmento corrente e lo esclude sia nella ricerca sequenziale sia nella ricerca geometrica own-family/return-follows-supply;
+- log aggiunge `excludedCurrent`.
+
+Risultato Harness:
+- run `36225982580`: **SUCCESS**;
+- quadrato: 8.940 Supply, 3.642 terminali Supply, 6.317 Return, 15.257 nodi totali, 12 terminali accettati, maxDepth 30;
+- benchmark quadrato 20/20: P95 1.055 ms, memoria delta max ~17,77 MB, SVG SHA `52ca8f50765ea10beda90dc24c320f90134f910173739f39633f7c1ff37827d5`;
+- percorso vincente: `(0.15,0.15)->(0.75,0.15)->(1.40,0.15)->(1.40,0.75)->(2.60,0.75)->(3.25,0.75)`;
+- il tratto `(1.40,0.75)->(2.60,0.75)` è la parallela eco a `1->3` a distanza `2p=0,60 m` ed entra realmente nella soluzione selezionata;
+- mandata selezionata: activeLength 29,25 m, goodness 1,097;
+- appartamento preconfezionato: SUCCESS, 66 nodi totali, 2 accettati, 81 ms diagnostici.
+
+Regression:
+- build PR compila;
+- benchmark quadrato sostenibile;
+- `ConcaveL` supera nuovamente 250.000 nodi: la riapertura corretta delle alternative aumenta fortemente la combinatoria;
+- nessun limite alzato e nessuna potatura euristica introdotta.
+
+Decisione:
+- LG-044 registrata come approvata e simulata;
+- PR #8 resta sperimentale e non viene integrata;
+- prossimo problema separato: deduplicazione esatta/stati equivalenti per contenere la ricerca senza perdere le alternative geometriche corrette.
+
 ## R13 — Raccordo entrante promosso a Return sequence 0
 Stato: **ESEGUITO — SIMULAZIONE REALE POSITIVA / GEOMETRIA VINCENTE INVARIATA**
 
