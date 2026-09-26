@@ -7,6 +7,28 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R27 — Problema dell'ansa
+Stato: **PRINCIPIO GEOMETRICO CONSOLIDATO — CRITERIO MATEMATICO APERTO**
+
+Decisione utente 26/09/2026:
+- denominare **Problema dell'ansa** il comportamento geometrico osservato nella spirale;
+- dopo il primo giro la mandata crea presso la partenza un'ansa necessaria allo scavalcamento;
+- il Return deve poter entrare nell'ansa quando lo spazio e le distanze minime lo consentono;
+- nei giri successivi l'ansa si restringe progressivamente;
+- quando il restringimento non lascia più spazio utile, il Return non deve essere forzato a entrare;
+- questo è uno dei miglioramenti fondamentali della ricerca ad albero StrategiaDiego rispetto alla StrategiaVittorio più deterministica.
+
+Stato progettuale:
+- fenomeno e obiettivo geometrico: **consolidati**;
+- trasformazione in funzione di merito/bonus/penalità: **non ancora autorizzata né definita**;
+- metodo di studio: confrontare rami reali con Explorer/Branch Inspector e Decision Reject Replay, osservando sempre lo SVG standard del motore;
+- solo dopo casi coerenti trasformare il giudizio geometrico in una regola generale.
+
+Documentazione:
+- `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`;
+- commit `fd498d74b4831280f7eb9622cbf061032782403f`.
+
+
 ## R26 — Collisione Decision Key terminale tra setup distinti
 Stato: **PROBLEMA APERTO — RIPRODOTTO**
 
