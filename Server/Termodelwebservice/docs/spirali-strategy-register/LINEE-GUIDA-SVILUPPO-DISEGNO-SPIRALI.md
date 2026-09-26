@@ -5818,8 +5818,11 @@ Problema dell'ansa.
 
 ### Prefix Lock — preservare un prefisso buono e lasciare libero il seguito
 
-Per il Problema dell'ansa è disponibile sul branch sperimentale PR #8 un
-meccanismo diagnostico complementare al Decision Reject Replay: **Prefix Lock**.
+Per il Problema dell'ansa è disponibile su `main` un meccanismo diagnostico
+complementare al Decision Reject Replay: **Prefix Lock**. È nato sulla PR #8,
+ma la PR è stata integrata e il relativo Core/Harness è ora parte dello stato
+pubblicato. Non cercare quindi una branch sperimentale per riprendere questo
+debug.
 
 Principio:
 
@@ -5969,6 +5972,241 @@ Stato del debug:
 
 
 
+### Checkpoint R31 — nodo 15 continua prima del fronte interno
+
+**Stato: VERIFICATO NEL VERO HARNESS / INTEGRATO SU `main`.**
+
+Questo checkpoint completa il precedente R30 e costituisce, insieme alla
+sezione "Ripresa operativa obbligatoria" seguente, il punto corrente del debug.
+
+Base approvata:
+- Prefix Lock R30 di **14 Decision Key**;
+- nuovo nodo 14 = vecchio nodo 22 = `(1,40;3,25)`;
+- nodo 15 = `(0,75;3,25)`;
+- prefisso R30 considerato approvato integralmente fino al nodo 15.
+
+Problema osservato prima della correzione:
+- dal nodo 15 il ramo poteva terminare anche se esisteva una prosecuzione
+  geometricamente corretta;
+- il candidato laterale "oltre il fronte" collideva con Supply già costruita;
+- mancava il fallback che arresta il candidato **prima dello stesso fronte
+  interno della stessa famiglia**, mantenendo la distanza di rispetto.
+
+Correzione generale implementata:
+- non è un hardcode sul numero 15;
+- quando il candidato oltrepassa un fronte interno della stessa famiglia e la
+  prosecuzione oltre il fronte collide, il motore può costruire il fallback
+  prima di quel fronte;
+- sul quadrato il primo passo libero dopo il prefisso R30 deve essere:
+
+`DIEGO_DECISION family=Supply choice=PARALLELA_A start=(0.750000,3.250000) target=(0.750000,1.350000) refFamily=Supply ref=((1.400000,0.750000)->(2.600000,0.750000)) d=0.600000 type=lateral`
+
+Risultato reale GitHub Actions:
+- run Harness su `main`: `36250164600`;
+- artifact: `radiant-harness-fast`, id `10908514063`;
+- commit Core pubblicato: `77ae7b81dd82afb157b4f54a15a45c77cf9d1d63`;
+- marker R30: `RADIANT_HARNESS_R30_APPROVED_PREFIX_OK`;
+- marker R31: `RADIANT_HARNESS_NODE15_CONTINUATION_OK`;
+- `node15=(0.75,3.25)`;
+- `continuation=(0.75,1.35)`;
+- `respect=0.60`;
+- `bestFeasibleSupplyRank=13`;
+- `combinedMerit=37.0242640687119`;
+- SVG standard Supply:
+  `LG041-R31-NODE15-CONTINUES-SUPPLY.svg`;
+- SVG standard combinato:
+  `LG041-R31-NODE15-CONTINUES-COMBINED.svg`;
+- report:
+  `LG041-R31-NODE15-CONTINUES.report.json`.
+
+Il workflow completo può risultare rosso **dopo** questi marker a causa del
+vecchio Decision Reject Replay cumulativo che supera il budget di ricerca.
+Questo non invalida R30/R31. Per giudicare il checkpoint occorre controllare
+prima i marker sopra e gli artifact prodotti.
+
+---
+
+## RIPRESA OPERATIVA OBBLIGATORIA — per ChatGPT / Codex / nuova chat
+
+Questa sezione è il **bootstrap autosufficiente** per riprendere il lavoro
+senza ricostruire la storia da commit sparsi.
+
+### 1. Stato repository da assumere
+
+- repository: `Fetonte1960/Termodel`;
+- branch operativo: `main`;
+- directory di lavoro Harness:
+  `Server/Termodelwebservice`;
+- la vecchia PR #8 è **chiusa e integrata**;
+- commit che ha pubblicato il Core R31:
+  `77ae7b81dd82afb157b4f54a15a45c77cf9d1d63`;
+- rollback pre-pubblicazione:
+  `backup/pre-render-r31-20260926`;
+- i commit successivi possono essere solo documentali: non dedurre lo stato
+  del Core dal fatto che l'HEAD di `main` abbia uno SHA diverso.
+
+File Core pertinenti:
+- `src/Termodel.Core/RadiantPanels/StrategiaDiegoEngine.cs`;
+- `src/Termodel.Core/RadiantPanels/StrategiaDiegoBenchmark.cs`.
+
+Harness:
+- `tools/Termodel.RadiantPanels.Harness/`;
+- workflow:
+  `.github/workflows/termodel-radiant-harness.yml`.
+
+### 2. Input canonico del test corrente
+
+Fixture/case:
+
+`tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json`
+
+Geometria:
+- locale quadrato 4,00 x 4,00 m;
+- passo `p = 0,30 m`;
+- stessa famiglia Supply/Supply: distanza di rispetto `2p = 0,60 m`;
+- ingresso T1 come definito dalla fixture/case versionata.
+
+Prefix Lock approvato:
+
+`tests/radiant-harness/prefixes/LG041-R30-APPROVED-THROUGH-NODE15.prefix-lock.txt`
+
+Il file contiene **14 Decision Key**. Non ricostruirle a mano e non sostituirle
+con numeri nodo: i numeri nodo cambiano fra run, le Decision Key sono il
+riferimento persistente.
+
+### 3. Comando minimo per ricostruire R30
+
+Eseguire dalla directory:
+
+`Server/Termodelwebservice`
+
+PowerShell:
+
+```powershell
+$out = Join-Path $env:TEMP "Termodel-R31-Resume"
+$prefix = "tests/radiant-harness/prefixes/LG041-R30-APPROVED-THROUGH-NODE15.prefix-lock.txt"
+
+dotnet build tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release
+
+dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+  --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+  --id LG041-R30-APPROVED `
+  --out $out `
+  --supply-top 5 `
+  --lock-supply-prefix $prefix
+```
+
+Controlli obbligatori:
+- il Prefix Lock ha 14 righe non vuote;
+- `LG041-R30-APPROVED.supply-explorer/solutions.json` esiste;
+- ogni soluzione conserva come prime 14 Decision Key le 14 chiavi del file;
+- il punto approvato finale del prefisso è `(0,75;3,25)`, nodo umano corrente
+  **15**.
+
+### 4. Verifica minima R31
+
+Nel `solutions.json` precedente la Decision Key n. 15, cioè indice 14, deve
+essere esattamente:
+
+`DIEGO_DECISION family=Supply choice=PARALLELA_A start=(0.750000,3.250000) target=(0.750000,1.350000) refFamily=Supply ref=((1.400000,0.750000)->(2.600000,0.750000)) d=0.600000 type=lateral`
+
+Se questa chiave manca, **non proseguire oltre**: significa che il checkpoint
+R31 non è stato riprodotto e bisogna analizzare il Core/log prima di fare altri
+esperimenti.
+
+Per riprodurre l'intero R31 esattamente come il workflow, usare come riferimento
+lo step GitHub Actions:
+
+`Verify approved node 15 continues before internal front`
+
+del file:
+
+`.github/workflows/termodel-radiant-harness.yml`
+
+Lo step usa il numero totale di terminali Supply del manifest come
+`--solution-rank` per ottenere un circuito completo fattibile e produce gli
+SVG/report canonici R31 elencati sopra.
+
+### 5. Distinzione fondamentale: Harness condizionato vs Service libero
+
+Questa distinzione era implicita e **non deve più esserlo**.
+
+**Harness R30/R31 condizionato**
+- usa `--lock-supply-prefix`;
+- serve a conservare il ramo approvato e studiare il seguito;
+- dimostra che il vero motore sa costruire quel ramo;
+- non rappresenta la scelta spontanea del ranking globale.
+
+**Service / StrategiaDiego free-run**
+- non riceve alcun Prefix Lock;
+- `RadiantExecutiveGenerator` chiama
+  `StrategiaDiegoEngine.Generate(...)` senza
+  `lockedSupplyDecisionPrefix`;
+- il Service deve restare libero: **non introdurre il Prefix Lock nel runtime**
+  per far coincidere artificialmente il risultato col checkpoint;
+- il test pubblico Render eseguito dopo la pubblicazione R31 sul quadrato
+  consolidato ha prodotto una soluzione differente dal ramo R30/R31.
+  Questo non indica che le modifiche Core manchino: indica che il criterio
+  libero di esplorazione/selezione continua a scegliere un altro terminale.
+
+### 6. Problema corrente da risolvere
+
+Il problema non è più "trovare l'ansa buona" e non è più "far continuare il
+nodo 15".
+
+Il problema corrente è:
+
+> **capire la prima Decision Key in cui il free-run del quadrato si separa dal
+> prefisso R30 approvato e perché la selezione libera preferisce quel ramo.**
+
+Procedura obbligatoria:
+1. eseguire una baseline **senza** Prefix Lock sullo stesso case;
+2. acquisire Decision Key e SVG standard del ramo scelto;
+3. eseguire R30/R31 con Prefix Lock;
+4. confrontare le sequenze dalla radice;
+5. individuare la **prima divergenza**;
+6. usare Branch Inspector / Supply Explorer / Solution Explorer su quel punto;
+7. correggere il Core soltanto se emerge una regola geometrica o di selezione
+   generale;
+8. non hardcodare numero nodo, coordinate del quadrato o file Prefix Lock nel
+   runtime;
+9. criterio di successo futuro: il free-run deve convergere sul comportamento
+   desiderato per una regola generale, non perché è stato condizionato.
+
+Baseline libera consigliata:
+
+```powershell
+$out = Join-Path $env:TEMP "Termodel-FreeRun-Resume"
+
+dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+  --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+  --id LG041-FREE-RUN-CURRENT `
+  --out $out `
+  --solution-top 5
+```
+
+Per il confronto, usare `solutions.json`, le `decisionKeys` e gli SVG
+standard prodotti dal vero Harness. Non usare SVG ricostruiti manualmente.
+
+### 7. Quando un agente può dichiarare "test ripreso"
+
+Un agente/Codex può dire di avere ripreso il test soltanto se ha verificato
+tutti questi punti:
+
+- è su `main` e lavora da `Server/Termodelwebservice`;
+- trova il case LG041 e il file Prefix Lock R30;
+- ricostruisce o legge il checkpoint R30 a 14 Decision Key;
+- riconosce nodo 15 `(0,75;3,25)`;
+- riconosce la continuazione R31 `(0,75;1,35)`;
+- distingue esplicitamente run condizionato da free-run;
+- sa che il prossimo obiettivo è la **prima divergenza del free-run**;
+- non propone di ricominciare la ricerca dell'ansa buona;
+- non propone di mettere il Prefix Lock nel Service.
+
+Se uno di questi dati manca, deve fermarsi e recuperarlo da questa sezione,
+dal file Prefix Lock o dal workflow prima di modificare il Core.
+
+
 ---
 ## Variabile documentale canonica — STRATEGIADIEGO_TEST_CONTEXT_CURRENT
 
@@ -5994,32 +6232,34 @@ verificare che descriva davvero il caso che si intende provare.
 ### Valore corrente
 
 ```text
-STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG046-RETURN-STEP-P-SQUARE4X4-T1-P030
+STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG041-R31-FREE-RUN-SELECTION-SQUARE4X4-T1-P030
 
-IdContesto: LG046-RETURN-STEP-P-SQUARE4X4-T1-P030
-TipoInput: fixture sintetica versionata
-Fixture: tests/fixtures/StrategiaDiegoSquare4x4.locale.xml
+IdContesto: LG041-R31-FREE-RUN-SELECTION-SQUARE4X4-T1-P030
+TipoInput: fixture sintetica versionata + confronto con progetto quadrato consolidato sul Service
+CaseHarness: tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json
+PrefixLockApprovato: tests/radiant-harness/prefixes/LG041-R30-APPROVED-THROUGH-NODE15.prefix-lock.txt
+PrefixLockDecisionKeys: 14
 Locale: R001
 Geometria: quadrato 4,00 m x 4,00 m
-Ingresso: T1 da (2,-1) a (2,1), direzione entrante +Y
 Passo_p: 0,30 m
-RegolaSottoTest: LG-041 + LG-042 + LG-043 + LG-044 + LG-045 + LG-046 Return/Return=p
-CondizionePrincipale: trovare e visualizzare il ramo che risolve correttamente la prima ansa ma viene penalizzato da scelte successive; preservare il prefisso buono e correggere le decisioni successive con Inspector/Replay
-FamigliePertinenti: architettura + mandata costruita + ritorno costruito nello scenario
-PrioritaEsplorazione: candidati laterali per lunghezza valida decrescente, senza potatura
-SelezioneFinale: funzione di merito/Fattore di Bontà corrente
-VersoSpecialeScavalcamento: nessuno
-SetupPreliminarePreferito: Termodel.RadiantPanels.Harness -> vero StrategiaDiegoEngine
-CaseHarness: tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json
-BaseDatiHarness: tests/radiant-harness/
-DatasetPreconfezionatoReale: tests/radiant-harness/prepared/StrategiaDiegoCurrentApartment.pannelli.xml
-DatasetPreconfezionatoSHA256: b31b5c2bac4dbd8a13507daef4022c5ad2301fb6503ff6d666e427a2eb5d4a80
-CaseRealePreconfezionato: tests/radiant-harness/cases/CURRENT-APARTMENT-P030.json
-BuildRapida: Core + Harness only
-OutputRichiesto: log candidati/nodi + SVG diagnostico numerato + metriche JSON
-StatoMotoreReale: LG-041 consolidata ma non ancora implementata
+NodoApprovatoR30: nodo 15 = (0,75;3,25)
+ContinuazioneVerificataR31: PARALLELA_A (0,75;3,25) -> (0,75;1,35)
+DistanzaR31: 0,60 m = 2p
+RegolaSottoTest: selezione libera dopo R31 / prima divergenza dal prefisso approvato
+CondizionePrincipale: confrontare free-run senza lock con ramo R30/R31 condizionato e individuare la prima Decision Key divergente
+MotoreRiferimento: StrategiaDiegoEngine reale
+RuntimeService: StrategiaDiego è il default; il Service NON usa Prefix Lock
+SetupDiagnostico: Termodel.RadiantPanels.Harness
+WorkingDirectory: Server/Termodelwebservice
+OutputRichiesto: decisionKeys + log nodo/divergenza + SVG standard reale + solutions.json
+MarkerR30: RADIANT_HARNESS_R30_APPROVED_PREFIX_OK
+MarkerR31: RADIANT_HARNESS_NODE15_CONTINUATION_OK
+UltimoRunR31Main: 36250164600
+UltimoArtifactR31: radiant-harness-fast / 10908514063
+CommitCoreR31Pubblicato: 77ae7b81dd82afb157b4f54a15a45c77cf9d1d63
+StatoMotoreReale: R30/R31 implementati e verificati nel vero Harness; resta aperta la selezione spontanea del free-run
+ProssimoPasso: trovare la prima divergenza free-run vs Prefix Lock R30, non modificare il runtime con hardcode del lock
 ```
-
 ### Regola di manutenzione
 
 Questo blocco è parte dello stato operativo del progetto.
@@ -6035,12 +6275,25 @@ corrente.
 
 ## Punti successivi
 
-Questa sezione viene aggiornata durante il confronto. I prossimi principi
-saranno aggiunti come `LG-037`, `LG-038`, ecc., mantenendo per ciascuno:
+Ordine corrente, obbligatorio finché non viene aggiornato questo checkpoint:
 
-- proposta;
-- commento tecnico;
-- regola consolidata;
-- vincoli;
-- criterio di verifica;
-- stato implementativo.
+1. produrre la baseline LG041 **free-run** senza Prefix Lock;
+2. estrarre la sequenza `decisionKeys` della soluzione libera scelta;
+3. confrontarla con le 14 Decision Key R30 e con la quindicesima R31;
+4. individuare la prima Decision Key divergente;
+5. aprire Branch Inspector su quel punto e classificare candidati
+   accettati/rifiutati;
+6. stabilire se la divergenza deriva da:
+   - geometria/candidato mancante;
+   - ordinamento/esplorazione;
+   - ranking Supply;
+   - merito combinato Supply+Return;
+   - potatura impropria;
+7. applicare una correzione generale solo dopo la diagnosi;
+8. rieseguire prima Harness condizionato R30/R31 per evitare regressioni e poi
+   free-run;
+9. aggiornare questa stessa sezione con nuovo checkpoint, run, artifact,
+   Decision Key e SVG canonico.
+
+Il checkpoint R30/R31 non va cancellato quando si avanza: deve restare come
+regression stabile del ramo approvato.
