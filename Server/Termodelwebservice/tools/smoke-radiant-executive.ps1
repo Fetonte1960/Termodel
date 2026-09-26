@@ -218,6 +218,10 @@ try {
     throw "StrategiaDiego: nessun inseguimento geometrico own-family registrato sul quadrato."
   }
 
+  if ($diegoLogText -notmatch "EXTEND beyond-extended-front") {
+    throw "StrategiaDiego LG-034: il quadrato non ha esercitato il passaggio oltre una linea estesa."
+  }
+
   $goodnessMatches = [regex]::Matches(
     $diegoLogText,
     'SUPPLY-BEST-GOODNESS[^\r\n]*activeSegments=(?<segments>\d+)[^\r\n]*activeLength=(?<length>[0-9.]+)m[^\r\n]*coveredArea=(?<covered>[0-9.]+)m2[^\r\n]*localeArea=(?<area>[0-9.]+)m2[^\r\n]*factor=(?<factor>[0-9.]+)')
@@ -238,14 +242,14 @@ try {
     Sort-Object Factor,Segments -Descending |
     Select-Object -First 1
 
-  if ($bestSupplyGoodness.Segments -lt 10) {
-    throw "StrategiaDiego nodo 8 regression: miglior terminale mandata ha solo $($bestSupplyGoodness.Segments) tratti attivi; attesi almeno 10."
+  if ($bestSupplyGoodness.Segments -lt 15) {
+    throw "StrategiaDiego LG-034 regression: miglior terminale mandata ha solo $($bestSupplyGoodness.Segments) tratti attivi; attesi almeno 15."
   }
-  if ($bestSupplyGoodness.Factor -lt 0.80) {
-    throw "StrategiaDiego nodo 8 regression: fattore di bonta mandata $($bestSupplyGoodness.Factor) inferiore a 0,80."
+  if ($bestSupplyGoodness.Factor -lt 1.00) {
+    throw "StrategiaDiego LG-034 regression: fattore di bonta mandata $($bestSupplyGoodness.Factor) inferiore a 1,00."
   }
 
-  Write-Host ("STRATEGIA_DIEGO_NODE8_FORWARD_OK activeSegments={0} activeLength={1}m coveredArea={2}m2 localeArea={3}m2 factor={4}" -f
+  Write-Host ("STRATEGIA_DIEGO_LG034_BEYOND_OK activeSegments={0} activeLength={1}m coveredArea={2}m2 localeArea={3}m2 factor={4}" -f
     $bestSupplyGoodness.Segments,
     $bestSupplyGoodness.Length.ToString("0.###",[Globalization.CultureInfo]::InvariantCulture),
     $bestSupplyGoodness.Covered.ToString("0.###",[Globalization.CultureInfo]::InvariantCulture),
