@@ -16,7 +16,6 @@ on:
       - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
       - 'Server/Termodelwebservice/tests/radiant-harness/**'
       - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiego*.locale.xml'
-      - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl'
       - '.github/workflows/termodel-radiant-harness.yml'
   pull_request:
     paths:
@@ -83,21 +82,17 @@ jobs:
           if (-not (Test-Path (Join-Path $out "LG041-SQUARE4X4-T1-P030.metrics.json"))) { throw "Metriche Harness mancanti." }
           Write-Host "RADIANT_HARNESS_FAST_CASE_OK"
 
-      - name: Prepare current apartment panel input
+      - name: Run prepared current apartment case
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
-          $prepared = Join-Path $out "StrategiaDiegoCurrentApartment.pannelli.xml"
-          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- prepare `
-            --project tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl `
-            --output $prepared
-          if (-not (Test-Path $prepared)) { throw "Input pannelli preconfezionato mancante." }
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
-            --input $prepared `
-            --id CURRENT-APARTMENT-PREPARED `
-            --p 0.30 `
+            --case tests/radiant-harness/cases/CURRENT-APARTMENT-P030.json `
             --out $out
+          if (-not (Test-Path (Join-Path $out "CURRENT-APARTMENT-P030.svg"))) { throw "SVG appartamento Harness mancante." }
+          if (-not (Test-Path (Join-Path $out "CURRENT-APARTMENT-P030.log.txt"))) { throw "Log appartamento Harness mancante." }
+          if (-not (Test-Path (Join-Path $out "CURRENT-APARTMENT-P030.metrics.json"))) { throw "Metriche appartamento Harness mancanti." }
           Write-Host "RADIANT_HARNESS_CURRENT_APARTMENT_OK"
 
       - name: Upload Harness artifacts
