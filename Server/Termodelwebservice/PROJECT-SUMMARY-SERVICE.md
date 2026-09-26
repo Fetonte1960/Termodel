@@ -71,6 +71,20 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Completamento sistema debug albero StrategiaDiego + reject cumulativo
+Stato: COMMISSIONATO
+
+Commissionato:
+- completare l'infrastruttura di debug della StrategiaDiego basata sul vero albero di ricerca e sul Decision Reject Replay;
+- mantenere il lavoro algoritmico sul branch sperimentale PR #8, senza merge in `main`;
+- verificare in CI il rifiuto cumulativo di più setup Supply consecutivi: rank 1 escluso -> rank 2, poi rank 2 escluso mantenendo il primo reject -> rank 3 della classifica originale residua;
+- conservare invariato il comportamento senza reject e continuare a produrre lo SVG standard del motore;
+- consolidare in un documento unico il flusso operativo Albero -> Explorer/Inspector -> Decision Key -> reject -> nuova soluzione reale;
+- correggere la documentazione storica R23 affinché non risulti più "non implementata" dopo R24;
+- aggiornare registro sviluppo e Summary con build/test reali;
+- aggiornare e chiudere Issue #1 come `Completed` a fine incarico se il collaudo riesce.
+
+
 ### INCARICO 2026-09-26 — Implementazione Decision Reject Replay
 Stato: ESEGUITO — HARNESS SUCCESS / PROTOTIPO PR #8
 
