@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Correzione eco 1→3: escludere il segmento di arrivo dalla continuazione
-Stato: COMMISSIONATO
+Stato: ESEGUITO — SIMULAZIONE POSITIVA / NON INTEGRATA
 
 Diagnosi consolidata dal log reale:
 - al nodo 32 il riferimento guida orizzontale `1→3` è già correttamente conservato in `node.Front`;
@@ -91,6 +91,21 @@ Commissionato:
 - eseguire appartamento preconfezionato e osservare le regression senza alzare limiti;
 - nessun merge in `main` senza ulteriore approvazione visuale;
 - Issue #1 aperta durante il lavoro e chiusa `Completed` al termine della simulazione.
+
+Risultato:
+- modifica sperimentale commit `8664e780dc810d6d9ff34cbaa7c9b82e671a2fcf` sul branch `experiment/lg041-supply-first-return-after`, PR #8; nessun merge in `main`;
+- `FindSequenceContinuation()` esclude ora il segmento corrente/di arrivo dalla ricerca del fronte successivo; `node.Front` continua a fungere da riferimento guida senza introdurre nuovo stato;
+- Radiant Harness run `36225982580`: **SUCCESS** su quadrato e appartamento;
+- quadrato: 8.940 nodi Supply, 3.642 terminali Supply, 6.317 Return, 15.257 nodi totali, 12 terminali accettati, maxDepth 30;
+- benchmark quadrato 20/20 deterministico: P95 1.055 ms, memoria delta max ~17,77 MB, SVG SHA-256 `52ca8f50765ea10beda90dc24c320f90134f910173739f39633f7c1ff37827d5`;
+- il percorso mandata selezionato contiene finalmente l'eco a `2p`: `(1.40,0.75)->(2.60,0.75)` parallelo al tratto iniziale `1->3`; quindi l'opzione non è soltanto generata ma entra nel percorso vincente;
+- sequenza locale selezionata: `(0.15,0.15)->(0.75,0.15)->(1.40,0.15)->(1.40,0.75)->(2.60,0.75)->(3.25,0.75)`;
+- mandata vincente: activeLength `29,25 m`, goodness `1,097`;
+- appartamento preconfezionato: SUCCESS, 61 Supply + 5 Return = 66 nodi totali, 2 terminali accettati, 81 ms diagnostici;
+- build completa PR compila ma benchmark `ConcaveL` supera nuovamente il limite tecnico di 250.000 nodi; la correzione geometrica riapre molte alternative e aumenta la combinatoria;
+- nessun limite alzato e nessuna potatura euristica introdotta;
+- LG-044 registrata nelle linee guida nel commit `db2a3f86fe4b350cf3d17309fdaeb3b3e38672f7`; registro R14 nel commit `7b2886dd1405a9eb53f3ba669151282951e5fff4`;
+- conclusione: difetto geometrico dello scavalcamento individuato e corretto nel prototipo; integrazione rinviata finché non viene affrontata la deduplicazione esatta degli stati equivalenti.
 
 
 ### INCARICO 2026-09-26 — Raccordo entrante ritorno come segmento Return normale
