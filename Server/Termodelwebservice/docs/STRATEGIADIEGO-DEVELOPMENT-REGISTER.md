@@ -7,6 +7,29 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R26 — Collisione Decision Key terminale tra setup distinti
+Stato: **PROBLEMA APERTO — RIPRODOTTO**
+
+Emerso il 26/09/2026 durante la richiesta utente `ancora indietro` dopo tre esclusioni cumulative.
+
+Osservazione reale:
+- rank 1 e rank 4 della baseline possiedono la stessa Decision Key terminale pur appartenendo a percorsi differenti;
+- il primo reject della Decision Key terminale del rank 1 elimina quindi anche il rank 4;
+- dopo reject cumulativi di rank 1, rank 2 e rank 3, il nuovo top residuo è il precedente rank 5;
+- SVG standard prodotto: SHA-256 `a6f27603a009e8caed5c1b23ecbc306514d26b7f54ae97b52dbb0b12a90ed3c4`;
+- metriche del nuovo top Supply: active `27.95 m`, goodness `1.048125`, total `28.10 m`.
+
+Interpretazione:
+- Decision Reject Replay resta corretto per escludere una decisione geometrica;
+- la scorciatoia `scarta questo setup mandata` non è ancora un identificatore univoco di setup quando usa soltanto la Decision Key terminale;
+- soluzione da progettare: firma canonica dell'intero percorso (Setup Key) oppure meccanismo equivalente che identifichi un singolo setup senza collidere con altri percorsi.
+
+Tracciabilità:
+- probe temporaneo branch PR #8 commit `1a421bdaf8ef2d3b2558f7d55e2552f0938f66f1`;
+- run Harness `36236421399`: test intenzionalmente fallito sull'aspettativa vecchio rank4, rivelando la collisione;
+- artifact `radiant-harness-fast` id `10904013495`;
+- probe temporaneo rimosso con commit `032087fe6ba1e98946c3c68616933c90199eb3df`, ripristinando il workflow Harness precedente.
+
 ## R25 — Chiusura sistema debug ad albero + reject cumulativo
 Stato: **ESEGUITO — HARNESS SUCCESS / INFRASTRUTTURA CONSOLIDATA**
 
