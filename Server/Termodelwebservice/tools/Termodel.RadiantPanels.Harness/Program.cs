@@ -21,8 +21,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--reject-decisions <file.txt>] [--reject-current-supply] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--reject-decisions <file.txt>] [--reject-current-supply] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--reject-decisions <file.txt>] [--lock-supply-prefix <file.txt>] [--reject-current-supply] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--reject-decisions <file.txt>] [--lock-supply-prefix <file.txt>] [--reject-current-supply] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
 }
@@ -37,6 +37,7 @@ static int Run(string[] args)
         string? idArg = Arg(args, "--id");
         string? stepArg = Arg(args, "--p");
         string? rejectDecisionsArg = Arg(args, "--reject-decisions");
+        string? lockSupplyPrefixArg = Arg(args, "--lock-supply-prefix");
         bool rejectCurrentSupply = HasFlag(args, "--reject-current-supply");
         int? inspectNode = PositiveIntArg(args, "--inspect-node");
         int? compareNode = PositiveIntArg(args, "--compare-node");
@@ -99,6 +100,8 @@ static int Run(string[] args)
 
         HashSet<string> rejectedDecisionKeys =
             LoadRejectedDecisionKeys(rejectDecisionsArg);
+        IReadOnlyList<string> lockedSupplyDecisionPrefix =
+            LoadDecisionPrefix(lockSupplyPrefixArg);
         StrategiaDiegoSupplyExplorerEntry? rejectedCurrentSupplyEntry = null;
 
         if (rejectCurrentSupply)
@@ -108,7 +111,8 @@ static int Run(string[] args)
                     localeXml,
                     stepMeters,
                     topCount: 1,
-                    rejectedDecisionKeys: rejectedDecisionKeys);
+                    rejectedDecisionKeys: rejectedDecisionKeys,
+                    lockedSupplyDecisionPrefix: lockedSupplyDecisionPrefix);
 
             rejectedCurrentSupplyEntry =
                 beforeReplay.Items.FirstOrDefault()
@@ -168,7 +172,8 @@ static int Run(string[] args)
                 outputDir,
                 solutionSkip,
                 solutionCount,
-                rejectedDecisionKeys);
+                rejectedDecisionKeys,
+                lockedSupplyDecisionPrefix);
         }
         if (supplyTop is not null || supplyRank is not null || skipTop > 0)
         {
@@ -186,7 +191,8 @@ static int Run(string[] args)
                 supplyRank,
                 skipTop,
                 exportCount,
-                rejectedDecisionKeys);
+                rejectedDecisionKeys,
+                lockedSupplyDecisionPrefix);
         }
 
         StrategiaDiegoBenchmarkSample sample =
@@ -194,7 +200,8 @@ static int Run(string[] args)
                 localeXml,
                 stepMeters,
                 includeDetailedDiagnostics: true,
-                rejectedDecisionKeys: rejectedDecisionKeys);
+                rejectedDecisionKeys: rejectedDecisionKeys,
+                lockedSupplyDecisionPrefix: lockedSupplyDecisionPrefix);
 
         StrategiaDiegoSupplyExplorerEntry? nextSupplyEntry = null;
         string? replaySummaryPath = null;
@@ -205,7 +212,8 @@ static int Run(string[] args)
                     localeXml,
                     stepMeters,
                     topCount: 1,
-                    rejectedDecisionKeys: rejectedDecisionKeys);
+                    rejectedDecisionKeys: rejectedDecisionKeys,
+                    lockedSupplyDecisionPrefix: lockedSupplyDecisionPrefix);
 
             nextSupplyEntry = afterReplay.Items.FirstOrDefault()
                 ?? throw new InvalidDataException(
@@ -282,6 +290,8 @@ static int Run(string[] args)
             sample.MemoryDeltaBytes,
             diagnosticsCount = sample.Diagnostics.Count,
             rejectedDecisionCount = rejectedDecisionKeys.Count,
+            lockedSupplyPrefixCount = lockedSupplyDecisionPrefix.Count,
+            lockSupplyPrefixArg,
             rejectCurrentSupply,
             effectiveRejectPath,
             replaySummaryPath,
@@ -301,6 +311,7 @@ static int Run(string[] args)
         Console.WriteLine($"acceptedTerminals={sample.AcceptedTerminals}");
         Console.WriteLine($"elapsedMs={sample.ElapsedMilliseconds}");
         Console.WriteLine($"rejectedDecisions={rejectedDecisionKeys.Count}");
+        Console.WriteLine($"lockedSupplyPrefix={lockedSupplyDecisionPrefix.Count}");
         if (effectiveRejectPath is not null)
             Console.WriteLine($"rejectFile={effectiveRejectPath}");
         if (replaySummaryPath is not null)
@@ -864,7 +875,8 @@ static int RunRankedSolutionExplorer(
     string outputDir,
     int skipTop,
     int count,
-    IReadOnlyCollection<string> rejectedDecisionKeys)
+    IReadOnlyCollection<string> rejectedDecisionKeys,
+    IReadOnlyList<string> lockedSupplyDecisionPrefix)
 {
     StrategiaDiegoRankedSolutionExplorerSample explorer =
         StrategiaDiegoBenchmark.ExploreRankedSolutions(
@@ -872,7 +884,8 @@ static int RunRankedSolutionExplorer(
             stepMeters,
             skipTop,
             count,
-            rejectedDecisionKeys);
+            rejectedDecisionKeys,
+            lockedSupplyDecisionPrefix);
 
     if (explorer.Items.Count == 0)
         throw new InvalidDataException(
@@ -1031,14 +1044,16 @@ static int RunSupplyExplorer(
     int? selectedRank,
     int skipTop,
     int exportCount,
-    IReadOnlyCollection<string> rejectedDecisionKeys)
+    IReadOnlyCollection<string> rejectedDecisionKeys,
+    IReadOnlyList<string> lockedSupplyDecisionPrefix)
 {
     StrategiaDiegoSupplyExplorerSample explorer =
         StrategiaDiegoBenchmark.ExploreSupply(
             localeXml,
             stepMeters,
             topCount,
-            rejectedDecisionKeys);
+            rejectedDecisionKeys,
+            lockedSupplyDecisionPrefix);
 
     string explorerDir = Path.Combine(
         outputDir,
@@ -1249,6 +1264,44 @@ static bool HasFlag(
         arg.Equals(
             name,
             StringComparison.OrdinalIgnoreCase));
+
+static IReadOnlyList<string> LoadDecisionPrefix(
+    string? prefixPath)
+{
+    var result = new List<string>();
+    if (string.IsNullOrWhiteSpace(prefixPath))
+        return result;
+
+    string fullPath = Path.GetFullPath(prefixPath);
+    if (!File.Exists(fullPath))
+    {
+        throw new FileNotFoundException(
+            "File Prefix Lock non trovato.",
+            fullPath);
+    }
+
+    foreach (string raw in File.ReadLines(fullPath, Encoding.UTF8))
+    {
+        string line = raw.Trim();
+        if (line.Length == 0 ||
+            line.StartsWith("#", StringComparison.Ordinal))
+        {
+            continue;
+        }
+
+        if (!line.StartsWith(
+                "DIEGO_DECISION ",
+                StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                "Prefix Lock: ogni riga deve essere una Decision Key canonica che inizi con 'DIEGO_DECISION '.");
+        }
+
+        result.Add(line);
+    }
+
+    return result;
+}
 
 static HashSet<string> LoadRejectedDecisionKeys(
     string? rejectDecisionsPath)
