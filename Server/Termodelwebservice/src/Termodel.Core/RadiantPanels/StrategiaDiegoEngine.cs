@@ -23,7 +23,8 @@ internal static class StrategiaDiegoEngine
         XDocument floorInput,
         double stepMeters = DefaultStepMeters,
         bool numberSpiralNodes = true,
-        IReadOnlySet<string>? rejectedDecisionKeys = null)
+        IReadOnlySet<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix = null)
     {
         if (floorInput.Root is null)
             throw new InvalidDataException("StrategiaDiego: documento locale privo di root.");
@@ -52,7 +53,8 @@ internal static class StrategiaDiegoEngine
 
         LogDiego(
             $"START step={Fmt(stepMeters)}m maxNodes={maxNodes} maxDepth={maxDepth} " +
-            $"connections={connections.Count} rejectDecisions={rejectedDecisionKeys?.Count ?? 0}");
+            $"connections={connections.Count} rejectDecisions={rejectedDecisionKeys?.Count ?? 0} " +
+            $"lockedSupplyPrefix={lockedSupplyDecisionPrefix?.Count ?? 0}");
 
         foreach (XElement localeElement in floorInput.Descendants("Locale"))
         {
@@ -82,7 +84,8 @@ internal static class StrategiaDiegoEngine
                 connections,
                 stepMeters,
                 counters,
-                rejectedDecisionKeys);
+                rejectedDecisionKeys,
+                lockedSupplyDecisionPrefix);
             solutions.Add(solution);
 
             // Modificato da Codex per realizzare: rendere diagnosticabile il
@@ -150,7 +153,8 @@ internal static class StrategiaDiegoEngine
         XDocument floorInput,
         double stepMeters,
         int topCount,
-        IReadOnlySet<string>? rejectedDecisionKeys = null)
+        IReadOnlySet<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix = null)
     {
         if (floorInput.Root is null)
             throw new InvalidDataException(
@@ -206,7 +210,8 @@ internal static class StrategiaDiegoEngine
             stepMeters,
             counters,
             countAsSupply: true,
-            rejectedDecisionKeys: rejectedDecisionKeys);
+            rejectedDecisionKeys: rejectedDecisionKeys,
+            requiredDecisionPrefix: lockedSupplyDecisionPrefix);
 
         List<SearchNode> ordered = supplyTree.Terminals
             .OrderByDescending(terminal =>
@@ -262,7 +267,8 @@ internal static class StrategiaDiegoEngine
         double stepMeters,
         int skipTop,
         int count,
-        IReadOnlySet<string>? rejectedDecisionKeys = null)
+        IReadOnlySet<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix = null)
     {
         if (floorInput.Root is null)
             throw new InvalidDataException(
@@ -321,7 +327,8 @@ internal static class StrategiaDiegoEngine
             stepMeters,
             supplyCounters,
             countAsSupply: true,
-            rejectedDecisionKeys: rejectedDecisionKeys);
+            rejectedDecisionKeys: rejectedDecisionKeys,
+            requiredDecisionPrefix: lockedSupplyDecisionPrefix);
 
         List<SearchNode> orderedSupply = supplyTree.Terminals
             .OrderByDescending(terminal =>
@@ -606,7 +613,8 @@ internal static class StrategiaDiegoEngine
         IReadOnlyList<InputLine> connections,
         double step,
         SearchCounters counters,
-        IReadOnlySet<string>? rejectedDecisionKeys)
+        IReadOnlySet<string>? rejectedDecisionKeys,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix)
     {
         DirectedConnection directed = DirectConnection(locale, connection);
         LogDiego(
@@ -633,7 +641,8 @@ internal static class StrategiaDiegoEngine
             step,
             counters,
             countAsSupply: true,
-            rejectedDecisionKeys: rejectedDecisionKeys);
+            rejectedDecisionKeys: rejectedDecisionKeys,
+            requiredDecisionPrefix: lockedSupplyDecisionPrefix);
 
         LogDiego(
             $"SUPPLY-FIRST {locale.Id} tree terminals={supplyTree.Terminals.Count} " +
@@ -775,7 +784,8 @@ internal static class StrategiaDiegoEngine
         SearchCounters counters,
         bool countAsSupply,
         ExtensionResult? initialConnector = null,
-        IReadOnlySet<string>? rejectedDecisionKeys = null)
+        IReadOnlySet<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? requiredDecisionPrefix = null)
     {
         var terminals = new List<SearchNode>();
         var stack = new Stack<SearchNode>();
@@ -847,6 +857,11 @@ internal static class StrategiaDiegoEngine
 
             var children = new List<SearchNode>();
             int replayRejectedChildren = 0;
+            int prefixRejectedChildren = 0;
+            int nextDecisionIndex = node.Depth - 1;
+            bool prefixDecisionRequired =
+                requiredDecisionPrefix is not null &&
+                nextDecisionIndex < requiredDecisionPrefix.Count;
 
             // LG-041: PROSEGUI_DRITTO non seleziona piu' il solo riferimento
             // piu' vicino. Ogni riferimento pertinente puo' generare un
@@ -885,6 +900,19 @@ internal static class StrategiaDiegoEngine
                     candidate.PhysicalHit ? "physical" : "lateral");
 
                 LogDiego(decisionKey);
+                if (!IsDecisionAllowedByPrefix(
+                        node,
+                        decisionKey,
+                        requiredDecisionPrefix,
+                        out string? expectedDecisionKey))
+                {
+                    prefixRejectedChildren++;
+                    LogDiego(
+                        $"DIEGO_PREFIX_LOCK REJECT_NOT_IN_PREFIX parentNode={node.NodeId} " +
+                        $"index={nextDecisionIndex} expected={expectedDecisionKey ?? "-"} actual={decisionKey}");
+                    continue;
+                }
+
                 if (IsDecisionRejected(
                         decisionKey,
                         rejectedDecisionKeys))
@@ -988,6 +1016,19 @@ internal static class StrategiaDiegoEngine
                         extension.Front));
 
                 LogDiego(decisionKey);
+                if (!IsDecisionAllowedByPrefix(
+                        node,
+                        decisionKey,
+                        requiredDecisionPrefix,
+                        out string? expectedDecisionKey))
+                {
+                    prefixRejectedChildren++;
+                    LogDiego(
+                        $"DIEGO_PREFIX_LOCK REJECT_NOT_IN_PREFIX parentNode={node.NodeId} " +
+                        $"index={nextDecisionIndex} expected={expectedDecisionKey ?? "-"} actual={decisionKey}");
+                    continue;
+                }
+
                 if (IsDecisionRejected(
                         decisionKey,
                         rejectedDecisionKeys))
@@ -1021,6 +1062,15 @@ internal static class StrategiaDiegoEngine
 
             if (children.Count == 0)
             {
+                if (prefixDecisionRequired)
+                {
+                    LogDiego(
+                        $"TREE {family} PRUNED_BY_PREFIX_LOCK node={node.NodeId} " +
+                        $"decisionIndex={nextDecisionIndex} rejectedChildren={prefixRejectedChildren} " +
+                        $"terminalCreated=false");
+                    continue;
+                }
+
                 if (replayRejectedChildren > 0)
                 {
                     LogDiego(
@@ -2204,6 +2254,30 @@ internal static class StrategiaDiegoEngine
     private static string? TerminalDecisionKey(
         SearchNode node) =>
         node.DecisionKey;
+
+    private static bool IsDecisionAllowedByPrefix(
+        SearchNode parent,
+        string decisionKey,
+        IReadOnlyList<string>? requiredDecisionPrefix,
+        out string? expectedDecisionKey)
+    {
+        expectedDecisionKey = null;
+        if (requiredDecisionPrefix is null ||
+            requiredDecisionPrefix.Count == 0)
+        {
+            return true;
+        }
+
+        int decisionIndex = parent.Depth - 1;
+        if (decisionIndex >= requiredDecisionPrefix.Count)
+            return true;
+
+        expectedDecisionKey = requiredDecisionPrefix[decisionIndex];
+        return string.Equals(
+            expectedDecisionKey,
+            decisionKey,
+            StringComparison.Ordinal);
+    }
 
     private static bool IsDecisionRejected(
         string decisionKey,
