@@ -9,6 +9,8 @@ using Termodel.Core.RadiantPanels;
 using Termodel.Core.ProjectFiles;
 using Termodel.Leggidxf;
 
+const double SpiralHeatingStepMeters = 0.30;
+
 return args.Length == 0
     ? Usage()
     : args[0].ToLowerInvariant() switch
@@ -21,8 +23,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--reject-decisions <file.txt>] [--lock-supply-prefix <file.txt>] [--reject-current-supply] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--reject-decisions <file.txt>] [--lock-supply-prefix <file.txt>] [--reject-current-supply] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--engine Vittorio|Diego] [--id <case-id>] [--p <metri>] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
 }
@@ -36,6 +38,7 @@ static int Run(string[] args)
         string? outputArg = Arg(args, "--out");
         string? idArg = Arg(args, "--id");
         string? stepArg = Arg(args, "--p");
+        string? engineArg = Arg(args, "--engine");
         string? rejectDecisionsArg = Arg(args, "--reject-decisions");
         string? lockSupplyPrefixArg = Arg(args, "--lock-supply-prefix");
         bool rejectCurrentSupply = HasFlag(args, "--reject-current-supply");
@@ -97,6 +100,48 @@ static int Run(string[] args)
         Directory.CreateDirectory(outputDir);
 
         string localeXml = File.ReadAllText(fullInputPath, Encoding.UTF8);
+
+        string selectedEngine = (
+            engineArg ??
+            testCase?.Engine ??
+            "Diego").Trim();
+        if (selectedEngine.Equals("Vittorio", StringComparison.OrdinalIgnoreCase))
+        {
+            bool hasDiegoOnlyOptions =
+                !string.IsNullOrWhiteSpace(rejectDecisionsArg) ||
+                !string.IsNullOrWhiteSpace(lockSupplyPrefixArg) ||
+                rejectCurrentSupply ||
+                inspectNode is not null ||
+                compareNode is not null ||
+                solutionTop is not null ||
+                solutionRank is not null ||
+                supplyTop is not null ||
+                supplyRank is not null ||
+                skipTop > 0;
+            if (hasDiegoOnlyOptions)
+            {
+                throw new ArgumentException(
+                    "Explorer, replay, prefix lock e branch inspector sono opzioni specifiche di StrategiaDiego.");
+            }
+            if (Math.Abs(stepMeters - SpiralHeatingStepMeters) > 1e-9)
+            {
+                throw new ArgumentException(
+                    $"StrategiaVittorio usa il passo reale fisso {SpiralHeatingStepMeters.ToString("0.###", CultureInfo.InvariantCulture)} m; " +
+                    $"il caso richiede {stepMeters.ToString("0.###", CultureInfo.InvariantCulture)} m.");
+            }
+
+            return RunVittorio(
+                localeXml,
+                fullInputPath,
+                caseId,
+                outputDir,
+                testCase?.Description);
+        }
+        if (!selectedEngine.Equals("Diego", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                $"Motore Harness non riconosciuto: '{selectedEngine}'. Valori ammessi: Vittorio, Diego.");
+        }
 
         HashSet<string> rejectedDecisionKeys =
             LoadRejectedDecisionKeys(rejectDecisionsArg);
@@ -276,6 +321,7 @@ static int Run(string[] args)
         {
             caseId,
             description = testCase?.Description,
+            engine = "Diego",
             input = fullInputPath,
             stepMeters = sample.StepMeters,
             sample.SupplyNodes,
@@ -306,6 +352,7 @@ static int Run(string[] args)
 
         Console.WriteLine("RADIANT_HARNESS_OK");
         Console.WriteLine($"case={caseId}");
+        Console.WriteLine("engine=Diego");
         Console.WriteLine($"input={fullInputPath}");
         Console.WriteLine($"p={sample.StepMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
         Console.WriteLine($"nodes={sample.TotalNodes}");
@@ -335,6 +382,68 @@ static int Run(string[] args)
         Console.Error.WriteLine(ex);
         return 3;
     }
+}
+
+// Funzione realizzata da Codex in autonomia
+static int RunVittorio(
+    string localeXml,
+    string fullInputPath,
+    string caseId,
+    string outputDir,
+    string? description)
+{
+    StrategiaVittorioBenchmarkSample sample =
+        StrategiaVittorioBenchmark.Run(localeXml);
+
+    string svgPath = Path.Combine(outputDir, caseId + ".svg");
+    string resultXmlPath = Path.Combine(
+        outputDir,
+        caseId + ".result.locale.xml");
+    string logPath = Path.Combine(outputDir, caseId + ".log.txt");
+    string metricsPath = Path.Combine(outputDir, caseId + ".metrics.json");
+
+    File.WriteAllText(svgPath, sample.Svg, new UTF8Encoding(false));
+    File.WriteAllText(
+        resultXmlPath,
+        sample.ResultLocaleXml,
+        new UTF8Encoding(false));
+    File.WriteAllLines(logPath, sample.Diagnostics, new UTF8Encoding(false));
+
+    var metrics = new
+    {
+        caseId,
+        description,
+        engine = "Vittorio",
+        input = fullInputPath,
+        stepMeters = sample.StepMeters,
+        sample.LocaleCount,
+        sample.SpiralPointCount,
+        sample.ElapsedMilliseconds,
+        sample.MemoryDeltaBytes,
+        diagnosticsCount = sample.Diagnostics.Count,
+        svgSha256 = Sha256(sample.Svg)
+    };
+    File.WriteAllText(
+        metricsPath,
+        JsonSerializer.Serialize(
+            metrics,
+            new JsonSerializerOptions { WriteIndented = true }),
+        new UTF8Encoding(false));
+
+    Console.WriteLine("RADIANT_HARNESS_OK");
+    Console.WriteLine($"case={caseId}");
+    Console.WriteLine("engine=Vittorio");
+    Console.WriteLine($"input={fullInputPath}");
+    Console.WriteLine($"p={sample.StepMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
+    Console.WriteLine($"locales={sample.LocaleCount}");
+    Console.WriteLine($"spiralPoints={sample.SpiralPointCount}");
+    Console.WriteLine($"elapsedMs={sample.ElapsedMilliseconds}");
+    Console.WriteLine($"svg={svgPath}");
+    Console.WriteLine($"resultXml={resultXmlPath}");
+    Console.WriteLine($"log={logPath}");
+    Console.WriteLine($"metrics={metricsPath}");
+
+    return sample.SpiralPointCount > 0 ? 0 : 2;
 }
 
 
@@ -1584,4 +1693,5 @@ internal sealed class HarnessCase
     public string Description { get; set; } = string.Empty;
     public string PreparedInput { get; set; } = string.Empty;
     public double StepMeters { get; set; } = 0.30;
+    public string Engine { get; set; } = "Diego";
 }

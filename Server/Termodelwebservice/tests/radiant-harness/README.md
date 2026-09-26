@@ -1,11 +1,11 @@
-# StrategiaDiego — base dati Harness rapido
+# Strategie pannelli — base dati Harness rapido
 
 Questa cartella contiene i casi preconfezionati usati dal
 `Termodel.RadiantPanels.Harness`.
 
-Il Harness non duplica StrategiaDiego: richiama direttamente
-`Termodel.Core.RadiantPanels.StrategiaDiegoBenchmark`, che esegue il vero
-`StrategiaDiegoEngine`.
+Il Harness non duplica gli algoritmi: seleziona il vero motore `Vittorio` o
+`Diego`. Il caso JSON può dichiarare `engine`, sovrascrivibile da riga di
+comando con `--engine Vittorio|Diego`.
 
 ## Caso corrente
 
@@ -15,7 +15,8 @@ Il Harness non duplica StrategiaDiego: richiama direttamente
 Il passo è `p=0,30 m`.
 
 Il secondo caso rapido è `cases/CURRENT-APARTMENT-P030.json`, che usa direttamente
-`prepared/StrategiaDiegoCurrentApartment.pannelli.xml`.
+`prepared/StrategiaDiegoCurrentApartment.pannelli.xml` ed è attualmente
+commutato sul vero algoritmo `Vittorio`.
 
 Origine del preconfezionato:
 
@@ -60,6 +61,14 @@ dotnet run --project tools/Termodel.RadiantPanels.Harness -- run `
 ```
 
 Output: SVG, log diagnostico e JSON metriche.
+Con Vittorio viene prodotto anche `*.result.locale.xml`, cioè l'XML aggiornato
+dal motore con la spirale calcolata.
+
+Il workflow `Termodel Radiant Harness` pubblica inoltre il caso corrente come
+artifact dedicato `strategia-vittorio-current-apartment`, comprendente SVG,
+XML risultante, log e metriche. Gli strumenti `supply/solution explorer`,
+`prefix lock`, `decision replay` e `branch inspector` restano intenzionalmente
+esclusivi di StrategiaDiego.
 
 La workflow focalizzata usa direttamente i due case preconfezionati e quindi
 **non rigenera il progetto completo ad ogni test**. Il comando `prepare` resta

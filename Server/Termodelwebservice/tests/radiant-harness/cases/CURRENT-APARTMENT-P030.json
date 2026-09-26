@@ -2,5 +2,6 @@
   "id": "CURRENT-APARTMENT-P030",
   "description": "Input pannelli preconfezionato dal progetto appartamento corrente tramite il vero GeneraModello; p=0,30 m.",
   "preparedInput": "../prepared/StrategiaDiegoCurrentApartment.pannelli.xml",
-  "stepMeters": 0.3
+  "stepMeters": 0.3,
+  "engine": "Vittorio"
 }

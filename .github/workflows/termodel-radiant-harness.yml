@@ -13,6 +13,7 @@ on:
   push:
     paths:
       - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/**'
+      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorio/**'
       - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
       - 'Server/Termodelwebservice/tests/radiant-harness/**'
       - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiego*.locale.xml'
@@ -20,6 +21,7 @@ on:
   pull_request:
     paths:
       - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/**'
+      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorio/**'
       - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
       - 'Server/Termodelwebservice/tests/radiant-harness/**'
       - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiego*.locale.xml'
@@ -609,7 +611,29 @@ jobs:
           if (-not (Test-Path (Join-Path $out "CURRENT-APARTMENT-P030.svg"))) { throw "SVG appartamento Harness mancante." }
           if (-not (Test-Path (Join-Path $out "CURRENT-APARTMENT-P030.log.txt"))) { throw "Log appartamento Harness mancante." }
           if (-not (Test-Path (Join-Path $out "CURRENT-APARTMENT-P030.metrics.json"))) { throw "Metriche appartamento Harness mancanti." }
-          Write-Host "RADIANT_HARNESS_CURRENT_APARTMENT_OK"
+          if (-not (Test-Path (Join-Path $out "CURRENT-APARTMENT-P030.result.locale.xml"))) { throw "XML risultante Vittorio mancante." }
+          $metrics = Get-Content -LiteralPath (Join-Path $out "CURRENT-APARTMENT-P030.metrics.json") -Raw | ConvertFrom-Json
+          if ([string]$metrics.engine -ne "Vittorio") { throw "Il caso appartamento non ha eseguito StrategiaVittorio." }
+          if ([int]$metrics.SpiralPointCount -lt 2) { throw "StrategiaVittorio non ha prodotto una spirale valida." }
+          Copy-Item `
+            -LiteralPath (Join-Path $out "CURRENT-APARTMENT-P030.svg") `
+            -Destination (Join-Path $out "pannelli-esecutivo-vittorio.svg") `
+            -Force
+          Write-Host "RADIANT_HARNESS_CURRENT_APARTMENT_VITTORIO_OK"
+
+      - name: Upload StrategiaVittorio current apartment
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: strategia-vittorio-current-apartment
+          path: |
+            ${{ runner.temp }}/RadiantHarness/CURRENT-APARTMENT-P030.svg
+            ${{ runner.temp }}/RadiantHarness/CURRENT-APARTMENT-P030.result.locale.xml
+            ${{ runner.temp }}/RadiantHarness/CURRENT-APARTMENT-P030.log.txt
+            ${{ runner.temp }}/RadiantHarness/CURRENT-APARTMENT-P030.metrics.json
+            ${{ runner.temp }}/RadiantHarness/pannelli-esecutivo-vittorio.svg
+          if-no-files-found: warn
+          retention-days: 90
 
       - name: Upload Harness artifacts
         if: always()
