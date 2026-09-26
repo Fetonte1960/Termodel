@@ -71,6 +71,30 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Simulazione mandata completa prima del ritorno
+Stato: COMMISSIONATO
+
+Commissionato:
+- simulare una variante strutturale di StrategiaDiego in cui la mandata viene costruita completamente prima che esista qualsiasi geometria di ritorno;
+- durante l'albero della mandata usare soltanto architettura, collegamenti esterni e mandata già costruita; nessun `ReturnConnection`, nessuna radice di ritorno e nessun tratto Return devono entrare nei vincoli o nel merito della mandata;
+- ordinare i terminali di mandata con il criterio proprio della mandata (`TerminalGoodness`, poi lunghezza attiva) e provare il ritorno soltanto dopo il completamento della mandata;
+- per ogni terminale di mandata, costruire successivamente le configurazioni di ingresso ritorno e relativo albero usando la mandata completa come geometria fissa;
+- il ritorno può invalidare una mandata fisicamente incompatibile; in tal caso si prova il terminale di mandata successivo, ma il ritorno non deve modificare né favorire la costruzione della mandata;
+- per una stessa mandata fattibile scegliere la migliore configurazione di ritorno con il merito corrente del ritorno/chiusura;
+- usare il prototipo LG-041 multi-candidato come base della simulazione, senza merge in `main` prima della valutazione visuale;
+- banco principale: `LG041-SQUARE4X4-T1-P030`; controllo visuale specifico del tratto mandata 28→29;
+- eseguire anche il caso appartamento preconfezionato e osservare l'impatto sulla crescita combinatoria;
+- produrre SVG/log/metriche tramite Radiant Harness;
+- Issue #1 aperta durante il lavoro e chiusa `Completed` a fine simulazione.
+
+Criteri di completamento:
+- mandata dimostrabilmente indipendente dal ritorno nel prototipo;
+- Harness quadrato eseguito con SVG reale;
+- comportamento 28→29 confrontabile con il precedente;
+- metriche nodi/tempo registrate;
+- nessuna integrazione in main senza ulteriore approvazione visuale.
+
+
 ### INCARICO 2026-09-26 — Implementazione e test LG-041 con Radiant Harness
 Stato: ESEGUITO — TEST COMPLETATO / PROTOTIPO NON INTEGRATO
 
