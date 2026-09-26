@@ -8,7 +8,7 @@ attivazione e benchmark della StrategiaDiego.
 
 
 ## R25 — Chiusura sistema debug ad albero + reject cumulativo
-Stato: **IN COLLAUDO — PR #8**
+Stato: **ESEGUITO — HARNESS SUCCESS / INFRASTRUTTURA CONSOLIDATA**
 
 Decisione utente 26/09/2026:
 - completare il sistema di debug StrategiaDiego come infrastruttura unica basata sul vero albero di ricerca;
@@ -17,14 +17,38 @@ Decisione utente 26/09/2026:
 - verificare esplicitamente il caso cumulativo "scarta questo setup mandata" ripetuto due volte;
 - notificare con Issue #1 a fine incarico.
 
-Completamento predisposto:
-- documento operativo unico: `docs/STRATEGIADIEGO-TREE-DEBUG.md`;
-- workflow Harness PR #8 esteso per verificare rank1 -> rank2 e, conservando il primo reject, rank2 -> rank3;
-- verifica prevista anche della riproducibilità byte-per-byte usando il file con due Decision Key;
-- nessuna modifica alle regole geometriche o alla funzione di merito;
+Completamento:
+- documento operativo unico aggiunto: `docs/STRATEGIADIEGO-TREE-DEBUG.md`;
+- R23 riallineata: architettura non più marcata "non implementata", perché implementata e verificata in R24/R25;
+- workflow Harness PR #8 esteso nel commit `b31e2faf2d0ca25a5cd23cf347f56716d3b64b5d`;
+- nessuna modifica alle regole geometriche, funzione di merito o output standard;
 - nessun merge algoritmico in `main`.
 
-Esito CI: **IN ATTESA DEL RUN REALE**.
+Collaudo reale:
+- Harness run `36235621367`, job `108386726433`: **SUCCESS**;
+- baseline Supply con almeno tre setup;
+- primo reject: rank 1 escluso -> nuovo top = precedente rank 2;
+- secondo reject, mantenendo il primo: precedente rank 2 escluso -> nuovo top = precedente rank 3;
+- file cumulativo contiene esattamente due Decision Key distinte;
+- log del secondo replay contiene almeno due `DIEGO_DECISION_REPLAY REJECT_BY_INPUT`;
+- replay usando esclusivamente il file cumulativo produce SVG byte-identico al secondo reject interattivo;
+- marker CI `RADIANT_HARNESS_DECISION_REPLAY_CUMULATIVE_OK`;
+- artifact `radiant-harness-fast`, id `10903972542`;
+- commento di tracciabilità pubblicato sulla PR #8.
+
+Build generale:
+- workflow `TermodelService Build` run `36235621362`;
+- Restore/Build Release: **SUCCESS**, 0 errori;
+- workflow finale **FAILURE** solo sul benchmark di sostenibilità già noto del quadrato;
+- benchmark: `44.044` nodi, P95 `5289 ms` > budget `2000 ms`;
+- artifact benchmark id `10904326425`;
+- il failure prestazionale non invalida il collaudo funzionale del sistema di debug/replay.
+
+Uso operativo consolidato:
+- richiesta `scarta questo setup mandata` = aggiungere la Decision Key terminale del setup corrente ai reject attivi e rieseguire;
+- richieste successive mantengono i reject precedenti e avanzano nella classifica residua reale;
+- per scelte intermedie usare direttamente la Decision Key osservata da Explorer/Inspector;
+- lo SVG da valutare resta sempre quello standard generato dal vero motore.
 
 ## R24 — Decision Reject Replay implementato e verificato
 Stato: **ESEGUITO — PROTOTIPO PR #8 / HARNESS SUCCESS**
