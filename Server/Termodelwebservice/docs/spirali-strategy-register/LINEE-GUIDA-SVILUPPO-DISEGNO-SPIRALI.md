@@ -4545,6 +4545,123 @@ computazionalmente sostenibile sul regression set completo.
 
 ---
 
+## LG-042 — Costruzione supply-first: mandata completa prima del ritorno
+
+**Stato:** APPROVATA E SIMULATA — NON ANCORA INTEGRATA IN `main`  
+**Origine:** approvazione utente del 26/09/2026
+
+### Principio
+
+La mandata e il ritorno non devono essere costruiti come due alberi che si
+condizionano reciprocamente durante la ricerca della mandata.
+
+La sequenza strategica è:
+
+`MANDATA COMPLETA -> VERIFICA/SCELTA TERMINALE MANDATA -> COSTRUZIONE RITORNO`.
+
+Durante la costruzione della mandata possono esistere come vincoli soltanto:
+
+- contenimento architettonico;
+- collegamenti esterni già realmente presenti;
+- segmenti di mandata già costruiti nello scenario corrente.
+
+Durante questa fase **non devono esistere**:
+
+- `ReturnRoot` strategiche;
+- `ReturnConnection`;
+- segmenti `Return`;
+- premi o penalizzazioni derivanti dal futuro ritorno.
+
+Il ritorno viene costruito soltanto dopo che un terminale di mandata è stato
+completato.
+
+### Selezione della mandata
+
+I terminali di mandata vengono ordinati usando il merito proprio della mandata:
+
+1. `TerminalGoodness` decrescente;
+2. lunghezza attiva decrescente;
+3. lunghezza totale come ulteriore discriminante stabile.
+
+Il ritorno non può far vincere preventivamente una mandata peggiore perché
+produce un percorso blu più lungo.
+
+### Costruzione del ritorno
+
+Per il terminale di mandata in esame:
+
+- si costruiscono le possibili radici di ritorno;
+- si crea il raccordo entrante del ritorno soltanto in questo momento;
+- la mandata completa viene passata come geometria fissa al ritorno;
+- il ritorno usa architettura + mandata completa + ritorno già costruito;
+- fra le configurazioni di ritorno fattibili si seleziona il miglior merito
+  corrente di ritorno/chiusura.
+
+Se nessun ritorno è fisicamente realizzabile per il miglior terminale di
+mandata, si prova il terminale di mandata successivo.
+
+Quindi il ritorno può **invalidare** una mandata terminata, ma non può
+condizionarne la costruzione.
+
+### Rapporto con LG-041
+
+LG-042 non sostituisce il principio multi-candidato di LG-041.
+Ne modifica l'ordine temporale delle due famiglie:
+
+- LG-041 genera le alternative geometriche della mandata;
+- LG-042 impedisce che geometrie future del ritorno entrino nell'albero
+  della mandata;
+- dopo la selezione della mandata, LG-041 può essere applicata in modo
+  simmetrico all'albero del ritorno.
+
+### Collaudo reale 26/09/2026
+
+Prototipo: branch `experiment/lg041-supply-first-return-after`, PR #8.
+
+Radiant Harness run `36224330125`: **SUCCESS**.
+
+Quadrato 4x4, `p=0,30 m`:
+
+- percorso mandata selezionato contiene `27 -> 28 -> 29 -> 30`;
+- `28 -> 29` è verticale sulla corsia sinistra e non viene deviato dal blu;
+- il ritorno inizia soltanto dopo la costruzione completa della mandata;
+- 290 nodi mandata, 64 terminali mandata;
+- 726 nodi ritorno;
+- 1.016 nodi totali;
+- 16 terminali combinati accettati;
+- benchmark 20/20 deterministico, P95 313 ms;
+- SVG SHA-256 `d2af75acfb1b717c6d08ad82dfb0bfa89fc5dd6fd9b2ebfaa1d9db8e3b84bc7f`.
+
+Confronto col prototipo LG-041 precedente sullo stesso quadrato:
+
+- precedente: 17.616 nodi;
+- supply-first: 1.016 nodi;
+- riduzione circa 94,2%.
+
+Appartamento preconfezionato:
+
+- SUCCESS;
+- 42 nodi mandata + 38 nodi ritorno = 80 nodi totali;
+- 3 terminali accettati;
+- circa 65 ms nel run diagnostico Harness.
+
+Regression estesa:
+
+- `StrategiaDiegoConcaveL`: ora sostenibile, 4.455 nodi, 72 terminali
+  accettati, P95 382 ms;
+- `StrategiaDiegoObliqueTrapezoid`: sostenibile, 1.587 nodi, 24 terminali
+  accettati, P95 312 ms;
+- `StrategiaDiegoConnectionTerminal`: resta non sostenibile nel prototipo e
+  supera il limite tecnico di 250.000 nodi.
+
+### Stato implementativo
+
+**Non integrata in `main`.** Il comportamento supply-first è approvato e
+la simulazione sul caso principale è positiva. La PR #8 resta sperimentale
+finché non viene valutato visualmente l'SVG e affrontato il caso
+`ConnectionTerminal`.
+---
+
 ## Direttiva permanente — collaudo preliminare rapido delle strategie
 
 ### Scopo
@@ -4742,17 +4859,17 @@ verificare che descriva davvero il caso che si intende provare.
 ### Valore corrente
 
 ```text
-STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG041-SQUARE4X4-T1-P030
+STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG042-SUPPLY-FIRST-SQUARE4X4-T1-P030
 
-IdContesto: LG041-SQUARE4X4-T1-P030
+IdContesto: LG042-SUPPLY-FIRST-SQUARE4X4-T1-P030
 TipoInput: fixture sintetica versionata
 Fixture: tests/fixtures/StrategiaDiegoSquare4x4.locale.xml
 Locale: R001
 Geometria: quadrato 4,00 m x 4,00 m
 Ingresso: T1 da (2,-1) a (2,1), direzione entrante +Y
 Passo_p: 0,30 m
-RegolaSottoTest: LG-041
-CondizionePrincipale: PROSEGUI_DRITTO genera 0..N candidati da fronti fisici e prolungamenti laterali pertinenti
+RegolaSottoTest: LG-041 + LG-042 supply-first
+CondizionePrincipale: mandata LG-041 completa e indipendente dal ritorno; controllo 28->29; ritorno costruito solo dopo terminale mandata
 FamigliePertinenti: architettura + mandata costruita + ritorno costruito nello scenario
 PrioritaEsplorazione: candidati laterali per lunghezza valida decrescente, senza potatura
 SelezioneFinale: funzione di merito/Fattore di Bontà corrente
