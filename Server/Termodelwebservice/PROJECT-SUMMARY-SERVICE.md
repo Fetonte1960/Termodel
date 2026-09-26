@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Solution Explorer StrategiaDiego
-Stato: COMMISSIONATO
+Stato: ESEGUITO — HARNESS VERIFICATO / PROTOTIPO PR #8
 
 Commissionato:
 - implementare sul prototipo PR #8 uno strumento diagnostico nel `Termodel.RadiantPanels.Harness` per visualizzare anche soluzioni non vincenti;
@@ -86,6 +86,23 @@ Commissionato:
 - aggiornare linee guida/registro/Summary con uso e risultati;
 - nessun merge algoritmico in `main` senza ulteriore approvazione;
 - Issue #1 chiusa `Completed` al termine della simulazione.
+
+Risultato:
+- implementato sul branch `experiment/lg041-supply-first-return-after` / PR #8 un percorso diagnostico Supply-only che riusa il vero `BuildTree`, `TerminalGoodness`, `ActiveSpiralLength` e lo stesso ordinamento del motore;
+- `StrategiaDiegoEngine.ExploreSupply()` produce la classifica delle mandate pure senza costruire il ritorno e senza modificare la selezione normale;
+- `StrategiaDiegoBenchmark.ExploreSupply()` espone la facciata diagnostica al Harness;
+- Harness supporta `--supply-top N`, `--skip-top N --supply-top M` e `--supply-rank N`;
+- output per il Solution Explorer: un `supply-rank-NNN.svg` per soluzione, `solutions.json` con metriche/percorso nodi, e `index.html` a galleria;
+- Harness run `36229900092`: **SUCCESS** completo; build Core+Harness, run quadrato, Top 40, prova `--skip-top 20 --supply-top 5`, appartamento e artifact tutti SUCCESS;
+- artifact finale `radiant-harness-fast` id `10901942162`;
+- quadrato: 374 nodi Supply, 110 terminali Supply classificati;
+- rank 1: terminale 123, activeLength `28,05 m`, goodness `1,052`, totalLength `28,20 m`;
+- nessuna delle prime 20 mandate contiene il ramo `47->48`;
+- prima comparsa del ramo `47->48`: **rank 21**, terminale 74, activeLength `25,45 m`, goodness `0,954375`, totalLength `25,60 m`, percorso `1,3,41,42,43,44,45,47,48,50,52,59,61,62,65,67,69,73,74`;
+- il ramo `47->48` compare anche ai rank 22 e 25;
+- prova skip-top verificata realmente: `--skip-top 20 --supply-top 5` esporta solo rank 21..25 e non rank 20;
+- linee guida aggiornate nel commit `4a891a06325862ea1b989a8ef85c7454ba6df4b0`; registro R20 nel commit `fa477ea4568cb4c7d141bf6e09c5980ea8e042aa`;
+- lo strumento è diagnostico e non altera funzione di merito o Service; resta sul prototipo PR #8 insieme alle modifiche algoritmiche sperimentali.
 
 
 ### INCARICO 2026-09-26 — Return/Return a passo p
