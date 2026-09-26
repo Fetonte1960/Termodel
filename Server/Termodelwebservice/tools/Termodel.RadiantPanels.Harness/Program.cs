@@ -88,7 +88,10 @@ static int Run(string[] args)
 
         string localeXml = File.ReadAllText(fullInputPath, Encoding.UTF8);
         StrategiaDiegoBenchmarkSample sample =
-            StrategiaDiegoBenchmark.Run(localeXml, stepMeters);
+            StrategiaDiegoBenchmark.Run(
+                localeXml,
+                stepMeters,
+                includeDetailedDiagnostics: true);
 
         string svgPath = Path.Combine(outputDir, caseId + ".svg");
         string logPath = Path.Combine(outputDir, caseId + ".log.txt");
