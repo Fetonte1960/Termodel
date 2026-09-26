@@ -1549,7 +1549,28 @@ internal static class StrategiaDiegoEngine
                 continue;
 
             if (Math.Abs(rayTravel) <= GeometryTolerance)
+            {
                 rayTravel = 0.0;
+
+                // LG-045: un at-node non e' un nuovo fronte se appartiene
+                // alla stessa evoluzione rettilinea con cui siamo arrivati.
+                // L'esclusione non e' solo per ID del currentSegment: segue
+                // l'intera catena collineare e contigua della provenienza.
+                if (IsSameArrivalStraightChain(
+                        candidate,
+                        currentSegment,
+                        constraints,
+                        pathFamily))
+                {
+                    LogDiego(
+                        $"SEQUENCE skip-same-arrival-chain " +
+                        $"pathFamily={pathFamily} frontFamily={front.Family} " +
+                        $"from={front.SequenceIndex} candidate={candidate.SequenceIndex} " +
+                        $"candidateId={candidate.Id} currentId={currentSegment.Id} " +
+                        $"start={Fmt(start)} dir={Fmt(travel)} rayTravel=0");
+                    continue;
+                }
+            }
 
             if (rayTravel < bestTravel - GeometryTolerance)
             {
@@ -1587,6 +1608,88 @@ internal static class StrategiaDiegoEngine
         return best;
     }
 
+    private static bool IsSameArrivalStraightChain(
+        GeoSegment candidate,
+        GeoSegment currentSegment,
+        IReadOnlyList<GeoSegment> constraints,
+        GeoFamily pathFamily)
+    {
+        if (candidate.Family != pathFamily)
+            return false;
+
+        GeoSegment? canonicalCurrent = constraints
+            .Where(segment => segment.Family == pathFamily)
+            .Cast<GeoSegment?>()
+            .FirstOrDefault(segment =>
+                segment!.Value.Id.Equals(
+                    currentSegment.Id,
+                    StringComparison.Ordinal));
+
+        GeoSegment seed = canonicalCurrent ?? currentSegment;
+        DVector baseDirection = seed.Direction.Normalize();
+        if (baseDirection.Length <= Epsilon)
+            return false;
+
+        bool OnArrivalSupportLine(GeoSegment segment)
+        {
+            DVector direction = segment.Direction.Normalize();
+            if (direction.Length <= Epsilon)
+                return false;
+
+            if (Math.Abs(DVector.Cross(
+                    baseDirection,
+                    direction)) > GeometryTolerance)
+            {
+                return false;
+            }
+
+            double distanceA = Math.Abs(
+                DVector.Cross(segment.A - seed.A, baseDirection));
+            double distanceB = Math.Abs(
+                DVector.Cross(segment.B - seed.A, baseDirection));
+            return distanceA <= GeometryTolerance &&
+                   distanceB <= GeometryTolerance;
+        }
+
+        if (!OnArrivalSupportLine(candidate))
+            return false;
+
+        List<GeoSegment> sameLine = constraints
+            .Where(segment =>
+                segment.Family == pathFamily &&
+                segment.SequenceIndex >= 0 &&
+                OnArrivalSupportLine(segment))
+            .ToList();
+
+        if (!sameLine.Any(segment =>
+                segment.Id.Equals(candidate.Id, StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        var queue = new Queue<GeoSegment>();
+        queue.Enqueue(seed);
+        visited.Add(seed.Id);
+
+        while (queue.Count > 0)
+        {
+            GeoSegment current = queue.Dequeue();
+            foreach (GeoSegment next in sameLine)
+            {
+                if (visited.Contains(next.Id) ||
+                    !SharesEndpoint(current, next))
+                {
+                    continue;
+                }
+
+                visited.Add(next.Id);
+                queue.Enqueue(next);
+            }
+        }
+
+        return visited.Contains(candidate.Id);
+    }
     private static List<SearchNode> ReconstructNodes(
         SearchNode node)
     {
