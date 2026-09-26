@@ -98,46 +98,19 @@ jobs:
           if (-not (Test-Path (Join-Path $dir "supply-rank-040.svg"))) { throw "Solution Explorer rank 20 mancante." }
           Write-Host "RADIANT_HARNESS_SUPPLY_EXPLORER_TOP40_OK"
 
-      - name: Lock good first-loop prefix and free the continuation
+      - name: Lock approved good-ansa prefix and free the continuation
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
-          $baselinePath = Join-Path $out "LG041-SQUARE4X4-T1-P030.supply-explorer\solutions.json"
-          $baseline = Get-Content -LiteralPath $baselinePath -Raw | ConvertFrom-Json
+          $approvedR30 = "tests/radiant-harness/prefixes/LG041-R30-APPROVED-THROUGH-NODE15.prefix-lock.txt"
+          if (-not (Test-Path $approvedR30)) { throw "Fixture R30 approvata mancante." }
 
-          $candidate = $null
-          foreach ($solution in $baseline.solutions) {
-            $ids = @($solution.nodeIds | ForEach-Object { [int]$_ })
-            for ($i = 0; $i -le $ids.Count - 3; $i++) {
-              if ($ids[$i] -eq 47 -and $ids[$i + 1] -eq 48 -and $ids[$i + 2] -eq 50) {
-                $candidate = $solution
-                break
-              }
-            }
-            if ($null -ne $candidate) { break }
-          }
-          if ($null -eq $candidate) {
-            throw "Prefix ansa candidato 47->48->50 non trovato nei primi 40 setup Supply."
-          }
-
-          $ids = @($candidate.nodeIds | ForEach-Object { [int]$_ })
-          $node50Index = -1
-          for ($i = 0; $i -lt $ids.Count; $i++) {
-            if ($ids[$i] -eq 50) {
-              $node50Index = $i
-              break
-            }
-          }
-          if ($node50Index -le 0) { throw "Nodo 50 non localizzato correttamente nel candidato ansa." }
-
-          $allKeys = @($candidate.decisionKeys | ForEach-Object { [string]$_ })
-          if ($allKeys.Count -lt $node50Index) {
-            throw "Decision Key insufficienti per bloccare il prefisso fino al nodo 50."
-          }
-          $prefixKeys = @($allKeys[0..($node50Index - 1)])
           $prefixPath = Join-Path $out "LG041-ANSA-GOOD.prefix-lock.txt"
-          $prefixKeys | Set-Content -LiteralPath $prefixPath -Encoding utf8NoBOM
+          @(Get-Content -LiteralPath $approvedR30 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 9) |
+            Set-Content -LiteralPath $prefixPath -Encoding utf8NoBOM
+          $prefixKeys = @(Get-Content -LiteralPath $prefixPath)
+          if ($prefixKeys.Count -ne 9) { throw "Prefisso ansa R29 deve contenere 9 Decision Key." }
 
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
@@ -166,38 +139,27 @@ jobs:
           $checkPath = Join-Path $out "LG041-ANSA-PREFIX-CHECK.supply-explorer\solutions.json"
           $check = Get-Content -LiteralPath $checkPath -Raw | ConvertFrom-Json
           if ($check.solutions.Count -lt 1) { throw "Prefix Lock non produce terminali Supply." }
-
           foreach ($solution in $check.solutions) {
             $keys = @($solution.decisionKeys | ForEach-Object { [string]$_ })
-            if ($keys.Count -lt $prefixKeys.Count) {
-              throw "Terminale Supply più corto del prefisso bloccato."
-            }
-            for ($i = 0; $i -lt $prefixKeys.Count; $i++) {
-              if ($keys[$i] -ne $prefixKeys[$i]) {
-                throw "Terminale Supply non rispetta il prefisso ansa al passo $i."
-              }
+            if ($keys.Count -lt $prefixKeys.Count) { throw "Terminale Supply più corto del prefisso ansa congelato." }
+            for ($i=0; $i -lt $prefixKeys.Count; $i++) {
+              if ($keys[$i] -ne $prefixKeys[$i]) { throw "Terminale Supply non rispetta il prefisso ansa congelato al passo $i." }
             }
           }
 
           $metricsData = Get-Content -LiteralPath $metrics -Raw | ConvertFrom-Json
           $report = [ordered]@{
-            candidateOriginalRank = [int]$candidate.Rank
-            candidateTerminalNodeId = [int]$candidate.TerminalNodeId
-            prefixThroughHistoricalNode = 50
+            sourceCheckpoint = "R30-approved-prefix"
             prefixDecisionCount = $prefixKeys.Count
             prefixFile = $prefixPath
             lockedSvg = $svg
             lockedSvgSha256 = [string]$metricsData.svgSha256
             lockedSupplyNodes = [int]$metricsData.SupplyNodes
             lockedSupplyTerminals = [int]$metricsData.SupplyTerminals
-            lockedReturnNodes = [int]$metricsData.ReturnNodes
-            lockedAcceptedTerminals = [int]$metricsData.AcceptedTerminals
           }
-          $reportPath = Join-Path $out "LG041-ANSA-PREFIX.report.json"
-          $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reportPath -Encoding utf8NoBOM
-
+          $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $out "LG041-ANSA-PREFIX.report.json") -Encoding utf8NoBOM
           Write-Host "RADIANT_HARNESS_PREFIX_LOCK_ANSA_OK"
-          Write-Host ("candidateOriginalRank=" + $candidate.Rank)
+          Write-Host "sourceCheckpoint=R30-approved-prefix"
           Write-Host ("prefixDecisionCount=" + $prefixKeys.Count)
           Write-Host ("lockedSvg=" + $svg)
 
@@ -252,176 +214,34 @@ jobs:
           Write-Host ("bestCombinedMerit=" + $bestCombined.combinedMeritMeters)
           Write-Host ("bestAnsaSvg=" + $bestSvg)
 
-      - name: Inspect node 22 and force option nearest 2p to SVG 5-6-7
+      - name: Verify approved R30 prefix through node 15
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $ci = [System.Globalization.CultureInfo]::InvariantCulture
           $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
-          $prefixPath = Join-Path $out "LG041-ANSA-GOOD.prefix-lock.txt"
-          $bestReportPath = Join-Path $out "LG041-ANSA-PREFIX-BEST-COMBINED.report.json"
-          $solutionsDir = Join-Path $out "LG041-ANSA-PREFIX-SOLUTIONS.solution-explorer"
-          $solutionsPath = Join-Path $solutionsDir "solutions.json"
-          foreach ($required in @($prefixPath,$bestReportPath,$solutionsPath)) {
-            if (-not (Test-Path $required)) { throw "Prerequisito nodo22 mancante: $required" }
-          }
-
-          $bestReport = Get-Content -LiteralPath $bestReportPath -Raw | ConvertFrom-Json
-          $solutions = Get-Content -LiteralPath $solutionsPath -Raw | ConvertFrom-Json
-          $current = $solutions.solutions |
-            Where-Object { [int]$_.supplyRank -eq [int]$bestReport.lockedSupplyRank } |
-            Select-Object -First 1
-          if ($null -eq $current) { throw "Setup corrente migliore non ritrovato nel manifest." }
-
-          $currentSvg = Join-Path $solutionsDir ([string]$current.svg)
-          if (-not (Test-Path $currentSvg)) { throw "SVG setup corrente mancante: $currentSvg" }
+          $approvedPrefix = "tests/radiant-harness/prefixes/LG041-R30-APPROVED-THROUGH-NODE15.prefix-lock.txt"
+          $keys = @(Get-Content -LiteralPath $approvedPrefix | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+          if ($keys.Count -ne 14) { throw "Checkpoint R30 deve contenere 14 Decision Key." }
 
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
-            --id LG041-ANSA-NODE22-INSPECT `
+            --id LG041-R30-APPROVED `
             --out $out `
-            --inspect-node 22 `
-            --lock-supply-prefix $prefixPath
+            --lock-supply-prefix $approvedPrefix
 
-          $inspectDir = Join-Path $out "LG041-ANSA-NODE22-INSPECT.branch-inspector"
-          $inspectJson = Join-Path $inspectDir "branch-node-022.json"
-          $inspectSvg = Join-Path $inspectDir "branch-node-022.svg"
-          $inspectLog = Join-Path $inspectDir "branch-node-022.log.txt"
-          foreach ($required in @($inspectJson,$inspectSvg,$inspectLog)) {
-            if (-not (Test-Path $required)) { throw "Branch Inspector nodo22 artifact mancante: $required" }
+          $svg = Join-Path $out "LG041-R30-APPROVED.svg"
+          $log = Join-Path $out "LG041-R30-APPROVED.log.txt"
+          if (-not (Test-Path $svg)) { throw "SVG R30 approvato mancante." }
+          if (-not (Test-Path $log)) { throw "Log R30 approvato mancante." }
+
+          $logText = Get-Content -LiteralPath $log -Raw
+          if ($logText -notmatch "TREE Supply CHOICE PROSEGUI_DRITTO\[1/2\] ACCEPT parentNode=14 childNode=15 \(1\.4,3\.25\)->\(0\.75,3\.25\)") {
+            throw "Checkpoint R30 non raggiunge il nodo15 approvato (0.75,3.25)."
           }
 
-          [xml]$svgDoc = Get-Content -LiteralPath $currentSvg -Raw
-          $ns = New-Object System.Xml.XmlNamespaceManager($svgDoc.NameTable)
-          $ns.AddNamespace("s","http://www.w3.org/2000/svg")
-          function Get-MandataNodePoint([int]$id) {
-            $n = $svgDoc.SelectSingleNode("//s:text[@data-role='mandata' and @data-node-id='$id']", $ns)
-            if ($null -eq $n) { throw "Nodo SVG mandata $id non trovato." }
-            return [pscustomobject]@{
-              x = [double]::Parse([string]$n.GetAttribute("data-x"), $ci)
-              y = [double]::Parse([string]$n.GetAttribute("data-y"), $ci)
-            }
-          }
-          function Point-SegmentDistance($p,$a,$b) {
-            $vx = $b.x - $a.x; $vy = $b.y - $a.y
-            $wx = $p.x - $a.x; $wy = $p.y - $a.y
-            $vv = $vx*$vx + $vy*$vy
-            if ($vv -le 1e-15) {
-              return [Math]::Sqrt(($p.x-$a.x)*($p.x-$a.x)+($p.y-$a.y)*($p.y-$a.y))
-            }
-            $t = ($wx*$vx + $wy*$vy) / $vv
-            if ($t -lt 0) { $t = 0 }
-            if ($t -gt 1) { $t = 1 }
-            $qx = $a.x + $t*$vx; $qy = $a.y + $t*$vy
-            return [Math]::Sqrt(($p.x-$qx)*($p.x-$qx)+($p.y-$qy)*($p.y-$qy))
-          }
-
-          $p5 = Get-MandataNodePoint 5
-          $p6 = Get-MandataNodePoint 6
-          $p7 = Get-MandataNodePoint 7
-          $p22 = Get-MandataNodePoint 22
-          $targetDistance = 0.60
-
-          $inspect = Get-Content -LiteralPath $inspectJson -Raw | ConvertFrom-Json
-          $accepted = @($inspect.candidates | Where-Object {
-            $_.status -eq "ACCEPT" -and $null -ne $_.target
-          })
-          if ($accepted.Count -lt 1) { throw "Nodo22: nessun candidato ACCEPT con target." }
-
-          $scored = foreach ($candidate in $accepted) {
-            $pt = [pscustomobject]@{ x=[double]$candidate.target.x; y=[double]$candidate.target.y }
-            $d56 = Point-SegmentDistance $pt $p5 $p6
-            $d67 = Point-SegmentDistance $pt $p6 $p7
-            $d = [Math]::Min($d56,$d67)
-            [pscustomobject]@{
-              candidate = $candidate
-              distance = $d
-              delta = [Math]::Abs($d-$targetDistance)
-            }
-          }
-          $selectedScore = $scored |
-            Sort-Object -Property @{Expression={$_.delta};Ascending=$true}, @{Expression={$_.distance};Ascending=$true} |
-            Select-Object -First 1
-          $selected = $selectedScore.candidate
-
-          $sx = ([double]$selected.start.x).ToString("0.000000",$ci)
-          $sy = ([double]$selected.start.y).ToString("0.000000",$ci)
-          $tx = ([double]$selected.target.x).ToString("0.000000",$ci)
-          $ty = ([double]$selected.target.y).ToString("0.000000",$ci)
-          $needle = "DIEGO_DECISION family=Supply choice=$($selected.kind) start=($sx,$sy) target=($tx,$ty)"
-          $decisionLine = Get-Content -LiteralPath $inspectLog |
-            Where-Object { $_.Contains($needle) } |
-            Select-Object -First 1
-          if ([string]::IsNullOrWhiteSpace($decisionLine)) {
-            throw "Decision Key del candidato nodo22 selezionato non trovata nel log."
-          }
-          $keyPos = $decisionLine.IndexOf("DIEGO_DECISION ")
-          if ($keyPos -lt 0) { throw "Decision Key nodo22 non canonica." }
-          $selectedKey = $decisionLine.Substring($keyPos)
-
-          $nodeIds = @($current.supplyNodeIds | ForEach-Object { [int]$_ })
-          $node22Index = -1
-          for ($i=0; $i -lt $nodeIds.Count; $i++) {
-            if ($nodeIds[$i] -eq 22) { $node22Index=$i; break }
-          }
-          if ($node22Index -lt 1) { throw "Nodo22 non trovato nel percorso del setup corrente." }
-
-          $currentKeys = @($current.supplyDecisionKeys | ForEach-Object { [string]$_ })
-          if ($currentKeys.Count -lt $node22Index) { throw "Decision Key insufficienti fino al nodo22." }
-          $extendedPrefix = New-Object System.Collections.Generic.List[string]
-          for ($i=0; $i -lt $node22Index; $i++) { $extendedPrefix.Add($currentKeys[$i]) }
-          $extendedPrefix.Add($selectedKey)
-
-          $extendedPrefixPath = Join-Path $out "LG041-ANSA-NODE22-2P.prefix-lock.txt"
-          $extendedPrefix | Set-Content -LiteralPath $extendedPrefixPath -Encoding utf8NoBOM
-
-          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
-            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
-            --id LG041-ANSA-NODE22-2P `
-            --out $out `
-            --lock-supply-prefix $extendedPrefixPath
-
-          $resultSvg = Join-Path $out "LG041-ANSA-NODE22-2P.svg"
-          $resultLog = Join-Path $out "LG041-ANSA-NODE22-2P.log.txt"
-          $resultMetrics = Join-Path $out "LG041-ANSA-NODE22-2P.metrics.json"
-          foreach ($required in @($resultSvg,$resultLog,$resultMetrics)) {
-            if (-not (Test-Path $required)) { throw "Risultato forzato nodo22 mancante: $required" }
-          }
-
-          $metrics = Get-Content -LiteralPath $resultMetrics -Raw | ConvertFrom-Json
-          $report = [ordered]@{
-            baseLockedSupplyRank = [int]$current.supplyRank
-            debugNode = 22
-            debugNodePoint = @{ x=$p22.x; y=$p22.y }
-            svgReferenceNodes = @{
-              node5=@{x=$p5.x;y=$p5.y}
-              node6=@{x=$p6.x;y=$p6.y}
-              node7=@{x=$p7.x;y=$p7.y}
-            }
-            targetDistanceMeters = $targetDistance
-            selectedKind = [string]$selected.kind
-            selectedTarget = @{x=[double]$selected.target.x;y=[double]$selected.target.y}
-            selectedDistanceTo567Meters = [double]$selectedScore.distance
-            selectedDeltaFrom2pMeters = [double]$selectedScore.delta
-            selectedDecisionKey = $selectedKey
-            extendedPrefixDecisionCount = $extendedPrefix.Count
-            inspectorSvg = $inspectSvg
-            resultSvg = $resultSvg
-            resultSvgSha256 = [string]$metrics.svgSha256
-          }
-          $reportPath = Join-Path $out "LG041-ANSA-NODE22-2P.report.json"
-          $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $reportPath -Encoding utf8NoBOM
-
-          if ([Math]::Abs([double]$selectedScore.distance - 0.60) -gt 0.000001) {
-            throw "Nodo22: il miglior candidato non raggiunge esattamente 2p dal tratto 5-6-7."
-          }
-
-          Write-Host "RADIANT_HARNESS_NODE22_2P_OK"
-          Write-Host ("selectedKind=" + $selected.kind)
-          Write-Host ("selectedTarget=(" + $tx + "," + $ty + ")")
-          Write-Host ("distanceTo567=" + ([double]$selectedScore.distance).ToString("0.######",$ci))
-          Write-Host ("selectedDecisionKey=" + $selectedKey)
-          Write-Host ("resultSvg=" + $resultSvg)
+          Write-Host "RADIANT_HARNESS_R30_APPROVED_PREFIX_OK"
+          Write-Host "approvedThroughNode=15"
+          Write-Host "approvedPoint=(0.75,3.25)"
 
       - name: Verify approved node 15 continues before internal front
         shell: pwsh
