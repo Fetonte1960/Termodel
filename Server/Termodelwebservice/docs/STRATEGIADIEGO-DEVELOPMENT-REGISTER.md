@@ -8,7 +8,7 @@ attivazione e benchmark della StrategiaDiego.
 
 
 ## R7 — LG-034/LG-035: oltre linea estesa dal nodo corrente
-Stato: **IMPLEMENTATO SU BRANCH — BUILD/REGRESSION DA ESEGUIRE**
+Stato: **ESEGUITO — COMPILATO / REGRESSION SUCCESS / PUBBLICATO SU MAIN**
 
 Decisione utente 26/09/2026:
 - al nodo 8 il riferimento desiderato è la precedente mandata raggiunta tramite il suo prolungamento;
@@ -18,21 +18,40 @@ Decisione utente 26/09/2026:
 - la possibilità resta un ramo dell'albero e deve passare tutte le normali verifiche geometriche.
 
 Implementazione:
-- FindSequenceContinuation conserva le intersezioni teoriche a distanza circa zero invece di eliminarle;
-- TryExtend conserva l'intersezione circa zero; se il riferimento tubazione è incontrato solo sul prolungamento usa la costruzione oltre linea già prevista;
-- nuovo marker log EXTEND beyond-extended-front;
+- `FindSequenceContinuation()` conserva le intersezioni teoriche a distanza circa zero invece di eliminarle;
+- `TryExtend()` conserva l'intersezione circa zero; se il riferimento tubazione è incontrato solo sul prolungamento usa la costruzione oltre linea già prevista;
+- nuovo marker log `EXTEND beyond-extended-front`;
 - LG-034/LG-035 aggiornate con stato implementativo parziale, distinto dalla futura geometria miter generale.
 
-Regression:
-- il quadrato deve esercitare realmente EXTEND beyond-extended-front;
-- miglior terminale mandata: almeno 15 tratti attivi;
-- Fattore di Bontà mandata: almeno 0,88.
+Verifica reale:
+- prima PR Action `36210011831` (#571): build/benchmark SUCCESS, smoke volutamente rosso perché la soglia simulata `B>=1,00` non è stata confermata; runtime reale `B=0,882`;
+- regression riallineata al dato reale mantenendo i vincoli funzionali: marker oltre-linea presente, almeno 15 tratti attivi, `B>=0,88`;
+- PR #4 head finale `c79f2aa73cce7fd5c8986b24d46846dd21d531d3`;
+- PR Action `36210173917` (#575): **SUCCESS** completo;
+- merge su `main`: `b02c692b160bac34961ac1af775a81a20f02cfea`;
+- main Action `36210449283`, job `108315651971`: **SUCCESS** completo;
+- Commit Status `Termodel/job=SUCCESS`;
+- artifact main `strategia-diego-square-executive`, id `10896115041`;
+- miglior terminale mandata reale per entrambi i lati ritorno:
+  **15 tratti attivi**, `20,56 m`, area empirica `12,336 m²`,
+  superficie locale `13,988 m²`, Fattore di Bontà **0,882**;
+- la simulazione in memoria che stimava circa `1,105` non è confermata nella
+  lunghezza: il dato runtime autorevole è `0,882`;
+- soluzione complessiva selezionata dal criterio di merito corrente:
+  mandata attiva `17,72 m`, bontà `0,760`; ritorno attivo `11,88 m`,
+  bontà `0,510`; merito `32,758 m`;
+- SVG SHA-256
+  `875042179e3d2df58e38f2e9c5867e67b2caa5aff3bb8879e34bb3d107f63d0a`;
+- DXF SHA-256
+  `18444400dc3ba48b7730b90d094934ce101b28d8972f2ea537fbb2b1ce974f82`;
+- numerazione diagnostica SVG: 22 nodi;
+- smoke progetto radiante reale, banco appartamento corrente e snapshot:
+  **SUCCESS**.
 
-Prima verifica reale:
-- PR Action run 36210011831 (#571): build e benchmark SUCCESS, smoke esecutivo fermato dalla soglia iniziale di bontà 1,00;
-- il runtime ha però esercitato correttamente EXTEND beyond-extended-front e ha prodotto 15 tratti attivi;
-- miglior terminale mandata reale: 20,56 m attivi, area empirica 12,336 m² su 13,988 m², fattore 0,882;
-- la simulazione in memoria (circa 1,105) non è quindi confermata nella lunghezza; la regression è stata riallineata al dato runtime reale senza rimuovere il controllo sull'opzione LG-034.
+Pubblicazione:
+- il merge su `main` ha attivato il normale auto-deploy Render;
+- l'SVG/log reale è disponibile per il controllo visuale dell'utente secondo LG-036;
+- la geometria offset/miter generale per angoli arbitrari resta futura e non viene dichiarata completata da R7.
 
 ## R6 — Riaggancio geometrico della mandata dopo il primo giro
 Stato: **ESEGUITO — COMPILATO / REGRESSION SUCCESS / PUBBLICATO SU MAIN**
