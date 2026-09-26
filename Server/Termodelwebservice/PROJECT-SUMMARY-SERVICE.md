@@ -72,19 +72,57 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Prefix Lock e ricerca setup ansa buono
-Stato: COMMISSIONATO
+Stato: ESEGUITO — HARNESS SUCCESS / SETUP ANSA BUONO ISOLATO
 
 Commissionato:
-- introdurre sul branch sperimentale PR #8 un meccanismo diagnostico **Prefix Lock** complementare al Decision Reject Replay;
-- il Prefix Lock deve preservare una sequenza iniziale di Decision Key del vero albero e lasciare nuovamente libera l'esplorazione dopo il prefisso;
-- nessuna modifica alla funzione di merito o alle regole geometriche normali in assenza del lock;
-- usare il meccanismo per individuare/visualizzare un setup che risolve correttamente la prima ansa della mandata lasciando spazio utile all'ingresso del Return, anche se il completamento successivo è poco performante;
-- produrre lo SVG standard del vero motore e una fotografia riproducibile del prefisso buono;
-- usare Explorer/Inspector/Replay per analizzare e, se possibile, migliorare le decisioni successive senza perdere il prefisso ansa;
-- aggiornare linee guida, registro sviluppo, Summary e PR #8;
-- nessun merge in main senza autorizzazione separata;
-- chiudere Issue #1 Completed se il collaudo riesce, Not planned se fallisce.
+- introdurre sulla PR #8 un meccanismo diagnostico Prefix Lock complementare al Decision Reject Replay;
+- preservare una sequenza iniziale di Decision Key del vero albero e lasciare libera l'esplorazione dopo il prefisso;
+- usare il lock per trovare/visualizzare il ramo che risolve correttamente la prima ansa;
+- confrontare le decisioni successive senza modificare funzione di merito o geometria;
+- produrre SVG standard del vero motore e fotografia riproducibile;
+- nessun merge in main.
 
+Implementazione:
+- `c23a1f2949a32b5547c83ac0d2f9de83fc493040`: Prefix Lock nel vero `BuildTree` Supply;
+- `82fc399c678ac5d4a5125592d3d761618191b85c`: facciata Benchmark;
+- `0a98ceae0bcea666741d5b90164240b9d72ca28d`: Harness `--lock-supply-prefix <file.txt>`;
+- scelte fuori prefisso loggate come `DIEGO_PREFIX_LOCK REJECT_NOT_IN_PREFIX`;
+- rami incompatibili potati con `PRUNED_BY_PREFIX_LOCK ... terminalCreated=false`;
+- dopo l'ultima chiave l'albero torna libero;
+- senza lock il comportamento normale resta invariato.
+
+Ramo ansa buono individuato:
+- baseline Supply rank 21, terminale storico 74;
+- prefisso storico umano `47 -> 48 -> 50`, persistito come 9 Decision Key canoniche;
+- tratto caratteristico `(0,75;0,15) -> (1,40;0,15) -> (1,40;0,75)`;
+- il Return riesce a sfruttare l'apertura della prima ansa;
+- Harness run `36238346531`: **SUCCESS**;
+- con lock: 48 nodi Supply, 15 terminali Supply;
+- normale selezione sotto lock ricostruisce esattamente il vecchio rank 21;
+- SVG locked SHA-256 `5e66496004a65a0a9ba6d60a54b705c2bd4e146a0e8a2218a501490b5f0abae6`;
+- artifact `radiant-harness-fast` id `10904813175`.
+
+Confronto completamenti dello stesso prefisso:
+- commit test `cdb593fd765d8ea3d497425547fc3441e6179ffc`;
+- Harness run `36238654776`: **SUCCESS**;
+- locked rank 1: Supply 25,45 m / goodness 0,954375; Return 14,90 m; combined merit 41,9808 m;
+- locked rank 3: stessa qualità Supply 25,45 m / 0,954375; Return 19,35 m / goodness 0,725625; closure 1,0440 m; combined merit **46,4440 m**;
+- il locked rank 3 è un completamento nettamente migliore dello stesso prefisso ansa, ma non è scelto dal ranking Supply corrente;
+- SVG migliorato SHA-256 `3cdab768960a2328ef67d77275b56b4f27a8805000b08016f7da997dd56d94e1`;
+- artifact `radiant-harness-fast` id `10905531133`.
+
+Build generale:
+- `TermodelService Build` run `36238656696`: Restore/Build **SUCCESS**, 0 errori;
+- workflow finale failure solo sul benchmark LG-046 già noto: 44.044 nodi, P95 4538 ms > budget 2000 ms.
+
+Documentazione:
+- linee guida aggiornate commit `839affc8066d01a93533c17329b0216b0a0f9520`;
+- registro R29 commit `b162a739cb2fd312e9a03a1fe372c2021e9014a1`.
+
+Conclusione consolidata:
+- **il problema dell'ansa è stato separato dal problema del seguito**;
+- il ramo con ansa buona è ora riproducibile tramite Prefix Lock;
+- il prossimo problema è la selezione fra discendenti a pari qualità Supply: il locked rank 3 produce un Return molto migliore del locked rank 1 ma non viene preferito dal selettore Supply-first corrente.
 
 ### INCARICO 2026-09-26 — Problema corrente: ramo ansa buono con prosecuzione disastrosa
 Stato: ESEGUITO — PROBLEMA OPERATIVO CONSOLIDATO
