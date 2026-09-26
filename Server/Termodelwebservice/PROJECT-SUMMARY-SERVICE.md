@@ -7,7 +7,7 @@
 > `Termodel/job` con `RUNNING -> SUCCESS/FAILED` e push telefono a
 > SUCCESS/FAILED. La regola è permanente e già verificata end-to-end.
 
-Ultimo aggiornamento: **2026-09-25**  
+Ultimo aggiornamento: **2026-09-26**  
 Branch GitHub di riferimento: **main**  
 Repository: `https://github.com/Fetonte1960/Termodel`
 
@@ -72,18 +72,42 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Completamento sistema debug albero StrategiaDiego + reject cumulativo
-Stato: COMMISSIONATO
+Stato: ESEGUITO — HARNESS SUCCESS / INFRASTRUTTURA CONSOLIDATA
 
 Commissionato:
 - completare l'infrastruttura di debug della StrategiaDiego basata sul vero albero di ricerca e sul Decision Reject Replay;
 - mantenere il lavoro algoritmico sul branch sperimentale PR #8, senza merge in `main`;
-- verificare in CI il rifiuto cumulativo di più setup Supply consecutivi: rank 1 escluso -> rank 2, poi rank 2 escluso mantenendo il primo reject -> rank 3 della classifica originale residua;
+- verificare in CI il rifiuto cumulativo di più setup Supply consecutivi;
 - conservare invariato il comportamento senza reject e continuare a produrre lo SVG standard del motore;
-- consolidare in un documento unico il flusso operativo Albero -> Explorer/Inspector -> Decision Key -> reject -> nuova soluzione reale;
-- correggere la documentazione storica R23 affinché non risulti più "non implementata" dopo R24;
-- aggiornare registro sviluppo e Summary con build/test reali;
-- aggiornare e chiudere Issue #1 come `Completed` a fine incarico se il collaudo riesce.
+- consolidare in un documento unico il flusso Albero -> Explorer/Inspector -> Decision Key -> reject -> nuova soluzione reale;
+- correggere la documentazione storica R23 dopo l'implementazione R24;
+- aggiornare registro/Summary e notificare con Issue #1.
 
+Risultato:
+- documento operativo unico creato in `docs/STRATEGIADIEGO-TREE-DEBUG.md`;
+- R23 riallineata a stato implementato/verificato; R25 chiude il sistema di debug ad albero;
+- workflow Harness PR #8 esteso nel commit `b31e2faf2d0ca25a5cd23cf347f56716d3b64b5d`;
+- Harness run `36235621367`, job `108386726433`: **SUCCESS**;
+- primo reject Supply: rank1 -> precedente rank2;
+- secondo reject cumulativo, mantenendo il primo: precedente rank2 -> precedente rank3;
+- file cumulativo con 2 Decision Key distinte;
+- il log osserva entrambi i `REJECT_BY_INPUT`;
+- replay dal solo file cumulativo riproduce lo stesso SVG byte-per-byte del secondo reject interattivo;
+- marker CI `RADIANT_HARNESS_DECISION_REPLAY_CUMULATIVE_OK`;
+- artifact Harness `radiant-harness-fast`, id `10903972542`;
+- PR #8 aggiornata con commento di tracciabilità;
+- nessuna modifica alla geometria/funzione di merito e nessun merge algoritmico in `main`.
+
+Verifica build generale:
+- `TermodelService Build` run `36235621362`: Restore e Build Release **SUCCESS**, 0 errori;
+- workflow finale rosso esclusivamente sul benchmark di sostenibilità LG-046 già noto: `44.044` nodi, P95 `5289 ms` > budget `2000 ms`;
+- artifact benchmark id `10904326425`;
+- il limite prestazionale è separato dal collaudo funzionale del Decision Reject Replay.
+
+Uso futuro consolidato:
+- frase `scarta questo setup mandata` = aggiungere la Decision Key terminale del setup attualmente mostrato ai reject già attivi e rieseguire;
+- ulteriori richieste accumulano i reject e presentano il nuovo top reale della classifica residua;
+- Explorer e Branch Inspector osservano l'albero; Replay lo filtra; lo SVG mostrato resta sempre quello standard del vero motore.
 
 ### INCARICO 2026-09-26 — Implementazione Decision Reject Replay
 Stato: ESEGUITO — HARNESS SUCCESS / PROTOTIPO PR #8
