@@ -4515,6 +4515,191 @@ Prima di dichiarare LG-041 implementata occorrerà:
 ancora il modello precedente e dovrà essere modificato in un incarico
 successivo esplicitamente autorizzato.
 
+
+---
+
+## Direttiva permanente — collaudo preliminare rapido delle strategie
+
+### Scopo
+
+Prima di modificare `StrategiaDiegoEngine` per una nuova regola geometrica,
+quando il comportamento può essere isolato, eseguire preferibilmente un
+**collaudo preliminare in chat** tramite un simulatore temporaneo indipendente.
+
+Il collaudo preliminare serve a validare rapidamente la semantica della regola,
+riducendo il numero di cicli commit -> GitHub Actions -> artifact necessari
+durante la fase di ricerca.
+
+Non sostituisce la verifica definitiva del motore reale.
+
+### Linguaggio e fedeltà
+
+Quando l'obiettivo è la massima corrispondenza con il comportamento finale,
+preferire **C#/.NET** anche per il simulatore preliminare.
+
+Python può essere usato per calcoli esplorativi o controlli geometrici semplici,
+ma non deve essere scelto come riferimento finale quando differenze di
+tolleranza, tipi numerici, strutture dati o librerie .NET possono influenzare
+il risultato.
+
+Il simulatore preliminare deve riprodurre, per quanto pertinente al caso:
+
+- gli stessi dati di input del test reale;
+- la stessa matrice delle distanze `d` e il valore `p`;
+- le stesse tolleranze geometriche che si intendono usare nel Core;
+- le stesse primitive concettuali: rette, segmenti, prolungamenti, offset,
+  intersezioni, contenimento e collisioni;
+- le stesse famiglie geometriche e regole LG già consolidate;
+- lo stesso criterio di merito o Fattore di Bontà quando interviene nella
+  selezione del terminale;
+- lo stesso principio di esplorazione dell'albero previsto dalla specifica.
+
+Quando una libreria geometrica .NET già usata dal progetto è disponibile e
+rilevante, preferirla anche nel simulatore. Nei casi semplici è ammessa una
+implementazione locale delle sole primitive geometriche necessarie, purché
+le formule e le tolleranze siano esplicite.
+
+### Input del collaudo
+
+L'input deve provenire, in ordine di preferenza, da:
+
+1. fixture versionata già esistente;
+2. `locale.xml` o progetto reale fornito dall'utente;
+3. geometria sintetica descritta esplicitamente e registrata nel contesto
+   corrente di test.
+
+Non ricostruire a memoria un caso reale se esiste già il relativo input.
+
+### Ciclo operativo preliminare
+
+Per ogni nuova strategia o rettifica:
+
+1. leggere `STRATEGIADIEGO_TEST_CONTEXT_CURRENT`;
+2. caricare o ricostruire esattamente l'input indicato;
+3. implementare la sola regola in esame nel simulatore temporaneo;
+4. generare tutti i candidati previsti dalla specifica, senza scorciatoie
+   euristiche non consolidate;
+5. applicare validazioni geometriche e criterio di merito dichiarati;
+6. produrre un log leggibile dei nodi/candidati;
+7. quando il disegno cambia, produrre anche un SVG diagnostico numerato;
+8. discutere il risultato e ripetere rapidamente il ciclo finché la strategia
+   è sufficientemente chiara;
+9. solo dopo il consolidamento, trasferire la regola nel Core e avviare la
+   verifica GitHub Actions / runtime reale.
+
+### Output minimo del simulatore
+
+Per ogni candidato utile devono essere diagnosticabili, quando applicabili:
+
+- nodo di origine;
+- famiglia del tubo in costruzione;
+- linea/riferimento generatore;
+- tipo di candidato;
+- intersezione teorica `I`;
+- terminale `T`;
+- distanza `d`;
+- lunghezza del tratto;
+- esito di `TrattoPossibile` o equivalente;
+- motivo di scarto;
+- ordine di esplorazione;
+- merito/bontà del terminale quando disponibile.
+
+Il disegno preliminare deve usare la stessa numerazione dei nodi del log
+quando ciò è praticabile.
+
+### Valore probatorio
+
+Il collaudo preliminare può dichiarare una regola:
+
+- **coerente nella simulazione**;
+- **promettente**;
+- **da correggere**;
+- **non riprodotta**.
+
+Non può da solo dichiarare:
+
+- codice Core implementato;
+- build riuscita;
+- comportamento runtime verificato;
+- regressione definitiva superata;
+- corrispondenza certa con il Service.
+
+Queste dichiarazioni richiedono l'implementazione e l'esecuzione reali.
+
+### Passaggio a GitHub
+
+GitHub Actions viene usato dopo il consolidamento preliminare per:
+
+- compilare il vero `StrategiaDiegoEngine`;
+- eseguire fixture e progetto reale;
+- produrre log/SVG/artifact autorevoli;
+- confrontare simulazione e runtime;
+- registrare eventuali differenze;
+- trasformare il caso in regression permanente quando opportuno.
+
+Il principio operativo è quindi:
+
+`simulazione rapida -> consolidamento -> implementazione Core -> verifica GitHub -> confronto finale`.
+
+---
+
+## Variabile documentale canonica — STRATEGIADIEGO_TEST_CONTEXT_CURRENT
+
+`STRATEGIADIEGO_TEST_CONTEXT_CURRENT` identifica il **progetto/caso e le
+condizioni correnti di collaudo** usate nella discussione e nelle simulazioni.
+
+Non è una variabile di ambiente e non modifica il Service. È una variabile
+documentale autorevole delle linee guida.
+
+Deve essere aggiornata ogni volta che cambia almeno uno di questi elementi:
+
+- fixture o progetto di input;
+- geometria o locale studiato;
+- valore `p`;
+- regola/LG sotto test;
+- condizione specifica da verificare;
+- motore/simulatore di riferimento;
+- output diagnostico richiesto.
+
+Prima di avviare un nuovo collaudo, la chat deve leggere questo blocco e
+verificare che descriva davvero il caso che si intende provare.
+
+### Valore corrente
+
+```text
+STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG041-SQUARE4X4-T1-P030
+
+IdContesto: LG041-SQUARE4X4-T1-P030
+TipoInput: fixture sintetica versionata
+Fixture: tests/fixtures/StrategiaDiegoSquare4x4.locale.xml
+Locale: R001
+Geometria: quadrato 4,00 m x 4,00 m
+Ingresso: T1 da (2,-1) a (2,1), direzione entrante +Y
+Passo_p: 0,30 m
+RegolaSottoTest: LG-041
+CondizionePrincipale: PROSEGUI_DRITTO genera 0..N candidati da fronti fisici e prolungamenti laterali pertinenti
+FamigliePertinenti: architettura + mandata costruita + ritorno costruito nello scenario
+PrioritaEsplorazione: candidati laterali per lunghezza valida decrescente, senza potatura
+SelezioneFinale: funzione di merito/Fattore di Bontà corrente
+VersoSpecialeScavalcamento: nessuno
+SimulatorePreliminarePreferito: C#/.NET
+OutputRichiesto: log candidati/nodi + SVG diagnostico numerato
+StatoMotoreReale: LG-041 consolidata ma non ancora implementata
+```
+
+### Regola di manutenzione
+
+Questo blocco è parte dello stato operativo del progetto.
+
+Quando l'utente cambia progetto, locale, geometria o condizione da verificare,
+aggiornare **prima del collaudo successivo** il valore di
+`STRATEGIADIEGO_TEST_CONTEXT_CURRENT` e i campi associati.
+
+Le vecchie condizioni importanti non vanno perse: quando diventano regression
+o checkpoint consolidati devono essere registrate nel registro di sviluppo o
+nelle fixture, mentre questa variabile continua a indicare soltanto il test
+corrente.
+
 ## Punti successivi
 
 Questa sezione viene aggiornata durante il confronto. I prossimi principi
