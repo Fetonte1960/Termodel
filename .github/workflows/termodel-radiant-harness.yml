@@ -1,0 +1,148 @@
+name: Termodel Radiant Harness
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: termodel-radiant-harness-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/**'
+      - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
+      - 'Server/Termodelwebservice/tests/radiant-harness/**'
+      - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiego*.locale.xml'
+      - '.github/workflows/termodel-radiant-harness.yml'
+  pull_request:
+    paths:
+      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/**'
+      - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
+      - 'Server/Termodelwebservice/tests/radiant-harness/**'
+      - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiego*.locale.xml'
+      - '.github/workflows/termodel-radiant-harness.yml'
+
+jobs:
+  harness:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Server/Termodelwebservice
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Mark Termodel job RUNNING
+        if: ${{ github.event_name != 'pull_request' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+          $body = @{
+            state = "pending"
+            context = "Termodel/job"
+            description = "RUNNING - Radiant Harness #${{ github.run_number }}"
+            target_url = $runUrl
+          } | ConvertTo-Json
+          Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
+          Write-Host "TERMODEL_JOB_STATUS=RUNNING"
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Core + Harness only
+        run: dotnet restore tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj
+
+      - name: Build Core + Harness only
+        run: dotnet build tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-restore
+
+      - name: Run current fast case
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --out $out
+          if (-not (Test-Path (Join-Path $out "LG041-SQUARE4X4-T1-P030.svg"))) { throw "SVG Harness mancante." }
+          if (-not (Test-Path (Join-Path $out "LG041-SQUARE4X4-T1-P030.log.txt"))) { throw "Log Harness mancante." }
+          if (-not (Test-Path (Join-Path $out "LG041-SQUARE4X4-T1-P030.metrics.json"))) { throw "Metriche Harness mancanti." }
+          Write-Host "RADIANT_HARNESS_FAST_CASE_OK"
+
+      - name: Prepare current apartment panel input
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          $prepared = Join-Path $out "StrategiaDiegoCurrentApartment.pannelli.xml"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- prepare `
+            --project tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl `
+            --output $prepared
+          if (-not (Test-Path $prepared)) { throw "Input pannelli preconfezionato mancante." }
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --input $prepared `
+            --id CURRENT-APARTMENT-PREPARED `
+            --p 0.30 `
+            --out $out
+          Write-Host "RADIANT_HARNESS_CURRENT_APARTMENT_OK"
+
+      - name: Upload Harness artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: radiant-harness-fast
+          path: ${{ runner.temp }}/RadiantHarness
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Publish final status and notify
+        if: ${{ always() && github.event_name != 'pull_request' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NTFY_TOPIC: ${{ secrets.TERMODEL_NTFY_TOPIC }}
+        run: |
+          $jobStatus = "${{ job.status }}"
+          $ok = $jobStatus -eq "success"
+          $state = if ($ok) { "success" } else { "failure" }
+          $label = if ($ok) { "SUCCESS" } else { "FAILED" }
+          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+          $body = @{
+            state = $state
+            context = "Termodel/job"
+            description = "$label - Radiant Harness #${{ github.run_number }}"
+            target_url = $runUrl
+          } | ConvertTo-Json
+          Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
+          Write-Host "TERMODEL_JOB_STATUS=$label"
+          if (-not [string]::IsNullOrWhiteSpace($env:NTFY_TOPIC)) {
+            try {
+              $message = "Termodel Radiant Harness #${{ github.run_number }} $label - ${{ github.sha }} - $runUrl"
+              Invoke-RestMethod -Uri "https://ntfy.sh/$env:NTFY_TOPIC" -Method Post -Headers @{
+                "Title" = "Termodel Radiant Harness"
+                "Priority" = "low"
+                "Tags" = if ($ok) { "white_check_mark" } else { "x" }
+              } -Body $message | Out-Null
+              Write-Host "PHONE_NOTIFICATION_SENT status=$label"
+            } catch {
+              Write-Warning "Notifica ntfy non riuscita: $($_.Exception.Message)"
+            }
+          }
