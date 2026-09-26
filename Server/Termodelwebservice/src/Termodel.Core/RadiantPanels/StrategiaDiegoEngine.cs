@@ -22,7 +22,8 @@ internal static class StrategiaDiegoEngine
     public static StrategiaDiegoResult Generate(
         XDocument floorInput,
         double stepMeters = DefaultStepMeters,
-        bool numberSpiralNodes = true)
+        bool numberSpiralNodes = true,
+        IReadOnlySet<string>? rejectedDecisionKeys = null)
     {
         if (floorInput.Root is null)
             throw new InvalidDataException("StrategiaDiego: documento locale privo di root.");
@@ -51,7 +52,7 @@ internal static class StrategiaDiegoEngine
 
         LogDiego(
             $"START step={Fmt(stepMeters)}m maxNodes={maxNodes} maxDepth={maxDepth} " +
-            $"connections={connections.Count}");
+            $"connections={connections.Count} rejectDecisions={rejectedDecisionKeys?.Count ?? 0}");
 
         foreach (XElement localeElement in floorInput.Descendants("Locale"))
         {
@@ -80,7 +81,8 @@ internal static class StrategiaDiegoEngine
                 connection,
                 connections,
                 stepMeters,
-                counters);
+                counters,
+                rejectedDecisionKeys);
             solutions.Add(solution);
 
             // Modificato da Codex per realizzare: rendere diagnosticabile il
@@ -147,7 +149,8 @@ internal static class StrategiaDiegoEngine
     internal static StrategiaDiegoSupplyExplorerResult ExploreSupply(
         XDocument floorInput,
         double stepMeters,
-        int topCount)
+        int topCount,
+        IReadOnlySet<string>? rejectedDecisionKeys = null)
     {
         if (floorInput.Root is null)
             throw new InvalidDataException(
@@ -202,7 +205,8 @@ internal static class StrategiaDiegoEngine
             directed.EntryWall,
             stepMeters,
             counters,
-            countAsSupply: true);
+            countAsSupply: true,
+            rejectedDecisionKeys: rejectedDecisionKeys);
 
         List<SearchNode> ordered = supplyTree.Terminals
             .OrderByDescending(terminal =>
@@ -234,6 +238,8 @@ internal static class StrategiaDiegoEngine
                     goodness,
                     terminal.LengthMeters,
                     nodeIds,
+                    ReconstructDecisionKeys(terminal),
+                    TerminalDecisionKey(terminal),
                     BuildSupplyExplorerSvg(
                         locale,
                         points,
@@ -255,7 +261,8 @@ internal static class StrategiaDiegoEngine
         XDocument floorInput,
         double stepMeters,
         int skipTop,
-        int count)
+        int count,
+        IReadOnlySet<string>? rejectedDecisionKeys = null)
     {
         if (floorInput.Root is null)
             throw new InvalidDataException(
@@ -313,7 +320,8 @@ internal static class StrategiaDiegoEngine
             directed.EntryWall,
             stepMeters,
             supplyCounters,
-            countAsSupply: true);
+            countAsSupply: true,
+            rejectedDecisionKeys: rejectedDecisionKeys);
 
         List<SearchNode> orderedSupply = supplyTree.Terminals
             .OrderByDescending(terminal =>
@@ -360,7 +368,8 @@ internal static class StrategiaDiegoEngine
                     returnRoots,
                     supplyTerminal,
                     stepMeters,
-                    returnCounters);
+                    returnCounters,
+                    rejectedDecisionKeys);
             }
             catch (InvalidOperationException ex)
             {
@@ -376,7 +385,11 @@ internal static class StrategiaDiegoEngine
                     supplyGoodness,
                     supplyTerminal.LengthMeters,
                     supplyNodeIds,
+                    ReconstructDecisionKeys(supplyTerminal),
+                    TerminalDecisionKey(supplyTerminal),
                     false,
+                    null,
+                    null,
                     null,
                     null,
                     null,
@@ -425,6 +438,8 @@ internal static class StrategiaDiegoEngine
                 supplyGoodness,
                 supplyTerminal.LengthMeters,
                 supplyNodeIds,
+                ReconstructDecisionKeys(supplyTerminal),
+                TerminalDecisionKey(supplyTerminal),
                 true,
                 best.ReturnTerminal.NodeId,
                 returnActive,
@@ -434,6 +449,8 @@ internal static class StrategiaDiegoEngine
                 best.MeritMeters,
                 best.ReturnRoot.Side,
                 returnNodeIds,
+                ReconstructDecisionKeys(best.ReturnTerminal),
+                TerminalDecisionKey(best.ReturnTerminal),
                 returnCounters.ReturnNodes,
                 returnCounters.CombinedTerminals,
                 returnCounters.AcceptedTerminals,
@@ -469,7 +486,8 @@ internal static class StrategiaDiegoEngine
         IReadOnlyList<ReturnRoot> returnRoots,
         SearchNode supplyTerminal,
         double step,
-        SearchCounters counters)
+        SearchCounters counters,
+        IReadOnlySet<string>? rejectedDecisionKeys)
     {
         List<GeoSegment> supplySegments =
             ReconstructSegments(supplyTerminal);
@@ -534,7 +552,8 @@ internal static class StrategiaDiegoEngine
                 step,
                 counters,
                 countAsSupply: false,
-                initialConnector: returnConnector);
+                initialConnector: returnConnector,
+                rejectedDecisionKeys: rejectedDecisionKeys);
 
             foreach (SearchNode returnTerminal in returnTree.Terminals)
             {
@@ -586,7 +605,8 @@ internal static class StrategiaDiegoEngine
         InputLine connection,
         IReadOnlyList<InputLine> connections,
         double step,
-        SearchCounters counters)
+        SearchCounters counters,
+        IReadOnlySet<string>? rejectedDecisionKeys)
     {
         DirectedConnection directed = DirectConnection(locale, connection);
         LogDiego(
@@ -612,7 +632,8 @@ internal static class StrategiaDiegoEngine
             directed.EntryWall,
             step,
             counters,
-            countAsSupply: true);
+            countAsSupply: true,
+            rejectedDecisionKeys: rejectedDecisionKeys);
 
         LogDiego(
             $"SUPPLY-FIRST {locale.Id} tree terminals={supplyTree.Terminals.Count} " +
@@ -677,7 +698,8 @@ internal static class StrategiaDiegoEngine
                     returnRoots,
                     supplyTerminal,
                     step,
-                    counters);
+                    counters,
+                    rejectedDecisionKeys);
 
             if (bestForThisSupply is not null)
             {
@@ -707,6 +729,13 @@ internal static class StrategiaDiegoEngine
             GoodnessFactor(supplyActiveLength, step, localeArea);
         double returnGoodness =
             GoodnessFactor(returnActiveLength, step, localeArea);
+
+        LogDiego(
+            $"SUPPLY-FIRST {locale.Id} SELECTED-SUPPLY-TERMINAL-DECISION " +
+            $"{TerminalDecisionKey(best.SupplyTerminal) ?? "-"}");
+        LogDiego(
+            $"SUPPLY-FIRST {locale.Id} SELECTED-RETURN-TERMINAL-DECISION " +
+            $"{TerminalDecisionKey(best.ReturnTerminal) ?? "-"}");
 
         LogDiego(
             $"LOCALE {locale.Id} SELECT-GOODNESS " +
@@ -745,7 +774,8 @@ internal static class StrategiaDiegoEngine
         double step,
         SearchCounters counters,
         bool countAsSupply,
-        ExtensionResult? initialConnector = null)
+        ExtensionResult? initialConnector = null,
+        IReadOnlySet<string>? rejectedDecisionKeys = null)
     {
         var terminals = new List<SearchNode>();
         var stack = new Stack<SearchNode>();
@@ -782,7 +812,8 @@ internal static class StrategiaDiegoEngine
             direction: initialDirection,
             depth: 1,
             lengthMeters: first.Segment.Length,
-            nodeId: rootNodeId);
+            nodeId: rootNodeId,
+            decisionKey: null);
 
         LogDiego(
             $"TREE {family} initial ACCEPT node={root.NodeId} " +
@@ -815,6 +846,7 @@ internal static class StrategiaDiegoEngine
                 $"front={node.Front.Id} pathLen={Fmt(node.LengthMeters)}m");
 
             var children = new List<SearchNode>();
+            int replayRejectedChildren = 0;
 
             // LG-041: PROSEGUI_DRITTO non seleziona piu' il solo riferimento
             // piu' vicino. Ogni riferimento pertinente puo' generare un
@@ -844,6 +876,25 @@ internal static class StrategiaDiegoEngine
                     continue;
                 }
 
+                string decisionKey = BuildDecisionKey(
+                    family,
+                    "PROSEGUI_DRITTO",
+                    extension.Segment,
+                    extension.Front,
+                    step,
+                    candidate.PhysicalHit ? "physical" : "lateral");
+
+                LogDiego(decisionKey);
+                if (IsDecisionRejected(
+                        decisionKey,
+                        rejectedDecisionKeys))
+                {
+                    replayRejectedChildren++;
+                    LogDiego(
+                        $"DIEGO_DECISION_REPLAY REJECT_BY_INPUT {decisionKey}");
+                    continue;
+                }
+
                 int childNodeId =
                     counters.AddNode(countAsSupply, node.Depth + 1);
                 SearchNode child = new(
@@ -853,7 +904,8 @@ internal static class StrategiaDiegoEngine
                     node.Direction,
                     node.Depth + 1,
                     node.LengthMeters + extension.Segment.Length,
-                    childNodeId);
+                    childNodeId,
+                    decisionKey);
 
                 LogDiego(
                     $"TREE {family} CHOICE PROSEGUI_DRITTO[{straightIndex + 1}/{straightCandidates.Count}] ACCEPT " +
@@ -925,6 +977,27 @@ internal static class StrategiaDiegoEngine
                     continue;
                 }
 
+                string decisionKey = BuildDecisionKey(
+                    family,
+                    choiceName,
+                    extension.Segment,
+                    extension.Front,
+                    step,
+                    DecisionReferenceType(
+                        extension.Segment,
+                        extension.Front));
+
+                LogDiego(decisionKey);
+                if (IsDecisionRejected(
+                        decisionKey,
+                        rejectedDecisionKeys))
+                {
+                    replayRejectedChildren++;
+                    LogDiego(
+                        $"DIEGO_DECISION_REPLAY REJECT_BY_INPUT {decisionKey}");
+                    continue;
+                }
+
                 int childNodeId =
                     counters.AddNode(countAsSupply, node.Depth + 1);
                 SearchNode child = new(
@@ -934,7 +1007,8 @@ internal static class StrategiaDiegoEngine
                     direction,
                     node.Depth + 1,
                     node.LengthMeters + extension.Segment.Length,
-                    childNodeId);
+                    childNodeId,
+                    decisionKey);
 
                 LogDiego(
                     $"TREE {family} CHOICE {choiceName} ACCEPT " +
@@ -947,6 +1021,14 @@ internal static class StrategiaDiegoEngine
 
             if (children.Count == 0)
             {
+                if (replayRejectedChildren > 0)
+                {
+                    LogDiego(
+                        $"TREE {family} PRUNED_BY_REPLAY node={node.NodeId} " +
+                        $"rejectedChildren={replayRejectedChildren} terminalCreated=false");
+                    continue;
+                }
+
                 terminals.Add(node);
                 counters.AddTerminal(countAsSupply);
                 LogDiego(
@@ -2111,6 +2193,107 @@ internal static class StrategiaDiegoEngine
                 current.End))
             .ToList();
 
+    private static IReadOnlyList<string> ReconstructDecisionKeys(
+        SearchNode node) =>
+        ReconstructNodes(node)
+            .Select(current => current.DecisionKey)
+            .Where(key => key is not null)
+            .Cast<string>()
+            .ToArray();
+
+    private static string? TerminalDecisionKey(
+        SearchNode node) =>
+        node.DecisionKey;
+
+    private static bool IsDecisionRejected(
+        string decisionKey,
+        IReadOnlySet<string>? rejectedDecisionKeys) =>
+        rejectedDecisionKeys is not null &&
+        rejectedDecisionKeys.Contains(decisionKey);
+
+    private static string BuildDecisionKey(
+        GeoFamily family,
+        string choiceName,
+        GeoSegment segment,
+        GeoSegment reference,
+        double step,
+        string referenceType)
+    {
+        (DPoint refA, DPoint refB) =
+            CanonicalReferenceEndpoints(reference);
+        double respect = RequiredDistance(
+            family,
+            reference.Family,
+            step);
+
+        return
+            $"DIEGO_DECISION family={family} choice={choiceName} " +
+            $"start={CanonicalPoint(segment.A)} " +
+            $"target={CanonicalPoint(segment.B)} " +
+            $"refFamily={reference.Family} " +
+            $"ref=({CanonicalPoint(refA)}->{CanonicalPoint(refB)}) " +
+            $"d={CanonicalNumber(respect)} type={referenceType}";
+    }
+
+    private static string DecisionReferenceType(
+        GeoSegment segment,
+        GeoSegment reference)
+    {
+        DVector unit = segment.Direction.Normalize();
+        DVector refDirection = reference.Direction;
+        if (unit.Length <= Epsilon ||
+            refDirection.Length <= Epsilon)
+        {
+            return "unknown";
+        }
+
+        double denominator =
+            DVector.Cross(unit, refDirection);
+        if (Math.Abs(denominator) <= Epsilon)
+            return "parallel";
+
+        DVector delta = reference.A - segment.A;
+        double uReference =
+            DVector.Cross(delta, unit) /
+            denominator;
+
+        return
+            uReference >= -GeometryTolerance &&
+            uReference <= 1.0 + GeometryTolerance
+                ? "physical"
+                : "lateral";
+    }
+
+    private static (DPoint A, DPoint B) CanonicalReferenceEndpoints(
+        GeoSegment reference)
+    {
+        int compareX = reference.A.X.CompareTo(reference.B.X);
+        if (compareX < 0)
+            return (reference.A, reference.B);
+        if (compareX > 0)
+            return (reference.B, reference.A);
+
+        return reference.A.Y <= reference.B.Y
+            ? (reference.A, reference.B)
+            : (reference.B, reference.A);
+    }
+
+    private static string CanonicalPoint(
+        DPoint point) =>
+        $"({CanonicalNumber(point.X)},{CanonicalNumber(point.Y)})";
+
+    private static string CanonicalNumber(
+        double value)
+    {
+        double normalized =
+            Math.Abs(value) < 0.0000005
+                ? 0.0
+                : value;
+        return normalized.ToString(
+            "0.000000",
+            CultureInfo.InvariantCulture);
+    }
+
     private static double ActiveSpiralLength(
         SearchNode node) =>
         ReconstructSegments(node)
@@ -2718,7 +2901,8 @@ internal static class StrategiaDiegoEngine
             DVector direction,
             int depth,
             double lengthMeters,
-            int nodeId)
+            int nodeId,
+            string? decisionKey)
         {
             Parent = parent;
             Segment = segment;
@@ -2727,6 +2911,7 @@ internal static class StrategiaDiegoEngine
             Depth = depth;
             LengthMeters = lengthMeters;
             NodeId = nodeId;
+            DecisionKey = decisionKey;
         }
 
         public SearchNode? Parent { get; }
@@ -2736,6 +2921,7 @@ internal static class StrategiaDiegoEngine
         public int Depth { get; }
         public double LengthMeters { get; }
         public int NodeId { get; }
+        public string? DecisionKey { get; }
         public DPoint End => Segment.B;
     }
 
@@ -2873,6 +3059,8 @@ internal sealed record StrategiaDiegoRankedSolutionExplorerItem(
     double SupplyGoodness,
     double SupplyTotalLengthMeters,
     IReadOnlyList<int> SupplyNodeIds,
+    IReadOnlyList<string> SupplyDecisionKeys,
+    string? SupplyTerminalDecisionKey,
     bool ReturnFeasible,
     int? ReturnTerminalNodeId,
     double? ReturnActiveLengthMeters,
@@ -2882,6 +3070,8 @@ internal sealed record StrategiaDiegoRankedSolutionExplorerItem(
     double? CombinedMeritMeters,
     string? ReturnRootSide,
     IReadOnlyList<int>? ReturnNodeIds,
+    IReadOnlyList<string>? ReturnDecisionKeys,
+    string? ReturnTerminalDecisionKey,
     int ReturnNodesExplored,
     int CombinedTerminals,
     int AcceptedTerminals,
@@ -2902,6 +3092,8 @@ internal sealed record StrategiaDiegoSupplyExplorerItem(
     double Goodness,
     double TotalLengthMeters,
     IReadOnlyList<int> NodeIds,
+    IReadOnlyList<string> DecisionKeys,
+    string? TerminalDecisionKey,
     string Svg);
 internal sealed record StrategiaDiegoResult(
     string Svg,
