@@ -5428,6 +5428,210 @@ l'assenza del ramo normotico ma il calcolo del suo punto terminale.
 
 Lo strumento diventa disponibile a richiesta per qualsiasi nodo deterministico
 del banco di test.
+## Architettura di debug permanente — Decision Reject Replay
+
+**Stato:** APPROVATA COME ARCHITETTURA — NON ANCORA IMPLEMENTATA  
+**Origine:** decisione utente del 26/09/2026
+
+### Scopo
+
+Il debug di StrategiaDiego non deve richiedere, caso per caso, modifiche al
+sorgente per forzare un ramo o ricostruzioni grafiche esterne al motore.
+
+Quando si vuole osservare una soluzione alternativa, si deve continuare a
+usare **il vero motore StrategiaDiego** e il suo normale SVG finale.
+
+Il principio è:
+
+```text
+esecuzione normale
+        ↓
+il motore registra ogni decisione di ramo con una riga canonica
+        ↓
+l'utente sceglie una o più decisioni da escludere
+        ↓
+le stesse righe canoniche vengono fornite come input di debug
+        ↓
+quando la decisione corrente coincide con una riga esclusa
+        ↓
+quel ramo viene rifiutato
+        ↓
+l'albero continua normalmente sulle alternative residue
+        ↓
+il motore produce la successiva soluzione migliore e il suo SVG standard
+```
+
+Nome convenzionale dell'architettura:
+
+```text
+Decision Reject Replay
+```
+
+### Regola fondamentale
+
+Ogni volta che l'albero sta per materializzare una scelta di nodo deve essere
+disponibile una **Decision Key canonica**, stampata anche nel log.
+
+Se l'esecuzione riceve un insieme opzionale di Decision Key da rifiutare e la
+Decision Key corrente coincide esattamente con una di esse, la scelta viene
+rifiutata prima di creare il figlio dell'albero.
+
+Il rifiuto deve essere diagnosticato esplicitamente, per esempio:
+
+```text
+DIEGO_DECISION_REPLAY REJECT_BY_INPUT <Decision Key canonica>
+```
+
+In assenza di input di replay il comportamento del motore deve essere
+**identico byte-per-byte nelle decisioni** rispetto all'esecuzione normale:
+nessuna regola aggiuntiva, nessun bonus, nessuna potatura.
+
+### Decision Key canonica
+
+La chiave deve descrivere la **decisione geometrica**, non l'identità
+accidentale dell'esecuzione.
+
+Non devono essere necessari per il matching:
+
+- timestamp;
+- GUID generati a runtime;
+- numero progressivo del nodo, se cambia quando si esclude un ramo;
+- ordine casuale o dati diagnostici non geometrici.
+
+La forma canonica deve invece contenere almeno, quando applicabile:
+
+```text
+family
+fase/scelta            (PROSEGUI_DRITTO, PARALLELA_A, PARALLELA_B, ...)
+start
+direction e/o target
+famiglia del riferimento
+firma geometrica stabile del riferimento
+distanza di rispetto d
+eventuale tipo physical/lateral
+```
+
+Coordinate e distanze devono essere formattate in modo deterministico con una
+precisione canonica unica. La firma del riferimento deve usare geometria e
+semantica stabili, non un ID contenente GUID.
+
+Esempio concettuale:
+
+```text
+DIEGO_DECISION family=Supply choice=PARALLELA_B
+start=(1.400000,3.250000)
+target=(1.400000,1.350000)
+refFamily=Supply
+ref=((0.750000,0.750000)->(2.600000,0.750000))
+d=0.600000
+type=lateral
+```
+
+Il formato definitivo potrà essere su una sola riga, ma deve restare
+copiabile direttamente dal log all'input di replay.
+
+### Input di replay
+
+Il formato previsto è un semplice file di testo UTF-8 contenente zero o più
+Decision Key canoniche, una per riga. Righe vuote e commenti possono essere
+ignorati.
+
+Interfaccia Harness prevista:
+
+```text
+--reject-decisions <file.txt>
+```
+
+Il nome dell'opzione è documentato come contratto di debug previsto; la
+presente sezione **non dichiara ancora l'implementazione**.
+
+Più decisioni possono essere escluse contemporaneamente. Questo permette un
+debug iterativo:
+
+```text
+run 1 -> osservo soluzione A
+       -> copio la Decision Key che voglio impedire
+
+run 2 -> quella scelta viene REJECT_BY_INPUT
+       -> osservo la migliore soluzione residua B
+       -> eventualmente copio una seconda Decision Key
+
+run 3 -> escludo A + seconda scelta
+       -> osservo C
+```
+
+### Perché questa architettura è preferita
+
+Per osservare una soluzione scartata **non si deve disegnarla fuori dal
+motore** e non si deve aggiungere codice specifico del tipo `se nodo 63...`.
+
+Il replay produce:
+
+- lo stesso algoritmo reale;
+- la stessa geometria reale;
+- la stessa funzione di merito;
+- lo stesso costruttore Return;
+- lo stesso SVG standard prodotto dal motore;
+- una sola differenza controllata: una o più decisioni esplicitamente vietate.
+
+In questo modo una soluzione alternativa è realmente una soluzione di
+StrategiaDiego, non una ricostruzione diagnostica.
+
+### Rapporto con gli strumenti esistenti
+
+Gli strumenti già disponibili restano utili ma hanno ruoli distinti:
+
+- **Supply Explorer:** mostra la classifica delle mandate pure;
+- **Solution Explorer:** mostra `rank Supply + miglior Return`;
+- **Branch Inspector:** spiega cosa è stato tentato/rifiutato in un nodo;
+- **Decision Reject Replay:** forza il vero albero a non percorrere una
+  decisione e fa produrre al motore la migliore alternativa residua.
+
+Per ottenere la geometria definitiva di un ramo alternativo, il Decision
+Reject Replay deve essere preferito a una ricostruzione SVG esterna.
+
+### Workflow rapido per qualsiasi chat futura
+
+```text
+1. usare il banco corrente e il motore Diego reale;
+2. osservare SVG + log / Explorer;
+3. identificare la prima decisione che si vuole escludere;
+4. copiare la sua Decision Key canonica nel reject file;
+5. rieseguire lo stesso identico input;
+6. verificare nel log REJECT_BY_INPUT;
+7. osservare lo SVG standard prodotto dal motore;
+8. se necessario aggiungere altre Decision Key e ripetere;
+9. solo dopo il confronto decidere se esiste realmente una regola geometrica
+   da modificare;
+10. conservare test context + reject file + commit motore come fotografia
+    riproducibile del debug.
+```
+
+### Vincoli permanenti
+
+- il replay è **debug**, non una nuova strategia;
+- senza reject file non deve cambiare nulla;
+- non deve essere usato per mascherare un difetto e poi approvare un Golden;
+- una Decision Key esclusa deve essere visibile nel log come rifiuto esplicito;
+- il reject file deve essere tracciabile insieme al caso di test quando il
+  debug produce una decisione progettuale importante;
+- il meccanismo deve funzionare allo stesso modo per Supply e Return;
+- l'algoritmo normale deve continuare a valutare autonomamente tutte le altre
+  alternative residue;
+- l'SVG da analizzare deve essere quello standard generato dal motore reale,
+  non un'immagine generata o una ricostruzione manuale.
+
+### Caso guida iniziale
+
+Il primo collaudo previsto sarà il quadrato corrente, escludendo la scelta
+anticipata che porta dal nodo geometrico corrispondente a `62->65`, per
+lasciare che il motore sviluppi il ramo `62->63` e produca autonomamente il
+nuovo terminale e il relativo miglior Return.
+
+Il matching non dovrà dipendere dai numeri `62`, `63`, `65`: questi restano
+solo riferimenti umani al run corrente.
+
+---
 ## Variabile documentale canonica — STRATEGIADIEGO_TEST_CONTEXT_CURRENT
 
 `STRATEGIADIEGO_TEST_CONTEXT_CURRENT` identifica il **progetto/caso e le
