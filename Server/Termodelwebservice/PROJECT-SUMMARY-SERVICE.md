@@ -71,6 +71,29 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Correzione nodo 8: inseguimento geometrico mandata e nuova release
+Stato: COMMISSIONATO
+
+Commissionato:
+- consolidare la correzione discussa in simulazione sul quadrato pannelli dopo il nodo 8;
+- quando la mandata riaggancia una propria evoluzione precedente, non scegliere il riferimento successivo con il solo `SequenceIndex+1`: cercare invece la prima linea pertinente incontrata DAVANTI nella direzione corrente, usando la geometria teorica delle rette come già previsto per l'inseguimento;
+- preservare collisioni e distanze sulla geometria fisica reale e la distanza stessa-famiglia `2p`;
+- applicare la stessa regola di inseguimento della propria famiglia anche al ritorno, in coerenza con LG-027, senza modificare GPT/Vittorio;
+- aggiornare le linee guida chiarendo il significato operativo di “successivo riferimento” in LG-033/LG-035;
+- aggiungere regression sul quadrato che impedisca il ritorno al terminale prematuro del nodo 8 e misuri numero tratti/fattore di bontà della mandata;
+- eseguire build e smoke GitHub Actions, produrre nuovo SVG/log reale con numerazione nodi, pubblicare su `main` per il normale auto-deploy Render;
+- non modificare frontend, Library Desktop o `definizionedati.json`;
+- a conclusione aggiornare questo Summary e chiudere Issue #1 `Completed` se riuscito, `Not planned` se fallito.
+
+Criteri di completamento:
+- sorgente e direttive coerenti con la correzione;
+- sul quadrato reale la mandata supera il precedente arresto del nodo 8;
+- regression registra almeno numero tratti attivi e Fattore di Bontà del miglior terminale mandata;
+- build/smoke GitHub Actions SUCCESS;
+- artifact SVG/log reale disponibile per verifica visuale;
+- revisione integrata su `main` e notifica finale tramite Issue #1.
+
+
 ### INCARICO 2026-09-26 — Differenziazione intensità notifiche ntfy
 Stato: ESEGUITO
 
