@@ -7,6 +7,44 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R12 — Supply-first: mandata completa prima del ritorno
+Stato: **ESEGUITO — SIMULAZIONE REALE POSITIVA / NON INTEGRATA**
+
+Decisione utente 26/09/2026:
+- approvata la modifica strutturale: il ritorno deve essere costruito soltanto dopo la conclusione della mandata;
+- durante la ricerca della mandata nessuna geometria `Return` o `ReturnConnection` può condizionare il rosso;
+- il ritorno può invalidare una mandata terminata ma non modificarne la costruzione;
+- usare Radiant Harness e Issue #1 per il collaudo/notifica;
+- nessun merge in `main` prima della valutazione visuale.
+
+Prototipo:
+- branch `experiment/lg041-supply-first-return-after`, PR #8;
+- albero mandata costruito una sola volta con architettura + collegamenti esterni + mandata corrente;
+- terminali mandata ordinati per `TerminalGoodness`, poi lunghezza attiva e totale;
+- radici e raccordi ritorno creati solo dopo il terminale mandata in esame;
+- la mandata completa viene usata come `fixedPath` del ritorno;
+- primo terminale mandata che ammette almeno un ritorno viene selezionato; per quella mandata si sceglie la migliore configurazione blu corrente.
+
+Risultati quadrato:
+- Harness run `36224330125`, job `108355311328`: **SUCCESS**;
+- percorso rosso selezionato: `... 27 -> 28 -> 29 -> 30 ...`; il tratto `28 -> 29` resta verticale e indipendente dal ritorno;
+- 290 nodi Supply, 64 terminali Supply, 726 nodi Return, 1.016 nodi totali, 16 terminali accettati, maxDepth 25;
+- run diagnostico Harness ~393 ms;
+- benchmark 20/20 deterministico: P95 313 ms, memoria delta max ~10,95 MB;
+- SVG SHA-256 `d2af75acfb1b717c6d08ad82dfb0bfa89fc5dd6fd9b2ebfaa1d9db8e3b84bc7f`;
+- rispetto al prototipo LG-041 precedente sul quadrato (17.616 nodi), riduzione a 1.016 nodi (~94,2%).
+
+Altri casi:
+- appartamento preconfezionato Harness: SUCCESS, 42 Supply + 38 Return = 80 nodi, 3 terminali accettati, ~65 ms diagnostici;
+- `StrategiaDiegoConcaveL`: ora sostenibile, 4.455 nodi, 72 terminali accettati, P95 382 ms;
+- `StrategiaDiegoObliqueTrapezoid`: sostenibile, 1.587 nodi, 24 terminali accettati, P95 312 ms;
+- `StrategiaDiegoConnectionTerminal`: ancora non sostenibile; supera 250.000 nodi nel warm-up.
+
+Decisione:
+- LG-042 registrata come regola approvata e simulata;
+- PR #8 resta sperimentale e non viene integrata automaticamente;
+- prossimo passo: valutazione visuale utente del nuovo SVG e successiva analisi del caso `ConnectionTerminal`.
+
 ## R11 — Collaudo reale LG-041 con Radiant Harness
 Stato: **ESEGUITO — PROTOTIPO VALIDATO SUL QUADRATO / NON INTEGRABILE SUL CONCAVO**
 
