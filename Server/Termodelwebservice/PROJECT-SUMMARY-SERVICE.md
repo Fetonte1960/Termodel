@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Return/Return a passo p
-Stato: COMMISSIONATO
+Stato: ESEGUITO — SIMULAZIONE POSITIVA / NON INTEGRATA
 
 Commissionato:
 - proseguire la simulazione sul prototipo `experiment/lg041-supply-first-return-after` / PR #8, senza merge in `main`;
@@ -90,6 +90,22 @@ Commissionato:
 - eseguire appartamento preconfezionato e regression completa senza alzare limiti o introdurre potature;
 - nessuna modifica a frontend, Library Desktop, Vittorio/GPT o `definizionedati.json`;
 - Issue #1 aperta durante il lavoro e chiusa `Completed` al termine della simulazione.
+
+Risultato:
+- modifica sperimentale sul branch `experiment/lg041-supply-first-return-after`, commit `db380ea6af1fad8de4fed1df45aca64b395372c1`, PR #8; nessun merge in `main`;
+- `RequiredDistance()` usa ora `p` per Return/Return; Supply/Supply resta `2p`, Supply/Return e Return/Supply restano `p`, architettura resta `p/2`;
+- Radiant Harness run `36228623930`: **SUCCESS** su quadrato e appartamento;
+- quadrato: 374 nodi Supply, 43.670 Return, 44.044 totali, 12.545 terminali combinati, 8.192 accettati, maxDepth 35;
+- la mandata selezionata resta invariata: activeLength `28,05 m`, goodness `1,052`;
+- il ritorno selezionato migliora da activeLength `20,15 m`, goodness `0,756` a `21,05 m`, goodness `0,789`; guadagno `+0,90 m` attivi;
+- nel log risultano 7.328 candidati Return/Return accettati con `d=0,30 m` e nessuno con `d=0,60 m`; la nuova matrice è quindi effettivamente applicata;
+- SVG quadrato SHA-256 `ca3ba4bbda4a6e95398f3d155f7009d05e0e378843b06b26b86f9fe0a82e8ce0`;
+- appartamento preconfezionato: SUCCESS, 43 Supply + 198 Return = 241 nodi totali, 4 terminali accettati, 117 ms diagnostici;
+- build completa PR: compilazione SUCCESS; benchmark quadrato 20/20 deterministico con 44.044 nodi, P95 `3.904 ms`, memoria delta max ~12,62 MB e 8.192 terminali accettati;
+- benchmark quadrato `not-sustainable` per P95 oltre budget 2.000 ms pur restando sotto budget nodi 50.000; la regression si ferma sul quadrato e non verifica i fixture successivi;
+- nessun limite alzato e nessuna potatura euristica introdotta;
+- LG-046 registrata nelle linee guida nel commit `e66346aecb5b4feb5944e8236033dec010c7a1ab`; registro R19 nel commit `b4ce9e98a73c08d794f770c03a32e2506e33b18a`;
+- conclusione: la regola `Return/Return=p` migliora realmente il riempimento delle anse e la bontà del ritorno, ma aumenta fortemente la combinatoria; integrazione in `main` rinviata in attesa di deduplicazione esatta degli stati Return.
 
 
 ### INCARICO 2026-09-26 — Analisi efficienza ramo 47→49 rispetto a 47→48
