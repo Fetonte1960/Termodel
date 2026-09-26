@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Solution Explorer: rank mandata + miglior ritorno
-Stato: COMMISSIONATO
+Stato: ESEGUITO — HARNESS VERIFICATO / PROTOTIPO PR #8
 
 Commissionato:
 - estendere il `Termodel.RadiantPanels.Harness` sul prototipo PR #8 senza modificare il comportamento normale del Service;
@@ -87,6 +87,23 @@ Commissionato:
 - nessun merge in `main` senza ulteriore approvazione visuale;
 - Issue #1 chiusa `Completed` al termine della simulazione.
 
+
+Risultato:
+- implementata sul branch `experiment/lg041-supply-first-return-after` / PR #8 la modalità combinata `rank Supply + miglior Return`, senza modificare l'ordinamento delle mandate;
+- estratta `TryFindBestReturnForSupply()` e riusata sia dal flusso normale supply-first sia dal Solution Explorer, evitando una seconda implementazione del Return;
+- aggiunti `StrategiaDiegoEngine.ExploreRankedSolutions()` e `StrategiaDiegoBenchmark.ExploreRankedSolutions()`;
+- Harness esteso con `--solution-top N`, `--skip-top N --solution-top M` e `--solution-rank N`; modalità Supply-only precedenti mantenute;
+- output: `solution-rank-NNN.svg` rosso+blu, `solutions.json` con metriche Supply/Return/chiusura/merito e `index.html` a galleria;
+- Harness run `36231049216`, job `108374280776`: **SUCCESS** completo; Top 3 combinati, rank 21 combinato, appartamento e artifact tutti SUCCESS;
+- artifact `radiant-harness-fast`, id `10902548566`;
+- rank Supply 1: active `28,05 m`, goodness `1,051875`; Best Return active `21,05 m`, goodness `0,789375`, closure `0,30 m`, combined merit `50,00 m`, 43.670 nodi Return esplorati;
+- rank Supply 2: stessa qualità del rank 1, soluzione speculare con radice Return `Destra`;
+- rank Supply 3: Supply active `27,95 m`, goodness `1,048125`; Best Return active `5,60 m`, goodness `0,21`, closure `1,030776 m`, combined merit `35,1808 m`; peggioramento prevalentemente lato Return;
+- rank Supply 21, primo con `47->48`: Supply active `25,45 m`, goodness `0,954375`; Best Return active `14,90 m`, goodness `0,55875`, total Return `15,35 m`, closure `1,030776 m`, combined merit `41,9808 m`; 90.901 nodi Return esplorati;
+- il confronto conferma che il rank 21 perde sia per mandata più corta sia perché il miglior ritorno compatibile riempie meno efficacemente le anse;
+- build completa run `36231049256`: compilazione Release SUCCESS; benchmark quadrato `not-sustainable` per il problema già noto LG-046, 44.044 nodi e P95 `4.197 ms` > budget 2.000 ms; failure non attribuibile al Solution Explorer diagnostico;
+- linee guida aggiornate nel commit `0e39a9064711e0237484e9205496ddf3cd590809`; registro R21 nel commit `9b910330bdda49612da819e04aaa4e13052114d8`;
+- nessun merge in `main`; PR #8 resta sperimentale.
 
 ### INCARICO 2026-09-26 — Solution Explorer StrategiaDiego
 Stato: ESEGUITO — HARNESS VERIFICATO / PROTOTIPO PR #8
