@@ -467,39 +467,78 @@ internal static class StrategiaDiegoEngine
                 string? ExcludedFrontId,
                 string? RequiredFrontId)>();
 
-            // Il raccordo tecnico non e' una evoluzione e non introduce
-            // eccezioni nel nodo che segue: PROSEGUI_DRITTO viene valutato
-            // come qualunque altra alternativa e puo' essere scartato solo
-            // dalle normali verifiche geometriche.
-            directions.Add(
-                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null));
+            // Procedura di scavalcamento del tubo entrante e successivi.
+            // Se il nodo precedente e' stato fermato dal raccordo entrante
+            // del ritorno e il nodo corrente ha appena agganciato una
+            // precedente mandata/ritorno come corsia a 2p, il primo tratto
+            // sulla corsia deve seguire il riferimento orientato nel verso
+            // opposto. La fase resta un ramo dell'albero e non modifica le
+            // regole ordinarie degli altri nodi.
+            bool scavalcamentoLaneNode =
+                node.Parent is not null &&
+                node.Parent.Front.Family == GeoFamily.ReturnConnection &&
+                node.Front.Family == family;
 
-            DVector parallel = node.Front.Direction.Normalize();
-            GeoSegment? continuationA =
-                FindSequenceContinuation(
-                    node.End,
-                    node.Front,
-                    constraints,
-                    family,
-                    parallel);
-            GeoSegment? continuationB =
-                FindSequenceContinuation(
-                    node.End,
-                    node.Front,
-                    constraints,
-                    family,
-                    -parallel);
+            if (scavalcamentoLaneNode)
+            {
+                DVector opposite =
+                    -node.Front.Direction.Normalize();
+                GeoSegment? continuation =
+                    FindSequenceContinuation(
+                        node.End,
+                        node.Front,
+                        constraints,
+                        family,
+                        opposite);
 
-            directions.Add((
-                "PARALLELA_A",
-                parallel,
-                null,
-                continuationA?.Id));
-            directions.Add((
-                "PARALLELA_B",
-                -parallel,
-                null,
-                continuationB?.Id));
+                directions.Add((
+                    "SCAVALCAMENTO_OPPOSTA",
+                    opposite,
+                    null,
+                    continuation?.Id));
+
+                LogDiego(
+                    $"SCAVALCAMENTO opposite-lane node={node.NodeId} " +
+                    $"family={family} reference={node.Front.Id} " +
+                    $"referenceDir={Fmt(node.Front.Direction.Normalize())} " +
+                    $"travelDir={Fmt(opposite)}");
+            }
+            else
+            {
+                // Il raccordo tecnico non e' una evoluzione e non introduce
+                // eccezioni nel nodo che segue: PROSEGUI_DRITTO viene valutato
+                // come qualunque altra alternativa e puo' essere scartato solo
+                // dalle normali verifiche geometriche.
+                directions.Add(
+                    ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null));
+
+                DVector parallel = node.Front.Direction.Normalize();
+                GeoSegment? continuationA =
+                    FindSequenceContinuation(
+                        node.End,
+                        node.Front,
+                        constraints,
+                        family,
+                        parallel);
+                GeoSegment? continuationB =
+                    FindSequenceContinuation(
+                        node.End,
+                        node.Front,
+                        constraints,
+                        family,
+                        -parallel);
+
+                directions.Add((
+                    "PARALLELA_A",
+                    parallel,
+                    null,
+                    continuationA?.Id));
+                directions.Add((
+                    "PARALLELA_B",
+                    -parallel,
+                    null,
+                    continuationB?.Id));
+            }
 
             var children = new List<SearchNode>();
             foreach ((
@@ -551,6 +590,17 @@ internal static class StrategiaDiegoEngine
                     $"parentNode={node.NodeId} childNode={child.NodeId} " +
                     $"{Fmt(extension.Segment.A)}->{Fmt(extension.Segment.B)} " +
                     $"front={extension.Front.Id}");
+
+                if (node.Front.Family == GeoFamily.ReturnConnection &&
+                    extension.Front.Family == family)
+                {
+                    LogDiego(
+                        $"SCAVALCAMENTO lane-attach parentNode={node.NodeId} " +
+                        $"childNode={child.NodeId} family={family} " +
+                        $"limitingFront={node.Front.Id} " +
+                        $"strategicReference={extension.Front.Id} " +
+                        $"segment={Fmt(extension.Segment.A)}->{Fmt(extension.Segment.B)}");
+                }
 
                 children.Add(child);
             }
@@ -661,18 +711,22 @@ internal static class StrategiaDiegoEngine
             return null;
 
         ExtensionResult? best = null;
+        bool bestIsReturnConnectionLimiter = false;
 
         foreach (GeoSegment reference in constraints)
         {
-            // Modificato da Codex per realizzare: i tubi di collegamento sono
-            // ostacoli fisici, non linee strategiche sulle quali svoltare.
-            if (reference.Family is
-                GeoFamily.Connection or GeoFamily.ReturnConnection)
-            {
+            // I normali tubi di collegamento restano soli ostacoli
+            // anti-attraversamento. Il raccordo entrante del ritorno, invece,
+            // partecipa anche al troncamento fisico della procedura di
+            // scavalcamento, senza diventare riferimento strategico LG-033.
+            if (reference.Family == GeoFamily.Connection)
                 continue;
-            }
+
+            bool isReturnConnection =
+                reference.Family == GeoFamily.ReturnConnection;
 
             if (requiredFrontId is not null &&
+                !isReturnConnection &&
                 !reference.Id.Equals(requiredFrontId, StringComparison.Ordinal))
             {
                 continue;
@@ -722,10 +776,16 @@ internal static class StrategiaDiegoEngine
                 uReference <= 1.0 + GeometryTolerance;
 
             // Le estensioni architettoniche non sono ostacoli fisici.
-            // Le estensioni dei tubi possono invece essere marcatori strategici
-            // per l'inseguimento convesso (LG-033..LG-035).
-            if (!physicalHit && reference.Family == GeoFamily.Architecture)
+            // Anche ReturnConnection vale esclusivamente sul proprio segmento
+            // fisico: non deve mai diventare una linea strategica estesa.
+            // Le estensioni di Supply/Return possono invece essere marcatori
+            // strategici per l'inseguimento convesso (LG-033..LG-035).
+            if (!physicalHit &&
+                reference.Family is
+                    GeoFamily.Architecture or GeoFamily.ReturnConnection)
+            {
                 continue;
+            }
 
             double respect = RequiredDistance(
                 family,
@@ -778,10 +838,34 @@ internal static class StrategiaDiegoEngine
                 continue;
             }
 
+            bool isReturnConnectionLimiter =
+                physicalHit &&
+                reference.Family == GeoFamily.ReturnConnection;
+
+            if (isReturnConnectionLimiter)
+            {
+                LogDiego(
+                    $"SCAVALCAMENTO physical-limit family={family} " +
+                    $"reference={reference.Id} start={Fmt(start)} " +
+                    $"dir={Fmt(unit)} respect={Fmt(respect)}m " +
+                    $"target={Fmt(candidate.B)}");
+            }
+
+            // Durante lo scavalcamento il raccordo entrante del ritorno e'
+            // un limite fisico prioritario rispetto a un marcatore virtuale
+            // I+2p sul prolungamento di una tubazione. Le normali validazioni
+            // hanno gia' escluso eventuali ostacoli fisici piu' vicini.
             if (best is null ||
-                candidate.Length < best.Segment.Length - GeometryTolerance)
+                (isReturnConnectionLimiter &&
+                 !bestIsReturnConnectionLimiter) ||
+                (isReturnConnectionLimiter ==
+                     bestIsReturnConnectionLimiter &&
+                 candidate.Length <
+                     best.Segment.Length - GeometryTolerance))
             {
                 best = new ExtensionResult(candidate, reference);
+                bestIsReturnConnectionLimiter =
+                    isReturnConnectionLimiter;
             }
         }
 
