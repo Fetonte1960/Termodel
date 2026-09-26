@@ -55,6 +55,43 @@ public static class StrategiaDiegoBenchmark
             m.MaxDepthLimit,
             diagnostics);
     }
+    public static StrategiaDiegoSupplyExplorerSample ExploreSupply(
+        string localeXml,
+        double stepMeters = StrategiaDiegoEngine.DefaultStepMeters,
+        int topCount = 20)
+    {
+        if (string.IsNullOrWhiteSpace(localeXml))
+            throw new ArgumentException("Fixture Diego vuota.", nameof(localeXml));
+        if (topCount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(topCount));
+
+        XDocument document = XDocument.Parse(
+            localeXml,
+            LoadOptions.PreserveWhitespace);
+
+        StrategiaDiegoSupplyExplorerResult result =
+            StrategiaDiegoEngine.ExploreSupply(
+                document,
+                stepMeters,
+                topCount);
+
+        return new StrategiaDiegoSupplyExplorerSample(
+            result.LocaleId,
+            result.StepMeters,
+            result.SupplyNodes,
+            result.SupplyTerminals,
+            result.Items
+                .Select(item => new StrategiaDiegoSupplyExplorerEntry(
+                    item.Rank,
+                    item.TerminalNodeId,
+                    item.Depth,
+                    item.ActiveLengthMeters,
+                    item.Goodness,
+                    item.TotalLengthMeters,
+                    item.NodeIds,
+                    item.Svg))
+                .ToArray());
+    }
 }
 
 public sealed record StrategiaDiegoBenchmarkSample(
@@ -72,3 +109,20 @@ public sealed record StrategiaDiegoBenchmarkSample(
     int MaxNodes,
     int MaxDepthLimit,
     IReadOnlyList<string> Diagnostics);
+
+public sealed record StrategiaDiegoSupplyExplorerSample(
+    string LocaleId,
+    double StepMeters,
+    int SupplyNodes,
+    int SupplyTerminals,
+    IReadOnlyList<StrategiaDiegoSupplyExplorerEntry> Items);
+
+public sealed record StrategiaDiegoSupplyExplorerEntry(
+    int Rank,
+    int TerminalNodeId,
+    int Depth,
+    double ActiveLengthMeters,
+    double Goodness,
+    double TotalLengthMeters,
+    IReadOnlyList<int> NodeIds,
+    string Svg);
