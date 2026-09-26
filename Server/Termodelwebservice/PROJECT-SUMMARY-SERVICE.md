@@ -71,6 +71,28 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Correzione eco 1→3: escludere il segmento di arrivo dalla continuazione
+Stato: COMMISSIONATO
+
+Diagnosi consolidata dal log reale:
+- al nodo 32 il riferimento guida orizzontale `1→3` è già correttamente conservato in `node.Front`;
+- `PARALLELA_A/B` vengono quindi generate con direzione corretta parallela a `1→3`;
+- `FindSequenceContinuation()` sceglie però come `requiredFront` il segmento appena percorso `30→32`, che passa per il nodo corrente (`rayTravel=0`);
+- `TryExtend()` esclude correttamente il `previousSegment`, perciò entrambe le parallele vengono rifiutate prima della funzione di merito;
+- il difetto non è perdita del riferimento guida ma mancata esclusione del segmento di arrivo nella ricerca del fronte successivo.
+
+Commissionato:
+- sul prototipo PR #8, modificare `FindSequenceContinuation()` affinché escluda sempre il segmento corrente/di arrivo dalla ricerca della continuazione;
+- non introdurre un nuovo stato `GuideReference` se `node.Front` già conserva il riferimento corretto;
+- mantenere LG-041, LG-042 supply-first e LG-043 Return sequence 0;
+- simulare con Radiant Harness sul quadrato e verificare esplicitamente il nodo corrispondente a 32: almeno una parallela a `1→3` deve diventare candidata reale e non essere respinta per `requiredFront=previousSegment`;
+- verificare se il ramo viene poi scelto o scartato dalla normale funzione di merito;
+- recuperare SVG/log/metriche reali e confrontare con la simulazione precedente;
+- eseguire appartamento preconfezionato e osservare le regression senza alzare limiti;
+- nessun merge in `main` senza ulteriore approvazione visuale;
+- Issue #1 aperta durante il lavoro e chiusa `Completed` al termine della simulazione.
+
+
 ### INCARICO 2026-09-26 — Raccordo entrante ritorno come segmento Return normale
 Stato: ESEGUITO — SIMULAZIONE POSITIVA / NON INTEGRATA
 
