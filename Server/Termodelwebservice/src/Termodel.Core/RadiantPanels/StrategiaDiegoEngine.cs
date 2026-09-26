@@ -144,6 +144,113 @@ internal static class StrategiaDiegoEngine
             metrics);
     }
 
+    internal static StrategiaDiegoSupplyExplorerResult ExploreSupply(
+        XDocument floorInput,
+        double stepMeters,
+        int topCount)
+    {
+        if (floorInput.Root is null)
+            throw new InvalidDataException(
+                "StrategiaDiego Supply Explorer: documento locale privo di root.");
+        if (!double.IsFinite(stepMeters) || stepMeters <= 0)
+            throw new ArgumentOutOfRangeException(nameof(stepMeters));
+        if (topCount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(topCount));
+
+        int maxNodes = ReadPositiveEnvironmentInt(
+            "TERMODEL_DIEGO_MAX_NODES",
+            DefaultMaxNodes);
+        int maxDepth = ReadPositiveEnvironmentInt(
+            "TERMODEL_DIEGO_MAX_DEPTH",
+            DefaultMaxDepth);
+        var counters = new SearchCounters(maxNodes, maxDepth);
+
+        List<InputLine> connections = floorInput
+            .Descendants("Linea")
+            .Select(ParseInputLine)
+            .Where(line => line is not null)
+            .Cast<InputLine>()
+            .ToList();
+
+        XElement localeElement = floorInput
+            .Descendants("Locale")
+            .FirstOrDefault()
+            ?? throw new InvalidDataException(
+                "StrategiaDiego Supply Explorer: nessun Locale.");
+
+        LocaleGeometry locale = ParseLocale(localeElement)
+            ?? throw new InvalidDataException(
+                "StrategiaDiego Supply Explorer: locale non valido.");
+
+        InputLine connection = FindConnection(locale, connections)
+            ?? throw new InvalidDataException(
+                $"StrategiaDiego Supply Explorer/{locale.Id}: nessun tubo entrante.");
+
+        DirectedConnection directed = DirectConnection(locale, connection);
+        IReadOnlyList<GeoSegment> architecture = BuildArchitecture(locale);
+        IReadOnlyList<GeoSegment> connectionConstraints =
+            BuildConnectionConstraints(connections, connection.Id);
+
+        SearchTree supplyTree = BuildTree(
+            locale,
+            GeoFamily.Supply,
+            directed.EntryPoint,
+            directed.Direction,
+            architecture,
+            connectionConstraints,
+            Array.Empty<GeoSegment>(),
+            directed.EntryWall,
+            stepMeters,
+            counters,
+            countAsSupply: true);
+
+        List<SearchNode> ordered = supplyTree.Terminals
+            .OrderByDescending(terminal =>
+                TerminalGoodness(locale, terminal, stepMeters))
+            .ThenByDescending(ActiveSpiralLength)
+            .ThenByDescending(terminal => terminal.LengthMeters)
+            .ToList();
+
+        List<StrategiaDiegoSupplyExplorerItem> items = ordered
+            .Take(topCount)
+            .Select((terminal, index) =>
+            {
+                List<DPoint> points = ReconstructPoints(terminal);
+                IReadOnlyList<NodeLabel> labels = ReconstructNodeLabels(terminal);
+                IReadOnlyList<int> nodeIds = labels
+                    .Select(label => label.NodeId)
+                    .ToArray();
+                double activeLength = ActiveSpiralLength(terminal);
+                double goodness = TerminalGoodness(
+                    locale,
+                    terminal,
+                    stepMeters);
+
+                return new StrategiaDiegoSupplyExplorerItem(
+                    index + 1,
+                    terminal.NodeId,
+                    terminal.Depth,
+                    activeLength,
+                    goodness,
+                    terminal.LengthMeters,
+                    nodeIds,
+                    BuildSupplyExplorerSvg(
+                        locale,
+                        points,
+                        labels,
+                        index + 1,
+                        activeLength,
+                        goodness));
+            })
+            .ToList();
+
+        return new StrategiaDiegoSupplyExplorerResult(
+            locale.Id,
+            stepMeters,
+            counters.SupplyNodes,
+            counters.SupplyTerminals,
+            items);
+    }
     private static LocaleSolution GenerateLocale(
         LocaleGeometry locale,
         InputLine connection,
@@ -1992,6 +2099,53 @@ internal static class StrategiaDiegoEngine
         return inside;
     }
 
+    private static string BuildSupplyExplorerSvg(
+        LocaleGeometry locale,
+        IReadOnlyList<DPoint> supplyPoints,
+        IReadOnlyList<NodeLabel> supplyLabels,
+        int rank,
+        double activeLength,
+        double goodness)
+    {
+        IEnumerable<DPoint> allPoints = locale.Perimeter.Concat(supplyPoints);
+        double minX = allPoints.Min(point => point.X) - 0.25;
+        double minY = allPoints.Min(point => point.Y) - 0.25;
+        double maxX = allPoints.Max(point => point.X) + 0.25;
+        double maxY = allPoints.Max(point => point.Y) + 0.25;
+
+        var builder = new StringBuilder();
+        builder.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        builder.AppendLine(
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{minX} {minY} {maxX - minX} {maxY - minY}\" data-termodel-engine=\"Diego\" data-role=\"supply-explorer\" data-rank=\"{rank}\">"));
+
+        AppendPolyline(
+            builder,
+            locale.Perimeter,
+            "black",
+            locale.Id,
+            "perimetro");
+        AppendPolyline(
+            builder,
+            supplyPoints,
+            "red",
+            locale.Id,
+            "mandata");
+        AppendNodeLabels(
+            builder,
+            supplyLabels,
+            locale.Id,
+            "mandata");
+
+        string tx = minX.ToString("0.######", CultureInfo.InvariantCulture);
+        string ty = minY.ToString("0.######", CultureInfo.InvariantCulture);
+        builder.AppendLine(
+            $"<text x=\"{tx}\" y=\"{ty}\" font-size=\"0.10\" fill=\"#111\">" +
+            $"rank {rank} | active {Fmt(activeLength)} m | goodness {Fmt(goodness)}</text>");
+        builder.AppendLine("</svg>");
+        return builder.ToString();
+    }
     private static string WriteSvg(
         IReadOnlyList<LocaleSolution> solutions,
         StrategiaDiegoMetrics metrics,
@@ -2401,6 +2555,22 @@ internal static class StrategiaDiegoEngine
     }
 }
 
+internal sealed record StrategiaDiegoSupplyExplorerResult(
+    string LocaleId,
+    double StepMeters,
+    int SupplyNodes,
+    int SupplyTerminals,
+    IReadOnlyList<StrategiaDiegoSupplyExplorerItem> Items);
+
+internal sealed record StrategiaDiegoSupplyExplorerItem(
+    int Rank,
+    int TerminalNodeId,
+    int Depth,
+    double ActiveLengthMeters,
+    double Goodness,
+    double TotalLengthMeters,
+    IReadOnlyList<int> NodeIds,
+    string Svg);
 internal sealed record StrategiaDiegoResult(
     string Svg,
     double StepMeters,
