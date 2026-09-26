@@ -360,7 +360,7 @@ static string ReplaceProjectSection(string projectText, string name, string cont
     var pattern = new Regex(
         $"---BEGIN:{escaped}---\\s*\\n[\\s\\S]*?\\n---END:{escaped}---",
         RegexOptions.CultureInvariant);
-    string replacement = $"---BEGIN:{name}---\\n{content.TrimEnd()}\\n---END:{name}---";
+    string replacement = $"---BEGIN:{name}---\n{content.TrimEnd()}\n---END:{name}---";
     if (!pattern.IsMatch(projectText))
         throw new InvalidDataException($"Sezione progetto '{name}' non trovata.");
     return pattern.Replace(projectText, _ => replacement, 1);
