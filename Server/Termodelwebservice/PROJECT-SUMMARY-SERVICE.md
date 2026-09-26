@@ -71,6 +71,29 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Fotografia architettura debug Decision Reject Replay
+Stato: ESEGUITO — DOCUMENTAZIONE CONSOLIDATA / NON IMPLEMENTATA
+
+Decisione consolidata:
+- prima di implementare il nuovo meccanismo di debug, fotografarne l'architettura nelle linee guida affinché qualsiasi chat futura possa applicarla rapidamente e senza reinventare strumenti ad hoc;
+- nome architettura: `Decision Reject Replay`;
+- ogni decisione di ramo dovrà disporre di una Decision Key canonica e copiabile dal log;
+- un input opzionale di debug conterrà le Decision Key da rifiutare;
+- quando la key corrente coincide con una riga di input, la scelta viene respinta (`REJECT_BY_INPUT`) e il normale albero continua sulle alternative residue;
+- senza input di replay il motore deve mantenere comportamento invariato;
+- la Decision Key deve essere basata su geometria/semantica stabile e non su timestamp, GUID o node ID progressivi;
+- file di replay previsto: testo UTF-8, una key per riga; opzione Harness prevista `--reject-decisions <file.txt>`;
+- più reject possono essere cumulati per guidare progressivamente il vero motore verso soluzioni alternative;
+- il risultato da osservare deve essere sempre lo SVG standard prodotto da StrategiaDiego, non una ricostruzione o immagine generata;
+- Supply Explorer, Solution Explorer e Branch Inspector restano strumenti di osservazione; Decision Reject Replay sarà lo strumento preferito per ottenere una vera soluzione alternativa;
+- primo collaudo previsto: quadrato corrente, escludendo la decisione geometrica che nel run attuale corrisponde al ramo umano `62->65`, senza dipendere dai numeri di nodo.
+
+Tracciabilità:
+- linee guida: commit `4ee05ae37b14fd92856425971b464dd4e224baef`;
+- registro sviluppo R23: commit `0b63c9011748dab59b49a4b5f63b10aaca3d4e43`;
+- nessuna modifica al motore o al Service in questo incarico.
+
+
 ### INCARICO 2026-09-26 — Branch Inspector diagnostico per nodo 63
 Stato: ESEGUITO — HARNESS VERIFICATO / PROTOTIPO PR #8
 
