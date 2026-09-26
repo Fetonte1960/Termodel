@@ -8,7 +8,7 @@ attivazione e benchmark della StrategiaDiego.
 
 
 ## R5 — Consolidamento debug in memoria: ritorno preliminare, bontà e node-id
-Stato: **IMPLEMENTATO SU BRANCH — BUILD/REGRESSION DA ESEGUIRE**
+Stato: **ESEGUITO — COMPILATO / REGRESSION SUCCESS / ARTIFACT REALE DISPONIBILE**
 
 Decisioni utente 26/09/2026:
 - la radice del ritorno non usa più 0,50 m: distanza mandata-ritorno lungo la
@@ -31,16 +31,41 @@ Documentazione:
 - LG-040 numerazione diagnostica;
 - contratto Frontend-Service v1.27.
 
-Verifica prevista:
-- build Release;
-- benchmark e smoke esistenti;
-- quadrato 4x4 con log `SpiraliDiego`;
-- controllo corrispondenza node-id fra SVG e log;
-- artifact SVG reale per verifica visuale;
-- pubblicazione su `main`/Render soltanto dopo esito tecnico positivo.
+Implementazione e integrazione:
+- PR #2, head finale `e0118fc0e3cde43def856836669c89e95adf2a6d`;
+- PR Action `TermodelService Build` run `36205218493` (#550): **SUCCESS**;
+- merge su `main`: `a15d29e6407f41d3b245c418bc02103ba08227f6`;
+- main Action run `36205436426`, job `108300854209`: **SUCCESS**;
+- lo step finale `Finalize Termodel job status and notify phone` è **SUCCESS**.
+
+Verifica reale quadrato:
+- artifact main `strategia-diego-square-executive`, id `10893840445`;
+- SVG SHA-256
+  `6d8f8c281af51ccceeb20f082f58fe5b00a80ee497d66f7e1d4ef3843c9b511a`;
+- DXF SHA-256
+  `a159bb6529ad84d6415538a6adc82535edb844f89ff60d6c4fd7df9cdb06d7b9`;
+- `primitiveCount=4` tecniche e `svgDebugNodeCount=13`;
+- il log conferma radici ritorno distanti `p=0,30 m` lungo la parete e
+  raccordi entranti blu preliminari marcati `limit=true strategicFront=false`;
+- terminale mandata migliore per bontà nello scenario selezionato:
+  6 tratti attivi, 13,16 m, superficie empirica 7,896 m²,
+  superficie effettiva locale 13,988 m², fattore `0,564`;
+- soluzione finale corrente: merito 24,405 m, 8 punti mandata e 8 ritorno;
+  bontà soluzione selezionata: mandata `0,564`, ritorno `0,317`;
+- node-id soluzione mandata `1,3,4,5,6,7,8`, ritorno
+  `15,17,19,25,26,27`, presenti sia nell'SVG sia nel log;
+- smoke progetto radiante reale e banco appartamento corrente: **SUCCESS**;
+- l'artifact SVG reale è disponibile per verifica visuale dell'utente; la sua
+  approvazione geometrica resta distinta dal successo tecnico automatico.
+
+Pubblicazione:
+- merge/push su `main` ha attivato il normale auto-deploy Render configurato;
+- gli strumenti di rete della sessione non riescono a interrogare
+  `https://termodel.onrender.com/health`, quindi non viene dichiarata una
+  verifica HTTP indipendente del commit runtime.
 
 ## R4 — Uniformità evoluzioni e inversione corsie iniziali mandata/ritorno
-Stato: **IMPLEMENTATO SU GIT — NON COMPILATO / NON ESEGUITO**
+Stato: **ESEGUITO — VERIFICATO NEL CONSOLIDAMENTO R5**
 
 Decisione utente 26/09/2026:
 - eliminato il concetto di una "prima evoluzione" con distanza propria;
@@ -62,10 +87,13 @@ Implementazione:
   raccordo mandata e 0,45 m per il raccordo ritorno.
 
 Verifica:
-- per richiesta esplicita dell'utente, **nessuna compilazione, GitHub Action o
-  verifica SVG è stata eseguita in questa fase**;
-- pertanto la modifica è soltanto implementata/pubblicata e non va considerata
-  compilata, eseguita, testata o visualmente approvata.
+- la fase R4 era stata inizialmente pubblicata senza compilazione per richiesta
+  esplicita dell'utente;
+- la successiva fase R5 ha compilato ed eseguito realmente la stessa rettifica
+  insieme al consolidamento delle ulteriori regole: main Action
+  `36205436426`, job `108300854209`, **SUCCESS**;
+- artifact SVG reale prodotto; approvazione geometrica visuale dell'utente
+  ancora distinta dal successo tecnico.
 
 
 ## R3 — Riallineamento fondamentali geometrici GPT
