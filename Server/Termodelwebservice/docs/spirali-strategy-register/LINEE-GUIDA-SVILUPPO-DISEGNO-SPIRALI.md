@@ -5357,6 +5357,77 @@ Sul quadrato LG-046:
 
 Questo strumento diventa il metodo preferito per confrontare soluzioni scartate
 prima di modificare regole geometriche o funzione di merito.
+## Strumento diagnostico — Branch Inspector
+
+Il Radiant Harness dispone di un Branch Inspector per analizzare un nodo reale
+dell'albero StrategiaDiego senza modificare regole geometriche o funzione di
+merito.
+
+Comando:
+
+```text
+--inspect-node N [--compare-node M]
+```
+
+Funzionamento:
+
+- esegue il vero motore con diagnostica completa;
+- ricostruisce il percorso Supply fino al nodo `N` dai `TREE ... ACCEPT` reali;
+- opzionalmente sovrappone il ramo alternativo che conduce al nodo `M`;
+- mostra tutte le candidate tentate dal nodo `N`, incluse quelle rifiutate;
+- usa i dati reali `I`, `T`, `d`, riferimento e causa `VALIDATE ... REJECT`
+  emessi da `TryExtend()` / LG-041;
+- produce SVG, JSON e finestra log specifica del nodo.
+
+Convenzione SVG:
+
+- rosso: percorso accettato fino al nodo ispezionato;
+- arancione: ramo di confronto divergente;
+- verde: candidata accettata;
+- rosso tratteggiato: candidata rifiutata;
+- cerchio giallo: nodo target.
+
+Output:
+
+- `branch-node-NNN.svg`;
+- `branch-node-NNN.json`;
+- `branch-node-NNN.log.txt`.
+
+### Collaudo nodo 63 — 26/09/2026
+
+Workflow Harness run `36232724318`, job `108378795597`: **SUCCESS**.
+
+Comando verificato:
+
+```text
+--inspect-node 63 --compare-node 65
+```
+
+Percorso target ricostruito:
+
+`1,3,41,42,43,44,45,47,48,50,52,59,61,62,63`.
+
+Ramo di confronto:
+
+`1,3,41,42,43,44,45,47,48,50,52,59,61,62,65`.
+
+Candidate reali da nodo 63 `(0.75,3.25)`:
+
+- `PROSEGUI_DRITTO` verso `(0.15,3.25)`: REJECT, distanza `0` rispetto a
+  un Supply con distanza richiesta `0,60 m`;
+- `PARALLELA_A` verso il basso: intersezione teorica `I=(0.75,0.75)`,
+  target calcolato `T=(0.75,0.15)`, `d=0,60 m`; REJECT per
+  `distance=0 required=0.6`;
+- `PARALLELA_B` verso l'alto: `T=(0.75,4.45)`; REJECT perché fuori locale.
+
+Il Branch Inspector conferma quindi graficamente la diagnosi R18: dopo
+`61->62->63` il motore individua il fronte interno a `y=0.75`, ma per la
+`PARALLELA_A` laterale applica ancora la semantica `oltre I` e porta il target
+fino a `y=0.15`; la candidata sovra-estesa collide. Il problema non è
+l'assenza del ramo normotico ma il calcolo del suo punto terminale.
+
+Lo strumento diventa disponibile a richiesta per qualsiasi nodo deterministico
+del banco di test.
 ## Variabile documentale canonica — STRATEGIADIEGO_TEST_CONTEXT_CURRENT
 
 `STRATEGIADIEGO_TEST_CONTEXT_CURRENT` identifica il **progetto/caso e le
