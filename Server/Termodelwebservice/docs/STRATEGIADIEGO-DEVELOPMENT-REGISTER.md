@@ -7,6 +7,26 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R28 — Problema attuale: preservare il ramo ansa buono e correggere il seguito
+Stato: **PROBLEMA CORRENTE PRIORITARIO — DA RISOLVERE**
+
+Decisione utente 26/09/2026:
+- esiste, o è esistita prima di eventuali regressioni, una soluzione che alla prima ansa della mandata lascia spazio sufficiente per l'ingresso del Return;
+- tale soluzione può risultare poco performante nel ranking finale perché compie scelte successive disastrose;
+- il ranking globale non deve quindi essere usato da solo per giudicare la qualità della prima ansa;
+- occorre visualizzare il circuito del setup che risolve correttamente l'ansa anche se poi degenera;
+- il prefisso buono fino alla prima ansa deve essere preservato;
+- le scelte successive devono essere analizzate e corrette separatamente tramite Explorer, Branch Inspector e Decision Reject Replay;
+- solo dopo avere ottenuto un completamento buono si valuterà l'eventuale regola generale o modifica della funzione di merito.
+
+Criterio metodologico consolidato:
+**qualità del prefisso/ansa e qualità finale del circuito sono due grandezze da osservare separatamente durante il debug.**
+
+Documentazione:
+- linee guida aggiornate commit `f1bfaf1c0626120390ebd776f8f8e7ec7b6200cf`;
+- `STRATEGIADIEGO_TEST_CONTEXT_CURRENT.CondizionePrincipale` aggiornato per riflettere questo problema corrente.
+
+
 ## R27 — Problema dell'ansa
 Stato: **PRINCIPIO GEOMETRICO CONSOLIDATO — CRITERIO MATEMATICO APERTO**
 
