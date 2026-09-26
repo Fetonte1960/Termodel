@@ -537,6 +537,7 @@ internal static class StrategiaDiegoEngine
                 FindSequenceContinuation(
                     node.End,
                     node.Front,
+                    node.Segment,
                     constraints,
                     family,
                     parallel);
@@ -544,6 +545,7 @@ internal static class StrategiaDiegoEngine
                 FindSequenceContinuation(
                     node.End,
                     node.Front,
+                    node.Segment,
                     constraints,
                     family,
                     -parallel);
@@ -1478,6 +1480,7 @@ internal static class StrategiaDiegoEngine
     private static GeoSegment? FindSequenceContinuation(
         DPoint start,
         GeoSegment front,
+        GeoSegment currentSegment,
         IReadOnlyList<GeoSegment> constraints,
         GeoFamily pathFamily,
         DVector travelDirection)
@@ -1506,7 +1509,8 @@ internal static class StrategiaDiegoEngine
         {
             return constraints.FirstOrDefault(candidate =>
                 candidate.Family == front.Family &&
-                candidate.SequenceIndex == front.SequenceIndex + 1);
+                candidate.SequenceIndex == front.SequenceIndex + 1 &&
+                !candidate.Id.Equals(currentSegment.Id, StringComparison.Ordinal));
         }
 
         DVector travel = travelDirection.Normalize();
@@ -1519,7 +1523,8 @@ internal static class StrategiaDiegoEngine
         foreach (GeoSegment candidate in constraints.Where(candidate =>
                      candidate.Family == front.Family &&
                      candidate.SequenceIndex >= 0 &&
-                     candidate.SequenceIndex != front.SequenceIndex))
+                     candidate.SequenceIndex != front.SequenceIndex &&
+                     !candidate.Id.Equals(currentSegment.Id, StringComparison.Ordinal)))
         {
             DVector candidateDirection = candidate.Direction.Normalize();
             if (candidateDirection.Length <= Epsilon)
@@ -1563,7 +1568,7 @@ internal static class StrategiaDiegoEngine
                 $"SEQUENCE {mode} no-forward-front " +
                 $"pathFamily={pathFamily} frontFamily={front.Family} " +
                 $"from={front.SequenceIndex} start={Fmt(start)} " +
-                $"dir={Fmt(travel)}");
+                $"dir={Fmt(travel)} excludedCurrent={currentSegment.SequenceIndex}");
             return null;
         }
 
@@ -1577,7 +1582,8 @@ internal static class StrategiaDiegoEngine
             $"pathFamily={pathFamily} frontFamily={front.Family} " +
             $"from={front.SequenceIndex} next={best.Value.SequenceIndex} " +
             $"start={Fmt(start)} dir={Fmt(travel)} " +
-            $"rayTravel={Fmt(bestTravel)}m intersection={intersectionMode}");
+            $"rayTravel={Fmt(bestTravel)}m intersection={intersectionMode} " +
+            $"excludedCurrent={currentSegment.SequenceIndex}");
         return best;
     }
 
