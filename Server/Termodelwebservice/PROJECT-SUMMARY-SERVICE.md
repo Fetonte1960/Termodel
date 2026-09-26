@@ -71,6 +71,21 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Prefix Lock e ricerca setup ansa buono
+Stato: COMMISSIONATO
+
+Commissionato:
+- introdurre sul branch sperimentale PR #8 un meccanismo diagnostico **Prefix Lock** complementare al Decision Reject Replay;
+- il Prefix Lock deve preservare una sequenza iniziale di Decision Key del vero albero e lasciare nuovamente libera l'esplorazione dopo il prefisso;
+- nessuna modifica alla funzione di merito o alle regole geometriche normali in assenza del lock;
+- usare il meccanismo per individuare/visualizzare un setup che risolve correttamente la prima ansa della mandata lasciando spazio utile all'ingresso del Return, anche se il completamento successivo è poco performante;
+- produrre lo SVG standard del vero motore e una fotografia riproducibile del prefisso buono;
+- usare Explorer/Inspector/Replay per analizzare e, se possibile, migliorare le decisioni successive senza perdere il prefisso ansa;
+- aggiornare linee guida, registro sviluppo, Summary e PR #8;
+- nessun merge in main senza autorizzazione separata;
+- chiudere Issue #1 Completed se il collaudo riesce, Not planned se fallisce.
+
+
 ### INCARICO 2026-09-26 — Problema corrente: ramo ansa buono con prosecuzione disastrosa
 Stato: ESEGUITO — PROBLEMA OPERATIVO CONSOLIDATO
 
