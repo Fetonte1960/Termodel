@@ -36,6 +36,7 @@ Verifica reale:
 - la workflow finale è stata alleggerita: usa direttamente i dataset preconfezionati e non riesegue `prepare` ad ogni iterazione;
 - run finale PR `36222745007` / Harness #16: **SUCCESS**, con build Core+Harness, quadrato e appartamento preconfezionato tutti SUCCESS;
 - PR #6 integrato su `main` nel merge `9764218dfaceceb2ebbf73602ce28e1adf1b97c7`;
+- main Action `36222822652`, job `108351158157`: **SUCCESS** completo; build Release, benchmark StrategiaDiego, smoke esecutivo pannelli, riferimento reale, appartamento corrente e snapshot tutti SUCCESS;
 - linee guida aggiornate con setup Harness e base dati preconfezionata; nessuna modifica a `StrategiaDiegoEngine`, frontend, Library Desktop o `definizionedati.json`.
 
 Esito:
