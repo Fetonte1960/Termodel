@@ -7,6 +7,51 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R19 — Return/Return a passo p
+Stato: **ESEGUITO — SIMULAZIONE GEOMETRICA POSITIVA / COSTO COMBINATORIO ELEVATO**
+
+Decisione utente 26/09/2026:
+- distinguere il passo funzionale delle due famiglie;
+- Supply/Supply resta `2p`, perché la mandata crea le anse;
+- Return/Return diventa `p`, perché il ritorno deve riempire le anse;
+- Supply/Return e Return/Supply restano `p`;
+- tubo/architettura resta `p/2`;
+- simulare sul prototipo PR #8 senza merge automatico e notificare tramite Issue #1.
+
+Implementazione sperimentale:
+- branch `experiment/lg041-supply-first-return-after`, commit `db380ea6af1fad8de4fed1df45aca64b395372c1`, PR #8;
+- modificata soltanto `RequiredDistance()` per il caso `newFamily=Return` / `referenceFamily=Return`;
+- nessuna modifica all'albero o alla funzione di merito.
+
+Risultati Harness:
+- run `36228623930`: **SUCCESS**;
+- quadrato: 374 Supply + 43.670 Return = 44.044 nodi totali;
+- 12.545 terminali combinati, 8.192 accettati, maxDepth 35;
+- selected Supply invariata: activeLength `28,05 m`, goodness `1,052`;
+- selected Return: activeLength `21,05 m`, goodness `0,789`;
+- confronto LG-045: Return precedente activeLength `20,15 m`, goodness `0,756`; guadagno `+0,90 m` attivi e `+0,033` di goodness;
+- SVG SHA `ca3ba4bbda4a6e95398f3d155f7009d05e0e378843b06b26b86f9fe0a82e8ce0`;
+- log: 7.328 candidati Return/Return accettati con `d=0,30 m`; nessun Return/Return accettato con `d=0,60 m`;
+- appartamento preconfezionato: SUCCESS, 43 Supply + 198 Return = 241 nodi, 4 terminali accettati, 117 ms diagnostici.
+
+Confronto geometrico selezionato sul quadrato:
+- la mandata è identica alla LG-045;
+- il ritorno aggiunge una percorrenza più fitta nelle anse interne, inclusi tratti corti coerenti col passo `p`;
+- il terminale blu selezionato migliora senza alterare il terminale rosso.
+
+Sostenibilità:
+- build completa: compilazione SUCCESS;
+- benchmark quadrato: 20/20 deterministico, 44.044 nodi, P95 `3.904 ms`, memoria delta max ~12,62 MB, 8.192 terminali accettati;
+- numero nodi ancora entro budget 50.000, ma P95 oltre budget 2.000 ms -> `not-sustainable`;
+- la regression completa si ferma già sul quadrato, quindi fixture successive non verificate in questa run;
+- nessun limite alzato e nessuna potatura euristica introdotta.
+
+Decisione:
+- LG-046 registrata come approvata e simulata;
+- geometria del ritorno migliorata e principio `Return/Return=p` confermato;
+- PR #8 resta sperimentale e non integrata in `main`;
+- prossimo problema: deduplicazione esatta degli stati Return, ora molto più numerosi.
+
 ## R18 — Perché il ramo anticipato 47→49 risulta più efficiente
 Stato: **ESEGUITO — DIAGNOSI LOG / NESSUNA MODIFICA CODICE**
 
