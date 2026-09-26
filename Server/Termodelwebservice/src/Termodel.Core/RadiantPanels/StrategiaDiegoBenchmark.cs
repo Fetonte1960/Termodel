@@ -92,6 +92,59 @@ public static class StrategiaDiegoBenchmark
                     item.Svg))
                 .ToArray());
     }
+    public static StrategiaDiegoRankedSolutionExplorerSample ExploreRankedSolutions(
+        string localeXml,
+        double stepMeters = StrategiaDiegoEngine.DefaultStepMeters,
+        int skipTop = 0,
+        int count = 20)
+    {
+        if (string.IsNullOrWhiteSpace(localeXml))
+            throw new ArgumentException("Fixture Diego vuota.", nameof(localeXml));
+        if (skipTop < 0)
+            throw new ArgumentOutOfRangeException(nameof(skipTop));
+        if (count <= 0)
+            throw new ArgumentOutOfRangeException(nameof(count));
+
+        XDocument document = XDocument.Parse(
+            localeXml,
+            LoadOptions.PreserveWhitespace);
+
+        StrategiaDiegoRankedSolutionExplorerResult result =
+            StrategiaDiegoEngine.ExploreRankedSolutions(
+                document,
+                stepMeters,
+                skipTop,
+                count);
+
+        return new StrategiaDiegoRankedSolutionExplorerSample(
+            result.LocaleId,
+            result.StepMeters,
+            result.SupplyNodes,
+            result.SupplyTerminals,
+            result.SkipTop,
+            result.Items.Select(item =>
+                new StrategiaDiegoRankedSolutionExplorerEntry(
+                    item.SupplyRank,
+                    item.SupplyTerminalNodeId,
+                    item.SupplyActiveLengthMeters,
+                    item.SupplyGoodness,
+                    item.SupplyTotalLengthMeters,
+                    item.SupplyNodeIds,
+                    item.ReturnFeasible,
+                    item.ReturnTerminalNodeId,
+                    item.ReturnActiveLengthMeters,
+                    item.ReturnGoodness,
+                    item.ReturnTotalLengthMeters,
+                    item.ClosureLengthMeters,
+                    item.CombinedMeritMeters,
+                    item.ReturnRootSide,
+                    item.ReturnNodeIds,
+                    item.ReturnNodesExplored,
+                    item.CombinedTerminals,
+                    item.AcceptedTerminals,
+                    item.ReturnError,
+                    item.Svg)).ToArray());
+    }
 }
 
 public sealed record StrategiaDiegoBenchmarkSample(
@@ -125,4 +178,34 @@ public sealed record StrategiaDiegoSupplyExplorerEntry(
     double Goodness,
     double TotalLengthMeters,
     IReadOnlyList<int> NodeIds,
+    string Svg);
+
+public sealed record StrategiaDiegoRankedSolutionExplorerSample(
+    string LocaleId,
+    double StepMeters,
+    int SupplyNodes,
+    int SupplyTerminals,
+    int SkipTop,
+    IReadOnlyList<StrategiaDiegoRankedSolutionExplorerEntry> Items);
+
+public sealed record StrategiaDiegoRankedSolutionExplorerEntry(
+    int SupplyRank,
+    int SupplyTerminalNodeId,
+    double SupplyActiveLengthMeters,
+    double SupplyGoodness,
+    double SupplyTotalLengthMeters,
+    IReadOnlyList<int> SupplyNodeIds,
+    bool ReturnFeasible,
+    int? ReturnTerminalNodeId,
+    double? ReturnActiveLengthMeters,
+    double? ReturnGoodness,
+    double? ReturnTotalLengthMeters,
+    double? ClosureLengthMeters,
+    double? CombinedMeritMeters,
+    string? ReturnRootSide,
+    IReadOnlyList<int>? ReturnNodeIds,
+    int ReturnNodesExplored,
+    int CombinedTerminals,
+    int AcceptedTerminals,
+    string? ReturnError,
     string Svg);
