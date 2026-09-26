@@ -5708,6 +5708,77 @@ deve usare la Decision Key geometrica e non i numeri `62`, `63`, `65`,
 che restano soltanto riferimenti umani a uno specifico run.
 
 ---
+
+## Problema dell'ansa — principio geometrico StrategiaDiego
+
+### Definizione operativa
+
+Nella spirale normale, dopo il completamento del **primo giro**, la mandata
+deve scavalcare la propria zona di partenza. Questo genera localmente una
+**ansa**: una zona geometrica aperta che può costituire un passaggio utile per
+il Return.
+
+Il comportamento desiderato è:
+
+1. la mandata completa il primo giro e crea l'ansa di scavalcamento;
+2. il Return, quando la geometria e le distanze minime lo consentono, deve
+   poter **entrare nell'ansa** e sfruttarne lo spazio disponibile;
+3. nei giri successivi la spirale si richiude progressivamente verso
+   l'interno;
+4. di conseguenza l'ansa si restringe;
+5. raggiunto un certo livello di restringimento, il Return **non riesce più a
+   entrare** nell'ansa rispettando i vincoli geometrici;
+6. da quel punto il motore deve continuare sulle alternative realmente
+   fattibili, senza forzare l'ingresso nell'ansa.
+
+### Perché è importante
+
+Questo fenomeno è uno dei motivi principali per cui **StrategiaDiego ad
+albero** migliora la StrategiaVittorio.
+
+StrategiaVittorio tende a seguire una costruzione più deterministica. La
+StrategiaDiego, invece, conserva più evoluzioni possibili dell'albero e può
+valutare separatamente:
+
+- il ramo nel quale il Return riesce ancora a sfruttare l'ansa;
+- i rami nei quali l'ansa è ormai troppo stretta;
+- le alternative geometriche residue quando l'ingresso non è più possibile.
+
+Il miglioramento non consiste quindi semplicemente nel "fare entrare sempre il
+ritorno nell'ansa", ma nel **lasciare che il vero albero distingua il momento
+in cui l'ansa è ancora utilizzabile da quello in cui non lo è più**.
+
+### Criterio di perfezione — stato attuale
+
+Il concetto geometrico è consolidato, ma **non è ancora formalizzata una
+funzione matematica definitiva** che dica quanto una soluzione sia migliore
+di un'altra rispetto al problema dell'ansa.
+
+Per ora il criterio resta sperimentale e visuale:
+
+- una soluzione è preferibile quando sfrutta bene l'ansa disponibile senza
+  creare forzature o imbottigliamenti;
+- il Return deve entrare solo finché esiste realmente lo spazio utile;
+- il restringimento progressivo dell'ansa deve emergere naturalmente dalla
+  geometria e dai vincoli dell'albero;
+- non introdurre bonus/penalità ad hoc nella funzione di merito finché il
+  comportamento non è stato osservato su un numero sufficiente di casi.
+
+### Uso nel debug
+
+Il **Problema dell'ansa** deve essere trattato con gli strumenti già
+consolidati:
+
+`Supply Explorer -> Solution Explorer / Branch Inspector -> Decision Key ->
+Decision Reject Replay -> SVG standard del vero motore`.
+
+Quando due soluzioni differiscono per come usano l'ansa, il confronto deve
+servire a individuare la prima decisione geometrica che separa il comportamento
+desiderato da quello indesiderato. Solo dopo più confronti coerenti la regola
+può essere trasformata in criterio algoritmico generale.
+
+
+---
 ## Variabile documentale canonica — STRATEGIADIEGO_TEST_CONTEXT_CURRENT
 
 `STRATEGIADIEGO_TEST_CONTEXT_CURRENT` identifica il **progetto/caso e le
