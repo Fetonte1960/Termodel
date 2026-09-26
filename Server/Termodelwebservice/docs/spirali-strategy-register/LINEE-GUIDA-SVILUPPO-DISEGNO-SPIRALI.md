@@ -5272,9 +5272,71 @@ La classifica usa **esattamente** lo stesso ordinamento supply-first del motore:
 2. `ActiveSpiralLength` decrescente;
 3. lunghezza totale decrescente.
 
-Il Solution Explorer non costruisce il ritorno e non altera né il Service né
+Il Supply Explorer non costruisce il ritorno e non altera né il Service né
 la selezione normale. Serve esclusivamente a rendere osservabili i terminali
 Supply che normalmente vengono scartati.
+
+### Modalità combinata — rank Supply + miglior Return
+
+Per il debug completo è disponibile anche una modalità che conserva il rank
+della mandata pura e associa a ciascuna mandata congelata **il miglior ritorno
+compatibile** calcolato con lo stesso algoritmo Return del motore.
+
+Comandi:
+
+```text
+--solution-top N
+--skip-top N --solution-top M
+--solution-rank N
+```
+
+Il Return **non rimescola la classifica Supply**. Per ciascun rank:
+
+1. si congela la mandata di quel rank;
+2. si costruiscono tutte le configurazioni Return ammesse;
+3. si seleziona il miglior Return con il merito corrente Return/chiusura;
+4. si esporta uno SVG combinato rosso+blu;
+5. se la ricerca Return non trova una soluzione o supera un limite tecnico,
+   la mandata resta visibile e il manifest riporta l'errore/`RETURN NON FATTIBILE`.
+
+Output:
+
+- `solution-rank-NNN.svg`;
+- `solutions.json` con metriche Supply, Return, chiusura, merito combinato,
+  nodi esplorati e percorsi dei nodi;
+- `index.html` con galleria rosso+blu.
+
+Questa è la modalità preferita quando si vuole capire se una mandata scartata
+perde per la propria geometria oppure perché il miglior ritorno associato è
+debole o anomalo.
+
+### Collaudo modalità combinata 26/09/2026
+
+Workflow Harness run `36231049216`: **SUCCESS**.
+
+Verificati:
+
+- `--solution-top 3`: SVG combinati rank 1, 2, 3;
+- `--solution-rank 21`: SVG combinato della prima mandata contenente `47->48`;
+- artifact `radiant-harness-fast`, id `10902548566`.
+
+Risultati principali:
+
+- Supply rank 1: active `28,05 m`, goodness `1,051875`; miglior Return
+  active `21,05 m`, goodness `0,789375`, closure `0,30 m`, merit combinato
+  `50,00 m`; 43.670 nodi Return esplorati;
+- Supply rank 2: stessa qualità Supply e stesso Best Return del rank 1, con
+  radice opposta (`Destra`);
+- Supply rank 3: Supply active `27,95 m`, goodness `1,048125`; miglior Return
+  soltanto `5,60 m`, goodness `0,21`, closure `1,031 m`; il peggioramento
+  complessivo è quindi principalmente lato Return;
+- Supply rank 21 (`47->48`): Supply active `25,45 m`, goodness `0,954375`;
+  miglior Return active `14,90 m`, goodness `0,55875`, closure `1,031 m`,
+  merit combinato `41,9808 m`; la ricerca Return esplora 90.901 nodi.
+
+Il confronto rende immediatamente visibile che il rank 21 non perde soltanto
+per la mandata incompleta: anche il miglior Return associato è molto meno
+efficiente e molto più costoso da trovare rispetto al rank 1.
 
 ### Collaudo 26/09/2026
 
