@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Differenziazione intensità notifiche ntfy
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - rendere tutte le notifiche operative/build a bassa intensità;
@@ -85,6 +85,16 @@ Commissionato:
 Criterio operativo:
 - GitHub Actions/build: priorità ntfy `low` indipendentemente dall'esito;
 - chiusura Issue #1: priorità ntfy `urgent` sia `completed` sia `not_planned`.
+
+Risultato:
+- `.github/workflows/termodel-service-build.yml`: tutte le notifiche terminali build usano ora `Priority: low`, mantenendo tag diversi SUCCESS/FAILED;
+- `.github/workflows/issue-work-notify.yml`: la chiusura della Issue #1 usa sempre `Priority: urgent`, sia per successo sia per insuccesso;
+- protocollo canonico `.github/TERMODEL-ACTION-NOTIFICATIONS.md` aggiornato: il suono forte identifica esclusivamente la fine reale dell'incarico;
+- commit build notification: `5e5df3194a350e910db590c54319e4c393bf55f3`;
+- commit issue notification: `7198ba278aed4b2ba5c7f105c2f149ddac70f75e`;
+- commit documentazione: `37864a81644a92b507f2cf3723e946fe6a5e9290`;
+- nessuna modifica alla logica applicativa, frontend, Library Desktop o `definizionedati.json`;
+- la chiusura della Issue #1 costituisce anche la prova operativa della notifica `urgent` di fine incarico.
 
 
 ### INCARICO 2026-09-26 — Consolidamento debug StrategiaDiego, build e pubblicazione
