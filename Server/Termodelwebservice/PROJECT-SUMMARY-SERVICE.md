@@ -71,6 +71,27 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — LG-034/LG-035: oltre linea estesa a 2p e verifica nuova copertura
+Stato: COMMISSIONATO
+
+Commissionato:
+- consolidare e pubblicare la correzione discussa sul quadrato pannelli al nodo 8;
+- rendere realmente disponibile il caso già previsto da LG-034/LG-035 in cui la retta/prolungamento del riferimento interseca il nodo corrente e il nuovo tratto deve potersi collocare **oltre** tale linea alla distanza di rispetto `d`;
+- nel caso stessa famiglia mandata/mandata usare `d=2p`; con `p=0,30 m` il passaggio atteso è quindi `+0,60 m`;
+- non scartare automaticamente un riferimento strategico solo perché l'intersezione teorica con la semiretta corrente è a distanza zero entro tolleranza, quando l'intersezione è sul prolungamento e la costruzione `I+d` produce un tratto possibile;
+- conservare la distinzione LG-035 fra geometria teorica (rette/prolungamenti per il punto strategico) e geometria fisica (collisioni/distanze sui segmenti reali);
+- preservare l'albero delle alternative: la nuova possibilità deve essere sottoposta alle normali validazioni, non forzata come scelta unica;
+- aggiornare linee guida e registro StrategiaDiego precisando lo stato implementativo reale;
+- aggiornare lo smoke quadrato per verificare il marker del passaggio oltre linea estesa e registrare numero tratti, lunghezza attiva, superficie empirica e Fattore di Bontà del miglior terminale mandata;
+- eseguire build/smoke GitHub Actions, produrre nuovo SVG/log reale con numerazione nodi, integrare su `main` e attivare il normale auto-deploy Render;
+- non modificare GPT/Vittorio, frontend, Library Desktop o `definizionedati.json`;
+- a conclusione aggiornare questo Summary e chiudere Issue #1 `Completed` se riuscito, `Not planned` se fallito.
+
+Obiettivo di verifica:
+- verificare sul runtime reale se la simulazione in memoria (circa 15 tratti attivi e Fattore di Bontà circa 1,105) viene confermata;
+- non dichiarare confermato il valore simulato finché non emerge dall'Action/artifact reale.
+
+
 ### INCARICO 2026-09-26 — Correzione nodo 8: inseguimento geometrico mandata e nuova release
 Stato: ESEGUITO
 
