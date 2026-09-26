@@ -519,14 +519,16 @@ internal static class StrategiaDiegoEngine
                         node.Front,
                         constraints,
                         family,
-                        parallel);
+                        parallel,
+                        node.Segment.Id);
                 GeoSegment? continuationB =
                     FindSequenceContinuation(
                         node.End,
                         node.Front,
                         constraints,
                         family,
-                        -parallel);
+                        -parallel,
+                        node.Segment.Id);
 
                 directions.Add((
                     "PARALLELA_A",
