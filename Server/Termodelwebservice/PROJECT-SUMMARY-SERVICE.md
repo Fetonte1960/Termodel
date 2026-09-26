@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Branch Inspector diagnostico per nodo 63
-Stato: COMMISSIONATO
+Stato: ESEGUITO — HARNESS VERIFICATO / PROTOTIPO PR #8
 
 Commissionato:
 - implementare sul prototipo PR #8 uno strumento diagnostico generico per ispezionare un nodo/ramo dell'albero StrategiaDiego senza alterare algoritmo o funzione di merito;
@@ -86,6 +86,25 @@ Commissionato:
 - nessun merge algoritmico in `main` senza ulteriore approvazione;
 - Issue #1 chiusa `Completed` al termine del collaudo.
 
+
+Risultato:
+- implementato Branch Inspector riutilizzabile sul branch `experiment/lg041-supply-first-return-after` / PR #8;
+- `TryExtend()` emette log diagnostici `TRYEXT CHECK/ACCEPT/REJECT` con intersezione `I`, target `T`, distanza `d`, riferimento e tipo fisico/laterale; nessuna modifica alla logica di scelta;
+- Harness supporta `--inspect-node N [--compare-node M]` e produce SVG, JSON e finestra log del nodo;
+- primo run `36232610173`: failure di compilazione per conflitto di nome locale nel solo codice diagnostico; nessuna simulazione eseguita;
+- fix commit `1ebe2e24efb8739f78c68ace778dc352406bb749`;
+- Harness run `36232724318`, job `108378795597`: **SUCCESS** completo; Branch Inspector nodo 63, Explorer esistenti, appartamento e artifact tutti SUCCESS;
+- artifact `radiant-harness-fast`, id `10902842432`;
+- percorso target nodo 63: `1,3,41,42,43,44,45,47,48,50,52,59,61,62,63`; confronto nodo 65: stesso prefisso fino a 62, poi `62->65`;
+- dal nodo 63 `(0.75,3.25)` vengono osservate tre candidate reali:
+  - `PROSEGUI_DRITTO` a `(0.15,3.25)`: REJECT `distance=0 required=0.6`;
+  - `PARALLELA_A`: `I=(0.75,0.75)`, `T=(0.75,0.15)`, `d=0.60`, REJECT `distance=0 required=0.6`;
+  - `PARALLELA_B`: `I=(0.75,3.85)`, `T=(0.75,4.45)`, REJECT fuori locale;
+- nodo 63 termina con activeLength `21,65 m`, goodness `0,812`;
+- diagnosi confermata: `62->63` raggiunge correttamente la posizione a `2p` dal verticale `43->44`; la successiva parallela verso il basso usa però la semantica laterale `oltre I`, arriva fino a `y=0.15` e collide, invece di arrestarsi prima del fronte interno;
+- la build completa compila; resta il failure benchmark quadrato LG-046 già noto per P95 oltre budget, non causato dal Branch Inspector;
+- linee guida aggiornate nel commit `f3113354d772592b616dae3ef644aefa7984d8a1`; registro R22 nel commit `e2905647024f84dbd8fa311d9f7ae2557790f5db`;
+- nessun merge in `main`; PR #8 resta sperimentale.
 
 ### INCARICO 2026-09-26 — Solution Explorer: rank mandata + miglior ritorno
 Stato: ESEGUITO — HARNESS VERIFICATO / PROTOTIPO PR #8
