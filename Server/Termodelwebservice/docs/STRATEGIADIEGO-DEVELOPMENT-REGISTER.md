@@ -7,6 +7,56 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R29 — Prefix Lock e primo completamento migliorato del ramo ansa buono
+Stato: **ESEGUITO — HARNESS SUCCESS / CANDIDATO VISUALIZZABILE**
+
+Decisione utente 26/09/2026:
+- procedere alla ricerca/visualizzazione del setup che risolve correttamente la prima ansa anche se il completamento successivo è scarso;
+- introdurre un meccanismo diagnostico che preservi il prefisso buono e lasci libero il resto dell'albero;
+- notificare a fine incarico.
+
+Implementazione PR #8:
+- `c23a1f2949a32b5547c83ac0d2f9de83fc493040`: Prefix Lock nel vero `BuildTree` Supply;
+- `82fc399c678ac5d4a5125592d3d761618191b85c`: esposizione diagnostica Benchmark;
+- `0a98ceae0bcea666741d5b90164240b9d72ca28d`: Harness `--lock-supply-prefix <file.txt>`;
+- `aed2e637fbc19699a2af00bcd31b81ef657c33d3`: test del prefisso ansa;
+- `cdb593fd765d8ea3d497425547fc3441e6179ffc`: confronto dei primi 5 completamenti sotto lo stesso prefisso.
+
+Semantica:
+- il Prefix Lock contiene Decision Key ordinate;
+- finché il prefisso non è consumato il motore accetta solo la chiave attesa;
+- scelte diverse: `DIEGO_PREFIX_LOCK REJECT_NOT_IN_PREFIX`;
+- ramo che non soddisfa il prefisso: `PRUNED_BY_PREFIX_LOCK ... terminalCreated=false`;
+- dopo l'ultima Decision Key l'albero torna completamente libero;
+- assenza del lock = comportamento normale invariato;
+- nessuna modifica alla funzione di merito o alle regole geometriche.
+
+Ramo ansa individuato:
+- baseline Supply **rank 21**, terminale storico 74;
+- prefisso umano del run: `47 -> 48 -> 50`, convertito in 9 Decision Key canoniche;
+- geometria caratteristica: `(0,75;0,15) -> (1,40;0,15) -> (1,40;0,75)`;
+- questa apertura consente al Return di entrare nella prima ansa;
+- Harness run `36238346531`: **SUCCESS**;
+- con prefisso bloccato: 48 nodi Supply, 15 terminali Supply;
+- il normale selettore ricostruisce il vecchio rank 21;
+- SVG locked SHA-256 `5e66496004a65a0a9ba6d60a54b705c2bd4e146a0e8a2218a501490b5f0abae6`.
+
+Confronto del seguito:
+- Harness run `36238654776`: **SUCCESS**;
+- primi 5 discendenti Supply dello stesso prefisso confrontati con Solution Explorer;
+- locked rank 1: Supply active 25,45 m, goodness 0,954375; Return active 14,90 m; combined merit 41,9808 m;
+- locked rank 3: stessa qualità Supply (25,45 m / 0,954375), Return active 19,35 m, Return goodness 0,725625, closure 1,0440 m, combined merit **46,4440 m**;
+- il locked rank 3 è quindi un completamento nettamente migliore dello stesso prefisso ansa;
+- SVG migliorato SHA-256 `3cdab768960a2328ef67d77275b56b4f27a8805000b08016f7da997dd56d94e1`.
+
+Build generale:
+- `TermodelService Build` run `36238656696`: Restore/Build **SUCCESS**, 0 errori;
+- workflow finale rosso solo per benchmark LG-046 già noto: 44.044 nodi, P95 4538 ms > budget 2000 ms.
+
+Conclusione:
+**il problema dell'ansa è stato separato dal problema del seguito**. Il prossimo lavoro deve spiegare/perfezionare la selezione tra discendenti a pari qualità Supply, perché il selettore corrente preferisce il locked rank 1 mentre il locked rank 3 produce un Return molto migliore.
+
+
 ## R28 — Problema attuale: preservare il ramo ansa buono e correggere il seguito
 Stato: **PROBLEMA CORRENTE PRIORITARIO — DA RISOLVERE**
 
