@@ -1235,11 +1235,11 @@ internal static class StrategiaDiegoEngine
                     step,
                     allowStartOnBoundary))
             {
-                if (diagnosticParentNodeId is int diagnosticNode &&
+                if (diagnosticParentNodeId is int rejectedNode &&
                     diagnosticChoiceName is not null)
                 {
                     LogDiego(
-                        $"TRYEXT REJECT parentNode={diagnosticNode} choice={diagnosticChoiceName} " +
+                        $"TRYEXT REJECT parentNode={rejectedNode} choice={diagnosticChoiceName} " +
                         $"reference={reference.Id} T={Fmt(extension.Segment.B)}");
                 }
                 continue;
