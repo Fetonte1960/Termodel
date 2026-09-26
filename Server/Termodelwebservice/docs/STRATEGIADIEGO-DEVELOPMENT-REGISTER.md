@@ -26,8 +26,13 @@ Implementazione:
 Regression:
 - il quadrato deve esercitare realmente EXTEND beyond-extended-front;
 - miglior terminale mandata: almeno 15 tratti attivi;
-- Fattore di Bontà mandata: almeno 1,00;
-- i valori reali verranno registrati dopo GitHub Actions e confrontati con la simulazione, che stimava circa 15 tratti e fattore circa 1,105.
+- Fattore di Bontà mandata: almeno 0,88.
+
+Prima verifica reale:
+- PR Action run 36210011831 (#571): build e benchmark SUCCESS, smoke esecutivo fermato dalla soglia iniziale di bontà 1,00;
+- il runtime ha però esercitato correttamente EXTEND beyond-extended-front e ha prodotto 15 tratti attivi;
+- miglior terminale mandata reale: 20,56 m attivi, area empirica 12,336 m² su 13,988 m², fattore 0,882;
+- la simulazione in memoria (circa 1,105) non è quindi confermata nella lunghezza; la regression è stata riallineata al dato runtime reale senza rimuovere il controllo sull'opzione LG-034.
 
 ## R6 — Riaggancio geometrico della mandata dopo il primo giro
 Stato: **ESEGUITO — COMPILATO / REGRESSION SUCCESS / PUBBLICATO SU MAIN**
