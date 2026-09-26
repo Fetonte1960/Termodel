@@ -71,6 +71,22 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Branch Inspector diagnostico per nodo 63
+Stato: COMMISSIONATO
+
+Commissionato:
+- implementare sul prototipo PR #8 uno strumento diagnostico generico per ispezionare un nodo/ramo dell'albero StrategiaDiego senza alterare algoritmo o funzione di merito;
+- caso iniziale: ramo Supply scartato `61->62->63`, dove `62->63` arriva correttamente a distanza `2p` dal riferimento `43->44`, confrontato con il ramo scelto `62->65`;
+- lo strumento deve mostrare la geometria del percorso fino al nodo target e tutte le continuazioni tentate da quel nodo;
+- distinguere visivamente almeno: percorso accettato fino al target, candidati accettati, candidati rifiutati e ramo alternativo che ha prodotto la soluzione meglio classificata;
+- per ogni candidato mostrare tipo (`PROSEGUI_DRITTO`, `PARALLELA_A/B` o altro), endpoint teorico/reale quando disponibile e motivo di rifiuto ricavato dal motore;
+- mantenere lo strumento diagnostico separato dal Service e riusare il vero motore/BuildTree, senza sorgente geometrico alternativo;
+- aggiungere comando Harness riutilizzabile per target node o branch, con output SVG e JSON;
+- collaudare sul quadrato LG-046 e produrre una vista specifica del nodo 63;
+- nessun merge algoritmico in `main` senza ulteriore approvazione;
+- Issue #1 chiusa `Completed` al termine del collaudo.
+
+
 ### INCARICO 2026-09-26 — Solution Explorer: rank mandata + miglior ritorno
 Stato: ESEGUITO — HARNESS VERIFICATO / PROTOTIPO PR #8
 
