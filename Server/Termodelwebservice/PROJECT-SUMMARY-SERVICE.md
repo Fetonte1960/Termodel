@@ -71,6 +71,18 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Problema corrente: ramo ansa buono con prosecuzione disastrosa
+Stato: COMMISSIONATO
+
+Commissionato:
+- registrare come problema operativo corrente della StrategiaDiego il caso in cui un ramo risolve correttamente la **prima ansa**, lasciando spazio sufficiente all'ingresso del Return, ma viene classificato male a causa di decisioni successive molto sfavorevoli;
+- obiettivo del debug: riuscire a visualizzare il circuito completo di quel setup "buono nell'ansa ma cattivo dopo", senza perderlo a causa del ranking finale;
+- separare quindi la qualità del **prefisso geometrico fino alla prima ansa** dalla qualità delle decisioni successive;
+- usare il ramo buono come base da preservare e applicare Explorer/Branch Inspector/Decision Reject Replay alle decisioni successive per migliorarne il completamento;
+- non modificare ancora funzione di merito o geometria: prima rendere osservabile e riproducibile il ramo corretto;
+- aggiornare linee guida, registro e Summary; chiudere Issue #1 Completed al termine.
+
+
 ### INCARICO 2026-09-26 — Consolidamento linee guida: Problema dell'ansa
 Stato: ESEGUITO — PRINCIPIO GEOMETRICO CONSOLIDATO
 
