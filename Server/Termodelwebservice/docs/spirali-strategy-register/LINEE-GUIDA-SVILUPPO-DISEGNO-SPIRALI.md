@@ -5778,6 +5778,44 @@ desiderato da quello indesiderato. Solo dopo più confronti coerenti la regola
 può essere trasformata in criterio algoritmico generale.
 
 
+### Problema operativo attuale — ramo ansa buono, prosecuzione cattiva
+
+È noto che esiste, o è esistito prima di eventuali regressioni, almeno un ramo
+dell'albero nel quale la **prima ansa della mandata** viene costruita con spazio
+sufficiente a consentire l'ingresso del Return.
+
+Quel ramo può tuttavia risultare molto indietro nella classifica finale perché,
+**dopo avere risolto correttamente l'ansa**, prende una o più decisioni
+successive molto sfavorevoli. Il ranking finale può quindi nascondere una scelta
+iniziale geometricamente valida.
+
+Il problema corrente da risolvere è pertanto:
+
+1. individuare e **visualizzare il circuito completo** di un setup che risolve
+   bene la prima ansa anche se il completamento successivo è disastroso;
+2. identificare il **prefisso dell'albero** che contiene la soluzione corretta
+   dell'ansa;
+3. preservare quel prefisso come base diagnostica;
+4. analizzare separatamente le decisioni successive con Branch Inspector e
+   Decision Reject Replay;
+5. rifiutare o correggere le scelte successive peggiori senza perdere la buona
+   geometria iniziale dell'ansa;
+6. solo dopo avere ottenuto un completamento soddisfacente valutare se esiste
+   una regola generale da trasferire alla strategia o alla funzione di merito.
+
+Conseguenza metodologica importante:
+
+> **la qualità della prima ansa non deve essere confusa con il merito finale
+> dell'intero circuito.**
+
+In questa fase non si cerca semplicemente il rank globale migliore. Si cerca
+prima il **ramo/prefisso che risolve l'ansa**, anche se il suo rank finale è
+scarso, e poi si migliora il resto del percorso mantenendo quel prefisso.
+
+Questo è il **problema attuale prioritario** della StrategiaDiego per il
+Problema dell'ansa.
+
+
 ---
 ## Variabile documentale canonica — STRATEGIADIEGO_TEST_CONTEXT_CURRENT
 
@@ -5813,7 +5851,7 @@ Geometria: quadrato 4,00 m x 4,00 m
 Ingresso: T1 da (2,-1) a (2,1), direzione entrante +Y
 Passo_p: 0,30 m
 RegolaSottoTest: LG-041 + LG-042 + LG-043 + LG-044 + LG-045 + LG-046 Return/Return=p
-CondizionePrincipale: verificare che il ritorno riempia le anse con Return/Return=p mantenendo Supply/Supply=2p e tubo/architettura=p/2; misurare bontà e combinatoria
+CondizionePrincipale: trovare e visualizzare il ramo che risolve correttamente la prima ansa ma viene penalizzato da scelte successive; preservare il prefisso buono e correggere le decisioni successive con Inspector/Replay
 FamigliePertinenti: architettura + mandata costruita + ritorno costruito nello scenario
 PrioritaEsplorazione: candidati laterali per lunghezza valida decrescente, senza potatura
 SelezioneFinale: funzione di merito/Fattore di Bontà corrente
