@@ -143,6 +143,26 @@ jobs:
           $dir = Join-Path $out "LG041-SOLUTION-RANK21.solution-explorer"
           if (-not (Test-Path (Join-Path $dir "solution-rank-021.svg"))) { throw "Solution rank 21 mancante." }
           Write-Host "RADIANT_HARNESS_SOLUTION_RANK21_OK"
+      - name: Run branch inspector node 63
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-BRANCH63 `
+            --out $out `
+            --inspect-node 63 `
+            --compare-node 65
+          $dir = Join-Path $out "LG041-BRANCH63.branch-inspector"
+          if (-not (Test-Path (Join-Path $dir "branch-node-063.svg"))) { throw "Branch inspector SVG mancante." }
+          if (-not (Test-Path (Join-Path $dir "branch-node-063.json"))) { throw "Branch inspector JSON mancante." }
+          if (-not (Test-Path (Join-Path $dir "branch-node-063.log.txt"))) { throw "Branch inspector log mancante." }
+          $report = Get-Content -LiteralPath (Join-Path $dir "branch-node-063.json") -Raw | ConvertFrom-Json
+          if ($report.inspectNode -ne 63) { throw "Branch inspector nodo errato." }
+          if ($report.compareNode -ne 65) { throw "Branch inspector compare errato." }
+          if ($report.candidates.Count -lt 2) { throw "Branch inspector candidati insufficienti." }
+          Write-Host "RADIANT_HARNESS_BRANCH63_OK"
       - name: Run prepared current apartment case
         shell: pwsh
         run: |
