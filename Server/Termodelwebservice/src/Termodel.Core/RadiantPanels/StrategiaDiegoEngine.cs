@@ -1335,18 +1335,13 @@ internal static class StrategiaDiegoEngine
                 continue;
             }
 
-            bool stopBeforeOwnFamilyExtendedFront =
-                requiredFrontId is not null &&
-                reference.Family == family;
-
             ExtensionCandidate? raw = BuildExtensionCandidateGeometry(
                 family,
                 start,
                 unit,
                 reference,
                 step,
-                allowArchitectureExtension: false,
-                stopBeforeOwnFamilyExtendedFront: stopBeforeOwnFamilyExtendedFront);
+                allowArchitectureExtension: false);
 
             if (raw is null)
                 continue;
@@ -1363,14 +1358,67 @@ internal static class StrategiaDiegoEngine
             }
 
             ExtensionResult extension = raw.Extension;
-            if (!IsSegmentValid(
-                    locale,
-                    extension.Segment,
-                    constraints,
-                    previousSegment,
-                    reference,
-                    step,
-                    allowStartOnBoundary))
+            bool valid = IsSegmentValid(
+                locale,
+                extension.Segment,
+                constraints,
+                previousSegment,
+                reference,
+                step,
+                allowStartOnBoundary);
+
+            if (!valid &&
+                !raw.PhysicalHit &&
+                requiredFrontId is not null &&
+                reference.Family == family)
+            {
+                ExtensionCandidate? beforeFront =
+                    BuildExtensionCandidateGeometry(
+                        family,
+                        start,
+                        unit,
+                        reference,
+                        step,
+                        allowArchitectureExtension: false,
+                        useBeforeExtendedFront: true);
+
+                if (beforeFront is not null &&
+                    !SegmentsEquivalent(
+                        beforeFront.Extension.Segment,
+                        raw.Extension.Segment))
+                {
+                    if (diagnosticParentNodeId is int fallbackNode &&
+                        diagnosticChoiceName is not null)
+                    {
+                        LogDiego(
+                            $"TRYEXT FALLBACK-BEFORE CHECK parentNode={fallbackNode} " +
+                            $"choice={diagnosticChoiceName} reference={reference.Id} " +
+                            $"I={Fmt(beforeFront.Intersection)} " +
+                            $"T={Fmt(beforeFront.Extension.Segment.B)} " +
+                            $"d={Fmt(beforeFront.Respect)}m " +
+                            $"length={Fmt(beforeFront.Extension.Segment.Length)}m");
+                    }
+
+                    if (IsSegmentValid(
+                            locale,
+                            beforeFront.Extension.Segment,
+                            constraints,
+                            previousSegment,
+                            reference,
+                            step,
+                            allowStartOnBoundary))
+                    {
+                        extension = beforeFront.Extension;
+                        valid = true;
+                        LogDiego(
+                            $"EXTEND fallback-before-own-family-front family={family} " +
+                            $"reference={reference.Id} start={Fmt(start)} " +
+                            $"target={Fmt(extension.Segment.B)} respect={Fmt(beforeFront.Respect)}m");
+                    }
+                }
+            }
+
+            if (!valid)
             {
                 if (diagnosticParentNodeId is int rejectedNode &&
                     diagnosticChoiceName is not null)
@@ -1407,7 +1455,7 @@ internal static class StrategiaDiegoEngine
         GeoSegment reference,
         double step,
         bool allowArchitectureExtension,
-        bool stopBeforeOwnFamilyExtendedFront = false)
+        bool useBeforeExtendedFront = false)
     {
         DVector refDirection = reference.Direction;
         double refLength = refDirection.Length;
@@ -1449,23 +1497,18 @@ internal static class StrategiaDiegoEngine
             step);
 
         double alongRay = respect / Math.Abs(cross);
-        bool stopBeforeExtendedFront =
-            !physicalHit &&
-            stopBeforeOwnFamilyExtendedFront &&
-            reference.Family == family &&
-            tIntersection > GeometryTolerance;
-
-        double tEnd = physicalHit || stopBeforeExtendedFront
+        double tEnd = physicalHit || useBeforeExtendedFront
             ? tIntersection - alongRay
             : tIntersection + alongRay;
 
-        if (stopBeforeExtendedFront)
+        if (useBeforeExtendedFront && !physicalHit)
         {
             LogDiego(
-                $"EXTEND before-own-family-front family={family} " +
-                $"reference={reference.Id} start={Fmt(start)} dir={Fmt(unit)} " +
-                $"I={Fmt(tIntersection)}m respect={Fmt(respect)}m " +
-                $"alongRay={Fmt(alongRay)}m targetTravel={Fmt(tEnd)}m");
+                $"EXTEND before-extended-front-candidate family={family} " +
+                $"reference={reference.Id} refFamily={reference.Family} " +
+                $"start={Fmt(start)} dir={Fmt(unit)} I={Fmt(tIntersection)}m " +
+                $"respect={Fmt(respect)}m alongRay={Fmt(alongRay)}m " +
+                $"targetTravel={Fmt(tEnd)}m");
         }
         else if (!physicalHit &&
                  tIntersection <= GeometryTolerance &&
