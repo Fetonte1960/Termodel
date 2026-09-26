@@ -7,6 +7,39 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R17 — Diagnosi distanza 45→47 rispetto a 1→3
+Stato: **ESEGUITO — DIAGNOSI LOG / NESSUNA MODIFICA CODICE**
+
+Osservazione utente 26/09/2026:
+- nel quadrato ormai quasi normotico, il tratto selezionato `45->47` termina troppo lontano dal tratto iniziale `1->3`.
+
+Coordinate del percorso selezionato:
+- nodo 45 = `(0.15,0.15)`;
+- nodo 47 = `(0.75,0.15)`;
+- nodo 1 = `(2.00,0.15)`;
+- nodo 3 = `(3.85,0.15)`;
+- quindi `45->47` è collineare a `1->3`, ma il vuoto fra 47 e 1 misura `1,25 m`, maggiore dei `2p=0,60 m` attesi.
+
+Risultato log al nodo 47:
+- `PROSEGUI_DRITTO 47->48` viene **generato e accettato**: `(0.75,0.15)->(1.40,0.15)`;
+- il punto 48 = `(1.40,0.15)` è esattamente a `0,60 m = 2p` dal nodo 1 = `(2.00,0.15)`; quindi geometria e distanza attese sono disponibili;
+- contemporaneamente viene accettato `PARALLELA_B 47->49`: `(0.75,0.15)->(0.75,0.75)`;
+- il percorso vincente usa `47->49`, quindi il tratto orizzontale selezionato resta fermo a 47 e appare troppo lontano da `1->3`.
+
+Confronto dei due sottoalberi:
+- sottoalbero `47->48`: miglior terminale rilevato = nodo 74, activeLength `25,45 m`, goodness `0,954`;
+- sottoalbero `47->49`: miglior terminale = nodo 123, activeLength `28,05 m`, goodness `1,052`; è il terminale Supply selezionato;
+- il ramo corretto rispetto alla distanza non viene quindi scartato geometricamente: perde esclusivamente per la funzione di selezione finale.
+
+Diagnosi strutturale:
+- non è un errore di `RequiredDistance`: il punto a `2p` viene calcolato correttamente;
+- non è un problema di mancata generazione: `47->48` esiste ed è valido;
+- il comportamento deriva dal fatto che l'albero ammette un **cambio di direzione anticipato al nodo 47** (`47->49`) e la bontà basata sulla copertura/lunghezza premia quel sottoalbero più lungo;
+- la funzione di merito corrente non contiene una nozione di continuità/normoticità che imponga di completare il tratto diritto fino al fronte disponibile prima di una nuova svolta.
+
+Possibile regola da discutere prima di modificare:
+- quando esiste un `PROSEGUI_DRITTO` valido che porta alla distanza corretta dal prossimo fronte della stessa evoluzione, valutare se le svolte `PARALLELA_A/B` anticipatrici debbano essere rinviate al terminale di quel tratto invece di competere subito col ramo diritto;
+- evitare di introdurre un semplice premio numerico alla normoticità: preferibile una regola geometrica locale e deterministica.
 ## R16 — Esclusione catena collineare-contigua negli at-node
 Stato: **ESEGUITO — SIMULAZIONE GEOMETRICA POSITIVA / REGRESSION ANCORA NON SOSTENIBILE**
 
