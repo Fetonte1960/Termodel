@@ -7,6 +7,38 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R8 — Consolidamento LG-041: PROSEGUI_DRITTO multi-candidato universale
+Stato: **ESEGUITO — SPECIFICA CONSOLIDATA / NON IMPLEMENTATA**
+
+Decisione utente 26/09/2026:
+- `PROSEGUI_DRITTO` non è più concettualmente un singolo ramo, ma un generatore di `0..N` candidati;
+- ogni linea pertinente dello scenario corrente può generare un candidato lungo la direzione corrente;
+- linee pertinenti: architettura, mandata già costruita e ritorno già costruito nel ramo corrente;
+- esclusioni minime: segmento di provenienza, intersezioni dietro al nodo, parallele senza intersezione utile e duplicati geometrici entro tolleranza;
+- una intersezione sul segmento reale è un fronte fisico; una intersezione sulla sua retta fuori dal segmento è un riferimento laterale teorico;
+- il fronte fisico produce arresto prima del vincolo alla distanza `d`; il riferimento laterale produce un terminale oltre il riferimento alla distanza `d`; per obliqui si usa l'offset LG-034/LG-035;
+- ogni candidato conserva l'identità del riferimento che lo ha generato nello stato del nodo figlio;
+- la validazione resta sulla geometria fisica reale: un candidato teorico che attraversa un ostacolo viene scartato da `TrattoPossibile`; non serve una precedenza strategica speciale del fronte fisico;
+- i candidati laterali vengono esplorati per lunghezza valida decrescente, ma nessun candidato valido viene potato per questa priorità;
+- nessun verso speciale viene imposto dopo uno scavalcamento: restano tutte le alternative geometricamente valide;
+- la stessa regola vale per mandata e ritorno;
+- la precedente procedura specifica di scavalcamento del tubo entrante è superata sul piano strategico: il caso deve emergere da LG-041 universale;
+- la funzione di merito finale resta l'unica autorità di selezione fra i terminali.
+
+Relazione con le regole esistenti:
+- LG-006/LG-037 forniscono la distanza `d` fra famiglie;
+- LG-034/LG-035 forniscono la costruzione offset per il caso oltre linea e per gli obliqui;
+- LG-039 continua a rendere il raccordo entrante del ritorno un vincolo fisico reale;
+- LG-033 resta utile per identità/continuità delle evoluzioni, ma non deve ridurre a un solo `S_k+1` la generazione quando più riferimenti sono pertinenti;
+- LG-036 richiederà SVG reale quando la regola verrà implementata.
+
+Stato implementativo:
+- nessuna modifica al motore in R8;
+- nessuna build o smoke necessari per questo solo consolidamento documentale;
+- la futura implementazione dovrà diagnosticare per ogni candidato: riferimento, famiglia, classificazione fisico/laterale, `I`, `T`, `d`, lunghezza e ordine di esplorazione;
+- prima di introdurre limiti o potature dovrà essere misurata la crescita combinatoria sui regression correnti.
+
+
 ## R7 — LG-034/LG-035: oltre linea estesa dal nodo corrente
 Stato: **ESEGUITO — COMPILATO / REGRESSION SUCCESS / PUBBLICATO SU MAIN**
 
