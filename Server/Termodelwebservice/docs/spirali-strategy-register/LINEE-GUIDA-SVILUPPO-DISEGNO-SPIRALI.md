@@ -5430,7 +5430,7 @@ Lo strumento diventa disponibile a richiesta per qualsiasi nodo deterministico
 del banco di test.
 ## Architettura di debug permanente — Decision Reject Replay
 
-**Stato:** APPROVATA COME ARCHITETTURA — NON ANCORA IMPLEMENTATA  
+**Stato:** IMPLEMENTATA E VERIFICATA SUL PROTOTIPO PR #8  
 **Origine:** decisione utente del 26/09/2026
 
 ### Scopo
@@ -5536,14 +5536,28 @@ Il formato previsto è un semplice file di testo UTF-8 contenente zero o più
 Decision Key canoniche, una per riga. Righe vuote e commenti possono essere
 ignorati.
 
-Interfaccia Harness prevista:
+Interfaccia Harness implementata:
 
 ```text
 --reject-decisions <file.txt>
 ```
 
-Il nome dell'opzione è documentato come contratto di debug previsto; la
-presente sezione **non dichiara ancora l'implementazione**.
+È inoltre disponibile la scorciatoia operativa:
+
+```text
+--reject-current-supply
+```
+
+Questa individua il setup Supply attualmente primo nella classifica residua,
+preleva la sua **Decision Key terminale**, la aggiunge all'insieme di reject e
+riesegue il vero motore. È la traduzione operativa della richiesta umana:
+
+```text
+"scarta questo setup mandata"
+```
+
+L'output principale resta il normale SVG StrategiaDiego; vengono inoltre
+salvati il reject file effettivo e un piccolo report JSON prima/dopo.
 
 Più decisioni possono essere escluse contemporaneamente. Questo permette un
 debug iterativo:
@@ -5559,6 +5573,66 @@ run 2 -> quella scelta viene REJECT_BY_INPUT
 run 3 -> escludo A + seconda scelta
        -> osservo C
 ```
+
+### Semantica di potatura del replay
+
+Il replay **non deve inventare nuovi terminali**.
+
+Se un nodo possedeva uno o più figli geometricamente validi ma tutti i figli
+residui vengono eliminati esclusivamente dal Decision Reject Replay, quel nodo
+non diventa una nuova foglia. Viene invece marcato:
+
+```text
+TREE <family> PRUNED_BY_REPLAY ... terminalCreated=false
+```
+
+Questa regola è essenziale per la richiesta `scarta questo setup mandata`:
+rifiutando la Decision Key terminale del setup corrente si elimina quella
+foglia dall'insieme originale senza introdurre una nuova soluzione tronca.
+Di conseguenza il nuovo primo classificato è il setup immediatamente
+successivo della classifica residua.
+
+### Implementazione e collaudo reale — 26/09/2026
+
+Implementazione sperimentale:
+
+- branch `experiment/lg041-supply-first-return-after`, PR #8;
+- ogni figlio Supply/Return geometricamente valido riceve una Decision Key
+  canonica prima della creazione del nodo;
+- formato numerico canonico a 6 decimali;
+- firma del riferimento normalizzata per estremi geometrici, indipendente da
+  GUID, timestamp e node ID;
+- matching esatto `StringComparer.Ordinal`;
+- `REJECT_BY_INPUT` eseguito prima di `AddNode()`;
+- `SearchNode` conserva la Decision Key che lo ha generato;
+- Supply Explorer e Solution Explorer esportano percorso delle Decision Key e
+  `TerminalDecisionKey`;
+- `--reject-current-supply` usa la Decision Key terminale del setup corrente;
+- `--reject-decisions <file.txt>` permette replay riproducibile e cumulativo.
+
+Verifica GitHub Actions:
+
+- Harness run `36234542311`, job `108383827746`: **SUCCESS**;
+- caso: quadrato 4x4, T1, p=0,30 m;
+- baseline: Supply rank 1, active `28,05 m`, goodness `1,051875`, terminale 123;
+- reject della Decision Key terminale del rank 1;
+- log verificato con `DIEGO_DECISION_REPLAY REJECT_BY_INPUT` e
+  `PRUNED_BY_REPLAY ... terminalCreated=false`;
+- risultato residuo: esattamente il precedente Supply rank 2, active
+  `28,05 m`, goodness `1,051875`, terminale 290 nel run baseline;
+- il rank 1 e il rank 2 del quadrato sono a pari merito: il test certifica
+  quindi il **successivo nell'ordinamento**, non una riduzione stretta del
+  fattore di bontà;
+- lo stesso reject file prodotto dal comando automatico è stato riusato con
+  `--reject-decisions`; lo SVG standard ottenuto è byte-identico a quello
+  ottenuto dal reject automatico;
+- senza replay lo SVG baseline conserva SHA-256
+  `ca3ba4bbda4a6e95398f3d155f7009d05e0e378843b06b26b86f9fe0a82e8ce0`,
+  identico al checkpoint precedente: il comportamento normale non è cambiato.
+
+Build completa run `36234542357`: compilazione Release **SUCCESS**; il workflow
+resta rosso esclusivamente sul benchmark di sostenibilità LG-046 già noto
+(`44044` nodi, P95 `4559 ms` > budget `2000 ms`).
 
 ### Perché questa architettura è preferita
 
@@ -5621,15 +5695,17 @@ Reject Replay deve essere preferito a una ricostruzione SVG esterna.
 - l'SVG da analizzare deve essere quello standard generato dal motore reale,
   non un'immagine generata o una ricostruzione manuale.
 
-### Caso guida iniziale
+### Casi guida
 
-Il primo collaudo previsto sarà il quadrato corrente, escludendo la scelta
-anticipata che porta dal nodo geometrico corrispondente a `62->65`, per
-lasciare che il motore sviluppi il ramo `62->63` e produca autonomamente il
-nuovo terminale e il relativo miglior Return.
+Il collaudo infrastrutturale iniziale è stato completato sul quadrato
+escludendo la **Decision Key terminale del Supply rank 1** e verificando che il
+motore restituisse esattamente il precedente rank 2.
 
-Il matching non dovrà dipendere dai numeri `62`, `63`, `65`: questi restano
-solo riferimenti umani al run corrente.
+Resta disponibile come caso geometrico successivo l'esclusione della scelta
+che nel run storico corrispondeva umanamente al ramo `62->65`, per lasciare
+sviluppare il ramo `62->63` nel vero motore. Anche in questo caso il matching
+deve usare la Decision Key geometrica e non i numeri `62`, `63`, `65`,
+che restano soltanto riferimenti umani a uno specifico run.
 
 ---
 ## Variabile documentale canonica — STRATEGIADIEGO_TEST_CONTEXT_CURRENT
