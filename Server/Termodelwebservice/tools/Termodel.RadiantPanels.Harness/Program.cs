@@ -154,7 +154,8 @@ static int Run(string[] args)
                 outputDir,
                 inspectNode.Value,
                 compareNode,
-                rejectedDecisionKeys);
+                rejectedDecisionKeys,
+                lockedSupplyDecisionPrefix);
         }
         if (solutionTop is not null || solutionRank is not null)
         {
@@ -344,14 +345,16 @@ static int RunBranchInspector(
     string outputDir,
     int inspectNode,
     int? compareNode,
-    IReadOnlyCollection<string> rejectedDecisionKeys)
+    IReadOnlyCollection<string> rejectedDecisionKeys,
+    IReadOnlyList<string> lockedSupplyDecisionPrefix)
 {
     StrategiaDiegoBenchmarkSample sample =
         StrategiaDiegoBenchmark.Run(
             localeXml,
             stepMeters,
             includeDetailedDiagnostics: true,
-            rejectedDecisionKeys: rejectedDecisionKeys);
+            rejectedDecisionKeys: rejectedDecisionKeys,
+            lockedSupplyDecisionPrefix: lockedSupplyDecisionPrefix);
 
     Dictionary<int, BranchEdge> edges =
         ParseSupplyEdges(sample.Diagnostics);
@@ -409,6 +412,7 @@ static int RunBranchInspector(
         stepMeters,
         inspectNode,
         compareNode,
+        lockedSupplyPrefixCount = lockedSupplyDecisionPrefix.Count,
         targetPathNodeIds =
             BranchPathNodeIds(targetPath),
         comparePathNodeIds =
