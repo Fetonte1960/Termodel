@@ -71,6 +71,32 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Consolidamento LG-041 come regola universale
+Stato: COMMISSIONATO
+
+Commissionato:
+- consolidare la discussione successiva alla proposta LG-041 senza modificare ancora il motore;
+- `PROSEGUI_DRITTO` diventa generatore di candidati associati alle linee pertinenti dello scenario corrente;
+- sono pertinenti: contenimento architettonico, mandata fisicamente gia costruita e ritorno fisicamente gia costruito nello scenario del ramo;
+- escludere soltanto il segmento da cui si proviene, intersezioni dietro al nodo, casi paralleli senza intersezione e duplicati geometrici entro tolleranza;
+- ogni candidato conserva l'identita della linea che lo ha generato, affinche il riferimento resti disponibile al nodo successivo;
+- per fronti fisici il terminale rispetta la distanza prima del vincolo; per prolungamenti laterali il candidato prosegue oltre il riferimento alla distanza `d` corrente;
+- per geometrie oblique usare la costruzione offset coerente con LG-034/LG-035;
+- nessun verso di scavalcamento viene imposto: le alternative geometricamente valide restano nell'albero;
+- nessuna procedura speciale dedicata al tubo entrante: il caso deve emergere dalla stessa regola universale;
+- ordinare i candidati laterali per lunghezza decrescente solo come priorita di esplorazione, senza potatura; il merito finale resta autorevole;
+- regola identica per mandata e ritorno;
+- aggiornare anche il registro di sviluppo StrategiaDiego;
+- non modificare codice, frontend, Library Desktop o `definizionedati.json`;
+- a conclusione chiudere Issue #1 `Completed`.
+
+Criteri di completamento:
+- LG-041 marcata CONSOLIDATA nel principio e nei dettagli sopra;
+- precedente procedura specifica di scavalcamento dichiarata superata sul piano strategico, non implementata;
+- registro sviluppo aggiornato;
+- nessuna build necessaria per il solo consolidamento documentale.
+
+
 ### INCARICO 2026-09-26 — Registrazione proposta universale PROSEGUI_DRITTO multi-candidato
 Stato: ESEGUITO
 
