@@ -4753,6 +4753,107 @@ sperimentale in attesa della valutazione delle successive correzioni
 sull'eco/scavalcamento.
 ---
 
+## LG-044 — Continuazione eco: escludere il segmento di arrivo
+
+**Stato:** APPROVATA E SIMULATA — NON ANCORA INTEGRATA IN `main`  
+**Origine:** diagnosi log + approvazione utente del 26/09/2026
+
+### Diagnosi
+
+Nel caso quadrato supply-first, il nodo raggiunge correttamente la corsia
+parallela alla precedente mandata a distanza `2p`, ma la successiva ricerca
+della continuazione considerava anche il segmento appena percorso.
+
+Questo produceva il caso patologico:
+
+- `node.Front` conservava già correttamente il riferimento guida;
+- `FindSequenceContinuation()` selezionava il segmento di arrivo come primo
+  fronte successivo perché la sua retta passava per il nodo (`rayTravel=0`);
+- `TryExtend()` escludeva correttamente lo stesso segmento in qualità di
+  `previousSegment`;
+- la parallela veniva quindi respinta prima della funzione di merito.
+
+Il difetto non era la perdita del riferimento guida ma la mancata esclusione
+del segmento corrente nella ricerca del fronte successivo.
+
+### Regola
+
+`FindSequenceContinuation()` deve escludere sempre il segmento di arrivo
+corrente dalla ricerca della continuazione.
+
+Il riferimento guida resta `node.Front`; non viene introdotto un nuovo stato
+`GuideReference` quando non necessario.
+
+Quindi:
+
+`raggiungi offset -> mantieni front guida -> cerca prossimo fronte ESCLUDENDO
+il segmento appena percorso -> genera parallela -> valida -> valuta`.
+
+### Collaudo reale 26/09/2026
+
+Prototipo PR #8, commit
+`8664e780dc810d6d9ff34cbaa7c9b82e671a2fcf`.
+
+Radiant Harness run `36225982580`: **SUCCESS**.
+
+Quadrato 4x4:
+
+- 8.940 nodi Supply;
+- 3.642 terminali Supply;
+- 6.317 nodi Return;
+- 15.257 nodi totali;
+- 12 terminali combinati accettati;
+- maxDepth 30;
+- run diagnostico ~2.223 ms;
+- benchmark 20/20 deterministico: P95 1.055 ms, memoria delta max
+  ~17,77 MB;
+- SVG SHA-256 `52ca8f50765ea10beda90dc24c320f90134f910173739f39633f7c1ff37827d5`.
+
+Il percorso mandata selezionato contiene ora esplicitamente una corsia eco:
+
+`(0.15,0.15) -> (0.75,0.15) -> (1.40,0.15) ->
+ (1.40,0.75) -> (2.60,0.75) -> (3.25,0.75)`.
+
+Il tratto `(1.40,0.75)->(2.60,0.75)` è parallelo al tratto iniziale
+`1->3` ed è posto alla distanza `2p=0,60 m`: il ramo eco non è più solo
+generato, ma appartiene alla soluzione vincente.
+
+Il log conferma:
+
+- al nodo `(1.40,0.75)` viene accettata `PARALLELA_A` verso
+  `(2.60,0.75)`;
+- il fronte richiesto è un vero segmento successivo e non più il segmento
+  di arrivo;
+- la selezione finale migliora la mandata: activeLength `29,25 m`,
+  goodness `1,097`.
+
+Appartamento preconfezionato:
+
+- SUCCESS;
+- 61 nodi Supply + 5 Return = 66 nodi totali;
+- 2 terminali accettati;
+- 81 ms nel run diagnostico.
+
+### Limite rilevato
+
+La correzione riapre molte alternative geometriche corrette e aumenta
+fortemente la cardinalità dell'albero:
+
+- quadrato: 1.336 -> 15.257 nodi rispetto alla simulazione LG-043;
+- `ConcaveL` supera nuovamente il limite tecnico di 250.000 nodi;
+- la build completa PR compila ma fallisce sul benchmark `ConcaveL`.
+
+Quindi la correzione geometrica è valida, ma prima dell'integrazione in main
+serve una deduplicazione esatta degli stati equivalenti o altra riduzione
+non euristica della ricerca.
+
+### Stato implementativo
+
+**Non integrata in `main`.** La regola è approvata e simulata; il risultato
+geometrico sul quadrato è positivo e mostra l'effetto eco desiderato, ma la
+crescita combinatoria resta incompatibile con il regression set completo.
+---
+
 ## Direttiva permanente — collaudo preliminare rapido delle strategie
 
 ### Scopo
@@ -4950,17 +5051,17 @@ verificare che descriva davvero il caso che si intende provare.
 ### Valore corrente
 
 ```text
-STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG043-RETURN0-SUPPLYFIRST-SQUARE4X4-T1-P030
+STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG044-ECHO-CURRENTSEGMENT-EXCLUSION-SQUARE4X4-T1-P030
 
-IdContesto: LG043-RETURN0-SUPPLYFIRST-SQUARE4X4-T1-P030
+IdContesto: LG044-ECHO-CURRENTSEGMENT-EXCLUSION-SQUARE4X4-T1-P030
 TipoInput: fixture sintetica versionata
 Fixture: tests/fixtures/StrategiaDiegoSquare4x4.locale.xml
 Locale: R001
 Geometria: quadrato 4,00 m x 4,00 m
 Ingresso: T1 da (2,-1) a (2,1), direzione entrante +Y
 Passo_p: 0,30 m
-RegolaSottoTest: LG-041 + LG-042 supply-first + LG-043 Return sequence 0
-CondizionePrincipale: mandata LG-041 completa e indipendente dal ritorno; raccordo blu promosso a Return sequence 0; verifica corridoio p fra due mandate e persistenza del problema eco rosso dopo 29->30
+RegolaSottoTest: LG-041 + LG-042 + LG-043 + LG-044 esclusione segmento di arrivo
+CondizionePrincipale: verificare eco parallela a 1->3 dopo scavalcamento, escludendo il segmento di arrivo da FindSequenceContinuation; osservare correttezza geometrica e crescita combinatoria
 FamigliePertinenti: architettura + mandata costruita + ritorno costruito nello scenario
 PrioritaEsplorazione: candidati laterali per lunghezza valida decrescente, senza potatura
 SelezioneFinale: funzione di merito/Fattore di Bontà corrente
