@@ -71,6 +71,26 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Correzione cambio guida prematuro su catena collineare
+Stato: COMMISSIONATO
+
+Diagnosi di partenza:
+- al nodo 95 il motore segue ancora il riferimento verticale atteso, ma `FindSequenceContinuation()` seleziona `48->50` con `rayTravel=0`;
+- `48->50` è collineare e contiguo con il segmento di arrivo `50->95`, quindi appartiene alla stessa evoluzione rettilinea di provenienza;
+- l'esclusione LG-044 per solo ID del segmento corrente non basta.
+
+Commissionato:
+- modificare sul prototipo PR #8 la ricerca della continuazione affinché, nei candidati `at-node`, escluda l'intera catena collineare e contigua della stessa evoluzione di arrivo;
+- non eliminare genericamente tutti i `rayTravel=0`, perché restano necessari a LG-034/LG-035;
+- mantenere validi gli `at-node` appartenenti a un fronte geometricamente distinto;
+- non introdurre preferenze di merito o potature euristiche per ottenere il risultato;
+- verificare sul quadrato che al nodo 95 `48->50` venga escluso come `same-arrival-chain` e che il percorso selezionato continui secondo il circuito normotico atteso;
+- eseguire Radiant Harness su quadrato e appartamento preconfezionato; recuperare SVG/log/metriche;
+- eseguire regression completa e registrare eventuale impatto combinatorio senza alzare limiti;
+- nessun merge in `main` senza ulteriore approvazione visuale;
+- chiudere Issue #1 `Completed` al termine della simulazione.
+
+
 ### INCARICO 2026-09-26 — Analisi log nodo 95/97 dopo LG-044
 Stato: ESEGUITO — DIAGNOSI / NESSUNA MODIFICA CODICE
 
