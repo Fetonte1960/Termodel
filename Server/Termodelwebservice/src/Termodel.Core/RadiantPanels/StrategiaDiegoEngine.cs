@@ -251,6 +251,336 @@ internal static class StrategiaDiegoEngine
             counters.SupplyTerminals,
             items);
     }
+    internal static StrategiaDiegoRankedSolutionExplorerResult ExploreRankedSolutions(
+        XDocument floorInput,
+        double stepMeters,
+        int skipTop,
+        int count)
+    {
+        if (floorInput.Root is null)
+            throw new InvalidDataException(
+                "StrategiaDiego Solution Explorer: documento locale privo di root.");
+        if (!double.IsFinite(stepMeters) || stepMeters <= 0)
+            throw new ArgumentOutOfRangeException(nameof(stepMeters));
+        if (skipTop < 0)
+            throw new ArgumentOutOfRangeException(nameof(skipTop));
+        if (count <= 0)
+            throw new ArgumentOutOfRangeException(nameof(count));
+
+        int maxNodes = ReadPositiveEnvironmentInt(
+            "TERMODEL_DIEGO_MAX_NODES",
+            DefaultMaxNodes);
+        int maxDepth = ReadPositiveEnvironmentInt(
+            "TERMODEL_DIEGO_MAX_DEPTH",
+            DefaultMaxDepth);
+
+        var supplyCounters = new SearchCounters(maxNodes, maxDepth);
+
+        List<InputLine> connections = floorInput
+            .Descendants("Linea")
+            .Select(ParseInputLine)
+            .Where(line => line is not null)
+            .Cast<InputLine>()
+            .ToList();
+
+        XElement localeElement = floorInput
+            .Descendants("Locale")
+            .FirstOrDefault()
+            ?? throw new InvalidDataException(
+                "StrategiaDiego Solution Explorer: nessun Locale.");
+
+        LocaleGeometry locale = ParseLocale(localeElement)
+            ?? throw new InvalidDataException(
+                "StrategiaDiego Solution Explorer: locale non valido.");
+
+        InputLine connection = FindConnection(locale, connections)
+            ?? throw new InvalidDataException(
+                $"StrategiaDiego Solution Explorer/{locale.Id}: nessun tubo entrante.");
+
+        DirectedConnection directed = DirectConnection(locale, connection);
+        IReadOnlyList<GeoSegment> architecture = BuildArchitecture(locale);
+        IReadOnlyList<GeoSegment> connectionConstraints =
+            BuildConnectionConstraints(connections, connection.Id);
+
+        SearchTree supplyTree = BuildTree(
+            locale,
+            GeoFamily.Supply,
+            directed.EntryPoint,
+            directed.Direction,
+            architecture,
+            connectionConstraints,
+            Array.Empty<GeoSegment>(),
+            directed.EntryWall,
+            stepMeters,
+            supplyCounters,
+            countAsSupply: true);
+
+        List<SearchNode> orderedSupply = supplyTree.Terminals
+            .OrderByDescending(terminal =>
+                TerminalGoodness(locale, terminal, stepMeters))
+            .ThenByDescending(ActiveSpiralLength)
+            .ThenByDescending(terminal => terminal.LengthMeters)
+            .ToList();
+
+        List<ReturnRoot> returnRoots = BuildReturnRoots(
+            locale,
+            directed,
+            stepMeters);
+
+        double localeArea = PolygonArea(locale.Perimeter);
+        var items = new List<StrategiaDiegoRankedSolutionExplorerItem>();
+
+        foreach ((
+            SearchNode supplyTerminal,
+            int zeroBasedRank) in orderedSupply
+                .Select((terminal, index) => (terminal, index))
+                .Skip(skipTop)
+                .Take(count))
+        {
+            int rank = zeroBasedRank + 1;
+            double supplyActive = ActiveSpiralLength(supplyTerminal);
+            double supplyGoodness =
+                TerminalGoodness(locale, supplyTerminal, stepMeters);
+            IReadOnlyList<int> supplyNodeIds =
+                ReconstructNodeLabels(supplyTerminal)
+                    .Select(label => label.NodeId)
+                    .ToArray();
+
+            CombinedCandidate? best = null;
+            string? returnError = null;
+            var returnCounters = new SearchCounters(maxNodes, maxDepth);
+
+            try
+            {
+                best = TryFindBestReturnForSupply(
+                    locale,
+                    directed,
+                    architecture,
+                    connectionConstraints,
+                    returnRoots,
+                    supplyTerminal,
+                    stepMeters,
+                    returnCounters);
+            }
+            catch (InvalidOperationException ex)
+            {
+                returnError = ex.Message;
+            }
+
+            if (best is null)
+            {
+                items.Add(new StrategiaDiegoRankedSolutionExplorerItem(
+                    rank,
+                    supplyTerminal.NodeId,
+                    supplyActive,
+                    supplyGoodness,
+                    supplyTerminal.LengthMeters,
+                    supplyNodeIds,
+                    false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    returnCounters.ReturnNodes,
+                    returnCounters.CombinedTerminals,
+                    returnCounters.AcceptedTerminals,
+                    returnError,
+                    BuildRankedSolutionExplorerSvg(
+                        locale,
+                        ReconstructPoints(supplyTerminal),
+                        Array.Empty<DPoint>(),
+                        ReconstructNodeLabels(supplyTerminal),
+                        Array.Empty<NodeLabel>(),
+                        rank,
+                        supplyActive,
+                        supplyGoodness,
+                        null,
+                        null,
+                        false,
+                        returnError)));
+                continue;
+            }
+
+            double returnActive = ActiveSpiralLength(best.ReturnTerminal);
+            double returnGoodness =
+                GoodnessFactor(returnActive, stepMeters, localeArea);
+            IReadOnlyList<NodeLabel> returnLabels =
+                ReconstructNodeLabels(best.ReturnTerminal);
+            IReadOnlyList<int> returnNodeIds = returnLabels
+                .Select(label => label.NodeId)
+                .ToArray();
+            IReadOnlyList<DPoint> returnPoints =
+                ReconstructPoints(best.ReturnTerminal)
+                    .Append(best.Closure.B)
+                    .ToArray();
+
+            items.Add(new StrategiaDiegoRankedSolutionExplorerItem(
+                rank,
+                supplyTerminal.NodeId,
+                supplyActive,
+                supplyGoodness,
+                supplyTerminal.LengthMeters,
+                supplyNodeIds,
+                true,
+                best.ReturnTerminal.NodeId,
+                returnActive,
+                returnGoodness,
+                best.ReturnTerminal.LengthMeters,
+                best.Closure.Length,
+                best.MeritMeters,
+                best.ReturnRoot.Side,
+                returnNodeIds,
+                returnCounters.ReturnNodes,
+                returnCounters.CombinedTerminals,
+                returnCounters.AcceptedTerminals,
+                null,
+                BuildRankedSolutionExplorerSvg(
+                    locale,
+                    ReconstructPoints(supplyTerminal),
+                    returnPoints,
+                    ReconstructNodeLabels(supplyTerminal),
+                    returnLabels,
+                    rank,
+                    supplyActive,
+                    supplyGoodness,
+                    returnActive,
+                    returnGoodness,
+                    true,
+                    null)));
+        }
+
+        return new StrategiaDiegoRankedSolutionExplorerResult(
+            locale.Id,
+            stepMeters,
+            supplyCounters.SupplyNodes,
+            supplyCounters.SupplyTerminals,
+            skipTop,
+            items);
+    }
+    private static CombinedCandidate? TryFindBestReturnForSupply(
+        LocaleGeometry locale,
+        DirectedConnection directed,
+        IReadOnlyList<GeoSegment> architecture,
+        IReadOnlyList<GeoSegment> connectionConstraints,
+        IReadOnlyList<ReturnRoot> returnRoots,
+        SearchNode supplyTerminal,
+        double step,
+        SearchCounters counters)
+    {
+        List<GeoSegment> supplySegments =
+            ReconstructSegments(supplyTerminal);
+        CombinedCandidate? bestForThisSupply = null;
+
+        foreach (ReturnRoot returnRoot in returnRoots)
+        {
+            List<GeoSegment> returnConnectorConstraints =
+                CombineConstraints(
+                    architecture,
+                    connectionConstraints,
+                    supplySegments,
+                    Array.Empty<GeoSegment>());
+
+            ExtensionResult? rawReturnConnector =
+                TryBuildEntryConnector(
+                    locale,
+                    GeoFamily.Return,
+                    returnRoot.EntryPoint,
+                    directed.Direction,
+                    directed.EntryWall,
+                    returnConnectorConstraints,
+                    step);
+
+            if (rawReturnConnector is null)
+            {
+                LogDiego(
+                    $"SUPPLY-FIRST {locale.Id} RETURN-CONNECTION reject " +
+                    $"supplyNode={supplyTerminal.NodeId} config={returnRoot.Side}");
+                continue;
+            }
+
+            GeoSegment returnEntrySegment =
+                rawReturnConnector.Segment with
+                {
+                    Id =
+                        $"D-RETURN-0-{locale.Id}-{returnRoot.Side}-" +
+                        Guid.NewGuid().ToString("N"),
+                    Family = GeoFamily.Return,
+                    SequenceIndex = 0
+                };
+
+            ExtensionResult returnConnector = new(
+                returnEntrySegment,
+                rawReturnConnector.Front);
+
+            LogDiego(
+                $"SUPPLY-FIRST {locale.Id} RETURN-CONNECTION accept " +
+                $"supplyNode={supplyTerminal.NodeId} config={returnRoot.Side} " +
+                $"{Fmt(returnEntrySegment.A)}->{Fmt(returnEntrySegment.B)} " +
+                $"promotedTo=Return sequence=0 strategic=true");
+
+            SearchTree returnTree = BuildTree(
+                locale,
+                GeoFamily.Return,
+                returnRoot.EntryPoint,
+                directed.Direction,
+                architecture,
+                connectionConstraints,
+                supplySegments,
+                directed.EntryWall,
+                step,
+                counters,
+                countAsSupply: false,
+                initialConnector: returnConnector);
+
+            foreach (SearchNode returnTerminal in returnTree.Terminals)
+            {
+                counters.CombinedTerminals++;
+
+                List<GeoSegment> returnSegments =
+                    ReconstructSegments(returnTerminal);
+
+                GeoSegment closure = new(
+                    "CHIUSURA",
+                    returnTerminal.End,
+                    supplyTerminal.End,
+                    GeoFamily.Return,
+                    SequenceIndex: returnSegments.Count);
+
+                if (!IsPreliminaryClosureAcceptable(
+                        closure,
+                        architecture,
+                        supplySegments,
+                        returnSegments))
+                {
+                    continue;
+                }
+
+                counters.AcceptedTerminals++;
+
+                double merit =
+                    supplyTerminal.LengthMeters +
+                    returnTerminal.LengthMeters +
+                    closure.Length;
+
+                if (bestForThisSupply is null ||
+                    merit > bestForThisSupply.MeritMeters + Epsilon)
+                {
+                    bestForThisSupply = new CombinedCandidate(
+                        supplyTerminal,
+                        returnTerminal,
+                        returnRoot,
+                        closure,
+                        merit);
+                }
+            }
+        }
+
+        return bestForThisSupply;
+    }
     private static LocaleSolution GenerateLocale(
         LocaleGeometry locale,
         InputLine connection,
@@ -338,121 +668,16 @@ internal static class StrategiaDiegoEngine
                 $"node={supplyTerminal.NodeId} goodness={Fmt(TerminalGoodness(locale, supplyTerminal, step))} " +
                 $"active={Fmt(ActiveSpiralLength(supplyTerminal))}m");
 
-            CombinedCandidate? bestForThisSupply = null;
-
-            foreach (ReturnRoot returnRoot in returnRoots)
-            {
-                // Il raccordo del ritorno nasce solo adesso, con la mandata
-                // gia' terminata e presente come vincolo fisico completo.
-                List<GeoSegment> returnConnectorConstraints =
-                    CombineConstraints(
-                        architecture,
-                        connectionConstraints,
-                        supplySegments,
-                        Array.Empty<GeoSegment>());
-
-                ExtensionResult? rawReturnConnector =
-                    TryBuildEntryConnector(
-                        locale,
-                        GeoFamily.Return,
-                        returnRoot.EntryPoint,
-                        directed.Direction,
-                        directed.EntryWall,
-                        returnConnectorConstraints,
-                        step);
-
-                if (rawReturnConnector is null)
-                {
-                    LogDiego(
-                        $"SUPPLY-FIRST {locale.Id} RETURN-CONNECTION reject " +
-                        $"supplyNode={supplyTerminal.NodeId} config={returnRoot.Side}");
-                    continue;
-                }
-
-                // Il raccordo entrante assolve soltanto alla funzione tecnica
-                // di ingresso. Dopo la sua costruzione entra immediatamente
-                // nella normale sequenza Return come segmento 0: non resta
-                // un ostacolo speciale ReturnConnection e puo' quindi essere
-                // usato dalle regole LG-041 come qualsiasi altro tratto blu.
-                GeoSegment returnEntrySegment =
-                    rawReturnConnector.Segment with
-                    {
-                        Id =
-                            $"D-RETURN-0-{locale.Id}-{returnRoot.Side}-" +
-                            Guid.NewGuid().ToString("N"),
-                        Family = GeoFamily.Return,
-                        SequenceIndex = 0
-                    };
-
-                ExtensionResult returnConnector = new(
-                    returnEntrySegment,
-                    rawReturnConnector.Front);
-
-                LogDiego(
-                    $"SUPPLY-FIRST {locale.Id} RETURN-CONNECTION accept " +
-                    $"supplyNode={supplyTerminal.NodeId} config={returnRoot.Side} " +
-                    $"{Fmt(returnEntrySegment.A)}->{Fmt(returnEntrySegment.B)} " +
-                    $"promotedTo=Return sequence=0 strategic=true");
-
-                SearchTree returnTree = BuildTree(
+            CombinedCandidate? bestForThisSupply =
+                TryFindBestReturnForSupply(
                     locale,
-                    GeoFamily.Return,
-                    returnRoot.EntryPoint,
-                    directed.Direction,
+                    directed,
                     architecture,
                     connectionConstraints,
-                    supplySegments,
-                    directed.EntryWall,
+                    returnRoots,
+                    supplyTerminal,
                     step,
-                    counters,
-                    countAsSupply: false,
-                    initialConnector: returnConnector);
-
-                foreach (SearchNode returnTerminal in returnTree.Terminals)
-                {
-                    counters.CombinedTerminals++;
-
-                    List<GeoSegment> returnSegments =
-                        ReconstructSegments(returnTerminal);
-
-                    GeoSegment closure = new(
-                        "CHIUSURA",
-                        returnTerminal.End,
-                        supplyTerminal.End,
-                        GeoFamily.Return,
-                        SequenceIndex: returnSegments.Count);
-
-                    if (!IsPreliminaryClosureAcceptable(
-                            closure,
-                            architecture,
-                            supplySegments,
-                            returnSegments))
-                    {
-                        continue;
-                    }
-
-                    counters.AcceptedTerminals++;
-
-                    // La mandata e' gia' scelta per rango proprio. Per questa
-                    // mandata selezioniamo soltanto la migliore soluzione di
-                    // ritorno/chiusura. La lunghezza mandata e' costante.
-                    double merit =
-                        supplyTerminal.LengthMeters +
-                        returnTerminal.LengthMeters +
-                        closure.Length;
-
-                    if (bestForThisSupply is null ||
-                        merit > bestForThisSupply.MeritMeters + Epsilon)
-                    {
-                        bestForThisSupply = new CombinedCandidate(
-                            supplyTerminal,
-                            returnTerminal,
-                            returnRoot,
-                            closure,
-                            merit);
-                    }
-                }
-            }
+                    counters);
 
             if (bestForThisSupply is not null)
             {
@@ -2099,6 +2324,54 @@ internal static class StrategiaDiegoEngine
         return inside;
     }
 
+    private static string BuildRankedSolutionExplorerSvg(
+        LocaleGeometry locale,
+        IReadOnlyList<DPoint> supplyPoints,
+        IReadOnlyList<DPoint> returnPoints,
+        IReadOnlyList<NodeLabel> supplyLabels,
+        IReadOnlyList<NodeLabel> returnLabels,
+        int rank,
+        double supplyActive,
+        double supplyGoodness,
+        double? returnActive,
+        double? returnGoodness,
+        bool returnFeasible,
+        string? returnError)
+    {
+        IEnumerable<DPoint> allPoints = locale.Perimeter
+            .Concat(supplyPoints)
+            .Concat(returnPoints);
+        double minX = allPoints.Min(point => point.X) - 0.25;
+        double minY = allPoints.Min(point => point.Y) - 0.25;
+        double maxX = allPoints.Max(point => point.X) + 0.25;
+        double maxY = allPoints.Max(point => point.Y) + 0.25;
+
+        var builder = new StringBuilder();
+        builder.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        builder.AppendLine(
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{minX} {minY} {maxX - minX} {maxY - minY}\" data-termodel-engine=\"Diego\" data-role=\"solution-explorer\" data-supply-rank=\"{rank}\">"));
+
+        AppendPolyline(builder, locale.Perimeter, "black", locale.Id, "perimetro");
+        AppendPolyline(builder, supplyPoints, "red", locale.Id, "mandata");
+        if (returnPoints.Count > 0)
+            AppendPolyline(builder, returnPoints, "blue", locale.Id, "ritorno");
+        AppendNodeLabels(builder, supplyLabels, locale.Id, "mandata");
+        if (returnLabels.Count > 0)
+            AppendNodeLabels(builder, returnLabels, locale.Id, "ritorno");
+
+        string tx = minX.ToString("0.######", CultureInfo.InvariantCulture);
+        string ty = minY.ToString("0.######", CultureInfo.InvariantCulture);
+        string returnText = returnFeasible
+            ? $"return {Fmt(returnActive ?? 0)} m / {Fmt(returnGoodness ?? 0)}"
+            : $"RETURN NON FATTIBILE{(string.IsNullOrWhiteSpace(returnError) ? string.Empty : " - " + returnError)}";
+        builder.AppendLine(
+            $"<text x=\"{tx}\" y=\"{ty}\" font-size=\"0.10\" fill=\"#111\">" +
+            $"Supply rank {rank} | supply {Fmt(supplyActive)} m / {Fmt(supplyGoodness)} | {Escape(returnText)}</text>");
+        builder.AppendLine("</svg>");
+        return builder.ToString();
+    }
     private static string BuildSupplyExplorerSvg(
         LocaleGeometry locale,
         IReadOnlyList<DPoint> supplyPoints,
@@ -2555,6 +2828,35 @@ internal static class StrategiaDiegoEngine
     }
 }
 
+internal sealed record StrategiaDiegoRankedSolutionExplorerResult(
+    string LocaleId,
+    double StepMeters,
+    int SupplyNodes,
+    int SupplyTerminals,
+    int SkipTop,
+    IReadOnlyList<StrategiaDiegoRankedSolutionExplorerItem> Items);
+
+internal sealed record StrategiaDiegoRankedSolutionExplorerItem(
+    int SupplyRank,
+    int SupplyTerminalNodeId,
+    double SupplyActiveLengthMeters,
+    double SupplyGoodness,
+    double SupplyTotalLengthMeters,
+    IReadOnlyList<int> SupplyNodeIds,
+    bool ReturnFeasible,
+    int? ReturnTerminalNodeId,
+    double? ReturnActiveLengthMeters,
+    double? ReturnGoodness,
+    double? ReturnTotalLengthMeters,
+    double? ClosureLengthMeters,
+    double? CombinedMeritMeters,
+    string? ReturnRootSide,
+    IReadOnlyList<int>? ReturnNodeIds,
+    int ReturnNodesExplored,
+    int CombinedTerminals,
+    int AcceptedTerminals,
+    string? ReturnError,
+    string Svg);
 internal sealed record StrategiaDiegoSupplyExplorerResult(
     string LocaleId,
     double StepMeters,
