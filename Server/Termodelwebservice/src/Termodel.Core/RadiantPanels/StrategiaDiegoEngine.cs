@@ -483,25 +483,25 @@ internal static class StrategiaDiegoEngine
             {
                 DVector opposite =
                     -node.Front.Direction.Normalize();
-                GeoSegment? continuation =
-                    FindSequenceContinuation(
-                        node.End,
-                        node.Front,
-                        constraints,
-                        family,
-                        opposite);
 
+                // Il primo tratto sulla corsia usa il verso opposto al
+                // riferimento orientato, ma non forza ancora S_k+1:
+                // il front successivo viene scelto dalle normali intersezioni
+                // fisiche/strategiche. Forzare FindSequenceContinuation qui
+                // farebbe riagganciare il segmento appena percorso, che fa
+                // parte di currentPath ma non e' il successore della vecchia
+                // evoluzione da inseguire.
                 directions.Add((
                     "SCAVALCAMENTO_OPPOSTA",
                     opposite,
                     null,
-                    continuation?.Id));
+                    null));
 
                 LogDiego(
                     $"SCAVALCAMENTO opposite-lane node={node.NodeId} " +
                     $"family={family} reference={node.Front.Id} " +
                     $"referenceDir={Fmt(node.Front.Direction.Normalize())} " +
-                    $"travelDir={Fmt(opposite)}");
+                    $"travelDir={Fmt(opposite)} requiredFront=-");
             }
             else
             {
