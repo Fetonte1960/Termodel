@@ -4950,17 +4950,17 @@ verificare che descriva davvero il caso che si intende provare.
 ### Valore corrente
 
 ```text
-STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG042-SUPPLY-FIRST-SQUARE4X4-T1-P030
+STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG043-RETURN0-SUPPLYFIRST-SQUARE4X4-T1-P030
 
-IdContesto: LG042-SUPPLY-FIRST-SQUARE4X4-T1-P030
+IdContesto: LG043-RETURN0-SUPPLYFIRST-SQUARE4X4-T1-P030
 TipoInput: fixture sintetica versionata
 Fixture: tests/fixtures/StrategiaDiegoSquare4x4.locale.xml
 Locale: R001
 Geometria: quadrato 4,00 m x 4,00 m
 Ingresso: T1 da (2,-1) a (2,1), direzione entrante +Y
 Passo_p: 0,30 m
-RegolaSottoTest: LG-041 + LG-042 supply-first
-CondizionePrincipale: mandata LG-041 completa e indipendente dal ritorno; controllo 28->29; ritorno costruito solo dopo terminale mandata
+RegolaSottoTest: LG-041 + LG-042 supply-first + LG-043 Return sequence 0
+CondizionePrincipale: mandata LG-041 completa e indipendente dal ritorno; raccordo blu promosso a Return sequence 0; verifica corridoio p fra due mandate e persistenza del problema eco rosso dopo 29->30
 FamigliePertinenti: architettura + mandata costruita + ritorno costruito nello scenario
 PrioritaEsplorazione: candidati laterali per lunghezza valida decrescente, senza potatura
 SelezioneFinale: funzione di merito/Fattore di Bontà corrente
