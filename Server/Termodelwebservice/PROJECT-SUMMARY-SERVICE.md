@@ -71,6 +71,31 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Consolidamento debug StrategiaDiego, build e pubblicazione
+Stato: COMMISSIONATO
+
+Commissionato:
+- consolidare nel sorgente e nelle linee guida tutte le correzioni validate nella sessione di debug in memoria sul quadrato pannelli;
+- rettificare LG-012: la distanza lungo la parete fra nodo di mandata e radice del ritorno è sempre `p`, eliminando la vecchia costante fissa `0,50 m`;
+- generare preliminarmente il raccordo entrante del ritorno prima dell'albero di mandata e usarlo come geometria fisica limitante: distanza mandata-ritorno `p`; il raccordo di collegamento limita collisioni/distanze ma non diventa automaticamente una linea strategica di inseguimento;
+- eliminare l'eccezione runtime che sopprime `PROSEGUI_DRITTO` nel primo nodo dopo il raccordo tecnico: raccordo tecnico ed evoluzione restano oggetti distinti e ogni nodo valuta le normali alternative geometriche;
+- formalizzare il Fattore di Bontà del terminale come rapporto fra superficie empiricamente coperta e superficie effettiva del locale; per una sola mandata/ritorno: `Aeq = 2 * Lattiva * p`, escludendo collegamenti e raccordi tecnici dalla lunghezza attiva;
+- aggiungere una modalità diagnostica Service `numerazioneSpirali=true|false`, default `true`, che nell'SVG mostra un numero per ogni nodo della soluzione Diego, con lo stesso identificativo presente nel log `SpiraliDiego`; la numerazione deve essere solo diagnostica e non modificare geometria/calcolo né il DXF;
+- aggiornare regression/smoke pertinenti;
+- eseguire build e test reali GitHub Actions, recuperare almeno SVG/log del quadrato e registrare l'esito reale;
+- pubblicare la revisione riuscita tramite il normale auto-deploy Render collegato a `main`;
+- non modificare motori GPT/Vittorio, frontend, Library Desktop o `definizionedati.json`;
+- a conclusione aggiornare questo Summary e chiudere Issue #1 `Completed` se riuscito, `Not planned` se fallito.
+
+Criteri di completamento:
+- direttive e sorgente coerenti con le decisioni sopra;
+- build Release GitHub Actions SUCCESS;
+- smoke StrategiaDiego/quadrato SUCCESS con artifact diagnostico reale;
+- SVG di verifica con numerazione nodi di default e log con ID corrispondenti;
+- revisione finale su `main` pubblicata verso Render;
+- stato finale documentato e Issue #1 chiusa con esito coerente.
+
+
 ### INCARICO 2026-09-26 — Rettifica evoluzioni iniziali StrategiaDiego
 Stato: COMMISSIONATO
 
