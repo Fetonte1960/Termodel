@@ -459,7 +459,8 @@ internal static class StrategiaDiegoEngine
             LogDiego(
                 $"TREE {family} NODE node={node.NodeId} depth={node.Depth} " +
                 $"end={Fmt(node.End)} dir={Fmt(node.Direction)} " +
-                $"front={node.Front.Id} pathLen={Fmt(node.LengthMeters)}m");
+                $"front={node.Front.Id} pathLen={Fmt(node.LengthMeters)}m " +
+                $"scavalcamentoPhase={node.ScavalcamentoPhase}");
 
             var directions = new List<(
                 string Name,
@@ -475,16 +476,13 @@ internal static class StrategiaDiegoEngine
             // opposto. La fase resta un ramo dell'albero e non modifica le
             // regole ordinarie degli altri nodi.
             bool scavalcamentoLaneNode =
+                node.ScavalcamentoPhase == 1;
+            bool scavalcamentoFollowing =
+                node.ScavalcamentoPhase >= 2;
+            bool firstScavalcamentoFollowing =
+                node.ScavalcamentoPhase == 2 &&
                 node.Parent is not null &&
-                node.Parent.Front.Family == GeoFamily.ReturnConnection &&
-                node.Front.Family == family;
-
-            bool afterScavalcamentoOpposite =
-                node.Parent is not null &&
-                node.Parent.Parent is not null &&
-                node.Parent.Parent.Front.Family ==
-                    GeoFamily.ReturnConnection &&
-                node.Parent.Front.Family == family;
+                node.Parent.ScavalcamentoPhase == 1;
 
             if (scavalcamentoLaneNode)
             {
@@ -527,7 +525,7 @@ internal static class StrategiaDiegoEngine
                         constraints,
                         family,
                         parallel,
-                        afterScavalcamentoOpposite
+                        scavalcamentoFollowing
                             ? node.Segment.Id
                             : null);
                 GeoSegment? continuationB =
@@ -537,7 +535,7 @@ internal static class StrategiaDiegoEngine
                         constraints,
                         family,
                         -parallel,
-                        afterScavalcamentoOpposite
+                        scavalcamentoFollowing
                             ? node.Segment.Id
                             : null);
 
@@ -572,7 +570,7 @@ internal static class StrategiaDiegoEngine
                     step,
                     allowStartOnBoundary: false,
                     relaxedDistanceConstraintId:
-                        afterScavalcamentoOpposite
+                        firstScavalcamentoFollowing
                             ? node.Parent!.Segment.Id
                             : null);
 
@@ -593,6 +591,27 @@ internal static class StrategiaDiegoEngine
 
                 int childNodeId =
                     counters.AddNode(countAsSupply, node.Depth + 1);
+
+                int childScavalcamentoPhase;
+                if (node.ScavalcamentoPhase == 1)
+                {
+                    childScavalcamentoPhase = 2;
+                }
+                else if (node.ScavalcamentoPhase >= 2)
+                {
+                    childScavalcamentoPhase = 2;
+                }
+                else if (
+                    node.Front.Family == GeoFamily.ReturnConnection &&
+                    extension.Front.Family == family)
+                {
+                    childScavalcamentoPhase = 1;
+                }
+                else
+                {
+                    childScavalcamentoPhase = 0;
+                }
+
                 SearchNode child = new(
                     node,
                     extension.Segment,
@@ -600,7 +619,8 @@ internal static class StrategiaDiegoEngine
                     direction,
                     node.Depth + 1,
                     node.LengthMeters + extension.Segment.Length,
-                    childNodeId);
+                    childNodeId,
+                    childScavalcamentoPhase);
 
                 LogDiego(
                     $"TREE {family} CHOICE {choiceName} ACCEPT " +
@@ -2095,7 +2115,8 @@ internal static class StrategiaDiegoEngine
             DVector direction,
             int depth,
             double lengthMeters,
-            int nodeId)
+            int nodeId,
+            int scavalcamentoPhase = 0)
         {
             Parent = parent;
             Segment = segment;
@@ -2104,6 +2125,7 @@ internal static class StrategiaDiegoEngine
             Depth = depth;
             LengthMeters = lengthMeters;
             NodeId = nodeId;
+            ScavalcamentoPhase = scavalcamentoPhase;
         }
 
         public SearchNode? Parent { get; }
@@ -2113,6 +2135,7 @@ internal static class StrategiaDiegoEngine
         public int Depth { get; }
         public double LengthMeters { get; }
         public int NodeId { get; }
+        public int ScavalcamentoPhase { get; }
         public DPoint End => Segment.B;
     }
 
