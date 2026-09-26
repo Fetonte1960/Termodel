@@ -1366,7 +1366,8 @@ internal static class StrategiaDiegoEngine
         GeoSegment front,
         IReadOnlyList<GeoSegment> constraints,
         GeoFamily pathFamily,
-        DVector travelDirection)
+        DVector travelDirection,
+        string? excludedSegmentId = null)
     {
         if (front.Family == GeoFamily.Architecture ||
             front.SequenceIndex < 0)
@@ -1392,7 +1393,11 @@ internal static class StrategiaDiegoEngine
         {
             return constraints.FirstOrDefault(candidate =>
                 candidate.Family == front.Family &&
-                candidate.SequenceIndex == front.SequenceIndex + 1);
+                candidate.SequenceIndex == front.SequenceIndex + 1 &&
+                (excludedSegmentId is null ||
+                 !candidate.Id.Equals(
+                     excludedSegmentId,
+                     StringComparison.Ordinal)));
         }
 
         DVector travel = travelDirection.Normalize();
@@ -1405,7 +1410,11 @@ internal static class StrategiaDiegoEngine
         foreach (GeoSegment candidate in constraints.Where(candidate =>
                      candidate.Family == front.Family &&
                      candidate.SequenceIndex >= 0 &&
-                     candidate.SequenceIndex != front.SequenceIndex))
+                     candidate.SequenceIndex != front.SequenceIndex &&
+                     (excludedSegmentId is null ||
+                      !candidate.Id.Equals(
+                          excludedSegmentId,
+                          StringComparison.Ordinal))))
         {
             DVector candidateDirection = candidate.Direction.Normalize();
             if (candidateDirection.Length <= Epsilon)
@@ -1462,6 +1471,7 @@ internal static class StrategiaDiegoEngine
             $"SEQUENCE {mode} geometric-continuation " +
             $"pathFamily={pathFamily} frontFamily={front.Family} " +
             $"from={front.SequenceIndex} next={best.Value.SequenceIndex} " +
+            $"excluded={excludedSegmentId ?? "-"} " +
             $"start={Fmt(start)} dir={Fmt(travel)} " +
             $"rayTravel={Fmt(bestTravel)}m intersection={intersectionMode}");
         return best;
