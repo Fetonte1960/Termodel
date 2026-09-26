@@ -4331,120 +4331,189 @@ stessa soluzione algoritmica.
 
 ## LG-041 — PROSEGUI_DRITTO come generatore universale di candidati su fronti reali e prolungamenti laterali
 
-**Stato:** PROPOSTA UTENTE REGISTRATA — DA DISCUTERE E CONSOLIDARE PRIMA DELL'IMPLEMENTAZIONE  
-**Origine:** proposta utente del 26/09/2026
+**Stato:** CONSOLIDATA — NON ANCORA IMPLEMENTATA  
+**Origine:** proposta e consolidamento utente del 26/09/2026
 
 ### Principio
 
-`PROSEGUI_DRITTO` non deve essere modellato come un unico ramo dell'albero.
-Deve diventare un **generatore di candidati geometrici** lungo la direzione
+`PROSEGUI_DRITTO` non è un singolo ramo predefinito dell'albero.
+È un **generatore universale di candidati geometrici** lungo la direzione
 corrente del tubo.
 
-Da un nodo corrente, mantenendo fissa la direzione `Ucur`, devono poter essere
-considerati:
+Da ogni nodo, fissati il punto corrente `P` e la direzione normalizzata
+`Ucur`, il motore considera le linee pertinenti dello scenario del ramo.
+Ogni linea pertinente può proporre un proprio candidato diritto.
 
-1. i contenimenti frontali fisicamente intersecati dal tratto reale;
-2. le intersezioni teoriche con il prolungamento laterale a un estremo della
-   linea di riferimento;
-3. le intersezioni teoriche con il prolungamento laterale all'altro estremo
-   della stessa linea.
-
-Le linee di riferimento pertinenti possono appartenere a:
+Le linee pertinenti sono:
 
 - contenimento architettonico;
-- tubi/evoluzioni di mandata;
-- tubi/evoluzioni di ritorno.
+- mandata fisicamente già costruita nello scenario corrente;
+- ritorno fisicamente già costruito nello scenario corrente.
 
-La regola è **simmetrica**: si applica allo stesso modo durante la costruzione
-della mandata e durante la costruzione del ritorno. Cambia soltanto la distanza
-di rispetto `d`, ricavata dalla matrice corrente delle famiglie geometriche.
+La regola è identica per la costruzione della mandata e del ritorno.
+Cambia soltanto la distanza di rispetto `d`, ottenuta dalla matrice corrente
+delle famiglie geometriche secondo LG-006/LG-037.
 
-### Costruzione del candidato laterale
+### Linee escluse
 
-Per ogni linea di riferimento `S`, sia `L(S)` la sua retta di supporto.
-Se la semiretta corrente interseca `L(S)` in un punto teorico `I` che non
-appartiene al segmento fisico `S` ma ricade su uno dei suoi due prolungamenti
-laterali, il motore può costruire un candidato diritto che supera tale
-intersezione.
+Non generano candidati:
 
-Nel caso ortogonale già discusso: `T = I + d * Ucur`, con:
+- il segmento dal quale il nodo corrente proviene, quando produrrebbe il
+  riaggancio immediato allo stesso tratto;
+- intersezioni poste dietro `P` rispetto a `Ucur`;
+- linee parallele alla direzione corrente che non producono una intersezione
+  geometrica utile;
+- candidati geometricamente duplicati entro la tolleranza corrente.
 
-- `I` = intersezione teorica con il prolungamento laterale;
-- `d` = distanza di rispetto corrente fra la famiglia del tubo in costruzione
-  e la famiglia della linea di riferimento;
-- `Ucur` = direzione normalizzata del tratto corrente;
-- `T` = punto terminale candidato posto oltre l'intersezione.
+Non devono essere introdotte ulteriori esclusioni euristiche soltanto per
+ridurre il numero dei rami.
 
-Per geometrie oblique resta valida la generalizzazione tramite offset già
-richiesta da LG-034/LG-035: il significato geometrico è "oltre il riferimento
-alla distanza normale corretta", non una correzione cartesiana fissa.
+### Intersezione fisica e intersezione laterale
+
+Per ogni linea pertinente `S` si considera la sua retta di supporto `L(S)` e
+si calcola l'intersezione teorica `I` con la semiretta `(P,Ucur)`.
+
+Il punto `I` viene classificato in uno dei due modi:
+
+1. **intersezione fisica frontale**: `I` appartiene al segmento reale `S`;
+2. **intersezione laterale teorica**: `I` non appartiene al segmento reale
+   `S`, ma appartiene a uno dei due prolungamenti della sua retta di supporto.
+
+I due prolungamenti laterali, rispetto agli estremi del segmento, sono
+entrambi ammissibili: non esiste una preferenza predefinita destra/sinistra.
+
+### Punto terminale candidato
+
+Per una intersezione fisica frontale, il candidato termina **prima** del
+vincolo alla distanza di rispetto corrente `d`, usando la costruzione
+geometrica già prevista dalle regole di troncamento.
+
+Per una intersezione laterale teorica, il candidato termina **oltre** la linea
+di riferimento mantenendo la stessa distanza di rispetto corrente `d`.
+
+Nel caso ortogonale:
+
+`T = I + d * Ucur`
+
+dove `T` è il terminale candidato.
+
+Per geometrie oblique non si applica una correzione cartesiana fissa:
+si usa la costruzione mediante parallela offset alla distanza normale `d`
+prevista da LG-034/LG-035 e si interseca tale offset con la direzione corrente.
+
+### Riferimento associato al candidato
+
+Ogni candidato deve conservare almeno:
+
+- identificativo della linea `S` che lo ha generato;
+- famiglia geometrica della linea;
+- classificazione dell'intersezione: fisica oppure laterale;
+- punto teorico `I`;
+- punto terminale `T`;
+- distanza di rispetto `d` applicata.
+
+Il riferimento che ha generato il candidato deve quindi essere ancora
+disponibile nello stato del nodo figlio, così che i successivi cambi di
+direzione possano usare direttamente quella linea come riferimento geometrico
+senza doverla ricostruire per euristica.
+
+### Geometria teorica e geometria fisica
+
+La generazione di un candidato laterale usa rette e prolungamenti teorici.
+La validazione del tratto resta invece affidata alla geometria fisica reale.
+
+Ogni candidato deve passare le normali verifiche `TrattoPossibile`:
+contenimento, collisioni, attraversamenti vietati e distanze minime.
+
+Di conseguenza non serve una priorità speciale per un ostacolo frontale:
+se un candidato teorico più lontano attraversa realmente un ostacolo fisico,
+viene semplicemente scartato dalla validazione geometrica.
+
+LG-039 resta quindi integralmente valida: il raccordo entrante del ritorno
+rimane un oggetto fisico limitante anche se non viene trasformato in una
+procedura strategica speciale.
 
 ### Albero delle alternative
 
 Il numero dei rami generabili da un nodo **non è fissato a tre**.
-Il nodo può produrre `0..N` candidati `PROSEGUI_DRITTO`, oltre alle eventuali
-altre alternative geometriche valide, con `N` determinato esclusivamente dalle
-linee pertinenti presenti nello scenario corrente e dalle normali verifiche di
-validità.
 
-Quindi "illimitato" significa **non limitato da una cardinalità prefissata**:
-in ogni stato concreto l'insieme resta finito perché deriva dalla geometria
-finita del ramo corrente.
+Un nodo può produrre `0..N` candidati `PROSEGUI_DRITTO`, più le ulteriori
+alternative geometriche derivabili dai riferimenti associati ai candidati.
+`N` dipende dalla geometria finita dello scenario corrente e non da una
+cardinalità prefissata nel codice.
 
-Nessun candidato valido viene eliminato soltanto perché esiste un candidato
-più promettente. L'albero conserva tutte le alternative ammissibili e la
-funzione di valutazione finale sceglie il percorso migliore.
+Nessun candidato valido viene eliminato perché un altro sembra migliore.
+Tutte le alternative ammissibili entrano nell'albero e la funzione di
+valutazione finale resta l'unica autorità per scegliere il percorso vincente.
 
 ### Ordine di esplorazione
 
-L'ordine di visita dell'albero è distinto dalla selezione finale.
-Fra i candidati generati da intersezioni laterali, vengono esplorati per primi
-quelli che consentono il tratto diritto valido più lungo nella direzione
-corrente.
+Fra i candidati generati da intersezioni laterali, la priorità di visita è
+data dalla **lunghezza valida del tratto diritto**, in ordine decrescente.
 
-La priorità di esplorazione serve a trovare prima soluzioni estese e utili alla
-diagnostica; **non costituisce potatura** e non modifica il criterio di merito
-finale. Tutti i candidati validi devono essere esplorati e tutti i terminali
-ottenuti restano sottoposti alla funzione di valutazione corrente.
+Questa priorità riguarda soltanto l'ordine di esplorazione:
 
-### Rapporto con le regole precedenti
+- non è una potatura;
+- non assegna un premio implicito nel merito;
+- non elimina i candidati più corti;
+- non modifica il Fattore di Bontà né il criterio finale di selezione.
 
-Questa proposta generalizza il meccanismo introdotto in LG-034/LG-035:
-la costruzione "oltre una linea estesa" non viene più trattata come eccezione
-locale di uno specifico nodo o del tubo entrante, ma come possibilità generale
-di `PROSEGUI_DRITTO`.
+### Nessun verso speciale di scavalcamento
 
-Se consolidata, può rendere superflua una procedura speciale dedicata allo
-"scavalcamento del tubo entrante": anche quel caso dovrebbe emergere dallo
-stesso generatore universale di candidati e dalla normale funzione di merito.
+Non esiste una regola generale che imponga, dopo un candidato laterale, di
+percorrere il riferimento nel verso opposto o nello stesso verso.
 
-LG-039 resta comunque valida per la **presenza fisica** del raccordo entrante
-del ritorno: collisioni e distanze devono continuare a rispettare la geometria
-reale. La presente proposta riguarda la generazione delle alternative
-strategiche, non autorizza attraversamenti fisici.
+Dal nuovo nodo devono rimanere disponibili tutte le alternative
+geometricamente valide. La funzione di valutazione finale decide quale
+evoluzione prevale.
 
-### Punti da discutere prima dell'implementazione
+### Superamento della procedura speciale di scavalcamento
 
-1. Se una stessa linea produce contemporaneamente un'intersezione fisica e una
-   costruzione laterale teorica pertinente, stabilire se entrambi i candidati
-   devono convivere oppure se il vincolo fisico deve avere precedenza locale.
-2. Definire con precisione quando una linea è "pertinente" per evitare rami
-   geometricamente leciti ma privi di significato strategico.
-3. Stabilire come trattare duplicati geometrici generati da linee diverse che
-   producono lo stesso punto `T` entro tolleranza.
-4. Definire la costruzione generale per angoli obliqui usando gli offset di
-   LG-034/LG-035.
-5. Confermare che l'ordinamento per lunghezza riguardi soltanto l'ordine di
-   esplorazione e non introduca alcun premio implicito nella funzione di
-   merito.
-6. Verificare il costo combinatorio sui regression correnti prima di introdurre
-   qualsiasi potatura o limite euristico.
+Il caso del tubo entrante non richiede una procedura strategica dedicata.
+
+Quando una mandata o un ritorno incontra la situazione precedentemente
+descritta come «scavalcamento del tubo entrante», le possibilità devono
+emergere dalla stessa regola universale:
+
+- il raccordo entrante resta nella geometria fisica e impone le distanze;
+- le linee di mandata/ritorno/architettura pertinenti possono generare
+  candidati sui propri prolungamenti;
+- i candidati fisicamente impossibili vengono scartati;
+- quelli validi restano nell'albero;
+- il merito finale seleziona il percorso.
+
+Non va quindi implementata una eccezione separata denominata
+`ProceduraScavalcamentoTuboEntrante` finché LG-041 resta la regola consolidata.
+
+### Impatto sulle regole precedenti
+
+LG-041 generalizza il caso specifico «oltre linea estesa» già introdotto da
+LG-034/LG-035. LG-033 continua a descrivere l'identità e continuità delle
+evoluzioni precedenti, ma non deve limitare artificialmente la generazione
+dei candidati a un unico `S_k+1` quando più riferimenti geometricamente
+pertinenti sono disponibili.
+
+Le regole di distanza, collisione e contenimento restano invariate.
+
+### Verifica richiesta per la futura implementazione
+
+Prima di dichiarare LG-041 implementata occorrerà:
+
+- aggiungere diagnostica che elenchi tutti i candidati prodotti da ogni nodo;
+- registrare riferimento, tipo fisico/laterale, `I`, `T`, `d` e lunghezza;
+- verificare che l'ordine di esplorazione sia decrescente per lunghezza senza
+  eliminazione di candidati;
+- rieseguire quadrato, concavo, trapezio, rete ramificata e appartamento;
+- misurare crescita di nodi, tempo e memoria prima di qualsiasi eventuale
+  limite computazionale;
+- produrre SVG reale secondo LG-036 e confrontare il caso che ha originato
+  questa regola.
 
 ### Stato implementativo
 
-**Non implementata.** Questa LG registra la proposta universale per la
-successiva discussione. Nessuna modifica al motore deve essere eseguita finché
-i punti sopra non sono consolidati.
+**Non implementata.** La semantica è consolidata; il codice corrente conserva
+ancora il modello precedente e dovrà essere modificato in un incarico
+successivo esplicitamente autorizzato.
 
 ## Punti successivi
 
