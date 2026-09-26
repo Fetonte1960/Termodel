@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using Termodel.utilities;
 
 namespace Termodel.Core.RadiantPanels;
 
@@ -10,7 +11,8 @@ public static class StrategiaDiegoBenchmark
 {
     public static StrategiaDiegoBenchmarkSample Run(
         string localeXml,
-        double stepMeters = StrategiaDiegoEngine.DefaultStepMeters)
+        double stepMeters = StrategiaDiegoEngine.DefaultStepMeters,
+        bool includeDetailedDiagnostics = false)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Diego vuota.", nameof(localeXml));
@@ -19,10 +21,24 @@ public static class StrategiaDiegoBenchmark
             localeXml,
             LoadOptions.PreserveWhitespace);
 
+        TermodelLog.InitializeLog(
+            includeDetailedDiagnostics
+                ? new TermodelLog.LogConfiguration(
+                    true,
+                    new HashSet<TermodelLog.LogCategory>
+                    {
+                        TermodelLog.LogCategory.SpiraliDiego
+                    })
+                : null);
+
         StrategiaDiegoResult result =
             StrategiaDiegoEngine.Generate(document, stepMeters);
 
         StrategiaDiegoMetrics m = result.Metrics;
+        IReadOnlyList<string> diagnostics = includeDetailedDiagnostics
+            ? result.Diagnostics.Concat(TermodelLog.Messages).ToArray()
+            : result.Diagnostics;
+
         return new StrategiaDiegoBenchmarkSample(
             result.Svg,
             result.StepMeters,
@@ -37,7 +53,7 @@ public static class StrategiaDiegoBenchmark
             m.TotalNodes,
             m.MaxNodes,
             m.MaxDepthLimit,
-            result.Diagnostics);
+            diagnostics);
     }
 }
 
