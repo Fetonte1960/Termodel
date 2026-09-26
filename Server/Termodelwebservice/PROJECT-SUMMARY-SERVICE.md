@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Raccordo entrante ritorno come segmento Return normale
-Stato: COMMISSIONATO
+Stato: ESEGUITO — SIMULAZIONE POSITIVA / NON INTEGRATA
 
 Commissionato:
 - proseguire la simulazione sul prototipo `experiment/lg041-supply-first-return-after` senza integrare in `main`;
@@ -93,6 +93,20 @@ Criteri di completamento:
 - Harness quadrato e appartamento eseguiti;
 - SVG/log/metriche confrontabili;
 - esito e limiti registrati in Summary/registro/linee guida.
+Risultato:
+- modifica sperimentale sul branch `experiment/lg041-supply-first-return-after`, commit `7946cc0096cec52db7611a42f21402185ae72414`, PR #8; nessun merge in `main`;
+- il raccordo entrante blu resta `GeoFamily.Return`, `SequenceIndex=0`, con log `promotedTo=Return sequence=0 strategic=true`; non viene più mantenuto come `ReturnConnection` speciale;
+- Radiant Harness run `36225285732`, job `108358001545`: **SUCCESS** su quadrato e appartamento;
+- quadrato: 290 nodi Supply, 1.046 Return, 1.336 totali, 400 terminali combinati, 16 accettati, 375 ms nel run diagnostico;
+- benchmark quadrato senza diagnostica estesa: 20/20 deterministico, 1.336 nodi, P95 250 ms, memoria delta max 3.556.896 byte, SVG SHA-256 `19b46b7906ef6bd830f7bab10fd8af4aee42e6d3478b5760b78624c3c75ff403`;
+- 42 candidati LG-041 hanno usato `D-RETURN-0` come riferimento: 32 ACCEPT, 8 REJECT, 2 DUPLICATE; quindi il raccordo è effettivamente estensibile/strategico come gli altri Return;
+- esempio reale: nodo Return 300, riferimento `D-RETURN-0`, candidato laterale `(2.95,3.55)->(1.10,3.55)`, distanza `2p=0,60 m`;
+- la soluzione blu vincente percorre `x=1,05` fra due mandate verticali `x=0,75` e `x=1,35`, cioè esattamente a `p=0,30 m` da entrambe;
+- geometria finale selezionata del quadrato invariata rispetto alla simulazione supply-first precedente, sia rossa sia blu; la modifica aumenta soltanto le alternative Return (1.016 -> 1.336 nodi totali);
+- appartamento preconfezionato: SUCCESS, 80 nodi totali, 3 terminali accettati, 33 ms diagnostici;
+- regression completa PR: build SUCCESS; `ConcaveL` sostenibile 4.455 nodi / 72 accettati / P95 362 ms; `ObliqueTrapezoid` sostenibile 1.931 nodi / 36 accettati / P95 224 ms; `ConnectionTerminal` resta oltre 250.000 nodi e mantiene la build completa in failure;
+- conclusione: il trattamento `ReturnConnection` speciale era una limitazione strategica reale, ma **non era la causa del mancato eco rosso dopo 29->30**; in supply-first il ritorno nasce dopo la mandata e l'SVG rosso resta identico;
+- LG-043 registrata nelle linee guida nel commit `398c2fa01ab18a1d174a9b2607f1d0b9d37d2453`; contesto test aggiornato nel commit `c40d05fda53fa28c05fca91768d8d17873bd79ff`; registro R13 nel commit `3754dfd5dda2254cb935173b2870ac8e4d70bc53`.
 
 
 ### INCARICO 2026-09-26 — Simulazione mandata completa prima del ritorno
