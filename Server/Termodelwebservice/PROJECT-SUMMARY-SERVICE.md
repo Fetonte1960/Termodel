@@ -71,6 +71,21 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Analisi log nodo 95/97 dopo LG-044
+Stato: ESEGUITO — DIAGNOSI / NESSUNA MODIFICA CODICE
+
+Risultato:
+- nel percorso selezionato `...48->50->95->97->99...`, il cambio guida avviene al nodo 95;
+- al nodo 95 il `front` è ancora sequence 2, corrispondente al riferimento del tratto `3->39`, ma `FindSequenceContinuation()` sceglie sequence 10 (`48->50`) con `rayTravel=0` perché la sua retta estesa passa sul nodo;
+- `48->50` è collineare/contiguo con la corsa di arrivo `50->95`; l'esclusione LG-044 per ID del solo segmento corrente non lo elimina;
+- il motore costruisce quindi `95->97` come `EXTEND beyond-extended-front` a `2p` rispetto a `48->50` e il nodo 97 eredita questo fronte orizzontale;
+- a 97 esistono entrambe le alternative: `PROSEGUI_DRITTO 97->98` verticale fino a `(3.25,3.25)` e `PARALLELA_B 97->99` orizzontale fino a `(1.40,1.35)`;
+- il ramo verticale `97->98` non è scartato: produce terminali con activeLength `29,25 m`, goodness `1,097`, length totale `29,40 m`, uguali ai valori visualizzati del ramo vincente via `97->99`;
+- il terminale selezionato `1098` discende da `97->99`; i log arrotondano a tre decimali e l'ordinamento corrente non contiene alcuna preferenza normotica, quindi un eventuale micro-delta floating-point può rompere il pareggio;
+- diagnosi strutturale: cambio guida prematuro su un segmento appartenente alla stessa evoluzione rettilinea di arrivo; ipotesi successiva da discutere è escludere la catena collineare/contigua del segmento di arrivo dagli `at-node` usati come nuovo fronte, non tutti gli `at-node` in generale;
+- registro sviluppo R15: commit `a709454d2f5f9e97600c8dc4cb10377a28234867`.
+
+
 ### INCARICO 2026-09-26 — Correzione eco 1→3: escludere il segmento di arrivo dalla continuazione
 Stato: ESEGUITO — SIMULAZIONE POSITIVA / NON INTEGRATA
 
