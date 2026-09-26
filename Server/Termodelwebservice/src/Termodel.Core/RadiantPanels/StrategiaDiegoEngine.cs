@@ -906,7 +906,9 @@ internal static class StrategiaDiegoEngine
                     excludedFrontId: null,
                     requiredFront,
                     step,
-                    allowStartOnBoundary: false);
+                    allowStartOnBoundary: false,
+                    diagnosticParentNodeId: node.NodeId,
+                    diagnosticChoiceName: choiceName);
 
                 if (extension is null)
                 {
@@ -1165,7 +1167,9 @@ internal static class StrategiaDiegoEngine
         string? excludedFrontId,
         string? requiredFrontId,
         double step,
-        bool allowStartOnBoundary)
+        bool allowStartOnBoundary,
+        int? diagnosticParentNodeId = null,
+        string? diagnosticChoiceName = null)
     {
         DVector unit = direction.Normalize();
         if (unit.Length <= Epsilon)
@@ -1210,6 +1214,17 @@ internal static class StrategiaDiegoEngine
             if (raw is null)
                 continue;
 
+            if (diagnosticParentNodeId is int diagnosticNode &&
+                diagnosticChoiceName is not null)
+            {
+                LogDiego(
+                    $"TRYEXT CHECK parentNode={diagnosticNode} choice={diagnosticChoiceName} " +
+                    $"family={family} reference={reference.Id} refFamily={reference.Family} " +
+                    $"type={(raw.PhysicalHit ? "physical" : "lateral")} " +
+                    $"I={Fmt(raw.Intersection)} T={Fmt(raw.Extension.Segment.B)} " +
+                    $"d={Fmt(raw.Respect)}m length={Fmt(raw.Extension.Segment.Length)}m");
+            }
+
             ExtensionResult extension = raw.Extension;
             if (!IsSegmentValid(
                     locale,
@@ -1220,7 +1235,22 @@ internal static class StrategiaDiegoEngine
                     step,
                     allowStartOnBoundary))
             {
+                if (diagnosticParentNodeId is int diagnosticNode &&
+                    diagnosticChoiceName is not null)
+                {
+                    LogDiego(
+                        $"TRYEXT REJECT parentNode={diagnosticNode} choice={diagnosticChoiceName} " +
+                        $"reference={reference.Id} T={Fmt(extension.Segment.B)}");
+                }
                 continue;
+            }
+
+            if (diagnosticParentNodeId is int acceptedNode &&
+                diagnosticChoiceName is not null)
+            {
+                LogDiego(
+                    $"TRYEXT ACCEPT parentNode={acceptedNode} choice={diagnosticChoiceName} " +
+                    $"reference={reference.Id} T={Fmt(extension.Segment.B)}");
             }
 
             if (best is null ||
