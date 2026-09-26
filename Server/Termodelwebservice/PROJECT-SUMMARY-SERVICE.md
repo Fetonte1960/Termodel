@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Simulazione mandata completa prima del ritorno
-Stato: COMMISSIONATO
+Stato: ESEGUITO — SIMULAZIONE POSITIVA / NON INTEGRATA
 
 Commissionato:
 - simulare una variante strutturale di StrategiaDiego in cui la mandata viene costruita completamente prima che esista qualsiasi geometria di ritorno;
@@ -93,6 +93,21 @@ Criteri di completamento:
 - comportamento 28→29 confrontabile con il precedente;
 - metriche nodi/tempo registrate;
 - nessuna integrazione in main senza ulteriore approvazione visuale.
+Risultato:
+- prototipo branch `experiment/lg041-supply-first-return-after`, PR #8, commit `6b596ab872a7822c900dc9b281bc9a1480030447`; non integrato in `main`;
+- durante la mandata non vengono più create radici/raccordi/segmenti del ritorno; l'albero rosso è costruito con architettura + collegamenti esterni + mandata corrente;
+- i terminali mandata sono ordinati per `TerminalGoodness`, lunghezza attiva e lunghezza totale; il ritorno viene generato solo dopo il terminale in esame;
+- Harness run `36224330125`: **SUCCESS** su quadrato e appartamento preconfezionato;
+- quadrato: percorso rosso contiene `27 -> 28 -> 29 -> 30`; il tratto `28 -> 29` è verticale e non condizionato dal blu;
+- quadrato: 290 nodi mandata, 64 terminali mandata, 726 nodi ritorno, 1.016 nodi totali, 16 terminali accettati, maxDepth 25;
+- benchmark quadrato 20/20 deterministico: P95 313 ms, memoria delta max ~10,95 MB, SVG SHA-256 `d2af75acfb1b717c6d08ad82dfb0bfa89fc5dd6fd9b2ebfaa1d9db8e3b84bc7f`;
+- rispetto al prototipo LG-041 precedente (17.616 nodi) il quadrato scende a 1.016 nodi (~94,2% in meno);
+- appartamento preconfezionato: 80 nodi totali, 3 terminali accettati, ~65 ms nel run diagnostico;
+- regression estesa: `ConcaveL` ora sostenibile con 4.455 nodi / 72 accettati / P95 382 ms; `ObliqueTrapezoid` sostenibile con 1.587 nodi / 24 accettati / P95 312 ms;
+- `ConnectionTerminal` resta non sostenibile e supera il limite tecnico di 250.000 nodi; per questo la build completa PR non è SUCCESS e la modifica non viene integrata;
+- LG-042 registrata nelle linee guida come approvata e simulata nel commit `72af8c357f6f7cb630312bd5a6d672095d7f7823`; registro R12 nel commit `64ec7b33ecbfc67433f127483d1e151f784c15a8`;
+- `STRATEGIADIEGO_TEST_CONTEXT_CURRENT` aggiornato a `LG042-SUPPLY-FIRST-SQUARE4X4-T1-P030`;
+- nessuna modifica a frontend, Library Desktop, Vittorio/GPT o `definizionedati.json`.
 
 
 ### INCARICO 2026-09-26 — Implementazione e test LG-041 con Radiant Harness
