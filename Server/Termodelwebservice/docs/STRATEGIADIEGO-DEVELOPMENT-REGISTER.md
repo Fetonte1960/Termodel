@@ -7,6 +7,38 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R5 — Consolidamento debug in memoria: ritorno preliminare, bontà e node-id
+Stato: **IMPLEMENTATO SU BRANCH — BUILD/REGRESSION DA ESEGUIRE**
+
+Decisioni utente 26/09/2026:
+- la radice del ritorno non usa più 0,50 m: distanza mandata-ritorno lungo la
+  parete = `p`;
+- il raccordo entrante blu viene costruito prima della mandata e diventa
+  geometria fisica limitante, senza diventare automaticamente front strategica;
+- il primo nodo dopo il raccordo è ordinario: valuta anche
+  `PROSEGUI_DRITTO`, senza eccezioni basate su depth/ordine;
+- introdotto il Fattore di Bontà diagnostico
+  `B=(2*Lattiva*p)/Alocale`;
+- introdotti identificativi univoci dei nodi dell'albero Diego, riportati nel
+  log e, di default, come numerazione diagnostica nell'SVG;
+- parametro Service `numerazioneSpirali=true|false`, default `true`;
+- overlay numerazione escluso dal DXF e dal conteggio primitive tecniche.
+
+Documentazione:
+- LG-012 rettificata;
+- LG-038 Bontà terminale;
+- LG-039 raccordo ritorno come linea limitante;
+- LG-040 numerazione diagnostica;
+- contratto Frontend-Service v1.27.
+
+Verifica prevista:
+- build Release;
+- benchmark e smoke esistenti;
+- quadrato 4x4 con log `SpiraliDiego`;
+- controllo corrispondenza node-id fra SVG e log;
+- artifact SVG reale per verifica visuale;
+- pubblicazione su `main`/Render soltanto dopo esito tecnico positivo.
+
 ## R4 — Uniformità evoluzioni e inversione corsie iniziali mandata/ritorno
 Stato: **IMPLEMENTATO SU GIT — NON COMPILATO / NON ESEGUITO**
 
