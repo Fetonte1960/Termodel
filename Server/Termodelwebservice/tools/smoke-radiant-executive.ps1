@@ -222,6 +222,21 @@ try {
     throw "StrategiaDiego LG-034: il quadrato non ha esercitato il passaggio oltre una linea estesa."
   }
 
+  # LG-041 / R8: il raccordo di ritorno deve troncare fisicamente a p,
+  # il ramo deve agganciare la corsia 2p e il primo tratto sulla corsia
+  # deve essere percorso nel verso opposto al riferimento orientato.
+  if ($diegoLogText -notmatch "SCAVALCAMENTO physical-limit family=Supply[^\r\n]*respect=0.3m") {
+    throw "StrategiaDiego LG-041: troncamento fisico mandata/ReturnConnection a p non esercitato."
+  }
+  if ($diegoLogText -notmatch "SCAVALCAMENTO lane-attach") {
+    throw "StrategiaDiego LG-041: aggancio alla corsia successiva non esercitato."
+  }
+  if ($diegoLogText -notmatch "SCAVALCAMENTO opposite-lane") {
+    throw "StrategiaDiego LG-041: verso opposto sulla corsia non esercitato."
+  }
+
+  Write-Host "STRATEGIA_DIEGO_SCAVALCAMENTO_OK"
+
   $goodnessMatches = [regex]::Matches(
     $diegoLogText,
     'SUPPLY-BEST-GOODNESS[^\r\n]*activeSegments=(?<segments>\d+)[^\r\n]*activeLength=(?<length>[0-9.]+)m[^\r\n]*coveredArea=(?<covered>[0-9.]+)m2[^\r\n]*localeArea=(?<area>[0-9.]+)m2[^\r\n]*factor=(?<factor>[0-9.]+)')
