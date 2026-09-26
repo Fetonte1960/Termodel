@@ -71,6 +71,30 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Raccordo entrante ritorno come segmento Return normale
+Stato: COMMISSIONATO
+
+Commissionato:
+- proseguire la simulazione sul prototipo `experiment/lg041-supply-first-return-after` senza integrare in `main`;
+- eliminare la persistenza strategica della famiglia speciale `ReturnConnection` dopo la costruzione del raccordo entrante;
+- il raccordo prodotto da `TryBuildEntryConnector` deve restare un normale segmento `Return` con `SequenceIndex=0`, quindi entrare nella sequenza strategica del ritorno;
+- dalla prima evoluzione successiva il raccordo deve poter essere usato come riferimento/prolungamento LG-041 come gli altri segmenti Return;
+- le distanze rispetto alle mandate devono restare quelle normali Supply/Return = `p`; le distanze fra tratti Return restano `2p`;
+- verificare esplicitamente se il blu può occupare il corridoio centrale fra due mandate distanti `2p`, cioè `p` da entrambe;
+- mantenere supply-first LG-042: durante la costruzione della mandata il ritorno continua a non esistere;
+- eseguire Radiant Harness su quadrato e appartamento preconfezionato, recuperare SVG/log/metriche reali e confrontare con la simulazione supply-first precedente;
+- osservare anche crescita combinatoria e regressioni; non aumentare limiti e non introdurre potature euristiche;
+- nessun merge in `main` senza ulteriore approvazione visuale;
+- Issue #1 aperta durante il lavoro e chiusa `Completed` al termine della simulazione.
+
+Criteri di completamento:
+- raccordo entrante visibile nel log come `Return` normale e non `ReturnConnection`;
+- almeno un riferimento LG-041 al raccordo/segmento Return verificabile quando geometricamente pertinente;
+- Harness quadrato e appartamento eseguiti;
+- SVG/log/metriche confrontabili;
+- esito e limiti registrati in Summary/registro/linee guida.
+
+
 ### INCARICO 2026-09-26 — Simulazione mandata completa prima del ritorno
 Stato: ESEGUITO — SIMULAZIONE POSITIVA / NON INTEGRATA
 
