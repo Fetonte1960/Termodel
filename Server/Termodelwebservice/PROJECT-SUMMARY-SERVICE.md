@@ -71,6 +71,24 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Implementazione Decision Reject Replay
+Stato: COMMISSIONATO
+
+Commissionato:
+- implementare sul branch sperimentale PR #8 l'architettura `Decision Reject Replay` già consolidata nelle linee guida R23;
+- ogni scelta reale dell'albero Supply/Return deve avere una Decision Key canonica, stabile e copiabile;
+- la chiave non deve dipendere da timestamp, GUID o node ID progressivi;
+- introdurre input Harness `--reject-decisions <file.txt>` con zero o più Decision Key, una per riga;
+- se una Decision Key corrente coincide con una chiave di input, la scelta deve essere rifiutata prima della creazione del figlio e registrata come `REJECT_BY_INPUT`;
+- senza reject file, comportamento e ranking devono restare invariati;
+- il replay deve usare il vero BuildTree e produrre il normale SVG standard del motore, non una ricostruzione esterna;
+- verificare sul quadrato corrente almeno un reject Supply e confrontare il risultato con la classifica Supply Explorer per assicurarsi che la soluzione residua sia coerente;
+- preparare il flusso operativo per richieste future del tipo `scarta questo setup mandata`, così da presentare il setup immediatamente meno performante senza modifiche ad hoc al sorgente;
+- aggiornare linee guida/registro/Summary e PR #8 dopo il collaudo;
+- nessun merge in `main` senza successiva autorizzazione;
+- chiudere Issue #1 `Completed` al termine se il collaudo riesce.
+
+
 ### INCARICO 2026-09-26 — Fotografia architettura debug Decision Reject Replay
 Stato: ESEGUITO — DOCUMENTAZIONE CONSOLIDATA / NON IMPLEMENTATA
 
