@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Registrazione proposta universale PROSEGUI_DRITTO multi-candidato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - registrare nelle linee guida, senza modificare il motore, la nuova proposta utente di generalizzazione universale di `PROSEGUI_DRITTO`;
@@ -90,9 +90,18 @@ Criteri di completamento:
 - precedente incarico di scavalcamento esplicitamente sospeso in attesa della discussione;
 - Issue #1 chiusa Completed al termine del solo lavoro documentale.
 
+Risultato documentale:
+- LG-041 aggiunta a `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md` come proposta universale, non implementata;
+- `PROSEGUI_DRITTO` formalizzato come generatore di `0..N` candidati, includendo fronti fisici e prolungamenti laterali delle linee pertinenti;
+- priorità di esplorazione dei candidati laterali per lunghezza decrescente, senza potatura e senza alterare la funzione di merito finale;
+- regola dichiarata simmetrica per mandata e ritorno;
+- incarico specifico precedente sullo scavalcamento del tubo entrante sospeso in attesa della discussione LG-041;
+- nessuna modifica al motore, frontend, Library Desktop o `definizionedati.json`;
+- commit linee guida: `ec60a4cf9e66db5d978dec62fdf26bef2c3b3dac`.
+
 
 ### INCARICO 2026-09-26 — Procedura di scavalcamento tubo entrante: limite fisico, corsia 2p e verso opposto
-Stato: COMMISSIONATO
+Stato: SOSPESO — sostituzione in valutazione tramite LG-041 universale
 
 Commissionato:
 - consolidare la correzione validata nella simulazione sul quadrato pannelli senza snaturare l'albero StrategiaDiego;
