@@ -72,19 +72,51 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Debug nodo 22 verso tratto 5→6→7 a distanza 2p
-Stato: COMMISSIONATO
+Stato: ESEGUITO — HARNESS SUCCESS / CHECKPOINT MEMORIZZATO
 
 Commissionato:
-- partire dal setup corrente **ansa buona + miglior completamento top-5**;
-- analizzare le scelte reali disponibili al **nodo 22** secondo la numerazione dello SVG corrente;
-- assumere come obiettivo geometrico il tratto corrente **5→6→7**;
-- con p=0,30 m, individuare la scelta del nodo 22 che porta il nuovo tratto il più vicino possibile alla distanza obiettivo **2p = 0,60 m** dal riferimento 5→6→7;
-- usare Branch Inspector/Decision Key del vero albero, non ricostruzioni esterne;
-- visualizzare l'opzione scelta tramite SVG diagnostico/reale del motore;
-- memorizzare nelle linee guida questa esatta posizione di debug per consentire a una chat successiva di riprendere da qui;
-- non modificare ancora la funzione di merito o la geometria normale;
-- aggiornare registro, Summary, PR #8 e chiudere Issue #1 Completed se il collaudo riesce.
+- partire dal setup ansa buona + miglior completamento top-5;
+- analizzare le scelte reali al nodo 22 secondo la numerazione dello SVG corrente;
+- individuare e attuare l'opzione più vicina a 2p=0,60 m dal tratto SVG 5→6→7;
+- visualizzare il risultato con SVG del vero motore;
+- memorizzare questa posizione di debug nelle linee guida per una chat successiva;
+- nessuna modifica alla funzione di merito o alle regole geometriche normali.
 
+Riferimenti SVG di partenza:
+- nodo 5=(0,15;3,85), nodo 6=(0,15;3,25), nodo 7=(0,15;0,15);
+- nodo 22=(1,40;3,25); p=0,30 m, quindi 2p=0,60 m.
+
+Analisi nodo 22:
+- PROSEGUI_DRITTO fisico -> (0,75;3,25): ACCEPT, distanza esatta 0,60 m da 5→6→7;
+- PROSEGUI_DRITTO laterale -> (0,80;3,25): ACCEPT, distanza 0,65 m;
+- PARALLELA_B -> (1,40;1,35): ACCEPT ma più lontana;
+- PARALLELA_A: nessun candidato geometrico valido.
+
+Decision Key scelta:
+`DIEGO_DECISION family=Supply choice=PROSEGUI_DRITTO start=(1.400000,3.250000) target=(0.750000,3.250000) refFamily=Supply ref=((0.150000,3.250000)->(0.150000,3.850000)) d=0.600000 type=physical`
+
+Implementazione/collaudo:
+- `adca010d75dd63b5d4c1f42589113b31cb3824a8`: Branch Inspector compatibile con Prefix Lock;
+- `0f503eab6c7f88dab33a00ad4dd75eb45d227c40`: test automatico nodo22, selezione per distanza dalla polilinea 5→6→7 ed estensione Prefix Lock;
+- Prefix Lock esteso a 14 Decision Key;
+- Harness run `36240642880`, job `108400565235`: **SUCCESS**;
+- artifact `radiant-harness-fast` id `10904919361`;
+- output: SupplyNodes 15, SupplyTerminals 1, ReturnNodes 2893, AcceptedTerminals 656;
+- SVG SHA-256 `0325c4f3cc54d4e1614353e5384acba59b6ac1ffa774e06769fa432734df3f0b`;
+- Build generale run `36240642868`: Build **SUCCESS**, 0 errori; workflow finale rosso solo per benchmark LG-046 noto, 44.044 nodi, P95 2708 ms > budget 2000 ms.
+
+Rinumerazione dopo la potatura:
+- il vecchio nodo 22 `(1,40;3,25)` diventa nodo **14** nel nuovo SVG;
+- il nuovo target `(0,75;3,25)` diventa nodo **15**.
+
+Documentazione:
+- linee guida checkpoint commit `aa3571dbee9f50000545e8c83ed55fc140bd72a4`;
+- registro R30 commit `a54219287064a2c993facbeed5a04e6e962971f0`.
+
+Posizione corrente del debug:
+- ansa buona preservata;
+- scelta vecchio nodo22→(0,75;3,25) fissata a 2p dal tratto 5→6→7;
+- prossima chat deve ripartire dallo SVG R30 e usare la **nuova numerazione** per analizzare le scelte successive.
 
 ### INCARICO 2026-09-26 — Prefix Lock e ricerca setup ansa buono
 Stato: ESEGUITO — HARNESS SUCCESS / SETUP ANSA BUONO ISOLATO
