@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Implementazione e test LG-041 con Radiant Harness
-Stato: COMMISSIONATO
+Stato: ESEGUITO — TEST COMPLETATO / PROTOTIPO NON INTEGRATO
 
 Commissionato:
 - implementare la specifica consolidata LG-041 nel vero `StrategiaDiegoEngine` usando il nuovo `Termodel.RadiantPanels.Harness` come ciclo rapido;
@@ -99,6 +99,19 @@ Criteri di completamento:
 - build completa main SUCCESS;
 - Summary/registro/linee guida aggiornati;
 - Issue #1 chiusa con esito coerente.
+Esito del collaudo:
+- prototipo implementato esclusivamente sul branch `feature/lg041-multi-straight-candidates`, PR #7; nessuna modifica algoritmica LG-041 è stata integrata in `main`;
+- Harness PR run `36223457471`, job `108352924546`: **SUCCESS**; build Core+Harness, quadrato e appartamento preconfezionato tutti eseguiti;
+- quadrato LG-041: 17.616 nodi totali (312 mandata + 17.304 ritorno), 66 terminali mandata, 5.808 combinazioni, 412 terminali accettati, maxDepth 25;
+- benchmark quadrato senza diagnostica estesa: 20/20 iterazioni deterministiche, P95 1.039 ms, memoria delta max ~4,56 MB, entro i budget correnti; SVG SHA-256 `37ba2ccaf728f3ee20b2a1e8220d552df912dd72913422c4c8b2be58dbd3e644`;
+- rispetto alla baseline Harness precedente del quadrato (1.328 nodi), l'albero cresce di circa 13,3x; la crescita è concentrata soprattutto nel ritorno (17.304 nodi contro 1.164 baseline);
+- diagnostica LG-041 verificata: 3.606 nodi con almeno 2 candidati accettati, 3.724 nodi con almeno un candidato laterale; massimo 4 candidati accettati sullo stesso nodo; nessuna violazione dell'ordine decrescente dei candidati laterali rilevata;
+- esempio reale sul percorso mandata: al nodo 66 risultano contemporaneamente un candidato laterale da `D-INITIAL-Supply` lungo 1,25 m e un candidato fisico lungo 1,90 m; entrambi restano nell'albero;
+- appartamento preconfezionato: **SUCCESS**, 160 nodi, 16 terminali accettati, ~40 ms nel run Harness;
+- la diagnostica dettagliata del quadrato ha prodotto ~465.000 messaggi / ~76 MB di log; il valore memoria del run diagnostico (~174 MB) non è rappresentativo del motore puro, come confermato dal benchmark senza log (~4,56 MB max delta);
+- build completa PR run `36223457467`: compilazione **SUCCESS**, ma benchmark regression **FAILED** sulla fixture `StrategiaDiegoConcaveL.locale.xml` perché la ricerca supera il limite tecnico di 250.000 nodi già durante il warm-up;
+- per questo motivo LG-041 non viene dichiarata implementata e il PR #7 viene chiuso senza merge; la specifica resta valida come obiettivo geometrico, ma richiede una strategia di contenimento/deduplicazione esatta prima dell'integrazione;
+- nessun limite è stato alzato e nessuna potatura euristica è stata introdotta per mascherare l'esplosione combinatoria.
 
 
 ### INCARICO 2026-09-26 — Harness pannelli minimale e base dati test preconfezionata
