@@ -71,6 +71,18 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Rendere auto-riprendibile il debug spirali da Linee Guida
+Stato: COMMISSIONATO
+
+Commissionato:
+- verificare perché un agente/Codex, leggendo `LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`, non riesce a riprendere correttamente il test corrente;
+- confrontare Linee Guida con stato reale di Core, Harness, Prefix Lock R30, checkpoint R31, workflow e pubblicazione su `main`;
+- completare le Linee Guida con un punto di ripresa operativo autosufficiente: branch/commit di riferimento, fixture/case, cwd, file Prefix Lock, comandi esatti, output attesi, marker, artifact e distinzione fra run condizionato Harness e free run Service;
+- correggere informazioni obsolete che possono sviare un agente, senza modificare Core/frontend;
+- chiudere Issue #1 Completed se riuscito, Not planned se fallito.
+
+
+
 ### INCARICO 2026-09-26 — Pubblicazione su Render dello stato sperimentale StrategiaDiego
 Stato: ESEGUITO — PUBBLICATO SU MAIN / AUTO-DEPLOY RENDER ATTIVATO
 
