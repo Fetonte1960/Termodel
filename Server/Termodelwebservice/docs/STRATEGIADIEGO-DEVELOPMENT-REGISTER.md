@@ -7,6 +7,40 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R23 — Architettura debug universale Decision Reject Replay
+Stato: **APPROVATA E DOCUMENTATA — NON ANCORA IMPLEMENTATA**
+
+Decisione utente 26/09/2026:
+- evitare strumenti adattati caso per caso per forzare rami alternativi;
+- usare il log stesso come interfaccia stabile di debug;
+- ogni decisione dell'albero deve produrre una Decision Key canonica;
+- un file di input contiene le Decision Key da rifiutare;
+- quando la chiave corrente coincide con una riga di input, quella scelta viene esclusa e l'albero continua normalmente sulle alternative residue;
+- il risultato da analizzare deve essere il normale SVG prodotto dal vero motore, non una ricostruzione grafica esterna.
+
+Architettura consolidata:
+- nome: `Decision Reject Replay`;
+- matching su chiave geometrica stabile, non su GUID/timestamp/node ID progressivo;
+- chiave basata su famiglia, tipo scelta, start, direzione/target, riferimento geometrico stabile, distanza `d` e tipo physical/lateral quando applicabile;
+- input previsto: file testo UTF-8, una chiave per riga, opzione Harness prevista `--reject-decisions <file.txt>`;
+- più rifiuti possono essere cumulati per scendere progressivamente nell'albero;
+- assenza del file = comportamento normale invariato;
+- ogni esclusione deve produrre log esplicito `REJECT_BY_INPUT`;
+- stesso meccanismo per Supply e Return;
+- Explorer e Branch Inspector restano strumenti di osservazione; il Replay diventa lo strumento preferito per ottenere una vera soluzione alternativa e il suo SVG standard.
+
+Workflow rapido:
+`run normale -> individua decisione -> copia key -> replay con reject -> SVG standard della migliore soluzione residua -> eventuale nuovo reject -> confronto -> solo dopo eventuale modifica algoritmica`.
+
+Primo caso previsto:
+- quadrato corrente;
+- escludere la scelta geometrica corrispondente all'attuale ramo umano `62->65`;
+- lasciare il motore sviluppare autonomamente il ramo alternativo che oggi passa da `62->63`;
+- il matching non deve dipendere dai numeri 62/63/65.
+
+Documentazione:
+- linee guida aggiornate nel commit `4ee05ae37b14fd92856425971b464dd4e224baef`;
+- nessuna modifica al motore in R23.
 ## R22 — Branch Inspector nodo 63
 Stato: **ESEGUITO — STRUMENTO DIAGNOSTICO VERIFICATO**
 
