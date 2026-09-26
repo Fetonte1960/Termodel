@@ -4509,11 +4509,38 @@ Prima di dichiarare LG-041 implementata occorrerà:
 - produrre SVG reale secondo LG-036 e confrontare il caso che ha originato
   questa regola.
 
+### Collaudo sperimentale reale del 26/09/2026
+
+LG-041 è stata implementata **solo come prototipo non integrato** nel branch
+`feature/lg041-multi-straight-candidates` / PR #7 e collaudata tramite
+`Termodel.RadiantPanels.Harness`.
+
+Esito:
+
+- quadrato 4x4: comportamento multi-candidato reale confermato; 17.616 nodi,
+  412 terminali accettati, P95 benchmark 1.039 ms, determinismo 20/20;
+- diagnostica: 3.606 nodi con almeno due candidati validi e nessuna violazione
+  dell'ordine decrescente fra i candidati laterali;
+- appartamento preconfezionato: 160 nodi, esecuzione riuscita;
+- fixture concava: il prototipo supera il limite tecnico di 250.000 nodi già
+  nel warm-up del benchmark completo.
+
+Conclusione del collaudo:
+
+- la semantica geometrica multi-candidato è stata riprodotta correttamente;
+- la formulazione esplorativa completa causa però una crescita combinatoria
+  non accettabile su tutte le geometrie correnti;
+- il prototipo **non viene integrato** e non si alzano i limiti per farlo
+  passare artificialmente;
+- prima di una futura implementazione servono deduplicazione/stati equivalenti
+  esatti o altra riformulazione che conservi tutte le alternative realmente
+  distinte senza potatura euristica.
+
 ### Stato implementativo
 
-**Non implementata.** La semantica è consolidata; il codice corrente conserva
-ancora il modello precedente e dovrà essere modificato in un incarico
-successivo esplicitamente autorizzato.
+**Non implementata in `main`.** La semantica resta consolidata, ma il collaudo
+reale ha dimostrato che il prototipo universale corrente non è ancora
+computazionalmente sostenibile sul regression set completo.
 
 
 ---
