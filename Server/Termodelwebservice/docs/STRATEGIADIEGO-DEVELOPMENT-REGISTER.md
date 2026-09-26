@@ -7,6 +7,37 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R9 — Protocollo di collaudo preliminare e contesto corrente
+Stato: **ESEGUITO — DIRETTIVA OPERATIVA REGISTRATA**
+
+Decisione utente 26/09/2026:
+- prima dell'implementazione GitHub/Core, le nuove strategie geometriche possono essere collaudate rapidamente in chat con un simulatore temporaneo indipendente;
+- per la massima fedeltà al comportamento finale il linguaggio preferito è C#/.NET;
+- il simulatore deve usare, quando disponibili, la stessa fixture/input del caso reale, le stesse distanze, tolleranze, primitive geometriche e criterio di merito pertinenti;
+- il collaudo preliminare produce log di candidati/nodi e SVG diagnostico numerato quando il disegno cambia;
+- il risultato della simulazione non sostituisce build, runtime e regression del motore reale;
+- GitHub Actions viene usato dopo il consolidamento della strategia per verificare l'implementazione reale e confrontarla con la simulazione;
+- introdotta la variabile documentale canonica `STRATEGIADIEGO_TEST_CONTEXT_CURRENT`, da mantenere aggiornata nelle linee guida prima di ogni cambio di banco prova o condizione di test.
+
+Contesto iniziale:
+- `STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG041-SQUARE4X4-T1-P030`;
+- fixture: `tests/fixtures/StrategiaDiegoSquare4x4.locale.xml`;
+- locale R001, quadrato 4x4 m;
+- ingresso T1 `(2,-1)->(2,1)`, direzione `+Y`;
+- `p=0,30 m`;
+- regola sotto test: LG-041;
+- simulatore preliminare preferito: C#/.NET;
+- output richiesto: log candidati/nodi + SVG diagnostico numerato.
+
+Vincolo di manutenzione:
+- se cambia fixture, locale, geometria, `p`, LG/condizione sotto test o output diagnostico, aggiornare prima il blocco `STRATEGIADIEGO_TEST_CONTEXT_CURRENT` nelle linee guida;
+- i vecchi contesti significativi devono essere trasferiti nel registro o nelle fixture quando diventano regression/checkpoint; la variabile corrente resta singola e descrive solo il banco attivo.
+
+Implementazione:
+- solo documentazione; nessuna modifica a `StrategiaDiegoEngine`;
+- nessuna build o smoke richiesti per questa fase.
+
+
 ## R8 — Consolidamento LG-041: PROSEGUI_DRITTO multi-candidato universale
 Stato: **ESEGUITO — SPECIFICA CONSOLIDATA / NON IMPLEMENTATA**
 
