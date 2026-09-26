@@ -1,0 +1,6 @@
+{
+  "id": "LG041-SQUARE4X4-T1-P030",
+  "description": "Banco rapido StrategiaDiego: quadrato 4x4 m, ingresso T1, p=0,30 m, contesto corrente LG-041.",
+  "preparedInput": "../../fixtures/StrategiaDiegoSquare4x4.locale.xml",
+  "stepMeters": 0.30
+}
