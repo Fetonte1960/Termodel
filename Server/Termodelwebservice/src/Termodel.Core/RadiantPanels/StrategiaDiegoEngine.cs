@@ -1419,6 +1419,7 @@ internal static class StrategiaDiegoEngine
 
         GeoSegment? best = null;
         double bestTravel = double.PositiveInfinity;
+        bool bestPhysicalHit = false;
 
         foreach (GeoSegment candidate in constraints.Where(candidate =>
                      candidate.Family == front.Family &&
@@ -1454,10 +1455,29 @@ internal static class StrategiaDiegoEngine
             if (Math.Abs(rayTravel) <= GeometryTolerance)
                 rayTravel = 0.0;
 
-            if (rayTravel < bestTravel - GeometryTolerance)
+            DPoint theoreticalHit =
+                start + travel * rayTravel;
+            bool candidatePhysicalHit =
+                Distance(
+                    theoreticalHit,
+                    candidate.A,
+                    candidate.B) <= GeometryTolerance;
+
+            // Due segmenti successivi possono appartenere alla stessa retta
+            // (per esempio i due tratti verticali separati dal raccordo di
+            // ingresso). Se la loro intersezione teorica cade alla stessa
+            // distanza, preferire quello realmente presente nel punto di
+            // incontro: il segmento fisico richiede I-d, mentre il solo
+            // prolungamento produrrebbe I+d e puo' portare fuori locale.
+            if (rayTravel < bestTravel - GeometryTolerance ||
+                (Math.Abs(rayTravel - bestTravel) <=
+                     GeometryTolerance &&
+                 candidatePhysicalHit &&
+                 !bestPhysicalHit))
             {
                 bestTravel = rayTravel;
                 best = candidate;
+                bestPhysicalHit = candidatePhysicalHit;
             }
         }
 
@@ -1486,7 +1506,8 @@ internal static class StrategiaDiegoEngine
             $"from={front.SequenceIndex} next={best.Value.SequenceIndex} " +
             $"excluded={excludedSegmentId ?? "-"} " +
             $"start={Fmt(start)} dir={Fmt(travel)} " +
-            $"rayTravel={Fmt(bestTravel)}m intersection={intersectionMode}");
+            $"rayTravel={Fmt(bestTravel)}m intersection={intersectionMode} " +
+            $"physical={bestPhysicalHit}");
         return best;
     }
 
