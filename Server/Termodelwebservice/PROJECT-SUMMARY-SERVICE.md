@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Reject scelta nodo 47 del rank 1 corrente
-Stato: COMMISSIONATO
+Stato: ESEGUITO — HARNESS SUCCESS / REPLAY REALE
 
 Commissionato:
 - usare come base il rank 1 corrente del caso quadrato LG041 senza esclusioni;
@@ -83,6 +83,20 @@ Commissionato:
 - non modificare geometria, funzione di merito o algoritmo;
 - registrare esito reale e chiudere Issue #1 come Completed se il collaudo riesce.
 
+Risultato:
+- Decision Key estratta automaticamente dal percorso del rank 1 al nodo 47:
+  `DIEGO_DECISION family=Supply choice=PARALLELA_B start=(0.750000,0.150000) target=(0.750000,0.750000) refFamily=Supply ref=((2.000000,0.150000)->(3.850000,0.150000)) d=0.600000 type=lateral`;
+- il numero 47 è stato usato solo per localizzare la decisione nel run corrente; il reject effettivo usa la chiave canonica;
+- workflow commit `ba60d261ca90167f507cc0de542a406ee9c2a119`;
+- Harness run `36237004819`, job `108390500611`: **SUCCESS**;
+- step dedicato `Reject rank1 choice at current node 47`: **SUCCESS**;
+- il log contiene `DIEGO_DECISION_REPLAY REJECT_BY_INPUT` con la Decision Key richiesta;
+- nuovo top residuo = precedente **rank 2** della baseline;
+- terminal node baseline residuo: `290`;
+- active length `28.05 m`, goodness `1.051875`, total length `28.2 m`;
+- artifact `radiant-harness-fast`, id `10904393213`;
+- SVG standard risultante SHA-256 `6e1a8bf2c78df44aa3ead66788cd72d10246e223384800f7cbc10d0520c3bcd6`;
+- nessuna modifica alla geometria, funzione di merito o algoritmo; PR #8 resta sperimentale.
 
 ### INCARICO 2026-09-26 — Completamento sistema debug albero StrategiaDiego + reject cumulativo
 Stato: ESEGUITO — HARNESS SUCCESS / INFRASTRUTTURA CONSOLIDATA
