@@ -262,23 +262,30 @@ internal static class StrategiaDiegoEngine
                     continue;
                 }
 
-                GeoSegment returnLimitingSegment =
+                // Il raccordo entrante assolve soltanto alla funzione tecnica
+                // di ingresso. Dopo la sua costruzione entra immediatamente
+                // nella normale sequenza Return come segmento 0: non resta
+                // un ostacolo speciale ReturnConnection e puo' quindi essere
+                // usato dalle regole LG-041 come qualsiasi altro tratto blu.
+                GeoSegment returnEntrySegment =
                     rawReturnConnector.Segment with
                     {
                         Id =
-                            $"D-RETURN-CONNECTION-{locale.Id}-{returnRoot.Side}-" +
+                            $"D-RETURN-0-{locale.Id}-{returnRoot.Side}-" +
                             Guid.NewGuid().ToString("N"),
-                        Family = GeoFamily.ReturnConnection
+                        Family = GeoFamily.Return,
+                        SequenceIndex = 0
                     };
 
                 ExtensionResult returnConnector = new(
-                    returnLimitingSegment,
+                    returnEntrySegment,
                     rawReturnConnector.Front);
 
                 LogDiego(
                     $"SUPPLY-FIRST {locale.Id} RETURN-CONNECTION accept " +
                     $"supplyNode={supplyTerminal.NodeId} config={returnRoot.Side} " +
-                    $"{Fmt(returnLimitingSegment.A)}->{Fmt(returnLimitingSegment.B)}");
+                    $"{Fmt(returnEntrySegment.A)}->{Fmt(returnEntrySegment.B)} " +
+                    $"promotedTo=Return sequence=0 strategic=true");
 
                 SearchTree returnTree = BuildTree(
                     locale,
