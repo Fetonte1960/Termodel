@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Consolidamento debug StrategiaDiego, build e pubblicazione
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - consolidare nel sorgente e nelle linee guida tutte le correzioni validate nella sessione di debug in memoria sul quadrato pannelli;
@@ -95,9 +95,31 @@ Criteri di completamento:
 - revisione finale su `main` pubblicata verso Render;
 - stato finale documentato e Issue #1 chiusa con esito coerente.
 
+Risultato reale:
+- autorizzazione registrata nel commit `176749401c706bac5600d6461a00574e5e03222a`;
+- sviluppo consolidato sul branch `ai/strategiadiego-consolidamento-20260926` e integrato tramite PR #2;
+- PR head finale `e0118fc0e3cde43def856836669c89e95adf2a6d`;
+- PR Action `TermodelService Build` run `36205218493` (#550): **SUCCESS**;
+- merge su `main`: `a15d29e6407f41d3b245c418bc02103ba08227f6`;
+- main Action run `36205436426`, job `108300854209`: **SUCCESS**;
+- nello stesso run sono risultati SUCCESS build Release, benchmark StrategiaDiego, smoke HTTP/storage, feedback bridge, esecutivo SVG/DXF, progetto radiante reale, banco appartamento corrente, snapshot e step finale `Finalize Termodel job status and notify phone`;
+- Commit Status finale `Termodel/job=SUCCESS`;
+- artifact main del quadrato `strategia-diego-square-executive`, id `10893840445`;
+- artifact main banco appartamento `strategia-diego-current-apartment`, id `10892724316`;
+- SVG quadrato SHA-256 `6d8f8c281af51ccceeb20f082f58fe5b00a80ee497d66f7e1d4ef3843c9b511a`;
+- DXF quadrato SHA-256 `a159bb6529ad84d6415538a6adc82535edb844f89ff60d6c4fd7df9cdb06d7b9`;
+- numerazione diagnostica di default verificata realmente: 13 node-id nell'SVG e corrispondenza con il log `SpiraliDiego`; overlay escluso dal DXF e dal conteggio tecnico;
+- log reale: radici ritorno Sinistra/Destra distanti `p=0,30 m` lungo la parete; raccordo blu preliminare presente con `limit=true strategicFront=false`;
+- terminale di mandata con miglior bontà nello scenario reale del quadrato: 6 tratti attivi, 13,16 m, superficie empirica 7,896 m², superficie effettiva locale 13,988 m², fattore `0,564`;
+- soluzione selezionata corrente: merito 24,405 m, 8 punti mandata, 8 punti ritorno; bontà mandata `0,564`, bontà ritorno `0,317`;
+- node-id selezionati: mandata `1,3,4,5,6,7,8`; ritorno `15,17,19,25,26,27`;
+- aggiornato il registro StrategiaDiego R5 nel commit `795985c83ba41718341892fbf810778bd1330669`;
+- nessuna modifica a GPT/Vittorio, frontend, Library Desktop o `definizionedati.json`;
+- i push su `main` hanno attivato il normale auto-deploy Render; gli strumenti di rete della sessione non riescono a interrogare direttamente `https://termodel.onrender.com/health`, quindi non viene dichiarata una verifica HTTP indipendente del commit runtime;
+- l'SVG reale viene restituito all'utente per la verifica geometrica visuale richiesta da LG-036; il successo tecnico non equivale alla sua approvazione geometrica.
 
 ### INCARICO 2026-09-26 — Rettifica evoluzioni iniziali StrategiaDiego
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - rettificare la specifica StrategiaDiego eliminando il concetto di una "prima evoluzione" con regola speciale: tutte le evoluzioni della spirale devono seguire le stesse regole geometriche e di distanza;
@@ -114,6 +136,15 @@ Criteri di completamento:
 - nessuna compilazione o Action avviata;
 - Summary aggiornato con commit e stato reale;
 - Issue #1 chiusa `Completed` a pubblicazione Git conclusa.
+
+Risultato finale:
+- la fase iniziale è stata pubblicata senza compilazione come richiesto;
+- il successivo incarico di consolidamento ha incorporato e verificato le stesse rettifiche;
+- `main` commit funzionale `a15d29e6407f41d3b245c418bc02103ba08227f6`;
+- main Action `36205436426`, job `108300854209`: **SUCCESS**;
+- raccordo mandata `p/2`, ritorno `1,5p`, separazione mandata-ritorno `p` verificati dai regression/smoke aggiornati;
+- la vecchia esclusione arbitraria di `PROSEGUI_DRITTO` al primo nodo è stata rimossa nel consolidamento;
+- l'output SVG reale è disponibile per controllo visuale dell'utente.
 
 
 ### INCARICO 2026-09-25 — Pubblicazione ultima build + direttive anti-timeout
