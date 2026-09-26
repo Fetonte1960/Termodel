@@ -5055,6 +5055,144 @@ la maggiore capacità del ritorno di riempire le anse è verificata, ma il
 costo combinatorio deve essere ridotto.
 ---
 
+## LG-047 — Merito secondario della mandata basato sull'inseguimento per punti medi
+
+**Stato:** SPECIFICA APPROVATA — NON ANCORA IMPLEMENTATA
+**Origine:** direttiva utente del 26/09/2026
+
+### Problema risolto dalla specifica
+
+LG-041 genera correttamente più alternative geometriche, ma scavalcamenti e
+anse possono produrre molti terminali Supply con lo stesso fattore primario,
+o con differenze non significative di lunghezza. Costruire un albero Return
+completo per ogni Supply equivalente non è sostenibile: il numero di stati
+cresce rapidamente nei locali grandi e con passo piccolo.
+
+Una prova diagnostica sul quadrato 4x4 ha confermato il rischio:
+
+- una fascia relativa dell'1% includeva 20 mandate concorrenti;
+- anche una fascia ridotta allo 0,25% includeva 4 mandate;
+- l'esplorazione cumulativa dei Return ha raggiunto il limite tecnico di
+  250.000 nodi;
+- con diagnostica completa il consumo di memoria ha superato 2 GB prima del
+  completamento.
+
+La strategia di confronto globale Supply+Return è quindi **respinta**. Il
+ritorno deve essere sviluppato soltanto dopo avere scelto una singola mandata
+prevalente mediante un criterio Supply economico.
+
+### Missione geometrica
+
+La mandata deve:
+
+1. inseguire il profilo dell'edificio;
+2. inseguire progressivamente i tratti Supply già generati;
+3. evitare che anse e scavalcamenti di uguale lunghezza restino indistinguibili;
+4. selezionare una sola mandata prima di costruire il Return.
+
+### Fattore primario
+
+Il fattore primario resta la lunghezza attiva della mandata, espressa anche dal
+Fattore di Bontà LG-038.
+
+Il merito secondario interviene **soltanto quando il fattore primario è uguale**
+entro la tolleranza numerica geometrica già adottata dal motore. Non introduce
+una fascia percentuale di mandate "quasi uguali".
+
+### Definizione del merito secondario
+
+Per ogni tratto attivo Supply `s_i`, nell'ordine in cui viene generato:
+
+1. calcolare il punto medio `m_i` del tratto;
+2. calcolare i punti medi di tutte le pareti delimitanti del locale;
+3. calcolare i punti medi dei soli tratti Supply precedenti
+   `s_1 ... s_(i-1)`;
+4. misurare le distanze euclidee punto-punto da `m_i` a tutti questi punti
+   medi;
+5. assumere come contributo `d_i` la distanza minima trovata;
+6. sommare il contributo al valore cumulativo della mandata.
+
+Formula:
+
+```text
+d_i = min(
+    min distanza(m_i, puntoMedio(parete)),
+    min distanza(m_i, puntoMedio(s_j)) per ogni j < i
+)
+
+MeritoSecondarioSupply = somma(d_i)
+```
+
+Per il primo tratto attivo, in assenza di tratti Supply precedenti, il minimo
+viene calcolato sulle sole pareti delimitanti.
+
+Il raccordo tecnico iniziale non partecipa alla somma: come per la lunghezza
+attiva usata da LG-038, serve a raggiungere la prima traccia utile e non
+rappresenta inseguimento del profilo.
+
+### Ordinamento obbligatorio
+
+La graduatoria dei terminali Supply diventa lessicografica:
+
+1. **massimizzare** lunghezza attiva / Fattore di Bontà primario;
+2. a parità del primario, **minimizzare** `MeritoSecondarioSupply`;
+3. soltanto dopo questa scelta costruire il Return della mandata prevalente;
+4. se il Return non è fattibile, passare alla successiva mandata secondo lo
+   stesso ordinamento, conservando il comportamento Supply-first.
+
+Un valore secondario più basso è migliore perché indica che, nel complesso,
+i punti medi dei nuovi tratti restano più vicini al profilo o alla Supply già
+costruita.
+
+Se anche il merito secondario è uguale, questa specifica non introduce un
+nuovo criterio geometrico: resta valido l'ordinamento deterministico corrente
+finché un caso reale non richiederà un terzo fattore esplicito.
+
+### Aspetti da verificare senza cambiare la formula
+
+La formula richiesta usa intenzionalmente distanze **punto medio-punto medio**.
+Il collaudo deve rendere visibili due effetti:
+
+- la somma tende a penalizzare, a pari lunghezza, i percorsi spezzati in molti
+  tratti; questo può eliminare proprio le anse/scavalcamenti ridondanti, ma non
+  deve penalizzare un inseguimento necessario in un perimetro complesso;
+- il risultato dipende dalla suddivisione delle pareti in segmenti: due muri
+  geometricamente equivalenti ma discretizzati diversamente possono avere
+  punti medi differenti.
+
+Questi sono criteri di verifica, non autorizzano a sostituire automaticamente
+la distanza fra punti medi con una distanza punto-segmento, una media o una
+normalizzazione. Qualunque variante richiede confronto sugli SVG e una nuova
+decisione esplicita.
+
+### Vincoli implementativi
+
+- il parametro si calcola esclusivamente sulla mandata;
+- nessun albero Return deve essere generato per confrontare terminali Supply a
+  pari lunghezza;
+- il valore deve essere cumulabile nel nodo di ricerca: il figlio eredita il
+  totale del padre e aggiunge il solo `d_i` del nuovo tratto;
+- il calcolo iniziale può esaminare pareti e antenati Supply in modo diretto;
+  un indice spaziale sarà valutato soltanto se i benchmark grandi lo
+  richiederanno;
+- il log diagnostico deve esporre almeno lunghezza primaria, merito secondario
+  e motivo dell'eventuale spareggio;
+- non hardcodare coordinate, numero nodo, forma del quadrato o Prefix Lock nel
+  runtime.
+
+### Collaudo richiesto prima dell'integrazione
+
+1. preservare i checkpoint R30/R31 condizionati;
+2. eseguire il quadrato 4x4 in free-run;
+3. dimostrare che terminali Supply di uguale lunghezza vengono ordinati dal
+   nuovo totale secondario;
+4. dimostrare che viene costruito un solo albero Return alla volta;
+5. confrontare nodi, tempo e memoria con il tentativo globale respinto;
+6. verificare almeno un locale concavo e un caso più grande/passo più piccolo;
+7. produrre e ispezionare l'SVG reale del Harness secondo LG-036.
+
+---
+
 ## Direttiva permanente — collaudo preliminare rapido delle strategie
 
 ### Scopo
@@ -6232,9 +6370,9 @@ verificare che descriva davvero il caso che si intende provare.
 ### Valore corrente
 
 ```text
-STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG041-R31-FREE-RUN-SELECTION-SQUARE4X4-T1-P030
+STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG047-SUPPLY-SECONDARY-MERIT-SQUARE4X4-T1-P030
 
-IdContesto: LG041-R31-FREE-RUN-SELECTION-SQUARE4X4-T1-P030
+IdContesto: LG047-SUPPLY-SECONDARY-MERIT-SQUARE4X4-T1-P030
 TipoInput: fixture sintetica versionata + confronto con progetto quadrato consolidato sul Service
 CaseHarness: tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json
 PrefixLockApprovato: tests/radiant-harness/prefixes/LG041-R30-APPROVED-THROUGH-NODE15.prefix-lock.txt
@@ -6245,8 +6383,8 @@ Passo_p: 0,30 m
 NodoApprovatoR30: nodo 15 = (0,75;3,25)
 ContinuazioneVerificataR31: PARALLELA_A (0,75;3,25) -> (0,75;1,35)
 DistanzaR31: 0,60 m = 2p
-RegolaSottoTest: selezione libera dopo R31 / prima divergenza dal prefisso approvato
-CondizionePrincipale: confrontare free-run senza lock con ramo R30/R31 condizionato e individuare la prima Decision Key divergente
+RegolaSottoTest: LG-047, spareggio Supply tramite somma delle distanze minime fra punti medi
+CondizionePrincipale: a parità della lunghezza primaria selezionare la mandata col merito secondario minimo prima di costruire il Return
 MotoreRiferimento: StrategiaDiegoEngine reale
 RuntimeService: StrategiaDiego è il default; il Service NON usa Prefix Lock
 SetupDiagnostico: Termodel.RadiantPanels.Harness
@@ -6257,8 +6395,8 @@ MarkerR31: RADIANT_HARNESS_NODE15_CONTINUATION_OK
 UltimoRunR31Main: 36250164600
 UltimoArtifactR31: radiant-harness-fast / 10908514063
 CommitCoreR31Pubblicato: 77ae7b81dd82afb157b4f54a15a45c77cf9d1d63
-StatoMotoreReale: R30/R31 implementati e verificati nel vero Harness; resta aperta la selezione spontanea del free-run
-ProssimoPasso: trovare la prima divergenza free-run vs Prefix Lock R30, non modificare il runtime con hardcode del lock
+StatoMotoreReale: R30/R31 implementati e verificati; il tentativo di confrontare più Return globali è respinto per costo combinatorio e LG-047 è specificata ma non implementata
+ProssimoPasso: implementare il merito secondario cumulativo solo Supply, collaudare lo spareggio e verificare SVG/costi senza Prefix Lock nel runtime
 ```
 ### Regola di manutenzione
 
@@ -6277,22 +6415,18 @@ corrente.
 
 Ordine corrente, obbligatorio finché non viene aggiornato questo checkpoint:
 
-1. produrre la baseline LG041 **free-run** senza Prefix Lock;
-2. estrarre la sequenza `decisionKeys` della soluzione libera scelta;
-3. confrontarla con le 14 Decision Key R30 e con la quindicesima R31;
-4. individuare la prima Decision Key divergente;
-5. aprire Branch Inspector su quel punto e classificare candidati
-   accettati/rifiutati;
-6. stabilire se la divergenza deriva da:
-   - geometria/candidato mancante;
-   - ordinamento/esplorazione;
-   - ranking Supply;
-   - merito combinato Supply+Return;
-   - potatura impropria;
-7. applicare una correzione generale solo dopo la diagnosi;
-8. rieseguire prima Harness condizionato R30/R31 per evitare regressioni e poi
+1. aggiungere al nodo Supply il merito secondario cumulativo LG-047;
+2. calcolare per ogni nuovo tratto la distanza minima fra il proprio punto
+   medio e i punti medi di pareti e soli tratti Supply antenati;
+3. ordinare i terminali per primario decrescente e, soltanto a parità,
+   secondario crescente;
+4. costruire il Return della sola mandata prevalente e usare la successiva
+   soltanto se il Return non è fattibile;
+5. rieseguire prima Harness condizionato R30/R31 per evitare regressioni e poi
    free-run;
-9. aggiornare questa stessa sezione con nuovo checkpoint, run, artifact,
+6. confrontare nodi, tempo e memoria col tentativo globale respinto;
+7. verificare quadrato, concavo e almeno un caso grande/passo piccolo;
+8. aggiornare questa stessa sezione con nuovo checkpoint, run, artifact,
    Decision Key e SVG canonico.
 
 Il checkpoint R30/R31 non va cancellato quando si avanza: deve restare come
