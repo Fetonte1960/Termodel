@@ -30,6 +30,28 @@ Tracciabilità:
 - artifact `radiant-harness-fast` id `10904013495`;
 - probe temporaneo rimosso con commit `032087fe6ba1e98946c3c68616933c90199eb3df`, ripristinando il workflow Harness precedente.
 
+## R26 — Replay puntuale della scelta uscente dal nodo 47 del rank 1
+Stato: **ESEGUITO — HARNESS SUCCESS**
+
+Caso utente 26/09/2026:
+- base: rank 1 LG041 senza esclusioni;
+- richiesta: scartare la Decision Key osservata nella scelta uscente dal nodo 47 del setup corrente;
+- il numero nodo serve solo a localizzare la scelta nel run corrente; il replay usa la Decision Key canonica.
+
+Decision Key esclusa:
+`DIEGO_DECISION family=Supply choice=PARALLELA_B start=(0.750000,0.150000) target=(0.750000,0.750000) refFamily=Supply ref=((2.000000,0.150000)->(3.850000,0.150000)) d=0.600000 type=lateral`
+
+Collaudo:
+- commit workflow `ba60d261ca90167f507cc0de542a406ee9c2a119`;
+- Harness run `36237004819`, job `108390500611`: **SUCCESS**;
+- step `Reject rank1 choice at current node 47`: **SUCCESS**;
+- `REJECT_BY_INPUT` osservato sulla chiave richiesta;
+- nuovo top residuo = precedente rank 2;
+- terminal node `290`, active `28.05 m`, goodness `1.051875`, total `28.2 m`;
+- artifact `radiant-harness-fast` id `10904393213`;
+- SVG standard SHA-256 `6e1a8bf2c78df44aa3ead66788cd72d10246e223384800f7cbc10d0520c3bcd6`;
+- nessuna modifica a geometria o funzione di merito.
+
 ## R25 — Chiusura sistema debug ad albero + reject cumulativo
 Stato: **ESEGUITO — HARNESS SUCCESS / INFRASTRUTTURA CONSOLIDATA**
 
