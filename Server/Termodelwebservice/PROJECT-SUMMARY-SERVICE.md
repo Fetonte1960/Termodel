@@ -71,6 +71,36 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Implementazione e test LG-041 con Radiant Harness
+Stato: COMMISSIONATO
+
+Commissionato:
+- implementare la specifica consolidata LG-041 nel vero `StrategiaDiegoEngine` usando il nuovo `Termodel.RadiantPanels.Harness` come ciclo rapido;
+- `PROSEGUI_DRITTO` deve generare 0..N candidati validi, uno per ogni riferimento pertinente dello scenario corrente, invece di conservare soltanto il più corto;
+- riferimenti strategici ammessi: architettura e tubi Supply/Return fisicamente già costruiti; `Connection` e `ReturnConnection` restano vincoli fisici ma non generatori strategici;
+- conservare nel nodo figlio il riferimento che ha generato il candidato, così le successive `PARALLELA_A/B` possono derivare da tale fronte senza euristiche;
+- distinguere in diagnostica candidato `physical` e `lateral`, con riferimento, I, T, d e lunghezza;
+- i candidati laterali validi devono essere visitati in ordine di lunghezza decrescente senza potatura; nessun verso speciale di scavalcamento;
+- riusare le verifiche fisiche esistenti (`IsSegmentValid`) e le distanze LG-006/LG-037;
+- eseguire prima il case rapido `LG041-SQUARE4X4-T1-P030`, poi almeno appartamento preconfezionato; misurare nodi, tempo e memoria rispetto alla baseline corrente;
+- se il comportamento è sostenibile, aggiornare linee guida/registro a IMPLEMENTATA e lanciare la build completa Service;
+- non modificare frontend, Library Desktop, Vittorio/GPT o `definizionedati.json`;
+- Issue #1 resta aperta durante il lavoro e viene chiusa `Completed` solo a verifica completa; `Not planned` se il job fallisce definitivamente.
+
+Baseline disponibile dal Harness precedente:
+- quadrato: 1328 nodi, 46 terminali accettati, 290 ms runtime interno;
+- appartamento preconfezionato: 151 nodi, 15 terminali accettati, 44 ms runtime interno.
+
+Criteri di completamento:
+- LG-041 implementata nel Core senza procedura speciale di scavalcamento;
+- Harness quadrato SUCCESS con diagnostica multi-candidato verificabile;
+- Harness appartamento SUCCESS;
+- crescita computazionale misurata e registrata;
+- build completa main SUCCESS;
+- Summary/registro/linee guida aggiornati;
+- Issue #1 chiusa con esito coerente.
+
+
 ### INCARICO 2026-09-26 — Harness pannelli minimale e base dati test preconfezionata
 Stato: ESEGUITO
 
