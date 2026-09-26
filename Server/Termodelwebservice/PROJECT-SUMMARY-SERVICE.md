@@ -71,6 +71,22 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Differenziazione intensità notifiche ntfy
+Stato: COMMISSIONATO
+
+Commissionato:
+- rendere tutte le notifiche operative/build a bassa intensità;
+- mantenere alla massima intensità esclusivamente la notifica di chiusura della Issue #1, sia in caso di successo sia in caso di insuccesso;
+- conservare messaggi/tag distinti fra successo e fallimento;
+- non modificare logica applicativa, frontend, Library Desktop o `definizionedati.json`;
+- aggiornare il protocollo canonico delle notifiche;
+- chiudere Issue #1 `Completed` al termine se riuscito, `Not planned` se fallito.
+
+Criterio operativo:
+- GitHub Actions/build: priorità ntfy `low` indipendentemente dall'esito;
+- chiusura Issue #1: priorità ntfy `urgent` sia `completed` sia `not_planned`.
+
+
 ### INCARICO 2026-09-26 — Consolidamento debug StrategiaDiego, build e pubblicazione
 Stato: ESEGUITO
 
