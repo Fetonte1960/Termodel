@@ -5905,6 +5905,70 @@ fra discendenti a pari qualità Supply, il selettore preferisce il locked rank 1
 invece del locked rank 3 che produce un Return molto migliore.
 
 
+### Checkpoint debug corrente — nodo 22 verso tratto 5→6→7 a 2p
+
+**Questa è la posizione da cui una chat successiva deve riprendere il debug.**
+
+Base:
+- caso quadrato LG041, p = 0,30 m;
+- setup di partenza: **ansa buona + miglior completamento top-5** individuato in R29;
+- nello SVG di partenza la numerazione Supply pertinente è:
+  - nodo 5 = `(0,15;3,85)`;
+  - nodo 6 = `(0,15;3,25)`;
+  - nodo 7 = `(0,15;0,15)`;
+  - nodo 22 = `(1,40;3,25)`.
+
+Obiettivo richiesto:
+- dal nodo 22 scegliere l'opzione che si avvicina il più possibile alla
+  polilinea `5→6→7`;
+- distanza obiettivo: `2p = 0,60 m`.
+
+Analisi reale del nodo 22:
+- candidato `PROSEGUI_DRITTO` fisico verso `(0,75;3,25)`:
+  **ACCEPT**, distanza dal tratto `5→6→7` = **0,60 m esatti**;
+- candidato `PROSEGUI_DRITTO` laterale verso `(0,80;3,25)`:
+  **ACCEPT**, distanza = `0,65 m`;
+- `PARALLELA_B` verso `(1,40;1,35)`: ACCEPT ma resta molto più lontana
+  dal riferimento;
+- `PARALLELA_A`: nessun candidato geometrico valido in quel run.
+
+Scelta consolidata per questo checkpoint:
+`PROSEGUI_DRITTO (1,40;3,25) -> (0,75;3,25)`.
+
+Decision Key canonica:
+
+`DIEGO_DECISION family=Supply choice=PROSEGUI_DRITTO start=(1.400000,3.250000) target=(0.750000,3.250000) refFamily=Supply ref=((0.150000,3.250000)->(0.150000,3.850000)) d=0.600000 type=physical`
+
+Il test ha costruito un Prefix Lock esteso di **14 Decision Key**:
+- conserva il setup ansa buono fino al nodo 22 dello SVG di partenza;
+- forza la scelta sopra;
+- dopo la scelta il motore torna libero.
+
+**Attenzione alla rinumerazione:** dopo la potatura del Prefix Lock il nuovo
+SVG viene rinumerato. Lo stesso punto `(1,40;3,25)`, che nello SVG di
+partenza era nodo **22**, diventa nodo **14**; il nuovo punto
+`(0,75;3,25)` diventa nodo **15**.
+
+Collaudo:
+- commit Harness Prefix Inspector: `adca010d75dd63b5d4c1f42589113b31cb3824a8`;
+- commit CI scelta nodo22: `0f503eab6c7f88dab33a00ad4dd75eb45d227c40`;
+- Harness PR run `36240642880`, job `108400565235`: **SUCCESS**;
+- artifact `radiant-harness-fast` id `10904919361`;
+- marker step:
+  `Inspect node 22 and force option nearest 2p to SVG 5-6-7 = SUCCESS`;
+- output forzato: 15 nodi Supply, 1 terminale Supply, 2.893 nodi Return,
+  656 terminali combinati accettati;
+- SVG SHA-256:
+  `0325c4f3cc54d4e1614353e5384acba59b6ac1ffa774e06769fa432734df3f0b`.
+
+Stato del debug:
+- **ansa buona preservata**;
+- **scelta al vecchio nodo 22 fissata a 2p dal tratto 5→6→7**;
+- prossimo passo: analizzare le scelte successive partendo dal nuovo SVG,
+  usando la nuova numerazione e senza perdere questo Prefix Lock esteso.
+
+
+
 ---
 ## Variabile documentale canonica — STRATEGIADIEGO_TEST_CONTEXT_CURRENT
 
