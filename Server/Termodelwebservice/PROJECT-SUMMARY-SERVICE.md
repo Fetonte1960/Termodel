@@ -109,6 +109,14 @@ Uso futuro consolidato:
 - ulteriori richieste accumulano i reject e presentano il nuovo top reale della classifica residua;
 - Explorer e Branch Inspector osservano l'albero; Replay lo filtra; lo SVG mostrato resta sempre quello standard del vero motore.
 
+Problema aperto emerso nel terzo reject cumulativo:
+- una sola Decision Key terminale può comparire in più setup con percorsi differenti;
+- nel quadrato, il rank 4 originale condivide la Decision Key terminale già usata per escludere il rank 1;
+- di conseguenza, dopo aver escluso rank 1, 2 e 3 il successivo setup reale è il precedente rank 5, non il rank 4;
+- il replay resta corretto come rifiuto di una **decisione**, ma la scorciatoia `scarta questo setup mandata` non garantisce ancora l'esclusione di un solo setup quando la Decision Key terminale collide;
+- per una navigazione strettamente setup-per-setup servirà una firma canonica dell'intero percorso (o equivalente identificatore stabile di setup), distinta dalla singola Decision Key terminale;
+- probe CI temporaneo rimosso; workflow Harness ripristinato alla versione verde precedente.
+
 ### INCARICO 2026-09-26 — Implementazione Decision Reject Replay
 Stato: ESEGUITO — HARNESS SUCCESS / PROTOTIPO PR #8
 
