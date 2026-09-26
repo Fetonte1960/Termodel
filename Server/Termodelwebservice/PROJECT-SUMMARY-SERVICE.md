@@ -72,17 +72,22 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Consolidamento linee guida: Problema dell'ansa
-Stato: COMMISSIONATO
+Stato: ESEGUITO — PRINCIPIO GEOMETRICO CONSOLIDATO
 
 Commissionato:
 - registrare nelle linee guida StrategiaDiego il fenomeno denominato **Problema dell'ansa**;
-- descrivere che la spirale, completato il primo giro, crea in prossimità della partenza un'ansa necessaria a scavalcare il proprio tratto iniziale;
-- il Return deve poter entrare e sfruttare tale ansa quando la geometria lo consente;
-- con i giri successivi l'ansa si restringe e può diventare non più accessibile al Return;
-- registrare questo comportamento come uno dei miglioramenti fondamentali della StrategiaDiego ad albero rispetto alla StrategiaVittorio;
-- non trasformare ancora il concetto in una regola matematica o funzione di merito: il criterio di perfezione resta da identificare sperimentalmente;
-- aggiornare registro e Summary e chiudere Issue #1 Completed al termine.
+- descrivere l'ansa di scavalcamento che nasce dopo il primo giro;
+- registrare che il Return la sfrutta quando geometricamente accessibile e che nei giri successivi l'ansa può restringersi fino a non essere più percorribile;
+- registrare il fenomeno come miglioramento concettuale della StrategiaDiego ad albero rispetto alla StrategiaVittorio;
+- non introdurre ancora una regola matematica o modifica della funzione di merito.
 
+Risultato:
+- aggiunta sezione autorevole `Problema dell'ansa — principio geometrico StrategiaDiego` nelle linee guida;
+- commit linee guida `fd498d74b4831280f7eb9622cbf061032782403f`;
+- registrata R27 in `STRATEGIADIEGO-DEVELOPMENT-REGISTER.md`, commit `0f0dc1c8ea8760201ff16b63154ead608c8b4df8`;
+- principio consolidato: l'ansa iniziale deve poter essere utilizzata dal Return finché lo spazio lo consente; il progressivo restringimento nei giri successivi deve emergere naturalmente dalla geometria dell'albero;
+- nessuna modifica al motore, alla geometria o alla funzione di merito;
+- criterio matematico di perfezione ancora aperto e da derivare tramite confronto di rami reali con Explorer/Inspector/Replay.
 
 ### INCARICO 2026-09-26 — Reject scelta nodo 47 del rank 1 corrente
 Stato: ESEGUITO — HARNESS SUCCESS / REPLAY REALE
