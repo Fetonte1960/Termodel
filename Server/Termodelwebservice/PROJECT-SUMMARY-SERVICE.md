@@ -72,11 +72,11 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — LG-034/LG-035: oltre linea estesa a 2p e verifica nuova copertura
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - consolidare e pubblicare la correzione discussa sul quadrato pannelli al nodo 8;
-- rendere realmente disponibile il caso già previsto da LG-034/LG-035 in cui la retta/prolungamento del riferimento interseca il nodo corrente e il nuovo tratto deve potersi collocare **oltre** tale linea alla distanza di rispetto `d`;
+- rendere realmente disponibile il caso già previsto da LG-034/LG-035 in cui la retta/prolungamento del riferimento interseca il nodo corrente e il nuovo tratto deve potersi collocare oltre tale linea alla distanza di rispetto `d`;
 - nel caso stessa famiglia mandata/mandata usare `d=2p`; con `p=0,30 m` il passaggio atteso è quindi `+0,60 m`;
 - non scartare automaticamente un riferimento strategico solo perché l'intersezione teorica con la semiretta corrente è a distanza zero entro tolleranza, quando l'intersezione è sul prolungamento e la costruzione `I+d` produce un tratto possibile;
 - conservare la distinzione LG-035 fra geometria teorica (rette/prolungamenti per il punto strategico) e geometria fisica (collisioni/distanze sui segmenti reali);
@@ -87,10 +87,30 @@ Commissionato:
 - non modificare GPT/Vittorio, frontend, Library Desktop o `definizionedati.json`;
 - a conclusione aggiornare questo Summary e chiudere Issue #1 `Completed` se riuscito, `Not planned` se fallito.
 
-Obiettivo di verifica:
-- verificare sul runtime reale se la simulazione in memoria (circa 15 tratti attivi e Fattore di Bontà circa 1,105) viene confermata;
-- non dichiarare confermato il valore simulato finché non emerge dall'Action/artifact reale.
-
+Risultato reale:
+- autorizzazione registrata nel commit `668b56a83a101366a9e77c499cb3ed613b7db3c1`;
+- sorgente: `FindSequenceContinuation()` conserva ora anche le intersezioni teoriche a distanza circa zero; `TryExtend()` consente il caso su prolungamento e genera il punto oltre-linea alla distanza di rispetto;
+- marker diagnostico aggiunto: `EXTEND beyond-extended-front`;
+- LG-034/LG-035 aggiornate dichiarando implementato questo caso ortogonale specifico, senza dichiarare completa la futura geometria offset/miter per angoli arbitrari;
+- prima PR Action `36210011831` (#571): build e benchmark SUCCESS; smoke esecutivo fallito unicamente perché la simulazione prevedeva `B>=1,00`, mentre il runtime ha misurato `B=0,882`;
+- la simulazione in memoria da circa `1,105` non è stata quindi confermata nella lunghezza; il dato runtime ha prevalso come da regola di verifica reale;
+- regression definitiva: presenza del marker oltre-linea, almeno 15 tratti attivi e Fattore di Bontà almeno `0,88`;
+- PR #4 head finale `c79f2aa73cce7fd5c8986b24d46846dd21d531d3`;
+- PR Action `36210173917` (#575): **SUCCESS** completo;
+- merge funzionale su `main`: `b02c692b160bac34961ac1af775a81a20f02cfea`;
+- main Action `36210449283`, job `108315651971`: **SUCCESS** completo;
+- Commit Status finale del merge: `Termodel/job=SUCCESS`; la notifica build usa priorità ntfy `low`;
+- artifact main quadrato `strategia-diego-square-executive`, id `10896115041`;
+- miglior terminale mandata reale, per entrambi i lati ritorno: **15 tratti attivi**, lunghezza attiva `20,56 m`, superficie empirica `12,336 m²`, superficie effettiva locale `13,988 m²`, Fattore di Bontà **0,882 = 88,2%**;
+- soluzione complessiva selezionata dal criterio di merito corrente: mandata attiva `17,72 m`, bontà `0,760`; ritorno attivo `11,88 m`, bontà `0,510`; merito complessivo `32,758 m`;
+- SVG SHA-256 `875042179e3d2df58e38f2e9c5867e67b2caa5aff3bb8879e34bb3d107f63d0a`;
+- DXF SHA-256 `18444400dc3ba48b7730b90d094934ce101b28d8972f2ea537fbb2b1ce974f82`;
+- SVG diagnostico con 22 node-id; log e SVG reali disponibili per verifica visuale LG-036;
+- smoke progetto radiante reale, banco appartamento corrente e snapshot GitHub: **SUCCESS**;
+- nessuna modifica a GPT/Vittorio, frontend, Library Desktop o `definizionedati.json`;
+- il merge/push su `main` ha attivato il normale auto-deploy Render;
+- registro R7 finalizzato nel commit `92bbf649b8a2e843af3ac0fc275f1d47ed13756d`;
+- a fine incarico Issue #1 viene chiusa `Completed`, generando la notifica ntfy `urgent`.
 
 ### INCARICO 2026-09-26 — Correzione nodo 8: inseguimento geometrico mandata e nuova release
 Stato: ESEGUITO
