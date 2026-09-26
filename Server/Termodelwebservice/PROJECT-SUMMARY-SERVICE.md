@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Correzione cambio guida prematuro su catena collineare
-Stato: COMMISSIONATO
+Stato: ESEGUITO — SIMULAZIONE POSITIVA / NON INTEGRATA
 
 Diagnosi di partenza:
 - al nodo 95 il motore segue ancora il riferimento verticale atteso, ma `FindSequenceContinuation()` seleziona `48->50` con `rayTravel=0`;
@@ -89,6 +89,21 @@ Commissionato:
 - eseguire regression completa e registrare eventuale impatto combinatorio senza alzare limiti;
 - nessun merge in `main` senza ulteriore approvazione visuale;
 - chiudere Issue #1 `Completed` al termine della simulazione.
+
+Risultato:
+- modifica sperimentale sul branch `experiment/lg041-supply-first-return-after`, commit `1a734a98bc699d585c4fe80ad5dc791b913c5da1`, PR #8; nessun merge in `main`;
+- aggiunta esclusione `same-arrival-straight-chain`: negli `at-node`, `FindSequenceContinuation()` ignora la componente collineare/contigua della stessa evoluzione di arrivo, non gli altri fronti geometricamente distinti;
+- marker diagnostico: `SEQUENCE skip-same-arrival-chain`;
+- Radiant Harness run `36226870346`: **SUCCESS**;
+- quadrato: 374 nodi Supply, 110 terminali Supply, 8.854 nodi Return, 9.228 nodi totali, 2.560 terminali accettati, maxDepth 30;
+- percorso rosso vincente nella zona critica: `(2.60,0.75)->(3.25,0.75)->(3.25,3.25)->(1.40,3.25)->(0.75,3.25)->(0.75,1.35)`; il circuito torna normotico e il cambio guida spurio su `48->50` scompare;
+- benchmark quadrato 20/20 deterministico: P95 788 ms, memoria delta max 16.769.936 byte, SVG SHA-256 `e1e7565aa0007e7530175879cdf3589966a32e9ef7cc2b5c3b85e157e264f4cf`;
+- appartamento preconfezionato: SUCCESS, 43 Supply + 50 Return = 93 nodi totali, 4 terminali accettati, 61 ms nel run diagnostico;
+- build completa PR: compilazione SUCCESS; benchmark `ConcaveL` completa 20/20 ma è `not-sustainable`: 99.419 nodi, 4 terminali accettati, P95 6.812 ms, oltre budget 50.000 nodi / 2.000 ms;
+- il caso concavo non supera più il limite tecnico di 250.000 nodi, ma resta troppo costoso; la workflow si ferma su ConcaveL e non verifica i fixture successivi in questa run;
+- nessun limite alzato e nessuna potatura euristica introdotta;
+- LG-045 registrata nelle linee guida nel commit `e66dac6fe6b9bc16e4fdd4b2f94b4942d35767e9`; registro R16 nel commit `eada863cb8900ac97acacb9a3cdf6d40eb7fc5f3`;
+- conclusione: correzione geometrica riuscita; integrazione in main rinviata finché non viene ridotta in modo esatto la crescita degli stati sul concavo.
 
 
 ### INCARICO 2026-09-26 — Analisi log nodo 95/97 dopo LG-044
