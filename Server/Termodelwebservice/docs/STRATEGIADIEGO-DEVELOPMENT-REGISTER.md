@@ -7,6 +7,51 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R30 — Nodo 22: scelta a 2p dal tratto SVG 5→6→7
+Stato: **ESEGUITO — HARNESS SUCCESS / CHECKPOINT CORRENTE**
+
+Richiesta utente 26/09/2026:
+- partire dal setup ansa buona + miglior completamento top-5;
+- analizzare le scelte del nodo 22 secondo la numerazione dello SVG corrente;
+- visualizzare e attuare l'opzione che si avvicina di più a 2p dal tratto 5→6→7;
+- memorizzare la posizione esatta del debug per una chat successiva.
+
+Riferimenti nello SVG di partenza:
+- nodo 5 = (0,15;3,85);
+- nodo 6 = (0,15;3,25);
+- nodo 7 = (0,15;0,15);
+- nodo 22 = (1,40;3,25);
+- p=0,30 m, quindi 2p=0,60 m.
+
+Scelte osservate dal vero motore al nodo 22:
+- PROSEGUI_DRITTO fisico -> (0,75;3,25): ACCEPT, distanza dal tratto 5→6→7 = **0,60 m**;
+- PROSEGUI_DRITTO laterale -> (0,80;3,25): ACCEPT, distanza = 0,65 m;
+- PARALLELA_B -> (1,40;1,35): ACCEPT ma più lontana dal riferimento;
+- PARALLELA_A: nessun candidato geometrico valido.
+
+Scelta forzata:
+`DIEGO_DECISION family=Supply choice=PROSEGUI_DRITTO start=(1.400000,3.250000) target=(0.750000,3.250000) refFamily=Supply ref=((0.150000,3.250000)->(0.150000,3.850000)) d=0.600000 type=physical`
+
+Implementazione diagnostica:
+- `adca010d75dd63b5d4c1f42589113b31cb3824a8`: Branch Inspector reso compatibile con Prefix Lock;
+- `0f503eab6c7f88dab33a00ad4dd75eb45d227c40`: CI individua automaticamente il candidato ACCEPT più vicino a 2p dalla polilinea SVG 5→6→7, estende il Prefix Lock e forza la Decision Key selezionata;
+- Prefix Lock esteso: 14 Decision Key.
+
+Collaudo:
+- Harness run `36240642880`, job `108400565235`: **SUCCESS**;
+- artifact `radiant-harness-fast` id `10904919361`;
+- output: SupplyNodes 15, SupplyTerminals 1, ReturnNodes 2893, AcceptedTerminals 656;
+- SVG SHA-256 `0325c4f3cc54d4e1614353e5384acba59b6ac1ffa774e06769fa432734df3f0b`;
+- Build generale run `36240642868`: Build **SUCCESS**, 0 errori; workflow finale rosso solo per benchmark LG-046 noto, 44.044 nodi, P95 2708 ms > 2000 ms.
+
+Rinumerazione dopo la potatura:
+- il punto del vecchio nodo 22 `(1,40;3,25)` diventa nodo **14** nel nuovo SVG;
+- il nuovo target `(0,75;3,25)` diventa nodo **15**.
+
+Checkpoint per il seguito:
+**ripartire dallo SVG forzato R30, con ansa buona preservata e scelta vecchio nodo22→(0,75;3,25) fissata; per le analisi successive usare la nuova numerazione dello SVG.**
+
+
 ## R29 — Prefix Lock e primo completamento migliorato del ramo ansa buono
 Stato: **ESEGUITO — HARNESS SUCCESS / CANDIDATO VISUALIZZABILE**
 
