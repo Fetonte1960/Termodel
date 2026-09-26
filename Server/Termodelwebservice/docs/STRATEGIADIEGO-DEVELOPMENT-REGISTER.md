@@ -7,6 +7,41 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R16 — Esclusione catena collineare-contigua negli at-node
+Stato: **ESEGUITO — SIMULAZIONE GEOMETRICA POSITIVA / REGRESSION ANCORA NON SOSTENIBILE**
+
+Decisione utente 26/09/2026:
+- correggere il cambio guida prematuro diagnosticato in R15;
+- negli `at-node` escludere l'intera catena collineare e contigua dell'evoluzione di arrivo, non tutti gli `at-node`;
+- mantenere LG-034/LG-035 per fronti geometricamente distinti;
+- simulare con Harness e notificare via Issue #1.
+
+Implementazione sperimentale:
+- branch `experiment/lg041-supply-first-return-after`, commit `1a734a98bc699d585c4fe80ad5dc791b913c5da1`, PR #8;
+- aggiunto `IsSameArrivalStraightChain()`;
+- la catena è la componente connessa per estremi, stessa famiglia e stessa retta di supporto del segmento corrente;
+- `FindSequenceContinuation()` applica l'esclusione soltanto con `rayTravel=0` e registra `SEQUENCE skip-same-arrival-chain`.
+
+Risultato Harness:
+- run `36226870346`: **SUCCESS**;
+- quadrato: 374 Supply, 110 terminali Supply, 8.854 Return, 9.228 nodi totali, 2.560 terminali accettati, maxDepth 30;
+- percorso rosso vincente nella zona critica: `(2.60,0.75)->(3.25,0.75)->(3.25,3.25)->(1.40,3.25)->(0.75,3.25)->(0.75,1.35)`;
+- quindi il ramo verticale/normotico prevale e il cambio guida spurio verso `48->50` scompare;
+- benchmark quadrato 20/20 deterministico: P95 788 ms, memoria delta max ~16,77 MB, SVG SHA `e1e7565aa0007e7530175879cdf3589966a32e9ef7cc2b5c3b85e157e264f4cf`;
+- appartamento preconfezionato: SUCCESS, 93 nodi totali, 4 terminali accettati, 61 ms diagnostici.
+
+Regression:
+- build completa PR: compilazione SUCCESS;
+- quadrato sostenibile;
+- `ConcaveL`: 99.419 nodi, 4 terminali accettati, P95 6.812 ms, quindi `not-sustainable` rispetto ai budget 50.000 nodi / 2.000 ms;
+- la run si ferma su ConcaveL, pertanto trapezio e ConnectionTerminal non risultano verificati in questa iterazione;
+- nessun limite alzato e nessuna potatura euristica introdotta.
+
+Decisione:
+- LG-045 registrata come approvata e simulata;
+- PR #8 resta sperimentale e non integrata in main;
+- prossimo lavoro: deduplicazione esatta degli stati per ridurre i 99.419 nodi del concavo senza perdere il comportamento normotico ottenuto.
+
 ## R15 — Diagnosi nodo 95/97: cambio guida prematuro su 48→50
 Stato: **ESEGUITO — DIAGNOSI LOG / NESSUNA MODIFICA CODICE**
 
