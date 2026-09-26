@@ -210,6 +210,48 @@ try {
     (Join-Path $artifactDir "TermodelLog-SpiraliDiego.md"),
     $diegoLogText,
     [System.Text.UTF8Encoding]::new($false))
+
+  # Regression nodo 8: dopo il primo giro la mandata deve poter riagganciare
+  # una propria evoluzione usando la prima retta pertinente DAVANTI, senza
+  # arrestarsi sul vecchio SequenceIndex+1.
+  if ($diegoLogText -notmatch "SEQUENCE own-family geometric-continuation") {
+    throw "StrategiaDiego: nessun inseguimento geometrico own-family registrato sul quadrato."
+  }
+
+  $goodnessMatches = [regex]::Matches(
+    $diegoLogText,
+    'SUPPLY-BEST-GOODNESS[^\r\n]*activeSegments=(?<segments>\d+)[^\r\n]*activeLength=(?<length>[0-9.]+)m[^\r\n]*coveredArea=(?<covered>[0-9.]+)m2[^\r\n]*localeArea=(?<area>[0-9.]+)m2[^\r\n]*factor=(?<factor>[0-9.]+)')
+  if ($goodnessMatches.Count -lt 1) {
+    throw "StrategiaDiego: metriche SUPPLY-BEST-GOODNESS mancanti sul quadrato."
+  }
+
+  $bestSupplyGoodness = $goodnessMatches |
+    ForEach-Object {
+      [pscustomobject]@{
+        Segments = [int]$_.Groups["segments"].Value
+        Length = [double]::Parse($_.Groups["length"].Value,[Globalization.CultureInfo]::InvariantCulture)
+        Covered = [double]::Parse($_.Groups["covered"].Value,[Globalization.CultureInfo]::InvariantCulture)
+        Area = [double]::Parse($_.Groups["area"].Value,[Globalization.CultureInfo]::InvariantCulture)
+        Factor = [double]::Parse($_.Groups["factor"].Value,[Globalization.CultureInfo]::InvariantCulture)
+      }
+    } |
+    Sort-Object Factor,Segments -Descending |
+    Select-Object -First 1
+
+  if ($bestSupplyGoodness.Segments -lt 10) {
+    throw "StrategiaDiego nodo 8 regression: miglior terminale mandata ha solo $($bestSupplyGoodness.Segments) tratti attivi; attesi almeno 10."
+  }
+  if ($bestSupplyGoodness.Factor -lt 0.80) {
+    throw "StrategiaDiego nodo 8 regression: fattore di bonta mandata $($bestSupplyGoodness.Factor) inferiore a 0,80."
+  }
+
+  Write-Host ("STRATEGIA_DIEGO_NODE8_FORWARD_OK activeSegments={0} activeLength={1}m coveredArea={2}m2 localeArea={3}m2 factor={4}" -f
+    $bestSupplyGoodness.Segments,
+    $bestSupplyGoodness.Length.ToString("0.###",[Globalization.CultureInfo]::InvariantCulture),
+    $bestSupplyGoodness.Covered.ToString("0.###",[Globalization.CultureInfo]::InvariantCulture),
+    $bestSupplyGoodness.Area.ToString("0.###",[Globalization.CultureInfo]::InvariantCulture),
+    $bestSupplyGoodness.Factor.ToString("0.###",[Globalization.CultureInfo]::InvariantCulture))
+
   Write-Host "STRATEGIA_DIEGO_LOG_SMOKE_OK"
   if ($genericSvgResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false" -or
       $genericSvgResponse.Headers["X-Termodel-Generated-File"] -ne "artifacts/pannelli-esecutivo.svg") {
