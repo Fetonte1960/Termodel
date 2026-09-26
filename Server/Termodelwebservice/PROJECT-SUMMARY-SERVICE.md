@@ -109,6 +109,7 @@ Risultato reale:
 - dopo il versionamento dell'input preconfezionato la workflow è stata alleggerita: non rigenera più il progetto completo ad ogni iterazione;
 - run finale PR `36222745007` / Harness #16: **SUCCESS**; build Core+Harness, quadrato e appartamento preconfezionato tutti SUCCESS;
 - PR #6 integrato su `main` nel merge `9764218dfaceceb2ebbf73602ce28e1adf1b97c7`;
+- main Action `36222822652`, job `108351158157`: **SUCCESS** completo; build Release, benchmark StrategiaDiego e tutti gli smoke di integrazione completati con successo;
 - linee guida aggiornate nel commit `6a2fea0115401657ca6efe09f84b440dd1c3b68c`; registro R10 finalizzato nel commit `91f28438709409047c14e78dfeef62d03b93a0ce`;
 - nessuna modifica a `StrategiaDiegoEngine`, frontend, Library Desktop o `definizionedati.json`;
 - stato LG-041 invariato: consolidata ma non ancora implementata; il nuovo Harness è il setup preferenziale per il prossimo collaudo rapido.
