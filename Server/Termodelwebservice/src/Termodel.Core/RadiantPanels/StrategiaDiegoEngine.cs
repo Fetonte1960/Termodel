@@ -1456,6 +1456,14 @@ internal static class StrategiaDiegoEngine
                 : step * 2.0;
         }
 
+        // LG-046: la mandata crea le anse con passo 2p; il ritorno
+        // le riempie e rispetta passo p anche rispetto a se stesso.
+        if (newFamily == GeoFamily.Return &&
+            referenceFamily == GeoFamily.Return)
+        {
+            return step;
+        }
+
         return newFamily == referenceFamily
             ? step * 2.0
             : step;
