@@ -7,6 +7,45 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R13 — Raccordo entrante promosso a Return sequence 0
+Stato: **ESEGUITO — SIMULAZIONE REALE POSITIVA / GEOMETRIA VINCENTE INVARIATA**
+
+Decisione utente 26/09/2026:
+- verificare l'ipotesi che il raccordo entrante del ritorno, mantenuto come `ReturnConnection`, potesse disturbare la capacità del blu di infilarsi fra due mandate;
+- approvata la modifica sperimentale: dopo l'ingresso il raccordo diventa normale `Return`, sequence 0, e partecipa a LG-041;
+- mantenere supply-first LG-042 e nessun merge in main senza verifica.
+
+Prototipo:
+- branch `experiment/lg041-supply-first-return-after`, commit `7946cc0096cec52db7611a42f21402185ae72414`, PR #8;
+- il segmento entrante blu non viene più riclassificato `ReturnConnection`; resta `GeoFamily.Return` con `SequenceIndex=0`;
+- log esplicito `promotedTo=Return sequence=0 strategic=true`;
+- LG-041 può usare `D-RETURN-0` come riferimento fisico/laterale.
+
+Risultati Harness:
+- run `36225285732`, job `108358001545`: **SUCCESS**;
+- quadrato: 290 nodi Supply, 1.046 Return, 1.336 totali, 16 terminali accettati;
+- 42 candidate LG-041 riferiti a `D-RETURN-0`: 32 ACCEPT, 8 REJECT, 2 DUPLICATE;
+- esempio nodo Return 300: candidato laterale generato dal raccordo da `(2.95,3.55)` a `(1.10,3.55)`, `d=0,60 m`;
+- ritorno selezionato su `x=1,05` fra mandate `x=0,75` e `x=1,35`: distanza `p=0,30 m` da entrambe;
+- benchmark quadrato 20/20: 1.336 nodi, P95 250 ms, memoria delta max 3.556.896 byte;
+- appartamento preconfezionato: SUCCESS, 80 nodi, 3 terminali accettati, 33 ms.
+
+Confronto con R12:
+- geometria finale rossa e blu sul quadrato invariata;
+- nodi 1.016 -> 1.336: l'estendibilità del raccordo apre più alternative Return ma non cambia il terminale vincente;
+- il corridoio blu a `p` fra due mandate era già presente nella soluzione vincente supply-first;
+- quindi il trattamento speciale del raccordo non è la causa del mancato eco rosso dopo `29->30`.
+
+Regression:
+- `ConcaveL`: 4.455 nodi / 72 accettati / P95 362 ms;
+- `ObliqueTrapezoid`: 1.931 nodi / 36 accettati / P95 224 ms;
+- `ConnectionTerminal`: ancora oltre 250.000 nodi; build completa PR fallisce sul benchmark di questo caso.
+
+Decisione:
+- LG-043 registrata come approvata e simulata;
+- PR #8 resta sperimentale;
+- problema successivo da affrontare separatamente: persistenza del riferimento guida/eco della mandata dopo lo scavalcamento.
+
 ## R12 — Supply-first: mandata completa prima del ritorno
 Stato: **ESEGUITO — SIMULAZIONE REALE POSITIVA / NON INTEGRATA**
 
