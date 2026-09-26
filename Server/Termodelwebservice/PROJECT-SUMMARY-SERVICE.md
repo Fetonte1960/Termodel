@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Harness pannelli minimale e base dati test preconfezionata
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - registrare nelle linee guida il nuovo setup preferenziale per i test rapidi StrategiaDiego;
@@ -96,6 +96,23 @@ Criteri di completamento:
 - build reale verificata;
 - linee guida e registro aggiornati;
 - Issue #1 chiusa con esito coerente.
+Risultato reale:
+- creato `tools/Termodel.RadiantPanels.Harness`, Console .NET 8 che referenzia direttamente `Termodel.Core` e usa `StrategiaDiegoBenchmark.Run()`, quindi esegue il vero `StrategiaDiegoEngine` senza duplicazioni;
+- comando `run` produce SVG, log diagnostico e metriche JSON da fixture/case o input pannelli esplicito;
+- comando `prepare` usa il vero `GeneraModello` per estrarre `RadiantPanelInputXml` da un progetto completo; aggiunta canonicalizzazione in-memory dello SVG legacy solo per rendere la snapshot progetto consumabile dal Core corrente;
+- base dati creata in `tests/radiant-harness/`; case sintetico `LG041-SQUARE4X4-T1-P030.json` e case reale `CURRENT-APARTMENT-P030.json`;
+- input reale preconfezionato versionato in `tests/radiant-harness/prepared/StrategiaDiegoCurrentApartment.pannelli.xml`, derivato da `StrategiaDiegoCurrentApartment.project.tmdl`, SHA-256 `b31b5c2bac4dbd8a13507daef4022c5ad2301fb6503ff6d666e427a2eb5d4a80`;
+- workflow focalizzata `.github/workflows/termodel-radiant-harness.yml`: restore/build soltanto Core + Harness e lancio diretto dei due case preconfezionati;
+- run di preparazione `36222504481`: **SUCCESS** completo; Core+Harness compilati, quadrato eseguito, progetto appartamento preparato, input pannelli rieseguito;
+- nella stessa run: quadrato 1328 nodi / 46 terminali accettati / 290 ms runtime interno / SVG SHA `46d2ec137be52ef350a62a6497bd6bb4f3cb58603339874cc03657163c62f8f2`; appartamento preconfezionato 151 nodi / 15 terminali accettati / 44 ms runtime interno / SVG SHA `5678620a7a895d56886c2108ae9f3f8eab50e2aaaeff9deb1f3f1dea03e2ec96`;
+- artifact della preparazione: `radiant-harness-fast`, id `10899108905`;
+- dopo il versionamento dell'input preconfezionato la workflow è stata alleggerita: non rigenera più il progetto completo ad ogni iterazione;
+- run finale PR `36222745007` / Harness #16: **SUCCESS**; build Core+Harness, quadrato e appartamento preconfezionato tutti SUCCESS;
+- PR #6 integrato su `main` nel merge `9764218dfaceceb2ebbf73602ce28e1adf1b97c7`;
+- linee guida aggiornate nel commit `6a2fea0115401657ca6efe09f84b440dd1c3b68c`; registro R10 finalizzato nel commit `91f28438709409047c14e78dfeef62d03b93a0ce`;
+- nessuna modifica a `StrategiaDiegoEngine`, frontend, Library Desktop o `definizionedati.json`;
+- stato LG-041 invariato: consolidata ma non ancora implementata; il nuovo Harness è il setup preferenziale per il prossimo collaudo rapido.
+
 
 
 ### INCARICO 2026-09-26 — Collaudo preliminare in chat e contesto di test corrente
