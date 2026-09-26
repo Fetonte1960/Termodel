@@ -210,6 +210,94 @@ jobs:
           }
           Write-Host "RADIANT_HARNESS_DECISION_REPLAY_CUMULATIVE_OK"
           Write-Host "RADIANT_HARNESS_DECISION_REPLAY_OK"
+
+      - name: Reject rank1 choice at current node 47
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          $baselinePath = Join-Path $out "LG041-SQUARE4X4-T1-P030.supply-explorer\solutions.json"
+          $baseline = Get-Content -LiteralPath $baselinePath -Raw | ConvertFrom-Json
+          if ($baseline.solutions.Count -lt 1) { throw "Baseline Supply priva del rank 1." }
+
+          $rank1 = $baseline.solutions[0]
+          $nodeIndex = -1
+          for ($i = 0; $i -lt $rank1.nodeIds.Count; $i++) {
+            if ([int]$rank1.nodeIds[$i] -eq 47) {
+              $nodeIndex = $i
+              break
+            }
+          }
+          if ($nodeIndex -lt 0) { throw "Nodo 47 non presente nel percorso del rank 1 corrente." }
+          if ($nodeIndex -ge $rank1.decisionKeys.Count) {
+            throw "Nodo 47 terminale o privo di Decision Key uscente nel rank 1 corrente."
+          }
+
+          $node47Key = [string]$rank1.decisionKeys[$nodeIndex]
+          if ([string]::IsNullOrWhiteSpace($node47Key)) { throw "Decision Key nodo 47 vuota." }
+          if ($node47Key -notmatch "family=Supply") { throw "Decision Key nodo 47 non appartiene alla mandata." }
+
+          $expectedResidual = $null
+          foreach ($solution in $baseline.solutions) {
+            if (-not (@($solution.decisionKeys) -contains $node47Key)) {
+              $expectedResidual = $solution
+              break
+            }
+          }
+          if ($null -eq $expectedResidual) {
+            throw "Nessuna soluzione residua trovata dopo il reject della scelta al nodo 47."
+          }
+
+          $rejectPath = Join-Path $out "LG041-NODE47.reject-decisions.txt"
+          Set-Content -LiteralPath $rejectPath -Value $node47Key -Encoding utf8NoBOM
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-NODE47-REJECT `
+            --out $out `
+            --reject-decisions $rejectPath
+
+          $svg = Join-Path $out "LG041-NODE47-REJECT.svg"
+          $log = Join-Path $out "LG041-NODE47-REJECT.log.txt"
+          if (-not (Test-Path $svg)) { throw "SVG standard dopo reject nodo 47 mancante." }
+          if (-not (Test-Path $log)) { throw "Log dopo reject nodo 47 mancante." }
+
+          $logText = Get-Content -LiteralPath $log -Raw
+          if ($logText -notlike "*DIEGO_DECISION_REPLAY REJECT_BY_INPUT $node47Key*") {
+            throw "La Decision Key del nodo 47 non risulta rifiutata dal vero motore."
+          }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-NODE47-CHECK `
+            --out $out `
+            --supply-top 1 `
+            --reject-decisions $rejectPath
+
+          $checkPath = Join-Path $out "LG041-NODE47-CHECK.supply-explorer\solutions.json"
+          $check = Get-Content -LiteralPath $checkPath -Raw | ConvertFrom-Json
+          if ($check.solutions.Count -ne 1) { throw "Explorer residuo nodo 47 non ha restituito un unico top." }
+          if ($check.solutions[0].terminalDecisionKey -ne $expectedResidual.terminalDecisionKey) {
+            throw "Reject nodo 47: il top residuo non coincide con la prima soluzione baseline priva della Decision Key esclusa."
+          }
+
+          $report = [ordered]@{
+            rejectedNode = 47
+            rejectedDecisionKey = $node47Key
+            baselineRank = 1
+            residualOriginalRank = [int]$expectedResidual.Rank
+            residualTerminalNodeId = [int]$expectedResidual.TerminalNodeId
+            residualActiveLengthMeters = [double]$expectedResidual.ActiveLengthMeters
+            residualGoodness = [double]$expectedResidual.Goodness
+            residualTotalLengthMeters = [double]$expectedResidual.TotalLengthMeters
+            svg = $svg
+            rejectFile = $rejectPath
+          }
+          $reportPath = Join-Path $out "LG041-NODE47-REJECT.report.json"
+          $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $reportPath -Encoding utf8NoBOM
+          Write-Host "RADIANT_HARNESS_NODE47_REJECT_OK"
+          Write-Host ("rejectedDecisionKey=" + $node47Key)
+          Write-Host ("residualOriginalRank=" + $expectedResidual.Rank)
       - name: Run supply explorer skip top 20
         shell: pwsh
         run: |
