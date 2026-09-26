@@ -200,6 +200,57 @@ jobs:
           Write-Host ("candidateOriginalRank=" + $candidate.Rank)
           Write-Host ("prefixDecisionCount=" + $prefixKeys.Count)
           Write-Host ("lockedSvg=" + $svg)
+
+      - name: Compare continuations under good ansa prefix
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          $prefixPath = Join-Path $out "LG041-ANSA-GOOD.prefix-lock.txt"
+          if (-not (Test-Path $prefixPath)) { throw "Prefix ansa non disponibile." }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-ANSA-PREFIX-SOLUTIONS `
+            --out $out `
+            --solution-top 5 `
+            --lock-supply-prefix $prefixPath
+
+          $dir = Join-Path $out "LG041-ANSA-PREFIX-SOLUTIONS.solution-explorer"
+          $manifestPath = Join-Path $dir "solutions.json"
+          if (-not (Test-Path $manifestPath)) { throw "Manifest completamenti ansa mancante." }
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          $feasible = @($manifest.solutions | Where-Object { $_.returnFeasible -eq $true })
+          if ($feasible.Count -lt 1) { throw "Nessun completamento Return fattibile nel top 5 del prefisso ansa." }
+
+          $bestCombined = $feasible |
+            Sort-Object -Property @{Expression={[double]$_.combinedMeritMeters};Descending=$true} |
+            Select-Object -First 1
+
+          $bestSvgSource = Join-Path $dir ([string]$bestCombined.svg)
+          $bestSvg = Join-Path $out "LG041-ANSA-PREFIX-BEST-COMBINED.svg"
+          Copy-Item -LiteralPath $bestSvgSource -Destination $bestSvg -Force
+
+          $report = [ordered]@{
+            lockedSupplyRank = [int]$bestCombined.supplyRank
+            supplyTerminalNodeId = [int]$bestCombined.supplyTerminalNodeId
+            supplyActiveLengthMeters = [double]$bestCombined.supplyActiveLengthMeters
+            supplyGoodness = [double]$bestCombined.supplyGoodness
+            returnTerminalNodeId = [int]$bestCombined.returnTerminalNodeId
+            returnActiveLengthMeters = [double]$bestCombined.returnActiveLengthMeters
+            returnGoodness = [double]$bestCombined.returnGoodness
+            closureLengthMeters = [double]$bestCombined.closureLengthMeters
+            combinedMeritMeters = [double]$bestCombined.combinedMeritMeters
+            sourceSvg = $bestSvgSource
+            selectedSvg = $bestSvg
+          }
+          $reportPath = Join-Path $out "LG041-ANSA-PREFIX-BEST-COMBINED.report.json"
+          $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reportPath -Encoding utf8NoBOM
+
+          Write-Host "RADIANT_HARNESS_ANSA_CONTINUATIONS_OK"
+          Write-Host ("bestLockedSupplyRank=" + $bestCombined.supplyRank)
+          Write-Host ("bestCombinedMerit=" + $bestCombined.combinedMeritMeters)
+          Write-Host ("bestAnsaSvg=" + $bestSvg)
       - name: Run Decision Reject Replay
         shell: pwsh
         run: |
