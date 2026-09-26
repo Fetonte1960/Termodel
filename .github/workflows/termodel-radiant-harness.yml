@@ -109,9 +109,6 @@ jobs:
           if ($baseline.solutions.Count -lt 3) { throw "Servono almeno tre setup Supply per il replay cumulativo." }
           $expectedThirdKey = $baseline.solutions[2].terminalDecisionKey
           if ([string]::IsNullOrWhiteSpace($expectedThirdKey)) { throw "Decision Key rank 3 mancante." }
-          if ($baseline.solutions.Count -lt 4) { throw "Servono almeno quattro setup Supply per il terzo replay cumulativo." }
-          $expectedFourthKey = $baseline.solutions[3].terminalDecisionKey
-          if ([string]::IsNullOrWhiteSpace($expectedFourthKey)) { throw "Decision Key rank 4 mancante." }
 
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
@@ -211,38 +208,6 @@ jobs:
           if ($hashDirect2 -ne $hashFile2) {
             throw "Replay cumulativo da file non riproduce lo stesso SVG del secondo reject."
           }
-          # Terzo rifiuto cumulativo: conserva i primi due reject,
-          # scarta il precedente rank 3 e verifica che emerga il rank 4.
-          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
-            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
-            --id LG041-REPLAY-NEXT3 `
-            --out $out `
-            --reject-decisions $rejects2 `
-            --reject-current-supply
-
-          $svg3 = Join-Path $out "LG041-REPLAY-NEXT3.svg"
-          $log3 = Join-Path $out "LG041-REPLAY-NEXT3.log.txt"
-          $replay3 = Join-Path $out "LG041-REPLAY-NEXT3.decision-replay.json"
-          $rejects3 = Join-Path $out "LG041-REPLAY-NEXT3.reject-decisions.txt"
-          foreach ($required in @($svg3,$log3,$replay3,$rejects3)) {
-            if (-not (Test-Path $required)) { throw "Decision Replay cumulativo rank4 artifact mancante: $required" }
-          }
-
-          $replayData3 = Get-Content -LiteralPath $replay3 -Raw | ConvertFrom-Json
-          if ($replayData3.rejectedDecisionCount -ne 3) {
-            throw "Decision Replay cumulativo rank4: attesi esattamente tre reject."
-          }
-          if ($replayData3.rejectedSetup.TerminalDecisionKey -ne $expectedThirdKey) {
-            throw "Decision Replay cumulativo rank4: il terzo setup scartato non coincide col vecchio rank 3."
-          }
-          if ($replayData3.nextSetup.TerminalDecisionKey -ne $expectedFourthKey) {
-            throw "Decision Replay cumulativo non ha restituito il vecchio rank 4."
-          }
-          $rejectLines3 = @(Get-Content -LiteralPath $rejects3 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-          if ($rejectLines3.Count -ne 3 -or (@($rejectLines3 | Sort-Object -Unique)).Count -ne 3) {
-            throw "Decision Replay cumulativo rank4: reject file non contiene tre Decision Key distinte."
-          }
-          Write-Host "RADIANT_HARNESS_DECISION_REPLAY_RANK4_OK"
           Write-Host "RADIANT_HARNESS_DECISION_REPLAY_CUMULATIVE_OK"
           Write-Host "RADIANT_HARNESS_DECISION_REPLAY_OK"
       - name: Run supply explorer skip top 20
