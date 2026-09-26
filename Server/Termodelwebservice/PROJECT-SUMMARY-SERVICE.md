@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Correzione nodo 8: inseguimento geometrico mandata e nuova release
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - consolidare la correzione discussa in simulazione sul quadrato pannelli dopo il nodo 8;
@@ -92,6 +92,27 @@ Criteri di completamento:
 - build/smoke GitHub Actions SUCCESS;
 - artifact SVG/log reale disponibile per verifica visuale;
 - revisione integrata su `main` e notifica finale tramite Issue #1.
+
+Risultato reale:
+- commit autorizzazione `1a130e13fdf15de25c3de19d51908b62ba6e56f0`;
+- sorgente corretto in `StrategiaDiegoEngine.FindSequenceContinuation()`: per l'inseguimento della propria famiglia il successore è la prima retta pertinente davanti, non il semplice `SequenceIndex+1`;
+- LG-033/LG-035 aggiornate e fase R6 registrata;
+- regression quadrato aggiunta a `smoke-radiant-executive.ps1`: richiede marker `SEQUENCE own-family geometric-continuation`, almeno 10 tratti attivi e Fattore di Bontà >= 0,80;
+- PR #3 head `820a390cee4184d888af6d7149a2b567f932e5eb`;
+- PR Action `36207700577` (#562), job `108307606275`: **SUCCESS**;
+- merge funzionale su `main`: `599a980aca95af14d982e25911a1507aece0c21c`;
+- main Action `36207858838`, job `108308085490`: **SUCCESS**; build Release, benchmark, smoke esecutivo, progetto radiante reale, banco appartamento e snapshot tutti SUCCESS;
+- Commit Status `Termodel/job=SUCCESS`; la notifica build usa la nuova priorità ntfy `low`;
+- artifact main quadrato `strategia-diego-square-executive`, id `10894901931`;
+- miglior terminale di mandata reale, per entrambi i lati ritorno: **10 tratti attivi**, lunghezza `19,96 m`, superficie empirica `11,976 m²`, superficie effettiva `13,988 m²`, Fattore di Bontà **0,856**;
+- confermata quindi esattamente la simulazione in memoria: il vecchio arresto prematuro dopo 6 tratti / bontà 0,564 viene superato e il secondo giro viene esplorato;
+- la soluzione complessiva attualmente selezionata dal criterio di merito LG-003 non coincide col terminale di sola mandata più buono: usa mandata attiva `17,72 m` con fattore `0,760`, ritorno attivo `11,88 m` con fattore `0,510`, merito complessivo `32,758 m`;
+- SVG SHA-256 `5e5e04b7c1f88956bd9dbef14e1b8e8eb3981b9ee430551ac03458c63b0f50d4`; DXF SHA-256 `d70039f2504f18fe7148179b141adab22ca1f905cfa0d722ef0187ffd02ac1e1`; 19 node-id diagnostici nell'SVG;
+- commit registro R6 finale `ea76e7b206a90327f7b75cd1cac1f8d830a77f65`;
+- nessuna modifica a GPT/Vittorio, frontend, Library Desktop o `definizionedati.json`;
+- il merge/push su `main` ha attivato il normale auto-deploy Render; la verifica HTTP indipendente del runtime viene riportata separatamente solo se disponibile;
+- artifact SVG/log reale disponibile per controllo visivo dell'utente secondo LG-036;
+- a fine incarico Issue #1 viene chiusa `Completed`, generando la sola notifica ntfy `urgent`.
 
 
 ### INCARICO 2026-09-26 — Differenziazione intensità notifiche ntfy
