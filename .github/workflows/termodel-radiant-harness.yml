@@ -227,108 +227,106 @@ jobs:
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
             --id LG041-R30-APPROVED `
             --out $out `
+            --supply-top 5 `
             --lock-supply-prefix $approvedPrefix
 
-          $svg = Join-Path $out "LG041-R30-APPROVED.svg"
-          $log = Join-Path $out "LG041-R30-APPROVED.log.txt"
-          if (-not (Test-Path $svg)) { throw "SVG R30 approvato mancante." }
-          if (-not (Test-Path $log)) { throw "Log R30 approvato mancante." }
+          $manifestPath = Join-Path $out "LG041-R30-APPROVED.supply-explorer\solutions.json"
+          if (-not (Test-Path $manifestPath)) { throw "Manifest Supply R30 approvato mancante." }
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          if ($manifest.solutions.Count -lt 1) { throw "Checkpoint R30 non produce discendenti Supply." }
 
-          $logText = Get-Content -LiteralPath $log -Raw
-          if ($logText -notmatch "TREE Supply CHOICE PROSEGUI_DRITTO\[1/2\] ACCEPT parentNode=14 childNode=15 \(1\.4,3\.25\)->\(0\.75,3\.25\)") {
-            throw "Checkpoint R30 non raggiunge il nodo15 approvato (0.75,3.25)."
+          foreach ($solution in $manifest.solutions) {
+            $decisionKeys = @($solution.decisionKeys | ForEach-Object { [string]$_ })
+            if ($decisionKeys.Count -lt 14) { throw "Discendente R30 più corto del prefisso approvato." }
+            for ($i=0; $i -lt 14; $i++) {
+              if ($decisionKeys[$i] -ne $keys[$i]) {
+                throw "Discendente R30 non conserva Decision Key approvata al passo $i."
+              }
+            }
           }
 
           Write-Host "RADIANT_HARNESS_R30_APPROVED_PREFIX_OK"
           Write-Host "approvedThroughNode=15"
           Write-Host "approvedPoint=(0.75,3.25)"
+          Write-Host ("descendants=" + $manifest.solutions.Count)
 
       - name: Verify approved node 15 continues before internal front
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $ci = [System.Globalization.CultureInfo]::InvariantCulture
           $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
           $approvedPrefix = "tests/radiant-harness/prefixes/LG041-R30-APPROVED-THROUGH-NODE15.prefix-lock.txt"
-          if (-not (Test-Path $approvedPrefix)) {
-            throw "Fixture prefisso R30 approvato non trovata: $approvedPrefix"
+          $manifestPath = Join-Path $out "LG041-R30-APPROVED.supply-explorer\solutions.json"
+          if (-not (Test-Path $manifestPath)) { throw "Manifest Supply R30 mancante." }
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+
+          $expectedContinuation = "DIEGO_DECISION family=Supply choice=PARALLELA_A start=(0.750000,3.250000) target=(0.750000,1.350000) refFamily=Supply ref=((1.400000,0.750000)->(2.600000,0.750000)) d=0.600000 type=lateral"
+
+          foreach ($solution in $manifest.solutions) {
+            $decisionKeys = @($solution.decisionKeys | ForEach-Object { [string]$_ })
+            if ($decisionKeys.Count -lt 15) {
+              throw "Nodo15: discendente termina ancora senza una quindicesima decisione."
+            }
+            if ($decisionKeys[14] -ne $expectedContinuation) {
+              throw "Nodo15: la prima decisione libera non è la continuazione attesa prima del fronte interno."
+            }
           }
+
+          $supplySvgSource = Join-Path $out "LG041-R30-APPROVED.supply-explorer\supply-rank-001.svg"
+          $supplySvg = Join-Path $out "LG041-R31-NODE15-CONTINUES-SUPPLY.svg"
+          Copy-Item -LiteralPath $supplySvgSource -Destination $supplySvg -Force
 
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
             --id LG041-R31-NODE15-CONTINUES `
             --out $out `
+            --solution-top 5 `
             --lock-supply-prefix $approvedPrefix
 
-          $svg = Join-Path $out "LG041-R31-NODE15-CONTINUES.svg"
-          $log = Join-Path $out "LG041-R31-NODE15-CONTINUES.log.txt"
-          $metricsPath = Join-Path $out "LG041-R31-NODE15-CONTINUES.metrics.json"
-          foreach ($required in @($svg,$log,$metricsPath)) {
-            if (-not (Test-Path $required)) { throw "R31 artifact mancante: $required" }
+          $solutionsDir = Join-Path $out "LG041-R31-NODE15-CONTINUES.solution-explorer"
+          $solutionsPath = Join-Path $solutionsDir "solutions.json"
+          if (-not (Test-Path $solutionsPath)) { throw "Solution Explorer R31 mancante." }
+          $solutions = Get-Content -LiteralPath $solutionsPath -Raw | ConvertFrom-Json
+          $feasible = @($solutions.solutions | Where-Object { $_.returnFeasible -eq $true })
+          if ($feasible.Count -lt 1) {
+            throw "R31: nessun Return fattibile nei primi 5 discendenti del prefisso approvato."
           }
 
-          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
-            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
-            --id LG041-R31-NODE15-INSPECT `
-            --out $out `
-            --inspect-node 15 `
-            --lock-supply-prefix $approvedPrefix
-
-          $inspectJson = Join-Path $out "LG041-R31-NODE15-INSPECT.branch-inspector\branch-node-015.json"
-          $inspectSvg = Join-Path $out "LG041-R31-NODE15-INSPECT.branch-inspector\branch-node-015.svg"
-          if (-not (Test-Path $inspectJson)) { throw "Inspector nodo15 JSON mancante." }
-          if (-not (Test-Path $inspectSvg)) { throw "Inspector nodo15 SVG mancante." }
-
-          $inspect = Get-Content -LiteralPath $inspectJson -Raw | ConvertFrom-Json
-          $continuation = @($inspect.candidates | Where-Object {
-            $_.kind -eq "PARALLELA_A" -and
-            $_.status -eq "ACCEPT" -and
-            $null -ne $_.target -and
-            [Math]::Abs([double]$_.target.x - 0.75) -le 0.000001 -and
-            [Math]::Abs([double]$_.target.y - 1.35) -le 0.000001
-          })
-          if ($continuation.Count -lt 1) {
-            throw "Nodo15: continuazione PARALLELA_A attesa verso (0.75,1.35) non trovata ACCEPT."
-          }
-
-          $logText = Get-Content -LiteralPath $log -Raw
-          if ($logText -notmatch "EXTEND fallback-before-own-family-front family=Supply") {
-            throw "Nodo15: fallback before-own-family-front non osservato."
-          }
-          if ($logText -notmatch "TREE Supply CHOICE PARALLELA_A ACCEPT parentNode=15 childNode=16 \(0\.75,3\.25\)->\(0\.75,1\.35\)") {
-            throw "Nodo15: il vero albero non ha creato la continuazione attesa."
-          }
-          if ($logText -match "TREE Supply TERMINAL node=15 ") {
-            throw "Nodo15 risulta ancora terminale dopo la correzione."
-          }
-
-          $metrics = Get-Content -LiteralPath $metricsPath -Raw | ConvertFrom-Json
-          if ([int]$metrics.SupplyNodes -le 15) {
-            throw "Nodo15: il Supply non prosegue oltre il checkpoint approvato."
-          }
+          $best = $feasible |
+            Sort-Object -Property @{Expression={[double]$_.combinedMeritMeters};Descending=$true} |
+            Select-Object -First 1
+          $combinedSource = Join-Path $solutionsDir ([string]$best.svg)
+          $combinedSvg = Join-Path $out "LG041-R31-NODE15-CONTINUES-COMBINED.svg"
+          Copy-Item -LiteralPath $combinedSource -Destination $combinedSvg -Force
 
           $report = [ordered]@{
             approvedThroughNode = 15
             approvedNodePoint = @{ x=0.75; y=3.25 }
-            diagnosis = "lateral own-family candidate used beyond-intersection semantics and collided with existing Supply"
+            diagnosis = "beyond-front lateral candidate collided with existing Supply; fallback stops before the same internal front"
             correctedChoice = "PARALLELA_A"
             correctedTarget = @{ x=0.75; y=1.35 }
             respectMeters = 0.60
-            supplyNodesAfterFix = [int]$metrics.SupplyNodes
-            supplyTerminalsAfterFix = [int]$metrics.SupplyTerminals
-            resultSvg = $svg
-            resultSvgSha256 = [string]$metrics.svgSha256
-            inspectorSvg = $inspectSvg
+            correctedDecisionKey = $expectedContinuation
+            supplyDescendantsChecked = [int]$manifest.solutions.Count
+            selectedSupplyRank = [int]$best.supplyRank
+            supplyActiveLengthMeters = [double]$best.supplyActiveLengthMeters
+            supplyGoodness = [double]$best.supplyGoodness
+            returnActiveLengthMeters = [double]$best.returnActiveLengthMeters
+            returnGoodness = [double]$best.returnGoodness
+            combinedMeritMeters = [double]$best.combinedMeritMeters
+            supplySvg = $supplySvg
+            combinedSvg = $combinedSvg
           }
           $reportPath = Join-Path $out "LG041-R31-NODE15-CONTINUES.report.json"
-          $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reportPath -Encoding utf8NoBOM
+          $report | ConvertTo-Json -Depth 7 | Set-Content -LiteralPath $reportPath -Encoding utf8NoBOM
 
           Write-Host "RADIANT_HARNESS_NODE15_CONTINUATION_OK"
           Write-Host "node15=(0.75,3.25)"
           Write-Host "continuation=(0.75,1.35)"
           Write-Host "respect=0.60"
-          Write-Host ("supplyNodesAfterFix=" + $metrics.SupplyNodes)
-          Write-Host ("resultSvg=" + $svg)
+          Write-Host ("bestFeasibleSupplyRank=" + $best.supplyRank)
+          Write-Host ("combinedMerit=" + $best.combinedMeritMeters)
+          Write-Host ("combinedSvg=" + $combinedSvg)
 
       - name: Run Decision Reject Replay
         shell: pwsh
