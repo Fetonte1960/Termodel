@@ -21,8 +21,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--reject-decisions <file.txt>] [--reject-current-supply] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--reject-decisions <file.txt>] [--reject-current-supply] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
 }
@@ -36,6 +36,8 @@ static int Run(string[] args)
         string? outputArg = Arg(args, "--out");
         string? idArg = Arg(args, "--id");
         string? stepArg = Arg(args, "--p");
+        string? rejectDecisionsArg = Arg(args, "--reject-decisions");
+        bool rejectCurrentSupply = HasFlag(args, "--reject-current-supply");
         int? inspectNode = PositiveIntArg(args, "--inspect-node");
         int? compareNode = PositiveIntArg(args, "--compare-node");
         int? solutionTop = PositiveIntArg(args, "--solution-top");
@@ -95,6 +97,50 @@ static int Run(string[] args)
 
         string localeXml = File.ReadAllText(fullInputPath, Encoding.UTF8);
 
+        HashSet<string> rejectedDecisionKeys =
+            LoadRejectedDecisionKeys(rejectDecisionsArg);
+        StrategiaDiegoSupplyExplorerEntry? rejectedCurrentSupplyEntry = null;
+
+        if (rejectCurrentSupply)
+        {
+            StrategiaDiegoSupplyExplorerSample beforeReplay =
+                StrategiaDiegoBenchmark.ExploreSupply(
+                    localeXml,
+                    stepMeters,
+                    topCount: 1,
+                    rejectedDecisionKeys: rejectedDecisionKeys);
+
+            rejectedCurrentSupplyEntry =
+                beforeReplay.Items.FirstOrDefault()
+                ?? throw new InvalidDataException(
+                    "Decision Replay: nessun setup mandata corrente da scartare.");
+
+            string terminalDecisionKey =
+                rejectedCurrentSupplyEntry.TerminalDecisionKey
+                ?? throw new InvalidDataException(
+                    "Decision Replay: il setup mandata corrente non ha una Decision Key terminale.");
+
+            rejectedDecisionKeys.Add(terminalDecisionKey);
+
+            Console.WriteLine(
+                $"DECISION_REPLAY_REJECT_CURRENT_SUPPLY " +
+                $"active={rejectedCurrentSupplyEntry.ActiveLengthMeters.ToString("0.###", CultureInfo.InvariantCulture)} " +
+                $"goodness={rejectedCurrentSupplyEntry.Goodness.ToString("0.######", CultureInfo.InvariantCulture)}");
+            Console.WriteLine(terminalDecisionKey);
+        }
+
+        string? effectiveRejectPath = null;
+        if (rejectedDecisionKeys.Count > 0)
+        {
+            effectiveRejectPath = Path.Combine(
+                outputDir,
+                caseId + ".reject-decisions.txt");
+            File.WriteAllLines(
+                effectiveRejectPath,
+                rejectedDecisionKeys.OrderBy(key => key, StringComparer.Ordinal),
+                new UTF8Encoding(false));
+        }
+
         if (inspectNode is not null)
         {
             return RunBranchInspector(
@@ -103,7 +149,8 @@ static int Run(string[] args)
                 caseId,
                 outputDir,
                 inspectNode.Value,
-                compareNode);
+                compareNode,
+                rejectedDecisionKeys);
         }
         if (solutionTop is not null || solutionRank is not null)
         {
@@ -120,7 +167,8 @@ static int Run(string[] args)
                 caseId,
                 outputDir,
                 solutionSkip,
-                solutionCount);
+                solutionCount,
+                rejectedDecisionKeys);
         }
         if (supplyTop is not null || supplyRank is not null || skipTop > 0)
         {
@@ -137,14 +185,76 @@ static int Run(string[] args)
                 requestedTop,
                 supplyRank,
                 skipTop,
-                exportCount);
+                exportCount,
+                rejectedDecisionKeys);
         }
 
         StrategiaDiegoBenchmarkSample sample =
             StrategiaDiegoBenchmark.Run(
                 localeXml,
                 stepMeters,
-                includeDetailedDiagnostics: true);
+                includeDetailedDiagnostics: true,
+                rejectedDecisionKeys: rejectedDecisionKeys);
+
+        StrategiaDiegoSupplyExplorerEntry? nextSupplyEntry = null;
+        string? replaySummaryPath = null;
+        if (rejectCurrentSupply)
+        {
+            StrategiaDiegoSupplyExplorerSample afterReplay =
+                StrategiaDiegoBenchmark.ExploreSupply(
+                    localeXml,
+                    stepMeters,
+                    topCount: 1,
+                    rejectedDecisionKeys: rejectedDecisionKeys);
+
+            nextSupplyEntry = afterReplay.Items.FirstOrDefault()
+                ?? throw new InvalidDataException(
+                    "Decision Replay: nessun setup mandata residuo dopo il reject.");
+
+            string nextSupplySvgPath = Path.Combine(
+                outputDir,
+                caseId + ".next-supply.svg");
+            File.WriteAllText(
+                nextSupplySvgPath,
+                nextSupplyEntry.Svg,
+                new UTF8Encoding(false));
+
+            replaySummaryPath = Path.Combine(
+                outputDir,
+                caseId + ".decision-replay.json");
+            var replaySummary = new
+            {
+                caseId,
+                rejectCurrentSupply = true,
+                effectiveRejectPath,
+                rejectedDecisionCount = rejectedDecisionKeys.Count,
+                rejectedSetup = rejectedCurrentSupplyEntry is null
+                    ? null
+                    : new
+                    {
+                        rejectedCurrentSupplyEntry.ActiveLengthMeters,
+                        rejectedCurrentSupplyEntry.Goodness,
+                        rejectedCurrentSupplyEntry.TotalLengthMeters,
+                        rejectedCurrentSupplyEntry.TerminalDecisionKey,
+                        rejectedCurrentSupplyEntry.DecisionKeys
+                    },
+                nextSetup = new
+                {
+                    nextSupplyEntry.ActiveLengthMeters,
+                    nextSupplyEntry.Goodness,
+                    nextSupplyEntry.TotalLengthMeters,
+                    nextSupplyEntry.TerminalDecisionKey,
+                    nextSupplyEntry.DecisionKeys,
+                    svg = nextSupplySvgPath
+                }
+            };
+            File.WriteAllText(
+                replaySummaryPath,
+                JsonSerializer.Serialize(
+                    replaySummary,
+                    new JsonSerializerOptions { WriteIndented = true }),
+                new UTF8Encoding(false));
+        }
 
         string svgPath = Path.Combine(outputDir, caseId + ".svg");
         string logPath = Path.Combine(outputDir, caseId + ".log.txt");
@@ -171,6 +281,10 @@ static int Run(string[] args)
             sample.ElapsedMilliseconds,
             sample.MemoryDeltaBytes,
             diagnosticsCount = sample.Diagnostics.Count,
+            rejectedDecisionCount = rejectedDecisionKeys.Count,
+            rejectCurrentSupply,
+            effectiveRejectPath,
+            replaySummaryPath,
             svgSha256 = Sha256(sample.Svg)
         };
 
@@ -186,6 +300,17 @@ static int Run(string[] args)
         Console.WriteLine($"nodes={sample.TotalNodes}");
         Console.WriteLine($"acceptedTerminals={sample.AcceptedTerminals}");
         Console.WriteLine($"elapsedMs={sample.ElapsedMilliseconds}");
+        Console.WriteLine($"rejectedDecisions={rejectedDecisionKeys.Count}");
+        if (effectiveRejectPath is not null)
+            Console.WriteLine($"rejectFile={effectiveRejectPath}");
+        if (replaySummaryPath is not null)
+            Console.WriteLine($"replaySummary={replaySummaryPath}");
+        if (nextSupplyEntry is not null)
+        {
+            Console.WriteLine(
+                $"NEXT_SUPPLY active={nextSupplyEntry.ActiveLengthMeters.ToString("0.###", CultureInfo.InvariantCulture)} " +
+                $"goodness={nextSupplyEntry.Goodness.ToString("0.######", CultureInfo.InvariantCulture)}");
+        }
         Console.WriteLine($"svg={svgPath}");
         Console.WriteLine($"log={logPath}");
         Console.WriteLine($"metrics={metricsPath}");
@@ -207,13 +332,15 @@ static int RunBranchInspector(
     string caseId,
     string outputDir,
     int inspectNode,
-    int? compareNode)
+    int? compareNode,
+    IReadOnlyCollection<string> rejectedDecisionKeys)
 {
     StrategiaDiegoBenchmarkSample sample =
         StrategiaDiegoBenchmark.Run(
             localeXml,
             stepMeters,
-            includeDetailedDiagnostics: true);
+            includeDetailedDiagnostics: true,
+            rejectedDecisionKeys: rejectedDecisionKeys);
 
     Dictionary<int, BranchEdge> edges =
         ParseSupplyEdges(sample.Diagnostics);
@@ -736,14 +863,16 @@ static int RunRankedSolutionExplorer(
     string caseId,
     string outputDir,
     int skipTop,
-    int count)
+    int count,
+    IReadOnlyCollection<string> rejectedDecisionKeys)
 {
     StrategiaDiegoRankedSolutionExplorerSample explorer =
         StrategiaDiegoBenchmark.ExploreRankedSolutions(
             localeXml,
             stepMeters,
             skipTop,
-            count);
+            count,
+            rejectedDecisionKeys);
 
     if (explorer.Items.Count == 0)
         throw new InvalidDataException(
@@ -782,6 +911,8 @@ static int RunRankedSolutionExplorer(
             supplyGoodness = entry.SupplyGoodness,
             supplyTotalLengthMeters = entry.SupplyTotalLengthMeters,
             supplyNodeIds = entry.SupplyNodeIds,
+            supplyDecisionKeys = entry.SupplyDecisionKeys,
+            supplyTerminalDecisionKey = entry.SupplyTerminalDecisionKey,
             contains47To48 = ContainsEdge(entry.SupplyNodeIds, 47, 48),
             returnFeasible = entry.ReturnFeasible,
             returnTerminalNodeId = entry.ReturnTerminalNodeId,
@@ -792,6 +923,8 @@ static int RunRankedSolutionExplorer(
             combinedMeritMeters = entry.CombinedMeritMeters,
             returnRootSide = entry.ReturnRootSide,
             returnNodeIds = entry.ReturnNodeIds,
+            returnDecisionKeys = entry.ReturnDecisionKeys,
+            returnTerminalDecisionKey = entry.ReturnTerminalDecisionKey,
             returnNodesExplored = entry.ReturnNodesExplored,
             combinedTerminals = entry.CombinedTerminals,
             acceptedTerminals = entry.AcceptedTerminals,
@@ -897,13 +1030,15 @@ static int RunSupplyExplorer(
     int topCount,
     int? selectedRank,
     int skipTop,
-    int exportCount)
+    int exportCount,
+    IReadOnlyCollection<string> rejectedDecisionKeys)
 {
     StrategiaDiegoSupplyExplorerSample explorer =
         StrategiaDiegoBenchmark.ExploreSupply(
             localeXml,
             stepMeters,
-            topCount);
+            topCount,
+            rejectedDecisionKeys);
 
     string explorerDir = Path.Combine(
         outputDir,
@@ -1103,6 +1238,57 @@ static async Task<int> PrepareAsync(string[] args)
         Console.Error.WriteLine(ex);
         return 3;
     }
+}
+
+static bool HasFlag(
+    string[] args,
+    string name) =>
+    args.Any(arg =>
+        arg.Equals(
+            name,
+            StringComparison.OrdinalIgnoreCase));
+
+static HashSet<string> LoadRejectedDecisionKeys(
+    string? rejectDecisionsPath)
+{
+    var result = new HashSet<string>(
+        StringComparer.Ordinal);
+
+    if (string.IsNullOrWhiteSpace(rejectDecisionsPath))
+        return result;
+
+    string fullPath = Path.GetFullPath(
+        rejectDecisionsPath);
+    if (!File.Exists(fullPath))
+    {
+        throw new FileNotFoundException(
+            "File Decision Reject Replay non trovato.",
+            fullPath);
+    }
+
+    foreach (string raw in File.ReadLines(
+                 fullPath,
+                 Encoding.UTF8))
+    {
+        string line = raw.Trim();
+        if (line.Length == 0 ||
+            line.StartsWith("#", StringComparison.Ordinal))
+        {
+            continue;
+        }
+
+        if (!line.StartsWith(
+                "DIEGO_DECISION ",
+                StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                "Decision Reject Replay: ogni riga deve essere una Decision Key canonica che inizi con 'DIEGO_DECISION '.");
+        }
+
+        result.Add(line);
+    }
+
+    return result;
 }
 
 static string? Arg(string[] args, string name)
