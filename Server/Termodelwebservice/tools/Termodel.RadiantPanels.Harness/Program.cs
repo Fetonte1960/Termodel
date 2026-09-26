@@ -21,8 +21,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--supply-top N] [--skip-top N] [--supply-rank N]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--supply-top N] [--skip-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
 }
@@ -36,6 +36,8 @@ static int Run(string[] args)
         string? outputArg = Arg(args, "--out");
         string? idArg = Arg(args, "--id");
         string? stepArg = Arg(args, "--p");
+        int? solutionTop = PositiveIntArg(args, "--solution-top");
+        int? solutionRank = PositiveIntArg(args, "--solution-rank");
         int? supplyTop = PositiveIntArg(args, "--supply-top");
         int skipTop = NonNegativeIntArg(args, "--skip-top") ?? 0;
         int? supplyRank = PositiveIntArg(args, "--supply-rank");
@@ -91,6 +93,23 @@ static int Run(string[] args)
 
         string localeXml = File.ReadAllText(fullInputPath, Encoding.UTF8);
 
+        if (solutionTop is not null || solutionRank is not null)
+        {
+            int solutionSkip = solutionRank is null
+                ? skipTop
+                : solutionRank.Value - 1;
+            int solutionCount = solutionRank is null
+                ? solutionTop ?? 20
+                : 1;
+
+            return RunRankedSolutionExplorer(
+                localeXml,
+                stepMeters,
+                caseId,
+                outputDir,
+                solutionSkip,
+                solutionCount);
+        }
         if (supplyTop is not null || supplyRank is not null || skipTop > 0)
         {
             int exportCount = supplyTop ?? 20;
@@ -169,6 +188,165 @@ static int Run(string[] args)
     }
 }
 
+static int RunRankedSolutionExplorer(
+    string localeXml,
+    double stepMeters,
+    string caseId,
+    string outputDir,
+    int skipTop,
+    int count)
+{
+    StrategiaDiegoRankedSolutionExplorerSample explorer =
+        StrategiaDiegoBenchmark.ExploreRankedSolutions(
+            localeXml,
+            stepMeters,
+            skipTop,
+            count);
+
+    if (explorer.Items.Count == 0)
+        throw new InvalidDataException(
+            $"Nessuna soluzione disponibile dopo skipTop={skipTop}; terminali={explorer.SupplyTerminals}.");
+
+    string explorerDir = Path.Combine(
+        outputDir,
+        caseId + ".solution-explorer");
+    Directory.CreateDirectory(explorerDir);
+
+    foreach (StrategiaDiegoRankedSolutionExplorerEntry entry in explorer.Items)
+    {
+        string svgPath = Path.Combine(
+            explorerDir,
+            $"solution-rank-{entry.SupplyRank:000}.svg");
+        File.WriteAllText(
+            svgPath,
+            entry.Svg,
+            new UTF8Encoding(false));
+    }
+
+    var manifest = new
+    {
+        caseId,
+        explorer.LocaleId,
+        explorer.StepMeters,
+        explorer.SupplyNodes,
+        explorer.SupplyTerminals,
+        explorer.SkipTop,
+        requestedCount = count,
+        solutions = explorer.Items.Select(entry => new
+        {
+            supplyRank = entry.SupplyRank,
+            supplyTerminalNodeId = entry.SupplyTerminalNodeId,
+            supplyActiveLengthMeters = entry.SupplyActiveLengthMeters,
+            supplyGoodness = entry.SupplyGoodness,
+            supplyTotalLengthMeters = entry.SupplyTotalLengthMeters,
+            supplyNodeIds = entry.SupplyNodeIds,
+            contains47To48 = ContainsEdge(entry.SupplyNodeIds, 47, 48),
+            returnFeasible = entry.ReturnFeasible,
+            returnTerminalNodeId = entry.ReturnTerminalNodeId,
+            returnActiveLengthMeters = entry.ReturnActiveLengthMeters,
+            returnGoodness = entry.ReturnGoodness,
+            returnTotalLengthMeters = entry.ReturnTotalLengthMeters,
+            closureLengthMeters = entry.ClosureLengthMeters,
+            combinedMeritMeters = entry.CombinedMeritMeters,
+            returnRootSide = entry.ReturnRootSide,
+            returnNodeIds = entry.ReturnNodeIds,
+            returnNodesExplored = entry.ReturnNodesExplored,
+            combinedTerminals = entry.CombinedTerminals,
+            acceptedTerminals = entry.AcceptedTerminals,
+            returnError = entry.ReturnError,
+            svg = $"solution-rank-{entry.SupplyRank:000}.svg"
+        }).ToArray()
+    };
+
+    string manifestPath = Path.Combine(explorerDir, "solutions.json");
+    File.WriteAllText(
+        manifestPath,
+        JsonSerializer.Serialize(
+            manifest,
+            new JsonSerializerOptions { WriteIndented = true }),
+        new UTF8Encoding(false));
+
+    string html = BuildRankedSolutionExplorerHtml(
+        caseId,
+        explorer);
+    string htmlPath = Path.Combine(explorerDir, "index.html");
+    File.WriteAllText(
+        htmlPath,
+        html,
+        new UTF8Encoding(false));
+
+    Console.WriteLine("RADIANT_HARNESS_SOLUTION_EXPLORER_OK");
+    Console.WriteLine($"case={caseId}");
+    Console.WriteLine($"supplyNodes={explorer.SupplyNodes}");
+    Console.WriteLine($"supplyTerminals={explorer.SupplyTerminals}");
+    Console.WriteLine($"skipTop={explorer.SkipTop}");
+    Console.WriteLine($"exported={explorer.Items.Count}");
+    Console.WriteLine($"manifest={manifestPath}");
+    Console.WriteLine($"index={htmlPath}");
+
+    foreach (StrategiaDiegoRankedSolutionExplorerEntry entry in explorer.Items)
+    {
+        string returnText = entry.ReturnFeasible
+            ? $"returnActive={entry.ReturnActiveLengthMeters?.ToString("0.###", CultureInfo.InvariantCulture)} " +
+              $"returnGoodness={entry.ReturnGoodness?.ToString("0.###", CultureInfo.InvariantCulture)} " +
+              $"returnNode={entry.ReturnTerminalNodeId} " +
+              $"returnExplored={entry.ReturnNodesExplored}"
+            : $"RETURN_NOT_FEASIBLE error={entry.ReturnError ?? "-"}";
+
+        Console.WriteLine(
+            $"SOLUTION_RANK supplyRank={entry.SupplyRank} supplyNode={entry.SupplyTerminalNodeId} " +
+            $"supplyActive={entry.SupplyActiveLengthMeters.ToString("0.###", CultureInfo.InvariantCulture)} " +
+            $"supplyGoodness={entry.SupplyGoodness.ToString("0.###", CultureInfo.InvariantCulture)} " +
+            $"contains47To48={ContainsEdge(entry.SupplyNodeIds, 47, 48)} {returnText}");
+    }
+
+    return 0;
+}
+
+static string BuildRankedSolutionExplorerHtml(
+    string caseId,
+    StrategiaDiegoRankedSolutionExplorerSample explorer)
+{
+    var builder = new StringBuilder();
+    builder.AppendLine("<!doctype html><html><head><meta charset=\"utf-8\">");
+    builder.AppendLine("<title>StrategiaDiego Solution Explorer</title>");
+    builder.AppendLine("<style>body{font-family:Arial,sans-serif;margin:20px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px}.card{border:1px solid #bbb;padding:10px;border-radius:8px}.card img{width:100%;height:auto;border:1px solid #ddd}.meta{font-family:monospace;white-space:pre-wrap}.bad{color:#a00;font-weight:bold}</style></head><body>");
+    builder.AppendLine($"<h1>{System.Net.WebUtility.HtmlEncode(caseId)} — Supply rank + Best Return</h1>");
+    builder.AppendLine($"<p>Supply nodes: {explorer.SupplyNodes} | terminals: {explorer.SupplyTerminals} | p={explorer.StepMeters.ToString("0.###", CultureInfo.InvariantCulture)} m | skipTop={explorer.SkipTop}</p>");
+    builder.AppendLine("<div class=\"grid\">");
+
+    foreach (StrategiaDiegoRankedSolutionExplorerEntry entry in explorer.Items)
+    {
+        string svg = $"solution-rank-{entry.SupplyRank:000}.svg";
+        builder.AppendLine("<div class=\"card\">");
+        builder.AppendLine($"<h2>Supply rank #{entry.SupplyRank}</h2>");
+        builder.AppendLine($"<a href=\"{svg}\"><img src=\"{svg}\" alt=\"rank {entry.SupplyRank}\"></a>");
+        builder.AppendLine("<div class=\"meta\">");
+        builder.AppendLine($"Supply node={entry.SupplyTerminalNodeId}<br>");
+        builder.AppendLine($"Supply active={entry.SupplyActiveLengthMeters.ToString("0.###", CultureInfo.InvariantCulture)} m<br>");
+        builder.AppendLine($"Supply goodness={entry.SupplyGoodness.ToString("0.###", CultureInfo.InvariantCulture)}<br>");
+        builder.AppendLine($"contains 47→48={ContainsEdge(entry.SupplyNodeIds,47,48)}<br>");
+
+        if (entry.ReturnFeasible)
+        {
+            builder.AppendLine($"Best Return node={entry.ReturnTerminalNodeId}<br>");
+            builder.AppendLine($"Return active={entry.ReturnActiveLengthMeters?.ToString("0.###", CultureInfo.InvariantCulture)} m<br>");
+            builder.AppendLine($"Return goodness={entry.ReturnGoodness?.ToString("0.###", CultureInfo.InvariantCulture)}<br>");
+            builder.AppendLine($"Closure={entry.ClosureLengthMeters?.ToString("0.###", CultureInfo.InvariantCulture)} m<br>");
+            builder.AppendLine($"Combined merit={entry.CombinedMeritMeters?.ToString("0.###", CultureInfo.InvariantCulture)} m<br>");
+            builder.AppendLine($"Return explored nodes={entry.ReturnNodesExplored}");
+        }
+        else
+        {
+            builder.AppendLine($"<span class=\"bad\">RETURN NON FATTIBILE</span><br>{System.Net.WebUtility.HtmlEncode(entry.ReturnError ?? string.Empty)}");
+        }
+
+        builder.AppendLine("</div></div>");
+    }
+
+    builder.AppendLine("</div></body></html>");
+    return builder.ToString();
+}
 static int RunSupplyExplorer(
     string localeXml,
     double stepMeters,
