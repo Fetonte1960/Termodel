@@ -122,19 +122,25 @@ prodotto SVG byte-identico, mentre la baseline senza reject è rimasta invariata
 
 ### Replay cumulativo
 
-Il collaudo finale deve verificare:
+Collaudo completato sul quadrato LG041:
 
-- baseline con almeno tre setup;
-- esclusione rank 1;
-- con il primo reject ancora attivo, esclusione del nuovo setup corrente
-  (precedente rank 2);
-- nuovo top uguale al precedente rank 3;
+- Harness run 36235621367, job 108386726433: SUCCESS;
+- baseline con almeno tre setup verificata;
+- esclusione rank 1 -> precedente rank 2;
+- mantenendo il primo reject, esclusione del nuovo setup corrente
+  (precedente rank 2) -> precedente rank 3;
 - file cumulativo con due Decision Key distinte;
+- entrambi i rifiuti osservati nel log come REJECT_BY_INPUT;
 - riesecuzione del solo file cumulativo con SVG byte-identico al secondo
-  rifiuto interattivo.
+  rifiuto interattivo;
+- marker CI: RADIANT_HARNESS_DECISION_REPLAY_CUMULATIVE_OK;
+- artifact radiant-harness-fast id 10903972542.
 
-Il risultato reale viene registrato nel registro StrategiaDiego e nel Summary
-Service.
+La build Release dello stesso commit è riuscita con 0 errori. Il workflow
+TermodelService Build 36235621362 resta rosso esclusivamente sul benchmark
+prestazionale già noto del quadrato: 44.044 nodi, P95 5289 ms contro budget
+2000 ms. Questo limite di sostenibilità è separato dalla correttezza del
+Decision Reject Replay.
 
 ## 8. Confini
 
