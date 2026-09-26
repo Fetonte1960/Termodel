@@ -570,7 +570,11 @@ internal static class StrategiaDiegoEngine
                     excludedFront,
                     requiredFront,
                     step,
-                    allowStartOnBoundary: false);
+                    allowStartOnBoundary: false,
+                    relaxedDistanceConstraintId:
+                        afterScavalcamentoOpposite
+                            ? node.Parent!.Segment.Id
+                            : null);
 
                 if (extension is null)
                 {
@@ -717,7 +721,8 @@ internal static class StrategiaDiegoEngine
         string? excludedFrontId,
         string? requiredFrontId,
         double step,
-        bool allowStartOnBoundary)
+        bool allowStartOnBoundary,
+        string? relaxedDistanceConstraintId = null)
     {
         DVector unit = direction.Normalize();
         if (unit.Length <= Epsilon)
@@ -728,6 +733,14 @@ internal static class StrategiaDiegoEngine
 
         foreach (GeoSegment reference in constraints)
         {
+            if (relaxedDistanceConstraintId is not null &&
+                reference.Id.Equals(
+                    relaxedDistanceConstraintId,
+                    StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             // I normali tubi di collegamento restano soli ostacoli
             // anti-attraversamento. Il raccordo entrante del ritorno, invece,
             // partecipa anche al troncamento fisico della procedura di
@@ -846,7 +859,8 @@ internal static class StrategiaDiegoEngine
                     previousSegment,
                     reference,
                     step,
-                    allowStartOnBoundary))
+                    allowStartOnBoundary,
+                    relaxedDistanceConstraintId))
             {
                 continue;
             }
@@ -892,7 +906,8 @@ internal static class StrategiaDiegoEngine
         GeoSegment? previousSegment,
         GeoSegment front,
         double step,
-        bool allowStartOnBoundary)
+        bool allowStartOnBoundary,
+        string? relaxedDistanceConstraintId = null)
     {
         if (!SegmentInsideLocale(
                 locale,
@@ -933,6 +948,18 @@ internal static class StrategiaDiegoEngine
                     $"VALIDATE {candidate.Family} REJECT intersection other={other.Id} " +
                     $"{Fmt(candidate.A)}->{Fmt(candidate.B)}");
                 return false;
+            }
+
+            if (relaxedDistanceConstraintId is not null &&
+                other.Id.Equals(
+                    relaxedDistanceConstraintId,
+                    StringComparison.Ordinal))
+            {
+                LogDiego(
+                    $"SCAVALCAMENTO transition-distance-exempt " +
+                    $"family={candidate.Family} other={other.Id} " +
+                    $"candidate={Fmt(candidate.A)}->{Fmt(candidate.B)}");
+                continue;
             }
 
             double required = RequiredDistance(
