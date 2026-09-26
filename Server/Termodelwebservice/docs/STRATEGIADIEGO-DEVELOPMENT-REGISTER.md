@@ -7,6 +7,25 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R25 — Chiusura sistema debug ad albero + reject cumulativo
+Stato: **IN COLLAUDO — PR #8**
+
+Decisione utente 26/09/2026:
+- completare il sistema di debug StrategiaDiego come infrastruttura unica basata sul vero albero di ricerca;
+- mantenere Supply Explorer, Solution Explorer e Branch Inspector come strumenti di osservazione;
+- usare Decision Reject Replay come strumento di esclusione delle scelte, senza ricostruzioni SVG esterne;
+- verificare esplicitamente il caso cumulativo "scarta questo setup mandata" ripetuto due volte;
+- notificare con Issue #1 a fine incarico.
+
+Completamento predisposto:
+- documento operativo unico: `docs/STRATEGIADIEGO-TREE-DEBUG.md`;
+- workflow Harness PR #8 esteso per verificare rank1 -> rank2 e, conservando il primo reject, rank2 -> rank3;
+- verifica prevista anche della riproducibilità byte-per-byte usando il file con due Decision Key;
+- nessuna modifica alle regole geometriche o alla funzione di merito;
+- nessun merge algoritmico in `main`.
+
+Esito CI: **IN ATTESA DEL RUN REALE**.
+
 ## R24 — Decision Reject Replay implementato e verificato
 Stato: **ESEGUITO — PROTOTIPO PR #8 / HARNESS SUCCESS**
 
@@ -52,7 +71,7 @@ Uso futuro:
 - se esistono setup a pari merito, viene mostrato prima il successivo nell'ordinamento corrente; ulteriori richieste `scarta questo setup mandata` accumulano i reject;
 - per casi geometrici puntuali può essere rifiutata qualunque Decision Key intermedia, non solo quella terminale.
 ## R23 — Architettura debug universale Decision Reject Replay
-Stato: **APPROVATA E DOCUMENTATA — NON ANCORA IMPLEMENTATA**
+Stato: **SUPERATA DA R24 — IMPLEMENTATA E VERIFICATA**
 
 Decisione utente 26/09/2026:
 - evitare strumenti adattati caso per caso per forzare rami alternativi;
