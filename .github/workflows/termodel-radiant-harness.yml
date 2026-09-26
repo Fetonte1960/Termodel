@@ -292,8 +292,8 @@ jobs:
           }
 
           $logText = Get-Content -LiteralPath $log -Raw
-          if ($logText -notmatch "EXTEND before-own-family-front family=Supply") {
-            throw "Nodo15: nuova semantica before-own-family-front non osservata."
+          if ($logText -notmatch "EXTEND fallback-before-own-family-front family=Supply") {
+            throw "Nodo15: fallback before-own-family-front non osservato."
           }
           if ($logText -notmatch "TREE Supply CHOICE PARALLELA_A ACCEPT parentNode=15 childNode=16 \(0\.75,3\.25\)->\(0\.75,1\.35\)") {
             throw "Nodo15: il vero albero non ha creato la continuazione attesa."
