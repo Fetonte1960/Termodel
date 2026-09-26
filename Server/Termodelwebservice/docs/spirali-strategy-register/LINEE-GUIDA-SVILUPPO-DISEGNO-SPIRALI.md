@@ -5104,35 +5104,36 @@ una fascia percentuale di mandate "quasi uguali".
 Per ogni tratto attivo Supply `s_i`, nell'ordine in cui viene generato:
 
 1. calcolare il punto medio `m_i` del tratto;
-2. calcolare i punti medi di tutte le pareti delimitanti del locale;
-3. calcolare i punti medi dei tratti Supply precedenti, **escludendo sempre il
-   tratto immediatamente precedente** `s_(i-1)`; i candidati Supply sono quindi
-   `s_1 ... s_(i-2)`;
-4. misurare le distanze euclidee punto-punto da `m_i` a tutti questi punti
-   medi;
-5. assumere come contributo `d_i` la distanza minima trovata;
+2. non usare la pianta architettonica, le pareti o altri segmenti Architecture
+   come candidati del merito secondario;
+3. considerare i punti medi dei tratti Supply precedenti, **escludendo sempre i
+   due tratti immediatamente precedenti** `s_(i-1)` e `s_(i-2)`; i candidati
+   Supply sono quindi `s_1 ... s_(i-3)`;
+4. misurare le distanze euclidee punto-punto da `m_i` ai punti medi dei soli
+   candidati Supply rimasti;
+5. assumere come contributo `d_i` la distanza minima trovata; se non esiste
+   alcun candidato, porre obbligatoriamente `d_i = 0`;
 6. sommare il contributo al valore cumulativo della mandata.
 
 Formula:
 
 ```text
-d_i = min(
-    min distanza(m_i, puntoMedio(parete)),
-    min distanza(m_i, puntoMedio(s_j)) per ogni j < i - 1
-)
+C_i = { s_j | j < i - 2 }
+
+d_i = 0                                      se C_i è vuoto
+d_i = min distanza(m_i, puntoMedio(s_j))     per ogni s_j in C_i
 
 MeritoSecondarioSupply = somma(d_i)
 ```
 
-Per il primo tratto attivo, in assenza di tratti Supply precedenti, il minimo
-viene calcolato sulle sole pareti delimitanti. Anche per il secondo tratto
-attivo il riferimento Supply immediatamente precedente è escluso, quindi il
-minimo viene ancora calcolato sulle sole pareti.
+Per i primi tre tratti attivi non esistono antenati Supply sufficientemente
+lontani nella sequenza: il loro contributo è quindi `d_i = 0`.
 
-L'esclusione del tratto padre evita un minimo improprio: due tratti consecutivi
-sono collegati per costruzione e la loro vicinanza locale non dimostra che il
-nuovo tratto stia realmente inseguendo il profilo o una parte già sviluppata
-della mandata.
+L'esclusione dei due tratti precedenti evita minimi impropri dovuti alla normale
+continuità locale della serpentina. Tratti così recenti sono vicini per
+costruzione e non dimostrano che il nuovo tratto stia inseguendo una parte già
+sviluppata della mandata. L'architettura continua a guidare e vincolare la
+generazione geometrica, ma non partecipa a questo fattore di spareggio.
 
 Il raccordo tecnico iniziale non partecipa alla somma: come per la lunghezza
 attiva usata da LG-038, serve a raggiungere la prima traccia utile e non
@@ -5149,8 +5150,8 @@ La graduatoria dei terminali Supply diventa lessicografica:
    stesso ordinamento, conservando il comportamento Supply-first.
 
 Un valore secondario più basso è migliore perché indica che, nel complesso,
-i punti medi dei nuovi tratti restano più vicini al profilo o alla Supply già
-costruita.
+i punti medi dei nuovi tratti restano più vicini alla parte non recente della
+Supply già costruita.
 
 Se anche il merito secondario è uguale, questa specifica non introduce un
 nuovo criterio geometrico: resta valido l'ordinamento deterministico corrente
@@ -5164,11 +5165,11 @@ Il collaudo deve rendere visibili due effetti:
 - la somma tende a penalizzare, a pari lunghezza, i percorsi spezzati in molti
   tratti; questo può eliminare proprio le anse/scavalcamenti ridondanti, ma non
   deve penalizzare un inseguimento necessario in un perimetro complesso;
-- il risultato dipende dalla suddivisione delle pareti in segmenti: due muri
-  geometricamente equivalenti ma discretizzati diversamente possono avere
-  punti medi differenti.
+- i primi tre contributi nulli sono intenzionali e non devono essere sostituiti
+  da distanze verso pareti o tratti esclusi.
 
-Questi sono criteri di verifica, non autorizzano a sostituire automaticamente
+Questi sono criteri di verifica, non autorizzano a reinserire automaticamente
+la pianta architettonica, a usare uno dei due tratti precedenti o a sostituire
 la distanza fra punti medi con una distanza punto-segmento, una media o una
 normalizzazione. Qualunque variante richiede confronto sugli SVG e una nuova
 decisione esplicita.
@@ -5180,8 +5181,8 @@ decisione esplicita.
   pari lunghezza;
 - il valore deve essere cumulabile nel nodo di ricerca: il figlio eredita il
   totale del padre e aggiunge il solo `d_i` del nuovo tratto;
-- il calcolo iniziale può esaminare pareti e antenati Supply in modo diretto,
-  saltando obbligatoriamente il padre immediato del nuovo tratto;
+- il calcolo iniziale esamina soltanto gli antenati Supply ammessi, saltando
+  obbligatoriamente i due predecessori immediati e senza consultare le pareti;
   un indice spaziale sarà valutato soltanto se i benchmark grandi lo
   richiederanno;
 - il log diagnostico deve esporre almeno lunghezza primaria, merito secondario
@@ -6426,8 +6427,8 @@ Ordine corrente, obbligatorio finché non viene aggiornato questo checkpoint:
 
 1. aggiungere al nodo Supply il merito secondario cumulativo LG-047;
 2. calcolare per ogni nuovo tratto la distanza minima fra il proprio punto
-   medio e i punti medi di pareti e tratti Supply antenati, escludendo il
-   tratto padre immediato;
+   medio e i punti medi dei soli antenati Supply ammessi, escludendo i due
+   predecessori immediati e assegnando zero quando l'insieme è vuoto;
 3. ordinare i terminali per primario decrescente e, soltanto a parità,
    secondario crescente;
 4. costruire il Return della sola mandata prevalente e usare la successiva
