@@ -21,8 +21,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--inspect-node N] [--compare-node M] [--solution-top N] [--skip-top N] [--solution-rank N] [--supply-top N] [--supply-rank N]");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
 }
@@ -36,6 +36,8 @@ static int Run(string[] args)
         string? outputArg = Arg(args, "--out");
         string? idArg = Arg(args, "--id");
         string? stepArg = Arg(args, "--p");
+        int? inspectNode = PositiveIntArg(args, "--inspect-node");
+        int? compareNode = PositiveIntArg(args, "--compare-node");
         int? solutionTop = PositiveIntArg(args, "--solution-top");
         int? solutionRank = PositiveIntArg(args, "--solution-rank");
         int? supplyTop = PositiveIntArg(args, "--supply-top");
@@ -93,6 +95,16 @@ static int Run(string[] args)
 
         string localeXml = File.ReadAllText(fullInputPath, Encoding.UTF8);
 
+        if (inspectNode is not null)
+        {
+            return RunBranchInspector(
+                localeXml,
+                stepMeters,
+                caseId,
+                outputDir,
+                inspectNode.Value,
+                compareNode);
+        }
         if (solutionTop is not null || solutionRank is not null)
         {
             int solutionSkip = solutionRank is null
@@ -187,6 +199,536 @@ static int Run(string[] args)
         return 3;
     }
 }
+
+
+static int RunBranchInspector(
+    string localeXml,
+    double stepMeters,
+    string caseId,
+    string outputDir,
+    int inspectNode,
+    int? compareNode)
+{
+    StrategiaDiegoBenchmarkSample sample =
+        StrategiaDiegoBenchmark.Run(
+            localeXml,
+            stepMeters,
+            includeDetailedDiagnostics: true);
+
+    Dictionary<int, BranchEdge> edges =
+        ParseSupplyEdges(sample.Diagnostics);
+
+    if (!edges.ContainsKey(inspectNode))
+        throw new InvalidDataException(
+            $"Nodo Supply {inspectNode} non trovato nel log.");
+
+    List<BranchEdge> targetPath =
+        ReconstructBranchPath(edges, inspectNode);
+    List<BranchEdge> comparePath =
+        compareNode is int compare
+            ? ReconstructBranchPath(edges, compare)
+            : new List<BranchEdge>();
+
+    List<BranchCandidate> candidates =
+        ParseBranchCandidates(
+            sample.Diagnostics,
+            inspectNode,
+            targetPath[^1].B);
+
+    XDocument document = XDocument.Parse(
+        localeXml,
+        LoadOptions.PreserveWhitespace);
+    List<InspectPoint> perimeter =
+        ParseFirstLocalePerimeter(document);
+
+    string inspectorDir = Path.Combine(
+        outputDir,
+        caseId + ".branch-inspector");
+    Directory.CreateDirectory(inspectorDir);
+
+    string svg = BuildBranchInspectorSvg(
+        perimeter,
+        targetPath,
+        comparePath,
+        candidates,
+        inspectNode,
+        compareNode);
+
+    string svgPath = Path.Combine(
+        inspectorDir,
+        $"branch-node-{inspectNode:000}.svg");
+    File.WriteAllText(
+        svgPath,
+        svg,
+        new UTF8Encoding(false));
+
+    string jsonPath = Path.Combine(
+        inspectorDir,
+        $"branch-node-{inspectNode:000}.json");
+    var report = new
+    {
+        caseId,
+        stepMeters,
+        inspectNode,
+        compareNode,
+        targetPathNodeIds =
+            BranchPathNodeIds(targetPath),
+        comparePathNodeIds =
+            comparePath.Count == 0
+                ? Array.Empty<int>()
+                : BranchPathNodeIds(comparePath),
+        candidates = candidates.Select(candidate => new
+        {
+            candidate.Kind,
+            candidate.Status,
+            start = new { candidate.Start.X, candidate.Start.Y },
+            target = candidate.Target is InspectPoint target
+                ? new { target.X, target.Y }
+                : null,
+            intersection = candidate.Intersection is InspectPoint intersection
+                ? new { intersection.X, intersection.Y }
+                : null,
+            candidate.Reference,
+            candidate.ReferenceFamily,
+            candidate.ReferenceType,
+            candidate.RespectMeters,
+            candidate.Reason
+        }).ToArray()
+    };
+    File.WriteAllText(
+        jsonPath,
+        JsonSerializer.Serialize(
+            report,
+            new JsonSerializerOptions { WriteIndented = true }),
+        new UTF8Encoding(false));
+
+    string logPath = Path.Combine(
+        inspectorDir,
+        $"branch-node-{inspectNode:000}.log.txt");
+    File.WriteAllLines(
+        logPath,
+        ExtractNodeDiagnosticWindow(
+            sample.Diagnostics,
+            inspectNode),
+        new UTF8Encoding(false));
+
+    Console.WriteLine("RADIANT_HARNESS_BRANCH_INSPECTOR_OK");
+    Console.WriteLine($"case={caseId}");
+    Console.WriteLine($"inspectNode={inspectNode}");
+    Console.WriteLine($"compareNode={compareNode?.ToString(CultureInfo.InvariantCulture) ?? "-"}");
+    Console.WriteLine($"targetPath={string.Join("->", BranchPathNodeIds(targetPath))}");
+    Console.WriteLine($"candidates={candidates.Count}");
+    foreach (BranchCandidate candidate in candidates)
+    {
+        Console.WriteLine(
+            $"BRANCH_CANDIDATE kind={candidate.Kind} status={candidate.Status} " +
+            $"target={(candidate.Target is InspectPoint t ? FormatInspectPoint(t) : "-")} " +
+            $"reference={candidate.Reference ?? "-"} reason={candidate.Reason ?? "-"}");
+    }
+    Console.WriteLine($"svg={svgPath}");
+    Console.WriteLine($"json={jsonPath}");
+    Console.WriteLine($"log={logPath}");
+    return 0;
+}
+
+static Dictionary<int, BranchEdge> ParseSupplyEdges(
+    IReadOnlyList<string> diagnostics)
+{
+    var result = new Dictionary<int, BranchEdge>();
+
+    Regex initial = new(
+        @"TREE Supply initial ACCEPT node=(?<node>\d+) (?<a>\([^)]+\))->(?<b>\([^)]+\))");
+    Regex choice = new(
+        @"TREE Supply CHOICE (?<choice>\S+) ACCEPT parentNode=(?<parent>\d+) childNode=(?<child>\d+) (?<a>\([^)]+\))->(?<b>\([^)]+\))");
+
+    foreach (string line in diagnostics)
+    {
+        Match initialMatch = initial.Match(line);
+        if (initialMatch.Success)
+        {
+            int node = int.Parse(
+                initialMatch.Groups["node"].Value,
+                CultureInfo.InvariantCulture);
+            result[node] = new BranchEdge(
+                null,
+                node,
+                "INITIAL",
+                ParseInspectPoint(initialMatch.Groups["a"].Value),
+                ParseInspectPoint(initialMatch.Groups["b"].Value));
+            continue;
+        }
+
+        Match choiceMatch = choice.Match(line);
+        if (!choiceMatch.Success)
+            continue;
+
+        int parent = int.Parse(
+            choiceMatch.Groups["parent"].Value,
+            CultureInfo.InvariantCulture);
+        int child = int.Parse(
+            choiceMatch.Groups["child"].Value,
+            CultureInfo.InvariantCulture);
+
+        result[child] = new BranchEdge(
+            parent,
+            child,
+            choiceMatch.Groups["choice"].Value,
+            ParseInspectPoint(choiceMatch.Groups["a"].Value),
+            ParseInspectPoint(choiceMatch.Groups["b"].Value));
+    }
+
+    return result;
+}
+
+static List<BranchEdge> ReconstructBranchPath(
+    IReadOnlyDictionary<int, BranchEdge> edges,
+    int nodeId)
+{
+    var reversed = new List<BranchEdge>();
+    int current = nodeId;
+
+    while (true)
+    {
+        if (!edges.TryGetValue(current, out BranchEdge? edge))
+            throw new InvalidDataException(
+                $"Impossibile ricostruire il nodo Supply {current}.");
+
+        reversed.Add(edge);
+        if (edge.ParentNodeId is null)
+            break;
+
+        current = edge.ParentNodeId.Value;
+    }
+
+    reversed.Reverse();
+    return reversed;
+}
+
+static int[] BranchPathNodeIds(
+    IReadOnlyList<BranchEdge> path) =>
+    path.Select(edge => edge.ChildNodeId).ToArray();
+
+static List<BranchCandidate> ParseBranchCandidates(
+    IReadOnlyList<string> diagnostics,
+    int nodeId,
+    InspectPoint start)
+{
+    Regex straightCheck = new(
+        $@"LG041 CANDIDATE CHECK parentNode={nodeId} family=Supply reference=(?<ref>\S+) refFamily=(?<family>\S+) type=(?<type>\S+) I=(?<i>\([^)]+\)) T=(?<t>\([^)]+\)) d=(?<d>[-0-9.]+)m");
+    Regex straightOutcome = new(
+        $@"LG041 CANDIDATE (?<status>ACCEPT|REJECT|DUPLICATE) parentNode={nodeId} family=Supply reference=(?<ref>\S+)");
+    Regex tryCheck = new(
+        $@"TRYEXT CHECK parentNode={nodeId} choice=(?<choice>\S+) family=Supply reference=(?<ref>\S+) refFamily=(?<family>\S+) type=(?<type>\S+) I=(?<i>\([^)]+\)) T=(?<t>\([^)]+\)) d=(?<d>[-0-9.]+)m");
+    Regex tryOutcome = new(
+        $@"TRYEXT (?<status>ACCEPT|REJECT) parentNode={nodeId} choice=(?<choice>\S+) reference=(?<ref>\S+)");
+    Regex parallelTreeReject = new(
+        $@"TREE Supply CHOICE (?<choice>PARALLELA_[AB]) REJECT parentNode={nodeId} start=(?<start>\([^)]+\)) dir=(?<dir>\([^)]+\)) requiredFront=(?<ref>\S+)");
+
+    var result = new List<BranchCandidate>();
+    BranchCandidate? pending = null;
+
+    foreach (string line in diagnostics)
+    {
+        Match straight = straightCheck.Match(line);
+        if (straight.Success)
+        {
+            pending = new BranchCandidate(
+                "PROSEGUI_DRITTO",
+                "PENDING",
+                start,
+                ParseInspectPoint(straight.Groups["t"].Value),
+                ParseInspectPoint(straight.Groups["i"].Value),
+                straight.Groups["ref"].Value,
+                straight.Groups["family"].Value,
+                straight.Groups["type"].Value,
+                ParseInvariantDouble(straight.Groups["d"].Value),
+                null);
+            result.Add(pending);
+            continue;
+        }
+
+        Match tryMatch = tryCheck.Match(line);
+        if (tryMatch.Success)
+        {
+            pending = new BranchCandidate(
+                tryMatch.Groups["choice"].Value,
+                "PENDING",
+                start,
+                ParseInspectPoint(tryMatch.Groups["t"].Value),
+                ParseInspectPoint(tryMatch.Groups["i"].Value),
+                tryMatch.Groups["ref"].Value,
+                tryMatch.Groups["family"].Value,
+                tryMatch.Groups["type"].Value,
+                ParseInvariantDouble(tryMatch.Groups["d"].Value),
+                null);
+            result.Add(pending);
+            continue;
+        }
+
+        if (pending is not null &&
+            pending.Status == "PENDING" &&
+            line.Contains(
+                "VALIDATE Supply REJECT",
+                StringComparison.Ordinal))
+        {
+            pending.Reason = line[
+                (line.IndexOf("VALIDATE Supply REJECT", StringComparison.Ordinal) +
+                 "VALIDATE Supply REJECT".Length)..].Trim();
+            continue;
+        }
+
+        Match straightResult = straightOutcome.Match(line);
+        if (straightResult.Success)
+        {
+            BranchCandidate? match = result.LastOrDefault(candidate =>
+                candidate.Kind == "PROSEGUI_DRITTO" &&
+                candidate.Reference == straightResult.Groups["ref"].Value &&
+                candidate.Status == "PENDING");
+            if (match is not null)
+                match.Status = straightResult.Groups["status"].Value;
+            pending = null;
+            continue;
+        }
+
+        Match tryResult = tryOutcome.Match(line);
+        if (tryResult.Success)
+        {
+            BranchCandidate? match = result.LastOrDefault(candidate =>
+                candidate.Kind == tryResult.Groups["choice"].Value &&
+                candidate.Reference == tryResult.Groups["ref"].Value &&
+                candidate.Status == "PENDING");
+            if (match is not null)
+                match.Status = tryResult.Groups["status"].Value;
+            pending = null;
+            continue;
+        }
+
+        Match treeReject = parallelTreeReject.Match(line);
+        if (treeReject.Success &&
+            !result.Any(candidate =>
+                candidate.Kind == treeReject.Groups["choice"].Value))
+        {
+            result.Add(new BranchCandidate(
+                treeReject.Groups["choice"].Value,
+                "REJECT",
+                ParseInspectPoint(treeReject.Groups["start"].Value),
+                null,
+                null,
+                treeReject.Groups["ref"].Value,
+                null,
+                null,
+                null,
+                "nessun candidato geometrico valido"));
+        }
+    }
+
+    foreach (BranchCandidate candidate in result.Where(candidate =>
+                 candidate.Status == "PENDING"))
+    {
+        candidate.Status = "UNKNOWN";
+    }
+
+    return result;
+}
+
+static string[] ExtractNodeDiagnosticWindow(
+    IReadOnlyList<string> diagnostics,
+    int nodeId)
+{
+    int start = -1;
+    int end = diagnostics.Count;
+    string marker = $"TREE Supply NODE node={nodeId} ";
+
+    for (int i = 0; i < diagnostics.Count; i++)
+    {
+        if (start < 0 &&
+            diagnostics[i].Contains(marker, StringComparison.Ordinal))
+        {
+            start = i;
+            continue;
+        }
+
+        if (start >= 0 &&
+            diagnostics[i].Contains(
+                "TREE Supply NODE node=",
+                StringComparison.Ordinal))
+        {
+            end = i;
+            break;
+        }
+    }
+
+    if (start < 0)
+        return Array.Empty<string>();
+
+    return diagnostics
+        .Skip(start)
+        .Take(end - start)
+        .ToArray();
+}
+
+static List<InspectPoint> ParseFirstLocalePerimeter(
+    XDocument document)
+{
+    XElement locale = document
+        .Descendants("Locale")
+        .FirstOrDefault()
+        ?? throw new InvalidDataException(
+            "Branch Inspector: nessun Locale.");
+
+    XElement perimeter = locale
+        .Descendants("PerimetroInterno")
+        .FirstOrDefault()
+        ?? throw new InvalidDataException(
+            "Branch Inspector: PerimetroInterno mancante.");
+
+    List<InspectPoint> points = perimeter
+        .Elements("Punto")
+        .Select(point => new InspectPoint(
+            double.Parse(
+                (string?)point.Attribute("X") ?? "0",
+                CultureInfo.InvariantCulture),
+            double.Parse(
+                (string?)point.Attribute("Y") ?? "0",
+                CultureInfo.InvariantCulture)))
+        .ToList();
+
+    if (points.Count > 0 &&
+        (points[0].X != points[^1].X ||
+         points[0].Y != points[^1].Y))
+    {
+        points.Add(points[0]);
+    }
+
+    return points;
+}
+
+static string BuildBranchInspectorSvg(
+    IReadOnlyList<InspectPoint> perimeter,
+    IReadOnlyList<BranchEdge> targetPath,
+    IReadOnlyList<BranchEdge> comparePath,
+    IReadOnlyList<BranchCandidate> candidates,
+    int inspectNode,
+    int? compareNode)
+{
+    List<InspectPoint> allPoints = perimeter
+        .Concat(targetPath.SelectMany(edge => new[] { edge.A, edge.B }))
+        .Concat(comparePath.SelectMany(edge => new[] { edge.A, edge.B }))
+        .Concat(candidates
+            .Where(candidate => candidate.Target is not null)
+            .Select(candidate => candidate.Target!.Value))
+        .ToList();
+
+    double minX = allPoints.Min(point => point.X) - 0.35;
+    double minY = allPoints.Min(point => point.Y) - 0.35;
+    double maxX = allPoints.Max(point => point.X) + 0.35;
+    double maxY = allPoints.Max(point => point.Y) + 0.35;
+
+    var builder = new StringBuilder();
+    builder.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+    builder.AppendLine(
+        FormattableString.Invariant(
+            $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{minX} {minY} {maxX - minX} {maxY - minY}\" data-role=\"branch-inspector\" data-node=\"{inspectNode}\">"));
+    builder.AppendLine(
+        "<defs><marker id=\"arrow-green\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"5\" markerHeight=\"5\" orient=\"auto-start-reverse\"><path d=\"M 0 0 L 10 5 L 0 10 z\" fill=\"#16823a\"/></marker><marker id=\"arrow-red\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"5\" markerHeight=\"5\" orient=\"auto-start-reverse\"><path d=\"M 0 0 L 10 5 L 0 10 z\" fill=\"#c62828\"/></marker></defs>");
+
+    string perimeterPoints = string.Join(
+        " ",
+        perimeter.Select(point =>
+            $"{FmtInspect(point.X)},{FmtInspect(point.Y)}"));
+    builder.AppendLine(
+        $"<polyline points=\"{perimeterPoints}\" fill=\"none\" stroke=\"black\" stroke-width=\"0.025\"/>");
+
+    foreach (BranchEdge edge in targetPath)
+    {
+        builder.AppendLine(
+            $"<line x1=\"{FmtInspect(edge.A.X)}\" y1=\"{FmtInspect(edge.A.Y)}\" x2=\"{FmtInspect(edge.B.X)}\" y2=\"{FmtInspect(edge.B.Y)}\" stroke=\"#d7191c\" stroke-width=\"0.035\"/>");
+        builder.AppendLine(
+            $"<text x=\"{FmtInspect(edge.B.X)}\" y=\"{FmtInspect(edge.B.Y)}\" font-size=\"0.09\" fill=\"#6a006a\">{edge.ChildNodeId}</text>");
+    }
+
+    HashSet<int> targetNodes = targetPath
+        .Select(edge => edge.ChildNodeId)
+        .ToHashSet();
+
+    foreach (BranchEdge edge in comparePath.Where(edge =>
+                 !targetNodes.Contains(edge.ChildNodeId)))
+    {
+        builder.AppendLine(
+            $"<line x1=\"{FmtInspect(edge.A.X)}\" y1=\"{FmtInspect(edge.A.Y)}\" x2=\"{FmtInspect(edge.B.X)}\" y2=\"{FmtInspect(edge.B.Y)}\" stroke=\"#e67e22\" stroke-width=\"0.035\"/>");
+        builder.AppendLine(
+            $"<text x=\"{FmtInspect(edge.B.X)}\" y=\"{FmtInspect(edge.B.Y)}\" font-size=\"0.09\" fill=\"#9a4d00\">{edge.ChildNodeId}</text>");
+    }
+
+    InspectPoint targetPoint = targetPath[^1].B;
+    builder.AppendLine(
+        $"<circle cx=\"{FmtInspect(targetPoint.X)}\" cy=\"{FmtInspect(targetPoint.Y)}\" r=\"0.06\" fill=\"#ffd700\" stroke=\"black\" stroke-width=\"0.015\"/>");
+
+    int labelIndex = 0;
+    foreach (BranchCandidate candidate in candidates)
+    {
+        labelIndex++;
+        if (candidate.Target is not InspectPoint target)
+            continue;
+
+        bool accepted =
+            candidate.Status.Equals(
+                "ACCEPT",
+                StringComparison.OrdinalIgnoreCase);
+        string stroke = accepted ? "#16823a" : "#c62828";
+        string dash = accepted ? string.Empty : " stroke-dasharray=\"0.08 0.05\"";
+        string marker = accepted ? "arrow-green" : "arrow-red";
+
+        builder.AppendLine(
+            $"<line x1=\"{FmtInspect(candidate.Start.X)}\" y1=\"{FmtInspect(candidate.Start.Y)}\" x2=\"{FmtInspect(target.X)}\" y2=\"{FmtInspect(target.Y)}\" stroke=\"{stroke}\" stroke-width=\"0.025\"{dash} marker-end=\"url(#{marker})\"/>");
+
+        double lx = (candidate.Start.X + target.X) / 2.0 + 0.03;
+        double ly = (candidate.Start.Y + target.Y) / 2.0 + (0.08 * labelIndex);
+        string label =
+            $"{EscapeXml(candidate.Kind)} {EscapeXml(candidate.Status)}" +
+            (string.IsNullOrWhiteSpace(candidate.Reason)
+                ? string.Empty
+                : $" | {EscapeXml(candidate.Reason!)}");
+        builder.AppendLine(
+            $"<text x=\"{FmtInspect(lx)}\" y=\"{FmtInspect(ly)}\" font-size=\"0.075\" fill=\"{stroke}\">{label}</text>");
+    }
+
+    builder.AppendLine(
+        $"<text x=\"{FmtInspect(minX + 0.05)}\" y=\"{FmtInspect(minY + 0.12)}\" font-size=\"0.10\" fill=\"#111\">node {inspectNode} | red=path | orange=compare {compareNode?.ToString() ?? "-"} | green=accepted | dashed red=rejected</text>");
+    builder.AppendLine("</svg>");
+    return builder.ToString();
+}
+
+static InspectPoint ParseInspectPoint(string raw)
+{
+    Match match = Regex.Match(
+        raw,
+        @"\((?<x>[-0-9.Ee+]+),(?<y>[-0-9.Ee+]+)\)");
+    if (!match.Success)
+        throw new FormatException(
+            $"Punto log non valido: {raw}");
+
+    return new InspectPoint(
+        ParseInvariantDouble(match.Groups["x"].Value),
+        ParseInvariantDouble(match.Groups["y"].Value));
+}
+
+static double ParseInvariantDouble(string raw) =>
+    double.Parse(
+        raw,
+        NumberStyles.Float,
+        CultureInfo.InvariantCulture);
+
+static string FormatInspectPoint(InspectPoint point) =>
+    $"({FmtInspect(point.X)},{FmtInspect(point.Y)})";
+
+static string FmtInspect(double value) =>
+    value.ToString(
+        "0.######",
+        CultureInfo.InvariantCulture);
+
+static string EscapeXml(string value) =>
+    System.Security.SecurityElement.Escape(value) ?? string.Empty;
 
 static int RunRankedSolutionExplorer(
     string localeXml,
@@ -740,6 +1282,56 @@ static string ReplaceProjectSection(string projectText, string name, string cont
         throw new InvalidDataException($"Sezione progetto '{name}' non trovata.");
     return pattern.Replace(projectText, _ => replacement, 1);
 }
+
+
+internal sealed record BranchEdge(
+    int? ParentNodeId,
+    int ChildNodeId,
+    string Choice,
+    InspectPoint A,
+    InspectPoint B);
+
+internal sealed class BranchCandidate
+{
+    public BranchCandidate(
+        string kind,
+        string status,
+        InspectPoint start,
+        InspectPoint? target,
+        InspectPoint? intersection,
+        string? reference,
+        string? referenceFamily,
+        string? referenceType,
+        double? respectMeters,
+        string? reason)
+    {
+        Kind = kind;
+        Status = status;
+        Start = start;
+        Target = target;
+        Intersection = intersection;
+        Reference = reference;
+        ReferenceFamily = referenceFamily;
+        ReferenceType = referenceType;
+        RespectMeters = respectMeters;
+        Reason = reason;
+    }
+
+    public string Kind { get; }
+    public string Status { get; set; }
+    public InspectPoint Start { get; }
+    public InspectPoint? Target { get; }
+    public InspectPoint? Intersection { get; }
+    public string? Reference { get; }
+    public string? ReferenceFamily { get; }
+    public string? ReferenceType { get; }
+    public double? RespectMeters { get; }
+    public string? Reason { get; set; }
+}
+
+internal readonly record struct InspectPoint(
+    double X,
+    double Y);
 
 internal sealed class HarnessCase
 {
