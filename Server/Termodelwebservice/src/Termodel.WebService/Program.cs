@@ -653,6 +653,22 @@ app.MapPost("/api/calculations", async (
         });
     }
 
+    bool numberSpiralNodes = true;
+    if (request.Query.TryGetValue(
+            "numerazioneSpirali",
+            out Microsoft.Extensions.Primitives.StringValues numberingValues))
+    {
+        string rawNumbering = numberingValues.ToString();
+        if (!bool.TryParse(rawNumbering, out numberSpiralNodes))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["numerazioneSpirali"] =
+                    ["Valore non valido. Usare true oppure false."]
+            });
+        }
+    }
+
     try
     {
         string projectText = await ReadProjectTextAsync(request, cancellationToken);
@@ -686,7 +702,8 @@ app.MapPost("/api/calculations", async (
                     RadiantExecutiveGenerator.Generate(
                         projectText,
                         result.RadiantPanelInputXml,
-                        result.CleanFloorPlans);
+                        result.CleanFloorPlans,
+                        numberSpiralNodes);
 
                 IReadOnlyList<string> executiveDiagnostics =
                     TermodelLog.Messages.ToArray();
