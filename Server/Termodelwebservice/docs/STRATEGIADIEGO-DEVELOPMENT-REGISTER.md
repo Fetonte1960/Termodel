@@ -7,6 +7,50 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R18 — Perché il ramo anticipato 47→49 risulta più efficiente
+Stato: **ESEGUITO — DIAGNOSI LOG / NESSUNA MODIFICA CODICE**
+
+Domanda utente 26/09/2026:
+- approfondire perché il ramo anticipato `47->49` produce goodness maggiore di `47->48`; ipotesi: il ramo `47->48` non viene poi sviluppato normoticamente.
+
+Confronto dei migliori terminali:
+- sottoalbero `47->48`: miglior terminale nodo 74, activeLength `25,45 m`, goodness `0,954`;
+- sottoalbero `47->49`: miglior terminale nodo 123, activeLength `28,05 m`, goodness `1,052`;
+- differenza activeLength: `+2,60 m` a favore del ramo anticipato.
+
+Ricostruzione del ramo `47->48`:
+- `47->48`: `(0.75,0.15)->(1.40,0.15)`;
+- `48->50`: salita a `(1.40,0.75)`;
+- sviluppo normotico fino a `(3.25,3.25)->(1.40,3.25)`;
+- al nodo 62 `(1.40,3.25)` esiste correttamente `PROSEGUI_DRITTO 62->63` fino a `(0.75,3.25)`;
+- il terminale migliore del sottoalbero però non usa `62->63`: gira anticipatamente con `62->65`, verticale su `x=1.40` fino a `y=1.35`;
+- se si segue `62->63`, al nodo 63 entrambe le parallele vengono respinte e il nodo diventa terminale con goodness `0,812`.
+
+Motivo del blocco al nodo 63:
+- da `(0.75,3.25)` la prosecuzione verticale verso il basso trova come fronte successivo la retta del tratto interno a `y=0.75`, con `rayTravel=2,50 m`;
+- in quel punto `x=0.75` la retta `y=0.75` è soltanto il **prolungamento laterale** del segmento reale, che nel ramo `47->48` inizia a `x=1.40`;
+- `TryExtend()` usa oggi la stessa regola anche per `PARALLELA_A/B`: se il riferimento è laterale, applica LG-034/LG-035 come `tEnd = I + d`, cioè prosegue **oltre** il prolungamento di `2p`;
+- partendo da `y=3.25`, intersezione teorica `y=0.75`, `2p=0.60`: il candidato arriva fino a `y=0.15` invece di fermarsi a `y=1.35`;
+- il candidato così sovra-esteso collide/tocca la mandata inferiore e viene respinto (`VALIDATE ... distance=0 required=0.6`);
+- quindi il ramo `47->48` perde la discesa normotica su `x=0.75` e ripiega prima su `x=1.40`.
+
+Perché `47->49` riesce invece a completarsi:
+- il ramo anticipato crea subito il verticale su `x=0.75` e poi il tratto reale a `y=0.75` a partire proprio da `x=0.75`;
+- quando più avanti torna a `(0.75,3.25)`, l'intersezione col fronte `y=0.75` è **fisica**, non laterale;
+- `TryExtend()` in caso fisico applica `I - d`, quindi si ferma correttamente a `y=1.35`;
+- da lì il ramo continua a costruire una spirale interna molto più completa.
+
+Origine esatta dei `+2,60 m`:
+- `+0,65 m`: il ramo `47->49` completa in alto `(1.40,3.25)->(0.75,3.25)`, tratto che il miglior ramo `47->48` sacrifica girando prima;
+- `+0,70 m`: sulla corsia `y=1.35` il ramo anticipato copre circa `1,90 m`, contro `1,20 m` del ramo alternativo;
+- `+1,25 m`: sulla corsia `y=2.65` il ramo anticipato costruisce il traverso interno lungo circa `1,25 m`, quasi assente nel terminale del ramo `47->48`;
+- somma: `0,65 + 0,70 + 1,25 = 2,60 m`, esattamente il vantaggio misurato.
+
+Diagnosi strutturale:
+- la bontà maggiore di `47->49` è quindi un **artefatto dello sviluppo incompleto del ramo 47->48**, non la prova che la svolta anticipata sia geometricamente migliore;
+- il problema è che la semantica `oltre il prolungamento` di LG-034/LG-035 viene riutilizzata indistintamente anche quando una `PARALLELA_A/B` sta cercando un normale fronte di arresto per completare una spira;
+- per il normale circuito normotico, quando una parallela usa la retta estesa di un fronte come limite, il terminale atteso è **prima del fronte di `d`**, non oltre;
+- da discutere come prossima correzione: separare la semantica dei candidati `PROSEGUI_DRITTO` laterali (che possono richiedere `oltre I`) dalla semantica delle svolte `PARALLELA_A/B` di chiusura normotica (che devono potersi arrestare `prima di I`).
 ## R17 — Diagnosi distanza 45→47 rispetto a 1→3
 Stato: **ESEGUITO — DIAGNOSI LOG / NESSUNA MODIFICA CODICE**
 
