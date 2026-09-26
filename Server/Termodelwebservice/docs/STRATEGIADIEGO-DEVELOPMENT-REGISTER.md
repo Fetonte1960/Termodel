@@ -7,6 +7,50 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R24 — Decision Reject Replay implementato e verificato
+Stato: **ESEGUITO — PROTOTIPO PR #8 / HARNESS SUCCESS**
+
+Decisione utente 26/09/2026:
+- implementare l'architettura R23;
+- rendere operativa la richiesta futura `scarta questo setup mandata`, presentando il setup immediatamente successivo della classifica residua;
+- notificare a fine incarico.
+
+Implementazione sul branch `experiment/lg041-supply-first-return-after`:
+- commit `e0cc560410b84e92102c958b24648fbd5c68451d`: supporto replay nel vero `BuildTree`, Decision Key canoniche, `REJECT_BY_INPUT`, `PRUNED_BY_REPLAY`, Decision Key conservata nei `SearchNode`;
+- commit `65c9e071c17c17c9cf45df97404a488983f0862b`: facciata benchmark con reject set ed esposizione Decision Key nei risultati Explorer;
+- commit `3c2c553372ce396d8c854614b86855aaa31ffd65`: Harness `--reject-decisions` e scorciatoia `--reject-current-supply`, report prima/dopo e SVG standard;
+- commit `287e5b60454356f381b937b0da9747c50f05fb09`: manifest Supply Explorer completo di Decision Key;
+- commit `9660d04bcbda9d2a55b4110f1c93e73792f271b8`: primo test CI automatico del replay;
+- commit `3d170d9897bcda615c8e206c9fbe2db8866bbd17`: test CI anche del replay da file.
+
+Semantica consolidata:
+- ogni scelta accettabile Supply/Return produce una riga `DIEGO_DECISION ...` canonica;
+- matching indipendente da GUID, timestamp e node ID;
+- il reject avviene prima di creare il figlio;
+- se tutti i figli validi residui vengono eliminati dal replay, il padre NON diventa un nuovo terminale: `PRUNED_BY_REPLAY ... terminalCreated=false`;
+- questa regola permette di eliminare una foglia Supply senza creare una falsa soluzione tronca;
+- `--reject-current-supply` rifiuta la Decision Key terminale dell'attuale primo setup e quindi espone il successivo setup della classifica originale residua;
+- `--reject-decisions <file.txt>` permette di accumulare e riapplicare più reject senza modificare il sorgente.
+
+Collaudo reale:
+- Harness run `36234542311`, job `108383827746`: **SUCCESS** completo;
+- baseline quadrato: Supply rank1 terminale 123, active `28.05 m`, goodness `1.051875`;
+- Decision Key terminale scartata: `PROSEGUI_DRITTO start=(1.400000,2.650000) target=(1.350000,2.650000)`;
+- replay: log contiene `REJECT_BY_INPUT` e `PRUNED_BY_REPLAY`;
+- nuovo top residuo = esattamente il precedente rank2 terminale 290, active `28.05 m`, goodness `1.051875`;
+- rank1/rank2 sono a pari merito nel quadrato: il risultato certifica il successivo nell'ordinamento, non una diminuzione stretta del goodness;
+- riesecuzione con il file prodotto e `--reject-decisions`: stesso SVG standard byte-per-byte del reject automatico;
+- baseline senza replay conserva SVG SHA-256 `ca3ba4bbda4a6e95398f3d155f7009d05e0e378843b06b26b86f9fe0a82e8ce0`, identico al checkpoint precedente.
+
+Build completa:
+- run `36234542357`: step Build **SUCCESS**;
+- benchmark square ancora `not-sustainable` per LG-046: 44.044 nodi, P95 4.559 s > budget 2 s;
+- il failure di sostenibilità è preesistente e non deriva dal replay; hash geometrico baseline invariato.
+
+Uso futuro:
+- frase utente `scarta questo setup mandata` = usare il setup Supply attualmente mostrato come setup corrente, aggiungere la sua Decision Key terminale ai reject già attivi e presentare il nuovo top residuo;
+- se esistono setup a pari merito, viene mostrato prima il successivo nell'ordinamento corrente; ulteriori richieste `scarta questo setup mandata` accumulano i reject;
+- per casi geometrici puntuali può essere rifiutata qualunque Decision Key intermedia, non solo quella terminale.
 ## R23 — Architettura debug universale Decision Reject Replay
 Stato: **APPROVATA E DOCUMENTATA — NON ANCORA IMPLEMENTATA**
 
