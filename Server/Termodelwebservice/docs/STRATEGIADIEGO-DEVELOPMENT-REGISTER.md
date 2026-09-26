@@ -8,7 +8,7 @@ attivazione e benchmark della StrategiaDiego.
 
 
 ## R10 — Harness pannelli rapido e base dati preconfezionata
-Stato: **IN CORSO — IMPLEMENTATO, BUILD PARZIALE VERIFICATA**
+Stato: **ESEGUITO — BUILD FOCALIZZATA E CASI RAPIDI SUCCESS**
 
 Decisione utente 26/09/2026:
 - adottare come setup preferenziale di test rapido un Harness Console .NET che richiama direttamente il vero `Termodel.Core`;
@@ -25,19 +25,23 @@ Implementazione corrente:
 - aggiunta workflow focalizzata `.github/workflows/termodel-radiant-harness.yml`, che compila soltanto Core + Harness;
 - aggiunta canonicalizzazione in-memory del vecchio `geometry/project.svg` prima del `prepare`, necessaria per la snapshot appartamento che precede il payload server canonico.
 
-Prima verifica reale:
-- run Harness #1 `36222253304`: restore Core+Harness SUCCESS, build Release Core+Harness SUCCESS, caso rapido quadrato SUCCESS;
-- il primo tentativo di `prepare` dell'appartamento è fallito con `Lo SVG deve dichiarare data-termodel-units='cm'`; il difetto è nella forma legacy della fixture progetto, non nel Harness/StrategiaDiego;
-- introdotta successivamente la canonicalizzazione equivalente al contratto server; nuova verifica in corso.
+Verifica reale:
+- run Harness #1 `36222253304`: restore Core+Harness SUCCESS, build Release Core+Harness SUCCESS, caso rapido quadrato SUCCESS; primo `prepare` appartamento fallito sulla forma legacy dello SVG (`data-termodel-units='cm'` mancante);
+- run `36222392601`: build e quadrato ancora SUCCESS; individuato e corretto un errore del solo ricomponitore Harness che scriveva `\\n` letterali nelle sezioni del progetto;
+- run `36222504481`: **SUCCESS completo**; build Core+Harness, quadrato, `prepare` del progetto appartamento e riesecuzione sull'input prodotto tutti SUCCESS;
+- artifact `radiant-harness-fast`, id `10899108905`; input prodotto `StrategiaDiegoCurrentApartment.pannelli.xml`, SHA-256 `b31b5c2bac4dbd8a13507daef4022c5ad2301fb6503ff6d666e427a2eb5d4a80`;
+- sul quadrato della run di preparazione: 1328 nodi totali, 46 terminali accettati, 290 ms runtime interno, SVG SHA-256 `46d2ec137be52ef350a62a6497bd6bb4f3cb58603339874cc03657163c62f8f2`;
+- sull'appartamento appena preconfezionato: 151 nodi totali, 15 terminali accettati, 44 ms runtime interno, SVG SHA-256 `5678620a7a895d56886c2108ae9f3f8eab50e2aaaeff9deb1f3f1dea03e2ec96`;
+- il file pannelli prodotto è stato poi versionato in `tests/radiant-harness/prepared/StrategiaDiegoCurrentApartment.pannelli.xml` e associato al case `CURRENT-APARTMENT-P030.json`;
+- la workflow finale è stata alleggerita: usa direttamente i dataset preconfezionati e non riesegue `prepare` ad ogni iterazione;
+- run finale PR `36222745007` / Harness #16: **SUCCESS**, con build Core+Harness, quadrato e appartamento preconfezionato tutti SUCCESS;
+- PR #6 integrato su `main` nel merge `9764218dfaceceb2ebbf73602ce28e1adf1b97c7`;
+- linee guida aggiornate con setup Harness e base dati preconfezionata; nessuna modifica a `StrategiaDiegoEngine`, frontend, Library Desktop o `definizionedati.json`.
 
-Completamento R10 richiesto:
-- build focalizzata SUCCESS;
-- `run` quadrato SUCCESS;
-- `prepare` progetto appartamento SUCCESS;
-- input pannelli appartamento prodotto e conservato nella base dati test;
-- esecuzione del Harness sull'input preconfezionato SUCCESS;
-- documentazione e contesto corrente aggiornati;
-- solo dopo questi punti R10 diventa ESEGUITO.
+Esito:
+- il percorso rapido operativo è ora `input pannelli preconfezionato -> vero Termodel.Core -> vero StrategiaDiegoEngine -> SVG/log/metriche`;
+- il comando `prepare` resta disponibile per rigenerare la base dati quando cambia il progetto sorgente;
+- la build completa Service resta la verifica finale di integrazione, distinta dal ciclo rapido di sviluppo.
 
 
 ## R9 — Protocollo di collaudo preliminare e contesto corrente
