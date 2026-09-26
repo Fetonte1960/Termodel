@@ -90,13 +90,13 @@ jobs:
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
             --out $out `
-            --supply-top 20
+            --supply-top 40
           $dir = Join-Path $out "LG041-SQUARE4X4-T1-P030.supply-explorer"
           if (-not (Test-Path (Join-Path $dir "solutions.json"))) { throw "Solution Explorer manifest mancante." }
           if (-not (Test-Path (Join-Path $dir "index.html"))) { throw "Solution Explorer index mancante." }
           if (-not (Test-Path (Join-Path $dir "supply-rank-001.svg"))) { throw "Solution Explorer rank 1 mancante." }
-          if (-not (Test-Path (Join-Path $dir "supply-rank-020.svg"))) { throw "Solution Explorer rank 20 mancante." }
-          Write-Host "RADIANT_HARNESS_SUPPLY_EXPLORER_TOP20_OK"
+          if (-not (Test-Path (Join-Path $dir "supply-rank-040.svg"))) { throw "Solution Explorer rank 20 mancante." }
+          Write-Host "RADIANT_HARNESS_SUPPLY_EXPLORER_TOP40_OK"
       - name: Run prepared current apartment case
         shell: pwsh
         run: |
