@@ -7,6 +7,44 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R6 — Riaggancio geometrico della mandata dopo il primo giro
+Stato: **IMPLEMENTATO SU BRANCH — BUILD/REGRESSION DA ESEGUIRE**
+
+Decisione utente 26/09/2026:
+- sul quadrato reale la mandata arriva al nodo 8 dopo un giro completo e si
+  arresta prematuramente pur esistendo spazio per il secondo giro;
+- la causa individuata è l'uso rigido di `SequenceIndex+1` per scegliere il
+  riferimento successivo durante l'inseguimento della propria evoluzione;
+- il successore deve essere la prima retta pertinente incontrata **davanti**
+  nella direzione corrente;
+- la geometria teorica può usare i prolungamenti delle rette, mentre collisioni
+  e distanze continuano a usare i segmenti fisici reali;
+- la regola viene applicata alla propria famiglia sia per mandata sia per
+  ritorno; resta invariato il caso ritorno che insegue la mandata.
+
+Implementazione:
+- `StrategiaDiegoEngine.FindSequenceContinuation()` usa ora la ricerca
+  geometrica orientata per `pathFamily == front.Family`;
+- mantenuta la ricerca geometrica per `Return -> Supply`;
+- gli altri casi conservano il comportamento sequenziale precedente;
+- log introdotto/esteso con marker
+  `SEQUENCE own-family geometric-continuation`;
+- LG-033/LG-035 chiarite: “successivo” è geometrico-orientato e non equivale
+  automaticamente a `SequenceIndex+1`.
+
+Regression:
+- lo smoke del quadrato richiede almeno un inseguimento `own-family`;
+- il miglior terminale di mandata deve avere almeno 10 tratti attivi;
+- il relativo Fattore di Bontà deve essere almeno 0,80;
+- verranno registrati valori reali di tratti, lunghezza, area coperta,
+  superficie locale e fattore dopo GitHub Actions.
+
+Verifica prevista:
+- PR Action completa;
+- artifact `strategia-diego-square-executive` con SVG/log reale;
+- controllo visuale utente secondo LG-036;
+- merge su `main` e normale auto-deploy Render solo dopo SUCCESS.
+
 ## R5 — Consolidamento debug in memoria: ritorno preliminare, bontà e node-id
 Stato: **ESEGUITO — COMPILATO / REGRESSION SUCCESS / ARTIFACT REALE DISPONIBILE**
 
