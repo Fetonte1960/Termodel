@@ -7,6 +7,39 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R10 — Harness pannelli rapido e base dati preconfezionata
+Stato: **IN CORSO — IMPLEMENTATO, BUILD PARZIALE VERIFICATA**
+
+Decisione utente 26/09/2026:
+- adottare come setup preferenziale di test rapido un Harness Console .NET che richiama direttamente il vero `Termodel.Core`;
+- evitare ASP.NET, HTTP, frontend e pipeline completa durante le iterazioni strategiche sui pannelli;
+- preconfezionare il solo input pannelli a partire dal progetto esempio, così le prove successive non ripetono l'elaborazione completa del progetto;
+- mantenere SVG, log diagnostico e metriche come output standard;
+- conservare GitHub Actions completa come verifica finale di integrazione, non come ciclo principale di ricerca.
+
+Implementazione corrente:
+- creato `tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj`, Console .NET 8 con riferimento diretto a `Termodel.Core`;
+- comando `run`: usa `StrategiaDiegoBenchmark.Run`, quindi il vero `StrategiaDiegoEngine`, e produce SVG/log/metriche JSON;
+- comando `prepare`: usa il vero `GeneraModello` per estrarre `RadiantPanelInputXml` da un progetto completo;
+- creata base dati `tests/radiant-harness/` con case JSON corrente `LG041-SQUARE4X4-T1-P030`, che riusa la fixture canonica senza duplicarla;
+- aggiunta workflow focalizzata `.github/workflows/termodel-radiant-harness.yml`, che compila soltanto Core + Harness;
+- aggiunta canonicalizzazione in-memory del vecchio `geometry/project.svg` prima del `prepare`, necessaria per la snapshot appartamento che precede il payload server canonico.
+
+Prima verifica reale:
+- run Harness #1 `36222253304`: restore Core+Harness SUCCESS, build Release Core+Harness SUCCESS, caso rapido quadrato SUCCESS;
+- il primo tentativo di `prepare` dell'appartamento è fallito con `Lo SVG deve dichiarare data-termodel-units='cm'`; il difetto è nella forma legacy della fixture progetto, non nel Harness/StrategiaDiego;
+- introdotta successivamente la canonicalizzazione equivalente al contratto server; nuova verifica in corso.
+
+Completamento R10 richiesto:
+- build focalizzata SUCCESS;
+- `run` quadrato SUCCESS;
+- `prepare` progetto appartamento SUCCESS;
+- input pannelli appartamento prodotto e conservato nella base dati test;
+- esecuzione del Harness sull'input preconfezionato SUCCESS;
+- documentazione e contesto corrente aggiornati;
+- solo dopo questi punti R10 diventa ESEGUITO.
+
+
 ## R9 — Protocollo di collaudo preliminare e contesto corrente
 Stato: **ESEGUITO — DIRETTIVA OPERATIVA REGISTRATA**
 
