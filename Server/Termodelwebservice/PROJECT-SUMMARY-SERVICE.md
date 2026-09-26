@@ -71,6 +71,20 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Pubblicazione su Render dello stato sperimentale StrategiaDiego
+Stato: COMMISSIONATO
+
+Commissionato:
+- pubblicare su `main` e quindi sul Service Render tutte le modifiche fin qui realizzate e verificate sul branch sperimentale PR #8, per una prova più ampia;
+- preservare un riferimento di rollback del `main` precedente alla pubblicazione;
+- includere il motore reale StrategiaDiego, Harness e condizionamenti diagnostici già sviluppati, senza modificare il frontend;
+- considerare la pubblicazione una **prova ampia sperimentale**, non una promozione a Golden definitivo;
+- verificare compilazione GitHub e raggiungibilità del Service pubblico dopo il deploy;
+- aggiornare Summary/registro con lo stato reale;
+- chiudere Issue #1 Completed se pubblicazione e verifica riescono, Not planned se falliscono.
+
+
+
 ### INCARICO 2026-09-26 — Correzione arresto immotivato dopo nodo 15
 Stato: COMMISSIONATO
 
