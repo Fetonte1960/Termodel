@@ -82,6 +82,522 @@ jobs:
           if (-not (Test-Path (Join-Path $out "LG041-SQUARE4X4-T1-P030.metrics.json"))) { throw "Metriche Harness mancanti." }
           Write-Host "RADIANT_HARNESS_FAST_CASE_OK"
 
+      - name: Run supply solution explorer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --out $out `
+            --supply-top 40
+          $dir = Join-Path $out "LG041-SQUARE4X4-T1-P030.supply-explorer"
+          if (-not (Test-Path (Join-Path $dir "solutions.json"))) { throw "Solution Explorer manifest mancante." }
+          if (-not (Test-Path (Join-Path $dir "index.html"))) { throw "Solution Explorer index mancante." }
+          if (-not (Test-Path (Join-Path $dir "supply-rank-001.svg"))) { throw "Solution Explorer rank 1 mancante." }
+          if (-not (Test-Path (Join-Path $dir "supply-rank-040.svg"))) { throw "Solution Explorer rank 20 mancante." }
+          Write-Host "RADIANT_HARNESS_SUPPLY_EXPLORER_TOP40_OK"
+
+      - name: Lock approved good-ansa prefix and free the continuation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          $approvedR30 = "tests/radiant-harness/prefixes/LG041-R30-APPROVED-THROUGH-NODE15.prefix-lock.txt"
+          if (-not (Test-Path $approvedR30)) { throw "Fixture R30 approvata mancante." }
+
+          $prefixPath = Join-Path $out "LG041-ANSA-GOOD.prefix-lock.txt"
+          @(Get-Content -LiteralPath $approvedR30 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 9) |
+            Set-Content -LiteralPath $prefixPath -Encoding utf8NoBOM
+          $prefixKeys = @(Get-Content -LiteralPath $prefixPath)
+          if ($prefixKeys.Count -ne 9) { throw "Prefisso ansa R29 deve contenere 9 Decision Key." }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-ANSA-PREFIX `
+            --out $out `
+            --lock-supply-prefix $prefixPath
+
+          $svg = Join-Path $out "LG041-ANSA-PREFIX.svg"
+          $log = Join-Path $out "LG041-ANSA-PREFIX.log.txt"
+          $metrics = Join-Path $out "LG041-ANSA-PREFIX.metrics.json"
+          foreach ($required in @($svg,$log,$metrics,$prefixPath)) {
+            if (-not (Test-Path $required)) { throw "Prefix Lock artifact mancante: $required" }
+          }
+          $logText = Get-Content -LiteralPath $log -Raw
+          if ($logText -notmatch "DIEGO_PREFIX_LOCK REJECT_NOT_IN_PREFIX") {
+            throw "Prefix Lock non risulta attivo nel log."
+          }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-ANSA-PREFIX-CHECK `
+            --out $out `
+            --supply-top 5 `
+            --lock-supply-prefix $prefixPath
+
+          $checkPath = Join-Path $out "LG041-ANSA-PREFIX-CHECK.supply-explorer\solutions.json"
+          $check = Get-Content -LiteralPath $checkPath -Raw | ConvertFrom-Json
+          if ($check.solutions.Count -lt 1) { throw "Prefix Lock non produce terminali Supply." }
+          foreach ($solution in $check.solutions) {
+            $keys = @($solution.decisionKeys | ForEach-Object { [string]$_ })
+            if ($keys.Count -lt $prefixKeys.Count) { throw "Terminale Supply più corto del prefisso ansa congelato." }
+            for ($i=0; $i -lt $prefixKeys.Count; $i++) {
+              if ($keys[$i] -ne $prefixKeys[$i]) { throw "Terminale Supply non rispetta il prefisso ansa congelato al passo $i." }
+            }
+          }
+
+          $metricsData = Get-Content -LiteralPath $metrics -Raw | ConvertFrom-Json
+          $report = [ordered]@{
+            sourceCheckpoint = "R30-approved-prefix"
+            prefixDecisionCount = $prefixKeys.Count
+            prefixFile = $prefixPath
+            lockedSvg = $svg
+            lockedSvgSha256 = [string]$metricsData.svgSha256
+            lockedSupplyNodes = [int]$metricsData.SupplyNodes
+            lockedSupplyTerminals = [int]$metricsData.SupplyTerminals
+          }
+          $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $out "LG041-ANSA-PREFIX.report.json") -Encoding utf8NoBOM
+          Write-Host "RADIANT_HARNESS_PREFIX_LOCK_ANSA_OK"
+          Write-Host "sourceCheckpoint=R30-approved-prefix"
+          Write-Host ("prefixDecisionCount=" + $prefixKeys.Count)
+          Write-Host ("lockedSvg=" + $svg)
+
+      - name: Compare continuations under good ansa prefix
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          $prefixPath = Join-Path $out "LG041-ANSA-GOOD.prefix-lock.txt"
+          if (-not (Test-Path $prefixPath)) { throw "Prefix ansa non disponibile." }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-ANSA-PREFIX-SOLUTIONS `
+            --out $out `
+            --solution-top 5 `
+            --lock-supply-prefix $prefixPath
+
+          $dir = Join-Path $out "LG041-ANSA-PREFIX-SOLUTIONS.solution-explorer"
+          $manifestPath = Join-Path $dir "solutions.json"
+          if (-not (Test-Path $manifestPath)) { throw "Manifest completamenti ansa mancante." }
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          $feasible = @($manifest.solutions | Where-Object { $_.returnFeasible -eq $true })
+          if ($feasible.Count -lt 1) { throw "Nessun completamento Return fattibile nel top 5 del prefisso ansa." }
+
+          $bestCombined = $feasible |
+            Sort-Object -Property @{Expression={[double]$_.combinedMeritMeters};Descending=$true} |
+            Select-Object -First 1
+
+          $bestSvgSource = Join-Path $dir ([string]$bestCombined.svg)
+          $bestSvg = Join-Path $out "LG041-ANSA-PREFIX-BEST-COMBINED.svg"
+          Copy-Item -LiteralPath $bestSvgSource -Destination $bestSvg -Force
+
+          $report = [ordered]@{
+            lockedSupplyRank = [int]$bestCombined.supplyRank
+            supplyTerminalNodeId = [int]$bestCombined.supplyTerminalNodeId
+            supplyActiveLengthMeters = [double]$bestCombined.supplyActiveLengthMeters
+            supplyGoodness = [double]$bestCombined.supplyGoodness
+            returnTerminalNodeId = [int]$bestCombined.returnTerminalNodeId
+            returnActiveLengthMeters = [double]$bestCombined.returnActiveLengthMeters
+            returnGoodness = [double]$bestCombined.returnGoodness
+            closureLengthMeters = [double]$bestCombined.closureLengthMeters
+            combinedMeritMeters = [double]$bestCombined.combinedMeritMeters
+            sourceSvg = $bestSvgSource
+            selectedSvg = $bestSvg
+          }
+          $reportPath = Join-Path $out "LG041-ANSA-PREFIX-BEST-COMBINED.report.json"
+          $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reportPath -Encoding utf8NoBOM
+
+          Write-Host "RADIANT_HARNESS_ANSA_CONTINUATIONS_OK"
+          Write-Host ("bestLockedSupplyRank=" + $bestCombined.supplyRank)
+          Write-Host ("bestCombinedMerit=" + $bestCombined.combinedMeritMeters)
+          Write-Host ("bestAnsaSvg=" + $bestSvg)
+
+      - name: Verify approved R30 prefix through node 15
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          $approvedPrefix = "tests/radiant-harness/prefixes/LG041-R30-APPROVED-THROUGH-NODE15.prefix-lock.txt"
+          $keys = @(Get-Content -LiteralPath $approvedPrefix | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+          if ($keys.Count -ne 14) { throw "Checkpoint R30 deve contenere 14 Decision Key." }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-R30-APPROVED `
+            --out $out `
+            --supply-top 5 `
+            --lock-supply-prefix $approvedPrefix
+
+          $manifestPath = Join-Path $out "LG041-R30-APPROVED.supply-explorer\solutions.json"
+          if (-not (Test-Path $manifestPath)) { throw "Manifest Supply R30 approvato mancante." }
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          if ($manifest.solutions.Count -lt 1) { throw "Checkpoint R30 non produce discendenti Supply." }
+
+          foreach ($solution in $manifest.solutions) {
+            $decisionKeys = @($solution.decisionKeys | ForEach-Object { [string]$_ })
+            if ($decisionKeys.Count -lt 14) { throw "Discendente R30 più corto del prefisso approvato." }
+            for ($i=0; $i -lt 14; $i++) {
+              if ($decisionKeys[$i] -ne $keys[$i]) {
+                throw "Discendente R30 non conserva Decision Key approvata al passo $i."
+              }
+            }
+          }
+
+          Write-Host "RADIANT_HARNESS_R30_APPROVED_PREFIX_OK"
+          Write-Host "approvedThroughNode=15"
+          Write-Host "approvedPoint=(0.75,3.25)"
+          Write-Host ("descendants=" + $manifest.solutions.Count)
+
+      - name: Verify approved node 15 continues before internal front
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          $approvedPrefix = "tests/radiant-harness/prefixes/LG041-R30-APPROVED-THROUGH-NODE15.prefix-lock.txt"
+          $manifestPath = Join-Path $out "LG041-R30-APPROVED.supply-explorer\solutions.json"
+          if (-not (Test-Path $manifestPath)) { throw "Manifest Supply R30 mancante." }
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+
+          $expectedContinuation = "DIEGO_DECISION family=Supply choice=PARALLELA_A start=(0.750000,3.250000) target=(0.750000,1.350000) refFamily=Supply ref=((1.400000,0.750000)->(2.600000,0.750000)) d=0.600000 type=lateral"
+
+          foreach ($solution in $manifest.solutions) {
+            $decisionKeys = @($solution.decisionKeys | ForEach-Object { [string]$_ })
+            if ($decisionKeys.Count -lt 15) {
+              throw "Nodo15: discendente termina ancora senza una quindicesima decisione."
+            }
+            if ($decisionKeys[14] -ne $expectedContinuation) {
+              throw "Nodo15: la prima decisione libera non è la continuazione attesa prima del fronte interno."
+            }
+          }
+
+          $supplySvgSource = Join-Path $out "LG041-R30-APPROVED.supply-explorer\supply-rank-001.svg"
+          $supplySvg = Join-Path $out "LG041-R31-NODE15-CONTINUES-SUPPLY.svg"
+          Copy-Item -LiteralPath $supplySvgSource -Destination $supplySvg -Force
+
+          $fallbackRank = [int]$manifest.SupplyTerminals
+          if ($fallbackRank -lt 1) { throw "R31: nessun terminale Supply disponibile." }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-R31-NODE15-CONTINUES `
+            --out $out `
+            --solution-rank $fallbackRank `
+            --lock-supply-prefix $approvedPrefix
+
+          $solutionsDir = Join-Path $out "LG041-R31-NODE15-CONTINUES.solution-explorer"
+          $solutionsPath = Join-Path $solutionsDir "solutions.json"
+          if (-not (Test-Path $solutionsPath)) { throw "Solution Explorer R31 mancante." }
+          $solutions = Get-Content -LiteralPath $solutionsPath -Raw | ConvertFrom-Json
+          $best = $solutions.solutions | Select-Object -First 1
+          if ($null -eq $best -or $best.returnFeasible -ne $true) {
+            throw "R31: il terminale Supply più corto non produce un Return fattibile entro il budget."
+          }
+          $combinedSource = Join-Path $solutionsDir ([string]$best.svg)
+          $combinedSvg = Join-Path $out "LG041-R31-NODE15-CONTINUES-COMBINED.svg"
+          Copy-Item -LiteralPath $combinedSource -Destination $combinedSvg -Force
+
+          $report = [ordered]@{
+            approvedThroughNode = 15
+            approvedNodePoint = @{ x=0.75; y=3.25 }
+            diagnosis = "beyond-front lateral candidate collided with existing Supply; fallback stops before the same internal front"
+            correctedChoice = "PARALLELA_A"
+            correctedTarget = @{ x=0.75; y=1.35 }
+            respectMeters = 0.60
+            correctedDecisionKey = $expectedContinuation
+            supplyDescendantsChecked = [int]$manifest.solutions.Count
+            selectedSupplyRank = [int]$best.supplyRank
+            supplyActiveLengthMeters = [double]$best.supplyActiveLengthMeters
+            supplyGoodness = [double]$best.supplyGoodness
+            returnActiveLengthMeters = [double]$best.returnActiveLengthMeters
+            returnGoodness = [double]$best.returnGoodness
+            combinedMeritMeters = [double]$best.combinedMeritMeters
+            supplySvg = $supplySvg
+            combinedSvg = $combinedSvg
+          }
+          $reportPath = Join-Path $out "LG041-R31-NODE15-CONTINUES.report.json"
+          $report | ConvertTo-Json -Depth 7 | Set-Content -LiteralPath $reportPath -Encoding utf8NoBOM
+
+          Write-Host "RADIANT_HARNESS_NODE15_CONTINUATION_OK"
+          Write-Host "node15=(0.75,3.25)"
+          Write-Host "continuation=(0.75,1.35)"
+          Write-Host "respect=0.60"
+          Write-Host ("bestFeasibleSupplyRank=" + $best.supplyRank)
+          Write-Host ("combinedMerit=" + $best.combinedMeritMeters)
+          Write-Host ("combinedSvg=" + $combinedSvg)
+
+      - name: Run Decision Reject Replay
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          $baseline = Get-Content -LiteralPath (Join-Path $out "LG041-SQUARE4X4-T1-P030.supply-explorer\solutions.json") -Raw | ConvertFrom-Json
+          if ($baseline.solutions.Count -lt 3) { throw "Servono almeno tre setup Supply per il replay." }
+
+          $firstRejectedKey = [string]$baseline.solutions[0].terminalDecisionKey
+          if ([string]::IsNullOrWhiteSpace($firstRejectedKey)) { throw "Decision Key top corrente mancante." }
+
+          $expectedNext = $baseline.solutions |
+            Where-Object { -not (@($_.decisionKeys | ForEach-Object { [string]$_ }) -contains $firstRejectedKey) } |
+            Select-Object -First 1
+          if ($null -eq $expectedNext) { throw "Nessun setup residuo dopo il primo reject." }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-REPLAY-NEXT `
+            --out $out `
+            --reject-current-supply
+
+          $svg = Join-Path $out "LG041-REPLAY-NEXT.svg"
+          $log = Join-Path $out "LG041-REPLAY-NEXT.log.txt"
+          $replay = Join-Path $out "LG041-REPLAY-NEXT.decision-replay.json"
+          $rejects = Join-Path $out "LG041-REPLAY-NEXT.reject-decisions.txt"
+          $nextSupplySvg = Join-Path $out "LG041-REPLAY-NEXT.next-supply.svg"
+          foreach ($required in @($svg,$log,$replay,$rejects,$nextSupplySvg)) {
+            if (-not (Test-Path $required)) { throw "Decision Replay artifact mancante: $required" }
+          }
+
+          $replayData = Get-Content -LiteralPath $replay -Raw | ConvertFrom-Json
+          if ($replayData.rejectedDecisionCount -ne 1) { throw "Decision Replay: numero reject inatteso." }
+          if ($replayData.nextSetup.TerminalDecisionKey -ne $expectedNext.terminalDecisionKey) {
+            throw "Decision Replay non ha restituito il primo setup realmente residuo della classifica."
+          }
+          $logText = Get-Content -LiteralPath $log -Raw
+          if ($logText -notmatch "DIEGO_DECISION_REPLAY REJECT_BY_INPUT") { throw "REJECT_BY_INPUT non registrato nel log." }
+          if ($logText -notmatch "PRUNED_BY_REPLAY") { throw "PRUNED_BY_REPLAY non registrato nel log." }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-REPLAY-FILE `
+            --out $out `
+            --reject-decisions $rejects
+
+          $fileSvg = Join-Path $out "LG041-REPLAY-FILE.svg"
+          $fileLog = Join-Path $out "LG041-REPLAY-FILE.log.txt"
+          if (-not (Test-Path $fileSvg)) { throw "Replay da file: SVG mancante." }
+          if (-not (Test-Path $fileLog)) { throw "Replay da file: log mancante." }
+          $hashDirect = (Get-FileHash -LiteralPath $svg -Algorithm SHA256).Hash
+          $hashFile = (Get-FileHash -LiteralPath $fileSvg -Algorithm SHA256).Hash
+          if ($hashDirect -ne $hashFile) { throw "Replay da file non riproduce lo stesso SVG del reject corrente." }
+
+          $secondRejectedKey = [string]$expectedNext.terminalDecisionKey
+          if ([string]::IsNullOrWhiteSpace($secondRejectedKey) -or $secondRejectedKey -eq $firstRejectedKey) {
+            throw "Seconda Decision Key residua non valida."
+          }
+
+          $expectedAfterTwo = $baseline.solutions |
+            Where-Object {
+              $keys = @($_.decisionKeys | ForEach-Object { [string]$_ })
+              -not ($keys -contains $firstRejectedKey) -and
+              -not ($keys -contains $secondRejectedKey)
+            } |
+            Select-Object -First 1
+          if ($null -eq $expectedAfterTwo) { throw "Nessun setup residuo dopo due reject." }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-REPLAY-NEXT2 `
+            --out $out `
+            --reject-decisions $rejects `
+            --reject-current-supply
+
+          $svg2 = Join-Path $out "LG041-REPLAY-NEXT2.svg"
+          $log2 = Join-Path $out "LG041-REPLAY-NEXT2.log.txt"
+          $replay2 = Join-Path $out "LG041-REPLAY-NEXT2.decision-replay.json"
+          $rejects2 = Join-Path $out "LG041-REPLAY-NEXT2.reject-decisions.txt"
+          foreach ($required in @($svg2,$log2,$replay2,$rejects2)) {
+            if (-not (Test-Path $required)) { throw "Decision Replay cumulativo artifact mancante: $required" }
+          }
+
+          $replayData2 = Get-Content -LiteralPath $replay2 -Raw | ConvertFrom-Json
+          if ($replayData2.rejectedDecisionCount -ne 2) {
+            throw "Decision Replay cumulativo: attesi esattamente due reject."
+          }
+          if ($replayData2.rejectedSetup.TerminalDecisionKey -ne $secondRejectedKey) {
+            throw "Decision Replay cumulativo: secondo setup scartato inatteso."
+          }
+          if ($replayData2.nextSetup.TerminalDecisionKey -ne $expectedAfterTwo.terminalDecisionKey) {
+            throw "Decision Replay cumulativo non ha restituito il primo setup residuo dopo due reject."
+          }
+
+          $rejectLines = @(Get-Content -LiteralPath $rejects2 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+          if ($rejectLines.Count -ne 2 -or (@($rejectLines | Sort-Object -Unique)).Count -ne 2) {
+            throw "Decision Replay cumulativo: reject file non contiene due Decision Key distinte."
+          }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-REPLAY-FILE2 `
+            --out $out `
+            --reject-decisions $rejects2
+
+          $fileSvg2 = Join-Path $out "LG041-REPLAY-FILE2.svg"
+          if (-not (Test-Path $fileSvg2)) { throw "Replay cumulativo da file: SVG mancante." }
+          $hashDirect2 = (Get-FileHash -LiteralPath $svg2 -Algorithm SHA256).Hash
+          $hashFile2 = (Get-FileHash -LiteralPath $fileSvg2 -Algorithm SHA256).Hash
+          if ($hashDirect2 -ne $hashFile2) {
+            throw "Replay cumulativo da file non riproduce lo stesso SVG del secondo reject."
+          }
+
+          Write-Host "RADIANT_HARNESS_DECISION_REPLAY_CUMULATIVE_OK"
+          Write-Host "RADIANT_HARNESS_DECISION_REPLAY_OK"
+          Write-Host ("firstResidualOriginalRank=" + $expectedNext.Rank)
+          Write-Host ("secondResidualOriginalRank=" + $expectedAfterTwo.Rank)
+
+      - name: Reject rank1 choice at current node 47
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          $baselinePath = Join-Path $out "LG041-SQUARE4X4-T1-P030.supply-explorer\solutions.json"
+          $baseline = Get-Content -LiteralPath $baselinePath -Raw | ConvertFrom-Json
+          if ($baseline.solutions.Count -lt 1) { throw "Baseline Supply priva del rank 1." }
+
+          $rank1 = $baseline.solutions[0]
+          $nodeIndex = -1
+          for ($i = 0; $i -lt $rank1.nodeIds.Count; $i++) {
+            if ([int]$rank1.nodeIds[$i] -eq 47) {
+              $nodeIndex = $i
+              break
+            }
+          }
+          if ($nodeIndex -lt 0) { throw "Nodo 47 non presente nel percorso del rank 1 corrente." }
+          if ($nodeIndex -ge $rank1.decisionKeys.Count) {
+            throw "Nodo 47 terminale o privo di Decision Key uscente nel rank 1 corrente."
+          }
+
+          $node47Key = [string]$rank1.decisionKeys[$nodeIndex]
+          if ([string]::IsNullOrWhiteSpace($node47Key)) { throw "Decision Key nodo 47 vuota." }
+          if ($node47Key -notmatch "family=Supply") { throw "Decision Key nodo 47 non appartiene alla mandata." }
+
+          $expectedResidual = $null
+          foreach ($solution in $baseline.solutions) {
+            if (-not (@($solution.decisionKeys) -contains $node47Key)) {
+              $expectedResidual = $solution
+              break
+            }
+          }
+          if ($null -eq $expectedResidual) {
+            throw "Nessuna soluzione residua trovata dopo il reject della scelta al nodo 47."
+          }
+
+          $rejectPath = Join-Path $out "LG041-NODE47.reject-decisions.txt"
+          Set-Content -LiteralPath $rejectPath -Value $node47Key -Encoding utf8NoBOM
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-NODE47-REJECT `
+            --out $out `
+            --reject-decisions $rejectPath
+
+          $svg = Join-Path $out "LG041-NODE47-REJECT.svg"
+          $log = Join-Path $out "LG041-NODE47-REJECT.log.txt"
+          if (-not (Test-Path $svg)) { throw "SVG standard dopo reject nodo 47 mancante." }
+          if (-not (Test-Path $log)) { throw "Log dopo reject nodo 47 mancante." }
+
+          $logText = Get-Content -LiteralPath $log -Raw
+          if ($logText -notlike "*DIEGO_DECISION_REPLAY REJECT_BY_INPUT $node47Key*") {
+            throw "La Decision Key del nodo 47 non risulta rifiutata dal vero motore."
+          }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-NODE47-CHECK `
+            --out $out `
+            --supply-top 1 `
+            --reject-decisions $rejectPath
+
+          $checkPath = Join-Path $out "LG041-NODE47-CHECK.supply-explorer\solutions.json"
+          $check = Get-Content -LiteralPath $checkPath -Raw | ConvertFrom-Json
+          if ($check.solutions.Count -ne 1) { throw "Explorer residuo nodo 47 non ha restituito un unico top." }
+          if ($check.solutions[0].terminalDecisionKey -ne $expectedResidual.terminalDecisionKey) {
+            throw "Reject nodo 47: il top residuo non coincide con la prima soluzione baseline priva della Decision Key esclusa."
+          }
+
+          $report = [ordered]@{
+            rejectedNode = 47
+            rejectedDecisionKey = $node47Key
+            baselineRank = 1
+            residualOriginalRank = [int]$expectedResidual.Rank
+            residualTerminalNodeId = [int]$expectedResidual.TerminalNodeId
+            residualActiveLengthMeters = [double]$expectedResidual.ActiveLengthMeters
+            residualGoodness = [double]$expectedResidual.Goodness
+            residualTotalLengthMeters = [double]$expectedResidual.TotalLengthMeters
+            svg = $svg
+            rejectFile = $rejectPath
+          }
+          $reportPath = Join-Path $out "LG041-NODE47-REJECT.report.json"
+          $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $reportPath -Encoding utf8NoBOM
+          Write-Host "RADIANT_HARNESS_NODE47_REJECT_OK"
+          Write-Host ("rejectedDecisionKey=" + $node47Key)
+          Write-Host ("residualOriginalRank=" + $expectedResidual.Rank)
+      - name: Run supply explorer skip top 20
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-SKIP20 `
+            --out $out `
+            --skip-top 20 `
+            --supply-top 5
+          $dir = Join-Path $out "LG041-SKIP20.supply-explorer"
+          if (-not (Test-Path (Join-Path $dir "supply-rank-021.svg"))) { throw "Skip-top rank 21 mancante." }
+          if (-not (Test-Path (Join-Path $dir "supply-rank-025.svg"))) { throw "Skip-top rank 25 mancante." }
+          if (Test-Path (Join-Path $dir "supply-rank-020.svg")) { throw "Skip-top ha esportato erroneamente rank 20." }
+          Write-Host "RADIANT_HARNESS_SUPPLY_EXPLORER_SKIP20_OK"
+      - name: Run ranked solution explorer top 3
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-SOLUTION-TOP3 `
+            --out $out `
+            --solution-top 3
+          $dir = Join-Path $out "LG041-SOLUTION-TOP3.solution-explorer"
+          if (-not (Test-Path (Join-Path $dir "solution-rank-001.svg"))) { throw "Solution rank 1 mancante." }
+          if (-not (Test-Path (Join-Path $dir "solution-rank-003.svg"))) { throw "Solution rank 3 mancante." }
+          if (-not (Test-Path (Join-Path $dir "solutions.json"))) { throw "Solution manifest mancante." }
+          if (-not (Test-Path (Join-Path $dir "index.html"))) { throw "Solution index mancante." }
+          Write-Host "RADIANT_HARNESS_SOLUTION_TOP3_OK"
+
+      - name: Run ranked solution explorer rank 21
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-SOLUTION-RANK21 `
+            --out $out `
+            --solution-rank 21
+          $dir = Join-Path $out "LG041-SOLUTION-RANK21.solution-explorer"
+          if (-not (Test-Path (Join-Path $dir "solution-rank-021.svg"))) { throw "Solution rank 21 mancante." }
+          Write-Host "RADIANT_HARNESS_SOLUTION_RANK21_OK"
+      - name: Run branch inspector node 63
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-BRANCH63 `
+            --out $out `
+            --inspect-node 63 `
+            --compare-node 65
+          $dir = Join-Path $out "LG041-BRANCH63.branch-inspector"
+          if (-not (Test-Path (Join-Path $dir "branch-node-063.svg"))) { throw "Branch inspector SVG mancante." }
+          if (-not (Test-Path (Join-Path $dir "branch-node-063.json"))) { throw "Branch inspector JSON mancante." }
+          if (-not (Test-Path (Join-Path $dir "branch-node-063.log.txt"))) { throw "Branch inspector log mancante." }
+          $report = Get-Content -LiteralPath (Join-Path $dir "branch-node-063.json") -Raw | ConvertFrom-Json
+          if ($report.inspectNode -ne 63) { throw "Branch inspector nodo errato." }
+          if ($report.compareNode -ne 65) { throw "Branch inspector compare errato." }
+          if ($report.candidates.Count -lt 2) { throw "Branch inspector candidati insufficienti." }
+          Write-Host "RADIANT_HARNESS_BRANCH63_OK"
       - name: Run prepared current apartment case
         shell: pwsh
         run: |

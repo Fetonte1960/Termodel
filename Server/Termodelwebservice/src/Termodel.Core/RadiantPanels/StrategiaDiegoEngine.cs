@@ -22,7 +22,9 @@ internal static class StrategiaDiegoEngine
     public static StrategiaDiegoResult Generate(
         XDocument floorInput,
         double stepMeters = DefaultStepMeters,
-        bool numberSpiralNodes = true)
+        bool numberSpiralNodes = true,
+        IReadOnlySet<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix = null)
     {
         if (floorInput.Root is null)
             throw new InvalidDataException("StrategiaDiego: documento locale privo di root.");
@@ -51,7 +53,8 @@ internal static class StrategiaDiegoEngine
 
         LogDiego(
             $"START step={Fmt(stepMeters)}m maxNodes={maxNodes} maxDepth={maxDepth} " +
-            $"connections={connections.Count}");
+            $"connections={connections.Count} rejectDecisions={rejectedDecisionKeys?.Count ?? 0} " +
+            $"lockedSupplyPrefix={lockedSupplyDecisionPrefix?.Count ?? 0}");
 
         foreach (XElement localeElement in floorInput.Descendants("Locale"))
         {
@@ -80,7 +83,9 @@ internal static class StrategiaDiegoEngine
                 connection,
                 connections,
                 stepMeters,
-                counters);
+                counters,
+                rejectedDecisionKeys,
+                lockedSupplyDecisionPrefix);
             solutions.Add(solution);
 
             // Modificato da Codex per realizzare: rendere diagnosticabile il
@@ -144,12 +149,472 @@ internal static class StrategiaDiegoEngine
             metrics);
     }
 
+    internal static StrategiaDiegoSupplyExplorerResult ExploreSupply(
+        XDocument floorInput,
+        double stepMeters,
+        int topCount,
+        IReadOnlySet<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix = null)
+    {
+        if (floorInput.Root is null)
+            throw new InvalidDataException(
+                "StrategiaDiego Supply Explorer: documento locale privo di root.");
+        if (!double.IsFinite(stepMeters) || stepMeters <= 0)
+            throw new ArgumentOutOfRangeException(nameof(stepMeters));
+        if (topCount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(topCount));
+
+        int maxNodes = ReadPositiveEnvironmentInt(
+            "TERMODEL_DIEGO_MAX_NODES",
+            DefaultMaxNodes);
+        int maxDepth = ReadPositiveEnvironmentInt(
+            "TERMODEL_DIEGO_MAX_DEPTH",
+            DefaultMaxDepth);
+        var counters = new SearchCounters(maxNodes, maxDepth);
+
+        List<InputLine> connections = floorInput
+            .Descendants("Linea")
+            .Select(ParseInputLine)
+            .Where(line => line is not null)
+            .Cast<InputLine>()
+            .ToList();
+
+        XElement localeElement = floorInput
+            .Descendants("Locale")
+            .FirstOrDefault()
+            ?? throw new InvalidDataException(
+                "StrategiaDiego Supply Explorer: nessun Locale.");
+
+        LocaleGeometry locale = ParseLocale(localeElement)
+            ?? throw new InvalidDataException(
+                "StrategiaDiego Supply Explorer: locale non valido.");
+
+        InputLine connection = FindConnection(locale, connections)
+            ?? throw new InvalidDataException(
+                $"StrategiaDiego Supply Explorer/{locale.Id}: nessun tubo entrante.");
+
+        DirectedConnection directed = DirectConnection(locale, connection);
+        IReadOnlyList<GeoSegment> architecture = BuildArchitecture(locale);
+        IReadOnlyList<GeoSegment> connectionConstraints =
+            BuildConnectionConstraints(connections, connection.Id);
+
+        SearchTree supplyTree = BuildTree(
+            locale,
+            GeoFamily.Supply,
+            directed.EntryPoint,
+            directed.Direction,
+            architecture,
+            connectionConstraints,
+            Array.Empty<GeoSegment>(),
+            directed.EntryWall,
+            stepMeters,
+            counters,
+            countAsSupply: true,
+            rejectedDecisionKeys: rejectedDecisionKeys,
+            requiredDecisionPrefix: lockedSupplyDecisionPrefix);
+
+        List<SearchNode> ordered = supplyTree.Terminals
+            .OrderByDescending(terminal =>
+                TerminalGoodness(locale, terminal, stepMeters))
+            .ThenByDescending(ActiveSpiralLength)
+            .ThenByDescending(terminal => terminal.LengthMeters)
+            .ToList();
+
+        List<StrategiaDiegoSupplyExplorerItem> items = ordered
+            .Take(topCount)
+            .Select((terminal, index) =>
+            {
+                List<DPoint> points = ReconstructPoints(terminal);
+                IReadOnlyList<NodeLabel> labels = ReconstructNodeLabels(terminal);
+                IReadOnlyList<int> nodeIds = labels
+                    .Select(label => label.NodeId)
+                    .ToArray();
+                double activeLength = ActiveSpiralLength(terminal);
+                double goodness = TerminalGoodness(
+                    locale,
+                    terminal,
+                    stepMeters);
+
+                return new StrategiaDiegoSupplyExplorerItem(
+                    index + 1,
+                    terminal.NodeId,
+                    terminal.Depth,
+                    activeLength,
+                    goodness,
+                    terminal.LengthMeters,
+                    nodeIds,
+                    ReconstructDecisionKeys(terminal),
+                    TerminalDecisionKey(terminal),
+                    BuildSupplyExplorerSvg(
+                        locale,
+                        points,
+                        labels,
+                        index + 1,
+                        activeLength,
+                        goodness));
+            })
+            .ToList();
+
+        return new StrategiaDiegoSupplyExplorerResult(
+            locale.Id,
+            stepMeters,
+            counters.SupplyNodes,
+            counters.SupplyTerminals,
+            items);
+    }
+    internal static StrategiaDiegoRankedSolutionExplorerResult ExploreRankedSolutions(
+        XDocument floorInput,
+        double stepMeters,
+        int skipTop,
+        int count,
+        IReadOnlySet<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix = null)
+    {
+        if (floorInput.Root is null)
+            throw new InvalidDataException(
+                "StrategiaDiego Solution Explorer: documento locale privo di root.");
+        if (!double.IsFinite(stepMeters) || stepMeters <= 0)
+            throw new ArgumentOutOfRangeException(nameof(stepMeters));
+        if (skipTop < 0)
+            throw new ArgumentOutOfRangeException(nameof(skipTop));
+        if (count <= 0)
+            throw new ArgumentOutOfRangeException(nameof(count));
+
+        int maxNodes = ReadPositiveEnvironmentInt(
+            "TERMODEL_DIEGO_MAX_NODES",
+            DefaultMaxNodes);
+        int maxDepth = ReadPositiveEnvironmentInt(
+            "TERMODEL_DIEGO_MAX_DEPTH",
+            DefaultMaxDepth);
+
+        var supplyCounters = new SearchCounters(maxNodes, maxDepth);
+
+        List<InputLine> connections = floorInput
+            .Descendants("Linea")
+            .Select(ParseInputLine)
+            .Where(line => line is not null)
+            .Cast<InputLine>()
+            .ToList();
+
+        XElement localeElement = floorInput
+            .Descendants("Locale")
+            .FirstOrDefault()
+            ?? throw new InvalidDataException(
+                "StrategiaDiego Solution Explorer: nessun Locale.");
+
+        LocaleGeometry locale = ParseLocale(localeElement)
+            ?? throw new InvalidDataException(
+                "StrategiaDiego Solution Explorer: locale non valido.");
+
+        InputLine connection = FindConnection(locale, connections)
+            ?? throw new InvalidDataException(
+                $"StrategiaDiego Solution Explorer/{locale.Id}: nessun tubo entrante.");
+
+        DirectedConnection directed = DirectConnection(locale, connection);
+        IReadOnlyList<GeoSegment> architecture = BuildArchitecture(locale);
+        IReadOnlyList<GeoSegment> connectionConstraints =
+            BuildConnectionConstraints(connections, connection.Id);
+
+        SearchTree supplyTree = BuildTree(
+            locale,
+            GeoFamily.Supply,
+            directed.EntryPoint,
+            directed.Direction,
+            architecture,
+            connectionConstraints,
+            Array.Empty<GeoSegment>(),
+            directed.EntryWall,
+            stepMeters,
+            supplyCounters,
+            countAsSupply: true,
+            rejectedDecisionKeys: rejectedDecisionKeys,
+            requiredDecisionPrefix: lockedSupplyDecisionPrefix);
+
+        List<SearchNode> orderedSupply = supplyTree.Terminals
+            .OrderByDescending(terminal =>
+                TerminalGoodness(locale, terminal, stepMeters))
+            .ThenByDescending(ActiveSpiralLength)
+            .ThenByDescending(terminal => terminal.LengthMeters)
+            .ToList();
+
+        List<ReturnRoot> returnRoots = BuildReturnRoots(
+            locale,
+            directed,
+            stepMeters);
+
+        double localeArea = PolygonArea(locale.Perimeter);
+        var items = new List<StrategiaDiegoRankedSolutionExplorerItem>();
+
+        foreach ((
+            SearchNode supplyTerminal,
+            int zeroBasedRank) in orderedSupply
+                .Select((terminal, index) => (terminal, index))
+                .Skip(skipTop)
+                .Take(count))
+        {
+            int rank = zeroBasedRank + 1;
+            double supplyActive = ActiveSpiralLength(supplyTerminal);
+            double supplyGoodness =
+                TerminalGoodness(locale, supplyTerminal, stepMeters);
+            IReadOnlyList<int> supplyNodeIds =
+                ReconstructNodeLabels(supplyTerminal)
+                    .Select(label => label.NodeId)
+                    .ToArray();
+
+            CombinedCandidate? best = null;
+            string? returnError = null;
+            var returnCounters = new SearchCounters(maxNodes, maxDepth);
+
+            try
+            {
+                best = TryFindBestReturnForSupply(
+                    locale,
+                    directed,
+                    architecture,
+                    connectionConstraints,
+                    returnRoots,
+                    supplyTerminal,
+                    stepMeters,
+                    returnCounters,
+                    rejectedDecisionKeys);
+            }
+            catch (InvalidOperationException ex)
+            {
+                returnError = ex.Message;
+            }
+
+            if (best is null)
+            {
+                items.Add(new StrategiaDiegoRankedSolutionExplorerItem(
+                    rank,
+                    supplyTerminal.NodeId,
+                    supplyActive,
+                    supplyGoodness,
+                    supplyTerminal.LengthMeters,
+                    supplyNodeIds,
+                    ReconstructDecisionKeys(supplyTerminal),
+                    TerminalDecisionKey(supplyTerminal),
+                    false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    returnCounters.ReturnNodes,
+                    returnCounters.CombinedTerminals,
+                    returnCounters.AcceptedTerminals,
+                    returnError,
+                    BuildRankedSolutionExplorerSvg(
+                        locale,
+                        ReconstructPoints(supplyTerminal),
+                        Array.Empty<DPoint>(),
+                        ReconstructNodeLabels(supplyTerminal),
+                        Array.Empty<NodeLabel>(),
+                        rank,
+                        supplyActive,
+                        supplyGoodness,
+                        null,
+                        null,
+                        false,
+                        returnError)));
+                continue;
+            }
+
+            double returnActive = ActiveSpiralLength(best.ReturnTerminal);
+            double returnGoodness =
+                GoodnessFactor(returnActive, stepMeters, localeArea);
+            IReadOnlyList<NodeLabel> returnLabels =
+                ReconstructNodeLabels(best.ReturnTerminal);
+            IReadOnlyList<int> returnNodeIds = returnLabels
+                .Select(label => label.NodeId)
+                .ToArray();
+            IReadOnlyList<DPoint> returnPoints =
+                ReconstructPoints(best.ReturnTerminal)
+                    .Append(best.Closure.B)
+                    .ToArray();
+
+            items.Add(new StrategiaDiegoRankedSolutionExplorerItem(
+                rank,
+                supplyTerminal.NodeId,
+                supplyActive,
+                supplyGoodness,
+                supplyTerminal.LengthMeters,
+                supplyNodeIds,
+                ReconstructDecisionKeys(supplyTerminal),
+                TerminalDecisionKey(supplyTerminal),
+                true,
+                best.ReturnTerminal.NodeId,
+                returnActive,
+                returnGoodness,
+                best.ReturnTerminal.LengthMeters,
+                best.Closure.Length,
+                best.MeritMeters,
+                best.ReturnRoot.Side,
+                returnNodeIds,
+                ReconstructDecisionKeys(best.ReturnTerminal),
+                TerminalDecisionKey(best.ReturnTerminal),
+                returnCounters.ReturnNodes,
+                returnCounters.CombinedTerminals,
+                returnCounters.AcceptedTerminals,
+                null,
+                BuildRankedSolutionExplorerSvg(
+                    locale,
+                    ReconstructPoints(supplyTerminal),
+                    returnPoints,
+                    ReconstructNodeLabels(supplyTerminal),
+                    returnLabels,
+                    rank,
+                    supplyActive,
+                    supplyGoodness,
+                    returnActive,
+                    returnGoodness,
+                    true,
+                    null)));
+        }
+
+        return new StrategiaDiegoRankedSolutionExplorerResult(
+            locale.Id,
+            stepMeters,
+            supplyCounters.SupplyNodes,
+            supplyCounters.SupplyTerminals,
+            skipTop,
+            items);
+    }
+    private static CombinedCandidate? TryFindBestReturnForSupply(
+        LocaleGeometry locale,
+        DirectedConnection directed,
+        IReadOnlyList<GeoSegment> architecture,
+        IReadOnlyList<GeoSegment> connectionConstraints,
+        IReadOnlyList<ReturnRoot> returnRoots,
+        SearchNode supplyTerminal,
+        double step,
+        SearchCounters counters,
+        IReadOnlySet<string>? rejectedDecisionKeys)
+    {
+        List<GeoSegment> supplySegments =
+            ReconstructSegments(supplyTerminal);
+        CombinedCandidate? bestForThisSupply = null;
+
+        foreach (ReturnRoot returnRoot in returnRoots)
+        {
+            List<GeoSegment> returnConnectorConstraints =
+                CombineConstraints(
+                    architecture,
+                    connectionConstraints,
+                    supplySegments,
+                    Array.Empty<GeoSegment>());
+
+            ExtensionResult? rawReturnConnector =
+                TryBuildEntryConnector(
+                    locale,
+                    GeoFamily.Return,
+                    returnRoot.EntryPoint,
+                    directed.Direction,
+                    directed.EntryWall,
+                    returnConnectorConstraints,
+                    step);
+
+            if (rawReturnConnector is null)
+            {
+                LogDiego(
+                    $"SUPPLY-FIRST {locale.Id} RETURN-CONNECTION reject " +
+                    $"supplyNode={supplyTerminal.NodeId} config={returnRoot.Side}");
+                continue;
+            }
+
+            GeoSegment returnEntrySegment =
+                rawReturnConnector.Segment with
+                {
+                    Id =
+                        $"D-RETURN-0-{locale.Id}-{returnRoot.Side}-" +
+                        Guid.NewGuid().ToString("N"),
+                    Family = GeoFamily.Return,
+                    SequenceIndex = 0
+                };
+
+            ExtensionResult returnConnector = new(
+                returnEntrySegment,
+                rawReturnConnector.Front);
+
+            LogDiego(
+                $"SUPPLY-FIRST {locale.Id} RETURN-CONNECTION accept " +
+                $"supplyNode={supplyTerminal.NodeId} config={returnRoot.Side} " +
+                $"{Fmt(returnEntrySegment.A)}->{Fmt(returnEntrySegment.B)} " +
+                $"promotedTo=Return sequence=0 strategic=true");
+
+            SearchTree returnTree = BuildTree(
+                locale,
+                GeoFamily.Return,
+                returnRoot.EntryPoint,
+                directed.Direction,
+                architecture,
+                connectionConstraints,
+                supplySegments,
+                directed.EntryWall,
+                step,
+                counters,
+                countAsSupply: false,
+                initialConnector: returnConnector,
+                rejectedDecisionKeys: rejectedDecisionKeys);
+
+            foreach (SearchNode returnTerminal in returnTree.Terminals)
+            {
+                counters.CombinedTerminals++;
+
+                List<GeoSegment> returnSegments =
+                    ReconstructSegments(returnTerminal);
+
+                GeoSegment closure = new(
+                    "CHIUSURA",
+                    returnTerminal.End,
+                    supplyTerminal.End,
+                    GeoFamily.Return,
+                    SequenceIndex: returnSegments.Count);
+
+                if (!IsPreliminaryClosureAcceptable(
+                        closure,
+                        architecture,
+                        supplySegments,
+                        returnSegments))
+                {
+                    continue;
+                }
+
+                counters.AcceptedTerminals++;
+
+                double merit =
+                    supplyTerminal.LengthMeters +
+                    returnTerminal.LengthMeters +
+                    closure.Length;
+
+                if (bestForThisSupply is null ||
+                    merit > bestForThisSupply.MeritMeters + Epsilon)
+                {
+                    bestForThisSupply = new CombinedCandidate(
+                        supplyTerminal,
+                        returnTerminal,
+                        returnRoot,
+                        closure,
+                        merit);
+                }
+            }
+        }
+
+        return bestForThisSupply;
+    }
     private static LocaleSolution GenerateLocale(
         LocaleGeometry locale,
         InputLine connection,
         IReadOnlyList<InputLine> connections,
         double step,
-        SearchCounters counters)
+        SearchCounters counters,
+        IReadOnlySet<string>? rejectedDecisionKeys,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix)
     {
         DirectedConnection directed = DirectConnection(locale, connection);
         LogDiego(
@@ -161,16 +626,56 @@ internal static class StrategiaDiegoEngine
         IReadOnlyList<GeoSegment> connectionConstraints =
             BuildConnectionConstraints(connections, connection.Id);
 
-        // LG-011/LG-012: il ritorno di collegamento deve esistere prima
-        // dell'esplorazione della mandata. Le due configurazioni laterali
-        // restano alternative indipendenti dello stesso ingresso.
+        // SUPPLY-FIRST: la mandata viene costruita completamente prima che
+        // esista qualunque geometria di ritorno. Nessuna ReturnRoot, nessun
+        // ReturnConnection e nessun tratto Return condizionano questo albero.
+        SearchTree supplyTree = BuildTree(
+            locale,
+            GeoFamily.Supply,
+            directed.EntryPoint,
+            directed.Direction,
+            architecture,
+            connectionConstraints,
+            Array.Empty<GeoSegment>(),
+            directed.EntryWall,
+            step,
+            counters,
+            countAsSupply: true,
+            rejectedDecisionKeys: rejectedDecisionKeys,
+            requiredDecisionPrefix: lockedSupplyDecisionPrefix);
+
+        LogDiego(
+            $"SUPPLY-FIRST {locale.Id} tree terminals={supplyTree.Terminals.Count} " +
+            $"returnGeometryPresent=false");
+
+        if (supplyTree.Terminals.Count == 0)
+        {
+            throw new InvalidDataException(
+                $"StrategiaDiego/{locale.Id}: nessun terminale mandata disponibile.");
+        }
+
+        List<SearchNode> orderedSupplyTerminals = supplyTree.Terminals
+            .OrderByDescending(terminal =>
+                TerminalGoodness(locale, terminal, step))
+            .ThenByDescending(ActiveSpiralLength)
+            .ThenByDescending(terminal => terminal.LengthMeters)
+            .ToList();
+
+        SearchNode bestSupplyByGoodness = orderedSupplyTerminals[0];
+        LogTerminalGoodness(
+            locale,
+            GeoFamily.Supply,
+            bestSupplyByGoodness,
+            step,
+            prefix: "SUPPLY-FIRST BEST-GOODNESS");
+
         List<ReturnRoot> returnRoots = BuildReturnRoots(
             locale,
             directed,
             step);
 
         LogDiego(
-            $"LOCALE {locale.Id} RETURN roots=" +
+            $"SUPPLY-FIRST {locale.Id} RETURN roots-after-supply=" +
             string.Join(",", returnRoots.Select(root => $"{root.Side}:{Fmt(root.EntryPoint)}")));
 
         if (returnRoots.Count == 0)
@@ -180,171 +685,50 @@ internal static class StrategiaDiegoEngine
         }
 
         CombinedCandidate? best = null;
+        int supplyRank = 0;
 
-        foreach (ReturnRoot returnRoot in returnRoots)
+        foreach (SearchNode supplyTerminal in orderedSupplyTerminals)
         {
-            List<GeoSegment> preliminaryConstraints =
-                CombineConstraints(
-                    architecture,
-                    connectionConstraints,
-                    Array.Empty<GeoSegment>(),
-                    Array.Empty<GeoSegment>());
-
-            ExtensionResult? rawReturnConnector =
-                TryBuildEntryConnector(
-                    locale,
-                    GeoFamily.Return,
-                    returnRoot.EntryPoint,
-                    directed.Direction,
-                    directed.EntryWall,
-                    preliminaryConstraints,
-                    step);
-
-            if (rawReturnConnector is null)
-            {
-                LogDiego(
-                    $"LOCALE {locale.Id} RETURN-CONNECTION reject " +
-                    $"config={returnRoot.Side} root={Fmt(returnRoot.EntryPoint)}");
-                continue;
-            }
-
-            // Il raccordo entrante del ritorno e' un tubo fisico limitante:
-            // impone le distanze mandata/ritorno ma non e' una linea strategica
-            // sulla quale aprire automaticamente una nuova evoluzione.
-            GeoSegment returnLimitingSegment =
-                rawReturnConnector.Segment with
-                {
-                    Id =
-                        $"D-RETURN-CONNECTION-{locale.Id}-{returnRoot.Side}-" +
-                        Guid.NewGuid().ToString("N"),
-                    Family = GeoFamily.ReturnConnection
-                };
-
-            ExtensionResult returnConnector = new(
-                returnLimitingSegment,
-                rawReturnConnector.Front);
+            supplyRank++;
+            List<GeoSegment> supplySegments =
+                ReconstructSegments(supplyTerminal);
 
             LogDiego(
-                $"LOCALE {locale.Id} RETURN-CONNECTION accept " +
-                $"config={returnRoot.Side} " +
-                $"{Fmt(returnLimitingSegment.A)}->{Fmt(returnLimitingSegment.B)} " +
-                $"limit=true strategicFront=false");
+                $"SUPPLY-FIRST {locale.Id} TRY-SUPPLY rank={supplyRank}/{orderedSupplyTerminals.Count} " +
+                $"node={supplyTerminal.NodeId} goodness={Fmt(TerminalGoodness(locale, supplyTerminal, step))} " +
+                $"active={Fmt(ActiveSpiralLength(supplyTerminal))}m");
 
-            // La mandata viene esplorata separatamente per ogni lato del
-            // ritorno, perche' il raccordo blu preliminare fa gia' parte della
-            // geometria fisica limitante di questo scenario.
-            SearchTree supplyTree = BuildTree(
-                locale,
-                GeoFamily.Supply,
-                directed.EntryPoint,
-                directed.Direction,
-                architecture,
-                connectionConstraints,
-                new[] { returnLimitingSegment },
-                directed.EntryWall,
-                step,
-                counters,
-                countAsSupply: true);
-
-            LogDiego(
-                $"LOCALE {locale.Id} SUPPLY tree config={returnRoot.Side} " +
-                $"terminals={supplyTree.Terminals.Count}");
-
-            if (supplyTree.Terminals.Count == 0)
-                continue;
-
-            SearchNode bestSupplyByGoodness = supplyTree.Terminals
-                .OrderByDescending(terminal =>
-                    TerminalGoodness(locale, terminal, step))
-                .ThenByDescending(ActiveSpiralLength)
-                .First();
-
-            LogTerminalGoodness(
-                locale,
-                GeoFamily.Supply,
-                bestSupplyByGoodness,
-                step,
-                prefix: $"SUPPLY-BEST-GOODNESS config={returnRoot.Side}");
-
-            foreach (SearchNode supplyTerminal in supplyTree.Terminals)
-            {
-                List<GeoSegment> supplySegments =
-                    ReconstructSegments(supplyTerminal);
-
-                SearchTree returnTree = BuildTree(
+            CombinedCandidate? bestForThisSupply =
+                TryFindBestReturnForSupply(
                     locale,
-                    GeoFamily.Return,
-                    returnRoot.EntryPoint,
-                    directed.Direction,
+                    directed,
                     architecture,
                     connectionConstraints,
-                    supplySegments,
-                    directed.EntryWall,
+                    returnRoots,
+                    supplyTerminal,
                     step,
                     counters,
-                    countAsSupply: false,
-                    initialConnector: returnConnector);
+                    rejectedDecisionKeys);
 
-                foreach (SearchNode returnTerminal in returnTree.Terminals)
-                {
-                    counters.CombinedTerminals++;
-
-                    List<GeoSegment> returnSegments =
-                        ReconstructSegments(returnTerminal);
-
-                    GeoSegment closure = new(
-                        "CHIUSURA",
-                        returnTerminal.End,
-                        supplyTerminal.End,
-                        GeoFamily.Return,
-                        SequenceIndex: returnSegments.Count);
-
-                    if (!IsPreliminaryClosureAcceptable(
-                            closure,
-                            architecture,
-                            supplySegments,
-                            returnSegments))
-                    {
-                        LogDiego(
-                            $"LOCALE {locale.Id} CLOSURE reject " +
-                            $"{Fmt(closure.A)}->{Fmt(closure.B)}");
-                        continue;
-                    }
-
-                    counters.AcceptedTerminals++;
-                    LogDiego(
-                        $"LOCALE {locale.Id} CLOSURE accept " +
-                        $"{Fmt(closure.A)}->{Fmt(closure.B)}");
-
-                    double merit =
-                        supplyTerminal.LengthMeters +
-                        returnTerminal.LengthMeters +
-                        closure.Length;
-
-                    if (best is null || merit > best.MeritMeters + Epsilon)
-                    {
-                        LogDiego(
-                            $"LOCALE {locale.Id} BEST update merit={Fmt(merit)}m " +
-                            $"supplyNode={supplyTerminal.NodeId} " +
-                            $"returnNode={returnTerminal.NodeId} " +
-                            $"supplyDepth={supplyTerminal.Depth} " +
-                            $"returnDepth={returnTerminal.Depth} " +
-                            $"config={returnRoot.Side}");
-                        best = new CombinedCandidate(
-                            supplyTerminal,
-                            returnTerminal,
-                            returnRoot,
-                            closure,
-                            merit);
-                    }
-                }
+            if (bestForThisSupply is not null)
+            {
+                best = bestForThisSupply;
+                LogDiego(
+                    $"SUPPLY-FIRST {locale.Id} SELECT-SUPPLY rank={supplyRank} " +
+                    $"node={supplyTerminal.NodeId} returnNode={best.ReturnTerminal.NodeId} " +
+                    $"config={best.ReturnRoot.Side} merit={Fmt(best.MeritMeters)}m");
+                break;
             }
+
+            LogDiego(
+                $"SUPPLY-FIRST {locale.Id} SUPPLY-NOT-FEASIBLE rank={supplyRank} " +
+                $"node={supplyTerminal.NodeId}; try-next-supply=true");
         }
 
         if (best is null)
         {
             throw new InvalidDataException(
-                $"StrategiaDiego/{locale.Id}: nessun terminale preliminarmente accettabile.");
+                $"StrategiaDiego/{locale.Id}: nessuna mandata ordinata ammette un ritorno preliminarmente accettabile.");
         }
 
         double localeArea = PolygonArea(locale.Perimeter);
@@ -354,6 +738,13 @@ internal static class StrategiaDiegoEngine
             GoodnessFactor(supplyActiveLength, step, localeArea);
         double returnGoodness =
             GoodnessFactor(returnActiveLength, step, localeArea);
+
+        LogDiego(
+            $"SUPPLY-FIRST {locale.Id} SELECTED-SUPPLY-TERMINAL-DECISION " +
+            $"{TerminalDecisionKey(best.SupplyTerminal) ?? "-"}");
+        LogDiego(
+            $"SUPPLY-FIRST {locale.Id} SELECTED-RETURN-TERMINAL-DECISION " +
+            $"{TerminalDecisionKey(best.ReturnTerminal) ?? "-"}");
 
         LogDiego(
             $"LOCALE {locale.Id} SELECT-GOODNESS " +
@@ -392,7 +783,9 @@ internal static class StrategiaDiegoEngine
         double step,
         SearchCounters counters,
         bool countAsSupply,
-        ExtensionResult? initialConnector = null)
+        ExtensionResult? initialConnector = null,
+        IReadOnlySet<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? requiredDecisionPrefix = null)
     {
         var terminals = new List<SearchNode>();
         var stack = new Stack<SearchNode>();
@@ -429,7 +822,8 @@ internal static class StrategiaDiegoEngine
             direction: initialDirection,
             depth: 1,
             lengthMeters: first.Segment.Length,
-            nodeId: rootNodeId);
+            nodeId: rootNodeId,
+            decisionKey: null);
 
         LogDiego(
             $"TREE {family} initial ACCEPT node={root.NodeId} " +
@@ -461,24 +855,101 @@ internal static class StrategiaDiegoEngine
                 $"end={Fmt(node.End)} dir={Fmt(node.Direction)} " +
                 $"front={node.Front.Id} pathLen={Fmt(node.LengthMeters)}m");
 
-            var directions = new List<(
-                string Name,
-                DVector Direction,
-                string? ExcludedFrontId,
-                string? RequiredFrontId)>();
+            var children = new List<SearchNode>();
+            int replayRejectedChildren = 0;
+            int prefixRejectedChildren = 0;
+            int nextDecisionIndex = node.Depth - 1;
+            bool prefixDecisionRequired =
+                requiredDecisionPrefix is not null &&
+                nextDecisionIndex < requiredDecisionPrefix.Count;
 
-            // Il raccordo tecnico non e' una evoluzione e non introduce
-            // eccezioni nel nodo che segue: PROSEGUI_DRITTO viene valutato
-            // come qualunque altra alternativa e puo' essere scartato solo
-            // dalle normali verifiche geometriche.
-            directions.Add(
-                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null));
+            // LG-041: PROSEGUI_DRITTO non seleziona piu' il solo riferimento
+            // piu' vicino. Ogni riferimento pertinente puo' generare un
+            // candidato indipendente che conserva il proprio fronte.
+            IReadOnlyList<ExtensionCandidate> straightCandidates =
+                GenerateStraightCandidates(
+                    locale,
+                    family,
+                    node.End,
+                    node.Direction,
+                    constraints,
+                    node.Segment,
+                    step,
+                    node.NodeId);
+
+            for (int straightIndex = 0;
+                 straightIndex < straightCandidates.Count;
+                 straightIndex++)
+            {
+                ExtensionCandidate candidate =
+                    straightCandidates[straightIndex];
+                ExtensionResult extension = candidate.Extension;
+
+                if (children.Any(existing =>
+                    SegmentsEquivalent(existing.Segment, extension.Segment)))
+                {
+                    continue;
+                }
+
+                string decisionKey = BuildDecisionKey(
+                    family,
+                    "PROSEGUI_DRITTO",
+                    extension.Segment,
+                    extension.Front,
+                    step,
+                    candidate.PhysicalHit ? "physical" : "lateral");
+
+                LogDiego(decisionKey);
+                if (!IsDecisionAllowedByPrefix(
+                        node,
+                        decisionKey,
+                        requiredDecisionPrefix,
+                        out string? expectedDecisionKey))
+                {
+                    prefixRejectedChildren++;
+                    LogDiego(
+                        $"DIEGO_PREFIX_LOCK REJECT_NOT_IN_PREFIX parentNode={node.NodeId} " +
+                        $"index={nextDecisionIndex} expected={expectedDecisionKey ?? "-"} actual={decisionKey}");
+                    continue;
+                }
+
+                if (IsDecisionRejected(
+                        decisionKey,
+                        rejectedDecisionKeys))
+                {
+                    replayRejectedChildren++;
+                    LogDiego(
+                        $"DIEGO_DECISION_REPLAY REJECT_BY_INPUT {decisionKey}");
+                    continue;
+                }
+
+                int childNodeId =
+                    counters.AddNode(countAsSupply, node.Depth + 1);
+                SearchNode child = new(
+                    node,
+                    extension.Segment,
+                    extension.Front,
+                    node.Direction,
+                    node.Depth + 1,
+                    node.LengthMeters + extension.Segment.Length,
+                    childNodeId,
+                    decisionKey);
+
+                LogDiego(
+                    $"TREE {family} CHOICE PROSEGUI_DRITTO[{straightIndex + 1}/{straightCandidates.Count}] ACCEPT " +
+                    $"parentNode={node.NodeId} childNode={child.NodeId} " +
+                    $"{Fmt(extension.Segment.A)}->{Fmt(extension.Segment.B)} " +
+                    $"front={extension.Front.Id} type={(candidate.PhysicalHit ? "physical" : "lateral")}");
+
+                children.Add(child);
+            }
 
             DVector parallel = node.Front.Direction.Normalize();
             GeoSegment? continuationA =
                 FindSequenceContinuation(
                     node.End,
                     node.Front,
+                    node.Segment,
                     constraints,
                     family,
                     parallel);
@@ -486,27 +957,24 @@ internal static class StrategiaDiegoEngine
                 FindSequenceContinuation(
                     node.End,
                     node.Front,
+                    node.Segment,
                     constraints,
                     family,
                     -parallel);
 
-            directions.Add((
-                "PARALLELA_A",
-                parallel,
-                null,
-                continuationA?.Id));
-            directions.Add((
-                "PARALLELA_B",
-                -parallel,
-                null,
-                continuationB?.Id));
+            var parallelDirections = new List<(
+                string Name,
+                DVector Direction,
+                string? RequiredFrontId)>
+            {
+                ("PARALLELA_A", parallel, continuationA?.Id),
+                ("PARALLELA_B", -parallel, continuationB?.Id)
+            };
 
-            var children = new List<SearchNode>();
             foreach ((
                 string choiceName,
                 DVector direction,
-                string? excludedFront,
-                string? requiredFront) in directions)
+                string? requiredFront) in parallelDirections)
             {
                 ExtensionResult? extension = TryExtend(
                     locale,
@@ -515,10 +983,12 @@ internal static class StrategiaDiegoEngine
                     direction,
                     constraints,
                     node.Segment,
-                    excludedFront,
+                    excludedFrontId: null,
                     requiredFront,
                     step,
-                    allowStartOnBoundary: false);
+                    allowStartOnBoundary: false,
+                    diagnosticParentNodeId: node.NodeId,
+                    diagnosticChoiceName: choiceName);
 
                 if (extension is null)
                 {
@@ -535,6 +1005,40 @@ internal static class StrategiaDiegoEngine
                     continue;
                 }
 
+                string decisionKey = BuildDecisionKey(
+                    family,
+                    choiceName,
+                    extension.Segment,
+                    extension.Front,
+                    step,
+                    DecisionReferenceType(
+                        extension.Segment,
+                        extension.Front));
+
+                LogDiego(decisionKey);
+                if (!IsDecisionAllowedByPrefix(
+                        node,
+                        decisionKey,
+                        requiredDecisionPrefix,
+                        out string? expectedDecisionKey))
+                {
+                    prefixRejectedChildren++;
+                    LogDiego(
+                        $"DIEGO_PREFIX_LOCK REJECT_NOT_IN_PREFIX parentNode={node.NodeId} " +
+                        $"index={nextDecisionIndex} expected={expectedDecisionKey ?? "-"} actual={decisionKey}");
+                    continue;
+                }
+
+                if (IsDecisionRejected(
+                        decisionKey,
+                        rejectedDecisionKeys))
+                {
+                    replayRejectedChildren++;
+                    LogDiego(
+                        $"DIEGO_DECISION_REPLAY REJECT_BY_INPUT {decisionKey}");
+                    continue;
+                }
+
                 int childNodeId =
                     counters.AddNode(countAsSupply, node.Depth + 1);
                 SearchNode child = new(
@@ -544,7 +1048,8 @@ internal static class StrategiaDiegoEngine
                     direction,
                     node.Depth + 1,
                     node.LengthMeters + extension.Segment.Length,
-                    childNodeId);
+                    childNodeId,
+                    decisionKey);
 
                 LogDiego(
                     $"TREE {family} CHOICE {choiceName} ACCEPT " +
@@ -557,6 +1062,23 @@ internal static class StrategiaDiegoEngine
 
             if (children.Count == 0)
             {
+                if (prefixDecisionRequired)
+                {
+                    LogDiego(
+                        $"TREE {family} PRUNED_BY_PREFIX_LOCK node={node.NodeId} " +
+                        $"decisionIndex={nextDecisionIndex} rejectedChildren={prefixRejectedChildren} " +
+                        $"terminalCreated=false");
+                    continue;
+                }
+
+                if (replayRejectedChildren > 0)
+                {
+                    LogDiego(
+                        $"TREE {family} PRUNED_BY_REPLAY node={node.NodeId} " +
+                        $"rejectedChildren={replayRejectedChildren} terminalCreated=false");
+                    continue;
+                }
+
                 terminals.Add(node);
                 counters.AddTerminal(countAsSupply);
                 LogDiego(
@@ -572,8 +1094,15 @@ internal static class StrategiaDiegoEngine
                 continue;
             }
 
-            foreach (SearchNode child in children)
-                stack.Push(child);
+            // Stack LIFO: inserimento inverso per rispettare l'ordine logico
+            // dei candidati. In particolare i candidati laterali LG-041
+            // vengono visitati per lunghezza valida decrescente senza potatura.
+            for (int childIndex = children.Count - 1;
+                 childIndex >= 0;
+                 childIndex--)
+            {
+                stack.Push(children[childIndex]);
+            }
         }
 
         return new SearchTree(terminals);
@@ -644,6 +1173,122 @@ internal static class StrategiaDiegoEngine
         return new ExtensionResult(candidate, entryWall);
     }
 
+    private static IReadOnlyList<ExtensionCandidate> GenerateStraightCandidates(
+        LocaleGeometry locale,
+        GeoFamily family,
+        DPoint start,
+        DVector direction,
+        IReadOnlyList<GeoSegment> constraints,
+        GeoSegment? previousSegment,
+        double step,
+        int parentNodeId)
+    {
+        DVector unit = direction.Normalize();
+        if (unit.Length <= Epsilon)
+            return Array.Empty<ExtensionCandidate>();
+
+        var candidates = new List<ExtensionCandidate>();
+
+        foreach (GeoSegment reference in constraints)
+        {
+            if (reference.Family is
+                GeoFamily.Connection or GeoFamily.ReturnConnection)
+            {
+                continue;
+            }
+
+            // LG-041 esclude il segmento dal quale si proviene; il fronte
+            // che ha generato il nodo resta invece disponibile se produce
+            // una nuova geometria realmente distinta e valida.
+            if (previousSegment is GeoSegment previous &&
+                reference.Id.Equals(previous.Id, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            ExtensionCandidate? raw = BuildExtensionCandidateGeometry(
+                family,
+                start,
+                unit,
+                reference,
+                step,
+                allowArchitectureExtension: true);
+
+            if (raw is null)
+                continue;
+
+            ExtensionCandidate candidate = raw;
+            string type = candidate.PhysicalHit ? "physical" : "lateral";
+
+            LogDiego(
+                $"LG041 CANDIDATE CHECK parentNode={parentNodeId} family={family} " +
+                $"reference={reference.Id} refFamily={reference.Family} type={type} " +
+                $"I={Fmt(candidate.Intersection)} T={Fmt(candidate.Extension.Segment.B)} " +
+                $"d={Fmt(candidate.Respect)}m length={Fmt(candidate.Extension.Segment.Length)}m");
+
+            if (!IsSegmentValid(
+                    locale,
+                    candidate.Extension.Segment,
+                    constraints,
+                    previousSegment,
+                    reference,
+                    step,
+                    allowStartOnBoundary: false))
+            {
+                LogDiego(
+                    $"LG041 CANDIDATE REJECT parentNode={parentNodeId} family={family} " +
+                    $"reference={reference.Id} type={type} " +
+                    $"I={Fmt(candidate.Intersection)} T={Fmt(candidate.Extension.Segment.B)} " +
+                    $"d={Fmt(candidate.Respect)}m length={Fmt(candidate.Extension.Segment.Length)}m");
+                continue;
+            }
+
+            if (candidates.Any(existing =>
+                    SegmentsEquivalent(
+                        existing.Extension.Segment,
+                        candidate.Extension.Segment)))
+            {
+                LogDiego(
+                    $"LG041 CANDIDATE DUPLICATE parentNode={parentNodeId} family={family} " +
+                    $"reference={reference.Id} type={type} T={Fmt(candidate.Extension.Segment.B)}");
+                continue;
+            }
+
+            candidates.Add(candidate);
+            LogDiego(
+                $"LG041 CANDIDATE ACCEPT parentNode={parentNodeId} family={family} " +
+                $"reference={reference.Id} refFamily={reference.Family} type={type} " +
+                $"I={Fmt(candidate.Intersection)} T={Fmt(candidate.Extension.Segment.B)} " +
+                $"d={Fmt(candidate.Respect)}m length={Fmt(candidate.Extension.Segment.Length)}m");
+        }
+
+        // LG-041 prescrive l'ordine decrescente solo fra i candidati
+        // laterali. I candidati fisici mantengono la posizione derivata
+        // dall'ordine stabile dei vincoli; negli slot laterali sostituiamo
+        // soltanto i laterali ordinati dal piu' lungo al piu' corto.
+        Queue<ExtensionCandidate> orderedLaterals = new(
+            candidates
+                .Where(candidate => !candidate.PhysicalHit)
+                .OrderByDescending(candidate => candidate.Extension.Segment.Length)
+                .ThenBy(candidate => candidate.Extension.Front.Id, StringComparer.Ordinal));
+
+        var ordered = new List<ExtensionCandidate>(candidates.Count);
+        foreach (ExtensionCandidate candidate in candidates)
+        {
+            ordered.Add(candidate.PhysicalHit
+                ? candidate
+                : orderedLaterals.Dequeue());
+        }
+
+        LogDiego(
+            $"LG041 SUMMARY parentNode={parentNodeId} family={family} " +
+            $"accepted={ordered.Count} physical={ordered.Count(candidate => candidate.PhysicalHit)} " +
+            $"lateral={ordered.Count(candidate => !candidate.PhysicalHit)} " +
+            $"order={string.Join(",", ordered.Select(candidate => $"{candidate.Extension.Front.Id}:{(candidate.PhysicalHit ? "P" : "L")}:{Fmt(candidate.Extension.Segment.Length)}"))}");
+
+        return ordered;
+    }
+
     private static ExtensionResult? TryExtend(
         LocaleGeometry locale,
         GeoFamily family,
@@ -654,7 +1299,9 @@ internal static class StrategiaDiegoEngine
         string? excludedFrontId,
         string? requiredFrontId,
         double step,
-        bool allowStartOnBoundary)
+        bool allowStartOnBoundary,
+        int? diagnosticParentNodeId = null,
+        string? diagnosticChoiceName = null)
     {
         DVector unit = direction.Normalize();
         if (unit.Length <= Epsilon)
@@ -664,8 +1311,6 @@ internal static class StrategiaDiegoEngine
 
         foreach (GeoSegment reference in constraints)
         {
-            // Modificato da Codex per realizzare: i tubi di collegamento sono
-            // ostacoli fisici, non linee strategiche sulle quali svoltare.
             if (reference.Family is
                 GeoFamily.Connection or GeoFamily.ReturnConnection)
             {
@@ -690,102 +1335,214 @@ internal static class StrategiaDiegoEngine
                 continue;
             }
 
-            DVector refDirection = reference.Direction;
-            double refLength = refDirection.Length;
-            if (refLength <= Epsilon)
-                continue;
-
-            DVector refUnit = refDirection / refLength;
-            double cross = DVector.Cross(unit, refUnit);
-            if (Math.Abs(cross) <= Epsilon)
-                continue;
-
-            DVector delta = reference.A - start;
-            double tIntersection = DVector.Cross(delta, refUnit) / cross;
-
-            // Una intersezione teorica appena dietro resta inammissibile.
-            // L'intersezione a distanza zero, invece, e' ammessa: se cade
-            // soltanto sul prolungamento di un tubo, LG-034/LG-035 richiede
-            // di poter valutare il punto convesso I+d oltre la linea estesa.
-            if (tIntersection < -GeometryTolerance)
-                continue;
-
-            if (Math.Abs(tIntersection) <= GeometryTolerance)
-                tIntersection = 0.0;
-
-            double uReference =
-                DVector.Cross(delta, unit) /
-                DVector.Cross(unit, refDirection);
-
-            bool physicalHit =
-                uReference >= -GeometryTolerance &&
-                uReference <= 1.0 + GeometryTolerance;
-
-            // Le estensioni architettoniche non sono ostacoli fisici.
-            // Le estensioni dei tubi possono invece essere marcatori strategici
-            // per l'inseguimento convesso (LG-033..LG-035).
-            if (!physicalHit && reference.Family == GeoFamily.Architecture)
-                continue;
-
-            double respect = RequiredDistance(
+            ExtensionCandidate? raw = BuildExtensionCandidateGeometry(
                 family,
-                reference.Family,
-                step);
+                start,
+                unit,
+                reference,
+                step,
+                allowArchitectureExtension: false);
 
-            double alongRay = respect / Math.Abs(cross);
-            // Modificato da Codex per realizzare: non applicare LG-035 finche'
-            // il nodo non conserva esplicitamente S_k orientato. Usare
-            // node.Front come sostituto ha eliminato le chiusure del quadrato.
-            double tEnd = physicalHit
-                ? tIntersection - alongRay
-                : tIntersection + alongRay;
+            if (raw is null)
+                continue;
 
-            if (!physicalHit &&
-                tIntersection <= GeometryTolerance &&
-                reference.Family is GeoFamily.Supply or GeoFamily.Return)
+            if (diagnosticParentNodeId is int diagnosticNode &&
+                diagnosticChoiceName is not null)
             {
                 LogDiego(
-                    $"EXTEND beyond-extended-front family={family} " +
-                    $"reference={reference.Id} refFamily={reference.Family} " +
-                    $"start={Fmt(start)} dir={Fmt(unit)} I={Fmt(tIntersection)}m " +
-                    $"respect={Fmt(respect)}m alongRay={Fmt(alongRay)}m " +
-                    $"targetTravel={Fmt(tEnd)}m");
+                    $"TRYEXT CHECK parentNode={diagnosticNode} choice={diagnosticChoiceName} " +
+                    $"family={family} reference={reference.Id} refFamily={reference.Family} " +
+                    $"type={(raw.PhysicalHit ? "physical" : "lateral")} " +
+                    $"I={Fmt(raw.Intersection)} T={Fmt(raw.Extension.Segment.B)} " +
+                    $"d={Fmt(raw.Respect)}m length={Fmt(raw.Extension.Segment.Length)}m");
             }
 
-            if (tEnd <= GeometryTolerance)
-                continue;
+            ExtensionResult extension = raw.Extension;
+            bool valid = IsSegmentValid(
+                locale,
+                extension.Segment,
+                constraints,
+                previousSegment,
+                reference,
+                step,
+                allowStartOnBoundary);
 
-            DPoint end = start + unit * tEnd;
-            var candidate = new GeoSegment(
-                $"D-{family}-{Guid.NewGuid():N}",
-                start,
-                end,
-                family,
-                SequenceIndex: -1);
-
-            if (candidate.Length <= GeometryTolerance)
-                continue;
-
-            if (!IsSegmentValid(
-                    locale,
-                    candidate,
-                    constraints,
-                    previousSegment,
-                    reference,
-                    step,
-                    allowStartOnBoundary))
+            if (!valid &&
+                !raw.PhysicalHit &&
+                requiredFrontId is not null &&
+                reference.Family == family)
             {
+                ExtensionCandidate? beforeFront =
+                    BuildExtensionCandidateGeometry(
+                        family,
+                        start,
+                        unit,
+                        reference,
+                        step,
+                        allowArchitectureExtension: false,
+                        useBeforeExtendedFront: true);
+
+                if (beforeFront is not null &&
+                    !SegmentsEquivalent(
+                        beforeFront.Extension.Segment,
+                        raw.Extension.Segment))
+                {
+                    if (diagnosticParentNodeId is int fallbackNode &&
+                        diagnosticChoiceName is not null)
+                    {
+                        LogDiego(
+                            $"TRYEXT FALLBACK-BEFORE CHECK parentNode={fallbackNode} " +
+                            $"choice={diagnosticChoiceName} reference={reference.Id} " +
+                            $"I={Fmt(beforeFront.Intersection)} " +
+                            $"T={Fmt(beforeFront.Extension.Segment.B)} " +
+                            $"d={Fmt(beforeFront.Respect)}m " +
+                            $"length={Fmt(beforeFront.Extension.Segment.Length)}m");
+                    }
+
+                    if (IsSegmentValid(
+                            locale,
+                            beforeFront.Extension.Segment,
+                            constraints,
+                            previousSegment,
+                            reference,
+                            step,
+                            allowStartOnBoundary))
+                    {
+                        extension = beforeFront.Extension;
+                        valid = true;
+                        LogDiego(
+                            $"EXTEND fallback-before-own-family-front family={family} " +
+                            $"reference={reference.Id} start={Fmt(start)} " +
+                            $"target={Fmt(extension.Segment.B)} respect={Fmt(beforeFront.Respect)}m");
+                    }
+                }
+            }
+
+            if (!valid)
+            {
+                if (diagnosticParentNodeId is int rejectedNode &&
+                    diagnosticChoiceName is not null)
+                {
+                    LogDiego(
+                        $"TRYEXT REJECT parentNode={rejectedNode} choice={diagnosticChoiceName} " +
+                        $"reference={reference.Id} T={Fmt(extension.Segment.B)}");
+                }
                 continue;
+            }
+
+            if (diagnosticParentNodeId is int acceptedNode &&
+                diagnosticChoiceName is not null)
+            {
+                LogDiego(
+                    $"TRYEXT ACCEPT parentNode={acceptedNode} choice={diagnosticChoiceName} " +
+                    $"reference={reference.Id} T={Fmt(extension.Segment.B)}");
             }
 
             if (best is null ||
-                candidate.Length < best.Segment.Length - GeometryTolerance)
+                extension.Segment.Length < best.Segment.Length - GeometryTolerance)
             {
-                best = new ExtensionResult(candidate, reference);
+                best = extension;
             }
         }
 
         return best;
+    }
+
+    private static ExtensionCandidate? BuildExtensionCandidateGeometry(
+        GeoFamily family,
+        DPoint start,
+        DVector unit,
+        GeoSegment reference,
+        double step,
+        bool allowArchitectureExtension,
+        bool useBeforeExtendedFront = false)
+    {
+        DVector refDirection = reference.Direction;
+        double refLength = refDirection.Length;
+        if (refLength <= Epsilon)
+            return null;
+
+        DVector refUnit = refDirection / refLength;
+        double cross = DVector.Cross(unit, refUnit);
+        if (Math.Abs(cross) <= Epsilon)
+            return null;
+
+        DVector delta = reference.A - start;
+        double tIntersection = DVector.Cross(delta, refUnit) / cross;
+
+        if (tIntersection < -GeometryTolerance)
+            return null;
+
+        if (Math.Abs(tIntersection) <= GeometryTolerance)
+            tIntersection = 0.0;
+
+        double uReference =
+            DVector.Cross(delta, unit) /
+            DVector.Cross(unit, refDirection);
+
+        bool physicalHit =
+            uReference >= -GeometryTolerance &&
+            uReference <= 1.0 + GeometryTolerance;
+
+        if (!physicalHit &&
+            reference.Family == GeoFamily.Architecture &&
+            !allowArchitectureExtension)
+        {
+            return null;
+        }
+
+        double respect = RequiredDistance(
+            family,
+            reference.Family,
+            step);
+
+        double alongRay = respect / Math.Abs(cross);
+        double tEnd = physicalHit || useBeforeExtendedFront
+            ? tIntersection - alongRay
+            : tIntersection + alongRay;
+
+        if (useBeforeExtendedFront && !physicalHit)
+        {
+            LogDiego(
+                $"EXTEND before-extended-front-candidate family={family} " +
+                $"reference={reference.Id} refFamily={reference.Family} " +
+                $"start={Fmt(start)} dir={Fmt(unit)} I={Fmt(tIntersection)}m " +
+                $"respect={Fmt(respect)}m alongRay={Fmt(alongRay)}m " +
+                $"targetTravel={Fmt(tEnd)}m");
+        }
+        else if (!physicalHit &&
+                 tIntersection <= GeometryTolerance &&
+                 reference.Family is GeoFamily.Supply or GeoFamily.Return)
+        {
+            LogDiego(
+                $"EXTEND beyond-extended-front family={family} " +
+                $"reference={reference.Id} refFamily={reference.Family} " +
+                $"start={Fmt(start)} dir={Fmt(unit)} I={Fmt(tIntersection)}m " +
+                $"respect={Fmt(respect)}m alongRay={Fmt(alongRay)}m " +
+                $"targetTravel={Fmt(tEnd)}m");
+        }
+
+        if (tEnd <= GeometryTolerance)
+            return null;
+
+        DPoint intersection = start + unit * tIntersection;
+        DPoint end = start + unit * tEnd;
+        var segment = new GeoSegment(
+            $"D-{family}-{Guid.NewGuid():N}",
+            start,
+            end,
+            family,
+            SequenceIndex: -1);
+
+        if (segment.Length <= GeometryTolerance)
+            return null;
+
+        return new ExtensionCandidate(
+            new ExtensionResult(segment, reference),
+            physicalHit,
+            intersection,
+            respect,
+            alongRay);
     }
 
     private static bool IsSegmentValid(
@@ -1256,6 +2013,14 @@ internal static class StrategiaDiegoEngine
                 : step * 2.0;
         }
 
+        // LG-046: la mandata crea le anse con passo 2p; il ritorno
+        // le riempie e rispetta passo p anche rispetto a se stesso.
+        if (newFamily == GeoFamily.Return &&
+            referenceFamily == GeoFamily.Return)
+        {
+            return step;
+        }
+
         return newFamily == referenceFamily
             ? step * 2.0
             : step;
@@ -1280,6 +2045,7 @@ internal static class StrategiaDiegoEngine
     private static GeoSegment? FindSequenceContinuation(
         DPoint start,
         GeoSegment front,
+        GeoSegment currentSegment,
         IReadOnlyList<GeoSegment> constraints,
         GeoFamily pathFamily,
         DVector travelDirection)
@@ -1308,7 +2074,8 @@ internal static class StrategiaDiegoEngine
         {
             return constraints.FirstOrDefault(candidate =>
                 candidate.Family == front.Family &&
-                candidate.SequenceIndex == front.SequenceIndex + 1);
+                candidate.SequenceIndex == front.SequenceIndex + 1 &&
+                !candidate.Id.Equals(currentSegment.Id, StringComparison.Ordinal));
         }
 
         DVector travel = travelDirection.Normalize();
@@ -1321,7 +2088,8 @@ internal static class StrategiaDiegoEngine
         foreach (GeoSegment candidate in constraints.Where(candidate =>
                      candidate.Family == front.Family &&
                      candidate.SequenceIndex >= 0 &&
-                     candidate.SequenceIndex != front.SequenceIndex))
+                     candidate.SequenceIndex != front.SequenceIndex &&
+                     !candidate.Id.Equals(currentSegment.Id, StringComparison.Ordinal)))
         {
             DVector candidateDirection = candidate.Direction.Normalize();
             if (candidateDirection.Length <= Epsilon)
@@ -1346,7 +2114,28 @@ internal static class StrategiaDiegoEngine
                 continue;
 
             if (Math.Abs(rayTravel) <= GeometryTolerance)
+            {
                 rayTravel = 0.0;
+
+                // LG-045: un at-node non e' un nuovo fronte se appartiene
+                // alla stessa evoluzione rettilinea con cui siamo arrivati.
+                // L'esclusione non e' solo per ID del currentSegment: segue
+                // l'intera catena collineare e contigua della provenienza.
+                if (IsSameArrivalStraightChain(
+                        candidate,
+                        currentSegment,
+                        constraints,
+                        pathFamily))
+                {
+                    LogDiego(
+                        $"SEQUENCE skip-same-arrival-chain " +
+                        $"pathFamily={pathFamily} frontFamily={front.Family} " +
+                        $"from={front.SequenceIndex} candidate={candidate.SequenceIndex} " +
+                        $"candidateId={candidate.Id} currentId={currentSegment.Id} " +
+                        $"start={Fmt(start)} dir={Fmt(travel)} rayTravel=0");
+                    continue;
+                }
+            }
 
             if (rayTravel < bestTravel - GeometryTolerance)
             {
@@ -1365,7 +2154,7 @@ internal static class StrategiaDiegoEngine
                 $"SEQUENCE {mode} no-forward-front " +
                 $"pathFamily={pathFamily} frontFamily={front.Family} " +
                 $"from={front.SequenceIndex} start={Fmt(start)} " +
-                $"dir={Fmt(travel)}");
+                $"dir={Fmt(travel)} excludedCurrent={currentSegment.SequenceIndex}");
             return null;
         }
 
@@ -1379,10 +2168,93 @@ internal static class StrategiaDiegoEngine
             $"pathFamily={pathFamily} frontFamily={front.Family} " +
             $"from={front.SequenceIndex} next={best.Value.SequenceIndex} " +
             $"start={Fmt(start)} dir={Fmt(travel)} " +
-            $"rayTravel={Fmt(bestTravel)}m intersection={intersectionMode}");
+            $"rayTravel={Fmt(bestTravel)}m intersection={intersectionMode} " +
+            $"excludedCurrent={currentSegment.SequenceIndex}");
         return best;
     }
 
+    private static bool IsSameArrivalStraightChain(
+        GeoSegment candidate,
+        GeoSegment currentSegment,
+        IReadOnlyList<GeoSegment> constraints,
+        GeoFamily pathFamily)
+    {
+        if (candidate.Family != pathFamily)
+            return false;
+
+        GeoSegment? canonicalCurrent = constraints
+            .Where(segment => segment.Family == pathFamily)
+            .Cast<GeoSegment?>()
+            .FirstOrDefault(segment =>
+                segment!.Value.Id.Equals(
+                    currentSegment.Id,
+                    StringComparison.Ordinal));
+
+        GeoSegment seed = canonicalCurrent ?? currentSegment;
+        DVector baseDirection = seed.Direction.Normalize();
+        if (baseDirection.Length <= Epsilon)
+            return false;
+
+        bool OnArrivalSupportLine(GeoSegment segment)
+        {
+            DVector direction = segment.Direction.Normalize();
+            if (direction.Length <= Epsilon)
+                return false;
+
+            if (Math.Abs(DVector.Cross(
+                    baseDirection,
+                    direction)) > GeometryTolerance)
+            {
+                return false;
+            }
+
+            double distanceA = Math.Abs(
+                DVector.Cross(segment.A - seed.A, baseDirection));
+            double distanceB = Math.Abs(
+                DVector.Cross(segment.B - seed.A, baseDirection));
+            return distanceA <= GeometryTolerance &&
+                   distanceB <= GeometryTolerance;
+        }
+
+        if (!OnArrivalSupportLine(candidate))
+            return false;
+
+        List<GeoSegment> sameLine = constraints
+            .Where(segment =>
+                segment.Family == pathFamily &&
+                segment.SequenceIndex >= 0 &&
+                OnArrivalSupportLine(segment))
+            .ToList();
+
+        if (!sameLine.Any(segment =>
+                segment.Id.Equals(candidate.Id, StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        var queue = new Queue<GeoSegment>();
+        queue.Enqueue(seed);
+        visited.Add(seed.Id);
+
+        while (queue.Count > 0)
+        {
+            GeoSegment current = queue.Dequeue();
+            foreach (GeoSegment next in sameLine)
+            {
+                if (visited.Contains(next.Id) ||
+                    !SharesEndpoint(current, next))
+                {
+                    continue;
+                }
+
+                visited.Add(next.Id);
+                queue.Enqueue(next);
+            }
+        }
+
+        return visited.Contains(candidate.Id);
+    }
     private static List<SearchNode> ReconstructNodes(
         SearchNode node)
     {
@@ -1433,6 +2305,131 @@ internal static class StrategiaDiegoEngine
                 current.NodeId,
                 current.End))
             .ToList();
+
+    private static IReadOnlyList<string> ReconstructDecisionKeys(
+        SearchNode node) =>
+        ReconstructNodes(node)
+            .Select(current => current.DecisionKey)
+            .Where(key => key is not null)
+            .Cast<string>()
+            .ToArray();
+
+    private static string? TerminalDecisionKey(
+        SearchNode node) =>
+        node.DecisionKey;
+
+    private static bool IsDecisionAllowedByPrefix(
+        SearchNode parent,
+        string decisionKey,
+        IReadOnlyList<string>? requiredDecisionPrefix,
+        out string? expectedDecisionKey)
+    {
+        expectedDecisionKey = null;
+        if (requiredDecisionPrefix is null ||
+            requiredDecisionPrefix.Count == 0)
+        {
+            return true;
+        }
+
+        int decisionIndex = parent.Depth - 1;
+        if (decisionIndex >= requiredDecisionPrefix.Count)
+            return true;
+
+        expectedDecisionKey = requiredDecisionPrefix[decisionIndex];
+        return string.Equals(
+            expectedDecisionKey,
+            decisionKey,
+            StringComparison.Ordinal);
+    }
+
+    private static bool IsDecisionRejected(
+        string decisionKey,
+        IReadOnlySet<string>? rejectedDecisionKeys) =>
+        rejectedDecisionKeys is not null &&
+        rejectedDecisionKeys.Contains(decisionKey);
+
+    private static string BuildDecisionKey(
+        GeoFamily family,
+        string choiceName,
+        GeoSegment segment,
+        GeoSegment reference,
+        double step,
+        string referenceType)
+    {
+        (DPoint refA, DPoint refB) =
+            CanonicalReferenceEndpoints(reference);
+        double respect = RequiredDistance(
+            family,
+            reference.Family,
+            step);
+
+        return
+            $"DIEGO_DECISION family={family} choice={choiceName} " +
+            $"start={CanonicalPoint(segment.A)} " +
+            $"target={CanonicalPoint(segment.B)} " +
+            $"refFamily={reference.Family} " +
+            $"ref=({CanonicalPoint(refA)}->{CanonicalPoint(refB)}) " +
+            $"d={CanonicalNumber(respect)} type={referenceType}";
+    }
+
+    private static string DecisionReferenceType(
+        GeoSegment segment,
+        GeoSegment reference)
+    {
+        DVector unit = segment.Direction.Normalize();
+        DVector refDirection = reference.Direction;
+        if (unit.Length <= Epsilon ||
+            refDirection.Length <= Epsilon)
+        {
+            return "unknown";
+        }
+
+        double denominator =
+            DVector.Cross(unit, refDirection);
+        if (Math.Abs(denominator) <= Epsilon)
+            return "parallel";
+
+        DVector delta = reference.A - segment.A;
+        double uReference =
+            DVector.Cross(delta, unit) /
+            denominator;
+
+        return
+            uReference >= -GeometryTolerance &&
+            uReference <= 1.0 + GeometryTolerance
+                ? "physical"
+                : "lateral";
+    }
+
+    private static (DPoint A, DPoint B) CanonicalReferenceEndpoints(
+        GeoSegment reference)
+    {
+        int compareX = reference.A.X.CompareTo(reference.B.X);
+        if (compareX < 0)
+            return (reference.A, reference.B);
+        if (compareX > 0)
+            return (reference.B, reference.A);
+
+        return reference.A.Y <= reference.B.Y
+            ? (reference.A, reference.B)
+            : (reference.B, reference.A);
+    }
+
+    private static string CanonicalPoint(
+        DPoint point) =>
+        $"({CanonicalNumber(point.X)},{CanonicalNumber(point.Y)})";
+
+    private static string CanonicalNumber(
+        double value)
+    {
+        double normalized =
+            Math.Abs(value) < 0.0000005
+                ? 0.0
+                : value;
+        return normalized.ToString(
+            "0.000000",
+            CultureInfo.InvariantCulture);
+    }
 
     private static double ActiveSpiralLength(
         SearchNode node) =>
@@ -1677,6 +2674,101 @@ internal static class StrategiaDiegoEngine
         return inside;
     }
 
+    private static string BuildRankedSolutionExplorerSvg(
+        LocaleGeometry locale,
+        IReadOnlyList<DPoint> supplyPoints,
+        IReadOnlyList<DPoint> returnPoints,
+        IReadOnlyList<NodeLabel> supplyLabels,
+        IReadOnlyList<NodeLabel> returnLabels,
+        int rank,
+        double supplyActive,
+        double supplyGoodness,
+        double? returnActive,
+        double? returnGoodness,
+        bool returnFeasible,
+        string? returnError)
+    {
+        IEnumerable<DPoint> allPoints = locale.Perimeter
+            .Concat(supplyPoints)
+            .Concat(returnPoints);
+        double minX = allPoints.Min(point => point.X) - 0.25;
+        double minY = allPoints.Min(point => point.Y) - 0.25;
+        double maxX = allPoints.Max(point => point.X) + 0.25;
+        double maxY = allPoints.Max(point => point.Y) + 0.25;
+
+        var builder = new StringBuilder();
+        builder.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        builder.AppendLine(
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{minX} {minY} {maxX - minX} {maxY - minY}\" data-termodel-engine=\"Diego\" data-role=\"solution-explorer\" data-supply-rank=\"{rank}\">"));
+
+        AppendPolyline(builder, locale.Perimeter, "black", locale.Id, "perimetro");
+        AppendPolyline(builder, supplyPoints, "red", locale.Id, "mandata");
+        if (returnPoints.Count > 0)
+            AppendPolyline(builder, returnPoints, "blue", locale.Id, "ritorno");
+        AppendNodeLabels(builder, supplyLabels, locale.Id, "mandata");
+        if (returnLabels.Count > 0)
+            AppendNodeLabels(builder, returnLabels, locale.Id, "ritorno");
+
+        string tx = minX.ToString("0.######", CultureInfo.InvariantCulture);
+        string ty = minY.ToString("0.######", CultureInfo.InvariantCulture);
+        string returnText = returnFeasible
+            ? $"return {Fmt(returnActive ?? 0)} m / {Fmt(returnGoodness ?? 0)}"
+            : $"RETURN NON FATTIBILE{(string.IsNullOrWhiteSpace(returnError) ? string.Empty : " - " + returnError)}";
+        builder.AppendLine(
+            $"<text x=\"{tx}\" y=\"{ty}\" font-size=\"0.10\" fill=\"#111\">" +
+            $"Supply rank {rank} | supply {Fmt(supplyActive)} m / {Fmt(supplyGoodness)} | {Escape(returnText)}</text>");
+        builder.AppendLine("</svg>");
+        return builder.ToString();
+    }
+    private static string BuildSupplyExplorerSvg(
+        LocaleGeometry locale,
+        IReadOnlyList<DPoint> supplyPoints,
+        IReadOnlyList<NodeLabel> supplyLabels,
+        int rank,
+        double activeLength,
+        double goodness)
+    {
+        IEnumerable<DPoint> allPoints = locale.Perimeter.Concat(supplyPoints);
+        double minX = allPoints.Min(point => point.X) - 0.25;
+        double minY = allPoints.Min(point => point.Y) - 0.25;
+        double maxX = allPoints.Max(point => point.X) + 0.25;
+        double maxY = allPoints.Max(point => point.Y) + 0.25;
+
+        var builder = new StringBuilder();
+        builder.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        builder.AppendLine(
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{minX} {minY} {maxX - minX} {maxY - minY}\" data-termodel-engine=\"Diego\" data-role=\"supply-explorer\" data-rank=\"{rank}\">"));
+
+        AppendPolyline(
+            builder,
+            locale.Perimeter,
+            "black",
+            locale.Id,
+            "perimetro");
+        AppendPolyline(
+            builder,
+            supplyPoints,
+            "red",
+            locale.Id,
+            "mandata");
+        AppendNodeLabels(
+            builder,
+            supplyLabels,
+            locale.Id,
+            "mandata");
+
+        string tx = minX.ToString("0.######", CultureInfo.InvariantCulture);
+        string ty = minY.ToString("0.######", CultureInfo.InvariantCulture);
+        builder.AppendLine(
+            $"<text x=\"{tx}\" y=\"{ty}\" font-size=\"0.10\" fill=\"#111\">" +
+            $"rank {rank} | active {Fmt(activeLength)} m | goodness {Fmt(goodness)}</text>");
+        builder.AppendLine("</svg>");
+        return builder.ToString();
+    }
     private static string WriteSvg(
         IReadOnlyList<LocaleSolution> solutions,
         StrategiaDiegoMetrics metrics,
@@ -1927,6 +3019,12 @@ internal static class StrategiaDiegoEngine
     private sealed record ExtensionResult(
         GeoSegment Segment,
         GeoSegment Front);
+    private sealed record ExtensionCandidate(
+        ExtensionResult Extension,
+        bool PhysicalHit,
+        DPoint Intersection,
+        double Respect,
+        double AlongRay);
 
     private sealed record SearchTree(
         IReadOnlyList<SearchNode> Terminals);
@@ -1940,7 +3038,8 @@ internal static class StrategiaDiegoEngine
             DVector direction,
             int depth,
             double lengthMeters,
-            int nodeId)
+            int nodeId,
+            string? decisionKey)
         {
             Parent = parent;
             Segment = segment;
@@ -1949,6 +3048,7 @@ internal static class StrategiaDiegoEngine
             Depth = depth;
             LengthMeters = lengthMeters;
             NodeId = nodeId;
+            DecisionKey = decisionKey;
         }
 
         public SearchNode? Parent { get; }
@@ -1958,6 +3058,7 @@ internal static class StrategiaDiegoEngine
         public int Depth { get; }
         public double LengthMeters { get; }
         public int NodeId { get; }
+        public string? DecisionKey { get; }
         public DPoint End => Segment.B;
     }
 
@@ -2080,6 +3181,57 @@ internal static class StrategiaDiegoEngine
     }
 }
 
+internal sealed record StrategiaDiegoRankedSolutionExplorerResult(
+    string LocaleId,
+    double StepMeters,
+    int SupplyNodes,
+    int SupplyTerminals,
+    int SkipTop,
+    IReadOnlyList<StrategiaDiegoRankedSolutionExplorerItem> Items);
+
+internal sealed record StrategiaDiegoRankedSolutionExplorerItem(
+    int SupplyRank,
+    int SupplyTerminalNodeId,
+    double SupplyActiveLengthMeters,
+    double SupplyGoodness,
+    double SupplyTotalLengthMeters,
+    IReadOnlyList<int> SupplyNodeIds,
+    IReadOnlyList<string> SupplyDecisionKeys,
+    string? SupplyTerminalDecisionKey,
+    bool ReturnFeasible,
+    int? ReturnTerminalNodeId,
+    double? ReturnActiveLengthMeters,
+    double? ReturnGoodness,
+    double? ReturnTotalLengthMeters,
+    double? ClosureLengthMeters,
+    double? CombinedMeritMeters,
+    string? ReturnRootSide,
+    IReadOnlyList<int>? ReturnNodeIds,
+    IReadOnlyList<string>? ReturnDecisionKeys,
+    string? ReturnTerminalDecisionKey,
+    int ReturnNodesExplored,
+    int CombinedTerminals,
+    int AcceptedTerminals,
+    string? ReturnError,
+    string Svg);
+internal sealed record StrategiaDiegoSupplyExplorerResult(
+    string LocaleId,
+    double StepMeters,
+    int SupplyNodes,
+    int SupplyTerminals,
+    IReadOnlyList<StrategiaDiegoSupplyExplorerItem> Items);
+
+internal sealed record StrategiaDiegoSupplyExplorerItem(
+    int Rank,
+    int TerminalNodeId,
+    int Depth,
+    double ActiveLengthMeters,
+    double Goodness,
+    double TotalLengthMeters,
+    IReadOnlyList<int> NodeIds,
+    IReadOnlyList<string> DecisionKeys,
+    string? TerminalDecisionKey,
+    string Svg);
 internal sealed record StrategiaDiegoResult(
     string Svg,
     double StepMeters,

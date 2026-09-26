@@ -1,0 +1,14 @@
+DIEGO_DECISION family=Supply choice=PARALLELA_A start=(2.000000,0.150000) target=(3.850000,0.150000) refFamily=Architecture ref=((4.000000,0.000000)->(4.000000,4.000000)) d=0.150000 type=physical
+DIEGO_DECISION family=Supply choice=PARALLELA_A start=(3.850000,0.150000) target=(3.850000,3.850000) refFamily=Architecture ref=((0.000000,4.000000)->(4.000000,4.000000)) d=0.150000 type=physical
+DIEGO_DECISION family=Supply choice=PARALLELA_A start=(3.850000,3.850000) target=(1.400000,3.850000) refFamily=Supply ref=((2.000000,0.000000)->(2.000000,0.150000)) d=0.600000 type=lateral
+DIEGO_DECISION family=Supply choice=PROSEGUI_DRITTO start=(1.400000,3.850000) target=(0.150000,3.850000) refFamily=Architecture ref=((0.000000,0.000000)->(0.000000,4.000000)) d=0.150000 type=physical
+DIEGO_DECISION family=Supply choice=PARALLELA_A start=(0.150000,3.850000) target=(0.150000,3.250000) refFamily=Supply ref=((1.400000,3.850000)->(3.850000,3.850000)) d=0.600000 type=lateral
+DIEGO_DECISION family=Supply choice=PROSEGUI_DRITTO start=(0.150000,3.250000) target=(0.150000,0.150000) refFamily=Architecture ref=((0.000000,0.000000)->(4.000000,0.000000)) d=0.150000 type=physical
+DIEGO_DECISION family=Supply choice=PARALLELA_A start=(0.150000,0.150000) target=(0.750000,0.150000) refFamily=Supply ref=((0.150000,3.250000)->(0.150000,3.850000)) d=0.600000 type=lateral
+DIEGO_DECISION family=Supply choice=PROSEGUI_DRITTO start=(0.750000,0.150000) target=(1.400000,0.150000) refFamily=Supply ref=((2.000000,0.000000)->(2.000000,0.150000)) d=0.600000 type=physical
+DIEGO_DECISION family=Supply choice=PARALLELA_A start=(1.400000,0.150000) target=(1.400000,0.750000) refFamily=Supply ref=((2.000000,0.150000)->(3.850000,0.150000)) d=0.600000 type=lateral
+DIEGO_DECISION family=Supply choice=PARALLELA_A start=(1.400000,0.750000) target=(2.600000,0.750000) refFamily=Supply ref=((2.000000,0.000000)->(2.000000,0.150000)) d=0.600000 type=lateral
+DIEGO_DECISION family=Supply choice=PROSEGUI_DRITTO start=(2.600000,0.750000) target=(3.250000,0.750000) refFamily=Supply ref=((3.850000,0.150000)->(3.850000,3.850000)) d=0.600000 type=physical
+DIEGO_DECISION family=Supply choice=PARALLELA_A start=(3.250000,0.750000) target=(3.250000,3.250000) refFamily=Supply ref=((1.400000,3.850000)->(3.850000,3.850000)) d=0.600000 type=physical
+DIEGO_DECISION family=Supply choice=PARALLELA_A start=(3.250000,3.250000) target=(1.400000,3.250000) refFamily=Supply ref=((2.000000,0.000000)->(2.000000,0.150000)) d=0.600000 type=lateral
+DIEGO_DECISION family=Supply choice=PROSEGUI_DRITTO start=(1.400000,3.250000) target=(0.750000,3.250000) refFamily=Supply ref=((0.150000,3.250000)->(0.150000,3.850000)) d=0.600000 type=physical
