@@ -54,8 +54,33 @@ Regole obbligatorie:
   la notifica senza esporre o simulare il secret.
 
 La notifica terminale deve contenere almeno workflow/incarico, numero run,
-SUCCESS/FAILED, commit e collegamento alla Action. Priorità consigliata:
-`high` per SUCCESS, `urgent` per FAILED.
+SUCCESS/FAILED, commit e collegamento alla Action.
+
+Gerarchia sonora obbligatoria dal 26/09/2026:
+
+- tutte le notifiche operative GitHub Actions/build usano priorità ntfy `low`,
+  sia in caso di SUCCESS sia in caso di FAILED;
+- la massima intensità è riservata esclusivamente alla notifica di chiusura
+  della Issue #1 che rappresenta la fine reale dell'incarico;
+- la chiusura Issue #1 usa priorità ntfy `urgent` sia per `completed` sia
+  per `not_planned`;
+- tag e testo continuano a distinguere successo e insuccesso.
+
+## Distinzione fra build e fine incarico
+
+La notifica della build è informativa e non equivale alla conclusione del
+lavoro assegnato. Durante un incarico possono verificarsi più build e retry;
+tutte queste notifiche restano a bassa intensità.
+
+La notifica ad alta evidenza viene generata soltanto dal workflow:
+
+```text
+.github/workflows/issue-work-notify.yml
+```
+
+quando la Issue #1 viene chiusa. In questo modo il suono più forte significa
+sempre **fine incarico**, indipendentemente dal fatto che l'esito sia successo
+o insuccesso.
 
 ## Errori e retry
 
