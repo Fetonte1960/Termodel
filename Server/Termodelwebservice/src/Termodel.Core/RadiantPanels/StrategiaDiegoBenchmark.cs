@@ -13,7 +13,8 @@ public static class StrategiaDiegoBenchmark
         string localeXml,
         double stepMeters = StrategiaDiegoEngine.DefaultStepMeters,
         bool includeDetailedDiagnostics = false,
-        IReadOnlyCollection<string>? rejectedDecisionKeys = null)
+        IReadOnlyCollection<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix = null)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Diego vuota.", nameof(localeXml));
@@ -34,13 +35,16 @@ public static class StrategiaDiegoBenchmark
 
         IReadOnlySet<string>? decisionRejectSet =
             NormalizeRejectedDecisionKeys(rejectedDecisionKeys);
+        IReadOnlyList<string>? decisionPrefix =
+            NormalizeDecisionPrefix(lockedSupplyDecisionPrefix);
 
         StrategiaDiegoResult result =
             StrategiaDiegoEngine.Generate(
                 document,
                 stepMeters,
                 numberSpiralNodes: true,
-                rejectedDecisionKeys: decisionRejectSet);
+                rejectedDecisionKeys: decisionRejectSet,
+                lockedSupplyDecisionPrefix: decisionPrefix);
 
         StrategiaDiegoMetrics m = result.Metrics;
         IReadOnlyList<string> diagnostics = includeDetailedDiagnostics
@@ -67,7 +71,8 @@ public static class StrategiaDiegoBenchmark
         string localeXml,
         double stepMeters = StrategiaDiegoEngine.DefaultStepMeters,
         int topCount = 20,
-        IReadOnlyCollection<string>? rejectedDecisionKeys = null)
+        IReadOnlyCollection<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix = null)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Diego vuota.", nameof(localeXml));
@@ -83,7 +88,8 @@ public static class StrategiaDiegoBenchmark
                 document,
                 stepMeters,
                 topCount,
-                NormalizeRejectedDecisionKeys(rejectedDecisionKeys));
+                NormalizeRejectedDecisionKeys(rejectedDecisionKeys),
+                NormalizeDecisionPrefix(lockedSupplyDecisionPrefix));
 
         return new StrategiaDiegoSupplyExplorerSample(
             result.LocaleId,
@@ -109,7 +115,8 @@ public static class StrategiaDiegoBenchmark
         double stepMeters = StrategiaDiegoEngine.DefaultStepMeters,
         int skipTop = 0,
         int count = 20,
-        IReadOnlyCollection<string>? rejectedDecisionKeys = null)
+        IReadOnlyCollection<string>? rejectedDecisionKeys = null,
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix = null)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Diego vuota.", nameof(localeXml));
@@ -128,7 +135,8 @@ public static class StrategiaDiegoBenchmark
                 stepMeters,
                 skipTop,
                 count,
-                NormalizeRejectedDecisionKeys(rejectedDecisionKeys));
+                NormalizeRejectedDecisionKeys(rejectedDecisionKeys),
+                NormalizeDecisionPrefix(lockedSupplyDecisionPrefix));
 
         return new StrategiaDiegoRankedSolutionExplorerSample(
             result.LocaleId,
@@ -162,6 +170,41 @@ public static class StrategiaDiegoBenchmark
                     item.AcceptedTerminals,
                     item.ReturnError,
                     item.Svg)).ToArray());
+    }
+
+    private static IReadOnlyList<string>? NormalizeDecisionPrefix(
+        IReadOnlyList<string>? lockedSupplyDecisionPrefix)
+    {
+        if (lockedSupplyDecisionPrefix is null ||
+            lockedSupplyDecisionPrefix.Count == 0)
+        {
+            return null;
+        }
+
+        var result = new List<string>();
+        foreach (string raw in lockedSupplyDecisionPrefix)
+        {
+            string key = raw.Trim();
+            if (key.Length == 0 ||
+                key.StartsWith("#", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (!key.StartsWith(
+                    "DIEGO_DECISION ",
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "Prefix Lock: ogni riga deve essere una Decision Key canonica.");
+            }
+
+            result.Add(key);
+        }
+
+        return result.Count == 0
+            ? null
+            : result;
     }
 
     private static IReadOnlySet<string>? NormalizeRejectedDecisionKeys(
