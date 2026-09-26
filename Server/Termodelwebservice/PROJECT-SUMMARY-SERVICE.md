@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Implementazione Decision Reject Replay
-Stato: COMMISSIONATO
+Stato: ESEGUITO — HARNESS SUCCESS / PROTOTIPO PR #8
 
 Commissionato:
 - implementare sul branch sperimentale PR #8 l'architettura `Decision Reject Replay` già consolidata nelle linee guida R23;
@@ -88,6 +88,23 @@ Commissionato:
 - nessun merge in `main` senza successiva autorizzazione;
 - chiudere Issue #1 `Completed` al termine se il collaudo riesce.
 
+
+Risultato:
+- implementato il Decision Reject Replay sul branch `experiment/lg041-supply-first-return-after`, PR #8;
+- ogni scelta reale Supply/Return dispone di Decision Key canonica con coordinate/distanze a 6 decimali e firma geometrica del riferimento normalizzata; nessuna dipendenza da GUID, timestamp o node ID;
+- il matching è esatto e il rifiuto avviene prima di `AddNode()`, con log `DIEGO_DECISION_REPLAY REJECT_BY_INPUT`;
+- i nodi potati esclusivamente dal replay non vengono trasformati in nuovi terminali: log `PRUNED_BY_REPLAY ... terminalCreated=false`; questo preserva l'insieme delle soluzioni originali meno i rami esplicitamente esclusi;
+- Harness implementa `--reject-decisions <file.txt>` e la scorciatoia `--reject-current-supply`;
+- `--reject-current-supply` prende la Decision Key terminale del primo setup Supply residuo, la aggiunge ai reject attivi e riesegue il vero motore;
+- Supply Explorer e Solution Explorer esportano Decision Key del percorso e terminal key, così una chat futura può applicare reject senza cambiare sorgente;
+- Harness run `36234542311`, job `108383827746`: **SUCCESS** completo;
+- test quadrato: scartato Supply rank1 terminale 123 (`active=28.05 m`, `goodness=1.051875`), nuovo top residuo = esattamente il precedente rank2 terminale 290 con stesso active/goodness (pari merito); quindi il meccanismo restituisce il successivo nell'ordinamento originale;
+- il reject file prodotto automaticamente è stato riusato con `--reject-decisions`; il normale SVG StrategiaDiego risultante è byte-identico a quello del reject automatico;
+- baseline senza reject conserva SVG SHA-256 `ca3ba4bbda4a6e95398f3d155f7009d05e0e378843b06b26b86f9fe0a82e8ce0`, identico al checkpoint precedente;
+- build completa run `36234542357`: step Release Build **SUCCESS**; workflow rosso solo per benchmark LG-046 già noto (`44044` nodi, P95 `4559 ms` > budget `2000 ms`);
+- linee guida aggiornate commit `153cb6e11bfeda53833ca5fd8f903d3d1b6f3adf`; registro sviluppo R24 commit `afb79b149b8d4e423358baa6402b1e051d15ef46`;
+- uso futuro concordato: richiesta `scarta questo setup mandata` = accumulare la Decision Key terminale del setup mostrato e presentare il nuovo top residuo; se c'è parità di merito si presenta il successivo nell'ordinamento;
+- nessun merge in `main`; PR #8 resta sperimentale.
 
 ### INCARICO 2026-09-26 — Fotografia architettura debug Decision Reject Replay
 Stato: ESEGUITO — DOCUMENTAZIONE CONSOLIDATA / NON IMPLEMENTATA
