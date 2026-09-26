@@ -1135,7 +1135,9 @@ jobs:
 
           $topic = [uri]::EscapeDataString($env:TERMODEL_NTFY_TOPIC)
           $message = "TermodelService Build #${{ github.run_number }}: $finalStatus" + [Environment]::NewLine + "Commit: ${{ github.sha }}"
-          $priority = if ($finalStatus -eq "SUCCESS") { "high" } else { "urgent" }
+          # Le build sono notifiche operative: sempre bassa intensita.
+          # La massima intensita e' riservata alla chiusura della Issue #1.
+          $priority = "low"
           $tags = if ($finalStatus -eq "SUCCESS") { "white_check_mark" } else { "rotating_light" }
 
           try {
