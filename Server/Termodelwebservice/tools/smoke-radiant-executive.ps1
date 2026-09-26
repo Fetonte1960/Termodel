@@ -327,33 +327,7 @@ try {
     [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)).Count
   $dxfPrimitiveCount = ([regex]::Matches(
     $dxfText,
-    '(?m)^0\r?\n(?:LINE|LWPOLYLINE|TEXT)\r?
-  $metadata = [ordered]@{
-    fixture = "square-4x4-service-project"
-    spiralEngine = $env:TERMODEL_SPIRAL_ENGINE
-    logCategory = "SpiraliDiego"
-    projectId = [string]$allocation.projectId
-    floorName = $floorName
-    svgSha256 = (Get-FileHash -LiteralPath $svgPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    dxfSha256 = (Get-FileHash -LiteralPath $dxfPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    primitiveCount = $dxfPrimitiveCount
-    svgDebugNodeCount = $debugPrimitiveCount
-    executedAtUtc = [DateTime]::UtcNow.ToString("o")
-  }
-  $metadata | ConvertTo-Json -Depth 20 |
-    Set-Content -LiteralPath (Join-Path $artifactDir "test-metadata.json") -Encoding utf8
-
-  Write-Host "RADIANT_EXECUTIVE_SVG_DXF_SMOKE_OK"
-  Write-Host "STRATEGIA_DIEGO_SQUARE_EXECUTIVE_OK"
-  Write-Host "squareExecutiveSvgSha256=$($metadata.svgSha256)"
-}
-finally {
-  Stop-ServiceProcess $service
-  if (Test-Path $env:TERMODEL_SAVED_PROJECTS_DIR) {
-    Remove-Item -LiteralPath $env:TERMODEL_SAVED_PROJECTS_DIR -Recurse -Force -ErrorAction SilentlyContinue
-  }
-}
-)).Count
+    '(?m)^0\r?\n(?:LINE|LWPOLYLINE|TEXT)\r?$')).Count
   $debugPrimitiveCount = $debugNodeTexts.Count
   $svgTechnicalPrimitiveCount = $svgPrimitiveCount - $debugPrimitiveCount
 
@@ -385,7 +359,8 @@ finally {
     floorName = $floorName
     svgSha256 = (Get-FileHash -LiteralPath $svgPath -Algorithm SHA256).Hash.ToLowerInvariant()
     dxfSha256 = (Get-FileHash -LiteralPath $dxfPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    primitiveCount = $svgPrimitiveCount
+    primitiveCount = $dxfPrimitiveCount
+    svgDebugNodeCount = $debugPrimitiveCount
     executedAtUtc = [DateTime]::UtcNow.ToString("o")
   }
   $metadata | ConvertTo-Json -Depth 20 |
