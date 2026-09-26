@@ -71,6 +71,33 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Harness pannelli minimale e base dati test preconfezionata
+Stato: COMMISSIONATO
+
+Commissionato:
+- registrare nelle linee guida il nuovo setup preferenziale per i test rapidi StrategiaDiego;
+- creare un eseguibile Console .NET minimale dedicato ai pannelli, separato da ASP.NET, che referenzi direttamente `Termodel.Core`;
+- il Harness deve usare il vero codice del Core/StrategiaDiego, non duplicare il motore;
+- predisporre una base dati di test pannelli preconfezionata a partire dalla fixture/progetto esempio corrente, evitando ogni modifica a `definizionedati.json`;
+- il primo dataset deve rappresentare il banco quadrato 4x4 / ingresso T1 / `p=0,30 m` e poter essere lanciato senza parsing del progetto Web completo;
+- output minimo: SVG diagnostico, log e metriche essenziali del percorso;
+- il Harness deve poter accettare una fixture/input esplicita e una directory di output, così da riusare lo stesso eseguibile per futuri casi;
+- preferire build limitata a `Termodel.Core` + Harness per accorciare il ciclo di prova;
+- aggiornare `STRATEGIADIEGO_TEST_CONTEXT_CURRENT` affinché indichi il Harness come setup preferito quando disponibile;
+- aggiornare registro StrategiaDiego e documentazione del dataset;
+- eseguire build reale del progetto Harness; se possibile aggiungere un smoke rapido separato dal Service completo;
+- non modificare frontend, Library Desktop o `definizionedati.json`;
+- chiudere Issue #1 `Completed` solo dopo build/test riusciti; `Not planned` se l'incarico fallisce definitivamente.
+
+Criteri di completamento:
+- progetto Console Harness presente e referenziato a `Termodel.Core`;
+- base dati test presente e documentata;
+- esecuzione Harness produce SVG/log/metriche sul quadrato;
+- build reale verificata;
+- linee guida e registro aggiornati;
+- Issue #1 chiusa con esito coerente.
+
+
 ### INCARICO 2026-09-26 — Collaudo preliminare in chat e contesto di test corrente
 Stato: ESEGUITO
 
