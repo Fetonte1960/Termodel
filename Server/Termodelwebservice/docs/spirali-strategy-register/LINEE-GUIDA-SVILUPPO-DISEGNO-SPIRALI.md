@@ -5228,6 +5228,73 @@ Il principio operativo è quindi:
 
 ---
 
+## Strumento diagnostico — StrategiaDiego Solution Explorer
+
+Per il debug delle strategie non è sufficiente osservare soltanto la soluzione
+vincente. Il `Termodel.RadiantPanels.Harness` dispone quindi di un Solution
+Explorer delle **mandate pure**, eseguito prima della costruzione del ritorno e
+senza modificare la funzione di merito.
+
+### Comandi
+
+```text
+--supply-top N
+```
+
+Esporta le migliori `N` mandate pure in ordine di classifica.
+
+```text
+--skip-top N --supply-top M
+```
+
+Esclude le prime `N` soluzioni e visualizza/esporta le successive `M`. È la
+modalità preferenziale quando si vuole capire perché una soluzione geometrica
+apparentemente migliore è stata scartata.
+
+```text
+--supply-rank N
+```
+
+Esporta una singola soluzione di rank assoluto `N`.
+
+### Output
+
+Il Harness crea:
+
+- `supply-rank-NNN.svg` per ogni soluzione richiesta;
+- `solutions.json` con rank, terminal node, depth, activeLength, goodness,
+  totalLength e sequenza completa dei node ID;
+- `index.html` con galleria visuale delle soluzioni esportate.
+
+La classifica usa **esattamente** lo stesso ordinamento supply-first del motore:
+
+1. `TerminalGoodness` decrescente;
+2. `ActiveSpiralLength` decrescente;
+3. lunghezza totale decrescente.
+
+Il Solution Explorer non costruisce il ritorno e non altera né il Service né
+la selezione normale. Serve esclusivamente a rendere osservabili i terminali
+Supply che normalmente vengono scartati.
+
+### Collaudo 26/09/2026
+
+Workflow Harness run `36229900092`: **SUCCESS**.
+
+Sul quadrato LG-046:
+
+- 374 nodi Supply;
+- 110 terminali Supply classificati;
+- Top 40 esportata con successo;
+- prova `--skip-top 20 --supply-top 5`: esportati esattamente rank 21..25;
+- il ramo contenente `47->48`, che non compariva nei Top 20, compare per la
+  prima volta al rank 21;
+- rank 21: terminale 74, activeLength `25,45 m`, goodness `0,954375`,
+  totalLength `25,60 m`, percorso nodi
+  `1,3,41,42,43,44,45,47,48,50,52,59,61,62,65,67,69,73,74`;
+- lo stesso ingresso `47->48` compare anche ai rank 22 e 25.
+
+Questo strumento diventa il metodo preferito per confrontare soluzioni scartate
+prima di modificare regole geometriche o funzione di merito.
 ## Variabile documentale canonica — STRATEGIADIEGO_TEST_CONTEXT_CURRENT
 
 `STRATEGIADIEGO_TEST_CONTEXT_CURRENT` identifica il **progetto/caso e le
