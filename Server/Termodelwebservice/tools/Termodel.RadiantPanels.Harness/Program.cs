@@ -21,8 +21,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--supply-top N] [--supply-rank N]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--supply-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --case <case.json> [--out <dir>] [--supply-top N] [--skip-top N] [--supply-rank N]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--id <case-id>] [--p <metri>] [--out <dir>] [--supply-top N] [--skip-top N] [--supply-rank N]");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
 }
@@ -37,6 +37,7 @@ static int Run(string[] args)
         string? idArg = Arg(args, "--id");
         string? stepArg = Arg(args, "--p");
         int? supplyTop = PositiveIntArg(args, "--supply-top");
+        int skipTop = NonNegativeIntArg(args, "--skip-top") ?? 0;
         int? supplyRank = PositiveIntArg(args, "--supply-rank");
 
         HarnessCase? testCase = null;
@@ -90,12 +91,12 @@ static int Run(string[] args)
 
         string localeXml = File.ReadAllText(fullInputPath, Encoding.UTF8);
 
-        if (supplyTop is not null || supplyRank is not null)
+        if (supplyTop is not null || supplyRank is not null || skipTop > 0)
         {
-            int requestedTop = Math.Max(
-                supplyTop ?? 0,
-                supplyRank ?? 0);
-            requestedTop = Math.Max(requestedTop, 1);
+            int exportCount = supplyTop ?? 20;
+            int requestedTop = supplyRank is not null
+                ? supplyRank.Value
+                : skipTop + exportCount;
 
             return RunSupplyExplorer(
                 localeXml,
@@ -103,7 +104,9 @@ static int Run(string[] args)
                 caseId,
                 outputDir,
                 requestedTop,
-                supplyRank);
+                supplyRank,
+                skipTop,
+                exportCount);
         }
 
         StrategiaDiegoBenchmarkSample sample =
@@ -172,7 +175,9 @@ static int RunSupplyExplorer(
     string caseId,
     string outputDir,
     int topCount,
-    int? selectedRank)
+    int? selectedRank,
+    int skipTop,
+    int exportCount)
 {
     StrategiaDiegoSupplyExplorerSample explorer =
         StrategiaDiegoBenchmark.ExploreSupply(
@@ -188,6 +193,8 @@ static int RunSupplyExplorer(
     IEnumerable<StrategiaDiegoSupplyExplorerEntry> entries =
         selectedRank is null
             ? explorer.Items
+                .Skip(skipTop)
+                .Take(exportCount)
             : explorer.Items.Where(item => item.Rank == selectedRank.Value);
 
     StrategiaDiegoSupplyExplorerEntry[] selected = entries.ToArray();
@@ -214,6 +221,8 @@ static int RunSupplyExplorer(
         explorer.SupplyNodes,
         explorer.SupplyTerminals,
         requestedTop = topCount,
+        skipTop,
+        exportCount,
         selectedRank,
         solutions = selected.Select(entry => new
         {
@@ -251,6 +260,7 @@ static int RunSupplyExplorer(
     Console.WriteLine($"case={caseId}");
     Console.WriteLine($"supplyNodes={explorer.SupplyNodes}");
     Console.WriteLine($"supplyTerminals={explorer.SupplyTerminals}");
+    Console.WriteLine($"skipTop={skipTop}");
     Console.WriteLine($"exported={selected.Length}");
     Console.WriteLine($"manifest={manifestPath}");
     Console.WriteLine($"index={htmlPath}");
@@ -313,6 +323,15 @@ static string BuildSupplyExplorerHtml(
     return builder.ToString();
 }
 
+static int? NonNegativeIntArg(string[] args, string name)
+{
+    string? raw = Arg(args, name);
+    if (raw is null)
+        return null;
+    if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) || value < 0)
+        throw new ArgumentException($"{name} deve essere un intero >= 0.");
+    return value;
+}
 static int? PositiveIntArg(string[] args, string name)
 {
     string? raw = Arg(args, name);
