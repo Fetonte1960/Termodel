@@ -7,6 +7,48 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R22 — Branch Inspector nodo 63
+Stato: **ESEGUITO — STRUMENTO DIAGNOSTICO VERIFICATO**
+
+Decisione utente 26/09/2026:
+- rendere disponibile a richiesta una diagnostica visuale di rami/nodi scartati;
+- caso iniziale: visualizzare `61->62->63`, confrontarlo con `62->65` e mostrare le continuazioni tentate dal nodo 63;
+- nessuna modifica alle regole geometriche o al merito.
+
+Implementazione:
+- branch `experiment/lg041-supply-first-return-after`, PR #8;
+- `TryExtend()` emette diagnostica `TRYEXT CHECK/ACCEPT/REJECT` con `I`, `T`, `d`, riferimento e tipo fisico/laterale;
+- Harness aggiunto comando `--inspect-node N [--compare-node M]`;
+- il Branch Inspector ricostruisce l'albero esclusivamente dai log del vero motore;
+- output SVG/JSON/log specifico del nodo.
+
+Verifica reale:
+- primo tentativo workflow `36232610173`: failure di compilazione per conflitto locale `diagnosticNode`; nessuna esecuzione geometrica;
+- correzione commit `1ebe2e24efb8739f78c68ace778dc352406bb749`;
+- Harness run `36232724318`, job `108378795597`: **SUCCESS**;
+- comando verificato: `--inspect-node 63 --compare-node 65`;
+- artifact `radiant-harness-fast`, id `10902842432`.
+
+Risultato nodo 63:
+- target path: `1,3,41,42,43,44,45,47,48,50,52,59,61,62,63`;
+- compare path: stesso prefisso fino a 62, poi `62->65`;
+- `PROSEGUI_DRITTO` da `(0.75,3.25)` a `(0.15,3.25)`: REJECT, `distance=0 required=0.6`;
+- `PARALLELA_A`: `I=(0.75,0.75)`, `T=(0.75,0.15)`, `d=0.60`; REJECT per collisione `distance=0 required=0.6`;
+- `PARALLELA_B`: `I=(0.75,3.85)`, `T=(0.75,4.45)`, `d=0.60`; REJECT fuori locale;
+- nodo 63 diventa terminale con activeLength `21,65 m`, goodness `0,812`.
+
+Diagnosi confermata:
+- il ramo `62->63` raggiunge correttamente la posizione a `2p` dal verticale `43->44`;
+- il difetto successivo è la `PARALLELA_A` che, usando un fronte disponibile solo tramite prolungamento laterale, viene portata `oltre I` fino a `y=0.15` anziché fermarsi prima del fronte;
+- la collisione così introdotta tronca artificialmente il ramo normotico e favorisce il ramo `62->65`.
+
+Build completa:
+- compilazione SUCCESS;
+- workflow completa resta failure sul benchmark quadrato LG-046 già noto per P95 oltre budget; il Branch Inspector non modifica l'algoritmo e non è la causa del failure.
+
+Decisione:
+- Branch Inspector adottato come strumento diagnostico riutilizzabile;
+- prossimo intervento algoritmico, se approvato, può essere focalizzato esclusivamente sulla diversa semantica terminale delle `PARALLELA_A/B` laterali rispetto a `PROSEGUI_DRITTO`.
 ## R21 — Solution Explorer combinato: rank Supply + miglior Return
 Stato: **ESEGUITO — STRUMENTO DIAGNOSTICO VERIFICATO**
 
