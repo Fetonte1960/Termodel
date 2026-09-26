@@ -71,6 +71,22 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Correzione arresto immotivato dopo nodo 15
+Stato: COMMISSIONATO
+
+Commissionato:
+- considerare **approvato** il setup R30 fino al nuovo nodo 15 `(0,75;3,25)`;
+- spiegare perché il Supply termina al nodo 15 e correggere il comportamento se il terminale è prodotto da una semantica geometrica errata;
+- preservare integralmente il Prefix Lock già approvato fino al nodo 15;
+- verificare in particolare la continuazione parallela verso il basso, mantenendo le distanze di progetto invece di collidere col tratto esistente;
+- applicare una correzione generale al motore solo se supportata dai log e non un hardcode sul nodo;
+- rieseguire Harness, produrre lo SVG standard aggiornato e confrontarlo col checkpoint R30;
+- aggiornare linee guida con lo stato corrente del debug e la diagnosi/correzione;
+- aggiornare registro, Summary e PR #8;
+- nessun merge in main senza autorizzazione separata;
+- chiudere Issue #1 Completed se riuscito, Not planned se fallito.
+
+
 ### INCARICO 2026-09-26 — Debug nodo 22 verso tratto 5→6→7 a distanza 2p
 Stato: ESEGUITO — HARNESS SUCCESS / CHECKPOINT MEMORIZZATO
 
