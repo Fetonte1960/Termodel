@@ -12,7 +12,8 @@ public static class StrategiaDiegoBenchmark
     public static StrategiaDiegoBenchmarkSample Run(
         string localeXml,
         double stepMeters = StrategiaDiegoEngine.DefaultStepMeters,
-        bool includeDetailedDiagnostics = false)
+        bool includeDetailedDiagnostics = false,
+        IReadOnlyCollection<string>? rejectedDecisionKeys = null)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Diego vuota.", nameof(localeXml));
@@ -31,8 +32,15 @@ public static class StrategiaDiegoBenchmark
                     })
                 : null);
 
+        IReadOnlySet<string>? decisionRejectSet =
+            NormalizeRejectedDecisionKeys(rejectedDecisionKeys);
+
         StrategiaDiegoResult result =
-            StrategiaDiegoEngine.Generate(document, stepMeters);
+            StrategiaDiegoEngine.Generate(
+                document,
+                stepMeters,
+                numberSpiralNodes: true,
+                rejectedDecisionKeys: decisionRejectSet);
 
         StrategiaDiegoMetrics m = result.Metrics;
         IReadOnlyList<string> diagnostics = includeDetailedDiagnostics
@@ -58,7 +66,8 @@ public static class StrategiaDiegoBenchmark
     public static StrategiaDiegoSupplyExplorerSample ExploreSupply(
         string localeXml,
         double stepMeters = StrategiaDiegoEngine.DefaultStepMeters,
-        int topCount = 20)
+        int topCount = 20,
+        IReadOnlyCollection<string>? rejectedDecisionKeys = null)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Diego vuota.", nameof(localeXml));
@@ -73,7 +82,8 @@ public static class StrategiaDiegoBenchmark
             StrategiaDiegoEngine.ExploreSupply(
                 document,
                 stepMeters,
-                topCount);
+                topCount,
+                NormalizeRejectedDecisionKeys(rejectedDecisionKeys));
 
         return new StrategiaDiegoSupplyExplorerSample(
             result.LocaleId,
@@ -89,6 +99,8 @@ public static class StrategiaDiegoBenchmark
                     item.Goodness,
                     item.TotalLengthMeters,
                     item.NodeIds,
+                    item.DecisionKeys,
+                    item.TerminalDecisionKey,
                     item.Svg))
                 .ToArray());
     }
@@ -96,7 +108,8 @@ public static class StrategiaDiegoBenchmark
         string localeXml,
         double stepMeters = StrategiaDiegoEngine.DefaultStepMeters,
         int skipTop = 0,
-        int count = 20)
+        int count = 20,
+        IReadOnlyCollection<string>? rejectedDecisionKeys = null)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Diego vuota.", nameof(localeXml));
@@ -114,7 +127,8 @@ public static class StrategiaDiegoBenchmark
                 document,
                 stepMeters,
                 skipTop,
-                count);
+                count,
+                NormalizeRejectedDecisionKeys(rejectedDecisionKeys));
 
         return new StrategiaDiegoRankedSolutionExplorerSample(
             result.LocaleId,
@@ -130,6 +144,8 @@ public static class StrategiaDiegoBenchmark
                     item.SupplyGoodness,
                     item.SupplyTotalLengthMeters,
                     item.SupplyNodeIds,
+                    item.SupplyDecisionKeys,
+                    item.SupplyTerminalDecisionKey,
                     item.ReturnFeasible,
                     item.ReturnTerminalNodeId,
                     item.ReturnActiveLengthMeters,
@@ -139,11 +155,41 @@ public static class StrategiaDiegoBenchmark
                     item.CombinedMeritMeters,
                     item.ReturnRootSide,
                     item.ReturnNodeIds,
+                    item.ReturnDecisionKeys,
+                    item.ReturnTerminalDecisionKey,
                     item.ReturnNodesExplored,
                     item.CombinedTerminals,
                     item.AcceptedTerminals,
                     item.ReturnError,
                     item.Svg)).ToArray());
+    }
+
+    private static IReadOnlySet<string>? NormalizeRejectedDecisionKeys(
+        IReadOnlyCollection<string>? rejectedDecisionKeys)
+    {
+        if (rejectedDecisionKeys is null ||
+            rejectedDecisionKeys.Count == 0)
+        {
+            return null;
+        }
+
+        var result = new HashSet<string>(
+            StringComparer.Ordinal);
+        foreach (string raw in rejectedDecisionKeys)
+        {
+            string key = raw.Trim();
+            if (key.Length == 0 ||
+                key.StartsWith("#", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            result.Add(key);
+        }
+
+        return result.Count == 0
+            ? null
+            : result;
     }
 }
 
@@ -178,6 +224,8 @@ public sealed record StrategiaDiegoSupplyExplorerEntry(
     double Goodness,
     double TotalLengthMeters,
     IReadOnlyList<int> NodeIds,
+    IReadOnlyList<string> DecisionKeys,
+    string? TerminalDecisionKey,
     string Svg);
 
 public sealed record StrategiaDiegoRankedSolutionExplorerSample(
@@ -195,6 +243,8 @@ public sealed record StrategiaDiegoRankedSolutionExplorerEntry(
     double SupplyGoodness,
     double SupplyTotalLengthMeters,
     IReadOnlyList<int> SupplyNodeIds,
+    IReadOnlyList<string> SupplyDecisionKeys,
+    string? SupplyTerminalDecisionKey,
     bool ReturnFeasible,
     int? ReturnTerminalNodeId,
     double? ReturnActiveLengthMeters,
@@ -204,6 +254,8 @@ public sealed record StrategiaDiegoRankedSolutionExplorerEntry(
     double? CombinedMeritMeters,
     string? ReturnRootSide,
     IReadOnlyList<int>? ReturnNodeIds,
+    IReadOnlyList<string>? ReturnDecisionKeys,
+    string? ReturnTerminalDecisionKey,
     int ReturnNodesExplored,
     int CombinedTerminals,
     int AcceptedTerminals,
