@@ -2504,6 +2504,103 @@ La numerazione è esclusivamente diagnostica:
 
 ---
 
+
+## LG-041 — Procedura di scavalcamento del tubo entrante e successivi
+
+**Stato:** CONSOLIDATA — IMPLEMENTAZIONE IN VERIFICA  
+**Origine:** debug visuale del quadrato pannelli del 26/09/2026
+
+### Scopo
+
+Quando una evoluzione incontra il raccordo entrante del ritorno, il raccordo
+non deve diventare una normale evoluzione strategica LG-033, ma non può
+nemmeno essere ignorato durante la costruzione del tratto.
+
+La fase prende il nome di:
+
+```text
+Procedura di scavalcamento del tubo entrante e successivi
+```
+
+### Regola
+
+Il raccordo entrante del ritorno mantiene tre proprietà:
+
+```text
+ostacolo fisico                 = SI
+distanza di rispetto            = SI
+fronte fisico di troncamento    = SI
+riferimento sequenziale LG-033  = NO
+```
+
+Per una mandata che lo incontra:
+
+```text
+distanza mandata-ritorno = p
+```
+
+Un marcatore teorico sul prolungamento di una precedente mandata non deve
+prevaricare il raccordo fisico soltanto perché produrrebbe un tratto più
+corto mediante `I+2p`.
+
+Dopo il troncamento al raccordo, il normale albero può aprire i rami paralleli
+al fronte fisico. Se uno di questi rami aggancia il prolungamento di una
+precedente evoluzione della stessa famiglia, l'aggancio avviene alla distanza
+ordinaria stessa-famiglia:
+
+```text
+d = 2p
+```
+
+Questa nuova corsia non è un offset globale pre-generato: resta una conseguenza
+locale delle primitive già usate da StrategiaDiego.
+
+### Orientamento dopo l'aggancio
+
+Il segmento di riferimento conserva il proprio verso orientato `Uref`.
+
+Il primo tratto percorso sulla corsia appena agganciata deve avere verso:
+
+```text
+Ucorsia = -Uref
+```
+
+Questa regola vale esclusivamente per il primo tratto della fase di
+scavalcamento. Dopo tale tratto il nodo ritorna alle normali alternative
+StrategiaDiego.
+
+### Relazione con Vittorio
+
+Il motore Vittorio costruisce preventivamente offset successivi e li percorre
+in sequenza. StrategiaDiego non adotta quel motore: conserva il proprio albero
+decisionale e riusa soltanto il principio geometrico di raggiungere una
+corsia successiva coerente.
+
+### Diagnostica obbligatoria
+
+La procedura deve rendere disponibili almeno i marker:
+
+```text
+SCAVALCAMENTO physical-limit
+SCAVALCAMENTO lane-attach
+SCAVALCAMENTO opposite-lane
+```
+
+La verifica automatica non sostituisce LG-036: l'SVG reale prodotto dalla
+Action deve essere recuperato per il controllo visuale.
+
+### Stato implementativo
+
+La revisione R8 implementa il caso ortogonale corrente del quadrato:
+`ReturnConnection` può troncare fisicamente la mandata a `p`, orienta
+temporaneamente il cambio di corsia senza entrare nella sequenza LG-033 e,
+dopo l'aggancio a una precedente tubazione, forza il primo tratto nel verso
+opposto al riferimento orientato.
+
+La generalizzazione a scavalcamenti obliqui o a più ostacoli concatenati resta
+soggetta alle future estensioni geometriche LG-034/LG-035.
+
+
 ## Collegamento con il registro dei casi
 
 I casi geometrici concreti continuano a essere registrati in:
