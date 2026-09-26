@@ -295,8 +295,8 @@ try {
 
   $supplyPoints = @($supplyPolyline.GetAttribute("points") -split "\s+" |
     Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-  if ($supplyPoints.Count -lt 3) {
-    throw "Banco prova appartamento: mandata priva del primo cambio direzione."
+  if ($supplyPoints.Count -lt 2) {
+    throw "Banco prova appartamento: mandata priva del raccordo tecnico iniziale."
   }
 
   function Parse-SvgPoint([string]$token) {
@@ -310,7 +310,6 @@ try {
 
   $p0 = Parse-SvgPoint $supplyPoints[0]
   $p1 = Parse-SvgPoint $supplyPoints[1]
-  $p2 = Parse-SvgPoint $supplyPoints[2]
 
   $firstEntryLength = [Math]::Sqrt(
     [Math]::Pow($p1[0]-$p0[0],2) +
@@ -318,10 +317,6 @@ try {
   if ([Math]::Abs($firstEntryLength - 0.15) -gt 0.02) {
     throw "Banco prova appartamento: raccordo ingresso mandata inatteso ($firstEntryLength m), atteso circa 0,15 m = p/2."
   }
-  if ([Math]::Abs($p2[0] - 7.98148) -gt 0.02) {
-    throw "Banco prova appartamento: primo tratto verso la parete destra termina a x=$($p2[0]) m; atteso circa 7,98148 m, cioe' 0,15 m = p/2 dalla parete."
-  }
-
   $returnGroup = @($svgDocument.DocumentElement.ChildNodes | Where-Object {
     $_.NodeType -eq [System.Xml.XmlNodeType]::Element -and
     $_.GetAttribute("data-layer") -eq "Unico_PannelliRitorno_Output"
@@ -352,6 +347,13 @@ try {
   }
   if ([Math]::Abs(($firstReturnEntryLength - $firstEntryLength) - 0.30) -gt 0.03) {
     throw "Banco prova appartamento: distanza normale ritorno-mandata inattesa; atteso p = 0,30 m."
+  }
+
+  $rootSeparation = [Math]::Sqrt(
+    [Math]::Pow($r0[0]-$p0[0],2) +
+    [Math]::Pow($r0[1]-$p0[1],2))
+  if ([Math]::Abs($rootSeparation - 0.30) -gt 0.02) {
+    throw "Banco prova appartamento: radice ritorno distante $rootSeparation m dalla mandata; atteso p = 0,30 m."
   }
 
 

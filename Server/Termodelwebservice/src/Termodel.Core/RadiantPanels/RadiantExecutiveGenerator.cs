@@ -23,7 +23,8 @@ public static class RadiantExecutiveGenerator
     public static RadiantExecutiveArtifacts? Generate(
         string projectText,
         string? panelInputXml,
-        IReadOnlyDictionary<string, string>? cleanFloorPlans = null)
+        IReadOnlyDictionary<string, string>? cleanFloorPlans = null,
+        bool numberSpiralNodes = true)
     {
         if (string.IsNullOrWhiteSpace(panelInputXml))
             return null;
@@ -91,7 +92,8 @@ public static class RadiantExecutiveGenerator
             SpiralEngineOutput engineOutput = RunSpiralEngine(
                 floorInput,
                 floorName,
-                selectedEngine);
+                selectedEngine,
+                numberSpiralNodes);
             string generatedSvg = engineOutput.Svg;
             selectedStepMeters = engineOutput.StepMeters;
 
@@ -216,12 +218,15 @@ public static class RadiantExecutiveGenerator
     private static SpiralEngineOutput RunSpiralEngine(
         XDocument floorInput,
         string floorName,
-        RadiantSpiralEngine engine)
+        RadiantSpiralEngine engine,
+        bool numberSpiralNodes)
     {
         if (engine == RadiantSpiralEngine.Diego)
         {
             StrategiaDiegoResult result =
-                StrategiaDiegoEngine.Generate(floorInput);
+                StrategiaDiegoEngine.Generate(
+                    floorInput,
+                    numberSpiralNodes: numberSpiralNodes);
 
             return new SpiralEngineOutput(
                 result.Svg,
@@ -580,6 +585,36 @@ public static class RadiantExecutiveGenerator
 
         foreach (XElement element in elements.Where(e =>
             e.Name.LocalName.Equals(
+                "text",
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(
+                (string?)e.Attribute("data-termodel"),
+                "spirale-node",
+                StringComparison.OrdinalIgnoreCase)))
+        {
+            if (!TryNumber(element, "data-x", out double x) ||
+                !TryNumber(element, "data-y", out double y) ||
+                !TryNumber(element, "data-altezza", out double height))
+            {
+                continue;
+            }
+
+            string text = element.Value.Trim();
+            if (text.Length == 0)
+                continue;
+
+            drawing.SvgOverlayPrimitives.Add(
+                RadiantExecutivePrimitive.Text(
+                    floorName,
+                    $"{floorName}_SpiraliDebug_Output",
+                    6,
+                    new ExecutivePoint(x, y),
+                    text,
+                    height));
+        }
+
+        foreach (XElement element in elements.Where(e =>
+            e.Name.LocalName.Equals(
                 "rect",
                 StringComparison.OrdinalIgnoreCase) &&
             string.Equals(
@@ -729,6 +764,10 @@ public sealed record RadiantExecutiveArtifacts(
 internal sealed class RadiantExecutiveDrawing
 {
     public List<RadiantExecutivePrimitive> Primitives { get; } = [];
+
+    // Overlay diagnostici visibili solo nell'SVG: non modificano la geometria
+    // tecnica, il DXF o il conteggio primitive dell'esecutivo.
+    public List<RadiantExecutivePrimitive> SvgOverlayPrimitives { get; } = [];
 }
 
 internal enum RadiantExecutivePrimitiveKind
@@ -807,8 +846,12 @@ internal static class RadiantExecutiveSvgWriter
     public static string Write(
         RadiantExecutiveDrawing drawing)
     {
-        IReadOnlyList<RadiantExecutivePrimitive> primitives =
+        IReadOnlyList<RadiantExecutivePrimitive> technicalPrimitives =
             drawing.Primitives;
+        IReadOnlyList<RadiantExecutivePrimitive> primitives =
+            technicalPrimitives
+                .Concat(drawing.SvgOverlayPrimitives)
+                .ToArray();
 
         (double minX, double minY, double maxX, double maxY) =
             Bounds(primitives);
@@ -841,7 +884,10 @@ internal static class RadiantExecutiveSvgWriter
                 F(minY)),
             new XAttribute(
                 "data-primitive-count",
-                primitives.Count));
+                technicalPrimitives.Count),
+            new XAttribute(
+                "data-debug-overlay-count",
+                drawing.SvgOverlayPrimitives.Count));
 
         foreach (IGrouping<string, RadiantExecutivePrimitive> layerGroup in
             primitives.GroupBy(

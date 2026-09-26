@@ -196,6 +196,8 @@ try {
     " ENTRY point=",
     "[SpiraliDiego] TREE Supply initial ACCEPT",
     "[SpiraliDiego] TREE Supply CHOICE",
+    "TERMINAL-GOODNESS",
+    " RETURN-CONNECTION accept ",
     " CLOSURE ",
     " BEST update ",
     " SELECT merit="
@@ -259,16 +261,36 @@ try {
   $cleanFloorLayer = $floorName + "_PiantaPulita_Output"
   $mandataLayer = $floorName + "_PannelliMandata_Output"
   $ritornoLayer = $floorName + "_PannelliRitorno_Output"
+  $debugLayer = $floorName + "_SpiraliDebug_Output"
 
   $cleanFloorGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$cleanFloorLayer']",$ns)
   $mandataGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$mandataLayer']",$ns)
   $ritornoGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$ritornoLayer']",$ns)
+  $debugGroup = $svgXml.SelectSingleNode("//s:g[@data-layer='$debugLayer']",$ns)
   if (-not $cleanFloorGroup -or -not $mandataGroup -or -not $ritornoGroup) {
     throw "SVG esecutivo privo dei gruppi pianta-pulita/mandata/ritorno."
   }
   if ($mandataGroup.ChildNodes.Count -lt 1 -or $ritornoGroup.ChildNodes.Count -lt 1) {
     throw "SVG esecutivo non contiene geometria spirale mandata/ritorno."
   }
+
+  if (-not $debugGroup) {
+    throw "SVG esecutivo privo del layer diagnostico nodi con numerazioneSpirali default=true."
+  }
+  $debugNodeTexts = @($debugGroup.SelectNodes("./s:text",$ns))
+  if ($debugNodeTexts.Count -lt 2) {
+    throw "SVG esecutivo: numerazione nodi StrategiaDiego insufficiente."
+  }
+  foreach ($debugNodeText in $debugNodeTexts) {
+    $nodeId = ([string]$debugNodeText.InnerText).Trim()
+    if ($nodeId -notmatch "^\d+$") {
+      throw "SVG esecutivo: identificativo nodo diagnostico non numerico '$nodeId'."
+    }
+    if ($diegoLogText -notmatch ("(?m)\bnode=" + [regex]::Escape($nodeId) + "\b|\bchildNode=" + [regex]::Escape($nodeId) + "\b")) {
+      throw "SVG esecutivo: node-id $nodeId non rintracciato nel log SpiraliDiego."
+    }
+  }
+  Write-Host "STRATEGIA_DIEGO_NODE_NUMBERING_OK count=$($debugNodeTexts.Count)"
 
   $cleanBoundaries = @($cleanFloorGroup.SelectNodes("./s:polyline | ./s:polygon",$ns))
   if ($cleanBoundaries.Count -lt 2) {
@@ -306,22 +328,27 @@ try {
   $dxfPrimitiveCount = ([regex]::Matches(
     $dxfText,
     '(?m)^0\r?\n(?:LINE|LWPOLYLINE|TEXT)\r?$')).Count
+  $debugPrimitiveCount = $debugNodeTexts.Count
+  $svgTechnicalPrimitiveCount = $svgPrimitiveCount - $debugPrimitiveCount
 
   $minimumExpectedPrimitives =
     $cleanBoundaries.Count +
     $mandataGroup.ChildNodes.Count +
     $ritornoGroup.ChildNodes.Count
-  if ($svgPrimitiveCount -lt $minimumExpectedPrimitives) {
-    throw "Conteggio primitive esecutivo inferiore alla somma pianta pulita + mandata + ritorno."
+  if ($svgTechnicalPrimitiveCount -lt $minimumExpectedPrimitives) {
+    throw "Conteggio primitive tecniche SVG inferiore alla somma pianta pulita + mandata + ritorno."
   }
-  if ($svgPrimitiveCount -ne $dxfPrimitiveCount) {
-    throw "Primitive SVG/DXF differenti: SVG=$svgPrimitiveCount DXF=$dxfPrimitiveCount."
+  if ($svgTechnicalPrimitiveCount -ne $dxfPrimitiveCount) {
+    throw "Primitive tecniche SVG/DXF differenti: SVGtecnico=$svgTechnicalPrimitiveCount DXF=$dxfPrimitiveCount debugSVG=$debugPrimitiveCount."
+  }
+  if ($dxfText -match [regex]::Escape($debugLayer)) {
+    throw "La numerazione diagnostica nodi non deve essere serializzata nel DXF."
   }
 
   $log = Get-Content -LiteralPath (Join-Path $projectDir "logs\calculation.log") -Raw
-  if ($log -notmatch "radiantExecutivePrimitiveCount=$svgPrimitiveCount" -or
+  if ($log -notmatch "radiantExecutivePrimitiveCount=$dxfPrimitiveCount" -or
       $log -notmatch "radiantExecutiveFloorCount=1") {
-    throw "Conteggi esecutivo non coerenti nel calculation.log."
+    throw "Conteggi esecutivo tecnico non coerenti nel calculation.log."
   }
 
   $metadata = [ordered]@{
@@ -332,7 +359,8 @@ try {
     floorName = $floorName
     svgSha256 = (Get-FileHash -LiteralPath $svgPath -Algorithm SHA256).Hash.ToLowerInvariant()
     dxfSha256 = (Get-FileHash -LiteralPath $dxfPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    primitiveCount = $svgPrimitiveCount
+    primitiveCount = $dxfPrimitiveCount
+    svgDebugNodeCount = $debugPrimitiveCount
     executedAtUtc = [DateTime]::UtcNow.ToString("o")
   }
   $metadata | ConvertTo-Json -Depth 20 |

@@ -1,7 +1,7 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.26**  
-Aggiornamento: **25 settembre 2026**  
+Versione documento: **1.27**  
+Aggiornamento: **26 settembre 2026**  
 Stato: **progetti autorevoli locali nel frontend; Service Render dedicato a calcolo e artifact con workspace ricreabile per projectId; endpoint legacy open/save/lock mantenuti compatibili; conversione DXF→SVG nel Core/Service; Pianta pulita SVG persistente e projectId-scoped; feedback utenti verso GitHub Issues, archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati, snapshot diagnostico Render→GitHub e notifica GitHub Actions/telefono implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
@@ -136,6 +136,27 @@ di dipendere da autorizzazioni clipboard dopo una fetch asincrona.
 
 `logCategories=all` abilita ora dieci categorie headless:
 le nove categorie Desktop più `SpiraliDiego`.
+
+## 0.6 Decisione 2026-09-26 — numerazione diagnostica nodi StrategiaDiego
+
+`POST /api/calculations` accetta il parametro opzionale:
+
+```http
+POST /api/calculations?numerazioneSpirali=true
+```
+
+Valori ammessi: `true | false`. Il default è `true`.
+
+Con motore `Diego`, quando il parametro è attivo, l'artifact
+`pannelli-esecutivo-svg` contiene un layer diagnostico
+`<Piano>_SpiraliDebug_Output` con un piccolo numero per ogni nodo della
+soluzione selezionata. Lo stesso ID è scritto nel log `SpiraliDiego`.
+
+La numerazione è un overlay SVG di debug: non modifica geometria, scelta del
+circuito, DXF tecnico o conteggio delle primitive tecniche. Gli altri motori
+non sono modificati da questo parametro.
+
+---
 
 ## 1. Obiettivo dell'architettura
 

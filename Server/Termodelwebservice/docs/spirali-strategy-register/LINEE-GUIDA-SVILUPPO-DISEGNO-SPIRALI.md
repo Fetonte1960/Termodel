@@ -1421,108 +1421,75 @@ ancora implementato.
 
 ## LG-012 — Radice dell'albero di ritorno
 
-**Stato:** CONSOLIDATA  
-**Origine:** decisione utente del 25/09/2026
+**Stato:** CONSOLIDATA — RETTIFICATA 26/09/2026  
+**Origine:** decisione utente del 25/09/2026; rettifica utente del 26/09/2026
 
 ### Proposta
 
-Per ogni tubo/nodo di mandata d'ingresso, l'algoritmo costruisce il **nodo
-radice dell'albero di ritorno** a una distanza di **0,50 m** dal nodo di
-mandata.
-
-Il vettore che unisce il nodo di mandata al nodo radice del ritorno deve essere
-**parallelo alla parete architettonica più vicina**.
-
-### Commento tecnico
-
-La posizione iniziale del ritorno non è quindi arbitraria e non viene ricavata
-da un offset globale rispetto agli assi del disegno.
-
-Per ogni ingresso la procedura geometrica è locale:
-
-1. si identifica il nodo di mandata di ingresso;
-2. si individua la parete architettonica più vicina;
-3. si costruisce una direzione parallela a tale parete;
-4. lungo tale direzione si colloca la radice del ritorno a 0,50 m dal nodo di
-   mandata;
-5. il verso concreto della traslazione deve essere coerente con il
-   `LatoRitorno` associato a quell'ingresso secondo LG-010.
-
-### Regola
+Per ogni nodo di mandata d'ingresso, la radice del ritorno viene collocata
+lungo la parete d'ingresso alla distanza fondamentale tubo-tubo `p`, non a
+una distanza metrica fissa.
 
 Siano:
 
-- `M` = nodo di mandata dell'ingresso;
-- `P` = parete architettonica più vicina a `M`;
-- `R0` = nodo radice dell'albero di ritorno.
+- `M` = nodo di mandata sulla parete d'ingresso;
+- `P` = parete d'ingresso;
+- `R0` = radice del ritorno.
 
 Deve valere:
 
 ```text
-|M R0| = 0,50 m
-
+|M R0| = p
 vettore(M -> R0) // P
-
 verso(M -> R0) coerente con LatoRitorno(M)
 ```
 
-dove `//` indica parallelismo geometrico.
+Con `p = 0,30 m`, la separazione lungo la parete è quindi `0,30 m`.
 
-### Relazione con LG-010 e LG-011
+### Distinzione delle due distanze iniziali
 
-LG-010 stabilisce che ogni ingresso possiede un proprio lato di ritorno.
-
-LG-011 stabilisce che l'albero di ritorno è costruito dall'algoritmo.
-
-LG-012 definisce la prima costruzione geometrica concreta dell'albero di
-ritorno: la posizione della sua radice rispetto al nodo di mandata.
-
-### Vincoli per la futura implementazione
-
-- la distanza 0,50 m deve essere misurata nelle unità geometriche reali del
-  modello;
-- la parete di riferimento deve essere selezionata fra le linee
-  architettoniche della struttura LG-004;
-- il parallelismo deve essere calcolato geometricamente;
-- il verso scelto deve rispettare il `LatoRitorno` del singolo ingresso;
-- ingressi differenti possono quindi produrre radici del ritorno su lati
-  differenti;
-- la parete più vicina e la radice ottenuta devono essere diagnosticabili.
-
-### Criterio futuro di verifica
-
-Per ogni ingresso devono poter essere verificati almeno:
+La distanza lungo la parete fra mandata e ritorno non va confusa con la
+profondità dei raccordi tecnici all'interno del locale:
 
 ```text
-nodo mandata M
-parete architettonica più vicina P
-LatoRitorno
-nodo radice ritorno R0
-distanza(M,R0) = 0,50 m
-parallelismo(M->R0, P) = vero
+lungo parete:
+mandata -> radice ritorno = p
+
+ortogonalmente alla parete, nel corridoio ordinario:
+parete -> traccia mandata = p/2
+parete -> traccia ritorno = 1,5p
 ```
 
-Ruotando l'intera geometria del locale, la costruzione deve restare invariata
-dal punto di vista geometrico relativo.
+La seconda relazione deriva da LG-006 e LG-013: il ritorno resta a `p`
+dalla mandata.
 
-### Punti ancora da definire
+### Sequenza preliminare obbligatoria
 
-LG-012 non stabilisce ancora:
+La radice e il raccordo entrante del ritorno devono essere costruiti **prima**
+dell'albero della mandata. In questo modo la successiva esplorazione della
+mandata conosce già la presenza fisica del ritorno di collegamento.
 
-- come risolvere il caso di due o più pareti equidistanti dal nodo di mandata;
-- quale punto o distanza dalla parete usare per definire 'parete più vicina'
-  quando la parete è un segmento finito;
-- se la distanza fissa di 0,50 m debba in futuro essere parametrica;
-- cosa fare se la posizione teorica di `R0` viola altre regole geometriche.
+La precedente formulazione `|M R0| = 0,50 m` è superata e non deve restare
+come costante runtime.
+
+### Criterio di verifica
+
+Per `p=0,30 m`:
+
+```text
+|M R0| = 0,30 m
+raccordo mandata = 0,15 m = p/2
+raccordo ritorno = 0,45 m = 1,5p
+```
+
+La costruzione deve restare geometricamente equivalente ruotando il locale.
 
 ### Stato implementativo corrente
 
-Principio documentale consolidato. La costruzione della radice dell'albero di
-ritorno non è ancora implementata in StrategiaDiego.
-
+Rettifica commissionata per il consolidamento del 26/09/2026; la verifica
+runtime è affidata alla build/regression dell'incarico corrente.
 
 ---
-
 
 ## LG-013 — Raccordo tecnico di ingresso e prima traccia utile
 
@@ -1591,8 +1558,11 @@ entrante alla traccia utile così determinata. Una volta raggiunta tale traccia,
 l'albero StrategiaDiego applica le normali regole di nodo alle due direzioni
 parallele possibili e alle evoluzioni successive.
 
-Il raccordo tecnico non deve essere trattato come `PROSEGUI_DRITTO` della
-spirale: è una connessione preliminare alla maglia delle evoluzioni.
+Il raccordo tecnico è una connessione preliminare e non una evoluzione.
+Raggiunto il suo estremo, però, il nodo successivo è un **nodo ordinario**:
+deve valutare `PROSEGUI_DRITTO`, `PARALLELA_A` e `PARALLELA_B` senza
+esclusioni dovute al fatto che sia il primo nodo o che abbia profondità 1.
+Una scelta viene scartata soltanto dalle normali verifiche geometriche.
 
 ### Relazione con LG-006, LG-017, LG-023 e LG-037
 
@@ -2396,7 +2366,145 @@ Le linee guida devono quindi precedere e governare le modifiche algoritmiche:
 se un caso richiede un nuovo comportamento strategico, la regola deve essere
 prima esplicitata o corretta nel documento e poi implementata.
 
-### Collegamento con il registro dei casi
+### LG-038 — Fattore di Bontà del terminale tramite superficie equivalente
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 26/09/2026
+
+### Regola
+
+La bontà geometrica di un terminale viene espressa come rapporto fra la
+superficie empiricamente coperta dalla lunghezza attiva e la superficie
+effettiva del locale:
+
+```text
+FattoreBonta = SuperficieCopertaEmpirica / SuperficieLocaleEffettiva
+```
+
+Per la sola mandata:
+
+```text
+AeqMandata = 2 * LmandataAttiva * p
+Bmandata   = AeqMandata / Alocale
+```
+
+e analogamente per il solo ritorno:
+
+```text
+AeqRitorno = 2 * LritornoAttiva * p
+Britorno   = AeqRitorno / Alocale
+```
+
+Il fattore 2 rappresenta empiricamente il contributo complementare
+mandata/ritorno di una spirale regolare.
+
+### Lunghezza attiva
+
+Nel calcolo non concorrono:
+
+- rete di collegamento collettore-locale;
+- raccordo tecnico d'ingresso;
+- altri tratti esterni alla superficie radiante.
+
+Concorrono le evoluzioni attive interne della spirale.
+
+### Obbligo diagnostico
+
+Ogni terminale analizzato deve poter riportare almeno:
+
+```text
+numero tratti attivi
+lunghezza attiva
+superficie coperta empirica
+superficie effettiva locale
+fattore di bontà
+```
+
+Il fattore di bontà è per ora una **metrica diagnostica**: non sostituisce
+implicitamente il criterio di selezione finale LG-003 finché una successiva
+decisione non lo stabilisce esplicitamente.
+
+---
+
+## LG-039 — Raccordo entrante del ritorno come linea limitante preliminare
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 26/09/2026
+
+### Regola
+
+Dopo aver costruito la radice del ritorno, il relativo raccordo tecnico
+entrante nel locale viene generato **prima** dell'albero di mandata e aggiunto
+alla geometria fisica limitante dello scenario.
+
+Il raccordo:
+
+- è un tubo di ritorno fisicamente presente;
+- impone alla mandata distanza minima `p`;
+- impedisce attraversamenti/intersezioni;
+- impone ai successivi ritorni le normali distanze di stessa famiglia;
+- **non** diventa automaticamente una linea strategica da inseguire o un
+  riferimento per aprire una svolta.
+
+Quindi la sua funzione è:
+
+```text
+collisioni + distanze + troncamento fisico
+```
+
+e non:
+
+```text
+riferimento strategico automatico
+```
+
+Poiché il lato del ritorno è un'alternativa di configurazione, ciascun lato
+produce uno scenario di mandata indipendente con il proprio raccordo
+limitante.
+
+---
+
+## LG-040 — Numerazione diagnostica dei nodi spirale
+
+**Stato:** CONSOLIDATA  
+**Origine:** decisione utente del 26/09/2026
+
+### Regola
+
+Il Service espone il parametro:
+
+```text
+numerazioneSpirali=true|false
+```
+
+con default `true`.
+
+Quando StrategiaDiego è attiva, l'SVG esecutivo mostra un piccolo numero in
+corrispondenza di ogni nodo della soluzione selezionata. L'identificativo è
+quello dello **stato/nodo dell'albero**, non della sola coordinata geometrica,
+e deve coincidere con l'ID riportato nel log `SpiraliDiego`.
+
+Esempio:
+
+```text
+SVG:  [17] ●────● [18]
+
+LOG:
+TREE Supply NODE node=17 ...
+TREE Supply CHOICE ... parentNode=17 childNode=18 ...
+```
+
+La numerazione è esclusivamente diagnostica:
+
+- non modifica il percorso scelto;
+- non entra nei controlli geometrici;
+- non modifica il DXF tecnico;
+- non modifica il conteggio delle primitive tecniche;
+- può essere disattivata tramite il parametro Service.
+
+---
+
+## Collegamento con il registro dei casi
 
 I casi geometrici concreti continuano a essere registrati in:
 
@@ -3571,8 +3679,10 @@ rispetto a linea architettonica -> p/2
 rispetto a linea di mandata     -> 2p
 ```
 
-Il ritorno non è ancora presente nella fase di costruzione della mandata e
-quindi non entra nella geometria vincolante di questa fase.
+La spirale di ritorno non è ancora presente durante la costruzione della
+mandata. Fa però eccezione il **raccordo entrante del ritorno di collegamento**,
+che viene costruito preliminarmente secondo LG-011/LG-012 e partecipa già alla
+geometria fisica limitante della mandata secondo LG-039.
 
 ### Relazione con LG-031
 
