@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Consolidamento LG-041 come regola universale
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - consolidare la discussione successiva alla proposta LG-041 senza modificare ancora il motore;
@@ -95,6 +95,16 @@ Criteri di completamento:
 - precedente procedura specifica di scavalcamento dichiarata superata sul piano strategico, non implementata;
 - registro sviluppo aggiornato;
 - nessuna build necessaria per il solo consolidamento documentale.
+
+Risultato:
+- LG-041 consolidata nel commit `bd661bd284b87308a2b6c969b24536a5de5c6bde`;
+- registro StrategiaDiego aggiornato con R8 nel commit `b72ee29f3561ac25c19d84cb7968aef99c7b3b83`;
+- confermati candidati `0..N`, riferimenti architettura/mandata/ritorno, esclusioni minime, memoria del riferimento generatore e validazione fisica tramite `TrattoPossibile`;
+- confermata priorità di esplorazione per lunghezza decrescente senza potatura;
+- eliminata dalla specifica la necessità di imporre un verso speciale di scavalcamento;
+- la procedura specifica del tubo entrante è superata come strategia separata; LG-039 resta valida come vincolo fisico;
+- nessuna modifica al codice, frontend, Library Desktop o `definizionedati.json`;
+- nessuna compilazione/esecuzione dichiarata per questo incarico esclusivamente documentale.
 
 
 ### INCARICO 2026-09-26 — Registrazione proposta universale PROSEGUI_DRITTO multi-candidato
@@ -127,7 +137,7 @@ Risultato documentale:
 
 
 ### INCARICO 2026-09-26 — Procedura di scavalcamento tubo entrante: limite fisico, corsia 2p e verso opposto
-Stato: SOSPESO — sostituzione in valutazione tramite LG-041 universale
+Stato: SUPERATO — non implementare come procedura separata; sostituito da LG-041
 
 Commissionato:
 - consolidare la correzione validata nella simulazione sul quadrato pannelli senza snaturare l'albero StrategiaDiego;
