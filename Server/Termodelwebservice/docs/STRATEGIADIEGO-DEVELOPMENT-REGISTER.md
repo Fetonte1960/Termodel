@@ -7,6 +7,44 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R20 — Solution Explorer delle mandate pure
+Stato: **ESEGUITO — STRUMENTO DIAGNOSTICO VERIFICATO**
+
+Decisione utente 26/09/2026:
+- rendere visualizzabili anche le soluzioni scartate, senza alterare la funzione di bontà;
+- poter escludere un numero arbitrario di top solution per osservare quelle di qualità inferiore;
+- usare lo strumento per capire perché il ramo `47->48` perde rispetto al vincitore.
+
+Implementazione sperimentale:
+- branch `experiment/lg041-supply-first-return-after`, PR #8;
+- aggiunto `StrategiaDiegoEngine.ExploreSupply()`, percorso diagnostico che riusa il vero `BuildTree` Supply e lo stesso ordinamento supply-first;
+- aggiunta facciata pubblica `StrategiaDiegoBenchmark.ExploreSupply()`;
+- Harness esteso con:
+  - `--supply-top N`;
+  - `--skip-top N --supply-top M`;
+  - `--supply-rank N`;
+- output: SVG separato per rank, `solutions.json` e `index.html` a galleria;
+- il percorso diagnostico non costruisce Return, non cambia il merito e non modifica il comportamento normale del Service.
+
+Verifica reale:
+- Harness run `36229562479`: build Core+Harness SUCCESS e Top 20 Solution Explorer SUCCESS;
+- Harness run `36229734714`: Top 40 SUCCESS;
+- Harness run `36229900092`: **SUCCESS** completo, inclusa prova `--skip-top 20 --supply-top 5`; verificata assenza rank 20 ed esportazione rank 21..25;
+- artifact finale `radiant-harness-fast`, id `10901942162`.
+
+Risultato sul quadrato:
+- 374 nodi Supply, 110 terminali Supply;
+- rank 1: terminale 123, activeLength `28,05 m`, goodness `1,052`, totalLength `28,20 m`; non contiene `47->48`;
+- nessuna delle prime 20 soluzioni contiene `47->48`;
+- prima soluzione che contiene `47->48`: **rank 21**, terminale 74, activeLength `25,45 m`, goodness `0,954375`, totalLength `25,60 m`;
+- percorso rank 21: `1,3,41,42,43,44,45,47,48,50,52,59,61,62,65,67,69,73,74`;
+- `47->48` ricompare anche ai rank 22 e 25;
+- ciò conferma la diagnosi precedente: il ramo normotico esiste ma è significativamente più basso in classifica a causa dello sviluppo incompleto successivo.
+
+Decisione:
+- Solution Explorer adottato come strumento diagnostico preferenziale per i prossimi debug StrategiaDiego;
+- nessun cambiamento alla funzione di merito;
+- strumento attualmente presente nel prototipo PR #8; integrazione in main separabile dalle modifiche algoritmiche quando opportuno.
 ## R19 — Return/Return a passo p
 Stato: **ESEGUITO — SIMULAZIONE GEOMETRICA POSITIVA / COSTO COMBINATORIO ELEVATO**
 
