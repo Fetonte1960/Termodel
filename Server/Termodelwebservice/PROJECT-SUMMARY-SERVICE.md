@@ -71,6 +71,23 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Solution Explorer StrategiaDiego
+Stato: COMMISSIONATO
+
+Commissionato:
+- implementare sul prototipo PR #8 uno strumento diagnostico nel `Termodel.RadiantPanels.Harness` per visualizzare anche soluzioni non vincenti;
+- non modificare funzione di merito, regole geometriche o comportamento normale del Service;
+- esporre la classifica delle mandate pure prodotte prima del ritorno, con almeno rank, terminal node, activeLength, goodness, totalLength e firma/percorso nodi;
+- aggiungere modalità Harness `--supply-top N` per esportare le migliori N mandate pure in SVG separati e un indice/manifest JSON;
+- aggiungere selezione `--supply-rank N` per renderizzare una specifica mandata pura senza ritorno;
+- quando praticabile predisporre struttura estendibile a future classifiche Return per una mandata scelta, ma il primo collaudo deve concentrarsi sulle mandate pure;
+- generare Top 20 sul banco `LG046-RETURN-STEP-P-SQUARE4X4-T1-P030` e identificare il rank del ramo che contiene `47->48`;
+- produrre artifact leggibili rapidamente e mantenere il tool separato dall'output standard del Service;
+- aggiornare linee guida/registro/Summary con uso e risultati;
+- nessun merge algoritmico in `main` senza ulteriore approvazione;
+- Issue #1 chiusa `Completed` al termine della simulazione.
+
+
 ### INCARICO 2026-09-26 — Return/Return a passo p
 Stato: ESEGUITO — SIMULAZIONE POSITIVA / NON INTEGRATA
 
