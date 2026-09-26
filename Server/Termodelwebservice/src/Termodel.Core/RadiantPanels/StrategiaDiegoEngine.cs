@@ -461,18 +461,55 @@ internal static class StrategiaDiegoEngine
                 $"end={Fmt(node.End)} dir={Fmt(node.Direction)} " +
                 $"front={node.Front.Id} pathLen={Fmt(node.LengthMeters)}m");
 
-            var directions = new List<(
-                string Name,
-                DVector Direction,
-                string? ExcludedFrontId,
-                string? RequiredFrontId)>();
+            var children = new List<SearchNode>();
 
-            // Il raccordo tecnico non e' una evoluzione e non introduce
-            // eccezioni nel nodo che segue: PROSEGUI_DRITTO viene valutato
-            // come qualunque altra alternativa e puo' essere scartato solo
-            // dalle normali verifiche geometriche.
-            directions.Add(
-                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null));
+            // LG-041: PROSEGUI_DRITTO non seleziona piu' il solo riferimento
+            // piu' vicino. Ogni riferimento pertinente puo' generare un
+            // candidato indipendente che conserva il proprio fronte.
+            IReadOnlyList<ExtensionCandidate> straightCandidates =
+                GenerateStraightCandidates(
+                    locale,
+                    family,
+                    node.End,
+                    node.Direction,
+                    constraints,
+                    node.Segment,
+                    step,
+                    node.NodeId);
+
+            for (int straightIndex = 0;
+                 straightIndex < straightCandidates.Count;
+                 straightIndex++)
+            {
+                ExtensionCandidate candidate =
+                    straightCandidates[straightIndex];
+                ExtensionResult extension = candidate.Extension;
+
+                if (children.Any(existing =>
+                    SegmentsEquivalent(existing.Segment, extension.Segment)))
+                {
+                    continue;
+                }
+
+                int childNodeId =
+                    counters.AddNode(countAsSupply, node.Depth + 1);
+                SearchNode child = new(
+                    node,
+                    extension.Segment,
+                    extension.Front,
+                    node.Direction,
+                    node.Depth + 1,
+                    node.LengthMeters + extension.Segment.Length,
+                    childNodeId);
+
+                LogDiego(
+                    $"TREE {family} CHOICE PROSEGUI_DRITTO[{straightIndex + 1}/{straightCandidates.Count}] ACCEPT " +
+                    $"parentNode={node.NodeId} childNode={child.NodeId} " +
+                    $"{Fmt(extension.Segment.A)}->{Fmt(extension.Segment.B)} " +
+                    $"front={extension.Front.Id} type={(candidate.PhysicalHit ? "physical" : "lateral")}");
+
+                children.Add(child);
+            }
 
             DVector parallel = node.Front.Direction.Normalize();
             GeoSegment? continuationA =
@@ -490,23 +527,19 @@ internal static class StrategiaDiegoEngine
                     family,
                     -parallel);
 
-            directions.Add((
-                "PARALLELA_A",
-                parallel,
-                null,
-                continuationA?.Id));
-            directions.Add((
-                "PARALLELA_B",
-                -parallel,
-                null,
-                continuationB?.Id));
+            var parallelDirections = new List<(
+                string Name,
+                DVector Direction,
+                string? RequiredFrontId)>
+            {
+                ("PARALLELA_A", parallel, continuationA?.Id),
+                ("PARALLELA_B", -parallel, continuationB?.Id)
+            };
 
-            var children = new List<SearchNode>();
             foreach ((
                 string choiceName,
                 DVector direction,
-                string? excludedFront,
-                string? requiredFront) in directions)
+                string? requiredFront) in parallelDirections)
             {
                 ExtensionResult? extension = TryExtend(
                     locale,
@@ -515,7 +548,7 @@ internal static class StrategiaDiegoEngine
                     direction,
                     constraints,
                     node.Segment,
-                    excludedFront,
+                    excludedFrontId: null,
                     requiredFront,
                     step,
                     allowStartOnBoundary: false);
@@ -572,8 +605,15 @@ internal static class StrategiaDiegoEngine
                 continue;
             }
 
-            foreach (SearchNode child in children)
-                stack.Push(child);
+            // Stack LIFO: inserimento inverso per rispettare l'ordine logico
+            // dei candidati. In particolare i candidati laterali LG-041
+            // vengono visitati per lunghezza valida decrescente senza potatura.
+            for (int childIndex = children.Count - 1;
+                 childIndex >= 0;
+                 childIndex--)
+            {
+                stack.Push(children[childIndex]);
+            }
         }
 
         return new SearchTree(terminals);
@@ -644,6 +684,122 @@ internal static class StrategiaDiegoEngine
         return new ExtensionResult(candidate, entryWall);
     }
 
+    private static IReadOnlyList<ExtensionCandidate> GenerateStraightCandidates(
+        LocaleGeometry locale,
+        GeoFamily family,
+        DPoint start,
+        DVector direction,
+        IReadOnlyList<GeoSegment> constraints,
+        GeoSegment? previousSegment,
+        double step,
+        int parentNodeId)
+    {
+        DVector unit = direction.Normalize();
+        if (unit.Length <= Epsilon)
+            return Array.Empty<ExtensionCandidate>();
+
+        var candidates = new List<ExtensionCandidate>();
+
+        foreach (GeoSegment reference in constraints)
+        {
+            if (reference.Family is
+                GeoFamily.Connection or GeoFamily.ReturnConnection)
+            {
+                continue;
+            }
+
+            // LG-041 esclude il segmento dal quale si proviene; il fronte
+            // che ha generato il nodo resta invece disponibile se produce
+            // una nuova geometria realmente distinta e valida.
+            if (previousSegment is GeoSegment previous &&
+                reference.Id.Equals(previous.Id, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            ExtensionCandidate? raw = BuildExtensionCandidateGeometry(
+                family,
+                start,
+                unit,
+                reference,
+                step,
+                allowArchitectureExtension: true);
+
+            if (raw is null)
+                continue;
+
+            ExtensionCandidate candidate = raw;
+            string type = candidate.PhysicalHit ? "physical" : "lateral";
+
+            LogDiego(
+                $"LG041 CANDIDATE CHECK parentNode={parentNodeId} family={family} " +
+                $"reference={reference.Id} refFamily={reference.Family} type={type} " +
+                $"I={Fmt(candidate.Intersection)} T={Fmt(candidate.Extension.Segment.B)} " +
+                $"d={Fmt(candidate.Respect)}m length={Fmt(candidate.Extension.Segment.Length)}m");
+
+            if (!IsSegmentValid(
+                    locale,
+                    candidate.Extension.Segment,
+                    constraints,
+                    previousSegment,
+                    reference,
+                    step,
+                    allowStartOnBoundary: false))
+            {
+                LogDiego(
+                    $"LG041 CANDIDATE REJECT parentNode={parentNodeId} family={family} " +
+                    $"reference={reference.Id} type={type} " +
+                    $"I={Fmt(candidate.Intersection)} T={Fmt(candidate.Extension.Segment.B)} " +
+                    $"d={Fmt(candidate.Respect)}m length={Fmt(candidate.Extension.Segment.Length)}m");
+                continue;
+            }
+
+            if (candidates.Any(existing =>
+                    SegmentsEquivalent(
+                        existing.Extension.Segment,
+                        candidate.Extension.Segment)))
+            {
+                LogDiego(
+                    $"LG041 CANDIDATE DUPLICATE parentNode={parentNodeId} family={family} " +
+                    $"reference={reference.Id} type={type} T={Fmt(candidate.Extension.Segment.B)}");
+                continue;
+            }
+
+            candidates.Add(candidate);
+            LogDiego(
+                $"LG041 CANDIDATE ACCEPT parentNode={parentNodeId} family={family} " +
+                $"reference={reference.Id} refFamily={reference.Family} type={type} " +
+                $"I={Fmt(candidate.Intersection)} T={Fmt(candidate.Extension.Segment.B)} " +
+                $"d={Fmt(candidate.Respect)}m length={Fmt(candidate.Extension.Segment.Length)}m");
+        }
+
+        // LG-041 prescrive l'ordine decrescente solo fra i candidati
+        // laterali. I candidati fisici mantengono la posizione derivata
+        // dall'ordine stabile dei vincoli; negli slot laterali sostituiamo
+        // soltanto i laterali ordinati dal piu' lungo al piu' corto.
+        Queue<ExtensionCandidate> orderedLaterals = new(
+            candidates
+                .Where(candidate => !candidate.PhysicalHit)
+                .OrderByDescending(candidate => candidate.Extension.Segment.Length)
+                .ThenBy(candidate => candidate.Extension.Front.Id, StringComparer.Ordinal));
+
+        var ordered = new List<ExtensionCandidate>(candidates.Count);
+        foreach (ExtensionCandidate candidate in candidates)
+        {
+            ordered.Add(candidate.PhysicalHit
+                ? candidate
+                : orderedLaterals.Dequeue());
+        }
+
+        LogDiego(
+            $"LG041 SUMMARY parentNode={parentNodeId} family={family} " +
+            $"accepted={ordered.Count} physical={ordered.Count(candidate => candidate.PhysicalHit)} " +
+            $"lateral={ordered.Count(candidate => !candidate.PhysicalHit)} " +
+            $"order={string.Join(",", ordered.Select(candidate => $"{candidate.Extension.Front.Id}:{(candidate.PhysicalHit ? "P" : "L")}:{Fmt(candidate.Extension.Segment.Length)}"))}");
+
+        return ordered;
+    }
+
     private static ExtensionResult? TryExtend(
         LocaleGeometry locale,
         GeoFamily family,
@@ -664,8 +820,6 @@ internal static class StrategiaDiegoEngine
 
         foreach (GeoSegment reference in constraints)
         {
-            // Modificato da Codex per realizzare: i tubi di collegamento sono
-            // ostacoli fisici, non linee strategiche sulle quali svoltare.
             if (reference.Family is
                 GeoFamily.Connection or GeoFamily.ReturnConnection)
             {
@@ -690,85 +844,21 @@ internal static class StrategiaDiegoEngine
                 continue;
             }
 
-            DVector refDirection = reference.Direction;
-            double refLength = refDirection.Length;
-            if (refLength <= Epsilon)
-                continue;
-
-            DVector refUnit = refDirection / refLength;
-            double cross = DVector.Cross(unit, refUnit);
-            if (Math.Abs(cross) <= Epsilon)
-                continue;
-
-            DVector delta = reference.A - start;
-            double tIntersection = DVector.Cross(delta, refUnit) / cross;
-
-            // Una intersezione teorica appena dietro resta inammissibile.
-            // L'intersezione a distanza zero, invece, e' ammessa: se cade
-            // soltanto sul prolungamento di un tubo, LG-034/LG-035 richiede
-            // di poter valutare il punto convesso I+d oltre la linea estesa.
-            if (tIntersection < -GeometryTolerance)
-                continue;
-
-            if (Math.Abs(tIntersection) <= GeometryTolerance)
-                tIntersection = 0.0;
-
-            double uReference =
-                DVector.Cross(delta, unit) /
-                DVector.Cross(unit, refDirection);
-
-            bool physicalHit =
-                uReference >= -GeometryTolerance &&
-                uReference <= 1.0 + GeometryTolerance;
-
-            // Le estensioni architettoniche non sono ostacoli fisici.
-            // Le estensioni dei tubi possono invece essere marcatori strategici
-            // per l'inseguimento convesso (LG-033..LG-035).
-            if (!physicalHit && reference.Family == GeoFamily.Architecture)
-                continue;
-
-            double respect = RequiredDistance(
+            ExtensionCandidate? raw = BuildExtensionCandidateGeometry(
                 family,
-                reference.Family,
-                step);
-
-            double alongRay = respect / Math.Abs(cross);
-            // Modificato da Codex per realizzare: non applicare LG-035 finche'
-            // il nodo non conserva esplicitamente S_k orientato. Usare
-            // node.Front come sostituto ha eliminato le chiusure del quadrato.
-            double tEnd = physicalHit
-                ? tIntersection - alongRay
-                : tIntersection + alongRay;
-
-            if (!physicalHit &&
-                tIntersection <= GeometryTolerance &&
-                reference.Family is GeoFamily.Supply or GeoFamily.Return)
-            {
-                LogDiego(
-                    $"EXTEND beyond-extended-front family={family} " +
-                    $"reference={reference.Id} refFamily={reference.Family} " +
-                    $"start={Fmt(start)} dir={Fmt(unit)} I={Fmt(tIntersection)}m " +
-                    $"respect={Fmt(respect)}m alongRay={Fmt(alongRay)}m " +
-                    $"targetTravel={Fmt(tEnd)}m");
-            }
-
-            if (tEnd <= GeometryTolerance)
-                continue;
-
-            DPoint end = start + unit * tEnd;
-            var candidate = new GeoSegment(
-                $"D-{family}-{Guid.NewGuid():N}",
                 start,
-                end,
-                family,
-                SequenceIndex: -1);
+                unit,
+                reference,
+                step,
+                allowArchitectureExtension: false);
 
-            if (candidate.Length <= GeometryTolerance)
+            if (raw is null)
                 continue;
 
+            ExtensionResult extension = raw.Extension;
             if (!IsSegmentValid(
                     locale,
-                    candidate,
+                    extension.Segment,
                     constraints,
                     previousSegment,
                     reference,
@@ -779,13 +869,100 @@ internal static class StrategiaDiegoEngine
             }
 
             if (best is null ||
-                candidate.Length < best.Segment.Length - GeometryTolerance)
+                extension.Segment.Length < best.Segment.Length - GeometryTolerance)
             {
-                best = new ExtensionResult(candidate, reference);
+                best = extension;
             }
         }
 
         return best;
+    }
+
+    private static ExtensionCandidate? BuildExtensionCandidateGeometry(
+        GeoFamily family,
+        DPoint start,
+        DVector unit,
+        GeoSegment reference,
+        double step,
+        bool allowArchitectureExtension)
+    {
+        DVector refDirection = reference.Direction;
+        double refLength = refDirection.Length;
+        if (refLength <= Epsilon)
+            return null;
+
+        DVector refUnit = refDirection / refLength;
+        double cross = DVector.Cross(unit, refUnit);
+        if (Math.Abs(cross) <= Epsilon)
+            return null;
+
+        DVector delta = reference.A - start;
+        double tIntersection = DVector.Cross(delta, refUnit) / cross;
+
+        if (tIntersection < -GeometryTolerance)
+            return null;
+
+        if (Math.Abs(tIntersection) <= GeometryTolerance)
+            tIntersection = 0.0;
+
+        double uReference =
+            DVector.Cross(delta, unit) /
+            DVector.Cross(unit, refDirection);
+
+        bool physicalHit =
+            uReference >= -GeometryTolerance &&
+            uReference <= 1.0 + GeometryTolerance;
+
+        if (!physicalHit &&
+            reference.Family == GeoFamily.Architecture &&
+            !allowArchitectureExtension)
+        {
+            return null;
+        }
+
+        double respect = RequiredDistance(
+            family,
+            reference.Family,
+            step);
+
+        double alongRay = respect / Math.Abs(cross);
+        double tEnd = physicalHit
+            ? tIntersection - alongRay
+            : tIntersection + alongRay;
+
+        if (!physicalHit &&
+            tIntersection <= GeometryTolerance &&
+            reference.Family is GeoFamily.Supply or GeoFamily.Return)
+        {
+            LogDiego(
+                $"EXTEND beyond-extended-front family={family} " +
+                $"reference={reference.Id} refFamily={reference.Family} " +
+                $"start={Fmt(start)} dir={Fmt(unit)} I={Fmt(tIntersection)}m " +
+                $"respect={Fmt(respect)}m alongRay={Fmt(alongRay)}m " +
+                $"targetTravel={Fmt(tEnd)}m");
+        }
+
+        if (tEnd <= GeometryTolerance)
+            return null;
+
+        DPoint intersection = start + unit * tIntersection;
+        DPoint end = start + unit * tEnd;
+        var segment = new GeoSegment(
+            $"D-{family}-{Guid.NewGuid():N}",
+            start,
+            end,
+            family,
+            SequenceIndex: -1);
+
+        if (segment.Length <= GeometryTolerance)
+            return null;
+
+        return new ExtensionCandidate(
+            new ExtensionResult(segment, reference),
+            physicalHit,
+            intersection,
+            respect,
+            alongRay);
     }
 
     private static bool IsSegmentValid(
@@ -1927,6 +2104,12 @@ internal static class StrategiaDiegoEngine
     private sealed record ExtensionResult(
         GeoSegment Segment,
         GeoSegment Front);
+    private sealed record ExtensionCandidate(
+        ExtensionResult Extension,
+        bool PhysicalHit,
+        DPoint Intersection,
+        double Respect,
+        double AlongRay);
 
     private sealed record SearchTree(
         IReadOnlyList<SearchNode> Terminals);
