@@ -7,6 +7,42 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R11 — Collaudo reale LG-041 con Radiant Harness
+Stato: **ESEGUITO — PROTOTIPO VALIDATO SUL QUADRATO / NON INTEGRABILE SUL CONCAVO**
+
+Decisione utente 26/09/2026:
+- testare la strategia LG-041 con il nuovo Harness reale e usare Issue #1 come notifica di fine incarico;
+- non mascherare la crescita combinatoria alzando limiti o introducendo potature euristiche non concordate.
+
+Prototipo:
+- branch `feature/lg041-multi-straight-candidates`, PR #7;
+- `PROSEGUI_DRITTO` genera tutti i candidati validi dai riferimenti pertinenti e conserva il fronte generatore nel nodo figlio;
+- candidati `Connection` e `ReturnConnection` restano esclusi come generatori strategici e continuano a essere vincoli fisici;
+- candidati laterali visitati in lunghezza decrescente; nessuna potatura;
+- diagnostica sperimentale aggiunta nel prototipo con `LG041 CANDIDATE` e `LG041 SUMMARY`.
+
+Risultati Harness:
+- run `36223457471`, job `108352924546`: **SUCCESS**;
+- quadrato: 17.616 nodi, 312 Supply, 17.304 Return, 66 terminali Supply, 5.808 combinazioni, 412 terminali accettati, maxDepth 25;
+- benchmark quadrato 20/20 deterministico: P95 1.039 ms, memoria delta max ~4,56 MB, SVG SHA-256 `37ba2ccaf728f3ee20b2a1e8220d552df912dd72913422c4c8b2be58dbd3e644`;
+- baseline precedente quadrato: 1.328 nodi; crescita LG-041 ~13,3x, soprattutto nel ritorno (17.304 contro 1.164);
+- 3.606 nodi hanno almeno 2 candidati validi; 3.724 nodi hanno almeno un candidato laterale; massimo 4 candidati validi per nodo;
+- verifica automatica sull'intero log: zero violazioni dell'ordine decrescente fra candidati laterali;
+- nodo Supply 66: coesistono candidato laterale da `D-INITIAL-Supply` lungo 1,25 m e candidato fisico lungo 1,90 m; entrambi vengono mantenuti;
+- appartamento preconfezionato: SUCCESS, 160 nodi, 16 terminali accettati, ~40 ms;
+- diagnostica estesa quadrato: ~465.000 messaggi e ~76 MB di log; il consumo memoria elevato del run diagnostico deriva principalmente dalla raccolta log, non dal benchmark senza log.
+
+Regression completa:
+- PR Action `36223457467`: compilazione SUCCESS;
+- benchmark `StrategiaDiegoConcaveL.locale.xml` FAILED nel warm-up: superato il limite tecnico di 250.000 nodi;
+- il failure avviene prima di ottenere un terminale parziale e quindi LG-041, nella forma universale provata, non è sostenibile sull'intero set corrente.
+
+Decisione:
+- PR #7 chiuso senza merge;
+- LG-041 resta **CONSOLIDATA — NON IMPLEMENTATA**;
+- nessun limite aumentato e nessun Golden aggiornato;
+- prossimo approfondimento: riduzione esatta degli stati duplicati/equivalenti o altra formulazione che mantenga tutte le alternative geometricamente distinte senza esplosione combinatoria.
+
 ## R10 — Harness pannelli rapido e base dati preconfezionata
 Stato: **ESEGUITO — BUILD FOCALIZZATA E CASI RAPIDI SUCCESS**
 
