@@ -1335,13 +1335,18 @@ internal static class StrategiaDiegoEngine
                 continue;
             }
 
+            bool stopBeforeOwnFamilyExtendedFront =
+                requiredFrontId is not null &&
+                reference.Family == family;
+
             ExtensionCandidate? raw = BuildExtensionCandidateGeometry(
                 family,
                 start,
                 unit,
                 reference,
                 step,
-                allowArchitectureExtension: false);
+                allowArchitectureExtension: false,
+                stopBeforeOwnFamilyExtendedFront: stopBeforeOwnFamilyExtendedFront);
 
             if (raw is null)
                 continue;
@@ -1401,7 +1406,8 @@ internal static class StrategiaDiegoEngine
         DVector unit,
         GeoSegment reference,
         double step,
-        bool allowArchitectureExtension)
+        bool allowArchitectureExtension,
+        bool stopBeforeOwnFamilyExtendedFront = false)
     {
         DVector refDirection = reference.Direction;
         double refLength = refDirection.Length;
@@ -1443,13 +1449,27 @@ internal static class StrategiaDiegoEngine
             step);
 
         double alongRay = respect / Math.Abs(cross);
-        double tEnd = physicalHit
+        bool stopBeforeExtendedFront =
+            !physicalHit &&
+            stopBeforeOwnFamilyExtendedFront &&
+            reference.Family == family &&
+            tIntersection > GeometryTolerance;
+
+        double tEnd = physicalHit || stopBeforeExtendedFront
             ? tIntersection - alongRay
             : tIntersection + alongRay;
 
-        if (!physicalHit &&
-            tIntersection <= GeometryTolerance &&
-            reference.Family is GeoFamily.Supply or GeoFamily.Return)
+        if (stopBeforeExtendedFront)
+        {
+            LogDiego(
+                $"EXTEND before-own-family-front family={family} " +
+                $"reference={reference.Id} start={Fmt(start)} dir={Fmt(unit)} " +
+                $"I={Fmt(tIntersection)}m respect={Fmt(respect)}m " +
+                $"alongRay={Fmt(alongRay)}m targetTravel={Fmt(tEnd)}m");
+        }
+        else if (!physicalHit &&
+                 tIntersection <= GeometryTolerance &&
+                 reference.Family is GeoFamily.Supply or GeoFamily.Return)
         {
             LogDiego(
                 $"EXTEND beyond-extended-front family={family} " +
