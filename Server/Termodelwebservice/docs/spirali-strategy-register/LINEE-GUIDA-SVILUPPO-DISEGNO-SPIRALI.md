@@ -4662,6 +4662,97 @@ finché non viene valutato visualmente l'SVG e affrontato il caso
 `ConnectionTerminal`.
 ---
 
+## LG-043 — Il raccordo entrante del ritorno diventa Return sequence 0
+
+**Stato:** APPROVATA E SIMULATA — NON ANCORA INTEGRATA IN `main`  
+**Origine:** approvazione utente del 26/09/2026
+
+### Principio
+
+Il tratto tecnico che porta il ritorno dal punto di ingresso alla prima
+traccia utile non deve restare per tutta la ricerca nella famiglia speciale
+`ReturnConnection`.
+
+Una volta costruito, il raccordo entra immediatamente nella normale sequenza
+del ritorno come:
+
+`GeoFamily.Return`, `SequenceIndex = 0`.
+
+Da quel momento:
+
+- partecipa a LG-041 come gli altri segmenti Return;
+- può essere usato come riferimento reale o come retta/prolungamento laterale;
+- può generare candidati ed echi quando geometricamente pertinente;
+- mantiene le normali distanze fra famiglie: Return/Supply = `p`,
+  Return/Return = `2p`;
+- non crea una categoria di ostacolo speciale permanente.
+
+LG-042 resta prioritaria temporalmente: il raccordo blu nasce soltanto dopo
+che la mandata è stata completata e selezionata per il terminale in esame.
+
+### Motivazione
+
+Il ritorno deve poter occupare naturalmente il corridoio fra due mandate
+parallele distanti `2p`, rimanendo a distanza `p` da entrambe, senza essere
+penalizzato da una semantica speciale del proprio raccordo di ingresso.
+
+### Collaudo reale 26/09/2026
+
+Prototipo: branch `experiment/lg041-supply-first-return-after`, commit
+`7946cc0096cec52db7611a42f21402185ae72414`, PR #8.
+
+Radiant Harness run `36225285732`: **SUCCESS**.
+
+Quadrato 4x4, `p=0,30 m`:
+
+- il raccordo compare nel log come `promotedTo=Return sequence=0 strategic=true`;
+- 42 candidati LG-041 hanno usato `D-RETURN-0` come riferimento;
+- 32 di questi candidati sono stati accettati, 8 respinti e 2 risultano
+  duplicati geometrici;
+- esempio: dal nodo Return 300 il raccordo `D-RETURN-0` genera un candidato
+  laterale valido da `(2.95,3.55)` a `(1.10,3.55)` con distanza `2p=0,60 m`;
+- il ritorno selezionato percorre `x=1,05` fra le due mandate verticali
+  `x=0,75` e `x=1,35`: distanza `p=0,30 m` da entrambe;
+- 290 nodi Supply, 1.046 nodi Return, 1.336 nodi totali, 16 terminali
+  accettati;
+- benchmark 20/20 deterministico: 1.336 nodi, P95 250 ms, memoria delta max
+  ~3,56 MB;
+- appartamento preconfezionato: SUCCESS, 80 nodi totali, 3 terminali
+  accettati, 33 ms nel run Harness.
+
+Confronto con LG-042 supply-first precedente:
+
+- geometria selezionata di mandata e ritorno sul quadrato: **invariata**;
+- nodi totali: 1.016 -> 1.336, perché il raccordo normale apre nuove
+  alternative Return;
+- il blu era già capace nel percorso vincente di stare a `p` fra due mandate;
+  LG-043 rende però questa possibilità coerente anche a livello strategico
+  e non più dipendente dal trattamento speciale `ReturnConnection`.
+
+Regression estesa:
+
+- `ConcaveL`: sostenibile, 4.455 nodi, 72 terminali accettati, P95 362 ms;
+- `ObliqueTrapezoid`: sostenibile, 1.931 nodi, 36 terminali accettati,
+  P95 224 ms;
+- `ConnectionTerminal`: resta oltre il limite tecnico di 250.000 nodi.
+
+### Conclusione
+
+LG-043 è coerente e funziona come previsto sul ritorno, ma **non spiega né
+corregge il mancato scavalcamento della mandata dopo 29->30**.
+
+Nel modello supply-first la mandata è già completa prima della nascita del
+ritorno; inoltre l'SVG rosso resta identico. Il problema dell'eco
+`1->3` al nodo successivo rimane quindi separato e riguarda la persistenza
+del riferimento guida della mandata.
+
+### Stato implementativo
+
+**Non integrata in `main`.** La regola è approvata e simulata; PR #8 resta
+sperimentale in attesa della valutazione delle successive correzioni
+sull'eco/scavalcamento.
+---
+
 ## Direttiva permanente — collaudo preliminare rapido delle strategie
 
 ### Scopo
