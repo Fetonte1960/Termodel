@@ -459,7 +459,8 @@ internal static class StrategiaDiegoEngine
             LogDiego(
                 $"TREE {family} NODE node={node.NodeId} depth={node.Depth} " +
                 $"end={Fmt(node.End)} dir={Fmt(node.Direction)} " +
-                $"front={node.Front.Id} pathLen={Fmt(node.LengthMeters)}m");
+                $"front={node.Front.Id} pathLen={Fmt(node.LengthMeters)}m " +
+                $"scavalcamentoPhase={node.ScavalcamentoPhase}");
 
             var directions = new List<(
                 string Name,
@@ -467,39 +468,88 @@ internal static class StrategiaDiegoEngine
                 string? ExcludedFrontId,
                 string? RequiredFrontId)>();
 
-            // Il raccordo tecnico non e' una evoluzione e non introduce
-            // eccezioni nel nodo che segue: PROSEGUI_DRITTO viene valutato
-            // come qualunque altra alternativa e puo' essere scartato solo
-            // dalle normali verifiche geometriche.
-            directions.Add(
-                ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null));
+            // Procedura di scavalcamento del tubo entrante e successivi.
+            // Se il nodo precedente e' stato fermato dal raccordo entrante
+            // del ritorno e il nodo corrente ha appena agganciato una
+            // precedente mandata/ritorno come corsia a 2p, il primo tratto
+            // sulla corsia deve seguire il riferimento orientato nel verso
+            // opposto. La fase resta un ramo dell'albero e non modifica le
+            // regole ordinarie degli altri nodi.
+            bool scavalcamentoLaneNode =
+                node.ScavalcamentoPhase == 1;
+            bool scavalcamentoFollowing =
+                node.ScavalcamentoPhase >= 2;
+            bool firstScavalcamentoFollowing =
+                node.ScavalcamentoPhase == 2 &&
+                node.Parent is not null &&
+                node.Parent.ScavalcamentoPhase == 1;
 
-            DVector parallel = node.Front.Direction.Normalize();
-            GeoSegment? continuationA =
-                FindSequenceContinuation(
-                    node.End,
-                    node.Front,
-                    constraints,
-                    family,
-                    parallel);
-            GeoSegment? continuationB =
-                FindSequenceContinuation(
-                    node.End,
-                    node.Front,
-                    constraints,
-                    family,
-                    -parallel);
+            if (scavalcamentoLaneNode)
+            {
+                DVector opposite =
+                    -node.Front.Direction.Normalize();
 
-            directions.Add((
-                "PARALLELA_A",
-                parallel,
-                null,
-                continuationA?.Id));
-            directions.Add((
-                "PARALLELA_B",
-                -parallel,
-                null,
-                continuationB?.Id));
+                // Il primo tratto sulla corsia usa il verso opposto al
+                // riferimento orientato, ma non forza ancora S_k+1:
+                // il front successivo viene scelto dalle normali intersezioni
+                // fisiche/strategiche. Forzare FindSequenceContinuation qui
+                // farebbe riagganciare il segmento appena percorso, che fa
+                // parte di currentPath ma non e' il successore della vecchia
+                // evoluzione da inseguire.
+                directions.Add((
+                    "SCAVALCAMENTO_OPPOSTA",
+                    opposite,
+                    null,
+                    null));
+
+                LogDiego(
+                    $"SCAVALCAMENTO opposite-lane node={node.NodeId} " +
+                    $"family={family} reference={node.Front.Id} " +
+                    $"referenceDir={Fmt(node.Front.Direction.Normalize())} " +
+                    $"travelDir={Fmt(opposite)} requiredFront=-");
+            }
+            else
+            {
+                // Il raccordo tecnico non e' una evoluzione e non introduce
+                // eccezioni nel nodo che segue: PROSEGUI_DRITTO viene valutato
+                // come qualunque altra alternativa e puo' essere scartato solo
+                // dalle normali verifiche geometriche.
+                directions.Add(
+                    ("PROSEGUI_DRITTO", node.Direction, node.Front.Id, null));
+
+                DVector parallel = node.Front.Direction.Normalize();
+                GeoSegment? continuationA =
+                    FindSequenceContinuation(
+                        node.End,
+                        node.Front,
+                        constraints,
+                        family,
+                        parallel,
+                        scavalcamentoFollowing
+                            ? node.Segment.Id
+                            : null);
+                GeoSegment? continuationB =
+                    FindSequenceContinuation(
+                        node.End,
+                        node.Front,
+                        constraints,
+                        family,
+                        -parallel,
+                        scavalcamentoFollowing
+                            ? node.Segment.Id
+                            : null);
+
+                directions.Add((
+                    "PARALLELA_A",
+                    parallel,
+                    null,
+                    continuationA?.Id));
+                directions.Add((
+                    "PARALLELA_B",
+                    -parallel,
+                    null,
+                    continuationB?.Id));
+            }
 
             var children = new List<SearchNode>();
             foreach ((
@@ -518,7 +568,11 @@ internal static class StrategiaDiegoEngine
                     excludedFront,
                     requiredFront,
                     step,
-                    allowStartOnBoundary: false);
+                    allowStartOnBoundary: false,
+                    relaxedDistanceConstraintId:
+                        firstScavalcamentoFollowing
+                            ? node.Parent!.Segment.Id
+                            : null);
 
                 if (extension is null)
                 {
@@ -537,6 +591,27 @@ internal static class StrategiaDiegoEngine
 
                 int childNodeId =
                     counters.AddNode(countAsSupply, node.Depth + 1);
+
+                int childScavalcamentoPhase;
+                if (node.ScavalcamentoPhase == 1)
+                {
+                    childScavalcamentoPhase = 2;
+                }
+                else if (node.ScavalcamentoPhase >= 2)
+                {
+                    childScavalcamentoPhase = 2;
+                }
+                else if (
+                    node.Front.Family == GeoFamily.ReturnConnection &&
+                    extension.Front.Family == family)
+                {
+                    childScavalcamentoPhase = 1;
+                }
+                else
+                {
+                    childScavalcamentoPhase = 0;
+                }
+
                 SearchNode child = new(
                     node,
                     extension.Segment,
@@ -544,13 +619,25 @@ internal static class StrategiaDiegoEngine
                     direction,
                     node.Depth + 1,
                     node.LengthMeters + extension.Segment.Length,
-                    childNodeId);
+                    childNodeId,
+                    childScavalcamentoPhase);
 
                 LogDiego(
                     $"TREE {family} CHOICE {choiceName} ACCEPT " +
                     $"parentNode={node.NodeId} childNode={child.NodeId} " +
                     $"{Fmt(extension.Segment.A)}->{Fmt(extension.Segment.B)} " +
                     $"front={extension.Front.Id}");
+
+                if (node.Front.Family == GeoFamily.ReturnConnection &&
+                    extension.Front.Family == family)
+                {
+                    LogDiego(
+                        $"SCAVALCAMENTO lane-attach parentNode={node.NodeId} " +
+                        $"childNode={child.NodeId} family={family} " +
+                        $"limitingFront={node.Front.Id} " +
+                        $"strategicReference={extension.Front.Id} " +
+                        $"segment={Fmt(extension.Segment.A)}->{Fmt(extension.Segment.B)}");
+                }
 
                 children.Add(child);
             }
@@ -654,25 +741,38 @@ internal static class StrategiaDiegoEngine
         string? excludedFrontId,
         string? requiredFrontId,
         double step,
-        bool allowStartOnBoundary)
+        bool allowStartOnBoundary,
+        string? relaxedDistanceConstraintId = null)
     {
         DVector unit = direction.Normalize();
         if (unit.Length <= Epsilon)
             return null;
 
         ExtensionResult? best = null;
+        bool bestIsReturnConnectionLimiter = false;
 
         foreach (GeoSegment reference in constraints)
         {
-            // Modificato da Codex per realizzare: i tubi di collegamento sono
-            // ostacoli fisici, non linee strategiche sulle quali svoltare.
-            if (reference.Family is
-                GeoFamily.Connection or GeoFamily.ReturnConnection)
+            if (relaxedDistanceConstraintId is not null &&
+                reference.Id.Equals(
+                    relaxedDistanceConstraintId,
+                    StringComparison.Ordinal))
             {
                 continue;
             }
 
+            // I normali tubi di collegamento restano soli ostacoli
+            // anti-attraversamento. Il raccordo entrante del ritorno, invece,
+            // partecipa anche al troncamento fisico della procedura di
+            // scavalcamento, senza diventare riferimento strategico LG-033.
+            if (reference.Family == GeoFamily.Connection)
+                continue;
+
+            bool isReturnConnection =
+                reference.Family == GeoFamily.ReturnConnection;
+
             if (requiredFrontId is not null &&
+                !isReturnConnection &&
                 !reference.Id.Equals(requiredFrontId, StringComparison.Ordinal))
             {
                 continue;
@@ -722,10 +822,16 @@ internal static class StrategiaDiegoEngine
                 uReference <= 1.0 + GeometryTolerance;
 
             // Le estensioni architettoniche non sono ostacoli fisici.
-            // Le estensioni dei tubi possono invece essere marcatori strategici
-            // per l'inseguimento convesso (LG-033..LG-035).
-            if (!physicalHit && reference.Family == GeoFamily.Architecture)
+            // Anche ReturnConnection vale esclusivamente sul proprio segmento
+            // fisico: non deve mai diventare una linea strategica estesa.
+            // Le estensioni di Supply/Return possono invece essere marcatori
+            // strategici per l'inseguimento convesso (LG-033..LG-035).
+            if (!physicalHit &&
+                reference.Family is
+                    GeoFamily.Architecture or GeoFamily.ReturnConnection)
+            {
                 continue;
+            }
 
             double respect = RequiredDistance(
                 family,
@@ -773,15 +879,40 @@ internal static class StrategiaDiegoEngine
                     previousSegment,
                     reference,
                     step,
-                    allowStartOnBoundary))
+                    allowStartOnBoundary,
+                    relaxedDistanceConstraintId))
             {
                 continue;
             }
 
+            bool isReturnConnectionLimiter =
+                physicalHit &&
+                reference.Family == GeoFamily.ReturnConnection;
+
+            if (isReturnConnectionLimiter)
+            {
+                LogDiego(
+                    $"SCAVALCAMENTO physical-limit family={family} " +
+                    $"reference={reference.Id} start={Fmt(start)} " +
+                    $"dir={Fmt(unit)} respect={Fmt(respect)}m " +
+                    $"target={Fmt(candidate.B)}");
+            }
+
+            // Durante lo scavalcamento il raccordo entrante del ritorno e'
+            // un limite fisico prioritario rispetto a un marcatore virtuale
+            // I+2p sul prolungamento di una tubazione. Le normali validazioni
+            // hanno gia' escluso eventuali ostacoli fisici piu' vicini.
             if (best is null ||
-                candidate.Length < best.Segment.Length - GeometryTolerance)
+                (isReturnConnectionLimiter &&
+                 !bestIsReturnConnectionLimiter) ||
+                (isReturnConnectionLimiter ==
+                     bestIsReturnConnectionLimiter &&
+                 candidate.Length <
+                     best.Segment.Length - GeometryTolerance))
             {
                 best = new ExtensionResult(candidate, reference);
+                bestIsReturnConnectionLimiter =
+                    isReturnConnectionLimiter;
             }
         }
 
@@ -795,7 +926,8 @@ internal static class StrategiaDiegoEngine
         GeoSegment? previousSegment,
         GeoSegment front,
         double step,
-        bool allowStartOnBoundary)
+        bool allowStartOnBoundary,
+        string? relaxedDistanceConstraintId = null)
     {
         if (!SegmentInsideLocale(
                 locale,
@@ -836,6 +968,18 @@ internal static class StrategiaDiegoEngine
                     $"VALIDATE {candidate.Family} REJECT intersection other={other.Id} " +
                     $"{Fmt(candidate.A)}->{Fmt(candidate.B)}");
                 return false;
+            }
+
+            if (relaxedDistanceConstraintId is not null &&
+                other.Id.Equals(
+                    relaxedDistanceConstraintId,
+                    StringComparison.Ordinal))
+            {
+                LogDiego(
+                    $"SCAVALCAMENTO transition-distance-exempt " +
+                    $"family={candidate.Family} other={other.Id} " +
+                    $"candidate={Fmt(candidate.A)}->{Fmt(candidate.B)}");
+                continue;
             }
 
             double required = RequiredDistance(
@@ -1282,7 +1426,8 @@ internal static class StrategiaDiegoEngine
         GeoSegment front,
         IReadOnlyList<GeoSegment> constraints,
         GeoFamily pathFamily,
-        DVector travelDirection)
+        DVector travelDirection,
+        string? excludedSegmentId = null)
     {
         if (front.Family == GeoFamily.Architecture ||
             front.SequenceIndex < 0)
@@ -1308,7 +1453,11 @@ internal static class StrategiaDiegoEngine
         {
             return constraints.FirstOrDefault(candidate =>
                 candidate.Family == front.Family &&
-                candidate.SequenceIndex == front.SequenceIndex + 1);
+                candidate.SequenceIndex == front.SequenceIndex + 1 &&
+                (excludedSegmentId is null ||
+                 !candidate.Id.Equals(
+                     excludedSegmentId,
+                     StringComparison.Ordinal)));
         }
 
         DVector travel = travelDirection.Normalize();
@@ -1317,11 +1466,16 @@ internal static class StrategiaDiegoEngine
 
         GeoSegment? best = null;
         double bestTravel = double.PositiveInfinity;
+        bool bestPhysicalHit = false;
 
         foreach (GeoSegment candidate in constraints.Where(candidate =>
                      candidate.Family == front.Family &&
                      candidate.SequenceIndex >= 0 &&
-                     candidate.SequenceIndex != front.SequenceIndex))
+                     candidate.SequenceIndex != front.SequenceIndex &&
+                     (excludedSegmentId is null ||
+                      !candidate.Id.Equals(
+                          excludedSegmentId,
+                          StringComparison.Ordinal))))
         {
             DVector candidateDirection = candidate.Direction.Normalize();
             if (candidateDirection.Length <= Epsilon)
@@ -1348,10 +1502,29 @@ internal static class StrategiaDiegoEngine
             if (Math.Abs(rayTravel) <= GeometryTolerance)
                 rayTravel = 0.0;
 
-            if (rayTravel < bestTravel - GeometryTolerance)
+            DPoint theoreticalHit =
+                start + travel * rayTravel;
+            bool candidatePhysicalHit =
+                Distance(
+                    theoreticalHit,
+                    candidate.A,
+                    candidate.B) <= GeometryTolerance;
+
+            // Due segmenti successivi possono appartenere alla stessa retta
+            // (per esempio i due tratti verticali separati dal raccordo di
+            // ingresso). Se la loro intersezione teorica cade alla stessa
+            // distanza, preferire quello realmente presente nel punto di
+            // incontro: il segmento fisico richiede I-d, mentre il solo
+            // prolungamento produrrebbe I+d e puo' portare fuori locale.
+            if (rayTravel < bestTravel - GeometryTolerance ||
+                (Math.Abs(rayTravel - bestTravel) <=
+                     GeometryTolerance &&
+                 candidatePhysicalHit &&
+                 !bestPhysicalHit))
             {
                 bestTravel = rayTravel;
                 best = candidate;
+                bestPhysicalHit = candidatePhysicalHit;
             }
         }
 
@@ -1378,8 +1551,10 @@ internal static class StrategiaDiegoEngine
             $"SEQUENCE {mode} geometric-continuation " +
             $"pathFamily={pathFamily} frontFamily={front.Family} " +
             $"from={front.SequenceIndex} next={best.Value.SequenceIndex} " +
+            $"excluded={excludedSegmentId ?? "-"} " +
             $"start={Fmt(start)} dir={Fmt(travel)} " +
-            $"rayTravel={Fmt(bestTravel)}m intersection={intersectionMode}");
+            $"rayTravel={Fmt(bestTravel)}m intersection={intersectionMode} " +
+            $"physical={bestPhysicalHit}");
         return best;
     }
 
@@ -1940,7 +2115,8 @@ internal static class StrategiaDiegoEngine
             DVector direction,
             int depth,
             double lengthMeters,
-            int nodeId)
+            int nodeId,
+            int scavalcamentoPhase = 0)
         {
             Parent = parent;
             Segment = segment;
@@ -1949,6 +2125,7 @@ internal static class StrategiaDiegoEngine
             Depth = depth;
             LengthMeters = lengthMeters;
             NodeId = nodeId;
+            ScavalcamentoPhase = scavalcamentoPhase;
         }
 
         public SearchNode? Parent { get; }
@@ -1958,6 +2135,7 @@ internal static class StrategiaDiegoEngine
         public int Depth { get; }
         public double LengthMeters { get; }
         public int NodeId { get; }
+        public int ScavalcamentoPhase { get; }
         public DPoint End => Segment.B;
     }
 
