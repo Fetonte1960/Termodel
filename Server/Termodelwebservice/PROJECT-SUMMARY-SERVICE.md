@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Rendere auto-riprendibile il debug spirali da Linee Guida
-Stato: COMMISSIONATO
+Stato: ESEGUITO — LINEE GUIDA AUTOSUFFICIENTI PER RIPRESA R31
 
 Commissionato:
 - verificare perché un agente/Codex, leggendo `LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`, non riesce a riprendere correttamente il test corrente;
@@ -80,6 +80,16 @@ Commissionato:
 - completare le Linee Guida con un punto di ripresa operativo autosufficiente: branch/commit di riferimento, fixture/case, cwd, file Prefix Lock, comandi esatti, output attesi, marker, artifact e distinzione fra run condizionato Harness e free run Service;
 - correggere informazioni obsolete che possono sviare un agente, senza modificare Core/frontend;
 - chiudere Issue #1 Completed se riuscito, Not planned se fallito.
+
+Esito:
+- individuate tre cause principali della mancata ripresa: checkpoint fermo a R30, `STRATEGIADIEGO_TEST_CONTEXT_CURRENT` ancora puntato al vecchio contesto LG046 e stato motore dichiarato obsoletamente come non implementato; inoltre mancavano comandi riproducibili e la distinzione esplicita fra Harness con Prefix Lock e Service free-run;
+- aggiornato `LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md` con checkpoint R31 verificato, diagnosi/correzione del nodo 15, run/artifact/marker canonici e SVG/report attesi;
+- aggiunta sezione `RIPRESA OPERATIVA OBBLIGATORIA — per ChatGPT / Codex / nuova chat` con repository, branch, working directory, file Core, case LG041, Prefix Lock R30 a 14 Decision Key, comandi PowerShell, verifiche R30/R31 e protocollo di ripresa;
+- chiarito che PR #8 è già integrata su `main`, Core R31 pubblicato nel commit `77ae7b81dd82afb157b4f54a15a45c77cf9d1d63`, artifact canonico `radiant-harness-fast` id `10908514063`, run `36250164600`;
+- aggiornato il contesto corrente a `LG041-R31-FREE-RUN-SELECTION-SQUARE4X4-T1-P030`;
+- prossimo obiettivo reso esplicito: confrontare baseline free-run senza lock con R30/R31 condizionato e trovare la **prima Decision Key divergente**; vietato inserire il Prefix Lock nel runtime come hardcode;
+- nessuna modifica a Core, frontend, Library o `definizionedati.json`;
+- commit Linee Guida: `94581ea3cd55565d66005af44b4f066ec09b6a83`.
 
 
 
