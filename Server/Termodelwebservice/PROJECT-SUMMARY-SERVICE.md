@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Pubblicazione su Render dello stato sperimentale StrategiaDiego
-Stato: COMMISSIONATO
+Stato: ESEGUITO — PUBBLICATO SU MAIN / AUTO-DEPLOY RENDER ATTIVATO
 
 Commissionato:
 - pubblicare su `main` e quindi sul Service Render tutte le modifiche fin qui realizzate e verificate sul branch sperimentale PR #8, per una prova più ampia;
@@ -82,6 +82,16 @@ Commissionato:
 - verificare compilazione GitHub e raggiungibilità del Service pubblico dopo il deploy;
 - aggiornare Summary/registro con lo stato reale;
 - chiudere Issue #1 Completed se pubblicazione e verifica riescono, Not planned se falliscono.
+
+Esito:
+- creato rollback branch `backup/pre-render-r31-20260926` sullo stato di `main` precedente alla pubblicazione;
+- PR #8 integrata su `main` nel commit `77ae7b81dd82afb157b4f54a15a45c77cf9d1d63`;
+- il push su `main` attiva il normale auto-deploy Render già configurato per `https://termodel.onrender.com`;
+- frontend non modificato;
+- GitHub Action `TermodelService Build` run `36250164693`: restore e **Build SUCCESS, 0 errori**; workflow finale rosso esclusivamente nel benchmark StrategiaDiegoSquare4x4, con 73.123 nodi e P95 7290 ms oltre i budget correnti;
+- GitHub Action `Termodel Radiant Harness` run `36250164600`: build Harness/Core e checkpoint R30/R31 fino alla continuazione del nodo 15 **SUCCESS**; failure successiva nel Decision Reject Replay cumulativo per superamento del limite tecnico di ricerca già noto;
+- la pubblicazione è quindi destinata a **prova ampia sperimentale**, non a rilascio Golden;
+- la sessione non dispone di accesso rete affidabile al runtime Render per una verifica HTTP indipendente di `/health`; non viene quindi dichiarata una verifica runtime diretta del commit, ma il percorso di pubblicazione resta quello normale GitHub `main` -> auto-deploy Render.
 
 
 
