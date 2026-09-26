@@ -16,6 +16,7 @@ on:
       - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
       - 'Server/Termodelwebservice/tests/radiant-harness/**'
       - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiego*.locale.xml'
+      - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl'
       - '.github/workflows/termodel-radiant-harness.yml'
   pull_request:
     paths:
