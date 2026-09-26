@@ -251,6 +251,178 @@ jobs:
           Write-Host ("bestLockedSupplyRank=" + $bestCombined.supplyRank)
           Write-Host ("bestCombinedMerit=" + $bestCombined.combinedMeritMeters)
           Write-Host ("bestAnsaSvg=" + $bestSvg)
+
+      - name: Inspect node 22 and force option nearest 2p to SVG 5-6-7
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $ci = [System.Globalization.CultureInfo]::InvariantCulture
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
+          $prefixPath = Join-Path $out "LG041-ANSA-GOOD.prefix-lock.txt"
+          $bestReportPath = Join-Path $out "LG041-ANSA-PREFIX-BEST-COMBINED.report.json"
+          $solutionsDir = Join-Path $out "LG041-ANSA-PREFIX-SOLUTIONS.solution-explorer"
+          $solutionsPath = Join-Path $solutionsDir "solutions.json"
+          foreach ($required in @($prefixPath,$bestReportPath,$solutionsPath)) {
+            if (-not (Test-Path $required)) { throw "Prerequisito nodo22 mancante: $required" }
+          }
+
+          $bestReport = Get-Content -LiteralPath $bestReportPath -Raw | ConvertFrom-Json
+          $solutions = Get-Content -LiteralPath $solutionsPath -Raw | ConvertFrom-Json
+          $current = $solutions.solutions |
+            Where-Object { [int]$_.supplyRank -eq [int]$bestReport.lockedSupplyRank } |
+            Select-Object -First 1
+          if ($null -eq $current) { throw "Setup corrente migliore non ritrovato nel manifest." }
+
+          $currentSvg = Join-Path $solutionsDir ([string]$current.svg)
+          if (-not (Test-Path $currentSvg)) { throw "SVG setup corrente mancante: $currentSvg" }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-ANSA-NODE22-INSPECT `
+            --out $out `
+            --inspect-node 22 `
+            --lock-supply-prefix $prefixPath
+
+          $inspectDir = Join-Path $out "LG041-ANSA-NODE22-INSPECT.branch-inspector"
+          $inspectJson = Join-Path $inspectDir "branch-node-022.json"
+          $inspectSvg = Join-Path $inspectDir "branch-node-022.svg"
+          $inspectLog = Join-Path $inspectDir "branch-node-022.log.txt"
+          foreach ($required in @($inspectJson,$inspectSvg,$inspectLog)) {
+            if (-not (Test-Path $required)) { throw "Branch Inspector nodo22 artifact mancante: $required" }
+          }
+
+          [xml]$svgDoc = Get-Content -LiteralPath $currentSvg -Raw
+          $ns = New-Object System.Xml.XmlNamespaceManager($svgDoc.NameTable)
+          $ns.AddNamespace("s","http://www.w3.org/2000/svg")
+          function Get-MandataNodePoint([int]$id) {
+            $n = $svgDoc.SelectSingleNode("//s:text[@data-role='mandata' and @data-node-id='$id']", $ns)
+            if ($null -eq $n) { throw "Nodo SVG mandata $id non trovato." }
+            return [pscustomobject]@{
+              x = [double]::Parse([string]$n.GetAttribute("data-x"), $ci)
+              y = [double]::Parse([string]$n.GetAttribute("data-y"), $ci)
+            }
+          }
+          function Point-SegmentDistance($p,$a,$b) {
+            $vx = $b.x - $a.x; $vy = $b.y - $a.y
+            $wx = $p.x - $a.x; $wy = $p.y - $a.y
+            $vv = $vx*$vx + $vy*$vy
+            if ($vv -le 1e-15) {
+              return [Math]::Sqrt(($p.x-$a.x)*($p.x-$a.x)+($p.y-$a.y)*($p.y-$a.y))
+            }
+            $t = ($wx*$vx + $wy*$vy) / $vv
+            if ($t -lt 0) { $t = 0 }
+            if ($t -gt 1) { $t = 1 }
+            $qx = $a.x + $t*$vx; $qy = $a.y + $t*$vy
+            return [Math]::Sqrt(($p.x-$qx)*($p.x-$qx)+($p.y-$qy)*($p.y-$qy))
+          }
+
+          $p5 = Get-MandataNodePoint 5
+          $p6 = Get-MandataNodePoint 6
+          $p7 = Get-MandataNodePoint 7
+          $p22 = Get-MandataNodePoint 22
+          $targetDistance = 0.60
+
+          $inspect = Get-Content -LiteralPath $inspectJson -Raw | ConvertFrom-Json
+          $accepted = @($inspect.candidates | Where-Object {
+            $_.status -eq "ACCEPT" -and $null -ne $_.target
+          })
+          if ($accepted.Count -lt 1) { throw "Nodo22: nessun candidato ACCEPT con target." }
+
+          $scored = foreach ($candidate in $accepted) {
+            $pt = [pscustomobject]@{ x=[double]$candidate.target.x; y=[double]$candidate.target.y }
+            $d56 = Point-SegmentDistance $pt $p5 $p6
+            $d67 = Point-SegmentDistance $pt $p6 $p7
+            $d = [Math]::Min($d56,$d67)
+            [pscustomobject]@{
+              candidate = $candidate
+              distance = $d
+              delta = [Math]::Abs($d-$targetDistance)
+            }
+          }
+          $selectedScore = $scored |
+            Sort-Object -Property @{Expression={$_.delta};Ascending=$true}, @{Expression={$_.distance};Ascending=$true} |
+            Select-Object -First 1
+          $selected = $selectedScore.candidate
+
+          $sx = ([double]$selected.start.x).ToString("0.000000",$ci)
+          $sy = ([double]$selected.start.y).ToString("0.000000",$ci)
+          $tx = ([double]$selected.target.x).ToString("0.000000",$ci)
+          $ty = ([double]$selected.target.y).ToString("0.000000",$ci)
+          $needle = "DIEGO_DECISION family=Supply choice=$($selected.kind) start=($sx,$sy) target=($tx,$ty)"
+          $decisionLine = Get-Content -LiteralPath $inspectLog |
+            Where-Object { $_.Contains($needle) } |
+            Select-Object -First 1
+          if ([string]::IsNullOrWhiteSpace($decisionLine)) {
+            throw "Decision Key del candidato nodo22 selezionato non trovata nel log."
+          }
+          $keyPos = $decisionLine.IndexOf("DIEGO_DECISION ")
+          if ($keyPos -lt 0) { throw "Decision Key nodo22 non canonica." }
+          $selectedKey = $decisionLine.Substring($keyPos)
+
+          $nodeIds = @($current.supplyNodeIds | ForEach-Object { [int]$_ })
+          $node22Index = -1
+          for ($i=0; $i -lt $nodeIds.Count; $i++) {
+            if ($nodeIds[$i] -eq 22) { $node22Index=$i; break }
+          }
+          if ($node22Index -lt 1) { throw "Nodo22 non trovato nel percorso del setup corrente." }
+
+          $currentKeys = @($current.supplyDecisionKeys | ForEach-Object { [string]$_ })
+          if ($currentKeys.Count -lt $node22Index) { throw "Decision Key insufficienti fino al nodo22." }
+          $extendedPrefix = New-Object System.Collections.Generic.List[string]
+          for ($i=0; $i -lt $node22Index; $i++) { $extendedPrefix.Add($currentKeys[$i]) }
+          $extendedPrefix.Add($selectedKey)
+
+          $extendedPrefixPath = Join-Path $out "LG041-ANSA-NODE22-2P.prefix-lock.txt"
+          $extendedPrefix | Set-Content -LiteralPath $extendedPrefixPath -Encoding utf8NoBOM
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
+            --id LG041-ANSA-NODE22-2P `
+            --out $out `
+            --lock-supply-prefix $extendedPrefixPath
+
+          $resultSvg = Join-Path $out "LG041-ANSA-NODE22-2P.svg"
+          $resultLog = Join-Path $out "LG041-ANSA-NODE22-2P.log.txt"
+          $resultMetrics = Join-Path $out "LG041-ANSA-NODE22-2P.metrics.json"
+          foreach ($required in @($resultSvg,$resultLog,$resultMetrics)) {
+            if (-not (Test-Path $required)) { throw "Risultato forzato nodo22 mancante: $required" }
+          }
+
+          $metrics = Get-Content -LiteralPath $resultMetrics -Raw | ConvertFrom-Json
+          $report = [ordered]@{
+            baseLockedSupplyRank = [int]$current.supplyRank
+            debugNode = 22
+            debugNodePoint = @{ x=$p22.x; y=$p22.y }
+            svgReferenceNodes = @{
+              node5=@{x=$p5.x;y=$p5.y}
+              node6=@{x=$p6.x;y=$p6.y}
+              node7=@{x=$p7.x;y=$p7.y}
+            }
+            targetDistanceMeters = $targetDistance
+            selectedKind = [string]$selected.kind
+            selectedTarget = @{x=[double]$selected.target.x;y=[double]$selected.target.y}
+            selectedDistanceTo567Meters = [double]$selectedScore.distance
+            selectedDeltaFrom2pMeters = [double]$selectedScore.delta
+            selectedDecisionKey = $selectedKey
+            extendedPrefixDecisionCount = $extendedPrefix.Count
+            inspectorSvg = $inspectSvg
+            resultSvg = $resultSvg
+            resultSvgSha256 = [string]$metrics.svgSha256
+          }
+          $reportPath = Join-Path $out "LG041-ANSA-NODE22-2P.report.json"
+          $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $reportPath -Encoding utf8NoBOM
+
+          if ([Math]::Abs([double]$selectedScore.distance - 0.60) -gt 0.000001) {
+            throw "Nodo22: il miglior candidato non raggiunge esattamente 2p dal tratto 5-6-7."
+          }
+
+          Write-Host "RADIANT_HARNESS_NODE22_2P_OK"
+          Write-Host ("selectedKind=" + $selected.kind)
+          Write-Host ("selectedTarget=(" + $tx + "," + $ty + ")")
+          Write-Host ("distanceTo567=" + ([double]$selectedScore.distance).ToString("0.######",$ci))
+          Write-Host ("selectedDecisionKey=" + $selectedKey)
+          Write-Host ("resultSvg=" + $resultSvg)
+
       - name: Run Decision Reject Replay
         shell: pwsh
         run: |
