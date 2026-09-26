@@ -702,8 +702,16 @@ internal static class StrategiaDiegoEngine
 
             DVector delta = reference.A - start;
             double tIntersection = DVector.Cross(delta, refUnit) / cross;
-            if (tIntersection <= Epsilon)
+
+            // Una intersezione teorica appena dietro resta inammissibile.
+            // L'intersezione a distanza zero, invece, e' ammessa: se cade
+            // soltanto sul prolungamento di un tubo, LG-034/LG-035 richiede
+            // di poter valutare il punto convesso I+d oltre la linea estesa.
+            if (tIntersection < -GeometryTolerance)
                 continue;
+
+            if (Math.Abs(tIntersection) <= GeometryTolerance)
+                tIntersection = 0.0;
 
             double uReference =
                 DVector.Cross(delta, unit) /
@@ -731,6 +739,18 @@ internal static class StrategiaDiegoEngine
             double tEnd = physicalHit
                 ? tIntersection - alongRay
                 : tIntersection + alongRay;
+
+            if (!physicalHit &&
+                tIntersection <= GeometryTolerance &&
+                reference.Family is GeoFamily.Supply or GeoFamily.Return)
+            {
+                LogDiego(
+                    $"EXTEND beyond-extended-front family={family} " +
+                    $"reference={reference.Id} refFamily={reference.Family} " +
+                    $"start={Fmt(start)} dir={Fmt(unit)} I={Fmt(tIntersection)}m " +
+                    $"respect={Fmt(respect)}m alongRay={Fmt(alongRay)}m " +
+                    $"targetTravel={Fmt(tEnd)}m");
+            }
 
             if (tEnd <= GeometryTolerance)
                 continue;
@@ -1317,10 +1337,16 @@ internal static class StrategiaDiegoEngine
                 DVector.Cross(delta, candidateDirection) /
                 denominator;
 
-            // Sono ammessi anche i prolungamenti teorici della retta del
-            // segmento, ma esclusivamente DAVANTI al nodo corrente.
-            if (rayTravel <= GeometryTolerance)
+            // LG-034/LG-035: un riferimento puo' essere valido anche
+            // quando la sua retta/prolungamento passa esattamente per il
+            // nodo corrente. In quel caso rayTravel ~= 0 non significa
+            // "dietro": la costruzione convessa I+d puo' produrre un punto
+            // reale DAVANTI alla distanza di rispetto.
+            if (rayTravel < -GeometryTolerance)
                 continue;
+
+            if (Math.Abs(rayTravel) <= GeometryTolerance)
+                rayTravel = 0.0;
 
             if (rayTravel < bestTravel - GeometryTolerance)
             {
@@ -1343,12 +1369,17 @@ internal static class StrategiaDiegoEngine
             return null;
         }
 
+        string intersectionMode =
+            bestTravel <= GeometryTolerance
+                ? "at-node"
+                : "ahead";
+
         LogDiego(
             $"SEQUENCE {mode} geometric-continuation " +
             $"pathFamily={pathFamily} frontFamily={front.Family} " +
             $"from={front.SequenceIndex} next={best.Value.SequenceIndex} " +
             $"start={Fmt(start)} dir={Fmt(travel)} " +
-            $"rayTravel={Fmt(bestTravel)}m");
+            $"rayTravel={Fmt(bestTravel)}m intersection={intersectionMode}");
         return best;
     }
 

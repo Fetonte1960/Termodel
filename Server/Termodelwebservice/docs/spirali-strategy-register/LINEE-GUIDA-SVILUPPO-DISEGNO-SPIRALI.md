@@ -3946,9 +3946,9 @@ passa dal riferimento `S_k` al riferimento `S_{k+1}`.
 
 ### Stato implementativo corrente
 
-Principio geometrico consolidato durante l'audit pre-sviluppo dopo confronto
-con i motori Vittorio e GPT. Nessuna logica runtime StrategiaDiego è ancora
-implementata.
+Dal consolidamento del 26/09/2026 è implementato il caso ortogonale necessario al quadrato: se la retta o il prolungamento del riferimento passa per il nodo corrente e l'intersezione non è fisica, il motore può costruire il punto convesso T = I + d nella direzione corrente e sottoporlo alle normali verifiche di TrattoPossibile.
+
+Per stessa famiglia mandata/mandata o ritorno/ritorno vale d = 2p. Resta distinta e non ancora dichiarata completa la costruzione offset/miter generale per geometrie oblique e casi degeneri.
 
 
 ---
@@ -4051,9 +4051,10 @@ non autorizza una implementazione basata sul solo valore numerico
 
 1. considerare le rette dei segmenti pertinenti della precedente evoluzione;
 2. intersecarle con la semiretta orientata che parte dal nodo corrente;
-3. scartare le intersezioni dietro al nodo o coincidenti entro tolleranza;
-4. scegliere la prima intersezione positiva davanti;
-5. usare poi la geometria fisica reale per collisioni e distanze.
+3. scartare le intersezioni realmente dietro al nodo;
+4. se l'intersezione teorica coincide col nodo entro tolleranza, conservarla come caso speciale: il riferimento può ancora generare la costruzione convessa T = I + d sul proprio prolungamento;
+5. fra le intersezioni ammissibili scegliere il primo riferimento orientato;
+6. usare poi la geometria fisica reale per collisioni e distanze.
 
 Il prolungamento del segmento scelto può determinare il cambio anche se il
 segmento fisico non raggiunge ancora la retta corrente.
@@ -4128,8 +4129,9 @@ Per questa specifica regola:
 
 ### Stato implementativo corrente
 
-Definizione sufficientemente precisa per progettare le primitive geometriche
-della futura StrategiaDiego. Non ancora implementata, compilata o testata.
+Implementazione progressiva in corso. Sono presenti l'inseguimento geometrico del riferimento davanti, l'uso dei prolungamenti teorici dei tubi come marcatori strategici e il caso I circa N con possibilità convessa I + d quando il riferimento è incontrato soltanto sul proprio prolungamento.
+
+La classificazione completa S_k -> S_k+1 con costruzione miter robusta per angoli arbitrari resta futura e non va considerata implementata integralmente.
 
 ---
 

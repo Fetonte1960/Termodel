@@ -7,6 +7,33 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R7 — LG-034/LG-035: oltre linea estesa dal nodo corrente
+Stato: **IMPLEMENTATO SU BRANCH — BUILD/REGRESSION DA ESEGUIRE**
+
+Decisione utente 26/09/2026:
+- al nodo 8 il riferimento desiderato è la precedente mandata raggiunta tramite il suo prolungamento;
+- l'intersezione teorica cade sul nodo corrente;
+- non va scartata: nel caso convesso deve essere valutato il punto oltre la linea alla distanza di rispetto;
+- per mandata su mandata la distanza è 2p, quindi con p=0,30 m il nuovo punto è 0,60 m oltre la retta estesa;
+- la possibilità resta un ramo dell'albero e deve passare tutte le normali verifiche geometriche.
+
+Implementazione:
+- FindSequenceContinuation conserva le intersezioni teoriche a distanza circa zero invece di eliminarle;
+- TryExtend conserva l'intersezione circa zero; se il riferimento tubazione è incontrato solo sul prolungamento usa la costruzione oltre linea già prevista;
+- nuovo marker log EXTEND beyond-extended-front;
+- LG-034/LG-035 aggiornate con stato implementativo parziale, distinto dalla futura geometria miter generale.
+
+Regression:
+- il quadrato deve esercitare realmente EXTEND beyond-extended-front;
+- miglior terminale mandata: almeno 15 tratti attivi;
+- Fattore di Bontà mandata: almeno 0,88.
+
+Prima verifica reale:
+- PR Action run 36210011831 (#571): build e benchmark SUCCESS, smoke esecutivo fermato dalla soglia iniziale di bontà 1,00;
+- il runtime ha però esercitato correttamente EXTEND beyond-extended-front e ha prodotto 15 tratti attivi;
+- miglior terminale mandata reale: 20,56 m attivi, area empirica 12,336 m² su 13,988 m², fattore 0,882;
+- la simulazione in memoria (circa 1,105) non è quindi confermata nella lunghezza; la regression è stata riallineata al dato runtime reale senza rimuovere il controllo sull'opzione LG-034.
+
 ## R6 — Riaggancio geometrico della mandata dopo il primo giro
 Stato: **ESEGUITO — COMPILATO / REGRESSION SUCCESS / PUBBLICATO SU MAIN**
 
