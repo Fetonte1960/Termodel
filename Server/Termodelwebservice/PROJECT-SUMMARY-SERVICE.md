@@ -72,16 +72,21 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Problema corrente: ramo ansa buono con prosecuzione disastrosa
-Stato: COMMISSIONATO
+Stato: ESEGUITO — PROBLEMA OPERATIVO CONSOLIDATO
 
 Commissionato:
-- registrare come problema operativo corrente della StrategiaDiego il caso in cui un ramo risolve correttamente la **prima ansa**, lasciando spazio sufficiente all'ingresso del Return, ma viene classificato male a causa di decisioni successive molto sfavorevoli;
-- obiettivo del debug: riuscire a visualizzare il circuito completo di quel setup "buono nell'ansa ma cattivo dopo", senza perderlo a causa del ranking finale;
-- separare quindi la qualità del **prefisso geometrico fino alla prima ansa** dalla qualità delle decisioni successive;
-- usare il ramo buono come base da preservare e applicare Explorer/Branch Inspector/Decision Reject Replay alle decisioni successive per migliorarne il completamento;
-- non modificare ancora funzione di merito o geometria: prima rendere osservabile e riproducibile il ramo corretto;
-- aggiornare linee guida, registro e Summary; chiudere Issue #1 Completed al termine.
+- registrare il caso in cui un ramo risolve correttamente la prima ansa ma viene classificato male a causa di decisioni successive sfavorevoli;
+- rendere esplicito che il prossimo debug deve visualizzare quel circuito, preservare il prefisso buono e correggere soltanto il seguito;
+- non modificare ancora funzione di merito o geometria.
 
+Risultato:
+- aggiunta nelle linee guida la sezione `Problema operativo attuale — ramo ansa buono, prosecuzione cattiva`;
+- consolidato il principio: **qualità della prima ansa/prefisso e merito finale del circuito devono essere osservati separatamente**;
+- workflow di debug previsto: individuare il ramo che lascia spazio sufficiente al Return -> visualizzare il circuito completo anche se rank basso -> preservare il prefisso fino all'ansa -> usare Branch Inspector/Decision Reject Replay sulle scelte successive;
+- aggiornata `STRATEGIADIEGO_TEST_CONTEXT_CURRENT.CondizionePrincipale` con questo obiettivo;
+- linee guida commit `f1bfaf1c0626120390ebd776f8f8e7ec7b6200cf`;
+- registrata R28 nel registro sviluppo, commit `849f738f2818df285de3211d2b2e4ef2f35d3ca9`;
+- nessuna modifica al motore o alla funzione di merito.
 
 ### INCARICO 2026-09-26 — Consolidamento linee guida: Problema dell'ansa
 Stato: ESEGUITO — PRINCIPIO GEOMETRICO CONSOLIDATO
