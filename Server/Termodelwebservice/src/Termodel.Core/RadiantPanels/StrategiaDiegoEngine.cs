@@ -479,6 +479,13 @@ internal static class StrategiaDiegoEngine
                 node.Parent.Front.Family == GeoFamily.ReturnConnection &&
                 node.Front.Family == family;
 
+            bool afterScavalcamentoOpposite =
+                node.Parent is not null &&
+                node.Parent.Parent is not null &&
+                node.Parent.Parent.Front.Family ==
+                    GeoFamily.ReturnConnection &&
+                node.Parent.Front.Family == family;
+
             if (scavalcamentoLaneNode)
             {
                 DVector opposite =
@@ -520,7 +527,9 @@ internal static class StrategiaDiegoEngine
                         constraints,
                         family,
                         parallel,
-                        node.Segment.Id);
+                        afterScavalcamentoOpposite
+                            ? node.Segment.Id
+                            : null);
                 GeoSegment? continuationB =
                     FindSequenceContinuation(
                         node.End,
@@ -528,7 +537,9 @@ internal static class StrategiaDiegoEngine
                         constraints,
                         family,
                         -parallel,
-                        node.Segment.Id);
+                        afterScavalcamentoOpposite
+                            ? node.Segment.Id
+                            : null);
 
                 directions.Add((
                     "PARALLELA_A",
