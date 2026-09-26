@@ -4733,6 +4733,9 @@ VersoSpecialeScavalcamento: nessuno
 SetupPreliminarePreferito: Termodel.RadiantPanels.Harness -> vero StrategiaDiegoEngine
 CaseHarness: tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json
 BaseDatiHarness: tests/radiant-harness/
+DatasetPreconfezionatoReale: tests/radiant-harness/prepared/StrategiaDiegoCurrentApartment.pannelli.xml
+DatasetPreconfezionatoSHA256: b31b5c2bac4dbd8a13507daef4022c5ad2301fb6503ff6d666e427a2eb5d4a80
+CaseRealePreconfezionato: tests/radiant-harness/cases/CURRENT-APARTMENT-P030.json
 BuildRapida: Core + Harness only
 OutputRichiesto: log candidati/nodi + SVG diagnostico numerato + metriche JSON
 StatoMotoreReale: LG-041 consolidata ma non ancora implementata
