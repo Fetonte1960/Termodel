@@ -161,16 +161,54 @@ internal static class StrategiaDiegoEngine
         IReadOnlyList<GeoSegment> connectionConstraints =
             BuildConnectionConstraints(connections, connection.Id);
 
-        // LG-011/LG-012: il ritorno di collegamento deve esistere prima
-        // dell'esplorazione della mandata. Le due configurazioni laterali
-        // restano alternative indipendenti dello stesso ingresso.
+        // SUPPLY-FIRST: la mandata viene costruita completamente prima che
+        // esista qualunque geometria di ritorno. Nessuna ReturnRoot, nessun
+        // ReturnConnection e nessun tratto Return condizionano questo albero.
+        SearchTree supplyTree = BuildTree(
+            locale,
+            GeoFamily.Supply,
+            directed.EntryPoint,
+            directed.Direction,
+            architecture,
+            connectionConstraints,
+            Array.Empty<GeoSegment>(),
+            directed.EntryWall,
+            step,
+            counters,
+            countAsSupply: true);
+
+        LogDiego(
+            $"SUPPLY-FIRST {locale.Id} tree terminals={supplyTree.Terminals.Count} " +
+            $"returnGeometryPresent=false");
+
+        if (supplyTree.Terminals.Count == 0)
+        {
+            throw new InvalidDataException(
+                $"StrategiaDiego/{locale.Id}: nessun terminale mandata disponibile.");
+        }
+
+        List<SearchNode> orderedSupplyTerminals = supplyTree.Terminals
+            .OrderByDescending(terminal =>
+                TerminalGoodness(locale, terminal, step))
+            .ThenByDescending(ActiveSpiralLength)
+            .ThenByDescending(terminal => terminal.LengthMeters)
+            .ToList();
+
+        SearchNode bestSupplyByGoodness = orderedSupplyTerminals[0];
+        LogTerminalGoodness(
+            locale,
+            GeoFamily.Supply,
+            bestSupplyByGoodness,
+            step,
+            prefix: "SUPPLY-FIRST BEST-GOODNESS");
+
         List<ReturnRoot> returnRoots = BuildReturnRoots(
             locale,
             directed,
             step);
 
         LogDiego(
-            $"LOCALE {locale.Id} RETURN roots=" +
+            $"SUPPLY-FIRST {locale.Id} RETURN roots-after-supply=" +
             string.Join(",", returnRoots.Select(root => $"{root.Side}:{Fmt(root.EntryPoint)}")));
 
         if (returnRoots.Count == 0)
@@ -180,96 +218,67 @@ internal static class StrategiaDiegoEngine
         }
 
         CombinedCandidate? best = null;
+        int supplyRank = 0;
 
-        foreach (ReturnRoot returnRoot in returnRoots)
+        foreach (SearchNode supplyTerminal in orderedSupplyTerminals)
         {
-            List<GeoSegment> preliminaryConstraints =
-                CombineConstraints(
-                    architecture,
-                    connectionConstraints,
-                    Array.Empty<GeoSegment>(),
-                    Array.Empty<GeoSegment>());
+            supplyRank++;
+            List<GeoSegment> supplySegments =
+                ReconstructSegments(supplyTerminal);
 
-            ExtensionResult? rawReturnConnector =
-                TryBuildEntryConnector(
-                    locale,
-                    GeoFamily.Return,
-                    returnRoot.EntryPoint,
-                    directed.Direction,
-                    directed.EntryWall,
-                    preliminaryConstraints,
-                    step);
+            LogDiego(
+                $"SUPPLY-FIRST {locale.Id} TRY-SUPPLY rank={supplyRank}/{orderedSupplyTerminals.Count} " +
+                $"node={supplyTerminal.NodeId} goodness={Fmt(TerminalGoodness(locale, supplyTerminal, step))} " +
+                $"active={Fmt(ActiveSpiralLength(supplyTerminal))}m");
 
-            if (rawReturnConnector is null)
+            CombinedCandidate? bestForThisSupply = null;
+
+            foreach (ReturnRoot returnRoot in returnRoots)
             {
-                LogDiego(
-                    $"LOCALE {locale.Id} RETURN-CONNECTION reject " +
-                    $"config={returnRoot.Side} root={Fmt(returnRoot.EntryPoint)}");
-                continue;
-            }
+                // Il raccordo del ritorno nasce solo adesso, con la mandata
+                // gia' terminata e presente come vincolo fisico completo.
+                List<GeoSegment> returnConnectorConstraints =
+                    CombineConstraints(
+                        architecture,
+                        connectionConstraints,
+                        supplySegments,
+                        Array.Empty<GeoSegment>());
 
-            // Il raccordo entrante del ritorno e' un tubo fisico limitante:
-            // impone le distanze mandata/ritorno ma non e' una linea strategica
-            // sulla quale aprire automaticamente una nuova evoluzione.
-            GeoSegment returnLimitingSegment =
-                rawReturnConnector.Segment with
+                ExtensionResult? rawReturnConnector =
+                    TryBuildEntryConnector(
+                        locale,
+                        GeoFamily.Return,
+                        returnRoot.EntryPoint,
+                        directed.Direction,
+                        directed.EntryWall,
+                        returnConnectorConstraints,
+                        step);
+
+                if (rawReturnConnector is null)
                 {
-                    Id =
-                        $"D-RETURN-CONNECTION-{locale.Id}-{returnRoot.Side}-" +
-                        Guid.NewGuid().ToString("N"),
-                    Family = GeoFamily.ReturnConnection
-                };
+                    LogDiego(
+                        $"SUPPLY-FIRST {locale.Id} RETURN-CONNECTION reject " +
+                        $"supplyNode={supplyTerminal.NodeId} config={returnRoot.Side}");
+                    continue;
+                }
 
-            ExtensionResult returnConnector = new(
-                returnLimitingSegment,
-                rawReturnConnector.Front);
+                GeoSegment returnLimitingSegment =
+                    rawReturnConnector.Segment with
+                    {
+                        Id =
+                            $"D-RETURN-CONNECTION-{locale.Id}-{returnRoot.Side}-" +
+                            Guid.NewGuid().ToString("N"),
+                        Family = GeoFamily.ReturnConnection
+                    };
 
-            LogDiego(
-                $"LOCALE {locale.Id} RETURN-CONNECTION accept " +
-                $"config={returnRoot.Side} " +
-                $"{Fmt(returnLimitingSegment.A)}->{Fmt(returnLimitingSegment.B)} " +
-                $"limit=true strategicFront=false");
+                ExtensionResult returnConnector = new(
+                    returnLimitingSegment,
+                    rawReturnConnector.Front);
 
-            // La mandata viene esplorata separatamente per ogni lato del
-            // ritorno, perche' il raccordo blu preliminare fa gia' parte della
-            // geometria fisica limitante di questo scenario.
-            SearchTree supplyTree = BuildTree(
-                locale,
-                GeoFamily.Supply,
-                directed.EntryPoint,
-                directed.Direction,
-                architecture,
-                connectionConstraints,
-                new[] { returnLimitingSegment },
-                directed.EntryWall,
-                step,
-                counters,
-                countAsSupply: true);
-
-            LogDiego(
-                $"LOCALE {locale.Id} SUPPLY tree config={returnRoot.Side} " +
-                $"terminals={supplyTree.Terminals.Count}");
-
-            if (supplyTree.Terminals.Count == 0)
-                continue;
-
-            SearchNode bestSupplyByGoodness = supplyTree.Terminals
-                .OrderByDescending(terminal =>
-                    TerminalGoodness(locale, terminal, step))
-                .ThenByDescending(ActiveSpiralLength)
-                .First();
-
-            LogTerminalGoodness(
-                locale,
-                GeoFamily.Supply,
-                bestSupplyByGoodness,
-                step,
-                prefix: $"SUPPLY-BEST-GOODNESS config={returnRoot.Side}");
-
-            foreach (SearchNode supplyTerminal in supplyTree.Terminals)
-            {
-                List<GeoSegment> supplySegments =
-                    ReconstructSegments(supplyTerminal);
+                LogDiego(
+                    $"SUPPLY-FIRST {locale.Id} RETURN-CONNECTION accept " +
+                    $"supplyNode={supplyTerminal.NodeId} config={returnRoot.Side} " +
+                    $"{Fmt(returnLimitingSegment.A)}->{Fmt(returnLimitingSegment.B)}");
 
                 SearchTree returnTree = BuildTree(
                     locale,
@@ -305,32 +314,23 @@ internal static class StrategiaDiegoEngine
                             supplySegments,
                             returnSegments))
                     {
-                        LogDiego(
-                            $"LOCALE {locale.Id} CLOSURE reject " +
-                            $"{Fmt(closure.A)}->{Fmt(closure.B)}");
                         continue;
                     }
 
                     counters.AcceptedTerminals++;
-                    LogDiego(
-                        $"LOCALE {locale.Id} CLOSURE accept " +
-                        $"{Fmt(closure.A)}->{Fmt(closure.B)}");
 
+                    // La mandata e' gia' scelta per rango proprio. Per questa
+                    // mandata selezioniamo soltanto la migliore soluzione di
+                    // ritorno/chiusura. La lunghezza mandata e' costante.
                     double merit =
                         supplyTerminal.LengthMeters +
                         returnTerminal.LengthMeters +
                         closure.Length;
 
-                    if (best is null || merit > best.MeritMeters + Epsilon)
+                    if (bestForThisSupply is null ||
+                        merit > bestForThisSupply.MeritMeters + Epsilon)
                     {
-                        LogDiego(
-                            $"LOCALE {locale.Id} BEST update merit={Fmt(merit)}m " +
-                            $"supplyNode={supplyTerminal.NodeId} " +
-                            $"returnNode={returnTerminal.NodeId} " +
-                            $"supplyDepth={supplyTerminal.Depth} " +
-                            $"returnDepth={returnTerminal.Depth} " +
-                            $"config={returnRoot.Side}");
-                        best = new CombinedCandidate(
+                        bestForThisSupply = new CombinedCandidate(
                             supplyTerminal,
                             returnTerminal,
                             returnRoot,
@@ -339,12 +339,26 @@ internal static class StrategiaDiegoEngine
                     }
                 }
             }
+
+            if (bestForThisSupply is not null)
+            {
+                best = bestForThisSupply;
+                LogDiego(
+                    $"SUPPLY-FIRST {locale.Id} SELECT-SUPPLY rank={supplyRank} " +
+                    $"node={supplyTerminal.NodeId} returnNode={best.ReturnTerminal.NodeId} " +
+                    $"config={best.ReturnRoot.Side} merit={Fmt(best.MeritMeters)}m");
+                break;
+            }
+
+            LogDiego(
+                $"SUPPLY-FIRST {locale.Id} SUPPLY-NOT-FEASIBLE rank={supplyRank} " +
+                $"node={supplyTerminal.NodeId}; try-next-supply=true");
         }
 
         if (best is null)
         {
             throw new InvalidDataException(
-                $"StrategiaDiego/{locale.Id}: nessun terminale preliminarmente accettabile.");
+                $"StrategiaDiego/{locale.Id}: nessuna mandata ordinata ammette un ritorno preliminarmente accettabile.");
         }
 
         double localeArea = PolygonArea(locale.Perimeter);
