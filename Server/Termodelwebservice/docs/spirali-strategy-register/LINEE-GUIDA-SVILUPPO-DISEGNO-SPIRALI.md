@@ -4854,6 +4854,104 @@ geometrico sul quadrato è positivo e mostra l'effetto eco desiderato, ma la
 crescita combinatoria resta incompatibile con il regression set completo.
 ---
 
+## LG-045 — Negli at-node escludere la catena collineare-contigua di provenienza
+
+**Stato:** APPROVATA E SIMULATA — NON ANCORA INTEGRATA IN `main`  
+**Origine:** diagnosi R15 + approvazione utente del 26/09/2026
+
+### Principio
+
+Quando `FindSequenceContinuation()` valuta un candidato con `rayTravel=0`,
+il candidato non deve diventare nuovo fronte se appartiene alla stessa
+evoluzione rettilinea con cui il tubo è arrivato al nodo.
+
+L'esclusione deve quindi comprendere:
+
+- il segmento corrente/di arrivo;
+- i segmenti della stessa famiglia collineari sulla stessa retta di supporto;
+- collegati per estremi entro tolleranza in una catena contigua al segmento
+  di arrivo.
+
+Non devono invece essere esclusi genericamente tutti i candidati `at-node`:
+LG-034/LG-035 restano validi quando l'intersezione a zero appartiene a un
+fronte geometricamente distinto.
+
+### Algoritmo sperimentato
+
+1. Individuare il segmento corrente nella geometria del ramo.
+2. Prendere la sua retta di supporto.
+3. Raccogliere i segmenti della stessa famiglia giacenti sulla stessa retta.
+4. Partendo dal segmento corrente, seguire soltanto le connessioni per estremi
+   entro tolleranza.
+5. La componente connessa risultante è la `same-arrival-straight-chain`.
+6. Se un candidato di continuazione ha `rayTravel=0` e appartiene a questa
+   componente, scartarlo come nuovo fronte e registrare
+   `SEQUENCE skip-same-arrival-chain`.
+
+### Collaudo reale 26/09/2026
+
+Prototipo PR #8, commit
+`1a734a98bc699d585c4fe80ad5dc791b913c5da1`.
+
+Radiant Harness run `36226870346`: **SUCCESS**.
+
+Quadrato 4x4:
+
+- 374 nodi Supply;
+- 110 terminali Supply;
+- 8.854 nodi Return;
+- 9.228 nodi totali;
+- 2.560 terminali combinati accettati;
+- maxDepth 30;
+- benchmark 20/20 deterministico: P95 788 ms, memoria delta max
+  ~16,77 MB;
+- SVG SHA-256 `e1e7565aa0007e7530175879cdf3589966a32e9ef7cc2b5c3b85e157e264f4cf`.
+
+Il percorso mandata vincente è ora normotico. Nella zona che aveva prodotto
+l'anomalia precedente:
+
+`(2.60,0.75) -> (3.25,0.75) -> (3.25,3.25) ->
+ (1.40,3.25) -> (0.75,3.25) -> (0.75,1.35)`.
+
+Quindi il tratto verticale atteso prevale e non viene più introdotto il cambio
+guida spurio verso la catena `48->50`.
+
+Il log contiene marker `SEQUENCE skip-same-arrival-chain` per i casi in cui
+un segmento collineare-contiguo della provenienza sarebbe stato altrimenti
+scelto come nuovo fronte a distanza zero.
+
+Appartamento preconfezionato:
+
+- SUCCESS;
+- 43 nodi Supply + 50 Return = 93 nodi totali;
+- 4 terminali accettati;
+- circa 61 ms nel run diagnostico Harness.
+
+### Regression estesa
+
+La build completa compila. Il quadrato è sostenibile.
+
+`StrategiaDiegoConcaveL` non supera più il limite tecnico di 250.000 nodi,
+ma resta oltre i budget di sostenibilità correnti:
+
+- 99.419 nodi;
+- 4 terminali accettati;
+- P95 6.812 ms;
+- budget nodi 50.000;
+- budget P95 2.000 ms.
+
+Il benchmark viene quindi classificato `not-sustainable` e la workflow completa
+si ferma su `ConcaveL`; i casi successivi non vengono considerati verificati
+in questa run.
+
+### Stato implementativo
+
+**Non integrata in `main`.** La correzione geometrica del cambio guida
+prematuro è verificata e migliora drasticamente la forma del percorso.
+Resta necessario ridurre in modo esatto la crescita degli stati sui casi
+concavi prima del merge.
+---
+
 ## Direttiva permanente — collaudo preliminare rapido delle strategie
 
 ### Scopo
@@ -5051,17 +5149,17 @@ verificare che descriva davvero il caso che si intende provare.
 ### Valore corrente
 
 ```text
-STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG044-ECHO-CURRENTSEGMENT-EXCLUSION-SQUARE4X4-T1-P030
+STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG045-SAME-ARRIVAL-CHAIN-SQUARE4X4-T1-P030
 
-IdContesto: LG044-ECHO-CURRENTSEGMENT-EXCLUSION-SQUARE4X4-T1-P030
+IdContesto: LG045-SAME-ARRIVAL-CHAIN-SQUARE4X4-T1-P030
 TipoInput: fixture sintetica versionata
 Fixture: tests/fixtures/StrategiaDiegoSquare4x4.locale.xml
 Locale: R001
 Geometria: quadrato 4,00 m x 4,00 m
 Ingresso: T1 da (2,-1) a (2,1), direzione entrante +Y
 Passo_p: 0,30 m
-RegolaSottoTest: LG-041 + LG-042 + LG-043 + LG-044 esclusione segmento di arrivo
-CondizionePrincipale: verificare eco parallela a 1->3 dopo scavalcamento, escludendo il segmento di arrivo da FindSequenceContinuation; osservare correttezza geometrica e crescita combinatoria
+RegolaSottoTest: LG-041 + LG-042 + LG-043 + LG-044 + LG-045 catena collineare-contigua
+CondizionePrincipale: impedire cambio guida prematuro su segmenti at-node appartenenti alla stessa catena rettilinea di arrivo; verificare circuito normotico e sostenibilità
 FamigliePertinenti: architettura + mandata costruita + ritorno costruito nello scenario
 PrioritaEsplorazione: candidati laterali per lunghezza valida decrescente, senza potatura
 SelezioneFinale: funzione di merito/Fattore di Bontà corrente
