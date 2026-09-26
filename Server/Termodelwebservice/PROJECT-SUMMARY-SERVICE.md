@@ -71,6 +71,23 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Solution Explorer: rank mandata + miglior ritorno
+Stato: COMMISSIONATO
+
+Commissionato:
+- estendere il `Termodel.RadiantPanels.Harness` sul prototipo PR #8 senza modificare il comportamento normale del Service;
+- mantenere la classifica delle mandate pure come ordinamento principale e immutabile;
+- per ogni Supply rank richiesto, congelare quella mandata, costruire tutti i ritorni compatibili e selezionare soltanto il miglior Return associato;
+- il ritorno non deve rimescolare il rank della mandata;
+- se nessun ritorno è fattibile, esportare comunque la mandata e marcare `RETURN NON FATTIBILE`;
+- produrre SVG combinato rosso+blu per ogni rank, più manifest JSON con metriche Supply, metriche Return, nodo terminale Return, chiusura e merito combinato;
+- supportare almeno `--solution-top N`, `--skip-top N --solution-top M` e `--solution-rank N`;
+- mantenere disponibili le modalità Supply-only esistenti;
+- collaudo iniziale sul quadrato LG-046 con almeno top 20 e confronto specifico del rank 21 contenente `47->48`;
+- nessun merge in `main` senza ulteriore approvazione visuale;
+- Issue #1 chiusa `Completed` al termine della simulazione.
+
+
 ### INCARICO 2026-09-26 — Solution Explorer StrategiaDiego
 Stato: ESEGUITO — HARNESS VERIFICATO / PROTOTIPO PR #8
 
