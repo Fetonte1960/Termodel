@@ -1088,6 +1088,8 @@ static int RunSupplyExplorer(
             entry.Goodness,
             entry.TotalLengthMeters,
             nodeIds = entry.NodeIds,
+            decisionKeys = entry.DecisionKeys,
+            terminalDecisionKey = entry.TerminalDecisionKey,
             contains47To48 = ContainsEdge(entry.NodeIds, 47, 48),
             svg = $"supply-rank-{entry.Rank:000}.svg"
         }).ToArray()
