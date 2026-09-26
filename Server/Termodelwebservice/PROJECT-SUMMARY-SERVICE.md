@@ -71,6 +71,31 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Procedura di scavalcamento tubo entrante: limite fisico, corsia 2p e verso opposto
+Stato: COMMISSIONATO
+
+Commissionato:
+- consolidare la correzione validata nella simulazione sul quadrato pannelli senza snaturare l'albero StrategiaDiego;
+- introdurre la fase denominata **Procedura di scavalcamento del tubo entrante e successivi**;
+- il raccordo entrante del ritorno resta non-strategico, ma deve poter agire come fronte fisico di troncamento: mandata-ritorno = `p`;
+- quando il raccordo di ritorno tronca un tratto, non deve essere prevaricato da una costruzione virtuale `I+2p` più corta sul prolungamento di una mandata;
+- dopo il troncamento, il normale albero deve poter agganciare la corsia parallela alla precedente mandata alla distanza stessa-famiglia `2p`;
+- il primo tratto percorso sulla corsia dopo l'aggancio deve avere verso opposto al segmento di mandata usato come riferimento orientato;
+- mantenere collisioni e distanze sulla geometria fisica reale; il raccordo del ritorno non entra nella normale sequenza strategica LG-033;
+- aggiungere marker diagnostici e regression sul quadrato per verificare troncamento a `p`, aggancio corsia e verso opposto;
+- aggiornare linee guida e registro StrategiaDiego;
+- eseguire build/smoke GitHub Actions, recuperare SVG/log reale, integrare su `main` e attivare il normale auto-deploy Render;
+- non modificare GPT/Vittorio, frontend, Library Desktop o `definizionedati.json`;
+- a conclusione aggiornare questo Summary e chiudere Issue #1 `Completed` se riuscito, `Not planned` se fallito.
+
+Criteri di completamento:
+- sorgente compilabile e regression GitHub Actions SUCCESS;
+- log reale con marker della procedura di scavalcamento;
+- SVG reale del quadrato disponibile per verifica visuale;
+- revisione integrata su `main`;
+- Issue #1 chiusa con esito coerente e notifica finale `urgent`.
+
+
 ### INCARICO 2026-09-26 — LG-034/LG-035: oltre linea estesa a 2p e verifica nuova copertura
 Stato: ESEGUITO
 
