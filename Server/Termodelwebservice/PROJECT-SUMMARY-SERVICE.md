@@ -71,6 +71,21 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Debug nodo 22 verso tratto 5→6→7 a distanza 2p
+Stato: COMMISSIONATO
+
+Commissionato:
+- partire dal setup corrente **ansa buona + miglior completamento top-5**;
+- analizzare le scelte reali disponibili al **nodo 22** secondo la numerazione dello SVG corrente;
+- assumere come obiettivo geometrico il tratto corrente **5→6→7**;
+- con p=0,30 m, individuare la scelta del nodo 22 che porta il nuovo tratto il più vicino possibile alla distanza obiettivo **2p = 0,60 m** dal riferimento 5→6→7;
+- usare Branch Inspector/Decision Key del vero albero, non ricostruzioni esterne;
+- visualizzare l'opzione scelta tramite SVG diagnostico/reale del motore;
+- memorizzare nelle linee guida questa esatta posizione di debug per consentire a una chat successiva di riprendere da qui;
+- non modificare ancora la funzione di merito o la geometria normale;
+- aggiornare registro, Summary, PR #8 e chiudere Issue #1 Completed se il collaudo riesce.
+
+
 ### INCARICO 2026-09-26 — Prefix Lock e ricerca setup ansa buono
 Stato: ESEGUITO — HARNESS SUCCESS / SETUP ANSA BUONO ISOLATO
 
