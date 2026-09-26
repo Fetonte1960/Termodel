@@ -71,6 +71,31 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Collaudo preliminare in chat e contesto di test corrente
+Stato: COMMISSIONATO
+
+Commissionato:
+- registrare nelle linee guida un protocollo permanente di collaudo preliminare delle nuove strategie geometriche prima dell'implementazione GitHub/Core;
+- il collaudo preliminare deve poter essere eseguito in chat con un simulatore temporaneo indipendente, preferibilmente C#/.NET quando serve massima fedelta al motore finale;
+- il simulatore deve usare gli stessi dati di input del caso di test quando disponibili, le stesse distanze, tolleranze, primitive geometriche e criterio di merito definiti dalle LG;
+- produrre per ogni iterazione almeno log dei candidati/nodi e SVG diagnostico numerato quando la modifica influisce sul disegno;
+- distinguere sempre simulazione preliminare da verifica definitiva: la simulazione valida la strategia, mentre build/esecuzione del `StrategiaDiegoEngine` reale resta necessaria prima di dichiarare implementazione verificata;
+- usare il collaudo in chat per iterazioni rapide e GitHub Actions solo dopo consolidamento della strategia o quando serve confronto col motore reale;
+- introdurre nelle linee guida una variabile documentale canonica `STRATEGIADIEGO_TEST_CONTEXT_CURRENT`, da mantenere aggiornata ad ogni cambio del progetto/caso/condizione di test corrente;
+- la variabile deve identificare almeno: fixture/input, geometria sintetica o progetto reale, valore `p`, regola/LG sotto test, condizioni specifiche e output diagnostico atteso;
+- inizializzare il contesto corrente sul quadrato 4x4 / ingresso T1 / `p=0,30 m` per il collaudo LG-041;
+- aggiornare il registro StrategiaDiego;
+- nessuna modifica al motore, frontend, Library Desktop o `definizionedati.json`;
+- chiudere Issue #1 `Completed` al termine del lavoro documentale.
+
+Criteri di completamento:
+- protocollo preliminare registrato come direttiva permanente;
+- `STRATEGIADIEGO_TEST_CONTEXT_CURRENT` presente e valorizzata;
+- responsabilita di aggiornamento della variabile esplicitata;
+- registro sviluppo aggiornato;
+- nessuna build richiesta per il solo intervento documentale.
+
+
 ### INCARICO 2026-09-26 — Consolidamento LG-041 come regola universale
 Stato: ESEGUITO
 
