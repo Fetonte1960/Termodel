@@ -601,6 +601,7 @@ jobs:
           if ($report.candidates.Count -lt 2) { throw "Branch inspector candidati insufficienti." }
           Write-Host "RADIANT_HARNESS_BRANCH63_OK"
       - name: Run prepared current apartment case
+        if: always()
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
