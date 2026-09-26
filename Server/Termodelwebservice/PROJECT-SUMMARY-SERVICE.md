@@ -71,6 +71,19 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Reject scelta nodo 47 del rank 1 corrente
+Stato: COMMISSIONATO
+
+Commissionato:
+- usare come base il rank 1 corrente del caso quadrato LG041 senza esclusioni;
+- individuare nel percorso del rank 1 la Decision Key della scelta **uscente dal nodo 47** del run corrente;
+- usare il numero di nodo solo per localizzare la scelta nel run, quindi applicare il reject tramite Decision Key canonica;
+- rieseguire il vero motore StrategiaDiego con quella sola esclusione;
+- restituire lo SVG standard risultante e identificare il nuovo top residuo;
+- non modificare geometria, funzione di merito o algoritmo;
+- registrare esito reale e chiudere Issue #1 come Completed se il collaudo riesce.
+
+
 ### INCARICO 2026-09-26 — Completamento sistema debug albero StrategiaDiego + reject cumulativo
 Stato: ESEGUITO — HARNESS SUCCESS / INFRASTRUTTURA CONSOLIDATA
 
