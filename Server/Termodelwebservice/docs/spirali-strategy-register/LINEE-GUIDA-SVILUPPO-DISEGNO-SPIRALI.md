@@ -3754,10 +3754,17 @@ Quando un ramo convesso rientra verso una propria evoluzione precedente:
    prolungamento geometrico della sua retta;
 2. genera il nuovo tratto parallelo a quello raggiunto, alla distanza di
    rispetto applicabile;
-3. durante l'avanzamento, il successivo riferimento atteso è il tratto che
-   segue quello appena inseguito nella sequenza della precedente evoluzione;
+3. durante l'avanzamento, il successivo riferimento atteso è la **prima linea
+   pertinente incontrata DAVANTI nella direzione corrente** appartenente alla
+   stessa evoluzione/famiglia;
 4. il processo può continuare progressivamente sui tratti successivi
    `S1 -> S2 -> S3 -> ...`.
+
+Il termine **successivo** è quindi geometrico e orientato, non equivale
+automaticamente a `SequenceIndex + 1`. Il numero di sequenza resta utile per
+identità e tracciabilità, ma non può costringere il percorso a riferirsi a una
+linea che si trova dietro al nodo corrente o che non è la prima intercettata
+dalla semiretta di avanzamento.
 
 ### Significato della troncatura
 
@@ -3810,8 +3817,11 @@ possibili.
 
 ### Stato implementativo corrente
 
-Principio strategico consolidato; la regola operativa completa
-dell'inseguimento convesso non è ancora implementata.
+Principio strategico consolidato. La ricerca del successivo riferimento
+geometrico davanti è implementata nel consolidamento del 26/09/2026 per
+l'inseguimento della propria famiglia (mandata su mandata e ritorno su ritorno)
+e per il ritorno che insegue la mandata. Restano separati gli sviluppi futuri
+della costruzione offset completa LG-034/LG-035 per i casi obliqui/degeneri.
 
 
 ---
@@ -4032,11 +4042,21 @@ geometrica autorevole per il punto `T`.
 ### Perché non basta la linea più vicina
 
 Nel percorso convesso il prossimo riferimento non è scelto solo per distanza.
-Una volta agganciato `S_k`, il riferimento naturale è `S_k+1`, cioè il
-segmento successivo della precedente evoluzione.
+Una volta agganciato `S_k`, il riferimento naturale è il **successivo
+riferimento geometrico davanti** lungo la direzione di avanzamento corrente.
 
-Il suo prolungamento può determinare il cambio anche se il segmento fisico non
-raggiunge ancora la retta corrente.
+Nella notazione teorica esso può essere chiamato `S_k+1`, ma questa scrittura
+non autorizza una implementazione basata sul solo valore numerico
+`SequenceIndex + 1`. L'implementazione deve:
+
+1. considerare le rette dei segmenti pertinenti della precedente evoluzione;
+2. intersecarle con la semiretta orientata che parte dal nodo corrente;
+3. scartare le intersezioni dietro al nodo o coincidenti entro tolleranza;
+4. scegliere la prima intersezione positiva davanti;
+5. usare poi la geometria fisica reale per collisioni e distanze.
+
+Il prolungamento del segmento scelto può determinare il cambio anche se il
+segmento fisico non raggiunge ancora la retta corrente.
 
 Questa distinzione è indispensabile per il caso:
 
@@ -4061,6 +4081,23 @@ geometria fisica:
 
 Una intersezione con un prolungamento può quindi creare un nodo strategico
 senza rappresentare una collisione fisica.
+
+### Regression obbligatoria — riaggancio dopo il primo giro
+
+Sul quadrato pannelli, dopo il primo giro completo, la mandata che raggiunge
+una propria linea precedente non deve terminare prematuramente perché il
+`SequenceIndex+1` punta a una linea dietro al nodo.
+
+Il test deve verificare che:
+
+```text
+riaggancio propria mandata
+-> ricerca del primo riferimento geometrico davanti
+-> prosecuzione del secondo giro se esiste spazio a 2p
+```
+
+e deve registrare almeno numero di tratti attivi, lunghezza attiva, superficie
+empirica coperta e Fattore di Bontà del miglior terminale di mandata.
 
 ### Casi degeneri da gestire
 

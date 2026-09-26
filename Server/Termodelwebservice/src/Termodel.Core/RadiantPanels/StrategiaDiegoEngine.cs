@@ -1270,10 +1270,21 @@ internal static class StrategiaDiegoEngine
             return null;
         }
 
-        // Per i casi diversi dal ritorno che insegue la mandata conserva la
-        // semantica storica: il successore e' SequenceIndex+1.
-        if (pathFamily != GeoFamily.Return ||
-            front.Family != GeoFamily.Supply)
+        bool followsOwnFamily =
+            pathFamily == front.Family;
+        bool returnFollowsSupply =
+            pathFamily == GeoFamily.Return &&
+            front.Family == GeoFamily.Supply;
+
+        // LG-033/LG-035: quando il tubo sta inseguendo una propria evoluzione
+        // precedente, il "successivo" riferimento non e' definito dal solo
+        // SequenceIndex+1. Il riferimento corretto e' la prima retta
+        // pertinente incontrata DAVANTI nella direzione corrente.
+        //
+        // La stessa costruzione resta valida per il ritorno che insegue la
+        // mandata. Gli altri casi mantengono la semantica sequenziale storica.
+        if (!followsOwnFamily &&
+            !returnFollowsSupply)
         {
             return constraints.FirstOrDefault(candidate =>
                 candidate.Family == front.Family &&
@@ -1284,17 +1295,11 @@ internal static class StrategiaDiegoEngine
         if (travel.Length <= Epsilon)
             return null;
 
-        // Il ritorno e' una curva parallela alla mandata: la prossima svolta
-        // non si deduce dal verso A->B del segmento di mandata, perche' il
-        // ritorno puo' trovarsi sul suo prolungamento. Si sceglie quindi il
-        // primo segmento della stessa mandata la cui retta viene incontrata
-        // DAVANTI lungo la direzione corrente. Questo realizza l'inseguimento
-        // geometrico della traccia invece di forzare +1/-1 dall'orientamento.
         GeoSegment? best = null;
         double bestTravel = double.PositiveInfinity;
 
         foreach (GeoSegment candidate in constraints.Where(candidate =>
-                     candidate.Family == GeoFamily.Supply &&
+                     candidate.Family == front.Family &&
                      candidate.SequenceIndex >= 0 &&
                      candidate.SequenceIndex != front.SequenceIndex))
         {
@@ -1302,14 +1307,18 @@ internal static class StrategiaDiegoEngine
             if (candidateDirection.Length <= Epsilon)
                 continue;
 
-            double denominator = DVector.Cross(travel, candidateDirection);
+            double denominator =
+                DVector.Cross(travel, candidateDirection);
             if (Math.Abs(denominator) <= GeometryTolerance)
                 continue;
 
             DVector delta = candidate.A - start;
             double rayTravel =
-                DVector.Cross(delta, candidateDirection) / denominator;
+                DVector.Cross(delta, candidateDirection) /
+                denominator;
 
+            // Sono ammessi anche i prolungamenti teorici della retta del
+            // segmento, ma esclusivamente DAVANTI al nodo corrente.
             if (rayTravel <= GeometryTolerance)
                 continue;
 
@@ -1320,18 +1329,26 @@ internal static class StrategiaDiegoEngine
             }
         }
 
+        string mode = followsOwnFamily
+            ? "own-family"
+            : "return-follows-supply";
+
         if (best is null)
         {
             LogDiego(
-                $"SEQUENCE return-follows-supply no-forward-front " +
-                $"from={front.SequenceIndex} start={Fmt(start)} dir={Fmt(travel)}");
+                $"SEQUENCE {mode} no-forward-front " +
+                $"pathFamily={pathFamily} frontFamily={front.Family} " +
+                $"from={front.SequenceIndex} start={Fmt(start)} " +
+                $"dir={Fmt(travel)}");
             return null;
         }
 
         LogDiego(
-            $"SEQUENCE return-follows-supply geometric-continuation " +
+            $"SEQUENCE {mode} geometric-continuation " +
+            $"pathFamily={pathFamily} frontFamily={front.Family} " +
             $"from={front.SequenceIndex} next={best.Value.SequenceIndex} " +
-            $"start={Fmt(start)} dir={Fmt(travel)} rayTravel={Fmt(bestTravel)}m");
+            $"start={Fmt(start)} dir={Fmt(travel)} " +
+            $"rayTravel={Fmt(bestTravel)}m");
         return best;
     }
 
