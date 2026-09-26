@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-26 — Collaudo preliminare in chat e contesto di test corrente
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - registrare nelle linee guida un protocollo permanente di collaudo preliminare delle nuove strategie geometriche prima dell'implementazione GitHub/Core;
@@ -94,6 +94,17 @@ Criteri di completamento:
 - responsabilita di aggiornamento della variabile esplicitata;
 - registro sviluppo aggiornato;
 - nessuna build richiesta per il solo intervento documentale.
+Risultato:
+- linee guida aggiornate nel commit `bcd0b0d2d211ba8f822712e61524de3e90bab329` con il protocollo permanente di collaudo preliminare;
+- definita la sequenza `simulazione rapida -> consolidamento -> implementazione Core -> verifica GitHub -> confronto finale`;
+- preferenza C#/.NET per simulazioni a massima fedelta, con Python ammesso per esplorazioni geometriche semplici;
+- fissati input, primitive, tolleranze, distanze, log minimo e SVG diagnostico richiesti;
+- introdotta la variabile documentale canonica `STRATEGIADIEGO_TEST_CONTEXT_CURRENT`; non è una variabile runtime e non modifica il Service;
+- valore iniziale: `LG041-SQUARE4X4-T1-P030`, fixture quadrato 4x4, ingresso T1, `p=0,30 m`, LG-041, output log candidati/nodi + SVG numerato;
+- obbligo di aggiornare il contesto prima di ogni cambio di fixture, locale, geometria, `p`, regola o condizione di test;
+- registro StrategiaDiego aggiornato con R9 nel commit `bf51d5fe8792438eb98176eb6aa10dc2d57d566e`;
+- nessuna modifica al motore, frontend, Library Desktop o `definizionedati.json`; nessuna build dichiarata.
+
 
 
 ### INCARICO 2026-09-26 — Consolidamento LG-041 come regola universale
