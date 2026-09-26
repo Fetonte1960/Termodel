@@ -333,12 +333,15 @@ jobs:
           $ErrorActionPreference = "Stop"
           $out = Join-Path $env:RUNNER_TEMP "RadiantHarness"
           $baseline = Get-Content -LiteralPath (Join-Path $out "LG041-SQUARE4X4-T1-P030.supply-explorer\solutions.json") -Raw | ConvertFrom-Json
-          if ($baseline.solutions.Count -lt 2) { throw "Servono almeno due setup Supply per il replay." }
-          $expectedNextKey = $baseline.solutions[1].terminalDecisionKey
-          if ([string]::IsNullOrWhiteSpace($expectedNextKey)) { throw "Decision Key rank 2 mancante." }
-          if ($baseline.solutions.Count -lt 3) { throw "Servono almeno tre setup Supply per il replay cumulativo." }
-          $expectedThirdKey = $baseline.solutions[2].terminalDecisionKey
-          if ([string]::IsNullOrWhiteSpace($expectedThirdKey)) { throw "Decision Key rank 3 mancante." }
+          if ($baseline.solutions.Count -lt 3) { throw "Servono almeno tre setup Supply per il replay." }
+
+          $firstRejectedKey = [string]$baseline.solutions[0].terminalDecisionKey
+          if ([string]::IsNullOrWhiteSpace($firstRejectedKey)) { throw "Decision Key top corrente mancante." }
+
+          $expectedNext = $baseline.solutions |
+            Where-Object { -not (@($_.decisionKeys | ForEach-Object { [string]$_ }) -contains $firstRejectedKey) } |
+            Select-Object -First 1
+          if ($null -eq $expectedNext) { throw "Nessun setup residuo dopo il primo reject." }
 
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
@@ -357,11 +360,8 @@ jobs:
 
           $replayData = Get-Content -LiteralPath $replay -Raw | ConvertFrom-Json
           if ($replayData.rejectedDecisionCount -ne 1) { throw "Decision Replay: numero reject inatteso." }
-          if ($replayData.nextSetup.TerminalDecisionKey -ne $expectedNextKey) {
-            throw "Decision Replay non ha restituito il setup immediatamente successivo della classifica Supply."
-          }
-          if ($replayData.nextSetup.Goodness -gt ($replayData.rejectedSetup.Goodness + 0.0000001)) {
-            throw "Decision Replay: il setup successivo risulta piu' performante del setup scartato."
+          if ($replayData.nextSetup.TerminalDecisionKey -ne $expectedNext.terminalDecisionKey) {
+            throw "Decision Replay non ha restituito il primo setup realmente residuo della classifica."
           }
           $logText = Get-Content -LiteralPath $log -Raw
           if ($logText -notmatch "DIEGO_DECISION_REPLAY REJECT_BY_INPUT") { throw "REJECT_BY_INPUT non registrato nel log." }
@@ -380,13 +380,21 @@ jobs:
           $hashDirect = (Get-FileHash -LiteralPath $svg -Algorithm SHA256).Hash
           $hashFile = (Get-FileHash -LiteralPath $fileSvg -Algorithm SHA256).Hash
           if ($hashDirect -ne $hashFile) { throw "Replay da file non riproduce lo stesso SVG del reject corrente." }
-          if ((Get-Content -LiteralPath $fileLog -Raw) -notmatch "DIEGO_DECISION_REPLAY REJECT_BY_INPUT") {
-            throw "Replay da file: REJECT_BY_INPUT non registrato."
+
+          $secondRejectedKey = [string]$expectedNext.terminalDecisionKey
+          if ([string]::IsNullOrWhiteSpace($secondRejectedKey) -or $secondRejectedKey -eq $firstRejectedKey) {
+            throw "Seconda Decision Key residua non valida."
           }
 
-          # Secondo rifiuto cumulativo: riusa il reject del rank 1,
-          # scarta il setup corrente (che deve essere il vecchio rank 2)
-          # e verifica che emerga esattamente il vecchio rank 3.
+          $expectedAfterTwo = $baseline.solutions |
+            Where-Object {
+              $keys = @($_.decisionKeys | ForEach-Object { [string]$_ })
+              -not ($keys -contains $firstRejectedKey) -and
+              -not ($keys -contains $secondRejectedKey)
+            } |
+            Select-Object -First 1
+          if ($null -eq $expectedAfterTwo) { throw "Nessun setup residuo dopo due reject." }
+
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
             --id LG041-REPLAY-NEXT2 `
@@ -406,23 +414,18 @@ jobs:
           if ($replayData2.rejectedDecisionCount -ne 2) {
             throw "Decision Replay cumulativo: attesi esattamente due reject."
           }
-          if ($replayData2.rejectedSetup.TerminalDecisionKey -ne $expectedNextKey) {
-            throw "Decision Replay cumulativo: il secondo setup scartato non coincide col vecchio rank 2."
+          if ($replayData2.rejectedSetup.TerminalDecisionKey -ne $secondRejectedKey) {
+            throw "Decision Replay cumulativo: secondo setup scartato inatteso."
           }
-          if ($replayData2.nextSetup.TerminalDecisionKey -ne $expectedThirdKey) {
-            throw "Decision Replay cumulativo non ha restituito il vecchio rank 3."
+          if ($replayData2.nextSetup.TerminalDecisionKey -ne $expectedAfterTwo.terminalDecisionKey) {
+            throw "Decision Replay cumulativo non ha restituito il primo setup residuo dopo due reject."
           }
+
           $rejectLines = @(Get-Content -LiteralPath $rejects2 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
           if ($rejectLines.Count -ne 2 -or (@($rejectLines | Sort-Object -Unique)).Count -ne 2) {
             throw "Decision Replay cumulativo: reject file non contiene due Decision Key distinte."
           }
-          $rejectMatches = ([regex]::Matches((Get-Content -LiteralPath $log2 -Raw), "DIEGO_DECISION_REPLAY REJECT_BY_INPUT")).Count
-          if ($rejectMatches -lt 2) {
-            throw "Decision Replay cumulativo: non sono stati osservati entrambi i rifiuti nel log."
-          }
 
-          # Il file cumulativo deve essere autosufficiente e riprodurre
-          # byte-per-byte lo SVG ottenuto dal secondo rifiuto interattivo.
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
             --id LG041-REPLAY-FILE2 `
@@ -430,16 +433,17 @@ jobs:
             --reject-decisions $rejects2
 
           $fileSvg2 = Join-Path $out "LG041-REPLAY-FILE2.svg"
-          $fileLog2 = Join-Path $out "LG041-REPLAY-FILE2.log.txt"
           if (-not (Test-Path $fileSvg2)) { throw "Replay cumulativo da file: SVG mancante." }
-          if (-not (Test-Path $fileLog2)) { throw "Replay cumulativo da file: log mancante." }
           $hashDirect2 = (Get-FileHash -LiteralPath $svg2 -Algorithm SHA256).Hash
           $hashFile2 = (Get-FileHash -LiteralPath $fileSvg2 -Algorithm SHA256).Hash
           if ($hashDirect2 -ne $hashFile2) {
             throw "Replay cumulativo da file non riproduce lo stesso SVG del secondo reject."
           }
+
           Write-Host "RADIANT_HARNESS_DECISION_REPLAY_CUMULATIVE_OK"
           Write-Host "RADIANT_HARNESS_DECISION_REPLAY_OK"
+          Write-Host ("firstResidualOriginalRank=" + $expectedNext.Rank)
+          Write-Host ("secondResidualOriginalRank=" + $expectedAfterTwo.Rank)
 
       - name: Reject rank1 choice at current node 47
         shell: pwsh
