@@ -4952,6 +4952,109 @@ Resta necessario ridurre in modo esatto la crescita degli stati sui casi
 concavi prima del merge.
 ---
 
+## LG-046 — Passo funzionale distinto: Return/Return = p
+
+**Stato:** APPROVATA E SIMULATA — NON ANCORA INTEGRATA IN `main`  
+**Origine:** proposta utente del 26/09/2026
+
+### Principio
+
+La mandata e il ritorno hanno ruoli geometrici differenti.
+
+La mandata costruisce le anse e deve lasciare spazio al ritorno:
+
+- Supply/Supply = `2p`.
+
+Il ritorno riempie le anse già create e deve poter avanzare con passo più
+fitto:
+
+- Return/Return = `p`.
+
+Restano inoltre:
+
+- Supply/Return = `p`;
+- Return/Supply = `p`;
+- qualunque tubo rispetto all'architettura = `p/2`.
+
+La matrice non è quindi più descrivibile soltanto con la regola generica
+`stessa famiglia = 2p`: la famiglia Return ha semantica funzionale diversa.
+
+### Motivazione
+
+In una spirale Diego la mandata crea corridoi fra due propri tratti distanti
+`2p`. Il ritorno deve poter occupare tali corridoi e proseguire nelle anse
+interne rispettando `p` sia rispetto alla mandata sia rispetto ad altri tratti
+Return quando la geometria lo richiede.
+
+Schema ideale:
+
+`Supply -- p -- Return -- p -- Supply`.
+
+### Collaudo reale 26/09/2026
+
+Prototipo PR #8, commit
+`db380ea6af1fad8de4fed1df45aca64b395372c1`.
+
+Radiant Harness run `36228623930`: **SUCCESS**.
+
+Quadrato 4x4:
+
+- Supply invariata: 374 nodi;
+- Return: 43.670 nodi;
+- totale: 44.044 nodi;
+- terminali combinati: 12.545;
+- terminali accettati: 8.192;
+- maxDepth 35;
+- run diagnostico: 6.617 ms;
+- SVG SHA-256 `ca3ba4bbda4a6e95398f3d155f7009d05e0e378843b06b26b86f9fe0a82e8ce0`.
+
+Verifica della nuova distanza:
+
+- nel log del quadrato compaiono 7.328 candidati `Return` su riferimento
+  `Return` accettati con `d=0,30 m`;
+- nessun candidato Return/Return usa più `d=0,60 m`;
+- il raccordo `Return sequence 0` partecipa alla stessa regola.
+
+Soluzione selezionata:
+
+- la mandata resta la stessa della LG-045: activeLength `28,05 m`,
+  goodness `1,052`;
+- il ritorno migliora da activeLength `20,15 m`, goodness `0,756` a
+  activeLength `21,05 m`, goodness `0,789`;
+- il ritorno selezionato segue più profondamente le anse interne e usa anche
+  segmenti corti coerenti con il nuovo passo `p`.
+
+Appartamento preconfezionato:
+
+- SUCCESS;
+- 43 nodi Supply + 198 Return = 241 nodi totali;
+- 4 terminali accettati;
+- circa 117 ms nel run diagnostico.
+
+### Sostenibilità
+
+Il benchmark completo compila, ma il quadrato viene classificato
+`not-sustainable` per il tempo:
+
+- 44.044 nodi, entro il budget nodi 50.000;
+- P95 `3.904 ms`, oltre il budget `2.000 ms`;
+- memoria delta max benchmark ~12,62 MB;
+- 8.192 terminali accettati.
+
+La workflow si ferma quindi già sul quadrato e non verifica i fixture
+successivi in questa run.
+
+Il comportamento geometrico è coerente, ma la riduzione Return/Return da
+`2p` a `p` moltiplica le alternative blu. Prima dell'integrazione serve
+ridurre gli stati equivalenti del ritorno senza perdere le nuove soluzioni.
+
+### Stato implementativo
+
+**Non integrata in `main`.** La regola funzionale è approvata e simulata;
+la maggiore capacità del ritorno di riempire le anse è verificata, ma il
+costo combinatorio deve essere ridotto.
+---
+
 ## Direttiva permanente — collaudo preliminare rapido delle strategie
 
 ### Scopo
@@ -5149,17 +5252,17 @@ verificare che descriva davvero il caso che si intende provare.
 ### Valore corrente
 
 ```text
-STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG045-SAME-ARRIVAL-CHAIN-SQUARE4X4-T1-P030
+STRATEGIADIEGO_TEST_CONTEXT_CURRENT = LG046-RETURN-STEP-P-SQUARE4X4-T1-P030
 
-IdContesto: LG045-SAME-ARRIVAL-CHAIN-SQUARE4X4-T1-P030
+IdContesto: LG046-RETURN-STEP-P-SQUARE4X4-T1-P030
 TipoInput: fixture sintetica versionata
 Fixture: tests/fixtures/StrategiaDiegoSquare4x4.locale.xml
 Locale: R001
 Geometria: quadrato 4,00 m x 4,00 m
 Ingresso: T1 da (2,-1) a (2,1), direzione entrante +Y
 Passo_p: 0,30 m
-RegolaSottoTest: LG-041 + LG-042 + LG-043 + LG-044 + LG-045 catena collineare-contigua
-CondizionePrincipale: impedire cambio guida prematuro su segmenti at-node appartenenti alla stessa catena rettilinea di arrivo; verificare circuito normotico e sostenibilità
+RegolaSottoTest: LG-041 + LG-042 + LG-043 + LG-044 + LG-045 + LG-046 Return/Return=p
+CondizionePrincipale: verificare che il ritorno riempia le anse con Return/Return=p mantenendo Supply/Supply=2p e tubo/architettura=p/2; misurare bontà e combinatoria
 FamigliePertinenti: architettura + mandata costruita + ritorno costruito nello scenario
 PrioritaEsplorazione: candidati laterali per lunghezza valida decrescente, senza potatura
 SelezioneFinale: funzione di merito/Fattore di Bontà corrente
