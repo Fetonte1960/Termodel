@@ -4559,6 +4559,54 @@ rilevante, preferirla anche nel simulatore. Nei casi semplici è ammessa una
 implementazione locale delle sole primitive geometriche necessarie, purché
 le formule e le tolleranze siano esplicite.
 
+### Setup preferenziale — Termodel.RadiantPanels.Harness
+
+Per i test iterativi di StrategiaDiego, quando il vero Core è disponibile, il
+setup preferenziale non è più una riscrittura del motore in Python/C# separato:
+si usa il Console Harness minimale:
+
+`tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj`
+
+Il Harness:
+
+- referenzia direttamente `Termodel.Core`;
+- chiama la facciata diagnostica `StrategiaDiegoBenchmark`, che esegue il vero
+  `StrategiaDiegoEngine`;
+- non avvia ASP.NET;
+- non esegue frontend, endpoint HTTP o pipeline completa del Service;
+- compila soltanto il Core e il piccolo eseguibile Harness;
+- accetta input pannelli già preparato e produce SVG, log diagnostico e
+  metriche JSON;
+- può estrarre una sola volta dal progetto completo il `RadiantPanelInputXml`
+  tramite il vero `GeneraModello`, usando il comando `prepare`;
+- dopo la preparazione, le iterazioni successive usano direttamente l'XML
+  preconfezionato e quindi saltano l'elaborazione completa del progetto.
+
+Comandi canonici:
+
+```text
+prepare --project <project.tmdl> --output <prepared.pannelli.xml>
+run --case <case.json> --out <directory>
+run --input <prepared.pannelli.xml> --p <metri> --out <directory>
+```
+
+La base dati Harness è mantenuta in:
+
+`tests/radiant-harness/`
+
+I case JSON devono puntare agli input canonici senza duplicarli quando esiste
+già una fixture equivalente. Gli input pannelli realmente preconfezionati da
+un progetto completo vanno invece conservati in `tests/radiant-harness/prepared/`
+con origine e modalità di rigenerazione documentate.
+
+Per una verifica remota focalizzata è disponibile la workflow:
+
+`.github/workflows/termodel-radiant-harness.yml`
+
+che effettua restore/build soltanto di Core + Harness e lancia i casi rapidi.
+Questa workflow è complementare, non sostitutiva, alla build completa del
+Service richiesta prima di considerare una modifica pronta per il deploy.
+
 ### Input del collaudo
 
 L'input deve provenire, in ordine di preferenza, da:
@@ -4682,8 +4730,11 @@ FamigliePertinenti: architettura + mandata costruita + ritorno costruito nello s
 PrioritaEsplorazione: candidati laterali per lunghezza valida decrescente, senza potatura
 SelezioneFinale: funzione di merito/Fattore di Bontà corrente
 VersoSpecialeScavalcamento: nessuno
-SimulatorePreliminarePreferito: C#/.NET
-OutputRichiesto: log candidati/nodi + SVG diagnostico numerato
+SetupPreliminarePreferito: Termodel.RadiantPanels.Harness -> vero StrategiaDiegoEngine
+CaseHarness: tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json
+BaseDatiHarness: tests/radiant-harness/
+BuildRapida: Core + Harness only
+OutputRichiesto: log candidati/nodi + SVG diagnostico numerato + metriche JSON
 StatoMotoreReale: LG-041 consolidata ma non ancora implementata
 ```
 
