@@ -71,6 +71,22 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Analisi efficienza ramo 47→49 rispetto a 47→48
+Stato: ESEGUITO — DIAGNOSI / NESSUNA MODIFICA CODICE
+
+Risultato:
+- il ramo `47->49` risulta più efficiente solo perché il ramo `47->48` non riesce a completare lo sviluppo normotico successivo;
+- miglior terminale `47->48`: nodo 74, activeLength `25,45 m`, goodness `0,954`;
+- miglior terminale `47->49`: nodo 123, activeLength `28,05 m`, goodness `1,052`; differenza `+2,60 m`;
+- nel ramo `47->48`, al nodo 62 viene generato correttamente `PROSEGUI_DRITTO 62->63` fino a `(0.75,3.25)`, ma da nodo 63 le parallele vengono respinte;
+- causa: la linea interna a `y=0.75` è lì soltanto un prolungamento laterale; `TryExtend()` applica la semantica LG-034/LG-035 `oltre I` anche alla svolta parallela, portando il candidato da `y=3.25` fino a `y=0.15` invece di fermarlo a `y=1.35`; il candidato sovra-esteso collide con la mandata inferiore e viene respinto;
+- nel ramo `47->49` la stessa linea `y=0.75` è invece fisicamente presente sotto `x=0.75`, quindi la svolta viene troncata `prima di I` a `y=1.35` e la spirale interna può completarsi;
+- il vantaggio `+2,60 m` si scompone in circa `+0,65 m` sul traverso alto, `+0,70 m` sulla corsia `y=1.35` e `+1,25 m` sulla corsia `y=2.65`;
+- conclusione: la maggiore bontà del ramo anticipato è un artefatto del mancato sviluppo normotico del ramo `47->48`, non una superiorità geometrica reale;
+- prossimo tema da discutere: separare la semantica dei laterali `PROSEGUI_DRITTO` (oltre il prolungamento quando richiesto) dalle svolte `PARALLELA_A/B`, che in un normale circuito normotico devono poter usare la retta estesa come fronte di arresto `prima di I`;
+- diagnosi registrata nel registro R18, commit `1da3603dca01e3672a3b2b6e6b052641177cab9b`; nessuna modifica al motore.
+
+
 ### INCARICO 2026-09-26 — Analisi distanza 45→47 rispetto a 1→3
 Stato: ESEGUITO — DIAGNOSI / NESSUNA MODIFICA CODICE
 
