@@ -5816,6 +5816,95 @@ Questo è il **problema attuale prioritario** della StrategiaDiego per il
 Problema dell'ansa.
 
 
+### Prefix Lock — preservare un prefisso buono e lasciare libero il seguito
+
+Per il Problema dell'ansa è disponibile sul branch sperimentale PR #8 un
+meccanismo diagnostico complementare al Decision Reject Replay: **Prefix Lock**.
+
+Principio:
+
+- il file di Prefix Lock contiene una sequenza ordinata di Decision Key;
+- finché il prefisso non è esaurito, il vero `BuildTree` accetta soltanto la
+  Decision Key attesa in quella posizione;
+- le altre decisioni vengono registrate come
+  `DIEGO_PREFIX_LOCK REJECT_NOT_IN_PREFIX`;
+- un ramo che non riesce a soddisfare il prefisso viene potato con
+  `PRUNED_BY_PREFIX_LOCK ... terminalCreated=false`;
+- una volta consumato l'intero prefisso, l'albero torna completamente libero;
+- senza Prefix Lock il comportamento normale resta invariato.
+
+Harness:
+
+`--lock-supply-prefix <file.txt>`
+
+Il Prefix Lock è **debug**, non una nuova strategia e non modifica la funzione
+di merito.
+
+#### Primo collaudo sul Problema dell'ansa
+
+Caso quadrato LG041, p=0,30 m.
+
+Il ramo baseline storicamente classificato **Supply rank 21** contiene il
+prefisso umano `47 -> 48 -> 50`. In quel ramo:
+
+- dopo il primo giro la mandata prosegue da `(0,75;0,15)` a
+  `(1,40;0,15)` e poi risale a `(1,40;0,75)`;
+- questa geometria lascia l'ansa iniziale sufficientemente aperta perché il
+  Return vi entri;
+- il completamento successivo è però molto meno efficace del rank 1 globale.
+
+Il Prefix Lock è stato costruito usando **9 Decision Key canoniche**, fino al
+punto storico corrispondente al nodo 50. Il numero nodo serve soltanto a
+riconoscere il run storico; il lock persistente usa esclusivamente Decision Key.
+
+Collaudo Harness:
+- commit infrastruttura: `c23a1f2949a32b5547c83ac0d2f9de83fc493040`,
+  `82fc399c678ac5d4a5125592d3d761618191b85c`,
+  `0a98ceae0bcea666741d5b90164240b9d72ca28d`;
+- commit test: `aed2e637fbc19699a2af00bcd31b81ef657c33d3`;
+- run Harness `36238346531`: **SUCCESS**;
+- con prefisso bloccato: 48 nodi Supply, 15 terminali Supply;
+- il normale selettore ricostruisce esattamente il vecchio rank 21;
+- SVG locked SHA-256
+  `5e66496004a65a0a9ba6d60a54b705c2bd4e146a0e8a2218a501490b5f0abae6`.
+
+Questo risultato dimostra che l'ansa buona è stata isolata correttamente, ma
+anche che il merito Supply corrente continua a scegliere lo stesso seguito
+sfavorevole.
+
+#### Confronto dei completamenti sotto lo stesso prefisso
+
+Senza modificare il motore è stato quindi eseguito il Solution Explorer sui
+primi 5 terminali Supply discendenti dallo **stesso prefisso ansa**.
+
+Commit test: `cdb593fd765d8ea3d497425547fc3441e6179ffc`.
+
+Harness run `36238654776`: **SUCCESS**.
+
+Risultati principali:
+
+- locked rank 1: Supply active `25,45 m`, goodness `0,954375`;
+  best Return active `14,90 m`, combined merit `41,9808 m`;
+- locked rank 3: stessa qualità Supply (`25,45 m`, `0,954375`) ma
+  Return active `19,35 m`, Return goodness `0,725625`,
+  closure `1,0440 m`, combined merit `46,4440 m`;
+- il locked rank 3 è quindi un completamento molto migliore dello stesso
+  prefisso ansa, pur non essendo scelto dal ranking Supply corrente.
+
+SVG del miglior completamento top-5:
+SHA-256 `3cdab768960a2328ef67d77275b56b4f27a8805000b08016f7da997dd56d94e1`.
+
+Conclusione operativa:
+
+> il **Problema dell'ansa è separato con successo dal problema del seguito**.
+> Possiamo preservare la geometria iniziale corretta e migliorare le decisioni
+> successive senza perdere l'ansa.
+
+Il prossimo lavoro non deve più cercare l'ansa buona: deve spiegare perché,
+fra discendenti a pari qualità Supply, il selettore preferisce il locked rank 1
+invece del locked rank 3 che produce un Return molto migliore.
+
+
 ---
 ## Variabile documentale canonica — STRATEGIADIEGO_TEST_CONTEXT_CURRENT
 
