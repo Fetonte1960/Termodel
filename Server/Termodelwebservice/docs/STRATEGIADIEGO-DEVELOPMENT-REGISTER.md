@@ -7,6 +7,32 @@ Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
 
+## R15 — Diagnosi nodo 95/97: cambio guida prematuro su 48→50
+Stato: **ESEGUITO — DIAGNOSI LOG / NESSUNA MODIFICA CODICE**
+
+Analisi utente 26/09/2026:
+- dopo il primo scavalcamento corretto, il percorso selezionato gira da nodo 97 verso sinistra, risultando parallelo a `48->50`, mentre ci si attende la prosecuzione normotica parallela a `3->39`;
+- richiesta verifica log per distinguere generazione/scarto/merito.
+
+Risultato log:
+- percorso selezionato: `... 48 -> 50 -> 95 -> 97 -> 99 ...`;
+- nodo 95 = `(3.25,0.75)`, `front` con `SequenceIndex=2`, cioè riferimento della famiglia del tratto `3->39`; direzione parallela cercata verticale;
+- `FindSequenceContinuation()` al nodo 95 trova però `next=10` con `rayTravel=0`; sequence 10 corrisponde al tratto orizzontale `48->50`;
+- ciò avviene perché la retta/prolungamento di `48->50` passa esattamente per nodo 95 ed LG-034/LG-035 ammettono la continuazione `at-node`;
+- il tratto `48->50` è inoltre collineare e contiguo alla corsa di arrivo `50->95`: è quindi geometricamente la stessa evoluzione rettilinea spezzata in due segmenti, ma l'esclusione corrente opera solo per ID del segmento di arrivo e non per evoluzione collineare;
+- da `48->50` il motore costruisce `95->97` come `EXTEND beyond-extended-front`, `d=2p=0,60 m`, e assegna al nodo 97 proprio `48->50` come nuovo `front`;
+- al nodo 97 viene comunque generato e accettato `PROSEGUI_DRITTO` verticale `97->98`, `(3.25,1.35)->(3.25,3.25)`: quindi la prosecuzione attesa parallela a `3->39` non è assente;
+- contemporaneamente viene accettata `PARALLELA_B` orizzontale `97->99`, `(3.25,1.35)->(1.40,1.35)`, coerente col nuovo front orizzontale `48->50`;
+- il terminale selezionato `1098` discende dal ramo `97->99`;
+- il ramo alternativo `97->98` produce anch'esso terminali con gli stessi valori visualizzati del vincente: activeLength `29,25 m`, goodness `1,097`, length totale `29,40 m` (es. terminale 603);
+- la selezione non contiene un criterio di preferenza per continuità/normoticità e i log arrotondano a tre decimali, quindi non distinguono un eventuale delta floating-point minimo fra terminali apparentemente pari.
+
+Diagnosi strutturale:
+- il problema primario è il **cambio guida prematuro al nodo 95**: un segmento collineare della stessa corsa di arrivo (`48->50`) viene interpretato come nuovo fronte `at-node`;
+- la sola esclusione del `currentSegment` per ID introdotta da LG-044 non basta: il tratto precedente collineare `48->50` ha ID diverso;
+- ipotesi da discutere prima di modificare: nella ricerca della continuazione, escludere l'intera evoluzione collineare/contigua al segmento di arrivo quando viene incontrata solo tramite prolungamento `rayTravel=0`, lasciando invece validi gli `at-node` appartenenti a un fronte geometricamente distinto;
+- nessuna modifica al prototipo in R15.
+
 ## R14 — Eco 1→3: esclusione del segmento di arrivo
 Stato: **ESEGUITO — SIMULAZIONE GEOMETRICA POSITIVA / REGRESSION NON SOSTENIBILE**
 
