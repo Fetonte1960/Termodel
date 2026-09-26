@@ -276,25 +276,24 @@ jobs:
           $supplySvg = Join-Path $out "LG041-R31-NODE15-CONTINUES-SUPPLY.svg"
           Copy-Item -LiteralPath $supplySvgSource -Destination $supplySvg -Force
 
+          $fallbackRank = [int]$manifest.SupplyTerminals
+          if ($fallbackRank -lt 1) { throw "R31: nessun terminale Supply disponibile." }
+
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030.json `
             --id LG041-R31-NODE15-CONTINUES `
             --out $out `
-            --solution-top 5 `
+            --solution-rank $fallbackRank `
             --lock-supply-prefix $approvedPrefix
 
           $solutionsDir = Join-Path $out "LG041-R31-NODE15-CONTINUES.solution-explorer"
           $solutionsPath = Join-Path $solutionsDir "solutions.json"
           if (-not (Test-Path $solutionsPath)) { throw "Solution Explorer R31 mancante." }
           $solutions = Get-Content -LiteralPath $solutionsPath -Raw | ConvertFrom-Json
-          $feasible = @($solutions.solutions | Where-Object { $_.returnFeasible -eq $true })
-          if ($feasible.Count -lt 1) {
-            throw "R31: nessun Return fattibile nei primi 5 discendenti del prefisso approvato."
+          $best = $solutions.solutions | Select-Object -First 1
+          if ($null -eq $best -or $best.returnFeasible -ne $true) {
+            throw "R31: il terminale Supply più corto non produce un Return fattibile entro il budget."
           }
-
-          $best = $feasible |
-            Sort-Object -Property @{Expression={[double]$_.combinedMeritMeters};Descending=$true} |
-            Select-Object -First 1
           $combinedSource = Join-Path $solutionsDir ([string]$best.svg)
           $combinedSvg = Join-Path $out "LG041-R31-NODE15-CONTINUES-COMBINED.svg"
           Copy-Item -LiteralPath $combinedSource -Destination $combinedSvg -Force
