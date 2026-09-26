@@ -71,6 +71,26 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-26 — Registrazione proposta universale PROSEGUI_DRITTO multi-candidato
+Stato: COMMISSIONATO
+
+Commissionato:
+- registrare nelle linee guida, senza modificare il motore, la nuova proposta utente di generalizzazione universale di `PROSEGUI_DRITTO`;
+- il ramo diritto deve poter generare candidati non soltanto verso un contenimento frontale fisicamente intersecato, ma anche verso le intersezioni teoriche con i prolungamenti laterali destro e sinistro delle linee pertinenti di architettura, mandata e ritorno;
+- per un'intersezione laterale teorica il punto terminale candidato è posto oltre l'intersezione, lungo la direzione corrente, applicando la distanza di rispetto `d` determinata dalla matrice corrente delle famiglie geometriche;
+- il numero dei rami non è fissato a tre: è determinato dal numero dei candidati geometrici validi presenti nello scenario corrente;
+- l'ordine di esplorazione privilegia i candidati laterali che producono il tratto diritto valido più lungo, senza potare gli altri; la funzione di valutazione finale resta responsabile della scelta del percorso migliore;
+- la stessa regola deve essere simmetrica per mandata e ritorno;
+- discutere e consolidare i dettagli prima di qualsiasi implementazione;
+- sospendere l'implementazione specifica della precedente procedura di scavalcamento del tubo entrante finché questa regola universale non è consolidata.
+
+Criteri di completamento:
+- nuova LG registrata come proposta da consolidare, non implementata;
+- nessuna modifica a codice, frontend, Library Desktop o `definizionedati.json`;
+- precedente incarico di scavalcamento esplicitamente sospeso in attesa della discussione;
+- Issue #1 chiusa Completed al termine del solo lavoro documentale.
+
+
 ### INCARICO 2026-09-26 — Procedura di scavalcamento tubo entrante: limite fisico, corsia 2p e verso opposto
 Stato: COMMISSIONATO
 
