@@ -67,9 +67,44 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.20';
+const APP_VERSION = '1.21';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
+const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
+let termodelFrontendVersionCheckPromise = null;
+
+async function ensureLatestTermodelFrontend() {
+  if (termodelFrontendVersionCheckPromise)
+    return termodelFrontendVersionCheckPromise;
+
+  termodelFrontendVersionCheckPromise = (async () => {
+    try {
+      const response = await fetch(
+        TERMODEL_FRONTEND_VERSION_URL + '?t=' + Date.now(),
+        { cache: 'no-store' }
+      );
+      if (!response.ok) return true;
+
+      const deployedVersion = String(await response.text()).trim();
+      if (!deployedVersion || deployedVersion === APP_VERSION) return true;
+
+      // Forza un nuovo documento HTML oltre al nuovo app.js: serve anche per
+      // i tab lasciati aperti durante un deploy GitHub Pages.
+      const target = new URL(window.location.href);
+      target.searchParams.set('v', deployedVersion);
+      target.searchParams.set('_reload', Date.now().toString());
+      window.location.replace(target.href);
+      return false;
+    } catch (error) {
+      console.warn('Controllo versione frontend non disponibile.', error);
+      return true;
+    } finally {
+      termodelFrontendVersionCheckPromise = null;
+    }
+  })();
+
+  return termodelFrontendVersionCheckPromise;
+}
 
 const TERMODEL_ANDROID_DEVICE = /Android/i.test(navigator.userAgent || '');
 const TERMODEL_DESKTOP_VIEWPORT_WIDTH = 1100;
@@ -77,6 +112,13 @@ let termodelForceDesktopLayout = false;
 
 if (TERMODEL_ANDROID_DEVICE)
   document.documentElement.classList.add('termodel-android');
+
+// Controllo immediato e al ritorno sul tab: evita di continuare a usare una
+// versione del frontend già sostituita su GitHub Pages.
+ensureLatestTermodelFrontend();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) ensureLatestTermodelFrontend();
+});
 
 function clearAndroidViewportOverrides() {
   document.documentElement.style.removeProperty('height');
@@ -2941,6 +2983,7 @@ async function readTermodelServiceError(response) {
 
 async function loadCalculatedModelFromService() {
   if (loading) return;
+  if (!await ensureLatestTermodelFrontend()) return;
   if (!structuredProjectActive || !currentProjectText) {
     await loadModel();
     resetView();
