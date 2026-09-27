@@ -71,6 +71,19 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Istruzione AI pubblicata MyHome3D Mobile
+Stato: COMMISSIONATO
+
+Commissionato:
+- creare sul sito Termodel una sezione/istruzione AI dedicata a **MyHome3D**, completa delle regole generali Termodel necessarie e armonizzata con il flusso Mobile;
+- nella versione Mobile riferirsi all'**input unifilare della versione Web / CAD 2D** come sorgente e oggetto di modifica del modello, evitando di indirizzare l'utente verso AutoCAD o un flusso desktop DXF;
+- includere i concetti collegati al flusso Web: `DisegnoInput.svg`/input unifilare, pianta pulita, esecutivi, modello 3D e progetto `TERMODEL-PROJECT-TEXT-V1`, senza alterare i protocolli esistenti;
+- collegare la nuova istruzione all'indice AI pubblico del sito;
+- fare in modo che **Help Mobile -> Chiedi informazioni ad AI** copi negli appunti il testo della nuova istruzione pubblicata, usandola come sorgente autorevole invece di una istruzione duplicata nel JavaScript;
+- preservare il frontend desktop e le funzioni Mobile esistenti; non modificare `definizionedati.json`;
+- aggiornare versione frontend/regression, pubblicare e notificare a fine lavoro.
+
+
 ### INCARICO 2026-09-27 — Prima funzione Help MyHome3D
 Stato: ESEGUITO — FRONTEND v1.28 PUBBLICATO / REGRESSION HELP VERIFICATA
 
