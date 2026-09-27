@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-27 — Esempio pannelli: rigenerazione 3D mostra solo schema/ponteggi
-Stato: COMMISSIONATO
+Stato: ESEGUITO — VIEWER 3D CORRETTO / REGRESSION PUBBLICA PASSATA
 
 Commissionato:
 - riprodurre il difetto segnalato sul progetto esempio **Pannelli radianti**: dopo `Rigenera/Aggiorna Modello` il 3D mostra soltanto lo schema verde tipo ponteggi, pur con nessun filtro di visualizzazione attivo;
@@ -82,6 +82,31 @@ Commissionato:
 - aggiungere/verificare una regression reale sul progetto esempio;
 - pubblicare su `main` e lasciare attivo il normale deploy;
 - aggiornare Summary e chiudere Issue #1 Completed solo dopo verifica riuscita.
+
+Diagnosi:
+- aggiunta una regression che esegue realmente il progetto pubblico `docs/termodel-ui-demo/examples/pannelli-radianti.tmdl.txt`, lo canonicalizza come il frontend, invoca il Service e legge l'artifact `model3d`;
+- il Service **non perde il modello edilizio**: artifact verificato con 438 mesh totali, di cui 96 `Parete`, 18 `Pavimento`, 18 `Soffitto`, 18 `Finestra`, 288 `Ponte`; tutte le mesh hanno vertici/indici triangolari validi;
+- il difetto era quindi nel viewer/stato dei filtri: `Pannelli` è una modalità speciale che, quando rimane selezionata, mostra soltanto `Pannelli + Ponte`; poiché il pannello filtri può essere chiuso senza azzerare le selezioni interne, tale modalità poteva restare attiva durante un successivo `Aggiorna Modello`, producendo esattamente lo scheletro verde osservato.
+
+Correzione:
+- aggiunta `resetPannelliOnlyModeForServiceModel()` nel frontend; prima di renderizzare un nuovo `model3d` proveniente dal Service viene disattivata soltanto la modalità speciale `Pannelli`, senza alterare gli altri filtri ordinari;
+- frontend portato a **v1.20** con cache-busting `app.js?v=1.20`;
+- esteso `tools/smoke-radiant-reference.ps1` con parametro `-ProjectPath` e controllo reale dell'artifact `model3d`;
+- workflow Service esegue ora il test del progetto pubblico subito dopo la build e prima del benchmark StrategiaDiego, così la regression resta verificabile anche se il successivo benchmark Diego supera i budget noti;
+- `definizionedati.json` non modificato.
+
+Verifica reale:
+- GitHub Action `TermodelService Build` run `36299819874`, commit `2efc24e199f51f54a86a51f1f32ba404e2954f16`: frontend JavaScript syntax **SUCCESS**, wiring frontend **SUCCESS**, Build **SUCCESS**, `Smoke public Pannelli radianti model3d` **SUCCESS**, upload diagnostica **SUCCESS**;
+- artifact diagnostico: `pannelli-radianti-public-model3d` id `10924859395`;
+- GitHub Pages run `36299819473`: **SUCCESS**, quindi frontend v1.20 pubblicato;
+- gli step successivi del workflow generale continuano a comprendere il benchmark StrategiaDiego e possono terminare rossi per il carico computazionale già noto; ciò è successivo e separato dalla regression di questo difetto.
+
+Commit principali:
+- `63d69367200b4e72da9039c2bde6e80b6008168a` — diagnostica model3d progetto pubblico;
+- `a178db82029d57cf35e8fb7a6a71cc61b2e7fd88` — regression anticipata prima del benchmark Diego;
+- `d2784e57f2e0bad0b9d5d77d6ab130cac9ebcb7b` — reset modalità speciale Pannelli;
+- `e5812adb50cfb97630d8a14320607b0fee21025e` — frontend v1.20;
+- `fd072e8e08317b51ac8d2c0654b84fd272b6593f`, `2efc24e199f51f54a86a51f1f32ba404e2954f16` — regression/CI allineata.
 
 
 
