@@ -72,6 +72,25 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-27 — Help Web PC e istruzione AI Termodel Web
+Stato: COMMISSIONATO
+
+Commissionato:
+- verificare se sul sito esiste già una istruzione AI **specifica e autosufficiente per Termodel Web PC**; se esiste, verificarne la completezza prima di crearne una concorrente;
+- lasciare **invariata** l'istruzione AI collegata alla main page `termodel.it`, perché resta destinata alla vecchia versione Desktop installabile;
+- creare o completare una sezione/istruzione pubblica specifica **Termodel Web**, aggiornabile sul sito senza modificare il programma;
+- l'istruzione Termodel Web deve comprendere le regole necessarie della versione Web e consentire i flussi AI di generazione della pianta/progetto:
+  - da **descrizione testuale**;
+  - da **sfondo bitmap/raster**;
+- aggiungere alla versione Web PC un vero **Help** simile concettualmente a quello Mobile: pannello leggibile e scorrevole, con comando AI in evidenza e testo introduttivo;
+- il comando AI del nuovo Help deve copiare/fornire il collegamento alla nuova istruzione **Termodel Web**, non all'istruzione Desktop storica;
+- sostituire nel percorso Help Web la semplice copia istruzioni con il pannello Help, preservando il resto della UI e i flussi AI già esistenti;
+- mantenere separata l'istruzione Mobile MyHome3D;
+- aggiornare frontend, documentazione Web, regression e versione; non modificare `definizionedati.json`;
+- a fine lavoro aggiornare Summary e chiudere Issue #1 come Completed per la notifica.
+
+
+
 ### INCARICO 2026-09-27 — Filtri Mobile, guida Istruisci AI e accessi MyHome3D
 Stato: ESEGUITO — FRONTEND v1.32 / MYHOME3D AI v0.25 PUBBLICATI
 
