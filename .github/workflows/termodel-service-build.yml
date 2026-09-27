@@ -89,16 +89,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.27';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.28';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.27")) {
-            throw "Cache-busting app.js v1.27 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.28")) {
+            throw "Cache-busting app.js v1.28 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.27") {
+          if ($frontendVersion -ne "1.28") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -350,6 +350,31 @@ jobs:
           Write-Host "ANDROID_EXPLORE_FILTER_DIALOG_OK"
           Write-Host "ANDROID_FILTER_DIALOG_PORTRAIT_OK"
           Write-Host "ANDROID_FILTER_DIALOG_LANDSCAPE_OK"
+
+          foreach ($marker in @(
+            'id="androidHelp3d"',
+            'id="androidCadHelp"',
+            'id="androidHelpAskAi"',
+            "function buildMyHome3dAiHelpInstruction(context = '3D')",
+            "function createAndroidHelpDialog()",
+            "function openAndroidHelpDialog(context = '3D')",
+            "function closeAndroidHelpDialog()",
+            "Chiedi informazioni ad AI",
+            "Sto usando MyHome3D, la versione Mobile di Termodel.",
+            "Termodel è lo strumento con cui realizzo il modello della mia casa, compresi gli impianti.",
+            "TERMODEL_AI_INDEX_URL",
+            "copyTextToClipboard(prompt, 'le istruzioni AI MyHome3D')",
+            ".android-help-body",
+            "-webkit-overflow-scrolling: touch;",
+            "openAndroidHelpDialog('3D');",
+            "openAndroidHelpDialog('2D');"
+          )) {
+            if (-not $app.Contains($marker)) {
+              throw "Help MyHome3D mobile incompleto: $marker"
+            }
+          }
+
+          Write-Host "MYHOME3D_MOBILE_HELP_OK"
 
           Write-Host "PROJECT_BROWSER_DESKTOP_GLOBAL_GATE_OK"
           Write-Host "PROJECT_BROWSER_INITIAL_GATE_OK"

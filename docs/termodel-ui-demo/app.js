@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.27';
+const APP_VERSION = '1.28';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -1738,6 +1738,92 @@ function installAndroidExploreStyles() {
       border-color: #4d82a8;
     }
 
+    .android-help-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 66;
+      display: grid;
+      place-items: center;
+      padding: 12px;
+      background: rgba(0,0,0,.42);
+    }
+    .android-help-modal[hidden] { display: none; }
+    .android-help-dialog {
+      width: min(560px, calc(100vw - 24px));
+      max-height: calc(100dvh - 24px);
+      display: grid;
+      grid-template-rows: auto auto auto minmax(0,1fr);
+      overflow: hidden;
+      border: 1px solid #6f7880;
+      border-radius: 8px;
+      background: #f7f8f9;
+      box-shadow: 0 12px 32px rgba(0,0,0,.34);
+      color: #20262c;
+    }
+    .android-help-head {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 7px 9px 7px 12px;
+      border-bottom: 1px solid #c3c8cd;
+      background: #e6e9ec;
+    }
+    .android-help-head strong { font-size: 15px; }
+    .android-help-close {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border: 1px solid #8a9299;
+      border-radius: 5px;
+      background: #fff;
+      font-size: 23px;
+      line-height: 1;
+    }
+    .android-help-ai {
+      min-height: 46px;
+      margin: 10px 10px 3px;
+      padding: 8px 12px;
+      border: 1px solid #477da2;
+      border-radius: 6px;
+      background: linear-gradient(#eef9ff,#cce7f7);
+      color: #173d57;
+      font-size: 14px;
+      font-weight: 800;
+      touch-action: manipulation;
+    }
+    .android-help-feedback {
+      min-height: 22px;
+      margin: 0 12px 3px;
+      color: #396143;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .android-help-body {
+      min-height: 0;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 8px 12px 14px;
+      font-size: 13px;
+      line-height: 1.48;
+      background: #fff;
+    }
+    .android-help-body p { margin: 0 0 10px; }
+    .android-help-body ol { margin: 6px 0 10px 20px; padding: 0; }
+    .android-help-body li { margin: 5px 0; }
+    .android-help-context {
+      display: inline-block;
+      margin-bottom: 9px;
+      padding: 3px 7px;
+      border: 1px solid #c6ccd2;
+      border-radius: 999px;
+      background: #f0f3f5;
+      color: #56616b;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
     @media (orientation: landscape) and (max-height: 520px) {
       .android-filter-modal {
         padding: 8px;
@@ -1777,6 +1863,31 @@ function installAndroidExploreStyles() {
       .android-filter-foot button {
         min-height: 36px;
       }
+      .android-help-dialog {
+        width: min(760px, calc(100vw - 16px));
+        max-height: calc(100dvh - 16px);
+      }
+      .android-help-head {
+        min-height: 38px;
+        padding: 4px 7px 4px 10px;
+      }
+      .android-help-close {
+        width: 32px;
+        height: 32px;
+      }
+      .android-help-ai {
+        min-height: 38px;
+        margin: 6px 8px 2px;
+        padding: 5px 10px;
+      }
+      .android-help-feedback {
+        min-height: 18px;
+        margin: 0 10px 2px;
+      }
+      .android-help-body {
+        padding: 6px 10px 9px;
+        line-height: 1.35;
+      }
     }
   `;
   document.head.appendChild(style);
@@ -1797,6 +1908,8 @@ function createAndroidExploreBox() {
   box.innerHTML = `
     <button id="androidExploreToggle" class="android-explore-main" type="button"
       aria-expanded="false">Esplora</button>
+    <button id="androidHelp3d" class="android-explore-main" type="button"
+      aria-label="Apri Help MyHome3D">Help</button>
     <button id="androidFullDesktop" class="android-explore-main android-desktop-toggle" type="button"
       aria-label="Apri la versione completa desktop" title="Versione completa desktop">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1825,6 +1938,7 @@ function createAndroidExploreBox() {
   modelPage.appendChild(box);
 
   const toggle = box.querySelector('#androidExploreToggle');
+  const help = box.querySelector('#androidHelp3d');
   const desktopToggle = box.querySelector('#androidFullDesktop');
   const menu = box.querySelector('#androidExploreMenu');
   const exampleSelect = box.querySelector('#androidExploreExample');
@@ -1855,6 +1969,12 @@ function createAndroidExploreBox() {
     }
 
     setOpen(menu.hidden);
+  });
+
+  help.addEventListener('click', event => {
+    event.stopPropagation();
+    setOpen(false);
+    openAndroidHelpDialog('3D');
   });
 
   desktopToggle.addEventListener('click', (event) => {
@@ -2064,6 +2184,123 @@ function closeAndroidFilterDialog() {
   androidFilterModal.setAttribute('aria-hidden', 'true');
 }
 
+let androidHelpModal = null;
+let androidHelpContext = '3D';
+
+function buildMyHome3dAiHelpInstruction(context = '3D') {
+  const view = context === '2D' ? 'CAD 2D' : 'modello 3D';
+  const currentExample = currentProjectBrowserExample();
+  const projectContext = currentExample
+    ? 'Sto esplorando l’esempio "' + currentExample.name + '".'
+    : (structuredProjectActive
+        ? 'Sto lavorando sul mio progetto MyHome3D corrente.'
+        : 'Sto esplorando MyHome3D.');
+
+  return [
+    'Sto usando MyHome3D, la versione Mobile di Termodel.',
+    'Termodel è lo strumento con cui realizzo il modello della mia casa, compresi gli impianti.',
+    'Il modello deve poter essere riutilizzato per dialogare con aziende di costruzione e installazione/impiantistica e ottenere rapidamente preventivi senza riprogettare ciò che è già stato definito.',
+    'Mi trovo nella vista ' + view + '. ' + projectContext,
+    '',
+    'Prima di rispondere, apri e segui le istruzioni AI aggiornate di Termodel:',
+    TERMODEL_AI_INDEX_URL,
+    '',
+    'Aiutami nel contesto MyHome3D Mobile con indicazioni semplici, operative e sequenziali per smartphone.',
+    'Se la funzione che ti chiedo richiede un passaggio desktop o non è disponibile nella versione Mobile, indicamelo chiaramente.',
+    'Non modificare o generare il progetto finché non te lo chiedo esplicitamente.',
+    '',
+    'La mia richiesta è: [scrivi qui cosa vuoi sapere]'
+  ].join('\n');
+}
+
+function createAndroidHelpDialog() {
+  if (!TERMODEL_ANDROID_DEVICE)
+    return null;
+
+  if (androidHelpModal)
+    return androidHelpModal;
+
+  const modal = document.createElement('div');
+  modal.id = 'androidHelpModal';
+  modal.className = 'android-help-modal';
+  modal.hidden = true;
+  modal.setAttribute('aria-hidden', 'true');
+  modal.innerHTML = `
+    <section class="android-help-dialog" role="dialog" aria-modal="true"
+      aria-labelledby="androidHelpTitle">
+      <header class="android-help-head">
+        <strong id="androidHelpTitle">MyHome3D — Help</strong>
+        <button type="button" class="android-help-close" aria-label="Chiudi Help">×</button>
+      </header>
+      <button id="androidHelpAskAi" class="android-help-ai" type="button">
+        Chiedi informazioni ad AI
+      </button>
+      <div id="androidHelpFeedback" class="android-help-feedback" aria-live="polite"></div>
+      <div class="android-help-body">
+        <span id="androidHelpContext" class="android-help-context">Vista 3D</span>
+        <p><strong>MyHome3D</strong> è la versione Mobile di Termodel: ti permette di costruire ed esplorare il modello della tua casa, compresi gli impianti.</p>
+        <p>Il modello è pensato per essere riutilizzato quando dialoghi con aziende di costruzione e installazione/impiantistica, così puoi chiedere preventivi senza riprogettare ciò che hai già definito.</p>
+        <p>Se vuoi capire meglio una funzione, usa il pulsante <strong>Chiedi informazioni ad AI</strong> qui sopra.</p>
+        <ol>
+          <li>MyHome3D copia negli appunti un’istruzione già preparata per la versione Mobile.</li>
+          <li>Apri ChatGPT o il tuo assistente AI e incolla il testo.</li>
+          <li>Sostituisci la frase finale con la tua domanda, oppure aggiungi subito ciò che vuoi approfondire.</li>
+          <li>L’AI farà riferimento alle istruzioni AI di Termodel per guidarti.</li>
+        </ol>
+        <p>Puoi chiudere questo Help e continuare a lavorare: la copia negli appunti non modifica il progetto.</p>
+      </div>
+    </section>
+  `;
+
+  document.body.appendChild(modal);
+
+  modal.querySelector('.android-help-close')?.addEventListener('click', closeAndroidHelpDialog);
+  modal.addEventListener('click', event => {
+    if (event.target === modal)
+      closeAndroidHelpDialog();
+  });
+  modal.querySelector('#androidHelpAskAi')?.addEventListener('click', async event => {
+    event.stopPropagation();
+    const feedback = modal.querySelector('#androidHelpFeedback');
+    const prompt = buildMyHome3dAiHelpInstruction(androidHelpContext);
+    const copied = await copyTextToClipboard(prompt, 'le istruzioni AI MyHome3D');
+    if (feedback) {
+      feedback.textContent = copied
+        ? '✓ Istruzione copiata. Ora apri ChatGPT o la tua AI, incolla il testo e scrivi la domanda che vuoi approfondire.'
+        : '⚠ Copia non riuscita. Verifica i permessi degli appunti del browser e riprova.';
+    }
+  });
+
+  androidHelpModal = modal;
+  return modal;
+}
+
+function openAndroidHelpDialog(context = '3D') {
+  const modal = createAndroidHelpDialog();
+  if (!modal)
+    return;
+
+  androidHelpContext = context === '2D' ? '2D' : '3D';
+  const contextLabel = modal.querySelector('#androidHelpContext');
+  const feedback = modal.querySelector('#androidHelpFeedback');
+  if (contextLabel)
+    contextLabel.textContent = androidHelpContext === '2D' ? 'Vista CAD 2D' : 'Vista modello 3D';
+  if (feedback)
+    feedback.textContent = '';
+
+  modal.hidden = false;
+  modal.setAttribute('aria-hidden', 'false');
+  modal.querySelector('#androidHelpAskAi')?.focus();
+}
+
+function closeAndroidHelpDialog() {
+  if (!androidHelpModal)
+    return;
+
+  androidHelpModal.hidden = true;
+  androidHelpModal.setAttribute('aria-hidden', 'true');
+}
+
 let androidCadPlaneSelect = null;
 let androidCadShowBackground = null;
 let androidCadShowExecutive = null;
@@ -2136,6 +2373,8 @@ function createAndroidCadBrowserBox() {
       aria-label="Torna al modello 3D">Home</button>
     <button id="androidCadExploreToggle" class="android-explore-main" type="button"
       aria-expanded="false">Esplora</button>
+    <button id="androidCadHelp" class="android-explore-main" type="button"
+      aria-label="Apri Help MyHome3D">Help</button>
     <div id="androidCadExploreMenu" class="android-explore-menu" hidden>
       <label class="android-explore-field">
         <span>Piano</span>
@@ -2161,6 +2400,7 @@ function createAndroidCadBrowserBox() {
 
   const home = box.querySelector('#androidCadHome');
   const explore = box.querySelector('#androidCadExploreToggle');
+  const help = box.querySelector('#androidCadHelp');
   const menu = box.querySelector('#androidCadExploreMenu');
   androidCadPlaneSelect = box.querySelector('#androidCadPlane');
   androidCadShowBackground = box.querySelector('#androidCadShowBackground');
@@ -2183,6 +2423,12 @@ function createAndroidCadBrowserBox() {
   explore.addEventListener('click', event => {
     event.stopPropagation();
     setOpen(menu.hidden);
+  });
+
+  help.addEventListener('click', event => {
+    event.stopPropagation();
+    setOpen(false);
+    openAndroidHelpDialog('2D');
   });
 
   androidCadPlaneSelect.addEventListener('change', event => {
