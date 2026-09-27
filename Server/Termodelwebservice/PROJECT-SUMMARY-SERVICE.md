@@ -71,6 +71,38 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Modalità Harness locale rapida e ripristinabile
+Stato: ESEGUITO — CICLO LOCALE, CACHE, SNAPSHOT E SERVER 5081 VERIFICATI
+
+Commissionato:
+- creare un ciclo operativo locale per `Diego_Vittorio` il più possibile indipendente da GitHub e GitHub Actions;
+- mantenere il WebService ordinario sulla porta `5080` e usare una porta separata, `5081`, per il server loopback di anteprima Harness;
+- eseguire direttamente il vero Core tramite l'Harness, con build incrementale conservata fuori dal repository e riuso dei binari quando i sorgenti non cambiano;
+- produrre una cartella `Latest` locale con SVG, XML, metriche e log, visualizzabile dal browser e aggiornata rapidamente a ogni prova;
+- predisporre snapshot locali con manifest e SHA-256, ripristinabili soltanto mediante comando esplicito; prima di ogni ripristino deve essere salvato automaticamente lo stato corrente;
+- preservare `SpiraliVittorio`, non modificare il frontend Web e non includere nel commit le modifiche sperimentali locali già presenti su Diego/Harness;
+- fornire comandi CMD dai nomi non ambigui, che mantengano visibile la finestra al termine;
+- verificare realmente snapshot, build/esecuzione, artifact e risposta HTTP del server locale prima di segnare l'incarico `ESEGUITO`.
+
+Esito:
+- aggiunto `tools/local-radiant-harness/LocalRadiantHarness.ps1` con azioni `run`, `snapshot`, `restore`, `serve` e `status`;
+- sorgenti Core/Harness copiati e compilati nel mirror esterno `%LOCALAPPDATA%\Termodel\RadiantHarness\SourceMirror`, senza scritture nelle cartelle `bin`/`obj` del repository;
+- impronta SHA-256 complessiva usata per saltare completamente la build quando i sorgenti non cambiano; quando cambiano, il mirror conserva `bin`/`obj` e MSBuild può eseguire una build incrementale;
+- output normalizzato in `Latest` con `latest.svg`, XML risultante, metriche, log e pagina con aggiornamento automatico;
+- server statico minimale vincolato a `127.0.0.1:5081`, distinto dal WebService su `localhost:5080`;
+- snapshot esterni al repository con manifest, commit, dimensioni e SHA-256; il ripristino richiede ID e conferma, crea prima uno snapshot `pre-restore` e non elimina file aggiuntivi;
+- aggiunti quattro comandi CMD numerati e non ambigui, tutti con pausa finale; `SpiraliVittorio`, frontend e `definizionedati.json` non sono stati modificati;
+- le modifiche sperimentali locali preesistenti in `StrategiaDiegoBenchmark.cs`, `StrategiaDiegoEngine.cs` e `Harness/Program.cs` sono state conservate e tenute fuori dal consolidamento di questo incarico.
+
+Verifiche locali:
+- snapshot `20260927-061118-470-verifica-iniziale`: 14 file, manifest valido e commit sorgente `bf47916b38d5a84fb3f3a45a269f0a502dbf434d`;
+- prima build Release nel mirror: riuscita; seconda esecuzione: messaggio verificato `riuso del binario locale (sorgenti invariati)`;
+- ricompilazione forzata fuori repository: riuscita;
+- Harness reale `Diego_Vittorio`, raccordi OFF: 18 punti; prove riuscite rispettivamente in 149, 111 e 162 ms;
+- artifact SVG finale: 3.272 byte, SHA-256 `E8213C3F474AECB1DCE43A77CEB654DBFDAC2DDEBF638A42F1EF45AA5E103507`;
+- prova HTTP sulla porta 5081: `GET /health`, `GET /` e `GET /latest.svg` tutti `200`; tipo SVG `image/svg+xml`;
+- il server di prova è stato arrestato al termine; il ripristino non è stato eseguito intenzionalmente.
+
 ### INCARICO 2026-09-27 — Sospensione raccordi grafici `Diego_Vittorio` durante il debug
 Stato: ESEGUITO — MODALITÀ DEBUG OFF E RIPRISTINO ON VERIFICATI
 
