@@ -4,11 +4,11 @@ name: TermodelService Build
 # .github/TERMODEL-ACTION-NOTIFICATIONS.md
 
 permissions:
-  contents: write
+  contents: read
   statuses: write
 concurrency:
   group: termodel-service-build-${{ github.ref }}
-  cancel-in-progress: ${{ startsWith(github.ref, 'refs/heads/work/') }}
+  cancel-in-progress: false
 
 on:
   workflow_dispatch:
@@ -145,10 +145,33 @@ jobs:
           $catalogPath = "..\..\docs\termodel-ui-demo\examples\catalog.json"
           $radiantExamplePath = "..\..\docs\termodel-ui-demo\examples\pannelli-radianti.tmdl.txt"
           $squareExamplePath = "..\..\docs\termodel-ui-demo\examples\quadrato-con-pannelli.svg"
+          $radiantExecutivePath = "..\..\docs\termodel-ui-demo\examples\pannelli-radianti-esecutivo.svg"
+          $squareExecutivePath = "..\..\docs\termodel-ui-demo\examples\quadrato-con-pannelli-esecutivo.svg"
           $catalog = Get-Content -LiteralPath $catalogPath -Raw
           $catalogJson = $catalog | ConvertFrom-Json
           $radiantExample = Get-Content -LiteralPath $radiantExamplePath -Raw
           $squareExample = Get-Content -LiteralPath $squareExamplePath -Raw
+          $radiantExecutive = Get-Content -LiteralPath $radiantExecutivePath -Raw
+          $squareExecutive = Get-Content -LiteralPath $squareExecutivePath -Raw
+
+          foreach ($entry in @(
+            @{ Name = "Pannelli radianti"; Svg = $radiantExecutive },
+            @{ Name = "Quadrato con pannelli"; Svg = $squareExecutive }
+          )) {
+            foreach ($marker in @(
+              "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1",
+              'data-coordinate-unit="m"',
+              'data-termodel-max-y=',
+              '_PiantaPulita_Output',
+              '_PannelliMandata_Output',
+              '_PannelliRitorno_Output'
+            )) {
+              if (-not $entry.Svg.Contains($marker)) {
+                throw "Esecutivo statico $($entry.Name) privo del marker $marker"
+              }
+            }
+          }
+          Write-Host "RADIANT_STATIC_EXECUTIVES_OK"
 
           foreach ($marker in @(
             '"id": "pannelli-radianti"',
@@ -261,59 +284,6 @@ jobs:
           path: ${{ runner.temp }}/RadiantPanelsPublicExampleArtifacts
           if-no-files-found: warn
           retention-days: 30
-
-      - name: Generate public Quadrato con pannelli executive
-        shell: pwsh
-        run: ./tools/generate-public-square-executive.ps1
-
-      - name: Upload public Quadrato con pannelli executive
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: quadrato-con-pannelli-public-executive
-          path: ${{ runner.temp }}/PublicSquareExecutiveArtifacts
-          if-no-files-found: warn
-          retention-days: 30
-
-      - name: Verify and consolidate public example executives
-        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/work/static-example-executives') && github.actor != 'github-actions[bot]' }}
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $repoRoot = Resolve-Path "..\.."
-          $examples = Join-Path $repoRoot "docs\termodel-ui-demo\examples"
-          $radiantSource = Join-Path $env:RUNNER_TEMP "RadiantPanelsPublicExampleArtifacts\pannelli-esecutivo.svg"
-          $squareSource = Join-Path $env:RUNNER_TEMP "PublicSquareExecutiveArtifacts\quadrato-con-pannelli-esecutivo.svg"
-
-          foreach ($source in @($radiantSource,$squareSource)) {
-            if (-not (Test-Path -LiteralPath $source)) { throw "Esecutivo generato mancante: $source" }
-            $svg = Get-Content -LiteralPath $source -Raw
-            foreach ($marker in @(
-              "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1",
-              'data-coordinate-unit="m"',
-              'data-termodel-max-y=',
-              '_PiantaPulita_Output',
-              '_PannelliMandata_Output',
-              '_PannelliRitorno_Output'
-            )) {
-              if (-not $svg.Contains($marker)) { throw "Esecutivo $source privo del marker $marker" }
-            }
-          }
-
-          Copy-Item -LiteralPath $radiantSource -Destination (Join-Path $examples "pannelli-radianti-esecutivo.svg") -Force
-          Copy-Item -LiteralPath $squareSource -Destination (Join-Path $examples "quadrato-con-pannelli-esecutivo.svg") -Force
-
-          Set-Location $repoRoot
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/termodel-ui-demo/examples/pannelli-radianti-esecutivo.svg docs/termodel-ui-demo/examples/quadrato-con-pannelli-esecutivo.svg
-          if (git diff --cached --quiet) {
-            Write-Host "PUBLIC_EXAMPLE_EXECUTIVES_ALREADY_CONSOLIDATED"
-          } else {
-            git commit -m "chore(web): consolida esecutivi statici esempi pannelli"
-            git push origin HEAD:${{ github.ref_name }}
-            Write-Host "PUBLIC_EXAMPLE_EXECUTIVES_COMMITTED"
-          }
 
       - name: Benchmark StrategiaDiego regression fixtures
         shell: pwsh
