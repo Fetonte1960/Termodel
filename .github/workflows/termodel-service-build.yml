@@ -89,16 +89,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.29';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.30';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.29")) {
-            throw "Cache-busting app.js v1.29 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.30")) {
+            throw "Cache-busting app.js v1.30 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.29") {
+          if ($frontendVersion -ne "1.30") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -403,13 +403,38 @@ jobs:
           if (-not $myHomeHtml.Contains("MYHOME3D MOBILE")) {
             throw "Pagina pubblica MyHome3D.html non contiene l'istruzione Mobile."
           }
-          if (-not $index.Contains("./app.js?v=1.29")) {
-            throw "Cache-busting MyHome3D v1.29 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.30")) {
+            throw "Cache-busting MyHome3D v1.30 non aggiornato."
           }
 
           Write-Host "MYHOME3D_AI_PUBLISHED_INSTRUCTION_OK"
           Write-Host "MYHOME3D_WEB_UNIFILAR_ONLY_OK"
           Write-Host "MYHOME3D_MOBILE_HELP_OK"
+
+          foreach ($marker in @(
+            'id="helpExplorationMode" type="checkbox" autocomplete="off"',
+            "let explorationModeEnabled = false;",
+            "function resetDesktopExplorationModeDefault()",
+            "helpExplorationMode.defaultChecked = false;",
+            "helpExplorationMode.checked = false;",
+            "window.addEventListener('pageshow', resetDesktopExplorationModeDefault);",
+            "function buildGenericCommandHelpInfo(element, key = '')",
+            "function desktopExplorationControlFromTarget(target)",
+            "function handleDesktopExplorationHelp(event)",
+            "document.addEventListener('click', handleDesktopExplorationHelp, true);",
+            "showCommandHelp(key, control);",
+            "Non intercetta né blocca il comando: informa soltanto."
+          )) {
+            if (-not ($app.Contains($marker) -or $index.Contains($marker))) {
+              throw "Modalità esplorazione desktop incompleta: $marker"
+            }
+          }
+          if ($index -match 'id="helpExplorationMode"[^>]*checked') {
+            throw "Modalità esplorazione desktop non deve essere checked di default."
+          }
+
+          Write-Host "DESKTOP_EXPLORATION_DEFAULT_OFF_OK"
+          Write-Host "DESKTOP_EXPLORATION_GLOBAL_HELP_OK"
 
           Write-Host "PROJECT_BROWSER_DESKTOP_GLOBAL_GATE_OK"
           Write-Host "PROJECT_BROWSER_INITIAL_GATE_OK"

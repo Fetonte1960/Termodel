@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.29';
+const APP_VERSION = '1.30';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -630,6 +630,15 @@ COMMAND_HELP['Copia progetto negli appunti'] = {
 let explorationModeEnabled = false;
 let commandHelpPanel = null;
 
+function resetDesktopExplorationModeDefault() {
+  explorationModeEnabled = false;
+  if (helpExplorationMode) {
+    helpExplorationMode.defaultChecked = false;
+    helpExplorationMode.checked = false;
+  }
+  hideCommandHelp();
+}
+
 function installCommandHelpStyles() {
   if (document.getElementById('commandHelpStyles')) return;
   const style = document.createElement('style');
@@ -642,7 +651,7 @@ function installCommandHelpStyles() {
       width: min(420px, calc(100% - 285px));
       max-height: calc(100% - 70px);
       overflow: auto;
-      z-index: 20;
+      z-index: 2100;
       background: rgba(250,250,250,.97);
       border: 1px solid #888;
       box-shadow: 3px 4px 14px rgba(0,0,0,.24);
@@ -719,10 +728,83 @@ function hideCommandHelp() {
   if (commandHelpPanel) commandHelpPanel.hidden = true;
 }
 
-function showCommandHelp(key) {
+function buildGenericCommandHelpInfo(element, key = '') {
+  const label = String(
+    key ||
+    element?.getAttribute?.('aria-label') ||
+    element?.getAttribute?.('title') ||
+    element?.dataset?.action ||
+    element?.dataset?.archive ||
+    element?.textContent ||
+    element?.id ||
+    'Funzione Termodel'
+  ).replace(/\s+/g, ' ').trim();
+
+  const safeLabel = label || 'Funzione Termodel';
+  const tag = element?.tagName?.toLowerCase() || '';
+  const type = String(element?.getAttribute?.('type') || '').toLowerCase();
+
+  if (element?.dataset?.archive) {
+    return {
+      title: safeLabel,
+      body:
+        '<p>Apre l’archivio <strong>' + safeLabel + '</strong> del progetto corrente.</p>' +
+        '<p>Gli archivi contengono i dati tecnici usati da Termodel. L’azione continua normalmente anche con la Modalità esplorazione attiva.</p>'
+    };
+  }
+
+  if (tag === 'select') {
+    return {
+      title: safeLabel,
+      body:
+        '<p>Seleziona il valore della funzione <strong>' + safeLabel + '</strong>.</p>' +
+        '<p>La Modalità esplorazione mostra questa spiegazione ma non modifica il comportamento del comando.</p>'
+    };
+  }
+
+  if (type === 'checkbox' || type === 'radio' || tag === 'label') {
+    return {
+      title: safeLabel,
+      body:
+        '<p>Attiva, disattiva o seleziona l’opzione <strong>' + safeLabel + '</strong>.</p>' +
+        '<p>La selezione viene applicata normalmente: la Modalità esplorazione aggiunge soltanto l’informazione contestuale.</p>'
+    };
+  }
+
+  if (element?.classList?.contains('tab')) {
+    return {
+      title: safeLabel,
+      body:
+        '<p>Mostra la sezione <strong>' + safeLabel + '</strong> dell’interfaccia Termodel.</p>' +
+        '<p>Il cambio di sezione avviene normalmente mentre questa spiegazione resta disponibile.</p>'
+    };
+  }
+
+  if (element?.closest?.('.cad-toolbar, .cad-tool-menu, .cad-tool-dropdown') ||
+      String(element?.id || '').startsWith('cad')) {
+    return {
+      title: safeLabel,
+      body:
+        '<p>Esegue il comando <strong>' + safeLabel + '</strong> nel CAD 2D Web di Termodel.</p>' +
+        '<p>La Modalità esplorazione non blocca il comando: serve a spiegare la funzione selezionata mentre continui a lavorare.</p>'
+    };
+  }
+
+  return {
+    title: safeLabel,
+    body:
+      '<p>Hai selezionato la funzione <strong>' + safeLabel + '</strong>.</p>' +
+      '<p>La Modalità esplorazione lascia eseguire normalmente il comando e mostra qui la spiegazione disponibile per la funzione cliccata.</p>'
+  };
+}
+
+function showCommandHelp(key, element = null) {
   if (!explorationModeEnabled) return;
-  const info = COMMAND_HELP[key];
-  if (!info) return;
+
+  const normalizedKey = String(key || '').trim();
+  const info =
+    COMMAND_HELP[normalizedKey] ||
+    buildGenericCommandHelpInfo(element, normalizedKey);
 
   if (!commandHelpPanel) commandHelpPanel = createCommandHelpPanel();
   commandHelpPanel.querySelector('#commandHelpTitle').textContent = info.title;
@@ -732,7 +814,55 @@ function showCommandHelp(key) {
 
 function helpKeyFromElement(element) {
   if (!element) return '';
-  return element.dataset.helpKey || element.textContent.trim();
+
+  const direct =
+    element.dataset?.helpKey ||
+    element.dataset?.action ||
+    element.getAttribute?.('aria-label') ||
+    element.getAttribute?.('title') ||
+    '';
+
+  if (direct) return String(direct).trim();
+
+  if (element.dataset?.archive)
+    return 'Archivio ' + String(element.dataset.archive).trim();
+
+  const text = String(element.textContent || '').replace(/\s+/g, ' ').trim();
+  return text || String(element.id || '').trim();
+}
+
+function desktopExplorationControlFromTarget(target) {
+  if (!(target instanceof Element))
+    return null;
+
+  if (target.closest('#commandHelpPanel'))
+    return null;
+
+  const control = target.closest(
+    'button, input:not([type="hidden"]), select, summary, label, .tab'
+  );
+
+  if (!control || !appRoot?.contains(control))
+    return null;
+
+  if (control === helpExplorationMode ||
+      control.closest('#helpMenu')?.querySelector('#helpExplorationMode') === control)
+    return null;
+
+  return control;
+}
+
+function handleDesktopExplorationHelp(event) {
+  if (!explorationModeEnabled || TERMODEL_ANDROID_DEVICE)
+    return;
+
+  const control = desktopExplorationControlFromTarget(event.target);
+  if (!control)
+    return;
+
+  // Non intercetta né blocca il comando: informa soltanto.
+  const key = helpKeyFromElement(control);
+  showCommandHelp(key, control);
 }
 
 function selectedTermodelLogCategories() {
@@ -4053,6 +4183,15 @@ helpExplorationMode?.addEventListener('change', () => {
   if (!explorationModeEnabled)
     hideCommandHelp();
 });
+
+// Default garantito OFF anche se il browser tenta di ripristinare lo stato
+// precedente del checkbox dopo refresh/back-forward cache.
+resetDesktopExplorationModeDefault();
+window.addEventListener('pageshow', resetDesktopExplorationModeDefault);
+
+// In modalità esplorazione ogni controllo desktop cliccabile passa dal
+// pannello informativo, ma l'evento continua verso la funzione originale.
+document.addEventListener('click', handleDesktopExplorationHelp, true);
 
 document.addEventListener('click', () => {
   document.querySelectorAll('.menu').forEach(m => m.classList.remove('open'));
