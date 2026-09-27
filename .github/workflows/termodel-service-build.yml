@@ -89,16 +89,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.25';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.26';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.25")) {
-            throw "Cache-busting app.js v1.25 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.26")) {
+            throw "Cache-busting app.js v1.26 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.25") {
+          if ($frontendVersion -ne "1.26") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -305,6 +305,27 @@ jobs:
             }
           }
 
+          foreach ($marker in @(
+            "function syncInitialModelDesktopGateControls()",
+            "function isInitialModelDesktopGateControl(target)",
+            "function shouldBypassInitialModelDesktopGate(control)",
+            "function handleInitialModelDesktopGate(event)",
+            "if (TERMODEL_ANDROID_DEVICE || !initialModelExplorationLocked)",
+            "control === newProjectButton",
+            "control === openProjectButton",
+            "control === openProjectFileInput",
+            "control.textContent.trim() === 'File'",
+            "event.stopImmediatePropagation();",
+            "void openProjectExploreDialog().catch",
+            "appRoot?.addEventListener('click', handleInitialModelDesktopGate, true);",
+            "initialGateWasDisabled"
+          )) {
+            if (-not $app.Contains($marker)) {
+              throw "Gate globale desktop modello iniziale incompleto: $marker"
+            }
+          }
+
+          Write-Host "PROJECT_BROWSER_DESKTOP_GLOBAL_GATE_OK"
           Write-Host "PROJECT_BROWSER_INITIAL_GATE_OK"
           Write-Host "PROJECT_BROWSER_CAD_DEFAULTS_OK"
           Write-Host "PROJECT_BROWSER_MOBILE_DIALOG_SIZE_OK"
