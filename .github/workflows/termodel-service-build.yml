@@ -89,16 +89,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.26';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.27';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.26")) {
-            throw "Cache-busting app.js v1.26 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.27")) {
+            throw "Cache-busting app.js v1.27 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.26") {
+          if ($frontendVersion -ne "1.27") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -324,6 +324,32 @@ jobs:
               throw "Gate globale desktop modello iniziale incompleto: $marker"
             }
           }
+
+          foreach ($marker in @(
+            'id="androidExploreFilters"',
+            "Filtri",
+            "function createAndroidFilterDialog()",
+            "function rebuildAndroidFilterDialog()",
+            "function openAndroidFilterDialog()",
+            "function closeAndroidFilterDialog()",
+            "ANDROID_FILTER_GROUPS",
+            "Seleziona i filtri e premi Applica per aggiornare il modello 3D.",
+            "applyFilters();",
+            "closeAndroidFilterDialog();",
+            ".android-filter-modal",
+            "width: min(520px, calc(100vw - 24px));",
+            "@media (orientation: landscape) and (max-height: 520px)",
+            "width: min(720px, calc(100vw - 16px));",
+            "grid-template-columns: repeat(2, minmax(0, 1fr));"
+          )) {
+            if (-not $app.Contains($marker)) {
+              throw "Filtri mobili Esplora incompleti: $marker"
+            }
+          }
+
+          Write-Host "ANDROID_EXPLORE_FILTER_DIALOG_OK"
+          Write-Host "ANDROID_FILTER_DIALOG_PORTRAIT_OK"
+          Write-Host "ANDROID_FILTER_DIALOG_LANDSCAPE_OK"
 
           Write-Host "PROJECT_BROWSER_DESKTOP_GLOBAL_GATE_OK"
           Write-Host "PROJECT_BROWSER_INITIAL_GATE_OK"
