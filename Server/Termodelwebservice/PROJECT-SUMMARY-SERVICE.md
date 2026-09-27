@@ -71,6 +71,24 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Setup iniziale CAD2D esempi e gate esplorazione
+Stato: COMMISSIONATO
+
+Commissionato:
+- frontend `docs/termodel-ui-demo`: quando viene caricato un esempio, inizializzare CAD2D con **Esecutivo pannelli ON**, **Input OFF**, **Sfondo OFF**;
+- definire il modello iniziale `TermodelWebModel.json` come **non esplorabile** nel ProjectBrowser;
+- al primo tentativo di esplorazione del modello iniziale mostrare una form con il messaggio:
+  `Modello realizzato con gli strumenti avanzati di Termodel non esplorabile, selezionare un esempio per esplorare il disegno di input ed i disegni esecutivi`;
+- sotto il messaggio mostrare l'elenco degli esempi pubblici con selezione e caricamento dell'esempio scelto;
+- riusare la stessa form anche per l'apertura esplicita di un esempio da desktop, evitando il prompt numerico;
+- verificare layout e dimensioni della form su smartphone, incluse viewport portrait e landscape;
+- preservare il caricamento locale degli esecutivi consolidati senza interrogare il Service durante l'esplorazione;
+- non modificare `definizionedati.json`;
+- aggiungere regression frontend e pubblicare su `main`;
+- a fine lavoro aggiornare questo Summary e chiudere Issue #1 `Completed` per la notifica.
+
+
+
 ### INCARICO 2026-09-27 — Consolidare esecutivo pannelli nei due esempi pubblici
 Stato: ESEGUITO — ESECUTIVI STATICI VERSIONATI / ESPLORAZIONE SENZA SERVICE
 
