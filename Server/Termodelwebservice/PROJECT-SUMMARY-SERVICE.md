@@ -73,7 +73,33 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-27 — Filtri Mobile, guida Istruisci AI e accessi MyHome3D
-Stato: COMMISSIONATO
+Stato: ESEGUITO — FRONTEND v1.32 / MYHOME3D AI v0.25 PUBBLICATI
+
+Esito:
+- corretto il funzionamento dei **Filtri Mobile** introducendo uno stato canonico `filterState`, indipendente dal pannello desktop nascosto;
+- i checkbox desktop e Mobile leggono/scrivono lo stesso stato tramite `getFilterState()` / `setFilterState()`;
+- premendo **Applica** nella finestra Mobile le selezioni vengono consolidate nello stato reale, sincronizzate ai checkbox desktop e applicate con `applyFilters()`;
+- la finestra viene ricostruita dallo stato consolidato prima della chiusura: alla successiva apertura ripropone le scelte applicate;
+- **Annulla**, X e chiusura continuano a non consolidare modifiche;
+- frontend portato a **v1.32**;
+- form **Istruisci AI** ampliata e resa più visibile, con procedura in tre passaggi e corpo scorrevole;
+- aggiunto esempio testuale **Meta AI in WhatsApp**: apertura chat, pressione prolungata nel campo messaggio, **Incolla**, **Invia**; nessun logo/icona/asset grafico di terzi incorporato;
+- aggiornato il bootstrap Web all'IndiceAI **v0.25**;
+- istruzione MyHome3D portata a **v0.25** e mantenuta esclusivamente informativa;
+- registrato il modello di accesso MyHome3D:
+  - senza registrazione: modello base in Termodel Web PC + anteprima 3D, senza server avanzato, consolidamento o link condivisibile;
+  - con registrazione: consolidamento, link condivisibile per fornitori/terzi e possibilità di richiedere consigli su miglioramenti termici, impianti e isolamento;
+  - abbonamento **100 € + IVA/anno** per server di calcolo e modelli avanzati (più piani, tetti/coperture avanzati, locali mansardati e funzioni analoghe);
+- aggiornati `MyHome3D.md`, `MyHome3D.html`, `IndiceAI.html` e `LINEE-GUIDA-MOBILE.md`;
+- `definizionedati.json` non modificato.
+
+Verifica reale:
+- commit funzionale/documentale: `33fac9e66256d81612bd60619d422b9c2c19113b`;
+- verifica sintassi JavaScript sul commit: **OK**;
+- GitHub Action run `36326256450`: **Check frontend JavaScript syntax SUCCESS**, regression frontend/MyHome3D **SUCCESS**, **Build SUCCESS**, smoke pubblico Pannelli radianti **SUCCESS**; il benchmark StrategiaDiego successivo è separato da questo incarico;
+- GitHub Pages run `36326255718`: **SUCCESS**;
+- regression aggiunte: `MOBILE_FILTER_STATE_PERSISTENCE_OK` e `AI_INSTRUCT_VISIBLE_GUIDE_OK`;
+- prova manuale dei Filtri su smartphone ancora da eseguire lato utente.
 
 Commissionato:
 - correggere i **Filtri Mobile**: le scelte effettuate nella finestra devono consolidarsi nello stato reale dei filtri e produrre immediatamente l'effetto sul modello 3D dopo **Applica**; riaprendo la finestra devono risultare mantenute;
