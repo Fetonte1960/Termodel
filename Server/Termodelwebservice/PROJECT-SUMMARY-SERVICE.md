@@ -72,7 +72,27 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-27 — Prima funzione Help MyHome3D
-Stato: COMMISSIONATO
+Stato: ESEGUITO — FRONTEND v1.28 PUBBLICATO / REGRESSION HELP VERIFICATA
+
+Esito:
+- frontend portato a **v1.28**;
+- aggiunto pulsante **Help** direttamente nel minipannello mobile della vista **3D**, accanto a Esplora;
+- aggiunto pulsante **Help** direttamente nel minipannello mobile della vista **CAD 2D**, accanto a Home/Esplora;
+- il pannello **MyHome3D — Help** mostra come primo comando in alto **Chiedi informazioni ad AI** e mantiene il testo esplicativo in un'area scorrevole;
+- il comando genera un'istruzione AI dedicata a MyHome3D, contestualizzata sulla vista 3D o CAD 2D, e la copia negli appunti usando il helper con fallback `copyTextToClipboard()`;
+- l'istruzione ricorda che MyHome3D è la versione Mobile, che Termodel è lo strumento per costruire il modello della casa e degli impianti, che il modello è riutilizzabile nel dialogo con aziende per preventivi e che gli approfondimenti devono seguire `TERMODEL_AI_INDEX_URL`;
+- dopo la copia il pannello guida l'utente ad aprire ChatGPT/AI, incollare il testo e formulare la domanda;
+- la funzione Help non modifica il progetto;
+- layout Help adattato anche a smartphone landscape con body scorrevole;
+- `definizionedati.json` non modificato.
+
+Verifica reale:
+- linee guida Help: commit `7483a5e617488bbc8b9f16a7828867c3cd755b18`;
+- implementazione frontend/regression/versione: commit `a9faa270f2db7d7bce291df4e1318118668953e3`;
+- GitHub Pages run `36305751811`: **SUCCESS**;
+- GitHub Action run `36305751843`: **Check frontend JavaScript syntax SUCCESS**, **Check radiant executive auto-load wiring SUCCESS** (include i marker `MYHOME3D_MOBILE_HELP_OK`), **Build SUCCESS**, smoke pubblico Pannelli radianti **SUCCESS**;
+- al momento della chiusura il workflow generale prosegue nel benchmark StrategiaDiego, che è separato dalla funzione Help e può mantenere il noto esito indipendente;
+- prova fisica sul telefono non ancora eseguita.
 
 Commissionato:
 - aggiungere un pulsante **Help** al minipannello mobile con **Esplora** sia nella vista **3D** sia nella vista **CAD 2D**;
