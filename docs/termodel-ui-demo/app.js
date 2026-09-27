@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.26';
+const APP_VERSION = '1.27';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -568,6 +568,7 @@ const COMMAND_HELP = {
         <li><strong>Piano</strong>: cambia il piano del progetto visualizzato.</li>
         <li><strong>Sfondo</strong>: mostra o nasconde lo sfondo associato al piano.</li>
         <li><strong>Unifilare input</strong>: mostra o nasconde il disegno tecnico di input.</li>
+        <li><strong>Filtri</strong>: apre i filtri grafici del modello 3D; le modifiche diventano effettive solo con <strong>Applica</strong>.</li>
       </ol>
       <p>Le scelte agiscono sugli stessi dati e controlli usati dal CAD completo.</p>
     `
@@ -1617,6 +1618,166 @@ function installAndroidExploreStyles() {
       background: #3d7fb1;
       transition: width .16s ease;
     }
+
+    .android-filter-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 220;
+      display: grid;
+      place-items: center;
+      padding: 12px;
+      background: rgba(0,0,0,.34);
+    }
+    .android-filter-modal[hidden] {
+      display: none;
+    }
+    .android-filter-dialog {
+      width: min(520px, calc(100vw - 24px));
+      max-height: calc(100dvh - 24px);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      overflow: hidden;
+      border: 1px solid #6f7881;
+      border-radius: 8px;
+      background: #f5f6f7;
+      box-shadow: 0 10px 34px rgba(0,0,0,.38);
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #20262c;
+    }
+    .android-filter-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 44px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #c3c8cd;
+      background: linear-gradient(#fff,#e7eaed);
+    }
+    .android-filter-head strong {
+      font-size: 15px;
+    }
+    .android-filter-close {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      font-size: 22px;
+      line-height: 1;
+    }
+    .android-filter-body {
+      min-height: 0;
+      overflow: auto;
+      padding: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .android-filter-note {
+      margin: 0 0 9px;
+      color: #56616c;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .android-filter-sections {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .android-filter-section {
+      min-width: 0;
+      padding: 8px;
+      border: 1px solid #c5cbd0;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .android-filter-section h3 {
+      margin: 0 0 6px;
+      font-size: 13px;
+      color: #39434d;
+    }
+    .android-filter-items {
+      display: grid;
+      gap: 4px;
+    }
+    .android-filter-row {
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 7px;
+      border: 1px solid #e0e3e6;
+      border-radius: 4px;
+      background: #fafafa;
+      font-size: 13px;
+    }
+    .android-filter-row input {
+      width: 19px;
+      height: 19px;
+      margin: 0;
+      flex: 0 0 auto;
+    }
+    .android-filter-empty {
+      padding: 5px 7px;
+      color: #78828b;
+      font-size: 12px;
+    }
+    .android-filter-foot {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 8px 10px;
+      border-top: 1px solid #c3c8cd;
+      background: #eef0f2;
+    }
+    .android-filter-foot button {
+      min-width: 92px;
+      min-height: 40px;
+      padding: 7px 14px;
+      font-weight: 700;
+    }
+    .android-filter-apply {
+      background: linear-gradient(#e8f7ff,#bcdff2);
+      border-color: #4d82a8;
+    }
+
+    @media (orientation: landscape) and (max-height: 520px) {
+      .android-filter-modal {
+        padding: 8px;
+      }
+      .android-filter-dialog {
+        width: min(720px, calc(100vw - 16px));
+        max-height: calc(100dvh - 16px);
+      }
+      .android-filter-head {
+        min-height: 38px;
+        padding: 5px 8px;
+      }
+      .android-filter-close {
+        width: 32px;
+        height: 32px;
+      }
+      .android-filter-body {
+        padding: 7px 8px;
+      }
+      .android-filter-note {
+        margin-bottom: 6px;
+      }
+      .android-filter-sections {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .android-filter-section {
+        padding: 6px;
+      }
+      .android-filter-row {
+        min-height: 32px;
+        padding: 3px 6px;
+      }
+      .android-filter-foot {
+        padding: 5px 8px;
+      }
+      .android-filter-foot button {
+        min-height: 36px;
+      }
+    }
   `;
   document.head.appendChild(style);
 }
@@ -1655,6 +1816,9 @@ function createAndroidExploreBox() {
       <button id="androidExploreExecutive" class="android-explore-action" type="button">
         Disegno esecutivo
       </button>
+      <button id="androidExploreFilters" class="android-explore-action" type="button">
+        Filtri
+      </button>
     </div>
   `;
 
@@ -1666,6 +1830,7 @@ function createAndroidExploreBox() {
   const exampleSelect = box.querySelector('#androidExploreExample');
   const singleLine = box.querySelector('#androidExploreSingleLine');
   const executive = box.querySelector('#androidExploreExecutive');
+  const filters = box.querySelector('#androidExploreFilters');
 
   const setOpen = (open) => {
     const next = Boolean(open);
@@ -1737,6 +1902,12 @@ function createAndroidExploreBox() {
     }
   });
 
+  filters.addEventListener('click', event => {
+    event.stopPropagation();
+    setOpen(false);
+    openAndroidFilterDialog();
+  });
+
   document.addEventListener('click', (event) => {
     if (!box.contains(event.target))
       setOpen(false);
@@ -1744,6 +1915,153 @@ function createAndroidExploreBox() {
 
   void populateAndroidExploreExamples(exampleSelect, singleLine);
   return box;
+}
+
+let androidFilterModal = null;
+
+const ANDROID_FILTER_GROUPS = [
+  ['piani', 'Piani'],
+  ['componenti', 'Componenti'],
+  ['confini', 'Confini'],
+  ['separazione', 'Separazione tra vani']
+];
+
+function createAndroidFilterDialog() {
+  if (!TERMODEL_ANDROID_DEVICE)
+    return null;
+
+  if (androidFilterModal)
+    return androidFilterModal;
+
+  const modal = document.createElement('div');
+  modal.id = 'androidFilterModal';
+  modal.className = 'android-filter-modal';
+  modal.hidden = true;
+  modal.setAttribute('aria-hidden', 'true');
+  modal.innerHTML = `
+    <section class="android-filter-dialog" role="dialog" aria-modal="true"
+      aria-labelledby="androidFilterTitle">
+      <header class="android-filter-head">
+        <strong id="androidFilterTitle">Filtri grafici</strong>
+        <button type="button" class="android-filter-close" aria-label="Chiudi filtri">×</button>
+      </header>
+      <div class="android-filter-body">
+        <p class="android-filter-note">Seleziona i filtri e premi Applica per aggiornare il modello 3D.</p>
+        <div class="android-filter-sections"></div>
+      </div>
+      <footer class="android-filter-foot">
+        <button type="button" class="android-filter-cancel">Annulla</button>
+        <button type="button" class="android-filter-apply">Applica</button>
+      </footer>
+    </section>
+  `;
+
+  document.body.appendChild(modal);
+
+  const close = () => closeAndroidFilterDialog();
+  modal.querySelector('.android-filter-close')?.addEventListener('click', close);
+  modal.querySelector('.android-filter-cancel')?.addEventListener('click', close);
+  modal.addEventListener('click', event => {
+    if (event.target === modal)
+      close();
+  });
+
+  modal.querySelector('.android-filter-apply')?.addEventListener('click', () => {
+    modal.querySelectorAll('input[data-mobile-filter-group]').forEach(input => {
+      const group = input.dataset.mobileFilterGroup || '';
+      const name = input.dataset.mobileFilterName || '';
+      const target = Array.from(
+        filterPanel.querySelectorAll('input[data-filter-group][data-filter-name]')
+      ).find(candidate =>
+        candidate.dataset.filterGroup === group &&
+        candidate.dataset.filterName === name
+      );
+      if (target)
+        target.checked = input.checked;
+    });
+
+    applyFilters();
+    closeAndroidFilterDialog();
+  });
+
+  androidFilterModal = modal;
+  return modal;
+}
+
+function rebuildAndroidFilterDialog() {
+  const modal = createAndroidFilterDialog();
+  const sections = modal?.querySelector('.android-filter-sections');
+  if (!modal || !sections)
+    return;
+
+  sections.replaceChildren();
+
+  const allFilters = Array.from(
+    filterPanel.querySelectorAll('input[data-filter-group][data-filter-name]')
+  );
+
+  ANDROID_FILTER_GROUPS.forEach(([group, title]) => {
+    const section = document.createElement('section');
+    section.className = 'android-filter-section';
+
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    section.appendChild(heading);
+
+    const items = document.createElement('div');
+    items.className = 'android-filter-items';
+
+    const groupFilters = allFilters.filter(input =>
+      input.dataset.filterGroup === group
+    );
+
+    if (!groupFilters.length) {
+      const empty = document.createElement('div');
+      empty.className = 'android-filter-empty';
+      empty.textContent = '—';
+      items.appendChild(empty);
+    } else {
+      groupFilters.forEach(source => {
+        const row = document.createElement('label');
+        row.className = 'android-filter-row';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = source.checked;
+        input.dataset.mobileFilterGroup = group;
+        input.dataset.mobileFilterName = source.dataset.filterName || '';
+
+        const text = document.createElement('span');
+        text.textContent = source.dataset.filterName || '';
+
+        row.appendChild(input);
+        row.appendChild(text);
+        items.appendChild(row);
+      });
+    }
+
+    section.appendChild(items);
+    sections.appendChild(section);
+  });
+}
+
+function openAndroidFilterDialog() {
+  const modal = createAndroidFilterDialog();
+  if (!modal)
+    return;
+
+  rebuildAndroidFilterDialog();
+  modal.hidden = false;
+  modal.setAttribute('aria-hidden', 'false');
+  modal.querySelector('input')?.focus();
+}
+
+function closeAndroidFilterDialog() {
+  if (!androidFilterModal)
+    return;
+
+  androidFilterModal.hidden = true;
+  androidFilterModal.setAttribute('aria-hidden', 'true');
 }
 
 let androidCadPlaneSelect = null;
