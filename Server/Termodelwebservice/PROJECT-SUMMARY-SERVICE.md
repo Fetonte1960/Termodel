@@ -71,6 +71,21 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Consolidare esecutivo pannelli nei due esempi pubblici
+Stato: COMMISSIONATO
+
+Commissionato:
+- rendere i due esempi pubblici `Pannelli radianti` e `Quadrato con pannelli` esplorabili anche nell'esecutivo pannelli **senza interrogare il Service**;
+- generare e versionare nei file pubblici gli SVG esecutivi reali dei due esempi;
+- estendere il catalogo esempi con il riferimento locale all'esecutivo consolidato;
+- modificare il frontend affinché, per gli esempi consolidati, carichi prima l'esecutivo statico locale e non chiami `/api/calculations` per la sola esplorazione;
+- mantenere `Aggiorna Modello` come azione esplicita separata per ricalcolare col Service;
+- non modificare `definizionedati.json`;
+- aggiungere regression che verifichi presenza/formato dei due SVG e wiring frontend senza Service;
+- pubblicare su `main`, aggiornare Summary e chiudere Issue #1 Completed solo a verifica riuscita.
+
+
+
 ### INCARICO 2026-09-27 — Esempio pannelli: rigenerazione 3D mostra solo schema/ponteggi
 Stato: ESEGUITO — VIEWER 3D CORRETTO / REGRESSION PUBBLICA PASSATA
 
