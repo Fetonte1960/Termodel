@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.25';
+const APP_VERSION = '1.26';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -876,6 +876,25 @@ async function loadProjectBrowserExamples() {
   return projectBrowserExamplesPromise;
 }
 
+function syncInitialModelDesktopGateControls() {
+  if (TERMODEL_ANDROID_DEVICE || !appRoot) return;
+
+  if (initialModelExplorationLocked) {
+    appRoot.querySelectorAll('button:disabled').forEach(button => {
+      if (!button.dataset.initialGateWasDisabled)
+        button.dataset.initialGateWasDisabled = 'true';
+      button.disabled = false;
+    });
+    return;
+  }
+
+  appRoot.querySelectorAll('button').forEach(button => {
+    if (button.dataset.initialGateWasDisabled !== 'true') return;
+    button.disabled = true;
+    delete button.dataset.initialGateWasDisabled;
+  });
+}
+
 function setInitialModelExplorationLocked(locked) {
   initialModelExplorationLocked = Boolean(locked);
 
@@ -888,6 +907,8 @@ function setInitialModelExplorationLocked(locked) {
       ? 'Il modello iniziale non dispone di disegni esplorabili: seleziona un esempio.'
       : 'Esplora disegno di input ed esecutivo pannelli.';
   }
+
+  syncInitialModelDesktopGateControls();
 }
 
 function closeProjectExploreDialog(result = null) {
@@ -2443,6 +2464,9 @@ function setStructuredProjectState(enabled) {
     helpCopyProjectClipboard.disabled = needsProject;
     helpCopyProjectClipboard.title = needsProject ? inviteTitle : 'Copia il TERMODEL-PROJECT-TEXT-V1 corrente negli appunti.';
   }
+
+  if (needsProject && initialModelExplorationLocked)
+    syncInitialModelDesktopGateControls();
 }
 
 async function loadEmptyProjectText() {
@@ -2695,6 +2719,8 @@ async function loadModel() {
   } finally {
     loading = false;
     cadUpdateControls();
+    if (initialModelExplorationLocked)
+      syncInitialModelDesktopGateControls();
   }
 }
 
@@ -3494,6 +3520,49 @@ const projectExploreExamples = document.getElementById('projectExploreExamples')
 const projectExploreStatus = document.getElementById('projectExploreStatus');
 const projectExploreClose = document.getElementById('projectExploreClose');
 const projectExploreCloseBottom = document.getElementById('projectExploreCloseBottom');
+
+function isInitialModelDesktopGateControl(target) {
+  if (!(target instanceof Element) || !appRoot?.contains(target))
+    return null;
+
+  return target.closest('button, input, select, summary, label, .tab');
+}
+
+function shouldBypassInitialModelDesktopGate(control) {
+  if (!control) return true;
+
+  if (control === newProjectButton ||
+      control === openProjectButton ||
+      control === openProjectFileInput)
+    return true;
+
+  if (control.matches?.('.menu > button') &&
+      control.textContent.trim() === 'File')
+    return true;
+
+  return false;
+}
+
+function handleInitialModelDesktopGate(event) {
+  if (TERMODEL_ANDROID_DEVICE || !initialModelExplorationLocked)
+    return;
+
+  const control = isInitialModelDesktopGateControl(event.target);
+  if (!control || shouldBypassInitialModelDesktopGate(control))
+    return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  document.querySelectorAll('.menu').forEach(menu => menu.classList.remove('open'));
+
+  void openProjectExploreDialog().catch(error => {
+    console.error('Selezione esempio non disponibile:', error);
+    if (status)
+      status.textContent = 'Errore esempi: ' + (error?.message || error);
+  });
+}
+
+appRoot?.addEventListener('click', handleInitialModelDesktopGate, true);
 
 const projectStartModal = document.getElementById('projectStartModal');
 const projectStartMessage = document.getElementById('projectStartMessage');
