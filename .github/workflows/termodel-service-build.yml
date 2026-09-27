@@ -96,6 +96,12 @@ jobs:
             throw "Cache-busting app.js v1.25 non aggiornato."
           }
 
+          $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
+          $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
+          if ($frontendVersion -ne "1.25") {
+            throw "frontend-version.txt inatteso: $frontendVersion"
+          }
+
           foreach ($marker in @(
             "const TERMODEL_SERVICE_WAIT_STATUS = 'In Attesa di una risposta del server';",
             "function beginTermodelServiceRequest()",
