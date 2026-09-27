@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-27 — Gate globale desktop sul modello iniziale non esplorabile
-Stato: COMMISSIONATO
+Stato: ESEGUITO — FRONTEND v1.26 PUBBLICATO / GATE DESKTOP VERIFICATO
 
 Commissionato:
 - estendere alla versione **non mobile/desktop** il comportamento del modello iniziale non esplorabile;
@@ -85,6 +85,25 @@ Commissionato:
 - aggiornare frontend/version marker e regression, pubblicare su `main`;
 - non modificare `definizionedati.json`;
 - a fine lavoro aggiornare il Summary e chiudere Issue #1 `Completed`.
+
+Esito:
+- frontend portato a **v1.26**;
+- aggiunto un gate desktop in capture phase su `#app`: quando `initialModelExplorationLocked=true` intercetta pulsanti, input, select, summary, label e tab prima dei rispettivi handler;
+- il gate non viene applicato ad Android, quindi il comportamento mobile v1.25 resta invariato;
+- le uniche eccezioni sono `newProjectButton`, `openProjectButton`, il relativo file input e il pulsante principale **File**, che deve restare apribile per raggiungere Nuovo/Apri;
+- qualunque altro comando desktop, comprese le altre voci del menu File, i menu Modifica/Visualizza/Calcoli/Help, tab, barra inferiore e controlli attivi, apre `openProjectExploreDialog()` e non esegue la funzione originale;
+- i pulsanti normalmente disabilitati perché manca un progetto vengono temporaneamente resi cliccabili durante il gate e ripristinati al termine, così anche essi danno la stessa risposta invece di restare muti;
+- dopo `Nuovo`, `Apri` o caricamento di un esempio, `setStructuredProjectState(true)` disattiva il gate e ripristina il comportamento normale;
+- `index.html`, `app.js` e `frontend-version.txt` sono allineati a **1.26**;
+- `definizionedati.json` non modificato.
+
+Verifica:
+- commit funzionale principale: `b0f1625caf1538b55414edcc2e7b353328b01ea9`;
+- commit pubblicazione/versione: `a5530c143dfacfb9c5a3aa8d2e0f73a95a045477`, `b5ac358f82de38734c0c51e467e42d79f1e54330`;
+- regression workflow: `b8c535064f2de1310a0dea120804df8ea8ce9bcb`;
+- GitHub Action run `36303222139`: `Check frontend JavaScript syntax` **SUCCESS**, `Check radiant executive auto-load wiring` **SUCCESS**, `Build` **SUCCESS**, smoke progetto pubblico pannelli **SUCCESS**; il check wiring include `PROJECT_BROWSER_DESKTOP_GLOBAL_GATE_OK`;
+- GitHub Pages run `36303222370`: **SUCCESS**;
+- l'eventuale esito rosso successivo del workflow generale resta separato e dovuto al benchmark StrategiaDiego già noto.
 
 
 
