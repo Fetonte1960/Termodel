@@ -1,13 +1,31 @@
+param(
+  [string]$ProjectPath = ""
+)
+
 $ErrorActionPreference = "Stop"
 
 $base = "http://127.0.0.1:5082"
 $env:ASPNETCORE_URLS = $base
 $env:TERMODEL_SAVED_PROJECTS_DIR = Join-Path $env:RUNNER_TEMP ("TermodelRadiantReference-" + [guid]::NewGuid().ToString("N"))
-$artifactDir = Join-Path $env:RUNNER_TEMP "RadiantPanelsReferenceArtifacts"
+$artifactDirName = if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
+  "RadiantPanelsReferenceArtifacts"
+} else {
+  "RadiantPanelsPublicExampleArtifacts"
+}
+$artifactDir = Join-Path $env:RUNNER_TEMP $artifactDirName
 New-Item -ItemType Directory -Path $env:TERMODEL_SAVED_PROJECTS_DIR -Force | Out-Null
 New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
 
 function Read-Fixture {
+  if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
+    if (-not (Test-Path -LiteralPath $ProjectPath)) {
+      throw "Progetto pubblico pannelli mancante: $ProjectPath"
+    }
+    return [System.IO.File]::ReadAllText(
+      (Resolve-Path $ProjectPath),
+      [System.Text.UTF8Encoding]::new($false))
+  }
+
   $parts = 1..4 | ForEach-Object {
     Join-Path $PSScriptRoot ("..\tests\fixtures\RadiantPanelsReference.original.part0" + $_ + ".txt")
   }
@@ -242,7 +260,12 @@ try {
     throw "Fixture reale pannelli non ricomposta correttamente."
   }
 
-  $correctedLocal = Apply-CircuitMetadata $original
+  $correctedLocal = if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
+    Apply-CircuitMetadata $original
+  } else {
+    # Il progetto pubblico contiene già l'identità dei sei circuiti.
+    $original
+  }
   [System.IO.File]::WriteAllText(
     (Join-Path $artifactDir "RadiantPanelsReference.corrected-local.tmdl.txt"),
     $correctedLocal,
@@ -274,6 +297,62 @@ try {
 
   $headers = @{ "X-Termodel-Project-Lock" = [string]$allocation.projectLockToken }
   $calc = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -Headers $headers -ContentType "text/plain; charset=utf-8" -Body $serverProject
+
+  # Regression 3D: l'artifact deve contenere vere superfici edilizie, non
+  # soltanto ponti/ponteggi verdi. Questo controllo usa lo stesso model3d
+  # restituito ad Aggiorna Modello nel frontend.
+  $modelArtifact = @($calc.artifacts | Where-Object { $_.name -eq "model3d" })
+  if ($modelArtifact.Count -ne 1) {
+    throw "Calcolo reale: atteso un solo artifact model3d, trovati $($modelArtifact.Count)."
+  }
+
+  $modelResponse = Invoke-WebRequest -Uri ($base + [string]$modelArtifact[0].href) -Method Get
+  if ($modelResponse.StatusCode -ne 200) {
+    throw "model3d: atteso HTTP 200, ricevuto $($modelResponse.StatusCode)."
+  }
+  $modelText = [string]$modelResponse.Content
+  [System.IO.File]::WriteAllText(
+    (Join-Path $artifactDir "model3d.json"),
+    $modelText,
+    [System.Text.UTF8Encoding]::new($false))
+  $model3d = $modelText | ConvertFrom-Json
+  $allPrimitives = @($model3d.primitives)
+  $meshPrimitives = @($allPrimitives | Where-Object { $_.kind -eq "mesh" })
+  $wallMeshes = @($meshPrimitives | Where-Object { $_.tipo -eq "Parete" })
+  $bridgeMeshes = @($meshPrimitives | Where-Object { $_.tipo -eq "Ponte" })
+  $nonBridgeMeshes = @($meshPrimitives | Where-Object { $_.tipo -ne "Ponte" })
+  $invalidMeshes = @($meshPrimitives | Where-Object {
+    @($_.vertices).Count -lt 3 -or @($_.indices).Count -lt 3
+  })
+
+  if ($meshPrimitives.Count -lt 1) {
+    throw "model3d: nessuna superficie mesh generata."
+  }
+  if ($wallMeshes.Count -lt 1) {
+    throw "model3d: nessuna Parete mesh; il modello ricade nel difetto 'solo ponti/ponteggi'."
+  }
+  if ($nonBridgeMeshes.Count -lt 1) {
+    throw "model3d: contiene soltanto mesh Ponte."
+  }
+  if ($invalidMeshes.Count -gt 0) {
+    throw "model3d: $($invalidMeshes.Count) mesh prive di vertici/indici triangolari."
+  }
+
+  $modelSummary = [ordered]@{
+    primitiveCount = $allPrimitives.Count
+    meshCount = $meshPrimitives.Count
+    wallMeshCount = $wallMeshes.Count
+    bridgeMeshCount = $bridgeMeshes.Count
+    nonBridgeMeshCount = $nonBridgeMeshes.Count
+    tipos = @($meshPrimitives | Group-Object tipo | Sort-Object Name | ForEach-Object {
+      [ordered]@{ tipo = $_.Name; count = $_.Count }
+    })
+  }
+  $modelSummary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $artifactDir "model3d-summary.json") -Encoding utf8NoBOM
+  Write-Host "RADIANT_PUBLIC_MODEL3D_SURFACES_OK"
+  Write-Host ("model3dMeshes=" + $meshPrimitives.Count)
+  Write-Host ("model3dPareti=" + $wallMeshes.Count)
+  Write-Host ("model3dPonti=" + $bridgeMeshes.Count)
 
   if (@($calc.artifacts.name) -notcontains "pannelli") {
     throw "Calcolo reale privo di pannelli.json."
