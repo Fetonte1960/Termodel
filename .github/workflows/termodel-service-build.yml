@@ -89,11 +89,11 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.23';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.24';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.23")) {
-            throw "Cache-busting app.js v1.23 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.24")) {
+            throw "Cache-busting app.js v1.24 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -274,7 +274,10 @@ jobs:
             "setInitialModelExplorationLocked(true);",
             "async function openProjectExploreDialog()",
             "if (initialModelExplorationLocked)",
-            "await openProjectExploreDialog();"
+            "await openProjectExploreDialog();",
+            "function openProjectBrowserSingleLine()",
+            "cadShowGeneratedExecutive.checked = false;",
+            "cadShowInput.checked = true;"
           )) {
             if (-not $app.Contains($marker)) {
               throw "Setup iniziale CAD/esplorazione incompleto: $marker"

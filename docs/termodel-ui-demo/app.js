@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.23';
+const APP_VERSION = '1.24';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -1089,6 +1089,19 @@ async function ensureProjectBrowserExecutive() {
   return cadGeneratedExecutiveAvailable();
 }
 
+function openProjectBrowserSingleLine() {
+  if (cadShowGeneratedExecutive)
+    cadShowGeneratedExecutive.checked = false;
+  if (cadShowInput)
+    cadShowInput.checked = true;
+  if (cadShowBackground)
+    cadShowBackground.checked = false;
+
+  activateCadPage();
+  applyCadLayerVisibility();
+  refreshAndroidCadExploreControls();
+}
+
 async function openProjectBrowserExecutive() {
   if (!await ensureProjectBrowserExecutive()) {
     status.textContent = 'Esecutivo pannelli non disponibile per l\'esempio corrente.';
@@ -1099,9 +1112,14 @@ async function openProjectBrowserExecutive() {
     cadShowGeneratedExecutive.disabled = false;
     cadShowGeneratedExecutive.checked = true;
   }
+  if (cadShowInput)
+    cadShowInput.checked = false;
+  if (cadShowBackground)
+    cadShowBackground.checked = false;
 
   activateCadPage();
   renderCadComparison();
+  applyCadLayerVisibility();
   refreshAndroidCadExploreControls();
   return true;
 }
@@ -1678,10 +1696,10 @@ function createAndroidExploreBox() {
     }
   });
 
-  singleLine.addEventListener('click', (event) => {
+  singleLine.addEventListener('click', event => {
     event.stopPropagation();
     setOpen(false);
-    activateCadPage();
+    openProjectBrowserSingleLine();
   });
 
   executive.addEventListener('click', async event => {
