@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.22';
+const APP_VERSION = '1.23';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -351,6 +351,8 @@ let termodelServiceProgressHideTimer = null;
 let projectBrowserExamples = [];
 let projectBrowserExamplesPromise = null;
 let activeProjectBrowserExampleId = '';
+let initialModelExplorationLocked = true;
+let projectExploreDialogResolver = null;
 let androidExampleProgressHideTimer = null;
 let lastAiPreviewData = null;
 let lastCleanPlanSvg = '';
@@ -874,41 +876,121 @@ async function loadProjectBrowserExamples() {
   return projectBrowserExamplesPromise;
 }
 
-async function openProjectBrowserExampleFromMenu() {
+function setInitialModelExplorationLocked(locked) {
+  initialModelExplorationLocked = Boolean(locked);
+
+  if (modelPage)
+    modelPage.dataset.explorable = initialModelExplorationLocked ? 'false' : 'true';
+
+  const toggle = document.getElementById('androidExploreToggle');
+  if (toggle) {
+    toggle.title = initialModelExplorationLocked
+      ? 'Il modello iniziale non dispone di disegni esplorabili: seleziona un esempio.'
+      : 'Esplora disegno di input ed esecutivo pannelli.';
+  }
+}
+
+function closeProjectExploreDialog(result = null) {
+  if (projectExploreModal) {
+    projectExploreModal.classList.remove('visible');
+    projectExploreModal.setAttribute('aria-hidden', 'true');
+  }
+  if (projectExploreDialogResolver) {
+    const resolve = projectExploreDialogResolver;
+    projectExploreDialogResolver = null;
+    resolve(result);
+  }
+}
+
+async function openProjectExploreDialog() {
   const examples = await loadProjectBrowserExamples();
   if (!examples.length) {
     window.alert('Nessun esempio consolidato disponibile.');
     return null;
   }
 
-  const lines = examples.map((example, index) => {
-    const description = example.description ? ' — ' + example.description : '';
-    return (index + 1) + '. ' + example.name + description;
+  if (!projectExploreModal || !projectExploreExamples)
+    throw new Error('Form selezione esempi non disponibile.');
+
+  if (projectExploreDialogResolver)
+    closeProjectExploreDialog(null);
+
+  projectExploreExamples.replaceChildren();
+  if (projectExploreStatus)
+    projectExploreStatus.textContent = '';
+
+  examples.forEach(example => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'project-explore-example';
+    button.dataset.exampleId = example.id;
+
+    const title = document.createElement('strong');
+    title.textContent = example.name;
+    button.appendChild(title);
+
+    if (example.description) {
+      const description = document.createElement('small');
+      description.textContent = example.description;
+      button.appendChild(description);
+    }
+
+    button.addEventListener('click', async () => {
+      projectExploreExamples.querySelectorAll('button').forEach(item => {
+        item.disabled = true;
+      });
+      if (projectExploreStatus)
+        projectExploreStatus.textContent = 'Caricamento ' + example.name + '…';
+
+      try {
+        await loadProjectBrowserExample(example.id, null);
+        setMainAiStatus('✓ Esempio aperto: ' + example.name);
+        closeProjectExploreDialog(example);
+      } catch (error) {
+        console.error('Caricamento esempio ProjectBrowser non riuscito:', error);
+        if (projectExploreStatus)
+          projectExploreStatus.textContent = 'Errore esempio: ' + (error?.message || error);
+        projectExploreExamples.querySelectorAll('button').forEach(item => {
+          item.disabled = false;
+        });
+      }
+    });
+
+    projectExploreExamples.appendChild(button);
   });
 
-  const selected = window.prompt(
-    'Apri esempio Termodel:\n\n' +
-    lines.join('\n') +
-    '\n\nNumero esempio:',
-    '1'
-  );
-  if (selected === null) return null;
+  projectExploreModal.classList.add('visible');
+  projectExploreModal.setAttribute('aria-hidden', 'false');
+  projectExploreExamples.querySelector('button')?.focus();
 
-  const index = Number.parseInt(String(selected).trim(), 10) - 1;
-  if (!Number.isInteger(index) || index < 0 || index >= examples.length)
-    throw new Error('Selezione esempio non valida.');
+  return await new Promise(resolve => {
+    projectExploreDialogResolver = resolve;
+  });
+}
 
-  const chosen = examples[index];
-
-  await loadProjectBrowserExample(chosen.id, null);
-  setMainAiStatus('✓ Esempio aperto: ' + chosen.name);
-  return chosen;
+async function openProjectBrowserExampleFromMenu() {
+  return await openProjectExploreDialog();
 }
 
 function currentProjectBrowserExample() {
   return projectBrowserExamples.find(
     item => item.id === activeProjectBrowserExampleId
   ) || null;
+}
+
+function applyProjectBrowserCadInitialSetup() {
+  if (cadShowGeneratedExecutive) {
+    cadShowGeneratedExecutive.disabled = !cadGeneratedExecutiveAvailable();
+    cadShowGeneratedExecutive.checked = cadGeneratedExecutiveAvailable();
+  }
+  if (cadShowInput)
+    cadShowInput.checked = false;
+  if (cadShowBackground)
+    cadShowBackground.checked = false;
+
+  applyCadLayerVisibility();
+  cadUpdateControls();
+  refreshAndroidCadExploreControls();
 }
 
 function syncAndroidExampleCadAvailability(singleLineButton) {
@@ -1272,7 +1354,7 @@ async function loadProjectBrowserExample(exampleId, singleLineButton) {
       currentProjectFileName = example.name + '.termodel.txt';
 
       if (cadShowBackground)
-        cadShowBackground.checked = true;
+        cadShowBackground.checked = false;
 
       setAndroidExampleProgress('Sto generando il 3D dall’unifilare…', 70);
       if (!processSvgText(svgText))
@@ -1323,6 +1405,8 @@ async function loadProjectBrowserExample(exampleId, singleLineButton) {
         throw new Error('Esecutivo pannelli consolidato non disponibile per ' + example.name + '.');
     }
 
+    setInitialModelExplorationLocked(false);
+    applyProjectBrowserCadInitialSetup();
     syncAndroidExampleCadAvailability(singleLineButton);
     activateModelPage();
     resetView();
@@ -1551,8 +1635,21 @@ function createAndroidExploreBox() {
     toggle.setAttribute('aria-expanded', next ? 'true' : 'false');
   };
 
-  toggle.addEventListener('click', (event) => {
+  toggle.addEventListener('click', async event => {
     event.stopPropagation();
+
+    if (initialModelExplorationLocked) {
+      setOpen(false);
+      try {
+        await openProjectExploreDialog();
+        await populateAndroidExploreExamples(exampleSelect, singleLine);
+      } catch (error) {
+        console.error('Selezione esempio non disponibile:', error);
+        status.textContent = 'Errore esempi: ' + (error?.message || error);
+      }
+      return;
+    }
+
     setOpen(menu.hidden);
   });
 
@@ -2304,6 +2401,8 @@ function resetView() {
 
 function setStructuredProjectState(enabled) {
   structuredProjectActive = Boolean(enabled);
+  if (structuredProjectActive)
+    setInitialModelExplorationLocked(false);
   const needsProject = !structuredProjectActive;
   const inviteTitle = 'Crea o importa il tuo progetto Termodel per usare questa funzione.';
 
@@ -2569,7 +2668,9 @@ async function loadModel() {
       label: 'PROGETTO ORIGINALE',
       renderOrigin: 'local'
     });
+    activeProjectBrowserExampleId = '';
     setStructuredProjectState(false);
+    setInitialModelExplorationLocked(true);
   } catch (error) {
     console.error(error);
     status.textContent = `Errore caricamento modello: ${error.message}`;
@@ -3369,6 +3470,12 @@ const importAiButton = document.getElementById('importAiButton');
 const aiInstructModal = document.getElementById('aiInstructModal');
 const aiInstructClose = document.getElementById('aiInstructClose');
 const aiInstructCloseBottom = document.getElementById('aiInstructCloseBottom');
+
+const projectExploreModal = document.getElementById('projectExploreModal');
+const projectExploreExamples = document.getElementById('projectExploreExamples');
+const projectExploreStatus = document.getElementById('projectExploreStatus');
+const projectExploreClose = document.getElementById('projectExploreClose');
+const projectExploreCloseBottom = document.getElementById('projectExploreCloseBottom');
 
 const projectStartModal = document.getElementById('projectStartModal');
 const projectStartMessage = document.getElementById('projectStartMessage');
@@ -9445,6 +9552,10 @@ document.addEventListener('keydown', (event) => {
     closeAiInstructDialog();
     return;
   }
+  if (projectExploreModal?.classList.contains('visible')) {
+    closeProjectExploreDialog(null);
+    return;
+  }
   if (svgExportModal.classList.contains('visible')) {
     closeSvgExportDialog();
     return;
@@ -9664,6 +9775,12 @@ document.querySelectorAll('[data-action]').forEach(button => {
   });
 });
 
+projectExploreClose?.addEventListener('click', () => closeProjectExploreDialog(null));
+projectExploreCloseBottom?.addEventListener('click', () => closeProjectExploreDialog(null));
+projectExploreModal?.addEventListener('click', event => {
+  if (event.target === projectExploreModal) closeProjectExploreDialog(null);
+});
+
 projectStartClose?.addEventListener('click', closeProjectStartDialog);
 projectStartCloseBottom?.addEventListener('click', closeProjectStartDialog);
 projectStartModal?.addEventListener('click', event => {
@@ -9772,6 +9889,7 @@ newProjectButton?.addEventListener('click', event => {
 });
 
 setStructuredProjectState(false);
+setInitialModelExplorationLocked(true);
 syncCopyTermodelLogAvailability();
 
 if (TERMODEL_ANDROID_DEVICE) {

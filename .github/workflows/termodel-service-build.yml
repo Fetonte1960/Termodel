@@ -89,11 +89,11 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.22';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.23';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.22")) {
-            throw "Cache-busting app.js v1.22 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.23")) {
+            throw "Cache-busting app.js v1.23 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -264,6 +264,41 @@ jobs:
             }
           }
           Write-Host "RADIANT_MODEL3D_PANNELLI_FILTER_RESET_OK"
+
+          foreach ($marker in @(
+            "function applyProjectBrowserCadInitialSetup()",
+            "cadShowGeneratedExecutive.checked = cadGeneratedExecutiveAvailable();",
+            "cadShowInput.checked = false;",
+            "cadShowBackground.checked = false;",
+            "function setInitialModelExplorationLocked(locked)",
+            "setInitialModelExplorationLocked(true);",
+            "async function openProjectExploreDialog()",
+            "if (initialModelExplorationLocked)",
+            "await openProjectExploreDialog();"
+          )) {
+            if (-not $app.Contains($marker)) {
+              throw "Setup iniziale CAD/esplorazione incompleto: $marker"
+            }
+          }
+
+          foreach ($marker in @(
+            'id="projectExploreModal"',
+            'id="projectExploreExamples"',
+            'Modello realizzato con gli strumenti avanzati di Termodel non esplorabile, selezionare un esempio per esplorare il disegno di input ed i disegni esecutivi',
+            'width: min(94vw, 520px) !important;',
+            'max-height: calc(100dvh - 24px) !important;',
+            '@media (max-width: 760px) and (orientation: landscape)',
+            'width: min(680px, 96vw) !important;',
+            'max-height: calc(100dvh - 16px) !important;'
+          )) {
+            if (-not $index.Contains($marker)) {
+              throw "Form esplorazione/mobile incompleta: $marker"
+            }
+          }
+
+          Write-Host "PROJECT_BROWSER_INITIAL_GATE_OK"
+          Write-Host "PROJECT_BROWSER_CAD_DEFAULTS_OK"
+          Write-Host "PROJECT_BROWSER_MOBILE_DIALOG_SIZE_OK"
 
           Write-Host "RADIANT_PUBLIC_EXAMPLE_OK"
 
