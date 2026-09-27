@@ -73,7 +73,38 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-27 — Help Web PC e istruzione AI Termodel Web
-Stato: COMMISSIONATO
+Stato: ESEGUITO — FRONTEND v1.33 / TERMODEL WEB AI v0.1 PUBBLICATI
+
+Esito:
+- verificato il contenuto pubblico esistente in `docs/termodel-ui-demo`: erano presenti `IndiceAI`, `TermodelGenerale`, `CreaProgettoDaDescrizione` e `CreaPianoTermodelDaRaster`, ma **non esisteva una istruzione autonoma specifica denominata Termodel Web PC**; `info_termodelwebservice.md` è documentazione tecnica frontend/backend e non un'istruzione AI utente;
+- creata la nuova sorgente pubblica dedicata `docs/termodel-ui-demo/TermodelWeb.md`, versione **Termodel Web AI 0.1**, con corrispondente pagina leggibile `TermodelWeb.html`;
+- la nuova istruzione Web mantiene la struttura modulare e rimanda alle istruzioni già esistenti:
+  - `TermodelGenerale.html` per le regole comuni;
+  - `CreaProgettoDaDescrizione.html` per la generazione da descrizione testuale;
+  - `CreaPianoTermodelDaRaster.html` per la generazione da sfondo bitmap/raster;
+- la nuova istruzione definisce esplicitamente il contesto **Termodel Web PC**, il CAD 2D Web, `DisegnoInput.svg`, pianta pulita, modello 3D, disegni esecutivi e `TERMODEL-PROJECT-TEXT-V1`;
+- le istruzioni storiche/modulari preesistenti sono rimaste **invariate**: `TermodelGenerale.md/html`, `IndiceAI.md/html`, `CreaProgettoDaDescrizione.md/html` e `CreaPianoTermodelDaRaster.md/html` non sono state modificate; in particolare non è stata alterata la linea di istruzioni riferita alla vecchia versione Desktop installabile;
+- frontend portato a **v1.33**;
+- aggiunto nel menu **Help** della versione Web PC il comando **Help Termodel Web** come prima voce;
+- il nuovo pannello **Termodel Web — Help** è un vero Help generale, leggibile e scorrevole, simile concettualmente all'Help Mobile;
+- nel pannello è in evidenza il comando **Istruisci AI per Termodel Web**;
+- il pannello descrive esplicitamente i due flussi AI richiesti: **da descrizione** e **da sfondo bitmap/raster**;
+- il comando AI copia ora un bootstrap specifico della versione Web che rimanda a `https://www.termodel.it/termodel-ui-demo/TermodelWeb.html?v=0.1`, quindi l'istruzione può essere aggiornata sul sito senza modificare il programma;
+- mantenuta separata l'istruzione MyHome3D Mobile;
+- il menu Help è stato escluso dal gate del modello iniziale, così l'Help resta disponibile anche quando l'esempio corrente non è esplorabile;
+- `definizionedati.json` non modificato.
+
+Verifica reale:
+- commit istruzione AI Web: `6e9e5dddf4f4d3e92a0c2729a6a0531995b3f280`;
+- commit wiring frontend: `bb270ae949b416a33242b0b5646f57f0ca62d2ce`;
+- commit pannello Help: `4038d383fd3d2cc997596aa3b54a6257c9f6561b`;
+- commit regression: `ebc24b787c61ecc8eb825bef53eacab8953966f7`;
+- commit versione frontend: `f12d4596a6438938b65380d7cc35555b83467258`;
+- verifica sintassi JavaScript sul frontend finale: **OK**;
+- GitHub Pages run `36327418535`: **SUCCESS**;
+- GitHub Action run `36327418949`: **Check frontend JavaScript syntax SUCCESS**, **Check radiant executive auto-load wiring SUCCESS** incluse le nuove regression `TERMODEL_WEB_HELP_OK` / `TERMODEL_WEB_AI_DEDICATED_OK`, **Build SUCCESS**, smoke pubblico Pannelli radianti **SUCCESS**; il benchmark StrategiaDiego successivo è separato da questo incarico;
+- verifica SHA delle fonti storiche: invariati `TermodelGenerale.md` `4b66271ec3f72004ffb25eca100e07cae501e867`, `TermodelGenerale.html` `ae9d6d1cc47f257f559c2f8959aff028d0629053`, `IndiceAI.html` `2e68acc3013b79be22d06f1aa7dbdbad517a920b`;
+- prova manuale del pannello Help su browser PC da eseguire lato utente.
 
 Commissionato:
 - verificare se sul sito esiste già una istruzione AI **specifica e autosufficiente per Termodel Web PC**; se esiste, verificarne la completezza prima di crearne una concorrente;
