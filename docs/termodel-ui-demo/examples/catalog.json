@@ -7,15 +7,17 @@
       "description": "Progetto reale di regressione con 6 circuiti radianti",
       "project": "./examples/pannelli-radianti.tmdl.txt",
       "executive": true,
-      "default": true
+      "default": true,
+      "executiveSvg": "./examples/pannelli-radianti-esecutivo.svg"
     },
     {
       "id": "quadrato-con-pannelli",
       "name": "Quadrato con pannelli",
-      "description": "Quadrato 4×4 m con un tubo di ingresso, banco rapido StrategiaDiego",
+      "description": "Quadrato 4×4 m con un tubo di ingresso ed esecutivo pannelli consolidato",
       "geometry": "./examples/quadrato-con-pannelli.svg",
       "executive": true,
-      "default": false
+      "default": false,
+      "executiveSvg": "./examples/quadrato-con-pannelli-esecutivo.svg"
     }
   ]
 }

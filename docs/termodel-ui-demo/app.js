@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.21';
+const APP_VERSION = '1.22';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -834,6 +834,7 @@ async function loadProjectBrowserExamples() {
           project: String(item.project || '').trim(),
           geometry: String(item.geometry || '').trim(),
           executive: item.executive === true,
+          executiveSvg: String(item.executiveSvg || '').trim(),
           background:
             item.background && typeof item.background === 'object'
               ? {
@@ -929,7 +930,9 @@ function syncAndroidExampleCadAvailability(singleLineButton) {
     executiveButton.title =
       current
         ? (hasExecutive
-            ? 'Calcola, se necessario, e mostra l\'esecutivo pannelli nel CAD2D.'
+            ? (current?.executiveSvg
+                ? 'Mostra l\'esecutivo pannelli consolidato locale, senza interrogare il Service.'
+                : 'Calcola, se necessario, e mostra l\'esecutivo pannelli nel CAD2D.')
             : 'Questo esempio non dispone di un esecutivo pannelli.')
         : 'Seleziona prima un esempio.';
   }
@@ -937,11 +940,68 @@ function syncAndroidExampleCadAvailability(singleLineButton) {
   refreshAndroidCadExploreControls();
 }
 
+async function loadProjectBrowserStaticExecutive(example, options = {}) {
+  const silent = options.silent === true;
+  if (!example?.executiveSvg) return false;
+
+  try {
+    const response = await fetch(
+      projectBrowserResourceUrl(example.executiveSvg) + '?t=' + Date.now(),
+      { cache: 'no-store' }
+    );
+    if (!response.ok)
+      throw new Error('Esecutivo esempio HTTP ' + response.status);
+
+    const svgText = await response.text();
+    const parsed = cadParseGeneratedExecutiveSvg(svgText);
+
+    cadGeneratedExecutiveOverlay = {
+      projectId: currentProjectId || '',
+      exampleId: example.id,
+      sourceType: 'example-static',
+      svgText: parsed.svgText,
+      sourcePath: example.executiveSvg,
+      stale: false,
+      primitiveCount: parsed.primitiveCount
+    };
+
+    if (cadShowGeneratedExecutive)
+      cadShowGeneratedExecutive.disabled = false;
+
+    renderCadComparison();
+    cadUpdateControls();
+
+    if (!silent) {
+      cadSetStatus(
+        '✓ Esecutivo pannelli consolidato locale · ' +
+        parsed.primitiveCount + ' primitive · nessuna richiesta al Service'
+      );
+    }
+    return true;
+  } catch (error) {
+    console.error(error);
+    cadGeneratedExecutiveOverlay = null;
+    if (cadShowGeneratedExecutive) {
+      cadShowGeneratedExecutive.checked = false;
+      cadShowGeneratedExecutive.disabled = true;
+    }
+    renderCadComparison();
+    cadUpdateControls();
+    if (!silent)
+      cadSetStatus('Esecutivo pannelli locale non disponibile: ' + (error?.message || error), 'error');
+    return false;
+  }
+}
+
 async function ensureProjectBrowserExecutive() {
   const current = currentProjectBrowserExample();
   if (!current?.executive) return false;
   if (cadGeneratedExecutiveAvailable()) return true;
 
+  if (current.executiveSvg)
+    return loadProjectBrowserStaticExecutive(current);
+
+  // Compatibilità con eventuali esempi futuri non ancora consolidati.
   status.textContent = 'Genero l\'esecutivo pannelli dell\'esempio ' + current.name + '…';
   await loadCalculatedModelFromService();
   return cadGeneratedExecutiveAvailable();
@@ -1163,6 +1223,11 @@ async function loadProjectBrowserExample(exampleId, singleLineButton) {
     throw new Error('Esempio ProjectBrowser non trovato: ' + id);
 
   loading = true;
+  cadGeneratedExecutiveOverlay = null;
+  if (cadShowGeneratedExecutive) {
+    cadShowGeneratedExecutive.checked = false;
+    cadShowGeneratedExecutive.disabled = true;
+  }
   status.textContent = 'Caricamento esempio: ' + example.name + '...';
   setAndroidExampleProgress('Sto preparando ' + example.name + '…', 8);
 
@@ -1250,6 +1315,14 @@ async function loadProjectBrowserExample(exampleId, singleLineButton) {
     setAndroidExampleProgress('Sto completando la visualizzazione…', 94);
 
     activeProjectBrowserExampleId = example.id;
+
+    if (example.executiveSvg) {
+      setAndroidExampleProgress('Sto caricando l’esecutivo consolidato…', 97);
+      const executiveLoaded = await loadProjectBrowserStaticExecutive(example, { silent: true });
+      if (!executiveLoaded)
+        throw new Error('Esecutivo pannelli consolidato non disponibile per ' + example.name + '.');
+    }
+
     syncAndroidExampleCadAvailability(singleLineButton);
     activateModelPage();
     resetView();
@@ -4800,8 +4873,15 @@ function cadParseGeneratedExecutiveSvg(svgText) {
 }
 
 function cadGeneratedExecutiveAvailable() {
-  return !!cadGeneratedExecutiveOverlay &&
-    String(cadGeneratedExecutiveOverlay.projectId || '') === String(currentProjectId || '');
+  if (!cadGeneratedExecutiveOverlay) return false;
+
+  if (cadGeneratedExecutiveOverlay.sourceType === 'example-static') {
+    return String(cadGeneratedExecutiveOverlay.exampleId || '') ===
+      String(activeProjectBrowserExampleId || '');
+  }
+
+  return String(cadGeneratedExecutiveOverlay.projectId || '') ===
+    String(currentProjectId || '');
 }
 
 function cadAppendGeneratedExecutiveOverlay(target, planeName) {

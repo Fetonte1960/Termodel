@@ -89,11 +89,11 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.21';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.22';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.21")) {
-            throw "Cache-busting app.js v1.21 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.22")) {
+            throw "Cache-busting app.js v1.22 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -145,15 +145,40 @@ jobs:
           $catalogPath = "..\..\docs\termodel-ui-demo\examples\catalog.json"
           $radiantExamplePath = "..\..\docs\termodel-ui-demo\examples\pannelli-radianti.tmdl.txt"
           $squareExamplePath = "..\..\docs\termodel-ui-demo\examples\quadrato-con-pannelli.svg"
+          $radiantExecutivePath = "..\..\docs\termodel-ui-demo\examples\pannelli-radianti-esecutivo.svg"
+          $squareExecutivePath = "..\..\docs\termodel-ui-demo\examples\quadrato-con-pannelli-esecutivo.svg"
           $catalog = Get-Content -LiteralPath $catalogPath -Raw
           $catalogJson = $catalog | ConvertFrom-Json
           $radiantExample = Get-Content -LiteralPath $radiantExamplePath -Raw
           $squareExample = Get-Content -LiteralPath $squareExamplePath -Raw
+          $radiantExecutive = Get-Content -LiteralPath $radiantExecutivePath -Raw
+          $squareExecutive = Get-Content -LiteralPath $squareExecutivePath -Raw
+
+          foreach ($entry in @(
+            @{ Name = "Pannelli radianti"; Svg = $radiantExecutive },
+            @{ Name = "Quadrato con pannelli"; Svg = $squareExecutive }
+          )) {
+            foreach ($marker in @(
+              "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1",
+              'data-coordinate-unit="m"',
+              'data-termodel-max-y=',
+              '_PiantaPulita_Output',
+              '_PannelliMandata_Output',
+              '_PannelliRitorno_Output'
+            )) {
+              if (-not $entry.Svg.Contains($marker)) {
+                throw "Esecutivo statico $($entry.Name) privo del marker $marker"
+              }
+            }
+          }
+          Write-Host "RADIANT_STATIC_EXECUTIVES_OK"
 
           foreach ($marker in @(
             '"id": "pannelli-radianti"',
             '"project": "./examples/pannelli-radianti.tmdl.txt"',
-            '"executive": true'
+            '"executive": true',
+            '"executiveSvg": "./examples/pannelli-radianti-esecutivo.svg"',
+            '"executiveSvg": "./examples/quadrato-con-pannelli-esecutivo.svg"'
           )) {
             if (-not $catalog.Contains($marker)) {
               throw "Catalogo esempio pannelli incompleto: $marker"
@@ -208,6 +233,9 @@ jobs:
             'id="androidCadShowExecutive"',
             "Esecutivo pannelli",
             "async function ensureProjectBrowserExecutive()",
+            "async function loadProjectBrowserStaticExecutive(example, options = {})",
+            "current.executiveSvg",
+            "nessuna richiesta al Service",
             "await openProjectBrowserExecutive();"
           )) {
             if (-not $app.Contains($marker)) {
@@ -254,19 +282,6 @@ jobs:
         with:
           name: pannelli-radianti-public-model3d
           path: ${{ runner.temp }}/RadiantPanelsPublicExampleArtifacts
-          if-no-files-found: warn
-          retention-days: 30
-
-      - name: Generate public Quadrato con pannelli executive
-        shell: pwsh
-        run: ./tools/generate-public-square-executive.ps1
-
-      - name: Upload public Quadrato con pannelli executive
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: quadrato-con-pannelli-public-executive
-          path: ${{ runner.temp }}/PublicSquareExecutiveArtifacts
           if-no-files-found: warn
           retention-days: 30
 
