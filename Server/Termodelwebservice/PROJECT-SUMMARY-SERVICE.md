@@ -71,6 +71,23 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Filtri grafici flottanti nel pannello Esplora mobile
+Stato: COMMISSIONATO
+
+Commissionato:
+- nella versione mobile/Android aggiungere al pannello principale **Esplora** del modello 3D un pulsante **Filtri**;
+- il pulsante deve aprire una form flottante centrata con i filtri grafici esistenti: Piani, Componenti, Confini e Separazione tra vani;
+- le modifiche nella form devono essere temporanee finché l'utente non preme **Applica**;
+- premendo **Applica** copiare le selezioni nei filtri reali, aggiornare il 3D con `applyFilters()` e chiudere la form;
+- chiusura/Annulla non devono modificare il modello;
+- la form deve essere ordinata e completamente utilizzabile su smartphone sia portrait sia landscape, con contenuto scrollabile e dimensioni entro la viewport;
+- preservare il pannello filtri desktop esistente e il comportamento mobile già consolidato;
+- aggiornare frontend/version marker e regression, pubblicare su `main`;
+- non modificare `definizionedati.json`;
+- a fine lavoro aggiornare il Summary e chiudere Issue #1 `Completed` per la notifica.
+
+
+
 ### INCARICO 2026-09-27 — Gate globale desktop sul modello iniziale non esplorabile
 Stato: ESEGUITO — FRONTEND v1.26 PUBBLICATO / GATE DESKTOP VERIFICATO
 
