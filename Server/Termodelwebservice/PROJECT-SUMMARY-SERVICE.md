@@ -72,6 +72,24 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-27 — Filtri Mobile, guida Istruisci AI e accessi MyHome3D
+Stato: COMMISSIONATO
+
+Commissionato:
+- correggere i **Filtri Mobile**: le scelte effettuate nella finestra devono consolidarsi nello stato reale dei filtri e produrre immediatamente l'effetto sul modello 3D dopo **Applica**; riaprendo la finestra devono risultare mantenute;
+- mantenere **Annulla** e X senza applicazione;
+- registrare nelle linee guida e nell'istruzione AI pubblicata MyHome3D il modello di accesso concordato:
+  - senza registrazione l'utente può usare Termodel Web PC per costruire un modello base e vedere l'anteprima 3D, ma non usare il server per funzioni avanzate né consolidare/condividere il modello;
+  - con registrazione può consolidare il modello, ottenere un link condivisibile con fornitori/terzi e richiedere consigli su miglioramenti termici, impianti e isolamento;
+  - per modelli avanzati che richiedono server di calcolo (più piani, tetti, locali mansardati e funzioni analoghe) è necessario un abbonamento di **100 € + IVA/anno**;
+- migliorare la form aperta da **Istruisci AI** rendendola molto visibile e spiegando in modo pratico cosa fare dopo la copia negli appunti;
+- includere un esempio d'uso con **Meta AI in WhatsApp** usando solo testo, simboli e descrizioni generiche dell'interfaccia, senza incorporare asset grafici o loghi di terzi;
+- aggiornare frontend, istruzioni Web/IndiceAI, linee guida Mobile e regression;
+- non modificare `definizionedati.json`;
+- a fine lavoro aggiornare il Summary e chiudere Issue #1 come Completed per la notifica.
+
+
+
 ### INCARICO 2026-09-27 — Filtri Home e AI informativa MyHome3D
 Stato: ESEGUITO — FRONTEND v1.31 / MYHOME3D AI v0.24 PUBBLICATI
 
