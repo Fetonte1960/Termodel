@@ -73,7 +73,15 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-27 — Definizione Mobile come MyHome3D
-Stato: COMMISSIONATO
+Stato: ESEGUITO — SOLO REGISTRAZIONE DOCUMENTALE
+
+Esito:
+- aggiornato `docs/termodel-ui-demo/LINEE-GUIDA-MOBILE.md` con identità e scopo concordati di **MyHome3D**;
+- nessuna modifica funzionale, implementazione, build o test eseguiti;
+- commit linee guida: `126ba7f3c94d0ee4357a433d8c017885cf19e12e`;
+- nessun'altra operazione applicativa autorizzata o eseguita.
+
+
 
 Commissionato:
 - registrare nelle sole linee guida Mobile che la versione Mobile viene da ora definita e presentata come **MyHome3D**;
