@@ -71,21 +71,21 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
-### INCARICO 2026-09-27 — Linee guida e audit della versione Mobile
-Stato: COMMISSIONATO
+### INCARICO 2026-09-27 — Linee guida della versione Mobile
+Stato: ESEGUITO — DOCUMENTO VUOTO CREATO / DEFINIZIONE DA COSTRUIRE IN COLLOQUIO
 
 Commissionato:
-- creare su Git un documento specifico per definire la **versione Mobile di Termodel Web**;
-- collocarlo nella linea frontend `docs/termodel-ui-demo/`, senza confonderlo con il Summary Service né con il Summary storico Web;
-- partire dallo stato reale corrente del frontend v1.27 e dal contratto Frontend ↔ Service;
-- descrivere scopo, confini, criteri di attivazione, stati, viewer 3D, pannello Esplora, esempi, CAD2D, filtri, rotazione portrait/landscape e passaggio volontario alla versione desktop;
-- iniziare un audit strutturato del codice corrente distinguendo: **coerente**, **parzialmente coerente**, **da definire**, **rischio/regressione**;
-- verificare in particolare cosa oggi significa realmente "mobile": rilevamento Android, comportamento smartphone, viewport, touch, landscape, caricamento locale degli esempi e dipendenze dal Service;
-- definire le invarianti UX che le modifiche future devono rispettare senza creare un secondo frontend o duplicare logica;
-- non modificare comportamento applicativo in questo incarico salvo documentazione/regression strettamente necessaria all'audit;
-- non modificare `definizionedati.json`;
-- aggiornare il Summary con il documento creato e lo stato dell'audit;
-- chiudere Issue #1 `Completed` a fine lavoro per la notifica.
+- creare su Git un documento dedicato alla **versione Mobile di Termodel Web**;
+- collocarlo nella linea frontend `docs/termodel-ui-demo/`;
+- partire volutamente da un documento vuoto, senza precompilare regole, audit o conclusioni;
+- definire il contenuto progressivamente tramite colloquio con l'utente, inserendo nel documento soltanto quanto viene concordato;
+- non modificare comportamento applicativo né `definizionedati.json`.
+
+Esito:
+- creato il file vuoto `docs/termodel-ui-demo/LINEE-GUIDA-MOBILE.md`;
+- commit: `8d81b56d368259114cc7fba45fd8880ec0de6371`;
+- nessuna regola Mobile è stata ancora inserita;
+- il precedente mandato di audit automatico è superato dalla rettifica dell'utente: la definizione parte ora dal colloquio.
 
 
 
