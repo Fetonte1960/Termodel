@@ -7,7 +7,7 @@
 > `Termodel/job` con `RUNNING -> SUCCESS/FAILED` e push telefono a
 > SUCCESS/FAILED. La regola è permanente e già verificata end-to-end.
 
-Ultimo aggiornamento: **2026-09-26**  
+Ultimo aggiornamento: **2026-09-27**  
 Branch GitHub di riferimento: **main**  
 Repository: `https://github.com/Fetonte1960/Termodel`
 
@@ -70,6 +70,17 @@ Prima di intervenire:
 15. **Protocollo anti-timeout chat — IMPORTANTE:** per incarichi lunghi applicare `.github/TERMODEL-CHAT-ANTI-TIMEOUT.md`. La chat è il punto di comando, GitHub è lo stato persistente: registrare subito `COMMISSIONATO`, lavorare per checkpoint piccoli, demandare build/test lunghi a GitHub Actions, evitare di riversare log enormi nella chat e riprendere dopo timeout da Summary, commit, status e artifact senza rifare lavoro già verificato.
 
 ## 1.1 Registro incarichi autorizzati
+
+
+### INCARICO 2026-09-27 — Definizione Mobile come MyHome3D
+Stato: COMMISSIONATO
+
+Commissionato:
+- registrare nelle sole linee guida Mobile che la versione Mobile viene da ora definita e presentata come **MyHome3D**;
+- fissare come scopo del progetto permettere a chiunque di creare un modello della propria casa, compresi gli impianti;
+- il modello deve servire per interagire con aziende di costruzione e di installazione/impiantistica, così da ottenere rapidamente preventivi senza dover riprogettare quanto è già stato progettato;
+- non eseguire modifiche funzionali, implementazioni o altre operazioni sul progetto fino a richiesta contraria dell'utente.
+
 
 ### INCARICO 2026-09-27 — Linee guida della versione Mobile
 Stato: ESEGUITO — DOCUMENTO VUOTO CREATO / DEFINIZIONE DA COSTRUIRE IN COLLOQUIO
