@@ -71,6 +71,23 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Gate globale desktop sul modello iniziale non esplorabile
+Stato: COMMISSIONATO
+
+Commissionato:
+- estendere alla versione **non mobile/desktop** il comportamento del modello iniziale non esplorabile;
+- finché `initialModelExplorationLocked=true`, qualunque funzione attivata da pulsanti, tab o menu deve mostrare la stessa form di selezione esempio già introdotta;
+- uniche eccezioni operative: **File -> Nuovo** e **File -> Apri...**, che devono continuare a funzionare normalmente;
+- il menu **File** deve restare apribile per consentire l'accesso a Nuovo e Apri; le altre voci File, incluso `Apri esempio...`, possono aprire la stessa form esempi;
+- gli altri menu principali, le relative voci, i pulsanti della barra inferiore e i tab devono essere intercettati prima dell'esecuzione della loro funzione;
+- non alterare il comportamento mobile già approvato;
+- dopo apertura/creazione progetto o caricamento esempio il gate deve disattivarsi come già previsto;
+- aggiornare frontend/version marker e regression, pubblicare su `main`;
+- non modificare `definizionedati.json`;
+- a fine lavoro aggiornare il Summary e chiudere Issue #1 `Completed`.
+
+
+
 ### INCARICO 2026-09-27 — Setup iniziale CAD2D esempi e gate esplorazione
 Stato: ESEGUITO — FRONTEND v1.25 PUBBLICATO / GATE E SETUP CAD VERIFICATI
 
