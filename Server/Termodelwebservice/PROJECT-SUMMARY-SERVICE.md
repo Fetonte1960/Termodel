@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-27 — Setup iniziale CAD2D esempi e gate esplorazione
-Stato: COMMISSIONATO
+Stato: ESEGUITO — FRONTEND v1.25 PUBBLICATO / GATE E SETUP CAD VERIFICATI
 
 Commissionato:
 - frontend `docs/termodel-ui-demo`: quando viene caricato un esempio, inizializzare CAD2D con **Esecutivo pannelli ON**, **Input OFF**, **Sfondo OFF**;
@@ -86,6 +86,37 @@ Commissionato:
 - non modificare `definizionedati.json`;
 - aggiungere regression frontend e pubblicare su `main`;
 - a fine lavoro aggiornare questo Summary e chiudere Issue #1 `Completed` per la notifica.
+
+Esito:
+- il modello iniziale `TermodelWebModel.json` viene marcato `data-explorable=false` e mantiene `initialModelExplorationLocked=true`;
+- su Android il primo tocco di **Esplora** sul modello iniziale apre la nuova form di scelta esempio invece del piccolo menu CAD;
+- `File -> Apri esempio...` su desktop usa la stessa form, eliminando il precedente `window.prompt` numerico;
+- la form contiene il testo richiesto e genera dinamicamente un pulsante per ciascun esempio di `examples/catalog.json`, con nome e descrizione;
+- dopo il caricamento di un esempio viene applicato `applyProjectBrowserCadInitialSetup()`: **Esecutivo pannelli ON**, **Input OFF**, **Sfondo OFF**;
+- **Disegno unifilare** commuta esplicitamente a Esecutivo OFF / Input ON / Sfondo OFF;
+- **Disegno esecutivo** commuta esplicitamente a Esecutivo ON / Input OFF / Sfondo OFF;
+- gli esecutivi consolidati dei due esempi continuano a essere caricati localmente da GitHub Pages; l'esplorazione non interroga Render;
+- frontend portato a **v1.25**; `index.html`, `app.js` e `frontend-version.txt` sono allineati a 1.25, evitando reload da marker versione obsoleto;
+- `definizionedati.json` non modificato.
+
+Form smartphone:
+- portrait <= 760 px: larghezza `min(520px, 100vw - 24px)`, altezza massima `100dvh - 24px`, corpo scrollabile;
+- landscape <= 760 px: larghezza `min(680px, 100vw - 16px)`, altezza massima `100dvh - 16px`, corpo scrollabile e righe esempio più compatte;
+- verifica dimensionale statica eseguita su viewport rappresentative: 320x568 -> 296x544 px max; 360x800 -> 336x776; 390x844 -> 366x820; 740x360 landscape -> 680x344. Con `box-sizing:border-box` la form resta entro la viewport. La prova fisica sul telefono resta distinta dalla verifica CSS automatica.
+
+Regression/verifica:
+- controllo sintattico JavaScript sul sorgente v1.25: **OK**;
+- workflow finale `36302557023`, commit `3476833ce31a658b45282976fcf6bcddf837735b`: `Check frontend JavaScript syntax` **SUCCESS** e `Check radiant executive auto-load wiring` **SUCCESS**; quest'ultimo verifica anche gate iniziale, default CAD, form mobile e marker `frontend-version.txt=1.25`;
+- build Service già **SUCCESS** sul commit funzionale `2605936d7b86f7bfa6c362e18222992822e24a55`; i commit successivi del frontend hanno riguardato CSS/version marker/regression e non sorgenti C#;
+- GitHub Pages finale run `36302556969`, commit `3476833ce31a658b45282976fcf6bcddf837735b`: **SUCCESS**;
+- gli eventuali fallimenti successivi del workflow Service restano riconducibili al benchmark StrategiaDiego già noto e separato da questo incarico frontend.
+
+Commit principali:
+- `8faf911ecbd57eab984764f82bc62f2a234d6b99` — gate modello iniziale, form esempi e setup CAD;
+- `2605936d7b86f7bfa6c362e18222992822e24a55` — coerenza viste unifilare/esecutivo;
+- `51fe31e6b919f9e7f84011b7183b73de2214dd09` — dimensionamento smartphone;
+- `4d626db676a6125620a1a3ba87697fcc7bb25836` — allineamento `frontend-version.txt`;
+- `3476833ce31a658b45282976fcf6bcddf837735b` — regression del marker versione.
 
 
 
