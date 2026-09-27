@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-27 — Filtri grafici flottanti nel pannello Esplora mobile
-Stato: COMMISSIONATO
+Stato: ESEGUITO — FRONTEND v1.27 PUBBLICATO / FILTRI MOBILE VERIFICATI
 
 Commissionato:
 - nella versione mobile/Android aggiungere al pannello principale **Esplora** del modello 3D un pulsante **Filtri**;
@@ -85,6 +85,30 @@ Commissionato:
 - aggiornare frontend/version marker e regression, pubblicare su `main`;
 - non modificare `definizionedati.json`;
 - a fine lavoro aggiornare il Summary e chiudere Issue #1 `Completed` per la notifica.
+
+Esito:
+- frontend portato a **v1.27**;
+- aggiunto nel menu mobile principale **Esplora** il pulsante **Filtri**;
+- `openAndroidFilterDialog()` apre una form flottante centrata che replica lo stato corrente dei filtri reali senza modificarli;
+- gruppi esposti: **Piani**, **Componenti**, **Confini**, **Separazione tra vani**;
+- le checkbox della form sono copie temporanee senza listener su `applyFilters()`: cambiare una selezione non modifica immediatamente il 3D;
+- **Applica** trasferisce le selezioni ai filtri reali, esegue `applyFilters()` e chiude la form;
+- **Annulla**, pulsante X e tap sullo sfondo chiudono la form senza applicare variazioni;
+- il pannello filtri desktop esistente non è stato modificato;
+- `definizionedati.json` non modificato.
+
+Layout mobile:
+- portrait: form centrata, larghezza `min(520px, 100vw - 24px)`, altezza massima `100dvh - 24px`, corpo scrollabile;
+- landscape con altezza <= 520 px: larghezza `min(720px, 100vw - 16px)`, altezza massima `100dvh - 16px`, sezioni disposte su due colonne e righe più compatte;
+- header e footer restano fissi nella griglia della form mentre scorre solo il corpo centrale.
+
+Verifica reale:
+- commit funzionale: `f8c4f1e542faeac011389065a95c87ebf2973d15`;
+- frontend/version marker: `53fe2228ae3fb8b87ba235d6213f5bf6665860f8`, `7e0199481e7c0dd882f4094670c4f672a0b235b9`;
+- regression workflow: `b226fba17870e8b542b4ce86c4071084b04ff88b`;
+- GitHub Action run `36304031007`: `Check frontend JavaScript syntax` **SUCCESS**, `Check radiant executive auto-load wiring` **SUCCESS**, `Build` **SUCCESS**, smoke progetto pubblico Pannelli radianti **SUCCESS**; il check wiring include i marker dei filtri mobile portrait/landscape;
+- GitHub Pages run `36304030775`: **SUCCESS**;
+- il successivo benchmark StrategiaDiego resta separato e può conservare il noto stato rosso per carico computazionale.
 
 
 
