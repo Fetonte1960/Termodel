@@ -73,7 +73,26 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-27 — Correzione Modalità esplorazione Web PC
-Stato: COMMISSIONATO
+Stato: ESEGUITO — FRONTEND v1.30 PUBBLICATO
+
+Esito:
+- la **Modalità esplorazione** desktop ora viene forzata esplicitamente a **OFF** a ogni caricamento/paginehow;
+- il checkbox `helpExplorationMode` non è più lasciato al ripristino automatico dello stato da parte del browser: HTML con `autocomplete="off"`, `defaultChecked=false` e `checked=false` impostati da JavaScript;
+- quando la modalità è attiva, un listener globale in capture intercetta i controlli desktop cliccabili (button/input/select/summary/label/tab) solo per mostrare l'Help, senza fare `preventDefault()` né fermare l'azione originale;
+- le funzioni già documentate continuano a usare `COMMAND_HELP`;
+- per funzioni/comandi non ancora presenti in `COMMAND_HELP` viene mostrato un fallback contestuale, così il clic non resta privo di spiegazione;
+- i comandi archivio, CAD 2D, checkbox/radio, select e tab hanno fallback specifici;
+- il pannello Help desktop è stato portato a z-index 2100 per restare visibile anche sopra dialog/modali;
+- Mobile/MyHome3D e sistema log non modificati; `definizionedati.json` non modificato;
+- frontend portato a **v1.30**.
+
+Verifica reale:
+- commit funzionale: `46433a39ebbab43cc80eff62a4296f92a592e00b`;
+- verifica sintattica JavaScript eseguita sul file del commit: **OK**;
+- controllo statico: default OFF presente, checkbox HTML senza `checked`, reset su `pageshow`, listener globale Help e fallback presenti;
+- GitHub Pages run `36317580284`: **SUCCESS**;
+- GitHub Action `36317580489` accodata dietro al precedente workflow al momento della chiusura; le regression permanenti `DESKTOP_EXPLORATION_DEFAULT_OFF_OK` e `DESKTOP_EXPLORATION_GLOBAL_HELP_OK` sono state aggiunte al workflow;
+- prova manuale su browser PC da eseguire lato utente.
 
 Commissionato:
 - verificare la **Modalità esplorazione** del menu Help nella versione Web PC;
