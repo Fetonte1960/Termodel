@@ -232,6 +232,20 @@ jobs:
 
       - name: Build
         run: dotnet build Termodel.WebService.sln --configuration Release --no-restore
+
+      - name: Smoke public Pannelli radianti model3d
+        shell: pwsh
+        run: ./tools/smoke-radiant-reference.ps1 -ProjectPath "../../docs/termodel-ui-demo/examples/pannelli-radianti.tmdl.txt"
+
+      - name: Upload public Pannelli radianti model3d diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pannelli-radianti-public-model3d
+          path: ${{ runner.temp }}/RadiantPanelsPublicExampleArtifacts
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Benchmark StrategiaDiego regression fixtures
         shell: pwsh
         run: |
