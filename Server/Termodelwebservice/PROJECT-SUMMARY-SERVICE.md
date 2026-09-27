@@ -71,6 +71,20 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+
+### INCARICO 2026-09-27 — Correzione Modalità esplorazione Web PC
+Stato: COMMISSIONATO
+
+Commissionato:
+- verificare la **Modalità esplorazione** del menu Help nella versione Web PC;
+- il default deve essere esplicitamente **disattivato** a ogni caricamento della pagina, senza dipendere dal ripristino automatico dello stato dei controlli da parte del browser;
+- quando la modalità è attiva, ogni funzione/comando cliccato nell'interfaccia desktop deve mostrare una spiegazione nel pannello Help e l'azione normale deve continuare;
+- usare le descrizioni specifiche già presenti in `COMMAND_HELP` quando disponibili e fornire un fallback informativo per controlli/comandi non ancora documentati, in modo da evitare clic silenziosi;
+- non trasformare la Modalità esplorazione in un blocco delle funzioni;
+- preservare la versione Mobile/MyHome3D, il sistema log e `definizionedati.json`;
+- aggiornare frontend/versione e regression, pubblicare e chiudere Issue #1 come Completed a fine lavoro.
+
+
 ### INCARICO 2026-09-27 — Istruzione AI pubblicata MyHome3D Mobile
 Stato: ESEGUITO — ISTRUZIONE PUBBLICATA / HELP COLLEGATO / FRONTEND v1.29
 
