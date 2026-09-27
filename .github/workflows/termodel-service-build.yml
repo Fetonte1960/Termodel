@@ -89,16 +89,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.30';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.31';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.30")) {
-            throw "Cache-busting app.js v1.30 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.31")) {
+            throw "Cache-busting app.js v1.31 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.30") {
+          if ($frontendVersion -ne "1.31") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -326,8 +326,11 @@ jobs:
           }
 
           foreach ($marker in @(
-            'id="androidExploreFilters"',
-            "Filtri",
+            'id="androidHomeFilters"',
+            'aria-label="Apri filtri grafici">Filtri</button>',
+            "const filters = box.querySelector('#androidHomeFilters');",
+            "filters.addEventListener('click', event => {",
+            "openAndroidFilterDialog();",
             "function createAndroidFilterDialog()",
             "function rebuildAndroidFilterDialog()",
             "function openAndroidFilterDialog()",
@@ -343,11 +346,14 @@ jobs:
             "grid-template-columns: repeat(2, minmax(0, 1fr));"
           )) {
             if (-not $app.Contains($marker)) {
-              throw "Filtri mobili Esplora incompleti: $marker"
+              throw "Filtri mobili Home incompleti: $marker"
             }
           }
+          if ($app.Contains('id="androidExploreFilters"')) {
+            throw "Filtri non deve più essere contenuto nel menu Esplora Mobile."
+          }
 
-          Write-Host "ANDROID_EXPLORE_FILTER_DIALOG_OK"
+          Write-Host "ANDROID_HOME_FILTER_DIALOG_OK"
           Write-Host "ANDROID_FILTER_DIALOG_PORTRAIT_OK"
           Write-Host "ANDROID_FILTER_DIALOG_LANDSCAPE_OK"
 
@@ -355,7 +361,7 @@ jobs:
             'id="androidHelp3d"',
             'id="androidCadHelp"',
             'id="androidHelpAskAi"',
-            "const MYHOME3D_AI_INSTRUCTION_URL = './MyHome3D.md?v=0.23';",
+            "const MYHOME3D_AI_INSTRUCTION_URL = './MyHome3D.md?v=0.24';",
             "async function loadMyHome3dAiInstruction()",
             "function createAndroidHelpDialog()",
             "function openAndroidHelpDialog(context = '3D')",
@@ -382,29 +388,40 @@ jobs:
           $myHome = Get-Content -LiteralPath $myHomePath -Raw
           $myHomeHtml = Get-Content -LiteralPath $myHomeHtmlPath -Raw
           foreach ($marker in @(
-            "# MYHOME3D MOBILE — Istruzioni AI Termodel armonizzate",
+            "# MYHOME3D MOBILE — Istruzione AI informativa",
+            "VERSIONE MYHOME3D AI: 0.24",
+            "esclusivamente a fornire **informazioni e spiegazioni**",
+            "id",
             "input unifilare della versione Web",
-            "CAD 2D di Termodel Web",
             "DisegnoInput.svg",
-            "TERMODEL-SVG-TEXT-V1",
-            "TERMODEL-PROJECT-TEXT-V1",
             "pianta pulita",
             "modello 3D",
             "disegni esecutivi",
-            "pannelli radianti"
+            "Il pulsante **Filtri** è indipendente da **Esplora**",
+            "Perfetto adesso sono in grado di darti informazioni su Myhome 3d e Termodel"
           )) {
             if (-not $myHome.Contains($marker)) {
-              throw "Istruzione AI MyHome3D incompleta: $marker"
+              throw "Istruzione AI MyHome3D informativa incompleta: $marker"
             }
           }
-          if ($myHome -match "(?i)AutoCAD|\bDXF\b|lettore desktop|Termodel desktop") {
-            throw "Istruzione AI MyHome3D contiene ancora riferimenti al flusso CAD desktop esterno."
+          foreach ($forbidden in @(
+            "## Creazione da descrizione testuale",
+            "CreaPianoTermodelDaRaster",
+            "TERMODEL-SVG-TEXT-V1",
+            "TERMODEL-STRATIGRAFIA-V1"
+          )) {
+            if ($myHome.Contains($forbidden)) {
+              throw "Istruzione AI MyHome3D contiene ancora una procedura di generazione progetto: $forbidden"
+            }
+          }
+          if ($myHome -match "(?i)\bbitmap\b|\braster\b|AutoCAD|\bDXF\b|lettore desktop|Termodel desktop") {
+            throw "Istruzione AI MyHome3D contiene riferimenti esclusi dalla modalità informativa."
           }
           if (-not $myHomeHtml.Contains("MYHOME3D MOBILE")) {
             throw "Pagina pubblica MyHome3D.html non contiene l'istruzione Mobile."
           }
-          if (-not $index.Contains("./app.js?v=1.30")) {
-            throw "Cache-busting MyHome3D v1.30 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.31")) {
+            throw "Cache-busting MyHome3D v1.31 non aggiornato."
           }
 
           Write-Host "MYHOME3D_AI_PUBLISHED_INSTRUCTION_OK"

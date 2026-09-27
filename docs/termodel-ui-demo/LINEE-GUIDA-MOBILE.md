@@ -33,3 +33,28 @@ Il comando **Chiedi informazioni ad AI** deve copiare negli appunti la specifica
 
 Questa istruzione deve essere armonizzata con le regole generali Termodel ma, per il flusso Mobile, deve riferirsi all'**input unifilare della versione Web / CAD 2D** e non indirizzare l'utente verso AutoCAD o il flusso desktop DXF.
 
+## Barra principale Home Mobile 3D
+
+Il comando **Filtri** appartiene alla barra principale della Home Mobile 3D e non al menu **Esplora**.
+
+**Filtri deve essere sempre attivo**, anche quando è visualizzato un esempio sul quale le altre funzioni di esplorazione non sono disponibili. I filtri grafici restano applicabili al modello visualizzato.
+
+Il comportamento della finestra Filtri rimane quello già consolidato:
+- le scelte nella finestra sono temporanee;
+- **Applica** trasferisce le scelte ai filtri reali e aggiorna il modello;
+- **Annulla**, X e chiusura non applicano modifiche.
+
+## Istruzione AI Mobile — modalità informativa
+
+L'istruzione AI copiata da **Chiedi informazioni ad AI** deve essere esclusivamente informativa su **MyHome3D** e **Termodel**.
+
+Non deve contenere istruzioni per generare o ricostruire un progetto da descrizione testuale, bitmap, raster o altra immagine e non deve avviare automaticamente operazioni sul progetto.
+
+Dopo l'acquisizione dell'istruzione, l'AI deve rispondere soltanto:
+
+```text
+Perfetto adesso sono in grado di darti informazioni su Myhome 3d e Termodel
+```
+
+Dopo questa conferma attende la domanda dell'utente.
+

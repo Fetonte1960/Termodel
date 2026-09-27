@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.30';
+const APP_VERSION = '1.31';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -2038,6 +2038,8 @@ function createAndroidExploreBox() {
   box.innerHTML = `
     <button id="androidExploreToggle" class="android-explore-main" type="button"
       aria-expanded="false">Esplora</button>
+    <button id="androidHomeFilters" class="android-explore-main" type="button"
+      aria-label="Apri filtri grafici">Filtri</button>
     <button id="androidHelp3d" class="android-explore-main" type="button"
       aria-label="Apri Help MyHome3D">Help</button>
     <button id="androidFullDesktop" class="android-explore-main android-desktop-toggle" type="button"
@@ -2059,22 +2061,19 @@ function createAndroidExploreBox() {
       <button id="androidExploreExecutive" class="android-explore-action" type="button">
         Disegno esecutivo
       </button>
-      <button id="androidExploreFilters" class="android-explore-action" type="button">
-        Filtri
-      </button>
     </div>
   `;
 
   modelPage.appendChild(box);
 
   const toggle = box.querySelector('#androidExploreToggle');
+  const filters = box.querySelector('#androidHomeFilters');
   const help = box.querySelector('#androidHelp3d');
   const desktopToggle = box.querySelector('#androidFullDesktop');
   const menu = box.querySelector('#androidExploreMenu');
   const exampleSelect = box.querySelector('#androidExploreExample');
   const singleLine = box.querySelector('#androidExploreSingleLine');
   const executive = box.querySelector('#androidExploreExecutive');
-  const filters = box.querySelector('#androidExploreFilters');
 
   const setOpen = (open) => {
     const next = Boolean(open);
@@ -2372,10 +2371,10 @@ function createAndroidHelpDialog() {
         <p>Il modello è pensato per essere riutilizzato quando dialoghi con aziende di costruzione e installazione/impiantistica, così puoi chiedere preventivi senza riprogettare ciò che hai già definito.</p>
         <p>Se vuoi capire meglio una funzione, usa il pulsante <strong>Chiedi informazioni ad AI</strong> qui sopra.</p>
         <ol>
-          <li>MyHome3D carica dal sito Termodel l’istruzione AI ufficiale della versione Mobile e la copia negli appunti.</li>
+          <li>MyHome3D carica dal sito Termodel l’istruzione AI informativa ufficiale della versione Mobile e la copia negli appunti.</li>
           <li>Apri ChatGPT o il tuo assistente AI e incolla il testo.</li>
-          <li>Sostituisci la frase finale con la tua domanda, oppure aggiungi subito ciò che vuoi approfondire.</li>
-          <li>L’istruzione contiene già le regole generali Termodel armonizzate con MyHome3D e con l’input unifilare Web.</li>
+          <li>Dopo la conferma dell’AI, chiedi ciò che vuoi sapere su MyHome3D o Termodel.</li>
+          <li>L’istruzione serve solo a fornire informazioni su MyHome3D e Termodel: non avvia la generazione di un progetto.</li>
         </ol>
         <p>Puoi chiudere questo Help e continuare a lavorare: la copia negli appunti non modifica il progetto.</p>
       </div>
@@ -2402,7 +2401,7 @@ function createAndroidHelpDialog() {
       const copied = await copyTextToClipboard(instruction, 'le istruzioni AI MyHome3D');
       if (feedback) {
         feedback.textContent = copied
-          ? '✓ Istruzione ufficiale MyHome3D copiata. Ora apri ChatGPT o la tua AI, incolla il testo e scrivi ciò che vuoi sapere o fare.'
+          ? '✓ Istruzione informativa MyHome3D copiata. Ora apri ChatGPT o la tua AI e incolla il testo.'
           : '⚠ Copia non riuscita. Verifica i permessi degli appunti del browser e riprova.';
       }
     } catch (error) {
@@ -4224,7 +4223,7 @@ document.querySelectorAll('[data-archive]').forEach(button => {
 const TERMODEL_GENERAL_PROMPT_URL = './TermodelGenerale.md';
 const RASTER_PROMPT_URL = './CreaPianoTermodelDaRaster.md';
 const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.html?v=0.23';
-const MYHOME3D_AI_INSTRUCTION_URL = './MyHome3D.md?v=0.23';
+const MYHOME3D_AI_INSTRUCTION_URL = './MyHome3D.md?v=0.24';
 
 const instructAiButton = document.getElementById('instructAiButton');
 const importAiButton = document.getElementById('importAiButton');
