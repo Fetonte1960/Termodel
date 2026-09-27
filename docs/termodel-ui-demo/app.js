@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.19';
+const APP_VERSION = '1.20';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 
@@ -1890,6 +1890,18 @@ function isChecked(group, name, fallback = true) {
   return input ? input.checked : fallback;
 }
 
+// "Pannelli" non è un normale componente ma una modalità speciale:
+// quando resta selezionata mostra soltanto Pannelli + Ponti. Un nuovo
+// Aggiorna Modello deve partire dal modello edilizio completo, altrimenti
+// una selezione precedente può far sembrare che il Service abbia restituito
+// soltanto lo scheletro verde dei ponti termici.
+function resetPannelliOnlyModeForServiceModel() {
+  const input = document.querySelector(
+    'input[data-filter-group="componenti"][data-filter-name="Pannelli"]'
+  );
+  if (input) input.checked = false;
+}
+
 function primitiveFilterData(primitive) {
   return {
     filterMetadata: primitive.filterMetadata === true,
@@ -3020,6 +3032,7 @@ async function loadCalculatedModelFromService() {
       cadShowGeneratedExecutive.checked = false;
       cadShowGeneratedExecutive.disabled = true;
     }
+    resetPannelliOnlyModeForServiceModel();
     renderModelData(data, {
       mode: 'project',
       label: 'PROGETTO CORRENTE · SERVER',
