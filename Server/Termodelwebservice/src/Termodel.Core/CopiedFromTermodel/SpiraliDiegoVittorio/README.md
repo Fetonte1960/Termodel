@@ -33,3 +33,21 @@ dimensioni percentuali, `viewBox` calcolato sull'intera geometria e
 senza deformazioni. Dimensioni, trasformazione e `viewBox` sono serializzati
 con cultura invariant. Questa estensione è soltanto grafica: non modifica XML,
 mandata, ritorno o sorgenti `SpiraliVittorio`.
+
+### Flag raccordi durante il debug
+
+Nell'attuale fase di debug i raccordi arrotondati sono disattivati per default:
+l'SVG usa mandata, ritorno e collegamento a segmenti rettilinei, evitando la
+generazione dei punti intermedi delle curve. La radice dichiara
+`data-termodel-fittings="disabled"`.
+
+Per riattivare integralmente i raccordi originali prima di eseguire Harness o
+Service:
+
+```powershell
+$env:TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS = "true"
+```
+
+Valori veri ammessi: `true`, `1`, `yes`, `on`. Valori falsi: `false`, `0`,
+`no`, `off`. Con raccordi attivi la radice SVG dichiara
+`data-termodel-fittings="enabled"`.

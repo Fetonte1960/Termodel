@@ -11,12 +11,20 @@ namespace SpiralHeatingDiegoVittorio
 {
     public static class ChiudiSpirale
     {
+        private const string DrawFilletsEnvironmentVariable =
+            "TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS";
+
         public static void Chiudi(string xmlFile, double raggioCurvatura, double distanzaRitorno, double distanzaRotazioneUltimoPunto, bool debug)
         {
             try
             {
                 XDocument doc = XDocument.Load(xmlFile);
                 CultureInfo ci = CultureInfo.InvariantCulture;
+                bool drawFillets = ShouldDrawFillets();
+                Console.WriteLine(
+                    drawFillets
+                        ? "Raccordi SVG Diego_Vittorio: ATTIVI."
+                        : $"Raccordi SVG Diego_Vittorio: DISATTIVATI; riattivare con {DrawFilletsEnvironmentVariable}=true.");
                 
                 // Leggi tutte le linee (tubi)
                 var linee = doc.Descendants("Linea")
@@ -96,14 +104,37 @@ namespace SpiralHeatingDiegoVittorio
                         ))
                         .ToList();
                     
-                    var spiraleArrotondata = GeometryUtils.ArrotondaSpirale(spirale, raggioCurvatura);
-                    var rientro = CreaRientro(spiraleArrotondata, distanzaRitorno);
+                    // Modificato da Codex per realizzare: il ritorno Vittorio
+                    // dipende strutturalmente dai campioni arrotondati. Questi
+                    // restano nel calcolo interno; in debug viene serializzata
+                    // una polilinea semplificata e priva dei raccordi grafici.
+                    var spiraleArrotondataCalcolo =
+                        GeometryUtils.ArrotondaSpirale(
+                            spirale,
+                            raggioCurvatura);
+                    var rientroCalcolo = CreaRientro(
+                        spiraleArrotondataCalcolo,
+                        distanzaRitorno);
+                    var spiraleArrotondata = drawFillets
+                        ? spiraleArrotondataCalcolo
+                        : spirale;
+                    var rientro = drawFillets
+                        ? rientroCalcolo
+                        : SemplificaPolilinea(
+                            rientroCalcolo,
+                            Math.Max(
+                                raggioCurvatura * 0.35,
+                                0.001));
                     // Modificato da Codex per realizzare: ripristino integrale
                     // della chiusura geometrica originale di Vittorio,
                     // mantenendo anche il box numerato ChiusuraGPT.
-                    var curvaCollegamento = CreaCurvaCollegamento(
-                        spiraleArrotondata,
-                        rientro);
+                    var curvaCollegamento = drawFillets
+                        ? CreaCurvaCollegamento(
+                            spiraleArrotondata,
+                            rientro)
+                        : CreaCollegamentoDritto(
+                            spiraleArrotondata,
+                            rientro);
                     
                     // Punto finale del rientro (per collegare la linea di ritorno del tubo)
                     Punto fineRientro = rientro.Count > 0 ? rientro[rientro.Count - 1] : null;
@@ -127,7 +158,11 @@ namespace SpiralHeatingDiegoVittorio
                 }
                 
                 // Salva SVG combinato
-                SalvaSvgCombinato("locale.svg", tutteLeSpiraliChiuse, linee);
+                SalvaSvgCombinato(
+                    "locale.svg",
+                    tutteLeSpiraliChiuse,
+                    linee,
+                    drawFillets);
                 Console.WriteLine($"Salvato: locale.svg");
                 
                 Console.WriteLine("Completato!");
@@ -140,7 +175,8 @@ namespace SpiralHeatingDiegoVittorio
         
         private static void SalvaSvgCombinato<T>(string filePath, 
             List<(string localeId, List<Punto> perimetro, List<Punto> spiraleArrotondata, List<Punto> rientro, List<Punto> curvaCollegamento, Punto fineRientro, string chiusuraGptSvg)> spirali,
-            List<T> linee) where T : class
+            List<T> linee,
+            bool drawFillets) where T : class
         {
             if (spirali.Count == 0) return;
             
@@ -178,13 +214,14 @@ namespace SpiralHeatingDiegoVittorio
             string widthSvg = SvgNumber(width);
             string heightSvg = SvgNumber(height);
             string flipTranslateSvg = SvgNumber(-(minY + maxY));
+            string filletsSvg = drawFillets ? "enabled" : "disabled";
 
             using (StreamWriter sw = new StreamWriter(filePath))
             {
                 sw.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                 // Modificato da Codex per realizzare: SVG responsivo, non
                 // deformato e numericamente valido anche con cultura italiana.
-                sw.WriteLine($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"{minXSvg} {minYSvg} {widthSvg} {heightSvg}\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;height:100%;background:#ffffff\" role=\"img\" aria-labelledby=\"termodel-svg-title\">");
+                sw.WriteLine($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"{minXSvg} {minYSvg} {widthSvg} {heightSvg}\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;height:100%;background:#ffffff\" role=\"img\" aria-labelledby=\"termodel-svg-title\" data-termodel-fittings=\"{filletsSvg}\">");
                 sw.WriteLine("<title id=\"termodel-svg-title\">Esecutivo pannelli Diego_Vittorio</title>");
                 sw.WriteLine($"<g transform=\"scale(1,-1) translate(0,{flipTranslateSvg})\" shape-rendering=\"geometricPrecision\">");
 
@@ -261,6 +298,88 @@ namespace SpiralHeatingDiegoVittorio
         // Funzione realizzata da Codex in autonomia
         private static string SvgNumber(double value) =>
             value.ToString("0.###############", CultureInfo.InvariantCulture);
+
+        // Funzione realizzata da Codex in autonomia
+        private static bool ShouldDrawFillets()
+        {
+            string value = (
+                Environment.GetEnvironmentVariable(
+                    DrawFilletsEnvironmentVariable) ?? string.Empty)
+                .Trim();
+
+            if (value.Length == 0)
+                return false;
+
+            return value.ToLowerInvariant() switch
+            {
+                "1" or "true" or "yes" or "on" => true,
+                "0" or "false" or "no" or "off" => false,
+                _ => throw new InvalidDataException(
+                    $"{DrawFilletsEnvironmentVariable} non riconosciuto: '{value}'. Valori ammessi: true/false, 1/0, yes/no, on/off.")
+            };
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static List<Punto> CreaCollegamentoDritto(
+            List<Punto> andata,
+            List<Punto> rientro)
+        {
+            if (andata.Count == 0 || rientro.Count == 0)
+                return new List<Punto>();
+
+            return new List<Punto>
+            {
+                andata[^1],
+                rientro[0]
+            };
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static List<Punto> SemplificaPolilinea(
+            List<Punto> punti,
+            double tolleranza)
+        {
+            if (punti.Count <= 2)
+                return punti.ToList();
+
+            var conserva = new bool[punti.Count];
+            conserva[0] = true;
+            conserva[^1] = true;
+
+            var sezioni = new Stack<(int Inizio, int Fine)>();
+            sezioni.Push((0, punti.Count - 1));
+
+            while (sezioni.Count > 0)
+            {
+                (int inizio, int fine) = sezioni.Pop();
+                double distanzaMassima = 0.0;
+                int indiceMassimo = -1;
+
+                for (int i = inizio + 1; i < fine; i++)
+                {
+                    double distanza = DistanzaPuntoSegmento(
+                        punti[i],
+                        punti[inizio],
+                        punti[fine]);
+                    if (distanza <= distanzaMassima)
+                        continue;
+
+                    distanzaMassima = distanza;
+                    indiceMassimo = i;
+                }
+
+                if (indiceMassimo < 0 || distanzaMassima <= tolleranza)
+                    continue;
+
+                conserva[indiceMassimo] = true;
+                sezioni.Push((inizio, indiceMassimo));
+                sezioni.Push((indiceMassimo, fine));
+            }
+
+            return punti
+                .Where((_, indice) => conserva[indice])
+                .ToList();
+        }
 
         // Funzione realizzata da Codex in autonomia
         /// <summary>

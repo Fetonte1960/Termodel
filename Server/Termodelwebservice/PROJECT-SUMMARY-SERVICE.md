@@ -71,6 +71,31 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Sospensione raccordi grafici `Diego_Vittorio` durante il debug
+Stato: ESEGUITO — MODALITÀ DEBUG OFF E RIPRISTINO ON VERIFICATI
+
+Commissionato:
+- intervenire esclusivamente su `Diego_Vittorio` e non modificare `Vittorio`;
+- disattivare per impostazione predefinita, durante l'attuale fase di debug, il calcolo/disegno dei raccordi arrotondati per velocizzare generazione e lettura dell'SVG;
+- mantenere mandata, ritorno e collegamento rappresentati con segmenti rettilinei a spigolo vivo;
+- permettere la riattivazione completa tramite il flag `TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS=true`;
+- rendere lo stato del flag riconoscibile nell'SVG e nei log;
+- verificare modalità raccordi OFF e ON su appartamento corrente e locale concavo.
+
+Esito:
+- `TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS` è falso per default nell'attuale fase di debug; `true`, `1`, `yes` o `on` riattivano integralmente i raccordi;
+- l'SVG dichiara `data-termodel-fittings="disabled|enabled"` e il log comunica esplicitamente lo stato;
+- in modalità OFF la mandata viene disegnata con i vertici originali, il ritorno resta calcolato sulla geometria arrotondata necessaria al contratto Vittorio ma viene semplificato per la sola presentazione, e il collegamento finale è rettilineo;
+- una prima prova che eliminava anche il calcolo interno è stata respinta perché `CreaRientro` dipende dalla campionatura arrotondata (`Count - 24`) e faceva scomparire il ritorno; la correzione definitiva mantiene visibile la linea blu;
+- workflow Harness esteso per verificare default OFF, presenza del ritorno, riduzione del peso SVG e riattivazione ON.
+
+Verifiche locali:
+- build Core + Harness Release temporanea: riuscita, 0 errori;
+- appartamento OFF: 21 punti rossi + 36 blu, 3.272 byte, 108 ms; ON: 205 rossi + 166 blu, 12.890 byte, 269 ms;
+- concavo OFF: 30 punti rossi + 56 blu, 3.907 byte, 171 ms; ON: 304 rossi + 265 blu, 18.768 byte, 308 ms;
+- XML risultanti identici nelle modalità OFF e ON e invariati rispetto alla base;
+- anteprima OFF 1200x800 verificata: contorno, mandata, ritorno e collegamento sono presenti con spigoli leggibili.
+
 ### INCARICO 2026-09-27 — SVG `Diego_Vittorio` con contorno architettonico e adattamento alla finestra
 Stato: ESEGUITO — SVG RESPONSIVO E CONTORNO VERIFICATI LOCALMENTE
 
