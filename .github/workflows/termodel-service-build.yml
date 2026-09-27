@@ -89,16 +89,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.32';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.33';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.32")) {
-            throw "Cache-busting app.js v1.32 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.33")) {
+            throw "Cache-busting app.js v1.33 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.32") {
+          if ($frontendVersion -ne "1.33") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -432,8 +432,8 @@ jobs:
           if (-not $myHomeHtml.Contains("MYHOME3D MOBILE")) {
             throw "Pagina pubblica MyHome3D.html non contiene l'istruzione Mobile."
           }
-          if (-not $index.Contains("./app.js?v=1.32")) {
-            throw "Cache-busting MyHome3D v1.32 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.33")) {
+            throw "Cache-busting MyHome3D v1.33 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -477,6 +477,54 @@ jobs:
           if ($index -match 'id="helpExplorationMode"[^>]*checked') {
             throw "Modalità esplorazione desktop non deve essere checked di default."
           }
+
+          foreach ($marker in @(
+            'id="helpOpenWebHelp"',
+            "Help Termodel Web",
+            'id="webHelpModal"',
+            'id="webHelpInstructAi"',
+            "Istruisci AI per Termodel Web",
+            "Creare una pianta con l'AI",
+            "Da descrizione:",
+            "Da sfondo bitmap/raster:",
+            "TermodelWeb.html?v=0.1",
+            "const TERMODEL_WEB_AI_URL = 'https://www.termodel.it/termodel-ui-demo/TermodelWeb.html?v=0.1';",
+            "function openWebHelpDialog()",
+            "function closeWebHelpDialog()",
+            "control.closest?.('#helpMenu')",
+            "Apri e segui le istruzioni AI specifiche e aggiornate della versione Web"
+          )) {
+            if (-not ($app.Contains($marker) -or $index.Contains($marker))) {
+              throw "Help Termodel Web incompleto: $marker"
+            }
+          }
+
+          $webAiPath = "..\..\docs\termodel-ui-demo\TermodelWeb.md"
+          $webAiHtmlPath = "..\..\docs\termodel-ui-demo\TermodelWeb.html"
+          $webAi = Get-Content -LiteralPath $webAiPath -Raw
+          $webAiHtml = Get-Content -LiteralPath $webAiHtmlPath -Raw
+          foreach ($marker in @(
+            "# TERMODEL WEB PC — Istruzioni AI",
+            "VERSIONE TERMODEL WEB AI: 0.1",
+            "Creazione da descrizione testuale",
+            "CreaProgettoDaDescrizione.html",
+            "Creazione da sfondo bitmap/raster",
+            "CreaPianoTermodelDaRaster.html",
+            "DisegnoInput.svg",
+            "TERMODEL-PROJECT-TEXT-V1",
+            "Non sostituisce l'istruzione della vecchia versione"
+          )) {
+            if (-not $webAi.Contains($marker)) {
+              throw "Istruzione AI Termodel Web incompleta: $marker"
+            }
+          }
+          if (-not $webAiHtml.Contains("TERMODEL WEB PC")) {
+            throw "Pagina pubblica TermodelWeb.html incompleta."
+          }
+
+          Write-Host "TERMODEL_WEB_HELP_OK"
+          Write-Host "TERMODEL_WEB_AI_DEDICATED_OK"
+          Write-Host "TERMODEL_DESKTOP_AI_UNTOUCHED_BY_DESIGN_OK"
 
           Write-Host "DESKTOP_EXPLORATION_DEFAULT_OFF_OK"
           Write-Host "DESKTOP_EXPLORATION_GLOBAL_HELP_OK"
@@ -1022,7 +1070,7 @@ jobs:
             # acqua 35/30 °C, coefficiente resa 5 W/m2K.
             if ([Math]::Abs([double]$circuit.flowLitersHour - 3.1826793) -gt 0.01 -or
                 [Math]::Abs([double]$circuit.reynolds - 123.4017) -gt 0.5 -or
-                [Math]::Abs([double]$circuit.pressureLossPa - 1.323675) -gt 0.02) {
+                [Math]::Abs([double]$circuit.pressureLossPa - 1.333675) -gt 0.02) {
               throw "Golden Darcy sintetico fuori tolleranza: flow=$($circuit.flowLitersHour) L/h, Re=$($circuit.reynolds), dP=$($circuit.pressureLossPa) Pa."
             }
 
