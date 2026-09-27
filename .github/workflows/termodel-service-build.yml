@@ -89,16 +89,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.28';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.29';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.28")) {
-            throw "Cache-busting app.js v1.28 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.29")) {
+            throw "Cache-busting app.js v1.29 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.28") {
+          if ($frontendVersion -ne "1.29") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -355,15 +355,14 @@ jobs:
             'id="androidHelp3d"',
             'id="androidCadHelp"',
             'id="androidHelpAskAi"',
-            "function buildMyHome3dAiHelpInstruction(context = '3D')",
+            "const MYHOME3D_AI_INSTRUCTION_URL = './MyHome3D.md?v=0.23';",
+            "async function loadMyHome3dAiInstruction()",
             "function createAndroidHelpDialog()",
             "function openAndroidHelpDialog(context = '3D')",
             "function closeAndroidHelpDialog()",
             "Chiedi informazioni ad AI",
-            "Sto usando MyHome3D, la versione Mobile di Termodel.",
-            "Termodel è lo strumento con cui realizzo il modello della mia casa, compresi gli impianti.",
-            "TERMODEL_AI_INDEX_URL",
-            "copyTextToClipboard(prompt, 'le istruzioni AI MyHome3D')",
+            "loadMyHome3dAiInstruction()",
+            "copyTextToClipboard(instruction, 'le istruzioni AI MyHome3D')",
             ".android-help-body",
             "-webkit-overflow-scrolling: touch;",
             "openAndroidHelpDialog('3D');",
@@ -374,6 +373,42 @@ jobs:
             }
           }
 
+          if ($app.Contains("function buildMyHome3dAiHelpInstruction")) {
+            throw "Help MyHome3D conserva una copia JavaScript delle istruzioni invece della sorgente pubblicata."
+          }
+
+          $myHomePath = "..\..\docs\termodel-ui-demo\MyHome3D.md"
+          $myHomeHtmlPath = "..\..\docs\termodel-ui-demo\MyHome3D.html"
+          $myHome = Get-Content -LiteralPath $myHomePath -Raw
+          $myHomeHtml = Get-Content -LiteralPath $myHomeHtmlPath -Raw
+          foreach ($marker in @(
+            "# MYHOME3D MOBILE — Istruzioni AI Termodel armonizzate",
+            "input unifilare della versione Web",
+            "CAD 2D di Termodel Web",
+            "DisegnoInput.svg",
+            "TERMODEL-SVG-TEXT-V1",
+            "TERMODEL-PROJECT-TEXT-V1",
+            "pianta pulita",
+            "modello 3D",
+            "disegni esecutivi",
+            "pannelli radianti"
+          )) {
+            if (-not $myHome.Contains($marker)) {
+              throw "Istruzione AI MyHome3D incompleta: $marker"
+            }
+          }
+          if ($myHome -match "(?i)AutoCAD|\bDXF\b|lettore desktop|Termodel desktop") {
+            throw "Istruzione AI MyHome3D contiene ancora riferimenti al flusso CAD desktop esterno."
+          }
+          if (-not $myHomeHtml.Contains("MYHOME3D MOBILE")) {
+            throw "Pagina pubblica MyHome3D.html non contiene l'istruzione Mobile."
+          }
+          if (-not $index.Contains("./app.js?v=1.29")) {
+            throw "Cache-busting MyHome3D v1.29 non aggiornato."
+          }
+
+          Write-Host "MYHOME3D_AI_PUBLISHED_INSTRUCTION_OK"
+          Write-Host "MYHOME3D_WEB_UNIFILAR_ONLY_OK"
           Write-Host "MYHOME3D_MOBILE_HELP_OK"
 
           Write-Host "PROJECT_BROWSER_DESKTOP_GLOBAL_GATE_OK"

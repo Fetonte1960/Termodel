@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.28';
+const APP_VERSION = '1.29';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -2187,30 +2187,30 @@ function closeAndroidFilterDialog() {
 let androidHelpModal = null;
 let androidHelpContext = '3D';
 
-function buildMyHome3dAiHelpInstruction(context = '3D') {
-  const view = context === '2D' ? 'CAD 2D' : 'modello 3D';
-  const currentExample = currentProjectBrowserExample();
-  const projectContext = currentExample
-    ? 'Sto esplorando l’esempio "' + currentExample.name + '".'
-    : (structuredProjectActive
-        ? 'Sto lavorando sul mio progetto MyHome3D corrente.'
-        : 'Sto esplorando MyHome3D.');
+let myHome3dAiInstructionPromise = null;
 
-  return [
-    'Sto usando MyHome3D, la versione Mobile di Termodel.',
-    'Termodel è lo strumento con cui realizzo il modello della mia casa, compresi gli impianti.',
-    'Il modello deve poter essere riutilizzato per dialogare con aziende di costruzione e installazione/impiantistica e ottenere rapidamente preventivi senza riprogettare ciò che è già stato definito.',
-    'Mi trovo nella vista ' + view + '. ' + projectContext,
-    '',
-    'Prima di rispondere, apri e segui le istruzioni AI aggiornate di Termodel:',
-    TERMODEL_AI_INDEX_URL,
-    '',
-    'Aiutami nel contesto MyHome3D Mobile con indicazioni semplici, operative e sequenziali per smartphone.',
-    'Se la funzione che ti chiedo richiede un passaggio desktop o non è disponibile nella versione Mobile, indicamelo chiaramente.',
-    'Non modificare o generare il progetto finché non te lo chiedo esplicitamente.',
-    '',
-    'La mia richiesta è: [scrivi qui cosa vuoi sapere]'
-  ].join('\n');
+async function loadMyHome3dAiInstruction() {
+  if (myHome3dAiInstructionPromise)
+    return myHome3dAiInstructionPromise;
+
+  myHome3dAiInstructionPromise = fetch(
+    MYHOME3D_AI_INSTRUCTION_URL,
+    { cache: 'no-store' }
+  )
+    .then(async response => {
+      if (!response.ok)
+        throw new Error('Istruzione MyHome3D HTTP ' + response.status);
+      const text = await response.text();
+      if (!text.trim() || !text.includes('# MYHOME3D MOBILE'))
+        throw new Error('Istruzione MyHome3D non valida.');
+      return text;
+    })
+    .catch(error => {
+      myHome3dAiInstructionPromise = null;
+      throw error;
+    });
+
+  return myHome3dAiInstructionPromise;
 }
 
 function createAndroidHelpDialog() {
@@ -2242,10 +2242,10 @@ function createAndroidHelpDialog() {
         <p>Il modello è pensato per essere riutilizzato quando dialoghi con aziende di costruzione e installazione/impiantistica, così puoi chiedere preventivi senza riprogettare ciò che hai già definito.</p>
         <p>Se vuoi capire meglio una funzione, usa il pulsante <strong>Chiedi informazioni ad AI</strong> qui sopra.</p>
         <ol>
-          <li>MyHome3D copia negli appunti un’istruzione già preparata per la versione Mobile.</li>
+          <li>MyHome3D carica dal sito Termodel l’istruzione AI ufficiale della versione Mobile e la copia negli appunti.</li>
           <li>Apri ChatGPT o il tuo assistente AI e incolla il testo.</li>
           <li>Sostituisci la frase finale con la tua domanda, oppure aggiungi subito ciò che vuoi approfondire.</li>
-          <li>L’AI farà riferimento alle istruzioni AI di Termodel per guidarti.</li>
+          <li>L’istruzione contiene già le regole generali Termodel armonizzate con MyHome3D e con l’input unifilare Web.</li>
         </ol>
         <p>Puoi chiudere questo Help e continuare a lavorare: la copia negli appunti non modifica il progetto.</p>
       </div>
@@ -2261,13 +2261,26 @@ function createAndroidHelpDialog() {
   });
   modal.querySelector('#androidHelpAskAi')?.addEventListener('click', async event => {
     event.stopPropagation();
+    const button = event.currentTarget;
     const feedback = modal.querySelector('#androidHelpFeedback');
-    const prompt = buildMyHome3dAiHelpInstruction(androidHelpContext);
-    const copied = await copyTextToClipboard(prompt, 'le istruzioni AI MyHome3D');
-    if (feedback) {
-      feedback.textContent = copied
-        ? '✓ Istruzione copiata. Ora apri ChatGPT o la tua AI, incolla il testo e scrivi la domanda che vuoi approfondire.'
-        : '⚠ Copia non riuscita. Verifica i permessi degli appunti del browser e riprova.';
+    button.disabled = true;
+    if (feedback)
+      feedback.textContent = 'Caricamento istruzione AI MyHome3D dal sito Termodel…';
+
+    try {
+      const instruction = await loadMyHome3dAiInstruction();
+      const copied = await copyTextToClipboard(instruction, 'le istruzioni AI MyHome3D');
+      if (feedback) {
+        feedback.textContent = copied
+          ? '✓ Istruzione ufficiale MyHome3D copiata. Ora apri ChatGPT o la tua AI, incolla il testo e scrivi ciò che vuoi sapere o fare.'
+          : '⚠ Copia non riuscita. Verifica i permessi degli appunti del browser e riprova.';
+      }
+    } catch (error) {
+      console.error('Istruzione AI MyHome3D non disponibile:', error);
+      if (feedback)
+        feedback.textContent = '⚠ Istruzione AI MyHome3D non disponibile dal sito Termodel. Riprova quando la connessione è attiva.';
+    } finally {
+      button.disabled = false;
     }
   });
 
@@ -4071,7 +4084,8 @@ document.querySelectorAll('[data-archive]').forEach(button => {
 
 const TERMODEL_GENERAL_PROMPT_URL = './TermodelGenerale.md';
 const RASTER_PROMPT_URL = './CreaPianoTermodelDaRaster.md';
-const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.html?v=0.21';
+const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.html?v=0.23';
+const MYHOME3D_AI_INSTRUCTION_URL = './MyHome3D.md?v=0.23';
 
 const instructAiButton = document.getElementById('instructAiButton');
 const importAiButton = document.getElementById('importAiButton');

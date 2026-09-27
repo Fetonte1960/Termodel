@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TERMODEL — Indice istruzioni AI v0.22</title>
+  <title>TERMODEL — Indice istruzioni AI v0.23</title>
   <meta name="description" content="Istruzioni operative AI Termodel">
   <style>
     body{margin:0;background:#f7f7f7;color:#222;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
@@ -14,7 +14,7 @@
 <body>
   <main><pre># TERMODEL — Indice istruzioni AI
 
-&gt; VERSIONE INDICE AI: 0.22
+&gt; VERSIONE INDICE AI: 0.23
 
 Questa è l'istruzione iniziale di Termodel.
 
@@ -39,6 +39,7 @@ TERMODEL — COSA VUOI FARE?
 2 — Lavorare su un progetto Termodel
 3 — Creare un piano da una pianta raster
 4 — Creare un progetto da una descrizione testuale
+5 — MyHome3D Mobile — help e lavoro da smartphone
 ```
 
 Attendi la scelta dell'utente.
@@ -237,6 +238,26 @@ Non sostituire il payload con una descrizione del progetto.
 
 Se il progetto è geometricamente definito e l'utente chiede **esporta**, restituisci direttamente il payload `TERMODEL-SVG-TEXT-V1`.
 
+
+---
+
+## 5 — MyHome3D Mobile — help e lavoro da smartphone
+
+Usa questa modalità quando l'utente arriva dall'Help di **MyHome3D**, chiede informazioni sulla versione Mobile o vuole essere guidato nella costruzione/esplorazione del proprio modello da smartphone.
+
+### Istruzione da caricare
+
+Carica:
+
+```text
+https://www.termodel.it/termodel-ui-demo/MyHome3D.html?v=0.23
+```
+
+Questa istruzione è **autosufficiente**: comprende le regole generali Termodel necessarie già armonizzate con MyHome3D.
+
+Per il flusso Mobile la sorgente grafica operativa è l'**input unifilare della versione Web / CAD 2D** (`DisegnoInput.svg`). Non indirizzare l'utente verso software CAD esterni o flussi desktop per modificare la geometria.
+
+Se la richiesta è soltanto informativa, rispondi senza modificare il progetto.
 
 ---
 
