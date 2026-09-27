@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-27 — Consolidare esecutivo pannelli nei due esempi pubblici
-Stato: COMMISSIONATO
+Stato: ESEGUITO — ESECUTIVI STATICI VERSIONATI / ESPLORAZIONE SENZA SERVICE
 
 Commissionato:
 - rendere i due esempi pubblici `Pannelli radianti` e `Quadrato con pannelli` esplorabili anche nell'esecutivo pannelli **senza interrogare il Service**;
@@ -83,6 +83,27 @@ Commissionato:
 - non modificare `definizionedati.json`;
 - aggiungere regression che verifichi presenza/formato dei due SVG e wiring frontend senza Service;
 - pubblicare su `main`, aggiornare Summary e chiudere Issue #1 Completed solo a verifica riuscita.
+
+Esito:
+- generati con il vero Service e versionati in `docs/termodel-ui-demo/examples/`:
+  - `pannelli-radianti-esecutivo.svg`, formato `TERMODEL-PANNELLI-ESECUTIVO-SVG-V1`, 87 primitive;
+  - `quadrato-con-pannelli-esecutivo.svg`, formato `TERMODEL-PANNELLI-ESECUTIVO-SVG-V1`, 8 primitive;
+- entrambi contengono i layer canonici `PiantaPulita_Output`, `PannelliMandata_Output` e `PannelliRitorno_Output`;
+- `examples/catalog.json` espone per entrambi `executiveSvg` locale;
+- frontend v1.22: `loadProjectBrowserStaticExecutive()` carica l'SVG statico con `fetch` locale e lo usa come overlay CAD; per questi due esempi `ensureProjectBrowserExecutive()` non invoca `loadCalculatedModelFromService()`;
+- all'apertura dell'esempio l'esecutivo consolidato viene precaricato localmente; il comando `Disegno esecutivo` può quindi essere esplorato senza interrogare Render;
+- `Aggiorna Modello` resta invariato come azione esplicita per un nuovo calcolo Service;
+- mantenuto il fallback Service soltanto per eventuali esempi futuri dichiarati `executive:true` ma privi di `executiveSvg`;
+- aggiunta regression permanente nel workflow: presenza e formato dei due SVG statici, layer obbligatori, riferimenti catalogo e wiring frontend;
+- `definizionedati.json` non modificato.
+
+Verifica reale:
+- generazione quadrato con motore runtime sostenibile `GPT/SpiraliGPT`: **SUCCESS** nel run di preparazione branch `36301010185`;
+- consolidamento automatico dei due SVG: **SUCCESS** nello stesso run;
+- PR #10 `Consolida esecutivi pannelli nei due esempi` integrata su `main`;
+- merge commit: `641dbd41cbb85922566ef0510d3c3974ace28ab5`;
+- GitHub Action main `36301209603`: syntax frontend **SUCCESS**, regression wiring/esecutivi statici **SUCCESS**, Build **SUCCESS**, smoke progetto pubblico Pannelli radianti **SUCCESS**; il benchmark StrategiaDiego successivo resta separato e può mantenere il noto stato rosso per carico computazionale;
+- GitHub Pages run `36301209387`: **SUCCESS**, frontend v1.22 e SVG statici pubblicati.
 
 
 
