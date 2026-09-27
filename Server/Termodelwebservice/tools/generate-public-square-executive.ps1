@@ -98,8 +98,14 @@ function Add-SquareFixture([string]$projectText,[string]$floorName) {
   ) -join [Environment]::NewLine
 
   $closeGroup = $geometry.IndexOf("</g>",$groupStart,[System.StringComparison]::OrdinalIgnoreCase)
-  if ($closeGroup -lt 0) { throw "Gruppo piano SVG non chiuso." }
-  $geometry = $geometry.Insert($closeGroup,$fixture + [Environment]::NewLine)
+  if ($closeGroup -ge 0) {
+    $geometry = $geometry.Insert($closeGroup,$fixture + [Environment]::NewLine)
+  } else {
+    $selfClose = $geometry.IndexOf(" />",$groupStart,[System.StringComparison]::Ordinal)
+    if ($selfClose -lt 0) { throw "Gruppo piano SVG non chiuso." }
+    $replacement = ">" + [Environment]::NewLine + $fixture + [Environment]::NewLine + "</g>"
+    $geometry = $geometry.Remove($selfClose,3).Insert($selfClose,$replacement)
+  }
   return $projectText.Substring(0,$cs) + $geometry + $projectText.Substring($ei)
 }
 
