@@ -89,11 +89,11 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.20';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.21';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.20")) {
-            throw "Cache-busting app.js v1.20 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.21")) {
+            throw "Cache-busting app.js v1.21 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -254,6 +254,19 @@ jobs:
         with:
           name: pannelli-radianti-public-model3d
           path: ${{ runner.temp }}/RadiantPanelsPublicExampleArtifacts
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Generate public Quadrato con pannelli executive
+        shell: pwsh
+        run: ./tools/generate-public-square-executive.ps1
+
+      - name: Upload public Quadrato con pannelli executive
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: quadrato-con-pannelli-public-executive
+          path: ${{ runner.temp }}/PublicSquareExecutiveArtifacts
           if-no-files-found: warn
           retention-days: 30
 
