@@ -72,6 +72,16 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-27 — Termodel come strumento e riferimento AI di MyHome3D
+Stato: COMMISSIONATO
+
+Commissionato:
+- registrare nelle linee guida MyHome3D che **Termodel è lo strumento utilizzato per la realizzazione del modello**;
+- stabilire che, per la generazione di help o di istruzioni richieste dall'utente per approfondire una funzione, si farà riferimento alle **istruzioni AI di Termodel**;
+- non introdurre modifiche funzionali o altre decisioni non esplicitamente concordate.
+
+
+
 ### INCARICO 2026-09-27 — Definizione Mobile come MyHome3D
 Stato: ESEGUITO — SOLO REGISTRAZIONE DOCUMENTALE
 
