@@ -73,7 +73,15 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-27 — Termodel come strumento e riferimento AI di MyHome3D
-Stato: COMMISSIONATO
+Stato: ESEGUITO — SOLO REGISTRAZIONE DOCUMENTALE
+
+Esito:
+- registrato che **Termodel è lo strumento utilizzato per la realizzazione del modello MyHome3D**;
+- registrato che le **istruzioni AI di Termodel** sono il riferimento per generare help e istruzioni di approfondimento su richiesta dell'utente;
+- nessuna modifica funzionale, build o test eseguiti;
+- commit linee guida: `80485aa49d90fd19817b1db39cfba0724ef510ab`.
+
+
 
 Commissionato:
 - registrare nelle linee guida MyHome3D che **Termodel è lo strumento utilizzato per la realizzazione del modello**;
