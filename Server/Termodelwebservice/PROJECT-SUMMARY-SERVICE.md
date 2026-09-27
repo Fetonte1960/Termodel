@@ -72,7 +72,27 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-27 — Istruzione AI pubblicata MyHome3D Mobile
-Stato: COMMISSIONATO
+Stato: ESEGUITO — ISTRUZIONE PUBBLICATA / HELP COLLEGATO / FRONTEND v1.29
+
+Esito:
+- creata la sorgente autorevole pubblica `docs/termodel-ui-demo/MyHome3D.md`, versione **0.23**, costruita sulle regole generali `TermodelGenerale.md` e armonizzata con il flusso MyHome3D Mobile;
+- creata la pagina leggibile sul sito `docs/termodel-ui-demo/MyHome3D.html`;
+- `IndiceAI.html` portato a **v0.23** con la nuova voce **5 — MyHome3D Mobile — help e lavoro da smartphone** e collegamento alla pagina pubblica;
+- per MyHome3D la sorgente grafica operativa è definita come **input unifilare della versione Web / CAD 2D** (`DisegnoInput.svg`);
+- l'istruzione Mobile descrive inoltre sfondo, pianta pulita, modello 3D, disegni esecutivi, pannelli radianti, `TERMODEL-SVG-TEXT-V1` e `TERMODEL-PROJECT-TEXT-V1`;
+- rimossi dalla specifica Mobile i riferimenti operativi al vecchio flusso CAD desktop esterno: regression esplicita vieta `AutoCAD`, `DXF`, `lettore desktop` e `Termodel desktop` nella nuova istruzione;
+- frontend portato a **v1.29**;
+- **Help -> Chiedi informazioni ad AI** non costruisce più una copia locale dell'istruzione nel JavaScript: carica `MyHome3D.md?v=0.23` dal sito Termodel con `cache: no-store` e ne copia il testo integrale negli appunti;
+- il pannello guida l'utente all'apertura di ChatGPT/AI dopo la copia; nessuna modifica al progetto viene eseguita dall'Help;
+- `definizionedati.json` non modificato.
+
+Verifica reale:
+- commit documentazione commissione: `a0f19e9b5ba86ad4d74f6b116e20a80b13f4fe17`, `882ef9357d766d098ec68d4fd6661523764e1693`;
+- commit funzionale/pubblicazione: `a1ed8c3ae50dca8f656d3173473c4b2a1bacebeb`;
+- GitHub Pages run `36315672409`: **SUCCESS**;
+- GitHub Action run `36315672702`: **Check frontend JavaScript syntax SUCCESS**, **Check radiant executive auto-load wiring SUCCESS** con regression `MYHOME3D_AI_PUBLISHED_INSTRUCTION_OK` / `MYHOME3D_WEB_UNIFILAR_ONLY_OK`, **Build SUCCESS**, smoke pubblico Pannelli radianti **SUCCESS**;
+- il workflow generale prosegue successivamente nel benchmark StrategiaDiego, separato da questa funzione e già noto come possibile causa indipendente di esito rosso;
+- prova fisica del tasto clipboard su smartphone ancora da eseguire.
 
 Commissionato:
 - creare sul sito Termodel una sezione/istruzione AI dedicata a **MyHome3D**, completa delle regole generali Termodel necessarie e armonizzata con il flusso Mobile;
