@@ -73,7 +73,29 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-27 — Filtri Home e AI informativa MyHome3D
-Stato: COMMISSIONATO
+Stato: ESEGUITO — FRONTEND v1.31 / MYHOME3D AI v0.24 PUBBLICATI
+
+Esito:
+- nella Home Mobile 3D il pulsante **Filtri** è stato spostato fuori dal menu **Esplora** ed è ora un comando diretto della barra principale;
+- **Filtri** resta attivo anche quando `initialModelExplorationLocked` è vero: apre direttamente la finestra filtri e non dipende dalla disponibilità delle altre funzioni Esplora;
+- rimosso il vecchio controllo `androidExploreFilters`; nuovo controllo `androidHomeFilters`;
+- il comportamento filtri non è cambiato: copia temporanea delle selezioni, **Applica** -> `applyFilters()`, Annulla/X senza applicazione;
+- frontend portato a **v1.31**;
+- istruzione pubblica MyHome3D portata a **v0.24** e riscritta come istruzione **esclusivamente informativa**;
+- eliminate dall'istruzione Mobile le procedure di generazione progetto da descrizione testuale e da immagini; non contiene i moduli/protocolli operativi di generazione;
+- dopo il caricamento l'AI deve rispondere soltanto: **“Perfetto adesso sono in grado di darti informazioni su Myhome 3d e Termodel”**;
+- `IndiceAI.html` aggiornato a **v0.24**: la modalità MyHome3D è descritta come informativa e non richiama le modalità di creazione progetto;
+- `LINEE-GUIDA-MOBILE.md` aggiornato con posizione/sempre-attivo dei Filtri e nuova regola AI informativa;
+- `definizionedati.json` non modificato.
+
+Verifica reale:
+- commit funzionale/documentale: `1ea5848142247d4d54efcb4c9f3a60569e5d26c8`;
+- verifica sintassi JavaScript sul commit: **OK**;
+- controllo statico: `androidHomeFilters` presente, `androidExploreFilters` assente, URL AI `MyHome3D.md?v=0.24` presente;
+- controllo contenuto `MyHome3D.md`: frase di conferma presente e assenti `Creazione da descrizione testuale`, `CreaPianoTermodelDaRaster`, `TERMODEL-SVG-TEXT-V1`, `TERMODEL-STRATIGRAFIA-V1`, `bitmap`, `raster`;
+- GitHub Pages run `36323456666`: **SUCCESS**;
+- GitHub Action run `36323456359`: **Check frontend JavaScript syntax SUCCESS**, regression frontend/MyHome3D **SUCCESS**, **Build SUCCESS**, smoke pubblico Pannelli radianti **SUCCESS**; il workflow prosegue nel benchmark StrategiaDiego separato da questo incarico;
+- prova manuale su smartphone da eseguire lato utente.
 
 Commissionato:
 - nella Home Mobile 3D spostare **Filtri** fuori dal menu **Esplora** e inserirlo come pulsante diretto nella barra principale;
