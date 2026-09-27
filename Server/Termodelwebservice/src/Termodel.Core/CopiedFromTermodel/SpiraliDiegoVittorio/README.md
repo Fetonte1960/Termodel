@@ -51,3 +51,29 @@ $env:TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS = "true"
 Valori veri ammessi: `true`, `1`, `yes`, `on`. Valori falsi: `false`, `0`,
 `no`, `off`. Con raccordi attivi la radice SVG dichiara
 `data-termodel-fittings="enabled"`.
+
+## Matrice delle distanze
+
+Dal 27 settembre 2026 la derivazione applica le distanze geometriche delle
+linee guida spirali, con `p = 0,30 m`:
+
+```text
+tubo - architettura = p/2 = 0,15 m
+Supply - Supply     = 2p  = 0,60 m
+Supply - Return     = p   = 0,30 m
+Return - Return     = p   = 0,30 m (LG-046)
+```
+
+Il primo offset della mandata è distinto dai successivi: nasce a `p/2` dalla
+parete, mentre le evoluzioni Supply avanzano di `2p`. Il ritorno derivato viene
+collocato sul lato interno della mandata a distanza `p`.
+
+Il ritorno resta ancora derivato dalla mandata: rispetta la distanza minima
+Return-Return ma non possiede ancora una ricerca autonoma capace di sfruttare
+tutti i corridoi a passo `p` previsti da LG-046.
+
+Il confronto prestazionale canonico usa la fixture Git
+`tests/fixtures/StrategiaDiegoSquare4x4.locale.xml`, SHA-256
+`9EC497979E89D87C9145B9527D171A23CDA691454DDB86B53B84FAB8B2165516`,
+tramite il case
+`tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO.json`.

@@ -1,0 +1,7 @@
+{
+  "id": "CONCAVE-L-P030-DIEGO-VITTORIO",
+  "description": "Locale concavo a L versionato, p=0,30 m; regressione distanze Diego_Vittorio.",
+  "preparedInput": "../../fixtures/StrategiaDiegoConcaveL.locale.xml",
+  "stepMeters": 0.30,
+  "engine": "Diego_Vittorio"
+}

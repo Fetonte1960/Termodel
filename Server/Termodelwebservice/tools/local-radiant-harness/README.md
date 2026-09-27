@@ -55,3 +55,18 @@ tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action restore -SnapshotId 
 Il ripristino va eseguito soltanto su richiesta. L'opzione `-Rebuild` forza
 l'aggiornamento del mirror e la ricompilazione; `-Fillets` riattiva i raccordi
 grafici, disabilitati per default nella modalità di debug rapido.
+
+## Regression distanze sul quadrato Git
+
+Dopo avere generato il case
+`LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO.json`, verificare l'SVG reale con:
+
+```powershell
+tools\local-radiant-harness\Test-DiegoVittorioDistances.ps1 `
+  -SvgPath <percorso-svg-prodotto-dall-harness>
+```
+
+La regression controlla sul quadrato canonico le tracce `p/2`, `2p`, `p`, la
+quota del ritorno a `1,5p` dalla parete e la distanza Return-Return osservata,
+che nella geometria derivata corrente è `2p` e quindi superiore al minimo
+LG-046 pari a `p`.

@@ -8,8 +8,20 @@ namespace SpiralHeatingDiegoVittorio
 {
 	public static class SpiralGenerator
 	{
-		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(List<Punto> perimetro, Punto startPoint, double distanza, bool drawSpiral = true)
+		// Modificato da Codex per realizzare: separare il distacco iniziale
+		// tubo-parete p/2 dal passo Supply-Supply 2p previsto dalle linee guida.
+		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(
+			List<Punto> perimetro,
+			Punto startPoint,
+			double distanzaParete,
+			double passoMandata,
+			bool drawSpiral = true)
 		{
+			if (distanzaParete <= 0)
+				throw new ArgumentOutOfRangeException(nameof(distanzaParete));
+			if (passoMandata <= 0)
+				throw new ArgumentOutOfRangeException(nameof(passoMandata));
+
 			List<Punto> spiral = new List<Punto>();
 			
 			// Verifica e correggi il senso di rotazione (deve essere antiorario)
@@ -18,19 +30,22 @@ namespace SpiralHeatingDiegoVittorio
 			List<List<Punto>> offsets = new List<List<Punto>>();
 			offsets.Add(GeometryUtils.NormalizePolygon(new List<Punto>(perimetro)));
 
-			double minArea = distanza * distanza;
-
 			// Genera offset successivi
 			for (int i = 0; i < 100; i++)
 			{
+				// Il primo offset nasce dall'architettura a p/2; tutti i
+				// successivi appartengono alla mandata e avanzano di 2p.
+				double distanzaOffset = i == 0
+					? distanzaParete
+					: passoMandata;
 				var previousOffset = i > 0 ? offsets[offsets.Count - 2] : perimetro;
-				var nextOffset = ComputeOffset(offsets.Last(), previousOffset, distanza);
+				var nextOffset = ComputeOffset(offsets.Last(), previousOffset, distanzaOffset);
 
 				if (nextOffset == null || nextOffset.Count < 3)
 					break;
 				
 				// Correggi vertici che intersecano il perimetro precedente
-				nextOffset = FixIntersections(nextOffset, offsets.Last(), distanza);
+				nextOffset = FixIntersections(nextOffset, offsets.Last(), distanzaOffset);
 				
 				double minEdgeLength = double.MaxValue;
 				for (int j = 0; j < nextOffset.Count - 1; j++)
@@ -39,9 +54,9 @@ namespace SpiralHeatingDiegoVittorio
 					if (edgeLen < minEdgeLength)
 						minEdgeLength = edgeLen;
 				}
-				if (minEdgeLength < distanza && minEdgeLength > 0.2)
+				if (minEdgeLength < passoMandata && minEdgeLength > 0.2)
 					break;
-				if (minEdgeLength < distanza * 1.2 && nextOffset.Count < 5)
+				if (minEdgeLength < passoMandata * 1.2 && nextOffset.Count < 5)
 					break;
 					
 				offsets.Add(GeometryUtils.NormalizePolygon(nextOffset));
@@ -77,7 +92,7 @@ namespace SpiralHeatingDiegoVittorio
 				
 				double distPuntoIntersezione = ultimoPuntoSpiral.DistanceTo(puntoIntersezione);
 				
-				if (distPuntoIntersezione > distanza)
+				if (distPuntoIntersezione > passoMandata)
 				{
 					double dx = Math.Abs(puntoIntersezione.X - ultimoPuntoSpiral.X);
 					double dy = Math.Abs(puntoIntersezione.Y - ultimoPuntoSpiral.Y);
@@ -109,7 +124,7 @@ namespace SpiralHeatingDiegoVittorio
 						for (int j = 0; j < spiral.Count - 1; j++)
 						{
 							double dist = GeometryUtils.DistancePointToSegment(puntoIntermedio, spiral[j], spiral[j + 1]);
-							if (dist < distanza * 0.8 && dist > 0.01)
+							if (dist < passoMandata * 0.8 && dist > 0.01)
 							{
 								isTooCloseToSpiral = true;
 								break;
@@ -143,7 +158,7 @@ namespace SpiralHeatingDiegoVittorio
 				Punto penultimoPunto;
 
 				double distanzaSegmento = puntoIntersezione.DistanceTo(spiral[spiral.Count - 1]);
-				if (distanzaSegmento > 2 * distanza) {
+				if (distanzaSegmento > 2 * passoMandata) {
 					ultimoPunto = puntoIntersezione;
 					penultimoPunto = spiral[spiral.Count - 1];
 				}
@@ -153,14 +168,14 @@ namespace SpiralHeatingDiegoVittorio
 					spiral.RemoveAt(spiral.Count - 1);
 				}
 
-				// Torna indietro di una distanza lungo l'ultimo segmento
+				// Torna indietro di un passo mandata lungo l'ultimo segmento.
 				var direzione = GeometryUtils.Normalize(new Punto(
 					penultimoPunto.X - ultimoPunto.X,
 					penultimoPunto.Y - ultimoPunto.Y
 				));
 				var puntoFinale = new Punto(
-					ultimoPunto.X + direzione.X * distanza,
-					ultimoPunto.Y + direzione.Y * distanza
+					ultimoPunto.X + direzione.X * passoMandata,
+					ultimoPunto.Y + direzione.Y * passoMandata
 				);
 				spiral.Add(puntoFinale);
 			}

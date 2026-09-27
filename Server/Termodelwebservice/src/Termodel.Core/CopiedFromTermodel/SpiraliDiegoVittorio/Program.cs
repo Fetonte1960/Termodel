@@ -21,14 +21,15 @@ namespace SpiralHeatingDiegoVittorio
     class Program
     {
         // Parametri di posa
-        // Modificato da Codex per realizzare: passo della spirale rossa pari
-        // a 0,30 m e ritorno collocato a metà passo.
+        // Modificato da Codex per realizzare: applicare a Diego_Vittorio la
+        // matrice distanze delle linee guida spirali senza toccare Vittorio.
         public const double PassoTubi = 0.30;
-        private const double DistanzaPareti = PassoTubi;
+        private const double DistanzaPareti = PassoTubi / 2.0;
+        private const double DistanzaMandataMandata = PassoTubi * 2.0;
         
         // Parametri chiusura spirale
         private const double RaggioCurvatura = 0.10;
-        private const double DistanzaRitorno = PassoTubi / 2.0;
+        private const double DistanzaRitorno = PassoTubi;
         private const double DistanzaRotazioneUltimoPunto = 0.20;
         
         // Modalità debug
@@ -177,6 +178,15 @@ namespace SpiralHeatingDiegoVittorio
                 
                 Console.WriteLine($"  Linea ingresso: {lineaIngresso.Id}");
                 Console.WriteLine($"  Punto interno (intersezione): ({lineaIngresso.PuntoInterno.X:F2}, {lineaIngresso.PuntoInterno.Y:F2})");
+                // Modificato da Codex per realizzare: rendere diagnosticabile
+                // la matrice geometrica realmente usata da Diego_Vittorio.
+                Console.WriteLine(
+                    "  Distanze Diego_Vittorio: " +
+                    $"p={PassoTubi.ToString("0.###", ci)} m; " +
+                    $"parete={DistanzaPareti.ToString("0.###", ci)} m; " +
+                    $"Supply-Supply={DistanzaMandataMandata.ToString("0.###", ci)} m; " +
+                    $"Supply-Return={DistanzaRitorno.ToString("0.###", ci)} m; " +
+                    $"Return-Return(min)={PassoTubi.ToString("0.###", ci)} m");
                 
                 // Salva P3 nel XML
                 var lineaXml = doc.Descendants("Linea")
@@ -201,6 +211,7 @@ namespace SpiralHeatingDiegoVittorio
                     perimetro,
                     lineaIngresso.PuntoInterno,
                     DistanzaPareti,
+                    DistanzaMandataMandata,
                     true  // writeSvg non usato in SpiralGenerator
                 );
                 

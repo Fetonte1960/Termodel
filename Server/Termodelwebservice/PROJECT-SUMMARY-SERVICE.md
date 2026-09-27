@@ -385,6 +385,40 @@ Esito:
 - verifica HTTP diretta di `https://termodel.onrender.com/health` non disponibile dagli strumenti della sessione; il runtime pubblico potrà essere confermato dall'endpoint `/health`, campo `spiralEngine`, dopo il completamento dell'auto-deploy.
 
 
+### INCARICO 2026-09-27 — Distanze geometriche `Diego_Vittorio` conformi alle linee guida
+Stato: ESEGUITO — DISTANZE E REGRESSION QUADRATO VERIFICATE LOCALMENTE
+
+Commissionato:
+- operare soltanto sulla derivazione `Diego_Vittorio`, mantenendo intatto il riferimento `SpiraliVittorio`;
+- prima dei test recuperare da Git il precedente progetto quadrato 4x4/T1/p=0,30 m e conservarne provenienza e SHA-256;
+- separare il distacco iniziale dalla parete dal passo delle evoluzioni della mandata: tubo-architettura `p/2`, Supply-Supply `2p`;
+- costruire il ritorno sul lato interno della mandata a distanza `p`, evitando l'attuale offset esterno a `p/2`;
+- applicare come riferimento più recente LG-046: Return-Return `p`, dichiarando però esplicitamente il limite del ritorno ancora derivato e non autonomo;
+- aggiungere verifiche diagnostiche delle distanze reali e confrontare prestazioni prima/dopo sul quadrato storico;
+- collaudare almeno quadrato, appartamento corrente e locale concavo, con raccordi OFF e ON, usando l'Harness locale indipendente da GitHub quando possibile;
+- non includere nel commit le modifiche sperimentali locali preesistenti in `StrategiaDiegoBenchmark.cs`, `StrategiaDiegoEngine.cs` e `Harness/Program.cs`;
+- a lavoro concluso notificare esito, commit, metriche e intervento umano richiesto mediante commento alla GitHub Issue `#1`.
+
+Esito:
+- recuperata da Git la fixture canonica `tests/fixtures/StrategiaDiegoSquare4x4.locale.xml`, introdotta dal commit `4bf2e2b`, 541 byte, SHA-256 `9EC497979E89D87C9145B9527D171A23CDA691454DDB86B53B84FAB8B2165516`;
+- creati i case Harness espliciti `LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO.json` e `CONCAVE-L-P030-DIEGO-VITTORIO.json`;
+- in `SpiralGenerator.Generate` separati il primo offset architettonico `p/2` e gli offset Supply successivi `2p`;
+- `Program` centralizza e registra nel log `p=0,30`, parete `0,15`, Supply-Supply `0,60`, Supply-Return `0,30` e minimo Return-Return `0,30 m`;
+- `CreaRientro` usa la normale interna alla mandata CCW e distanza `p`, sostituendo il precedente ritorno esterno a `p/2`;
+- aggiunta regression locale `Test-DiegoVittorioDistances.ps1` sul vero SVG del quadrato;
+- il ritorno resta derivato: sul quadrato la distanza Return-Return osservata è `0,60 m`, quindi rispetta il minimo LG-046 `p=0,30 m` ma non sfrutta ancora autonomamente corridoi più fitti;
+- `SpiraliVittorio` è rimasto byte-per-byte invariato e conserva le quattro impronte SHA-256 registrate;
+- le tre modifiche sperimentali locali preesistenti sono rimaste fuori dall'intervento.
+
+Verifiche locali:
+- snapshot pre-modifica: `20260927-110315-202-prima-distanze-lg`;
+- build Release nel mirror esterno al repository: riuscita, 0 errori;
+- regression quadrato raccordi OFF e ON: riuscita; parete-Supply `0,15`, Supply-Supply `0,60`, Supply-Return `0,30`, parete-Return `0,45`, Return-Return osservato `0,60 >= 0,30 m`;
+- quadrato finale OFF: 18 punti, 120 ms, SVG SHA-256 `B5D289381B0466E8070DC90F0A75921AD9BC14214ED113E8FF0C4BA194950B43`; ON: 18 punti, 285 ms;
+- concavo finale OFF: 9 punti, 327 ms, SVG SHA-256 `F998CB343B76A527BD250B6C9FA7643F09155178E1FB99D57B73526C246B470E`; ON: 9 punti, 395 ms;
+- appartamento finale OFF: 12 punti, 225 ms, SVG SHA-256 `E2CD1E745BD5738DA16B22FE2D010FA19F0CBEDD588E31CABEC492C95D7094B1`; ON: 12 punti, 316 ms;
+- benchmark isolato quadrato, 6 run misurati dopo warm-up: mediana OFF `178,5 -> 125,5 ms` (-29,7%); mediana ON `326,5 -> 251,5 ms` (-23,0%); la riduzione deriva anche dalla geometria corretta a `2p`, passata da 35 a 18 punti Supply;
+- frontend, `definizionedati.json`, WebService 5080 e sorgenti Vittorio non modificati.
 
 ### INCARICO 2026-09-27 — Modalità Harness locale rapida e ripristinabile
 Stato: ESEGUITO — CICLO LOCALE, CACHE, SNAPSHOT E SERVER 5081 VERIFICATI

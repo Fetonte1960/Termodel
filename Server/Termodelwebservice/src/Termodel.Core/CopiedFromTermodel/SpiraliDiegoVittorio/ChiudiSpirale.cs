@@ -890,8 +890,11 @@ namespace SpiralHeatingDiegoVittorio
                         dirX /= dirLen;
                         dirY /= dirLen;
                         
-                        double normX = dirY;
-                        double normY = -dirX;
+                        // Modificato da Codex per realizzare: collocare il ritorno
+                        // a distanza p sul lato interno della mandata CCW. Il vecchio
+                        // verso lo spostava all'esterno, verso la parete, a p/2.
+                        double normX = -dirY;
+                        double normY = dirX;
                         
                         rientro.Add(new Punto(
                             p.X + normX * distanza,
