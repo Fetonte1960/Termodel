@@ -71,6 +71,20 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Ripristino Service con SpiraliGPT come motore predefinito
+Stato: COMMISSIONATO
+
+Commissionato:
+- considerare StrategiaDiego temporaneamente non sostenibile sul Service per carico computazionale;
+- ripristinare il comportamento della versione server precedente al commit `9e96b43ce70af9082c3ba3ccdcfb73fad8f5f9e8`, nella quale il motore spirali predefinito era **SpiraliGPT / GPT**;
+- mantenere nel Core StrategiaDiego, Diego_Vittorio e gli strumenti di sviluppo: il rollback riguarda il motore predefinito del Service, non la cancellazione del lavoro;
+- preservare l'override `TERMODEL_SPIRAL_ENGINE` per confronti futuri;
+- pubblicare su `main` per il normale auto-deploy Render;
+- verificare build GitHub Actions;
+- aggiornare Summary e Issue #1 a fine lavoro.
+
+
+
 ### INCARICO 2026-09-27 — Modalità Harness locale rapida e ripristinabile
 Stato: ESEGUITO — CICLO LOCALE, CACHE, SNAPSHOT E SERVER 5081 VERIFICATI
 
