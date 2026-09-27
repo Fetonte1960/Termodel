@@ -27,3 +27,9 @@ Il pannello Help deve:
 - copiare negli appunti un'istruzione AI dedicata a **MyHome3D**, coerente con queste linee guida;
 - usare le **istruzioni AI di Termodel** come riferimento per gli approfondimenti richiesti dall'utente.
 
+### Sorgente autorevole dell'Help AI
+
+Il comando **Chiedi informazioni ad AI** deve copiare negli appunti la specifica istruzione AI pubblicata sul sito Termodel per **MyHome3D Mobile**.
+
+Questa istruzione deve essere armonizzata con le regole generali Termodel ma, per il flusso Mobile, deve riferirsi all'**input unifilare della versione Web / CAD 2D** e non indirizzare l'utente verso AutoCAD o il flusso desktop DXF.
+
