@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v1.32 — Esempio pannelli radianti</title>
+  <title>Termodel Web v1.33 — Esempio pannelli radianti</title>
   <script>
     // Android va riconosciuto prima del primo paint: evita il flash della UI desktop
     // mentre il modulo principale e Three.js sono ancora in caricamento.
@@ -172,6 +172,49 @@
       background: rgba(0,0,0,.46);
     }
     .ai-instruct-modal.visible { display: flex; }
+
+    .web-help-window {
+      width: min(760px, 95vw);
+      max-height: min(820px, 92vh);
+      display: grid;
+      grid-template-rows: auto auto minmax(0,1fr) auto;
+      overflow: hidden;
+      background: #f4f5f7;
+      border: 2px solid #40586d;
+      border-radius: 8px;
+      box-shadow: 0 18px 52px rgba(0,0,0,.46);
+    }
+    .web-help-ai {
+      margin: 12px 14px 6px;
+      min-height: 46px;
+      border: 1px solid #477da2;
+      border-radius: 6px;
+      background: linear-gradient(#eef9ff,#cce7f7);
+      color: #173d57;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .web-help-body {
+      min-height: 0;
+      overflow: auto;
+      padding: 12px 18px 16px;
+      background: #fff;
+      color: #2f3942;
+      line-height: 1.5;
+    }
+    .web-help-body h3 { margin: 15px 0 6px; font-size: 15px; }
+    .web-help-body p { margin: 0 0 10px; }
+    .web-help-body ul { margin: 6px 0 12px 20px; padding: 0; }
+    .web-help-body li { margin: 5px 0; }
+    .web-help-source {
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      border: 1px solid #c3ccd4;
+      background: #f7fafc;
+    }
+    .web-help-source a { font-weight: 700; }
+
     .ai-instruct-window {
       width: min(820px, 96vw);
       max-height: min(860px, 92vh);
@@ -1923,7 +1966,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v1.32</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v1.33</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -1940,6 +1983,8 @@
       </div></div>
       <div class="menu"><button type="button">Calcoli</button><div class="dropdown"><button type="button">Visualizza risultati dell'ultimo calcolo</button></div></div>
       <div class="menu" id="helpMenu"><button type="button">Help</button><div class="dropdown">
+        <button id="helpOpenWebHelp" type="button">Help Termodel Web</button>
+        <div class="sep"></div>
         <label class="menu-check"><input id="helpExplorationMode" type="checkbox" autocomplete="off" /> Modalità esplorazione</label>
         <div class="sep"></div>
         <div class="dropdown-heading">Log Aggiorna Modello</div>
@@ -2197,6 +2242,41 @@
       <button type="button" id="resetView">Aggiorna Modello</button>
       <label class="check-wrap"><input type="checkbox" id="filtersCheck" checked /> Mostra Filtri Grafici</label>
     </div>
+  </div>
+
+
+  <div id="webHelpModal" class="ai-instruct-modal" aria-hidden="true">
+    <section class="web-help-window" role="dialog" aria-modal="true" aria-labelledby="webHelpTitle">
+      <header class="ai-instruct-head">
+        <h2 id="webHelpTitle">Termodel Web — Help</h2>
+        <button id="webHelpClose" class="ai-instruct-close" type="button" aria-label="Chiudi Help">×</button>
+      </header>
+      <button id="webHelpInstructAi" class="web-help-ai" type="button">Istruisci AI per Termodel Web</button>
+      <div class="web-help-body">
+        <p><strong>Termodel Web PC</strong> permette di costruire, controllare e visualizzare nel browser il modello Termodel.</p>
+        <p>Se vuoi un approfondimento, premi <strong>Istruisci AI per Termodel Web</strong>: viene copiato negli appunti un breve messaggio che porta la tua AI alle istruzioni Web aggiornate sul sito Termodel.</p>
+
+        <h3>Creare una pianta con l'AI</h3>
+        <ul>
+          <li><strong>Da descrizione:</strong> descrivi a parole locali, dimensioni, pareti, porte e finestre. L'AI segue le istruzioni Termodel Web e restituisce un input compatibile con il progetto.</li>
+          <li><strong>Da sfondo bitmap/raster:</strong> parti da una pianta PNG/JPG/BMP/TIFF usata come riferimento; l'AI interpreta la stessa immagine secondo il flusso Termodel e costruisce l'input unifilare Web.</li>
+        </ul>
+
+        <h3>CAD 2D e 3D</h3>
+        <p>Nel CAD 2D il riferimento tecnico è <strong>DisegnoInput.svg</strong>. Lo sfondo è solo un riferimento grafico. Pianta pulita, modello 3D e disegni esecutivi sono elaborati derivati dal progetto.</p>
+
+        <h3>Modalità esplorazione</h3>
+        <p>Attivandola dal menu Help, ogni comando cliccato mostra una spiegazione contestuale senza bloccare l'azione normale.</p>
+
+        <div class="web-help-source">
+          Le istruzioni AI della versione Web sono mantenute separatamente sul sito e possono essere aggiornate senza modificare il programma:
+          <a href="./TermodelWeb.html?v=0.1" target="_blank" rel="noopener">apri Istruzioni AI Termodel Web</a>.
+        </div>
+      </div>
+      <footer class="ai-instruct-foot">
+        <button id="webHelpCloseBottom" type="button">Chiudi</button>
+      </footer>
+    </section>
   </div>
 
 
@@ -2503,6 +2583,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=1.32"></script>
+  <script type="module" src="./app.js?v=1.33"></script>
 </body>
 </html>
