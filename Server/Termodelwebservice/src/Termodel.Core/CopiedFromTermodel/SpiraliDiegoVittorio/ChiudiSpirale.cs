@@ -43,7 +43,9 @@ namespace SpiralHeatingDiegoVittorio
                 // Lista per tutte le spirali chiuse
                 // Modificato da Codex per realizzare: marcatura numerata della
                 // chiusura dei circuiti senza alterare la geometria di Vittorio.
-                var tutteLeSpiraliChiuse = new List<(string localeId, List<Punto> spiraleArrotondata, List<Punto> rientro, List<Punto> curvaCollegamento, Punto fineRientro, string chiusuraGptSvg)>();
+                // Modificato da Codex per realizzare: conservare il perimetro
+                // architettonico fino alla serializzazione SVG finale.
+                var tutteLeSpiraliChiuse = new List<(string localeId, List<Punto> perimetro, List<Punto> spiraleArrotondata, List<Punto> rientro, List<Punto> curvaCollegamento, Punto fineRientro, string chiusuraGptSvg)>();
                 int numeroCircuito = 1;
                 
                 if (debug && !Directory.Exists("svg_2"))
@@ -113,7 +115,7 @@ namespace SpiralHeatingDiegoVittorio
                         curvaCollegamento,
                         numeroCircuito++);
 
-                    tutteLeSpiraliChiuse.Add((localeId, spiraleArrotondata, rientro, curvaCollegamento, fineRientro, chiusuraGptSvg));
+                    tutteLeSpiraliChiuse.Add((localeId, perimetro, spiraleArrotondata, rientro, curvaCollegamento, fineRientro, chiusuraGptSvg));
                     
                     // Se debug, salva SVG singolo
                     if (debug)
@@ -137,7 +139,7 @@ namespace SpiralHeatingDiegoVittorio
         }
         
         private static void SalvaSvgCombinato<T>(string filePath, 
-            List<(string localeId, List<Punto> spiraleArrotondata, List<Punto> rientro, List<Punto> curvaCollegamento, Punto fineRientro, string chiusuraGptSvg)> spirali,
+            List<(string localeId, List<Punto> perimetro, List<Punto> spiraleArrotondata, List<Punto> rientro, List<Punto> curvaCollegamento, Punto fineRientro, string chiusuraGptSvg)> spirali,
             List<T> linee) where T : class
         {
             if (spirali.Count == 0) return;
@@ -145,8 +147,11 @@ namespace SpiralHeatingDiegoVittorio
             var allPoints = new List<Punto>();
             
             // Raccogli tutti i punti per calcolare bounding box
-            foreach (var (_, spiraleArrotondata, rientro, curvaCollegamento, fineRientro, _) in spirali)
+            // Modificato da Codex per realizzare: includere il contorno
+            // architettonico nel riquadro di presentazione.
+            foreach (var (_, perimetro, spiraleArrotondata, rientro, curvaCollegamento, fineRientro, _) in spirali)
             {
+                allPoints.AddRange(perimetro);
                 allPoints.AddRange(spiraleArrotondata);
                 allPoints.AddRange(rientro);
                 allPoints.AddRange(curvaCollegamento);
@@ -168,16 +173,38 @@ namespace SpiralHeatingDiegoVittorio
             
             double width = maxX - minX;
             double height = maxY - minY;
-            double scale = 100;
-            
+            string minXSvg = SvgNumber(minX);
+            string minYSvg = SvgNumber(minY);
+            string widthSvg = SvgNumber(width);
+            string heightSvg = SvgNumber(height);
+            string flipTranslateSvg = SvgNumber(-(minY + maxY));
+
             using (StreamWriter sw = new StreamWriter(filePath))
             {
                 sw.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-                sw.WriteLine($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{width * scale}\" height=\"{height * scale}\" viewBox=\"{minX} {minY} {width} {height}\">");
-                sw.WriteLine("<g transform=\"scale(1,-1) translate(0," + (-(minY + maxY)) + ")\">");
+                // Modificato da Codex per realizzare: SVG responsivo, non
+                // deformato e numericamente valido anche con cultura italiana.
+                sw.WriteLine($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"{minXSvg} {minYSvg} {widthSvg} {heightSvg}\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;height:100%;background:#ffffff\" role=\"img\" aria-labelledby=\"termodel-svg-title\">");
+                sw.WriteLine("<title id=\"termodel-svg-title\">Esecutivo pannelli Diego_Vittorio</title>");
+                sw.WriteLine($"<g transform=\"scale(1,-1) translate(0,{flipTranslateSvg})\" shape-rendering=\"geometricPrecision\">");
+
+                // Modificato da Codex per realizzare: mostrare il contorno
+                // architettonico sotto mandata, ritorno e collegamenti.
+                sw.WriteLine("<g id=\"architecture\" data-termodel-layer=\"architecture\">");
+                foreach (var (_, perimetro, _, _, _, _, _) in spirali)
+                {
+                    if (perimetro.Count < 3) continue;
+
+                    sw.Write("<polygon class=\"architectural-contour\" points=\"");
+                    foreach (var p in perimetro)
+                        sw.Write($"{SvgNumber(p.X)},{SvgNumber(p.Y)} ");
+                    sw.WriteLine("\" fill=\"#f8fafc\" fill-opacity=\"0.72\" stroke=\"#111827\" stroke-width=\"0.025\" stroke-linejoin=\"round\"/>");
+                }
+                sw.WriteLine("</g>");
+                sw.WriteLine("<g id=\"radiant-system\" data-termodel-layer=\"radiant-system\">");
                 
                 // Disegna spirali arrotondate e chiuse
-                foreach (var (localeId, spiraleArrotondata, rientro, curvaCollegamento, fineRientro, chiusuraGptSvg) in spirali)
+                foreach (var (localeId, _, spiraleArrotondata, rientro, curvaCollegamento, fineRientro, chiusuraGptSvg) in spirali)
                 {
                     // Spirale andata (rossa)
                     if (spiraleArrotondata.Count > 1)
@@ -226,9 +253,14 @@ namespace SpiralHeatingDiegoVittorio
                 }
                 
                 sw.WriteLine("</g>");
+                sw.WriteLine("</g>");
                 sw.WriteLine("</svg>");
             }
         }
+
+        // Funzione realizzata da Codex in autonomia
+        private static string SvgNumber(double value) =>
+            value.ToString("0.###############", CultureInfo.InvariantCulture);
 
         // Funzione realizzata da Codex in autonomia
         /// <summary>

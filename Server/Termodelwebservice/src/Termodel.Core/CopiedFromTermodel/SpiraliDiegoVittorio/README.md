@@ -23,3 +23,13 @@ Il selettore pubblico del motore è `Diego_Vittorio`.
 
 `SpiraliVittorio` resta la base di confronto e ripristino e non deve essere
 adattata durante lo sviluppo di `Diego_Vittorio`.
+
+## Presentazione SVG
+
+Dal 27 settembre 2026 l'SVG finale `Diego_Vittorio` include il contorno
+architettonico reale dei locali come gruppo `architecture`. La radice usa
+dimensioni percentuali, `viewBox` calcolato sull'intera geometria e
+`preserveAspectRatio="xMidYMid meet"`, così il disegno si adatta alla finestra
+senza deformazioni. Dimensioni, trasformazione e `viewBox` sono serializzati
+con cultura invariant. Questa estensione è soltanto grafica: non modifica XML,
+mandata, ritorno o sorgenti `SpiraliVittorio`.

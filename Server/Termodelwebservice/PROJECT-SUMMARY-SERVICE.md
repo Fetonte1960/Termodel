@@ -71,6 +71,31 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — SVG `Diego_Vittorio` con contorno architettonico e adattamento alla finestra
+Stato: ESEGUITO — SVG RESPONSIVO E CONTORNO VERIFICATI LOCALMENTE
+
+Commissionato:
+- intervenire esclusivamente sulla derivazione `Diego_Vittorio`, mantenendo `Vittorio` intatto;
+- rappresentare nell'SVG finale il contorno architettonico dei locali;
+- rendere l'SVG adattabile alla finestra di presentazione senza deformare la geometria;
+- correggere la serializzazione non invariant di dimensioni, `viewBox` e trasformazione, che in cultura italiana produce separatori decimali incompatibili con SVG;
+- produrre e presentare l'SVG reale dell'Harness sul progetto appartamento corrente;
+- verificare anche il locale concavo e accertare che XML e geometria delle spirali non vengano modificati.
+
+Esito:
+- modificato esclusivamente `SpiraliDiegoVittorio/ChiudiSpirale.cs`; i quattro sorgenti `SpiraliVittorio` conservano le impronte SHA-256 registrate;
+- propagato il `PerimetroInterno` alla sola serializzazione finale e aggiunto il gruppo SVG `architecture` con un `polygon.architectural-contour` per locale;
+- radice SVG resa responsiva con `width="100%"`, `height="100%"`, `viewBox` geometrico e `preserveAspectRatio="xMidYMid meet"`;
+- corretta la serializzazione di `viewBox` e trasformazione con `InvariantCulture`: eliminati i separatori decimali italiani non validi per SVG;
+- aggiunta al workflow Harness la regressione su contorno, adattamento e assenza di virgole nel `viewBox`.
+
+Verifiche locali:
+- build Core + Harness Release temporanea: riuscita, 0 errori;
+- appartamento corrente: SVG XML-valido, un contorno, `viewBox="3.33082 1.07362 5.30066 5.02547"`, 18 punti spirale;
+- concavo L: SVG XML-valido, un contorno, `viewBox="-0.5 -1.5 7 7"`, 27 punti spirale;
+- hash XML risultanti invariati rispetto alla base: appartamento `07221BD4633D0A2726054EF6D578B67C414779C7B1EB5383C9AD389CAA410442`, concavo `3187DCA854CEE0BF7FA8313FCDC1640EF12C6F8E1A3886B4DBD4403ED0387E23`;
+- anteprima 1200x800 renderizzata con Chrome headless: contorno, spirale e adattamento proporzionale visivamente verificati.
+
 ### INCARICO 2026-09-27 — Creazione strategia derivata `Diego_Vittorio`
 Stato: ESEGUITO — COPIA INDIPENDENTE E PARITÀ INIZIALE VERIFICATE
 

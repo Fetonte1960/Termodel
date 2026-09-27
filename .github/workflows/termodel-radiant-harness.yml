@@ -656,6 +656,20 @@ jobs:
           $metrics = Get-Content -LiteralPath $metricsPath -Raw | ConvertFrom-Json
           if ([string]$metrics.engine -ne "Diego_Vittorio") { throw "Il caso non ha eseguito Diego_Vittorio." }
           if ([int]$metrics.SpiralPointCount -lt 2) { throw "Diego_Vittorio non ha prodotto una spirale valida." }
+          $svgText = Get-Content -LiteralPath $svg -Raw
+          foreach ($marker in @(
+            'width="100%"',
+            'height="100%"',
+            'preserveAspectRatio="xMidYMid meet"',
+            'class="architectural-contour"',
+            'data-termodel-layer="architecture"'
+          )) {
+            if (-not $svgText.Contains($marker)) { throw "Presentazione SVG Diego_Vittorio incompleta: $marker" }
+          }
+          $viewBox = [regex]::Match($svgText, 'viewBox="([^"]+)"')
+          if (-not $viewBox.Success -or $viewBox.Groups[1].Value.Contains(',')) {
+            throw "viewBox Diego_Vittorio assente o serializzato con virgola decimale."
+          }
           Copy-Item -LiteralPath $svg -Destination (Join-Path $out "pannelli-esecutivo-diego-vittorio.svg") -Force
           Write-Host "RADIANT_HARNESS_CURRENT_APARTMENT_DIEGO_VITTORIO_OK"
 
