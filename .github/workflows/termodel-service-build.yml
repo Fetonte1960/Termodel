@@ -226,6 +226,17 @@ jobs:
           }
           Write-Host "SPIRALI_DIEGO_FRONTEND_LOG_UI_OK"
 
+          foreach ($marker in @(
+            "function resetPannelliOnlyModeForServiceModel()",
+            "resetPannelliOnlyModeForServiceModel();",
+            "input.checked = false;"
+          )) {
+            if (-not $app.Contains($marker)) {
+              throw "Reset modalità Pannelli dopo Aggiorna Modello mancante: $marker"
+            }
+          }
+          Write-Host "RADIANT_MODEL3D_PANNELLI_FILTER_RESET_OK"
+
           Write-Host "RADIANT_PUBLIC_EXAMPLE_OK"
 
           Write-Host "RADIANT_EXECUTIVE_AUTOLOAD_FRONTEND_OK"
