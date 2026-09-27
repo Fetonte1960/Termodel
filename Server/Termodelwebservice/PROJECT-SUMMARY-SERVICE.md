@@ -71,16 +71,17 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
-### INCARICO 2026-09-27 — Linee guida e audit della versione Home
+### INCARICO 2026-09-27 — Linee guida e audit della versione Mobile
 Stato: COMMISSIONATO
 
 Commissionato:
-- creare su Git un documento specifico per definire la **versione Home di Termodel Web**;
+- creare su Git un documento specifico per definire la **versione Mobile di Termodel Web**;
 - collocarlo nella linea frontend `docs/termodel-ui-demo/`, senza confonderlo con il Summary Service né con il Summary storico Web;
 - partire dallo stato reale corrente del frontend v1.27 e dal contratto Frontend ↔ Service;
-- descrivere scopo, confini, stati, comportamento desktop/mobile, rapporto con esempi, CAD2D, viewer 3D, filtri, progetto locale e Service;
-- iniziare un audit strutturato del codice corrente distinguendo: già coerente, parzialmente coerente, da definire, rischio/regressione;
-- identificare i punti in cui il concetto Home è oggi implicito/disperso e proporre criteri per renderlo esplicito senza duplicare motori o creare un secondo frontend;
+- descrivere scopo, confini, criteri di attivazione, stati, viewer 3D, pannello Esplora, esempi, CAD2D, filtri, rotazione portrait/landscape e passaggio volontario alla versione desktop;
+- iniziare un audit strutturato del codice corrente distinguendo: **coerente**, **parzialmente coerente**, **da definire**, **rischio/regressione**;
+- verificare in particolare cosa oggi significa realmente "mobile": rilevamento Android, comportamento smartphone, viewport, touch, landscape, caricamento locale degli esempi e dipendenze dal Service;
+- definire le invarianti UX che le modifiche future devono rispettare senza creare un secondo frontend o duplicare logica;
 - non modificare comportamento applicativo in questo incarico salvo documentazione/regression strettamente necessaria all'audit;
 - non modificare `definizionedati.json`;
 - aggiornare il Summary con il documento creato e lo stato dell'audit;
