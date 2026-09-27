@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-27 — Ripristino Service con SpiraliGPT come motore predefinito
-Stato: COMMISSIONATO
+Stato: ESEGUITO — GPT RIPRISTINATO COME DEFAULT / PUBBLICATO SU MAIN
 
 Commissionato:
 - considerare StrategiaDiego temporaneamente non sostenibile sul Service per carico computazionale;
@@ -82,6 +82,17 @@ Commissionato:
 - pubblicare su `main` per il normale auto-deploy Render;
 - verificare build GitHub Actions;
 - aggiornare Summary e Issue #1 a fine lavoro.
+
+Esito:
+- verificata la modifica storica `9e96b43ce70af9082c3ba3ccdcfb73fad8f5f9e8`: il passaggio a Diego aveva cambiato esclusivamente il default da `RadiantSpiralEngine.GPT` a `RadiantSpiralEngine.Diego` quando `TERMODEL_SPIRAL_ENGINE` non è valorizzata;
+- ripristinato in `RadiantExecutiveGenerator.ResolveSpiralEngine()` il default `RadiantSpiralEngine.GPT`;
+- aggiornata la documentazione Service: valori ammessi `Vittorio | GPT | Diego | Diego_Vittorio`, con **SpiraliGPT** di nuovo default operativo;
+- StrategiaDiego e Diego_Vittorio restano nel Core e selezionabili tramite `TERMODEL_SPIRAL_ENGINE`: nessun lavoro sperimentale è stato cancellato;
+- commit pubblicato su `main`: `a9164c75f04a9a5a17431101dbfaeb309011c2f4`;
+- il push su `main` attiva il normale auto-deploy Render;
+- GitHub Action `TermodelService Build` run `36296591604`: Restore, controlli preliminari e **Build SUCCESS** sul commit di rollback; gli step successivi continuano a includere benchmark/regression StrategiaDiego indipendenti dal motore runtime predefinito e possono mantenere il noto stato rosso per il carico computazionale Diego;
+- verifica sorgente post-commit: senza override il metodo restituisce `RadiantSpiralEngine.GPT`;
+- verifica HTTP diretta di `https://termodel.onrender.com/health` non disponibile dagli strumenti della sessione; il runtime pubblico potrà essere confermato dall'endpoint `/health`, campo `spiralEngine`, dopo il completamento dell'auto-deploy.
 
 
 
