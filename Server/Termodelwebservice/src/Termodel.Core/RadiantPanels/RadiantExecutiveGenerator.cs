@@ -9,7 +9,7 @@ namespace Termodel.Core.RadiantPanels;
 
 /// <summary>
 /// Genera l'esecutivo pannelli con un motore selezionabile
-/// Vittorio | GPT | Diego | Diego_Vittorio. Il default operativo e' Diego.
+/// Vittorio | GPT | Diego | Diego_Vittorio. Il default operativo e' GPT per compatibilita e sostenibilita sul Service.
 /// DXF e SVG vengono serializzati dallo stesso modello grafico neutro.
 /// La pianta pulita generata nella stessa elaborazione viene incorporata
 /// come base architettonica prima delle primitive delle spirali.
@@ -200,7 +200,7 @@ public static class RadiantExecutiveGenerator
             Environment.GetEnvironmentVariable("TERMODEL_SPIRAL_ENGINE");
 
         if (string.IsNullOrWhiteSpace(configured))
-            return RadiantSpiralEngine.Diego;
+            return RadiantSpiralEngine.GPT;
 
         if (Enum.TryParse(
                 configured.Trim(),
