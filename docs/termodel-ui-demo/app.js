@@ -52,6 +52,7 @@ const openExampleButton = document.getElementById('openExampleButton');
 const openProjectFileInput = document.getElementById('openProjectFileInput');
 const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
+const helpOpenWebHelp = document.getElementById('helpOpenWebHelp');
 const helpExplorationMode = document.getElementById('helpExplorationMode');
 const helpCopyProjectClipboard = document.getElementById('helpCopyProjectClipboard');
 const helpCopyLogClipboard = document.getElementById('helpCopyLogClipboard');
@@ -67,7 +68,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.32';
+const APP_VERSION = '1.33';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -616,6 +617,14 @@ COMMAND_HELP['Aggiorna Modello'] = {
   body: `
     <p>Invia lo stato tecnico corrente del progetto al Termodel Service, esegue il calcolo completo e visualizza l'artifact <strong>model3d</strong> restituito dal server.</p>
     <p>Le categorie selezionate nel menu <strong>Help → Log Aggiorna Modello</strong> controllano il log della singola elaborazione.</p>
+  `
+};
+
+COMMAND_HELP['Help Termodel Web'] = {
+  title: 'Help Termodel Web',
+  body: `
+    <p>Apre il pannello Help generale della versione Web PC.</p>
+    <p>Da qui puoi leggere una panoramica e istruire la tua AI usando la pagina dedicata a Termodel Web, separata dalle istruzioni della vecchia versione Desktop.</p>
   `
 };
 
@@ -4264,6 +4273,7 @@ document.querySelectorAll('[data-archive]').forEach(button => {
 const TERMODEL_GENERAL_PROMPT_URL = './TermodelGenerale.md';
 const RASTER_PROMPT_URL = './CreaPianoTermodelDaRaster.md';
 const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.html?v=0.25';
+const TERMODEL_WEB_AI_URL = 'https://www.termodel.it/termodel-ui-demo/TermodelWeb.html?v=0.1';
 const MYHOME3D_AI_INSTRUCTION_URL = './MyHome3D.md?v=0.25';
 
 const instructAiButton = document.getElementById('instructAiButton');
@@ -4271,6 +4281,10 @@ const importAiButton = document.getElementById('importAiButton');
 const aiInstructModal = document.getElementById('aiInstructModal');
 const aiInstructClose = document.getElementById('aiInstructClose');
 const aiInstructCloseBottom = document.getElementById('aiInstructCloseBottom');
+const webHelpModal = document.getElementById('webHelpModal');
+const webHelpClose = document.getElementById('webHelpClose');
+const webHelpCloseBottom = document.getElementById('webHelpCloseBottom');
+const webHelpInstructAi = document.getElementById('webHelpInstructAi');
 
 const projectExploreModal = document.getElementById('projectExploreModal');
 const projectExploreExamples = document.getElementById('projectExploreExamples');
@@ -4291,6 +4305,9 @@ function shouldBypassInitialModelDesktopGate(control) {
   if (control === newProjectButton ||
       control === openProjectButton ||
       control === openProjectFileInput)
+    return true;
+
+  if (control.closest?.('#helpMenu'))
     return true;
 
   if (control.matches?.('.menu > button') &&
@@ -4331,12 +4348,26 @@ const projectStartImportAi = document.getElementById('projectStartImportAi');
 const newProjectButton = document.getElementById('newProjectButton');
 let projectStartContext = { target: 'cad', archiveName: '' };
 
-const TERMODEL_AI_BOOTSTRAP = `Lavora con Termodel Web.
-Apri e segui le istruzioni aggiornate pubblicate qui:
-${TERMODEL_AI_INDEX_URL}`;
+const TERMODEL_AI_BOOTSTRAP = `Lavora con Termodel Web PC.
+Apri e segui le istruzioni AI specifiche e aggiornate della versione Web pubblicate qui:
+${TERMODEL_WEB_AI_URL}`;
 
 function setMainAiStatus(message) {
   if (status) status.textContent = message;
+}
+
+function openWebHelpDialog() {
+  if (!webHelpModal) return;
+  document.querySelectorAll('.menu').forEach(menu => menu.classList.remove('open'));
+  webHelpModal.classList.add('visible');
+  webHelpModal.setAttribute('aria-hidden', 'false');
+  webHelpInstructAi?.focus();
+}
+
+function closeWebHelpDialog() {
+  if (!webHelpModal) return;
+  webHelpModal.classList.remove('visible');
+  webHelpModal.setAttribute('aria-hidden', 'true');
 }
 
 function openAiInstructDialog() {
@@ -4533,6 +4564,23 @@ async function importAiFromMainForm(event) {
   activateModelPage();
   requestAnimationFrame(resize);
 }
+
+helpOpenWebHelp?.addEventListener('click', event => {
+  event.preventDefault();
+  event.stopPropagation();
+  openWebHelpDialog();
+});
+
+webHelpClose?.addEventListener('click', closeWebHelpDialog);
+webHelpCloseBottom?.addEventListener('click', closeWebHelpDialog);
+webHelpModal?.addEventListener('click', event => {
+  if (event.target === webHelpModal)
+    closeWebHelpDialog();
+});
+webHelpInstructAi?.addEventListener('click', async event => {
+  closeWebHelpDialog();
+  await instructAiFromMainForm(event);
+});
 
 if (instructAiButton)
   instructAiButton.addEventListener('click', instructAiFromMainForm);
