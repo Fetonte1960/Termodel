@@ -71,6 +71,20 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Esempio pannelli: rigenerazione 3D mostra solo schema/ponteggi
+Stato: COMMISSIONATO
+
+Commissionato:
+- riprodurre il difetto segnalato sul progetto esempio **Pannelli radianti**: dopo `Rigenera/Aggiorna Modello` il 3D mostra soltanto lo schema verde tipo ponteggi, pur con nessun filtro di visualizzazione attivo;
+- verificare l'intera catena progetto esempio -> payload Service -> `model3d` -> redraw frontend e distinguere un difetto dell'artifact da un difetto di stato/filtro del viewer;
+- correggere la causa con modifica minima e retrocompatibile;
+- non modificare `definizionedati.json`;
+- aggiungere/verificare una regression reale sul progetto esempio;
+- pubblicare su `main` e lasciare attivo il normale deploy;
+- aggiornare Summary e chiudere Issue #1 Completed solo dopo verifica riuscita.
+
+
+
 ### INCARICO 2026-09-27 — Ripristino Service con SpiraliGPT come motore predefinito
 Stato: ESEGUITO — GPT RIPRISTINATO COME DEFAULT / PUBBLICATO SU MAIN
 
