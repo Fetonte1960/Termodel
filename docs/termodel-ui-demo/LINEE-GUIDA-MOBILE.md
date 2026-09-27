@@ -16,3 +16,14 @@ Questa è, allo stato attuale, la definizione concordata del progetto Mobile. No
 
 Per la generazione di help o di istruzioni richieste dall'utente per approfondire una funzione, MyHome3D farà riferimento alle **istruzioni AI di Termodel**.
 
+## Help Mobile
+
+La prima funzione Help di MyHome3D deve essere accessibile dal minipannello mobile **Esplora** sia nella vista **3D** sia nella vista **CAD 2D**.
+
+Il pannello Help deve:
+- mostrare come primo comando in alto **Chiedi informazioni ad AI**;
+- contenere un primo messaggio di spiegazione scorrevole;
+- guidare l'utente nell'uso dell'assistenza AI;
+- copiare negli appunti un'istruzione AI dedicata a **MyHome3D**, coerente con queste linee guida;
+- usare le **istruzioni AI di Termodel** come riferimento per gli approfondimenti richiesti dall'utente.
+
