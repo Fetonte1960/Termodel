@@ -23,8 +23,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego] [--out <dir>] [opzioni diagnostiche Diego]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--engine Vittorio|Diego] [--id <case-id>] [--p <metri>] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego_Vittorio|Diego] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
 }
@@ -105,7 +105,9 @@ static int Run(string[] args)
             engineArg ??
             testCase?.Engine ??
             "Diego").Trim();
-        if (selectedEngine.Equals("Vittorio", StringComparison.OrdinalIgnoreCase))
+        // Modificato da Codex per realizzare: trattare Vittorio e la sua copia Diego_Vittorio tramite lo stesso contratto Harness.
+        if (selectedEngine.Equals("Vittorio", StringComparison.OrdinalIgnoreCase) ||
+            selectedEngine.Equals("Diego_Vittorio", StringComparison.OrdinalIgnoreCase))
         {
             bool hasDiegoOnlyOptions =
                 !string.IsNullOrWhiteSpace(rejectDecisionsArg) ||
@@ -126,21 +128,22 @@ static int Run(string[] args)
             if (Math.Abs(stepMeters - SpiralHeatingStepMeters) > 1e-9)
             {
                 throw new ArgumentException(
-                    $"StrategiaVittorio usa il passo reale fisso {SpiralHeatingStepMeters.ToString("0.###", CultureInfo.InvariantCulture)} m; " +
+                    $"Strategia {selectedEngine} usa il passo reale fisso {SpiralHeatingStepMeters.ToString("0.###", CultureInfo.InvariantCulture)} m; " +
                     $"il caso richiede {stepMeters.ToString("0.###", CultureInfo.InvariantCulture)} m.");
             }
 
-            return RunVittorio(
+            return RunCopiedSpiralStrategy(
                 localeXml,
                 fullInputPath,
                 caseId,
                 outputDir,
-                testCase?.Description);
+                testCase?.Description,
+                selectedEngine);
         }
         if (!selectedEngine.Equals("Diego", StringComparison.OrdinalIgnoreCase))
         {
             throw new ArgumentException(
-                $"Motore Harness non riconosciuto: '{selectedEngine}'. Valori ammessi: Vittorio, Diego.");
+                $"Motore Harness non riconosciuto: '{selectedEngine}'. Valori ammessi: Vittorio, Diego_Vittorio, Diego.");
         }
 
         HashSet<string> rejectedDecisionKeys =
@@ -385,15 +388,19 @@ static int Run(string[] args)
 }
 
 // Funzione realizzata da Codex in autonomia
-static int RunVittorio(
+static int RunCopiedSpiralStrategy(
     string localeXml,
     string fullInputPath,
     string caseId,
     string outputDir,
-    string? description)
+    string? description,
+    string selectedEngine)
 {
+    // Modificato da Codex per realizzare: mantenere un solo percorso di output per Vittorio e Diego_Vittorio.
     StrategiaVittorioBenchmarkSample sample =
-        StrategiaVittorioBenchmark.Run(localeXml);
+        selectedEngine.Equals("Diego_Vittorio", StringComparison.OrdinalIgnoreCase)
+            ? StrategiaDiegoVittorioBenchmark.Run(localeXml)
+            : StrategiaVittorioBenchmark.Run(localeXml);
 
     string svgPath = Path.Combine(outputDir, caseId + ".svg");
     string resultXmlPath = Path.Combine(
@@ -413,7 +420,7 @@ static int RunVittorio(
     {
         caseId,
         description,
-        engine = "Vittorio",
+        engine = selectedEngine,
         input = fullInputPath,
         stepMeters = sample.StepMeters,
         sample.LocaleCount,
@@ -432,7 +439,7 @@ static int RunVittorio(
 
     Console.WriteLine("RADIANT_HARNESS_OK");
     Console.WriteLine($"case={caseId}");
-    Console.WriteLine("engine=Vittorio");
+    Console.WriteLine($"engine={selectedEngine}");
     Console.WriteLine($"input={fullInputPath}");
     Console.WriteLine($"p={sample.StepMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
     Console.WriteLine($"locales={sample.LocaleCount}");

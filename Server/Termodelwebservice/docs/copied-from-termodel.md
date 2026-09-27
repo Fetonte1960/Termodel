@@ -7,6 +7,13 @@ temporanea di migrazione. Gli originali Termodel desktop non vengono modificati.
 Ogni adattamento deve essere minimo, commentato e classificato come modifica
 riportabile nel Core condiviso oppure esclusiva del server.
 
+La cartella `CopiedFromTermodel/SpiraliDiegoVittorio` è una derivazione
+sperimentale del Service: parte dalla copia invariata `SpiraliVittorio`, usa il
+namespace indipendente `SpiralHeatingDiegoVittorio` e il selettore
+`Diego_Vittorio`. Il motore Vittorio originale resta intatto per confronto e
+ripristino. Le impronte della base iniziale sono nel `README.md` della
+derivazione.
+
 ## Regole
 
 - `definizionedati/definizionedati.json` resta la fonte autorevole e non viene modificato.

@@ -71,6 +71,31 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Creazione strategia derivata `Diego_Vittorio`
+Stato: ESEGUITO — COPIA INDIPENDENTE E PARITÀ INIZIALE VERIFICATE
+
+Commissionato:
+- creare una copia completa e indipendente del motore `SpiraliVittorio`, denominata `Diego_Vittorio`, come base delle successive sperimentazioni;
+- mantenere i quattro sorgenti originali `SpiraliVittorio` byte-per-byte intatti per confronti e ripristini;
+- isolare la copia con namespace e selettore propri, senza introdurre in questa prima fase variazioni geometriche;
+- registrare provenienza e impronte SHA-256 dei sorgenti di partenza;
+- integrare il selettore nel Service e nell'Harness senza cambiare il caso corrente `Vittorio`;
+- verificare build e parità iniziale degli SVG sui casi rettangolare e concavo.
+
+Esito:
+- creata `CopiedFromTermodel/SpiraliDiegoVittorio/` con i quattro sorgenti Vittorio e il solo namespace iniziale cambiato in `SpiralHeatingDiegoVittorio`;
+- registrati nel `README.md` provenienza, commit base e SHA-256 dei quattro originali;
+- aggiunti selettore `Diego_Vittorio`, facciata benchmark e caso Harness dedicato, mantenendo `CURRENT-APARTMENT-P030.json` su `Vittorio`;
+- esteso il workflow con smoke e artifact separato `strategia-diego-vittorio-current-apartment`;
+- verificato nuovamente dopo le modifiche che le impronte dei quattro file `SpiraliVittorio` coincidono con quelle iniziali.
+
+Verifiche locali:
+- build Core + Harness Release in directory temporanea: riuscita, 0 errori; restano gli avvisi nullable già propri dei sorgenti copiati;
+- rettangolare/appartamento: 18 punti, SVG e XML di `Vittorio` e `Diego_Vittorio` identici SHA-256;
+- concavo L: 27 punti, SVG e XML di `Vittorio` e `Diego_Vittorio` identici SHA-256;
+- SVG rettangolare: `D8D573211BD189D86740615D3BFB3E98BFAA34D75037D4D430CE24071FF9BFC1`;
+- SVG concavo: `39F159A4FD390D9F59EB9CF9A20ABA49B98CD57583AB6931DA01B0F344743B74`.
+
 ### INCARICO 2026-09-26 — Rendere auto-riprendibile il debug spirali da Linee Guida
 Stato: ESEGUITO — LINEE GUIDA AUTOSUFFICIENTI PER RIPRESA R31
 

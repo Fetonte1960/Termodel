@@ -9,7 +9,7 @@ namespace Termodel.Core.RadiantPanels;
 
 /// <summary>
 /// Genera l'esecutivo pannelli con un motore selezionabile
-/// Vittorio | GPT | Diego. Il default operativo e' Diego.
+/// Vittorio | GPT | Diego | Diego_Vittorio. Il default operativo e' Diego.
 /// DXF e SVG vengono serializzati dallo stesso modello grafico neutro.
 /// La pianta pulita generata nella stessa elaborazione viene incorporata
 /// come base architettonica prima delle primitive delle spirali.
@@ -212,7 +212,7 @@ public static class RadiantExecutiveGenerator
 
         throw new InvalidDataException(
             $"TERMODEL_SPIRAL_ENGINE non riconosciuto: '{configured}'. " +
-            "Valori ammessi: Vittorio, GPT, Diego.");
+            "Valori ammessi: Vittorio, GPT, Diego, Diego_Vittorio.");
     }
 
     private static SpiralEngineOutput RunSpiralEngine(
@@ -255,8 +255,11 @@ public static class RadiantExecutiveGenerator
                 {
                     Directory.SetCurrentDirectory(tempRoot);
 
+                    // Modificato da Codex per realizzare: selezionare la copia indipendente Diego_Vittorio senza alterare Vittorio.
                     if (engine == RadiantSpiralEngine.Vittorio)
                         SpiralHeating.Program.AggiornaSpirali();
+                    else if (engine == RadiantSpiralEngine.Diego_Vittorio)
+                        SpiralHeatingDiegoVittorio.Program.AggiornaSpirali();
                     else
                         SpiralHeatingGPT.Program.AggiornaSpirali();
                 }
@@ -272,9 +275,14 @@ public static class RadiantExecutiveGenerator
                     $"Piano {floorName}: {engine} non ha prodotto locale.svg.");
             }
 
-            double step = engine == RadiantSpiralEngine.Vittorio
-                ? SpiralHeating.Program.PassoTubi
-                : SpiralHeatingGPT.Program.PassoTubi;
+            // Modificato da Codex per realizzare: leggere il passo dal motore effettivamente selezionato.
+            double step = engine switch
+            {
+                RadiantSpiralEngine.Vittorio => SpiralHeating.Program.PassoTubi,
+                RadiantSpiralEngine.Diego_Vittorio =>
+                    SpiralHeatingDiegoVittorio.Program.PassoTubi,
+                _ => SpiralHeatingGPT.Program.PassoTubi
+            };
 
             return new SpiralEngineOutput(
                 File.ReadAllText(localeSvgPath, Encoding.UTF8),
@@ -744,7 +752,9 @@ internal enum RadiantSpiralEngine
 {
     Vittorio,
     GPT,
-    Diego
+    Diego,
+    // Modificato da Codex per realizzare: esporre la copia sperimentale separata dal riferimento Vittorio.
+    Diego_Vittorio
 }
 
 internal sealed record SpiralEngineOutput(

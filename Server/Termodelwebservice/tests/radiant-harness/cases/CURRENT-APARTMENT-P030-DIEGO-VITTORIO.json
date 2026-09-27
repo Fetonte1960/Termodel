@@ -1,0 +1,7 @@
+{
+  "id": "CURRENT-APARTMENT-P030-DIEGO-VITTORIO",
+  "description": "Copia indipendente Diego_Vittorio eseguita sul medesimo input appartamento usato per il confronto con Vittorio; p=0,30 m.",
+  "preparedInput": "../prepared/StrategiaDiegoCurrentApartment.pannelli.xml",
+  "stepMeters": 0.3,
+  "engine": "Diego_Vittorio"
+}

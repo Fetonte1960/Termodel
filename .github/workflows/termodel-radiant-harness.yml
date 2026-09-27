@@ -14,6 +14,7 @@ on:
     paths:
       - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/**'
       - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorio/**'
+      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/**'
       - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
       - 'Server/Termodelwebservice/tests/radiant-harness/**'
       - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiego*.locale.xml'
@@ -22,6 +23,7 @@ on:
     paths:
       - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/**'
       - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorio/**'
+      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/**'
       - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
       - 'Server/Termodelwebservice/tests/radiant-harness/**'
       - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiego*.locale.xml'
@@ -633,6 +635,36 @@ jobs:
             ${{ runner.temp }}/RadiantHarness/CURRENT-APARTMENT-P030.log.txt
             ${{ runner.temp }}/RadiantHarness/CURRENT-APARTMENT-P030.metrics.json
             ${{ runner.temp }}/RadiantHarness/pannelli-esecutivo-vittorio.svg
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Run Diego_Vittorio current apartment copy
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RadiantHarnessDiegoVittorio"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/CURRENT-APARTMENT-P030-DIEGO-VITTORIO.json `
+            --out $out
+          $svg = Join-Path $out "CURRENT-APARTMENT-P030-DIEGO-VITTORIO.svg"
+          $metricsPath = Join-Path $out "CURRENT-APARTMENT-P030-DIEGO-VITTORIO.metrics.json"
+          $resultXml = Join-Path $out "CURRENT-APARTMENT-P030-DIEGO-VITTORIO.result.locale.xml"
+          foreach ($required in @($svg,$metricsPath,$resultXml)) {
+            if (-not (Test-Path -LiteralPath $required)) { throw "Artifact Diego_Vittorio mancante: $required" }
+          }
+          $metrics = Get-Content -LiteralPath $metricsPath -Raw | ConvertFrom-Json
+          if ([string]$metrics.engine -ne "Diego_Vittorio") { throw "Il caso non ha eseguito Diego_Vittorio." }
+          if ([int]$metrics.SpiralPointCount -lt 2) { throw "Diego_Vittorio non ha prodotto una spirale valida." }
+          Copy-Item -LiteralPath $svg -Destination (Join-Path $out "pannelli-esecutivo-diego-vittorio.svg") -Force
+          Write-Host "RADIANT_HARNESS_CURRENT_APARTMENT_DIEGO_VITTORIO_OK"
+
+      - name: Upload Diego_Vittorio current apartment
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: strategia-diego-vittorio-current-apartment
+          path: ${{ runner.temp }}/RadiantHarnessDiegoVittorio
           if-no-files-found: warn
           retention-days: 90
 
