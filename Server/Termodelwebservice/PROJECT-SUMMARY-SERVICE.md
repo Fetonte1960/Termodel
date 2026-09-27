@@ -71,6 +71,20 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-27 — Prima funzione Help MyHome3D
+Stato: COMMISSIONATO
+
+Commissionato:
+- aggiungere un pulsante **Help** al minipannello mobile con **Esplora** sia nella vista **3D** sia nella vista **CAD 2D**;
+- il pulsante apre un pannello Help mobile con un primo messaggio di spiegazione a contenuto scorrevole;
+- il primo comando in alto nel pannello deve essere **Chiedi informazioni ad AI**;
+- il comando deve guidare l'utente nell'uso dell'assistenza AI e copiare negli appunti un'istruzione AI dedicata alla versione Mobile/MyHome3D;
+- l'istruzione deve essere coerente con le linee guida: MyHome3D è la versione Mobile, Termodel è lo strumento per realizzare il modello della casa e degli impianti, e le istruzioni AI di Termodel sono il riferimento per gli approfondimenti;
+- preservare il comportamento desktop e le funzioni mobile esistenti;
+- aggiornare versione frontend e regression pertinenti, senza modificare `definizionedati.json`;
+- a fine lavoro aggiornare Summary e chiudere Issue #1 come Completed per la notifica.
+
+
 
 ### INCARICO 2026-09-27 — Termodel come strumento e riferimento AI di MyHome3D
 Stato: ESEGUITO — SOLO REGISTRAZIONE DOCUMENTALE
