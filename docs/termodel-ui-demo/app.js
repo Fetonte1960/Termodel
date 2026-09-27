@@ -67,7 +67,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.31';
+const APP_VERSION = '1.32';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -2216,20 +2216,25 @@ function createAndroidFilterDialog() {
   });
 
   modal.querySelector('.android-filter-apply')?.addEventListener('click', () => {
+    let applied = 0;
+
     modal.querySelectorAll('input[data-mobile-filter-group]').forEach(input => {
       const group = input.dataset.mobileFilterGroup || '';
       const name = input.dataset.mobileFilterName || '';
-      const target = Array.from(
-        filterPanel.querySelectorAll('input[data-filter-group][data-filter-name]')
-      ).find(candidate =>
-        candidate.dataset.filterGroup === group &&
-        candidate.dataset.filterName === name
-      );
-      if (target)
-        target.checked = input.checked;
+      if (!group || !name)
+        return;
+
+      setFilterState(group, name, input.checked, true);
+      applied += 1;
     });
 
     applyFilters();
+
+    // Rilegge subito lo stato consolidato: alla successiva apertura la
+    // finestra Mobile riparte esattamente dalle scelte applicate.
+    if (applied > 0)
+      rebuildAndroidFilterDialog();
+
     closeAndroidFilterDialog();
   });
 
@@ -2276,7 +2281,7 @@ function rebuildAndroidFilterDialog() {
 
         const input = document.createElement('input');
         input.type = 'checkbox';
-        input.checked = source.checked;
+        input.checked = getFilterState(group, source.dataset.filterName || '', source.checked);
         input.dataset.mobileFilterGroup = group;
         input.dataset.mobileFilterName = source.dataset.filterName || '';
 
@@ -2745,6 +2750,44 @@ function installFilterStyles() {
   document.head.appendChild(style);
 }
 
+const filterState = new Map();
+
+function filterStateKey(group, name) {
+  return String(group || '') + '::' + String(name || '');
+}
+
+function setFilterState(group, name, checked, syncDom = true) {
+  const key = filterStateKey(group, name);
+  const value = Boolean(checked);
+  filterState.set(key, value);
+
+  if (syncDom) {
+    document.querySelectorAll('input[data-filter-group][data-filter-name]').forEach(input => {
+      if (input.dataset.filterGroup === group && input.dataset.filterName === name)
+        input.checked = value;
+    });
+  }
+
+  return value;
+}
+
+function getFilterState(group, name, fallback = true) {
+  const key = filterStateKey(group, name);
+  if (filterState.has(key))
+    return filterState.get(key);
+
+  const input = Array.from(
+    document.querySelectorAll('input[data-filter-group][data-filter-name]')
+  ).find(candidate =>
+    candidate.dataset.filterGroup === group &&
+    candidate.dataset.filterName === name
+  );
+
+  const value = input ? input.checked : Boolean(fallback);
+  filterState.set(key, value);
+  return value;
+}
+
 function createFilterPanel() {
   installFilterStyles();
 
@@ -2794,10 +2837,14 @@ function addFilterCheckbox(group, name, checked) {
 
   const input = document.createElement('input');
   input.type = 'checkbox';
-  input.checked = checked;
   input.dataset.filterGroup = group;
   input.dataset.filterName = name;
-  input.addEventListener('change', applyFilters);
+  input.checked = getFilterState(group, name, checked);
+  setFilterState(group, name, input.checked, false);
+  input.addEventListener('change', () => {
+    setFilterState(group, name, input.checked, false);
+    applyFilters();
+  });
 
   const text = document.createElement('span');
   text.textContent = name;
@@ -2841,10 +2888,7 @@ function rebuildPianoFilters(primitives) {
 }
 
 function isChecked(group, name, fallback = true) {
-  const input = document.querySelector(
-    `input[data-filter-group="${group}"][data-filter-name="${CSS.escape(name)}"]`
-  );
-  return input ? input.checked : fallback;
+  return getFilterState(group, name, fallback);
 }
 
 // "Pannelli" non è un normale componente ma una modalità speciale:
@@ -2853,10 +2897,7 @@ function isChecked(group, name, fallback = true) {
 // una selezione precedente può far sembrare che il Service abbia restituito
 // soltanto lo scheletro verde dei ponti termici.
 function resetPannelliOnlyModeForServiceModel() {
-  const input = document.querySelector(
-    'input[data-filter-group="componenti"][data-filter-name="Pannelli"]'
-  );
-  if (input) input.checked = false;
+  setFilterState('componenti', 'Pannelli', false);
 }
 
 function primitiveFilterData(primitive) {
@@ -4222,8 +4263,8 @@ document.querySelectorAll('[data-archive]').forEach(button => {
 
 const TERMODEL_GENERAL_PROMPT_URL = './TermodelGenerale.md';
 const RASTER_PROMPT_URL = './CreaPianoTermodelDaRaster.md';
-const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.html?v=0.23';
-const MYHOME3D_AI_INSTRUCTION_URL = './MyHome3D.md?v=0.24';
+const TERMODEL_AI_INDEX_URL = 'https://www.termodel.it/termodel-ui-demo/IndiceAI.html?v=0.25';
+const MYHOME3D_AI_INSTRUCTION_URL = './MyHome3D.md?v=0.25';
 
 const instructAiButton = document.getElementById('instructAiButton');
 const importAiButton = document.getElementById('importAiButton');

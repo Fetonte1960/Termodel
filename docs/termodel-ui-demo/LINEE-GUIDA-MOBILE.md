@@ -58,3 +58,56 @@ Perfetto adesso sono in grado di darti informazioni su Myhome 3d e Termodel
 
 Dopo questa conferma attende la domanda dell'utente.
 
+## Creazione, consolidamento e livelli di accesso
+
+MyHome3D permette all'utente di arrivare alla costruzione del modello passando alla **versione Web PC di Termodel**.
+
+### Uso senza registrazione
+
+Senza registrazione l'utente può realizzare un **modello base** e visualizzarne l'**anteprima 3D**.
+
+Non può:
+- usare il server di calcolo per le funzioni avanzate;
+- consolidare il modello;
+- ottenere un link di condivisione del modello consolidato.
+
+### Registrazione
+
+Con la registrazione l'utente può:
+- **consolidare il modello**;
+- ottenere un **link condivisibile** da inviare a fornitori, installatori, imprese o altre persone che devono esplorare il modello;
+- evitare di far riprogettare a ogni interlocutore ciò che è già stato definito;
+- richiedere consigli su **miglioramenti termici**, interventi sugli **impianti** e sull'**isolamento**.
+
+La registrazione da sola non abilita le elaborazioni avanzate del server.
+
+### Abbonamento server
+
+Per i modelli avanzati che richiedono il motore di calcolo Termodel è necessario un abbonamento di **100 € + IVA per anno**.
+
+Rientrano tra le funzioni avanzate:
+- modelli con **più piani**;
+- **tetti/coperture** avanzati;
+- **locali mansardati**;
+- altre elaborazioni che richiedono il server di calcolo completo.
+
+## Persistenza dei Filtri Mobile
+
+Le scelte effettuate nella finestra **Filtri** diventano effettive soltanto con **Applica**.
+
+Dopo **Applica**:
+- le selezioni diventano lo stato reale dei filtri;
+- il modello 3D viene aggiornato immediatamente;
+- riaprendo la finestra devono ricomparire le selezioni applicate.
+
+**Annulla**, X e chiusura non consolidano le modifiche.
+
+## Istruisci AI — guida visibile
+
+Il comando **Istruisci AI** deve:
+- copiare negli appunti il messaggio di collegamento alle istruzioni Web Termodel;
+- aprire una finestra ben visibile che spieghi chiaramente cosa fare;
+- distinguere il flusso PC (**Ctrl+V**) dal flusso smartphone (**pressione prolungata nel campo messaggio -> Incolla -> Invia**);
+- mostrare un esempio pratico con **Meta AI in WhatsApp**;
+- usare per l'esempio solo nomi, testo e descrizioni generiche dei comandi, senza incorporare loghi o asset grafici di terzi.
+

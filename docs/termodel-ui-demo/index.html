@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v1.31 — Esempio pannelli radianti</title>
+  <title>Termodel Web v1.32 — Esempio pannelli radianti</title>
   <script>
     // Android va riconosciuto prima del primo paint: evita il flash della UI desktop
     // mentre il modulo principale e Three.js sono ancora in caricamento.
@@ -173,10 +173,15 @@
     }
     .ai-instruct-modal.visible { display: flex; }
     .ai-instruct-window {
-      width: min(620px, 94vw);
+      width: min(820px, 96vw);
+      max-height: min(860px, 92vh);
+      display: grid;
+      grid-template-rows: auto minmax(0,1fr) auto;
+      overflow: hidden;
       background: #f4f5f7;
-      border: 1px solid #666;
-      box-shadow: 0 14px 40px rgba(0,0,0,.35);
+      border: 2px solid #40586d;
+      border-radius: 8px;
+      box-shadow: 0 18px 52px rgba(0,0,0,.46);
     }
     .ai-instruct-head {
       display: flex;
@@ -202,7 +207,9 @@
       cursor: pointer;
     }
     .ai-instruct-body {
-      padding: 16px 18px 12px;
+      min-height: 0;
+      overflow: auto;
+      padding: 18px 20px 16px;
       background: #fff;
       line-height: 1.45;
       color: #2f3942;
@@ -218,11 +225,70 @@
       margin: 6px 0;
     }
     .ai-instruct-ok {
-      padding: 9px 10px;
+      padding: 11px 12px;
       border: 1px solid #79a27e;
       background: #eef8ef;
       color: #315f36;
-      font-weight: 700;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .ai-instruct-lead {
+      margin: 14px 0 10px;
+      font-size: 15px;
+      color: #243746;
+    }
+    .ai-instruct-flow {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
+    .ai-instruct-step {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid #bdc8d2;
+      border-radius: 7px;
+      background: #f7fafc;
+    }
+    .ai-instruct-step strong {
+      display: block;
+      margin-bottom: 5px;
+      color: #223b50;
+    }
+    .ai-instruct-step-number {
+      display: inline-grid;
+      place-items: center;
+      width: 25px;
+      height: 25px;
+      margin-right: 5px;
+      border-radius: 50%;
+      background: #315f7b;
+      color: #fff;
+      font-weight: 800;
+    }
+    .ai-instruct-example {
+      margin-top: 14px;
+      padding: 13px 14px;
+      border: 2px solid #7c9bb2;
+      border-radius: 8px;
+      background: #eef7fc;
+    }
+    .ai-instruct-example h3 {
+      margin: 0 0 9px;
+      font-size: 15px;
+      color: #1d425c;
+    }
+    .ai-instruct-example ol {
+      margin-bottom: 0;
+    }
+    .ai-instruct-example-note {
+      margin-top: 9px;
+      color: #596874;
+      font-size: 12px;
+    }
+    @media (max-width:760px) {
+      .ai-instruct-flow { grid-template-columns:1fr; }
+      .ai-instruct-window { max-height:94vh; }
     }
     .ai-instruct-warning {
       margin-top: 12px;
@@ -1857,7 +1923,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v1.31</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v1.32</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -2109,7 +2175,7 @@
           <div style="margin-top:18px; padding:14px; border:1px solid #9aa8b6; background:#f7fbff;">
             <strong style="display:block; margin-bottom:6px;">Se non lo hai ancora fatto, programma l'AI per aiutarti con Termodel.</strong>
             <span style="display:block; margin-bottom:10px; color:#4b5968;">Segui la procedura guidata e scegli cosa vuoi fare: informazioni, progetto Termodel o pianta raster.</span>
-            <a href="./IndiceAI.html?v=0.21" target="_blank" rel="noopener"
+            <a href="./IndiceAI.html?v=0.25" target="_blank" rel="noopener"
                style="display:inline-block; padding:7px 12px; border:1px solid #5c8db2; background:linear-gradient(#eef9ff,#cfe8f6); color:#111; text-decoration:none; font-weight:700;">
               Avvia istruzioni step by step
             </a>
@@ -2137,29 +2203,48 @@
   <div id="aiInstructModal" class="ai-instruct-modal" aria-hidden="true">
     <section class="ai-instruct-window" role="dialog" aria-modal="true" aria-labelledby="aiInstructTitle">
       <header class="ai-instruct-head">
-        <h2 id="aiInstructTitle">AI istruita per lavorare con Termodel</h2>
+        <h2 id="aiInstructTitle">Istruisci la tua AI per Termodel</h2>
         <button id="aiInstructClose" class="ai-instruct-close" type="button" aria-label="Chiudi">×</button>
       </header>
       <div class="ai-instruct-body">
-        <div class="ai-instruct-ok">✓ L'istruzione di collegamento è stata copiata negli appunti.</div>
-        <p style="margin-top:12px;">
-          Negli appunti non abbiamo copiato tutte le regole Termodel: abbiamo copiato una breve istruzione che indica all'AI dove trovare sul Web le istruzioni aggiornate.
-        </p>
-        <p><strong>Come utilizzarla:</strong></p>
-        <ol>
-          <li>Apri la tua AI preferita.</li>
-          <li>Incolla negli appunti con <strong>Ctrl+V</strong> e invia il messaggio.</li>
-          <li>L'AI leggerà le istruzioni Termodel pubblicate sul Web e ti guiderà nel lavoro.</li>
-          <li>Quando l'AI restituisce il progetto, copia negli appunti l'intero progetto restituito.</li>
-          <li>Torna in Termodel Web e premi <strong>Importa da AI</strong>.</li>
-        </ol>
+        <div class="ai-instruct-ok">✓ Il messaggio di collegamento è già stato copiato negli appunti.</div>
+
+        <p class="ai-instruct-lead"><strong>Adesso devi soltanto incollarlo nella tua AI e inviarlo.</strong> Il messaggio indica all'AI dove leggere sul sito Termodel le istruzioni aggiornate.</p>
+
+        <div class="ai-instruct-flow" aria-label="Procedura in tre passaggi">
+          <div class="ai-instruct-step">
+            <strong><span class="ai-instruct-step-number">1</span> Apri la tua AI</strong>
+            Puoi usare ChatGPT, Meta AI, Gemini o un altro assistente capace di aprire pagine Web.
+          </div>
+          <div class="ai-instruct-step">
+            <strong><span class="ai-instruct-step-number">2</span> Incolla e invia</strong>
+            Su PC premi <strong>Ctrl+V</strong>. Su telefono tieni premuto nel campo del messaggio e scegli <strong>Incolla</strong>, poi usa il comando <strong>Invia</strong>.
+          </div>
+          <div class="ai-instruct-step">
+            <strong><span class="ai-instruct-step-number">3</span> Continua la conversazione</strong>
+            Attendi che l'AI legga le istruzioni Termodel; poi descrivi ciò che vuoi sapere o fare.
+          </div>
+        </div>
+
+        <div class="ai-instruct-example" role="note" aria-label="Esempio Meta AI in WhatsApp">
+          <h3>Esempio: Meta AI in WhatsApp</h3>
+          <ol>
+            <li>Apri <strong>WhatsApp</strong> e entra nella conversazione con <strong>Meta AI</strong>.</li>
+            <li>Tocca il campo in cui normalmente scrivi un messaggio.</li>
+            <li>Tieni premuto nel campo e scegli la voce <strong>Incolla</strong>.</li>
+            <li>Controlla che sia comparso il messaggio Termodel copiato da questa pagina.</li>
+            <li>Tocca il normale comando <strong>Invia</strong> della chat.</li>
+            <li>Dopo la risposta dell'AI, continua scrivendo la tua richiesta.</li>
+          </ol>
+          <div class="ai-instruct-example-note">L'esempio usa soltanto nomi e descrizioni testuali dei comandi: non vengono incorporati loghi, icone o altri asset grafici di WhatsApp/Meta.</div>
+        </div>
+
         <div class="ai-instruct-warning" role="note" aria-label="Avvertenza sulle prestazioni AI">
           <strong>⚠ Attenzione</strong>
-          Le prestazioni, la qualità dei risultati e i tempi di risposta possono cambiare anche in modo importante in funzione del modello AI utilizzato.
+          Le prestazioni, la qualità dei risultati e la capacità di aprire le istruzioni Web possono cambiare in funzione dell'AI utilizzata.
         </div>
-        <p style="margin-top:12px; color:#66727c;">
-          L'istruzione copiata non viene mostrata qui: in questo modo resta semplice per l'utente e può essere aggiornata sul sito senza modificare il programma.
-        </p>
+
+        <p style="margin-top:12px; color:#66727c;">Se l'AI non riesce ad aprire il collegamento Web, prova con un assistente che consenta la consultazione di pagine Internet.</p>
       </div>
       <footer class="ai-instruct-foot">
         <button id="aiInstructCloseBottom" type="button">Ho capito</button>
@@ -2418,6 +2503,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=1.31"></script>
+  <script type="module" src="./app.js?v=1.32"></script>
 </body>
 </html>
