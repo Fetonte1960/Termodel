@@ -72,6 +72,21 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-27 — Filtri Home e AI informativa MyHome3D
+Stato: COMMISSIONATO
+
+Commissionato:
+- nella Home Mobile 3D spostare **Filtri** fuori dal menu **Esplora** e inserirlo come pulsante diretto nella barra principale;
+- il pulsante **Filtri** deve restare sempre utilizzabile, anche quando il modello visualizzato è un esempio non esplorabile, perché i filtri grafici restano applicabili;
+- il comportamento della finestra filtri resta quello già consolidato: copia temporanea delle scelte, **Applica** -> `applyFilters()`, Annulla/X senza modifiche;
+- l'istruzione AI Mobile **MyHome3D** deve diventare esclusivamente informativa e non deve contenere istruzioni per creare/generare progetti né da descrizione testuale né da bitmap/raster;
+- dopo aver acquisito l'istruzione, l'AI deve rispondere soltanto con: **“Perfetto adesso sono in grado di darti informazioni su Myhome 3d e Termodel”**;
+- aggiornare frontend, istruzioni pubbliche Web/IndiceAI, linee guida Mobile e regression;
+- non modificare `definizionedati.json`;
+- a fine lavoro aggiornare il Summary e chiudere Issue #1 come Completed per la notifica.
+
+
+
 ### INCARICO 2026-09-27 — Correzione Modalità esplorazione Web PC
 Stato: ESEGUITO — FRONTEND v1.30 PUBBLICATO
 
