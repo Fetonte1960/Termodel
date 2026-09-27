@@ -4,11 +4,11 @@ name: TermodelService Build
 # .github/TERMODEL-ACTION-NOTIFICATIONS.md
 
 permissions:
-  contents: read
+  contents: write
   statuses: write
 concurrency:
   group: termodel-service-build-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/heads/work/') }}
 
 on:
   workflow_dispatch:
@@ -89,11 +89,11 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.21';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.22';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.21")) {
-            throw "Cache-busting app.js v1.21 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.22")) {
+            throw "Cache-busting app.js v1.22 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -153,7 +153,9 @@ jobs:
           foreach ($marker in @(
             '"id": "pannelli-radianti"',
             '"project": "./examples/pannelli-radianti.tmdl.txt"',
-            '"executive": true'
+            '"executive": true',
+            '"executiveSvg": "./examples/pannelli-radianti-esecutivo.svg"',
+            '"executiveSvg": "./examples/quadrato-con-pannelli-esecutivo.svg"'
           )) {
             if (-not $catalog.Contains($marker)) {
               throw "Catalogo esempio pannelli incompleto: $marker"
@@ -208,6 +210,9 @@ jobs:
             'id="androidCadShowExecutive"',
             "Esecutivo pannelli",
             "async function ensureProjectBrowserExecutive()",
+            "async function loadProjectBrowserStaticExecutive(example, options = {})",
+            "current.executiveSvg",
+            "nessuna richiesta al Service",
             "await openProjectBrowserExecutive();"
           )) {
             if (-not $app.Contains($marker)) {
@@ -269,6 +274,46 @@ jobs:
           path: ${{ runner.temp }}/PublicSquareExecutiveArtifacts
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Verify and consolidate public example executives
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/work/static-example-executives') && github.actor != 'github-actions[bot]' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $repoRoot = Resolve-Path "..\.."
+          $examples = Join-Path $repoRoot "docs\termodel-ui-demo\examples"
+          $radiantSource = Join-Path $env:RUNNER_TEMP "RadiantPanelsPublicExampleArtifacts\pannelli-esecutivo.svg"
+          $squareSource = Join-Path $env:RUNNER_TEMP "PublicSquareExecutiveArtifacts\quadrato-con-pannelli-esecutivo.svg"
+
+          foreach ($source in @($radiantSource,$squareSource)) {
+            if (-not (Test-Path -LiteralPath $source)) { throw "Esecutivo generato mancante: $source" }
+            $svg = Get-Content -LiteralPath $source -Raw
+            foreach ($marker in @(
+              "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1",
+              'data-coordinate-unit="m"',
+              'data-termodel-max-y=',
+              '_PiantaPulita_Output',
+              '_PannelliMandata_Output',
+              '_PannelliRitorno_Output'
+            )) {
+              if (-not $svg.Contains($marker)) { throw "Esecutivo $source privo del marker $marker" }
+            }
+          }
+
+          Copy-Item -LiteralPath $radiantSource -Destination (Join-Path $examples "pannelli-radianti-esecutivo.svg") -Force
+          Copy-Item -LiteralPath $squareSource -Destination (Join-Path $examples "quadrato-con-pannelli-esecutivo.svg") -Force
+
+          Set-Location $repoRoot
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/termodel-ui-demo/examples/pannelli-radianti-esecutivo.svg docs/termodel-ui-demo/examples/quadrato-con-pannelli-esecutivo.svg
+          if (git diff --cached --quiet) {
+            Write-Host "PUBLIC_EXAMPLE_EXECUTIVES_ALREADY_CONSOLIDATED"
+          } else {
+            git commit -m "chore(web): consolida esecutivi statici esempi pannelli"
+            git push origin HEAD:${{ github.ref_name }}
+            Write-Host "PUBLIC_EXAMPLE_EXECUTIVES_COMMITTED"
+          }
 
       - name: Benchmark StrategiaDiego regression fixtures
         shell: pwsh
