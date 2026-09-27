@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Termodel Web v1.24 — Esempio pannelli radianti</title>
+  <title>Termodel Web v1.25 — Esempio pannelli radianti</title>
   <script>
     // Android va riconosciuto prima del primo paint: evita il flash della UI desktop
     // mentre il modulo principale e Three.js sono ancora in caricamento.
@@ -1802,7 +1802,7 @@
         padding: 12px !important;
       }
       .project-explore-window {
-        width: min(94vw, 520px) !important;
+        width: min(520px, calc(100vw - 24px)) !important;
         height: auto !important;
         max-height: calc(100dvh - 24px) !important;
         border: 1px solid #666 !important;
@@ -1823,7 +1823,7 @@
         padding: 8px !important;
       }
       .project-explore-window {
-        width: min(680px, 96vw) !important;
+        width: min(680px, calc(100vw - 16px)) !important;
         max-height: calc(100dvh - 16px) !important;
       }
       .project-explore-window .ai-instruct-body {
@@ -1857,7 +1857,7 @@
   <div id="app">
     <div class="titlebar">
       <div class="app-icon"></div>
-      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v1.24</div>
+      <div id="appTitleText" class="title-text">Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v1.25</div>
     </div>
 
     <nav class="menubar" aria-label="Menu principale">
@@ -2418,6 +2418,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsts@2.12.1/dist/jsts.min.js"
           integrity="sha512-uD8O1KVrtd2ar9XaZntrb9ne07Btc7+uudbQpOMXa7UQcls1/uEU65bdxeIqncsuDk+ow1ioX33EBUf0c0SvMQ=="
           crossorigin="anonymous"></script>
-  <script type="module" src="./app.js?v=1.24"></script>
+  <script type="module" src="./app.js?v=1.25"></script>
 </body>
 </html>

@@ -89,11 +89,11 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.24';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.25';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.24")) {
-            throw "Cache-busting app.js v1.24 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.25")) {
+            throw "Cache-busting app.js v1.25 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -288,10 +288,10 @@ jobs:
             'id="projectExploreModal"',
             'id="projectExploreExamples"',
             'Modello realizzato con gli strumenti avanzati di Termodel non esplorabile, selezionare un esempio per esplorare il disegno di input ed i disegni esecutivi',
-            'width: min(94vw, 520px) !important;',
+            'width: min(520px, calc(100vw - 24px)) !important;',
             'max-height: calc(100dvh - 24px) !important;',
             '@media (max-width: 760px) and (orientation: landscape)',
-            'width: min(680px, 96vw) !important;',
+            'width: min(680px, calc(100vw - 16px)) !important;',
             'max-height: calc(100dvh - 16px) !important;'
           )) {
             if (-not $index.Contains($marker)) {
