@@ -13,7 +13,7 @@
     {
       "id": "quadrato-con-pannelli",
       "name": "Quadrato con pannelli",
-      "description": "Quadrato 4×4 m con un tubo di ingresso, banco rapido StrategiaDiego",
+      "description": "Quadrato 4×4 m con un tubo di ingresso ed esecutivo pannelli consolidato",
       "geometry": "./examples/quadrato-con-pannelli.svg",
       "executive": true,
       "default": false,
