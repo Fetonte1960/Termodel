@@ -92,6 +92,12 @@ Fasi anti-timeout:
 - **FASE 3+ — locali successivi:** procedere uno per volta, aggiungendo ogni caso risolto alla regression Fast prima di passare al successivo;
 - ogni fase significativa termina con checkpoint persistente e Issue #1; le singole build restano notificate dalle Actions e non richiedono Issue dedicate.
 
+Stato fasi:
+- **FASE 1 — ESEGUITA:** input reale del progetto pubblico estratto tramite il vero `GeneraModello`, SHA-256 `15E9F73DEB570F4E17385FF3CD7335916DD8023C69A630925CF083C24A41109A`. Classificati 9 locali, 6 con circuito/ingresso pannello e 4 rettangolari con pannello: `locale_1` (T6, 3,09×5,50 m), `locale_5` (T1, 5,43×4,24 m), `locale_8` (T3, 3,91×4,24 m), `locale_9` (T5, 2,57×4,41 m). Salvata una sola fixture condivisa `tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml`; aggiunto al Harness il filtro `localeId/--locale` nel commit `3b1193fbdd814af6598a4bf08ba8fd800b7cff1c` e creati quattro case indipendenti. Il quadrato approvato è bloccato da baseline esatta SVG SHA-256 `fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39`, 16 punti; Fast Harness run `36385818334` SUCCESS.
+- **FASE 2 — IN CORSO (`locale_1`):** riprodotto Return a 6 punti con stop offset 2/3; la chiusura M0/R1 successiva taglia tre tratti Supply e rimuove ~10,35 m, quindi la forma rossa catastrofica è conseguenza del blocco Return. Prova lato opposto `Destro` nel run `36386515342`: peggiore (Return 2 punti, offset 1/2/3 non collegati), quindi il lato iniziale non è la causa. I rifiuti sono geometrici reali, non tolleranze numeriche. Ipotesi corrente: il Return cerca il passaggio all'offset successivo troppo tardi, dopo aver superato un varco utile; prima di qualunque modifica strategica verrà aggiunto solo trace non invasivo per verificare l'esistenza di un portale anticipato.
+- linee guida aggiornate con `DV-TEST-002` nel commit `707a5e0778afa303dd0dd7b29859cbeb4f7584f6`.
+
+
 Regole:
 - usare il percorso locale/Fast Harness come banco primario e GitHub Actions solo per consolidamento;
 - preservare `SpiraliVittorio`;
