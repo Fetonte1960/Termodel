@@ -552,6 +552,7 @@ namespace SpiralHeatingDiegoVittorio
             };
 
             int numeroTentativo = 0;
+            CandidatoChiusura primoAccettabile = null;
             var configurazioniGiaProvate = new HashSet<string>(
                 StringComparer.Ordinal);
 
@@ -590,17 +591,21 @@ namespace SpiralHeatingDiegoVittorio
                         passo,
                         numeroTentativo);
                     if (candidato != null)
-                        return candidato;
+                    {
+                        if (!TraceClosureEnabled)
+                            return candidato;
+
+                        primoAccettabile ??= candidato;
+                    }
                 }
             }
 
             // DV-TEST-002 — fallback ortogonale circoscritto.
-            // Si attiva soltanto se tutte le configurazioni storiche hanno
-            // fallito, quindi non può cambiare i casi (quadrato compreso) che
-            // possiedono già una chiusura LG-048 valida. Permette di terminare
-            // il Return all'interno dell'ultimo segmento conservato, nel punto
-            // ottenuto proiettando ortogonalmente il terminale della mandata.
-            // È la generalizzazione minima del caso locale_1: 0,60 m = 2p.
+            // In produzione viene raggiunto soltanto se tutte le configurazioni
+            // storiche hanno fallito. Con TRACE_CLOSURE attivo viene invece
+            // enumerato anche dopo un candidato diretto valido, esclusivamente
+            // per diagnosi: il candidato restituito resta comunque il primo
+            // accettabile secondo l'ordine storico.
             foreach (var livelloMandata in livelliMandata.Reverse())
             {
                 ConfigurazioneTerminale mandata =
@@ -644,13 +649,25 @@ namespace SpiralHeatingDiegoVittorio
                             Console.WriteLine(
                                 $"  DV_CLOSURE_PROJECTION_ACCEPT attempt={numeroTentativo} " +
                                 $"seq={mandata.Codice}/{ritorno.Codice}.");
+                            primoAccettabile ??= candidato;
+                            continue;
                         }
+
                         return candidato;
                     }
                 }
             }
 
-            return null;
+            if (TraceClosureEnabled && primoAccettabile != null)
+            {
+                Console.WriteLine(
+                    $"  DV_CLOSURE_TRACE_FIRST_ACCEPT attempt={primoAccettabile.NumeroTentativo} " +
+                    $"seq={primoAccettabile.LivelloMandata}/{primoAccettabile.TentativoRitorno} " +
+                    $"length={primoAccettabile.LunghezzaChiusura:R} " +
+                    $"removed={primoAccettabile.LunghezzaRimossa:R}.");
+            }
+
+            return primoAccettabile;
         }
 
         private static ConfigurazioneTerminale CreaConfigurazioneTerminaleProiettata(
