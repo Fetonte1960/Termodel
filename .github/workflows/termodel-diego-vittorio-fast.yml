@@ -19,6 +19,7 @@ on:
       - 'Server/Termodelwebservice/tests/radiant-harness/cases/*DIEGO-VITTORIO*.json'
       - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiegoSquare4x4.locale.xml'
       - 'Server/Termodelwebservice/tests/fixtures/DiegoVittorioPublicSquareLeft.locale.xml'
+      - 'Server/Termodelwebservice/tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml'
       - 'Server/Termodelwebservice/tools/local-radiant-harness/Test-DiegoVittorio*.ps1'
       - '.github/workflows/termodel-diego-vittorio-fast.yml'
 
@@ -134,6 +135,32 @@ jobs:
           # pubblico, il completamento del Return e la chiusura.
           Write-Host "DIEGO_VITTORIO_PUBLIC_SQUARE_LEFT_OK"
 
+      - name: Run public panels locale_1 regression
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioPanelsLocale1"
+          $caseId = "DV-PUBLIC-PANELS-RECT-01-P030-DIEGO-VITTORIO"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/$caseId.json `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Regression locale_1 fallita." }
+
+          $log = Join-Path $out "$caseId.log.txt"
+          if (-not (Test-Path -LiteralPath $log)) { throw "Log locale_1 mancante." }
+          $logText = Get-Content -LiteralPath $log -Raw
+          if ($logText -match 'Ritorno: offset 2 senza collegamento valido' -or
+              $logText -match 'Ritorno: offset 3 senza collegamento valido') {
+            throw "Regressione locale_1: Return nuovamente intrappolato."
+          }
+          if ($logText -notmatch 'Ritorno autonomo:.*punti=18') {
+            throw "Regressione locale_1: Return non raggiunge 18 punti."
+          }
+          if ($logText -notmatch 'Chiusura rapida:.*sequenza=M4/RP3.*lunghezza=0.6 m') {
+            throw "Regressione locale_1: chiusura proiettata M4/RP3 non presente."
+          }
+          Write-Host "DIEGO_VITTORIO_PUBLIC_PANELS_LOCALE1_OK"
+
       - name: Run fitting regression
         run: dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- fillet-check
 
@@ -145,6 +172,7 @@ jobs:
           path: |
             ${{ runner.temp }}/DiegoVittorioFast
             ${{ runner.temp }}/DiegoVittorioPublicSquare
+            ${{ runner.temp }}/DiegoVittorioPanelsLocale1
           if-no-files-found: warn
           retention-days: 14
 
