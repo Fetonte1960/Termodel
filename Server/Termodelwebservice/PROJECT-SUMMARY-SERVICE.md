@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-28 — Registrazione avvio test server `Diego_Vittorio`
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - verificare se Codex ha già registrato l'avvio dei test manuali sul Service pubblico della strategia spirali corrente;
@@ -84,6 +84,13 @@ Criteri di completamento:
 - Summary e registro spirali coerenti con la fase di collaudo reale iniziata;
 - nessuna modifica al codice geometrico o a `definizionedati.json`;
 - commit GitHub tracciato e incarico chiuso come `ESEGUITO`.
+
+Esito:
+- verificato che Codex aveva già consolidato e attivato `Diego_Vittorio` sul Service, ma non era ancora registrato esplicitamente l'avvio del **collaudo manuale sul Service pubblico** comunicato dall'utente;
+- aggiornato `docs/spirali-strategy-register/README.md` nel commit `9fb08fd3a290a564471c1f50efbe36f888b29b94`, eliminando il riferimento ormai obsoleto alla sola futura StrategiaDiego e registrando `Diego_Vittorio` come default corrente in test;
+- aggiornato `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md` nel commit `84d5c51da601ee6a6ce486ec4d88583520d573dd`: stato runtime portato al 28/09/2026 e nuova sezione dedicata all'avvio del collaudo manuale sul Service pubblico;
+- distinta esplicitamente la fase di test manuale reale dalle prove Harness/locali/GitHub Actions già eseguite;
+- nessuna modifica al motore, al frontend o a `definizionedati.json`; nessuna build necessaria per questo incarico esclusivamente documentale.
 
 
 ### INCARICO 2026-09-28 — Consolidamento e attivazione Service di `Diego_Vittorio`
