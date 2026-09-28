@@ -273,6 +273,82 @@ jobs:
           Write-Host "DIEGO_VITTORIO_LOCALE1_PRECLOSE_SVG_OK"
           Write-Host "PRECLOSE_SVG=$svg"
 
+      - name: Trace Return bottleneck locale_1 vs public square
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $env:TERMODEL_DIEGO_VITTORIO_TRACE_RETURN = "true"
+          $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioReturnBottleneckTrace"
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+
+          $cases = @(
+            @{
+              Name = "locale1"
+              Case = "tests/radiant-harness/cases/DV-PUBLIC-PANELS-RECT-01-P030-DIEGO-VITTORIO.json"
+              Id = "DV-TRACE-LOCALE1-T6"
+            },
+            @{
+              Name = "square"
+              Case = "tests/radiant-harness/cases/DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json"
+              Id = "DV-TRACE-PUBLIC-SQUARE"
+            }
+          )
+
+          foreach ($item in $cases) {
+            $out = Join-Path $root $item.Name
+            dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+              --case $item.Case `
+              --id $item.Id `
+              --skip-close `
+              --out $out
+            if ($LASTEXITCODE -ne 0) { throw "Return trace $($item.Name) fallito." }
+
+            $log = Join-Path $out "$($item.Id).log.txt"
+            if (-not (Test-Path -LiteralPath $log)) { throw "Return trace log mancante: $log" }
+            Write-Host "=== RETURN TRACE $($item.Name) ==="
+            Get-Content -LiteralPath $log | Where-Object {
+              $_ -match 'DV_RETURN_|Ritorno: offset|Ritorno autonomo|Ritorno parametrico'
+            } | Write-Host
+          }
+
+          Remove-Item Env:TERMODEL_DIEGO_VITTORIO_TRACE_RETURN -ErrorAction SilentlyContinue
+          Write-Host "DIEGO_VITTORIO_RETURN_BOTTLENECK_TRACE_OK"
+
+      - name: Run Vittorio reference locale_1 vs public square
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = Join-Path $env:RUNNER_TEMP "VittorioReferenceComparison"
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+
+          $cases = @(
+            @{
+              Name = "locale1"
+              Case = "tests/radiant-harness/cases/DV-PUBLIC-PANELS-RECT-01-P030-DIEGO-VITTORIO.json"
+              Id = "VITTORIO-LOCALE1-T6"
+            },
+            @{
+              Name = "square"
+              Case = "tests/radiant-harness/cases/DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json"
+              Id = "VITTORIO-PUBLIC-SQUARE"
+            }
+          )
+
+          foreach ($item in $cases) {
+            $out = Join-Path $root $item.Name
+            dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+              --case $item.Case `
+              --engine Vittorio `
+              --id $item.Id `
+              --out $out
+            if ($LASTEXITCODE -ne 0) { throw "Vittorio reference $($item.Name) fallito." }
+            $metrics = Join-Path $out "$($item.Id).metrics.json"
+            if (-not (Test-Path -LiteralPath $metrics)) { throw "Vittorio metrics mancanti: $metrics" }
+            $m = Get-Content -LiteralPath $metrics -Raw | ConvertFrom-Json
+            Write-Host ("VITTORIO_REFERENCE name={0} points={1} svg={2}" -f $item.Name,$m.SpiralPointCount,$m.svgSha256)
+          }
+          Write-Host "VITTORIO_REFERENCE_COMPARISON_OK"
+
       - name: Run public panels locale_1 regression
         shell: pwsh
         run: |
@@ -387,6 +463,8 @@ jobs:
             ${{ runner.temp }}/DiegoVittorioPublicSquare
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1PreClosure
+            ${{ runner.temp }}/DiegoVittorioReturnBottleneckTrace
+            ${{ runner.temp }}/VittorioReferenceComparison
             ${{ runner.temp }}/DiegoVittorioPanelsLocale5
             ${{ runner.temp }}/DiegoVittorioPanelsLocale8
             ${{ runner.temp }}/DiegoVittorioPanelsLocale9
