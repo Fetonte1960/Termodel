@@ -378,6 +378,23 @@ namespace SpiralHeatingDiegoVittorio
 						(startVertexIndex + delta + currentOffset.Count) %
 						currentOffset.Count;
 					Punto candidato = currentOffset[vertexIndex];
+
+					// Correzione locale DV-TEST-001: quando l'intersezione di
+					// collegamento coincide già con il primo vertice dell'offset,
+					// non esiste un nuovo segmento da validare. Trattare il punto
+					// coincidente come un segmento di lunghezza zero può produrre
+					// un falso rifiuto per autocondizionamento e far dichiarare
+					// erroneamente l'offset "senza tratto percorribile".
+					if (spiral[^1].DistanceTo(candidato) <= 0.000001)
+					{
+						if (TraceReturnEnabled)
+						{
+							Console.WriteLine(
+								$"  DV_RETURN_SKIP_ZERO candidate=({candidato.X:R},{candidato.Y:R}).");
+						}
+						continue;
+					}
+
 					if (!SegmentoRispettaCondizionamento(
 						spiral[^1],
 						candidato,
