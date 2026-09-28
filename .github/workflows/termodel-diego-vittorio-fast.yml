@@ -137,6 +137,10 @@ jobs:
           $content = Get-Content -LiteralPath $log -Raw
           foreach ($marker in @(
             "[SpiraliDiegoVittorio][Supply.Context]",
+            "[SpiraliDiegoVittorio][Supply.Access.Context]",
+            "[SpiraliDiegoVittorio][Supply.Access.Connection]",
+            "accessDistanceInside=",
+            "[SpiraliDiegoVittorio][Supply.Access.Finalize]",
             "[SpiraliDiegoVittorio][Supply.Offset.Begin]",
             "[SpiraliDiegoVittorio][Supply.ComputeOffset.Edge] level=3 edge=1",
             "conditionShort=true conditionShrink=true skip=true",
