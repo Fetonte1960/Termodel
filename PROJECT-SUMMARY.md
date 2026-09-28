@@ -14,10 +14,10 @@
 >
 > Questo documento serve a evitare la perdita di contesto quando una chat diventa troppo lunga. Deve essere mantenuto breve, operativo e aggiornato dopo ogni intervento che cambia architettura, stato, file importanti, contratti o prossimi passi.
 
-Ultimo aggiornamento: **2026-09-24**  
+Ultimo aggiornamento: **2026-09-28**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`8efdb3329eb30eb2ac962ed6e1dd8a3d2001e71f` — `Restore clean floor regression script`  
+`90bb914e7bcdb0cff17d9bd19d1bf2701ccf8424` — `test(web): allinea check identità Service esecutivo`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -256,6 +256,49 @@ Commit principali:
 - `ef4cd8073a184ef1d87c470a97c4150983d9a507` — implementazione;
 - `11c6091ec653571dbe10e2b3a849db2f6603582b` — fix header;
 - `8efdb3329eb30eb2ac962ed6e1dd8a3d2001e71f` — regression finale valida.
+
+
+## 0.8 Modifica 2026-09-28 — provenienza esecutivo pannelli nel CAD2D
+
+Stato: **ESEGUITO TECNICAMENTE / DA VERIFICARE VISIVAMENTE NEL BROWSER**.
+
+Obiettivo:
+- eliminare l'ambiguità, durante il collaudo rapido, fra esecutivo statico consolidato nell'esempio ed esecutivo appena ricalcolato dal Service;
+- mostrare direttamente nel CAD2D chi ha generato il disegno, con quale motore e quale commit Service.
+
+Risultato:
+- frontend **v1.34**;
+- aggiunto il box discreto `cadExecutiveProvenance`, sovrapposto alla tavola CAD ma esterno all'SVG;
+- quando è visibile un esecutivo statico del catalogo, il box mostra:
+  - `CONSOLIDATO NELL'ESEMPIO`;
+  - generatore `Termodel Service`;
+  - motore `GPT / SpiraliGPT`;
+  - commit Service di generazione `aba9bd29`;
+  - commit di consolidamento `9a4c0b7d` e data 27/09/2026;
+- la provenienza statica è documentata anche in `examples/catalog.json` tramite `executiveProvenance`;
+- quando viene caricato un artifact dell'ultimo `Aggiorna Modello`, il box cambia in:
+  - `CALCOLO CORRENTE · NON CONSOLIDATO`;
+  - motore e commit Service reali letti da `GET /health`;
+  - projectId corrente e avviso se l'artifact è stale;
+- nascondendo l'esecutivo viene nascosto anche il box;
+- nessuna modifica agli SVG esecutivi, al Core, al motore spirali o a `definizionedati.json`.
+
+Provenienza degli esecutivi statici verificata:
+- GitHub Actions run `36301010185`;
+- sorgente Service `aba9bd293936396c9861f521d5ffebdb0fe8b769`;
+- motore GPT / SpiraliGPT;
+- consolidamento nel catalogo: `9a4c0b7d982ea42c1b73a4a5a36975935d1bfece`.
+
+Commit:
+- `b33ffcc9f505c3dc9ac06c1d405f7b7e732b57e0` — implementazione;
+- `e694e191542bbdc133d552b879b35d1fb933998d` — cache-busting v1.34;
+- `90bb914e7bcdb0cff17d9bd19d1bf2701ccf8424` — allineamento regression identità Service.
+
+Verifica:
+- run `36411206078`: sintassi JavaScript SUCCESS, `CAD_EXECUTIVE_PROVENANCE_OK` SUCCESS, build Service SUCCESS con 0 errori, smoke progetto pubblico pannelli SUCCESS;
+- lo stesso workflow resta rosso solo sul Golden Darcy sintetico già noto e indipendente (dP 1,313675 Pa contro golden 1,343675 Pa);
+- GitHub Pages run `36411205191`: build e deploy SUCCESS;
+- resta da verificare visivamente nel browser il posizionamento/leggibilità del box e il passaggio statico consolidato → runtime non consolidato dopo `Aggiorna Modello`.
 
 
 ## 1. Regola obbligatoria per nuove chat

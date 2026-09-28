@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 12:26 Europe/Rome
+Checkpoint: 2026-09-28 12:44 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -218,7 +218,7 @@ Anomalia esterna alla presente campagna:
    locale o la geometria effettivamente difettosa.
 
 ## Sottofase FASE 6A — provenienza visibile dell'esecutivo CAD2D
-Stato: **IN CORSO**
+Stato: **COMPLETATA TECNICAMENTE — ATTESA SOLA VERIFICA VISIVA UTENTE**
 
 Origine richiesta utente:
 - prima del collaudo finale, rendere immediatamente visibile nel CAD2D / Disegno esecutivo chi ha generato il disegno;
@@ -230,21 +230,40 @@ Provenienza storica verificata:
 - gli esecutivi statici degli esempi furono generati dal vero Termodel WebService nel workflow run `36301010185`, sul commit sorgente `aba9bd293936396c9861f521d5ffebdb0fe8b769`;
 - il motore usato era `GPT / SpiraliGPT`;
 - i file furono consolidati nel catalogo pubblico dal commit `9a4c0b7d982ea42c1b73a4a5a36975935d1bfece` del 27/09/2026;
-- per gli esecutivi runtime la fonte autorevole deve essere `GET /health` del Service corrente (`serviceCommit`, `spiralEngine`).
+- per gli esecutivi runtime la fonte autorevole è `GET /health` del Service corrente (`serviceCommit`, `spiralEngine`).
 
-Piano:
-1. aggiungere metadata di provenienza agli esempi statici nel catalogo;
-2. aggiungere badge/box discreto nel CAD2D e logica di aggiornamento per statico/runtime;
-3. incrementare versione frontend e allineare cache-busting/regression CI;
-4. eseguire verifica sintattica/CI e aggiornare il checkpoint.
+Implementazione:
+- frontend portato a **v1.34**;
+- commit funzionale `b33ffcc9f505c3dc9ac06c1d405f7b7e732b57e0`;
+- fix cache-busting `e694e191542bbdc133d552b879b35d1fb933998d`;
+- allineamento regression identità Service `90bb914e7bcdb0cff17d9bd19d1bf2701ccf8424`;
+- aggiunto box discreto `cadExecutiveProvenance`, esterno all'SVG e quindi senza modificare la geometria;
+- esempio statico: mostra `CONSOLIDATO NELL'ESEMPIO`, generatore, motore, commit Service di generazione, commit/data di consolidamento;
+- artifact runtime: mostra `CALCOLO CORRENTE · NON CONSOLIDATO`, generatore, motore e commit reali del Service letti da `/health`, oltre al projectId e allo stato stale;
+- metadata storici aggiunti a `examples/catalog.json`;
+- nessuna modifica a Core, motore spirali, SVG esecutivi o `definizionedati.json`.
 
-Vincoli:
+Verifica:
+- run finale `36411206078`:
+  - JavaScript syntax: **SUCCESS**;
+  - `CAD_EXECUTIVE_PROVENANCE_OK`: **SUCCESS**;
+  - build Service: **SUCCESS**, 0 errori;
+  - smoke progetto pubblico Pannelli radianti: **SUCCESS**;
+- il workflow complessivo termina rosso soltanto sul Golden Darcy sintetico già noto e indipendente: dP corrente 1,313675 Pa contro golden storico 1,343675 Pa; non è causato né toccato dalla FASE 6A;
+- GitHub Pages run `36411205191`: build + deploy **SUCCESS**;
+- verifica HTTP diretta del dominio non disponibile dallo strumento di questa sessione: la prova visuale browser resta umana.
+
+Vincoli rispettati:
 - nessuna modifica al motore geometrico;
 - nessuna modifica a `definizionedati.json`;
 - nessuna alterazione dell'SVG esecutivo;
 - la FASE 6 principale resta tecnicamente validata e in attesa del collaudo visivo utente.
 
-**PROSSIMO PASSO ESATTO:** implementare esclusivamente il badge di provenienza e i metadata associati, quindi verificarne il wiring.
+**PROSSIMO PASSO ESATTO:**
+1. aprire il frontend v1.34 e l'esempio `Pannelli radianti`;
+2. in `Disegno esecutivo` verificare che il box indichi chiaramente lo statico consolidato GPT/SpiraliGPT;
+3. eseguire `Aggiorna Modello` e verificare che lo stesso box passi a `CALCOLO CORRENTE · NON CONSOLIDATO` mostrando il motore e commit Service correnti;
+4. proseguire quindi con la conferma visiva finale della FASE 6.
 
 ## File/componenti attualmente coinvolti
 
@@ -260,7 +279,7 @@ Vincoli:
 
 - `SpiraliVittorio` invariata.
 - `StrategiaDiego` resta PARKED.
-- Nessuna modifica frontend.
+- Nessuna ulteriore modifica frontend, salvo interventi esplicitamente autorizzati come FASE 6A.
 - Nessuna modifica a `definizionedati.json`.
 - Nessun refactoring strutturale durante questa campagna.
 - Nessuna strategia globale di fuga/backtracking senza consenso umano.
