@@ -6489,6 +6489,82 @@ Questa indipendenza può permettere al Return di utilizzare percorsi che una
 semplice copia parallela della mandata non potrebbe percorrere, ma rende il
 problema geometrico più vincolato e introduce nuovi modi di fallimento.
 
+## DV-TEST-001 — Campagna corrente: anomalia quadrato Service vs Harness
+
+**Stato:** INDAGINE ATTIVA — 28/09/2026  
+**Origine:** direttiva utente 28/09/2026
+
+Obiettivo corrente: eliminare le anomalie osservate nel disegno spirali
+dell'esempio pubblico **Quadrato con pannelli** usando `Diego_Vittorio`,
+senza introdurre modifiche strutturali non concordate con l'utente.
+
+### Prima non-equivalenza già accertata
+
+Il precedente quadrato sintetico del Harness e l'esempio Web pubblico hanno
+la stessa stanza 4×4 m, ma **non lo stesso ingresso tubo**:
+
+- fixture Harness
+  `tests/fixtures/StrategiaDiegoSquare4x4.locale.xml`:
+  ingresso `(2,-1) -> (2,1)`, verticale dal lato inferiore;
+- esempio Web
+  `docs/termodel-ui-demo/examples/quadrato-con-pannelli.svg`:
+  ingresso `(-0,5,2) -> (0,5,2)`, orizzontale dal lato sinistro.
+
+Di conseguenza il fatto che il quadrato sintetico fosse corretto nel Harness
+non dimostra che il caso pubblico attraversi le stesse decisioni geometriche.
+
+Inoltre
+`tools/generate-public-square-executive.ps1` forza storicamente
+`TERMODEL_SPIRAL_ENGINE=GPT`: l'esecutivo statico
+`quadrato-con-pannelli-esecutivo.svg` è quindi utile come riferimento
+grafico storico, ma **non è un Golden di Diego_Vittorio**.
+
+### Ipotesi da verificare
+
+L'ipotesi utente resta prioritaria dopo avere reso identico l'input:
+il Return autonomo può trovarsi in un budello con spazio di manovra prossimo
+al limite. In questa condizione piccole differenze di coordinate,
+normalizzazione, arrotondamento o tolleranza possono trasformare una
+connessione da valida a respinta e produrre uno stop prematuro.
+
+Il codice corrente contiene effettivamente decisioni di frontiera con
+tolleranze dell'ordine di `1e-6` e una normalizzazione del perimetro del
+Return a due decimali; questi elementi sono **sospetti da misurare**, non
+ancora cause accertate.
+
+### Ordine obbligatorio dell'indagine
+
+1. costruire dal **medesimo progetto quadrato pubblico** l'input reale usato
+   dal Service;
+2. conservare l'XML/fixture estratto senza ricostruirlo a mano;
+3. eseguire quello stesso input nel Harness `Diego_Vittorio`;
+4. confrontare Harness e percorso Service, registrando coordinate e motivo del
+   primo stop/rifiuto del Return;
+5. soltanto dopo provare variazioni diagnostiche circoscritte di precisione o
+   tolleranza;
+6. nessuna nuova euristica, backtracking, ricerca globale o modifica
+   strutturale del Return può essere introdotta senza accordo umano.
+
+### Regola di velocità del ciclo umano
+
+Per questa campagna il percorso primario deve essere **locale**:
+
+```text
+modifica circoscritta
+  -> build incrementale Harness
+  -> run stesso input reale
+  -> SVG + log + metriche locali
+  -> valutazione umana
+```
+
+GitHub serve a persistere checkpoint e verifiche finali, non come trasporto
+obbligatorio di ogni tentativo. GitHub Actions va usata per la verifica
+riproducibile di una fase o di una correzione candidata, non per ogni
+micro-iterazione. Le build hanno già le proprie notifiche; Issue #1 segnala
+soltanto la conclusione delle fasi significative.
+
+---
+
 ## DV-KNOWN-001 — Intrappolamento del Return nel “budello” della mandata
 
 **Stato:** PROBLEMA APERTO — OSSERVATO NEL COLLAUDO  
