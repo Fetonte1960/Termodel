@@ -1,10 +1,11 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 13:45 Europe/Rome
+Checkpoint: 2026-09-28 13:48 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
-HEAD tecnico validato prima del presente checkpoint: `a4f478c9a44c7764df45b8ce8b2801938c96fde7`
+HEAD tecnico validato: `3bc7fae41e643a3baa1273a5cc3694da04d7ebb7`
+HEAD documentale prima del presente checkpoint: `4c79d1ad8bad407d9998bc2605f4e943cf5ffffa`
 
 ## Attività corrente
 
@@ -457,6 +458,8 @@ Diagnostica aggiuntiva:
 - fix solo diagnostico `3bc7fae41e643a3baa1273a5cc3694da04d7ebb7`;
 - Fast Harness run `36417080491`, job `108910674388`: **SUCCESS**;
 - tutte le regression preesistenti, incluso il quadrato approvato, SUCCESS.
+- Summary Service aggiornato nel commit `4e0ff119c744aa87ff07b04a7a6393f34d5e3004`;
+- linee guida spirali aggiornate nel commit `4c79d1ad8bad407d9998bc2605f4e943cf5ffffa`.
 
 Confronto col riferimento Desktop:
 - `SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/Spiralgenerator.cs` contiene sia la stessa logica `ComputeOffset` con `skipIndices`, sia la stessa finalizzazione storica del giro;
