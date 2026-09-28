@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 12:12 Europe/Rome
+Checkpoint: 2026-09-28 12:18 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -172,13 +172,22 @@ Stato noto dai run di estrazione precedenti, da verificare sul codice corrente:
   `M3/R5` obliqua da 1,875 m;
 - questo miglioramento è incidentale e non è ancora una regression dedicata.
 
+Verifica corrente:
+- workflow inspection commit `6f4abb6a56ed515ddae776c4ed08c27e9f2dd28b`;
+- Fast Harness run `36407962757`: **SUCCESS**;
+- quadrato + `locale_1` + `locale_5` + `locale_8` tutti verdi;
+- `locale_9`: Return **13 punti**, 2 offset utili, nessun arresto;
+- la selezione LG-048 già consolidata sostituisce la precedente chiusura
+  obliqua 1,875 m con `M3/RP2`, ortogonale, **0,77 m**;
+- SVG ispezionato: due livelli Return ordinati e chiusura locale; nessuna
+  anomalia che richieda una nuova modifica del motore.
+
 **PROSSIMO PASSO ESATTO:**
-1. eseguire `locale_9` sul codice corrente nel Fast Harness;
-2. ispezionare log/SVG e verificare se Return 13 punti e chiusura 1,875 m
-   costituiscono una geometria coerente;
-3. se coerente, aggiungere regression dedicata senza cambiare il motore;
-4. se emerge un'anomalia reale, isolarla senza modificare i casi già
-   consolidati.
+1. trasformare lo step di inspection `locale_9` in regression ordinaria
+   (13 punti + `M3/RP2` 0,77 m);
+2. rieseguire Fast Harness completo con tutti e quattro i rettangolari;
+3. se verde, chiudere FASE 5 e avviare FASE 6 di ricomposizione del progetto
+   pubblico completo.
 
 ### FASE 6 — ricomposizione progetto completo
 Stato: **NON INIZIATA**
