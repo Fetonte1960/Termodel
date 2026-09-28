@@ -1142,3 +1142,61 @@ macchina decisionale Diego_Vittorio nel passaggio fra offset: riconoscere la
 strettoia 2p, distinguere adiacenza topologica da ostacolo remoto e decidere se
 il corridoio è realmente percorribile. L'arrotondamento non è la causa nel
 motore Diego_Vittorio.
+
+
+### STEP 4F — mappa del codice che valuta le strettoie
+Stato: **COMPLETATO — ANALISI FUNZIONALE, NESSUNA MODIFICA AL MOTORE**
+
+Incarico utente:
+- identificare prima di ogni correzione quali porzioni di codice valutano le
+  strettoie in Vittorio e Diego_Vittorio;
+- confrontare i due flussi decisionali.
+
+Verifiche:
+- `SpiraliVittorio/Spiralgenerator.cs` Service è byte-per-byte identico al
+  riferimento Desktop
+  `SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/Spiralgenerator.cs`;
+- anche `SpiraliVittorio/ChiudiSpirale.cs` è identico al Desktop.
+
+Esito Vittorio:
+- `ComputeOffset`: filtro locale su lato corto + contrazione;
+- soglie `minEdgeLength`: arresto locale di un nuovo anello;
+- `FindIntersectionWithOffset` + controllo `isTooCloseToSpiral`: sola
+  euristica sul gomito di connessione;
+- una volta entrato nell'offset, percorre tutti i vertici senza valutare
+  conseguenze future;
+- `CreaRientro` deriva il Return dalla mandata già arrotondata: nessuna
+  decisione autonoma entra/non entra nella strettoia.
+
+Esito Diego_Vittorio:
+- eredita i filtri Supply di Vittorio;
+- il Return autonomo decide localmente con:
+  `OffsetHaTrattoParalleloTroppoVicino`,
+  `FindConnectionWithOffset`,
+  `ConnectionPathIsValid`,
+  `SegmentoRispettaCondizionamento`,
+  `SegmentoRispettaSpirale`,
+  `FindConnectionWithTerminalTrim`,
+  `TrovaMassimoPrefissoValido`;
+- `FindConnectionWithOffset` è oggi il cuore della decisione di ingresso:
+  genera una famiglia finita di corridoi e sceglie il percorso valido più
+  corto, ma non valuta cosa succede dopo l'ingresso;
+- `ProvaPortaleAnticipato` con `TracePortalsEnabled` è già un look-ahead
+  diagnostico di un offset, ma oggi non influenza la geometria.
+
+Conclusione:
+- Vittorio non possiede una vera macchina decisionale di strettoia per il
+  Return;
+- Diego_Vittorio possiede una macchina locale di ricerca/validazione, ma non
+  ancora una funzione di convenienza a medio raggio;
+- il punto di estensione naturale è
+  `FindConnectionWithOffset + traversal`, non l'arrotondamento.
+
+Linee guida aggiornate:
+- `LG-050 — Strettoie: decisione a visione media, non solo locale`;
+- commit `b4c948582094f072d93f0014eee0a3f3d054c266`.
+
+**PROSSIMO PASSO ESATTO:** fase interattiva: scegliere un singolo punto di
+strettoia nel `locale_1` e seguire, chiamata per chiamata, quali candidati
+`FindConnectionWithOffset` costruisce, quali vengono respinti, quale viene
+premiato e quale informazione sul futuro manca al momento della scelta.
