@@ -10,8 +10,17 @@ $ErrorActionPreference = "Stop"
 $base = "http://127.0.0.1:5084"
 $env:ASPNETCORE_URLS = $base
 $env:TERMODEL_SPIRAL_ENGINE = $Engine
-$env:TERMODEL_SAVED_PROJECTS_DIR = Join-Path $env:RUNNER_TEMP ("TermodelPublicSquareExecutive-" + [guid]::NewGuid().ToString("N"))
-$artifactDir = Join-Path $env:RUNNER_TEMP "PublicSquareExecutiveArtifacts"
+$tempBase = if (-not [string]::IsNullOrWhiteSpace($env:RUNNER_TEMP)) {
+  $env:RUNNER_TEMP
+} else {
+  [System.IO.Path]::GetTempPath()
+}
+$env:TERMODEL_SAVED_PROJECTS_DIR = Join-Path $tempBase ("TermodelPublicSquareExecutive-" + [guid]::NewGuid().ToString("N"))
+$artifactDir = if (-not [string]::IsNullOrWhiteSpace($env:RUNNER_TEMP)) {
+  Join-Path $tempBase "PublicSquareExecutiveArtifacts"
+} else {
+  Join-Path ([Environment]::GetFolderPath("LocalApplicationData")) "Termodel\RadiantHarness\PreparedPublicSquare"
+}
 New-Item -ItemType Directory -Path $env:TERMODEL_SAVED_PROJECTS_DIR -Force | Out-Null
 if (Test-Path -LiteralPath $artifactDir) { Remove-Item -LiteralPath $artifactDir -Recurse -Force }
 New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
