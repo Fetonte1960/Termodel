@@ -183,25 +183,31 @@ jobs:
           }
           Write-Host "DIEGO_VITTORIO_PUBLIC_PANELS_LOCALE5_OK"
 
-      - name: Diagnose locale_8 local dogleg adjacency
+      - name: Run public panels locale_8 regression
         shell: pwsh
-        env:
-          TERMODEL_DIEGO_VITTORIO_TRACE_RETURN: "true"
-          TERMODEL_DIEGO_VITTORIO_DIAG_LOCAL_ROOT_ADJACENCY: "true"
         run: |
           $ErrorActionPreference = "Stop"
-          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioPanelsLocale8Dogleg"
+          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioPanelsLocale8"
           $caseId = "DV-PUBLIC-PANELS-RECT-08-P030-DIEGO-VITTORIO"
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/$caseId.json `
             --out $out
-          if ($LASTEXITCODE -ne 0) { throw "Diagnostica locale_8 dogleg fallita." }
+          if ($LASTEXITCODE -ne 0) { throw "Regression locale_8 fallita." }
 
           $log = Join-Path $out "$caseId.log.txt"
-          if (-not (Test-Path -LiteralPath $log)) { throw "Log diagnostico locale_8 mancante." }
-          Get-Content -LiteralPath $log | Where-Object {
-            $_ -match 'DV_RETURN_DIAG_LOCAL_DOGLEG_ADJACENCY|DV_RETURN_DIAG_LOCAL_ROOT_ADJACENCY|Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida'
-          } | ForEach-Object { Write-Host ("LOCALE8_DOGLEG_DIAG "+$_) }
+          if (-not (Test-Path -LiteralPath $log)) { throw "Log locale_8 mancante." }
+          $logText = Get-Content -LiteralPath $log -Raw
+          if ($logText -match 'Ritorno: offset 2 senza collegamento valido' -or
+              $logText -match 'Ritorno: offset 3 senza collegamento valido') {
+            throw "Regressione locale_8: Return nuovamente bloccato."
+          }
+          if ($logText -notmatch 'Ritorno autonomo:.*punti=18') {
+            throw "Regressione locale_8: Return non raggiunge 18 punti."
+          }
+          if ($logText -notmatch 'Chiusura rapida: tentativo=.*lunghezza=0.971 m') {
+            throw "Regressione locale_8: chiusura attesa non presente."
+          }
+          Write-Host "DIEGO_VITTORIO_PUBLIC_PANELS_LOCALE8_OK"
 
       - name: Run fitting regression
         run: dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- fillet-check
@@ -216,7 +222,7 @@ jobs:
             ${{ runner.temp }}/DiegoVittorioPublicSquare
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1
             ${{ runner.temp }}/DiegoVittorioPanelsLocale5
-            ${{ runner.temp }}/DiegoVittorioPanelsLocale8Dogleg
+            ${{ runner.temp }}/DiegoVittorioPanelsLocale8
           if-no-files-found: warn
           retention-days: 14
 
