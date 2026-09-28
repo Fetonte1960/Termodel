@@ -115,6 +115,19 @@ jobs:
             throw "Regressione DV-TEST-001: chiusura rapida non trovata."
           }
 
+          $baselinePath = "tests/radiant-harness/baselines/DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json"
+          $baseline = Get-Content -LiteralPath $baselinePath -Raw | ConvertFrom-Json
+          $actualSvgHash = (Get-FileHash -LiteralPath $svg -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expectedSvgHash = ([string]$baseline.svgSha256).ToLowerInvariant()
+          if ($actualSvgHash -ne $expectedSvgHash) {
+            throw "VINCOLO QUADRATO BASE VIOLATO: SVG $actualSvgHash, atteso $expectedSvgHash."
+          }
+          $metricsObject = Get-Content -LiteralPath $metrics -Raw | ConvertFrom-Json
+          if ([int]$metricsObject.SpiralPointCount -ne [int]$baseline.spiralPointCount) {
+            throw "VINCOLO QUADRATO BASE VIOLATO: punti=$($metricsObject.SpiralPointCount), attesi=$($baseline.spiralPointCount)."
+          }
+          Write-Host "DIEGO_VITTORIO_APPROVED_SQUARE_BASELINE_OK"
+
           # Test-DiegoVittorioDistances.ps1 resta volutamente specifico del
           # quadrato sintetico 0..4 e viene già eseguito nello step precedente.
           # Questa regression verifica il difetto DV-TEST-001 sul vero input
