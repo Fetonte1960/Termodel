@@ -245,6 +245,22 @@ jobs:
             } | ForEach-Object { Write-Host ("ROOM_DIAG "+$id+" "+$_) }
           }
 
+      - name: Diagnose locale_5 without closure
+        shell: pwsh
+        env:
+          TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE: "false"
+          TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS: "false"
+          TERMODEL_DIEGO_VITTORIO_TRACE_RETURN: "true"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioRoomExtraction"
+          $out = Join-Path $root "diagnostics-no-closure\locale_5"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/DV-PUBLIC-PANELS-RECT-05-P030-DIEGO-VITTORIO.json `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Diagnostica no-closure fallita per locale_5." }
+          Write-Host "LOCALE5_NO_CLOSURE_DIAGNOSTIC_OK"
+
       - name: Trace early portals and closure on locale_1 default side
         shell: pwsh
         env:
