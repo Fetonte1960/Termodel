@@ -71,6 +71,21 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-28 — Registrazione avvio test server `Diego_Vittorio`
+Stato: COMMISSIONATO
+
+Commissionato:
+- verificare se Codex ha già registrato l'avvio dei test manuali sul Service pubblico della strategia spirali corrente;
+- se manca, aggiornare i registri autorevoli senza modificare il motore;
+- allineare il registro strategie allo stato reale: `Diego_Vittorio` è il default operativo del Service, mentre `SpiraliVittorio` resta il riferimento invariato;
+- distinguere i test automatici/harness già eseguiti dal collaudo manuale sul server iniziato dall'utente.
+
+Criteri di completamento:
+- Summary e registro spirali coerenti con la fase di collaudo reale iniziata;
+- nessuna modifica al codice geometrico o a `definizionedati.json`;
+- commit GitHub tracciato e incarico chiuso come `ESEGUITO`.
+
+
 ### INCARICO 2026-09-28 — Consolidamento e attivazione Service di `Diego_Vittorio`
 Stato: ESEGUITO
 
