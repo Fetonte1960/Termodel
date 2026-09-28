@@ -1166,6 +1166,32 @@ namespace SpiralHeatingDiegoVittorio
 					continue;
 				}
 
+				// Diagnostica DV-TEST-002 / locale_8. Il penultimo ostacolo
+				// può essere il ramo immediatamente precedente a un unico raccordo
+				// locale: A-B -> B-C -> C-D. Se la distanza minima A-B/C-D
+				// coincide esattamente con la lunghezza B-C e A e D divergono
+				// sui lati opposti del raccordo, il deficit deriva dal raccordo
+				// stesso e non da due rami remoti affiancati. Per ora questa
+				// classificazione è attiva solo sotto il flag diagnostico.
+				if (DiagnosticLocalRootAdjacencyEnabled &&
+					i == spiraleCorrente.Count - 3 &&
+					CandidatoDivergeDopoRaccordoLocale(
+						spiraleCorrente[i],
+						spiraleCorrente[i + 1],
+						spiraleCorrente[^1],
+						inizio,
+						fine,
+						distanzaMinima))
+				{
+					if (TraceReturnEnabled)
+					{
+						Console.WriteLine(
+							$"  DV_RETURN_DIAG_LOCAL_DOGLEG_ADJACENCY obstacle={i} " +
+							$"candidate=({inizio.X:R},{inizio.Y:R})->({fine.X:R},{fine.Y:R}).");
+					}
+					continue;
+				}
+
 				double distanza = DistanzaSegmenti(
 					inizio,
 					fine,
@@ -1186,6 +1212,62 @@ namespace SpiralHeatingDiegoVittorio
 					}
 					return false;
 				}
+			}
+
+			return true;
+		}
+
+		private static bool CandidatoDivergeDopoRaccordoLocale(
+			Punto ostacoloInizio,
+			Punto ostacoloFine,
+			Punto corrente,
+			Punto inizioCandidato,
+			Punto fineCandidato,
+			double distanzaMinima)
+		{
+			const double tolleranza = 0.000001;
+			if (ostacoloInizio == null ||
+				ostacoloFine == null ||
+				corrente == null ||
+				inizioCandidato == null ||
+				fineCandidato == null ||
+				distanzaMinima <= 0 ||
+				corrente.DistanceTo(inizioCandidato) > tolleranza)
+			{
+				return false;
+			}
+
+			double lunghezzaRaccordo = ostacoloFine.DistanceTo(corrente);
+			if (lunghezzaRaccordo <= tolleranza ||
+				lunghezzaRaccordo >= distanzaMinima - tolleranza)
+			{
+				return false;
+			}
+
+			double distanza = DistanzaSegmenti(
+				inizioCandidato,
+				fineCandidato,
+				ostacoloInizio,
+				ostacoloFine);
+			if (Math.Abs(distanza - lunghezzaRaccordo) > tolleranza)
+				return false;
+
+			// I due rami devono svilupparsi da parti opposte rispetto alla
+			// retta del raccordo B-C: in questo modo si allontanano dal
+			// raccordo invece di correre affiancati sullo stesso lato.
+			double latoOstacolo = Orientamento(
+				ostacoloFine,
+				corrente,
+				ostacoloInizio);
+			double latoCandidato = Orientamento(
+				ostacoloFine,
+				corrente,
+				fineCandidato);
+			if (Math.Abs(latoOstacolo) <= tolleranza ||
+				Math.Abs(latoCandidato) <= tolleranza ||
+				latoOstacolo * latoCandidato >= 0)
+			{
+				return false;
 			}
 
 			return true;
