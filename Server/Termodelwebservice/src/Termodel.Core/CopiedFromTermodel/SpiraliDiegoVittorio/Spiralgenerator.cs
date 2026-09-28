@@ -1,6 +1,7 @@
 // SpiralGenerator.cs
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 // Modificato da Codex per realizzare: isolare la copia sperimentale Diego_Vittorio mantenendo intatto il motore Vittorio.
