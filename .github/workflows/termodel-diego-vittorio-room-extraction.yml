@@ -86,15 +86,37 @@ jobs:
             return [double]::Parse($v,[Globalization.CultureInfo]::InvariantCulture)
           }
 
-          function Normalize-Vertices($locale) {
-            $pts = @($locale.PerimetroInterno.Punto | ForEach-Object {
+          function SamePoint($a,$b,[double]$tol=0.001) {
+            return ([Math]::Abs($a.X-$b.X) -lt $tol -and [Math]::Abs($a.Y-$b.Y) -lt $tol)
+          }
+
+          function Raw-Vertices($locale) {
+            return @($locale.PerimetroInterno.Punto | ForEach-Object {
               [pscustomobject]@{ X = ToDouble ([string]$_.X); Y = ToDouble ([string]$_.Y) }
             })
-            if ($pts.Count -gt 1) {
-              $a=$pts[0]; $b=$pts[-1]
-              if ([Math]::Abs($a.X-$b.X) -le 0.001 -and [Math]::Abs($a.Y-$b.Y) -le 0.001) {
-                $pts = @($pts[0..($pts.Count-2)])
+          }
+
+          function Engine-Normalize($locale) {
+            $pts=@(Raw-Vertices $locale | ForEach-Object {
+              [pscustomobject]@{ X=[Math]::Round($_.X,2); Y=[Math]::Round($_.Y,2) }
+            })
+            if ($pts.Count -gt 1 -and (SamePoint $pts[0] $pts[-1])) {
+              $pts=@($pts[0..($pts.Count-2)])
+            }
+            $changed=$true
+            while($changed -and $pts.Count -gt 3) {
+              $changed=$false
+              $next=@()
+              for($i=0;$i -lt $pts.Count;$i++) {
+                $a=$pts[($i-1+$pts.Count)%$pts.Count]
+                $b=$pts[$i]
+                $d=$pts[($i+1)%$pts.Count]
+                $cross=($b.X-$a.X)*($d.Y-$b.Y)-($b.Y-$a.Y)*($d.X-$b.X)
+                if ([Math]::Abs($cross) -le 0.000001) { $changed=$true; continue }
+                $next += $b
               }
+              if ($next.Count -lt 3) { break }
+              $pts=@($next)
             }
             return @($pts)
           }
@@ -112,15 +134,58 @@ jobs:
             return $true
           }
 
+          function Point-InPolygon($point,$poly) {
+            $inside=$false
+            $j=$poly.Count-1
+            for($i=0;$i -lt $poly.Count;$i++) {
+              $pi=$poly[$i]; $pj=$poly[$j]
+              if ((($pi.Y -gt $point.Y) -ne ($pj.Y -gt $point.Y))) {
+                $xCross=($pj.X-$pi.X)*($point.Y-$pi.Y)/($pj.Y-$pi.Y)+$pi.X
+                if ($point.X -lt $xCross) { $inside = -not $inside }
+              }
+              $j=$i
+            }
+            return $inside
+          }
+
+          $allLines=@($doc.Locali.Piano.Tubi.Linea | ForEach-Object {
+            [pscustomobject]@{
+              Id=[string]$_.Id
+              P0=[pscustomobject]@{X=ToDouble([string]$_.P0.X);Y=ToDouble([string]$_.P0.Y)}
+              P1=[pscustomobject]@{X=ToDouble([string]$_.P1.X);Y=ToDouble([string]$_.P1.Y)}
+            }
+          })
+
+          function Candidate-Inlet($pts) {
+            foreach($line in $allLines) {
+              $p0In=Point-InPolygon $line.P0 $pts
+              $p1In=Point-InPolygon $line.P1 $pts
+              if ($p0In -eq $p1In) { continue }
+              $insidePoint=if($p0In){$line.P0}else{$line.P1}
+              $shared=$false
+              foreach($other in $allLines) {
+                if($other.Id -eq $line.Id){continue}
+                if((SamePoint $insidePoint $other.P0) -or (SamePoint $insidePoint $other.P1)) {
+                  $shared=$true; break
+                }
+              }
+              if(-not $shared){ return $line.Id }
+            }
+            return ""
+          }
+
           $summary=@()
           foreach($locale in @($doc.Locali.Locale)) {
             $id=[string]$locale.Id
-            $pts=Normalize-Vertices $locale
+            $raw=@(Raw-Vertices $locale)
+            if($raw.Count -gt 1 -and (SamePoint $raw[0] $raw[-1])) {$raw=@($raw[0..($raw.Count-2)])}
+            $pts=@(Engine-Normalize $locale)
             $minX=($pts | Measure-Object X -Minimum).Minimum
             $maxX=($pts | Measure-Object X -Maximum).Maximum
             $minY=($pts | Measure-Object Y -Minimum).Minimum
             $maxY=($pts | Measure-Object Y -Maximum).Maximum
             $rect=Is-Rectangle $pts
+            $inlet=Candidate-Inlet $pts
 
             $single = New-Object System.Xml.XmlDocument
             $rootNode = $single.CreateElement("Locali")
@@ -138,8 +203,11 @@ jobs:
 
             $summary += [pscustomobject]@{
               id=$id
-              vertexCount=$pts.Count
+              rawVertexCount=$raw.Count
+              normalizedVertexCount=$pts.Count
               rectangle=$rect
+              panelCandidate=(-not [string]::IsNullOrWhiteSpace($inlet))
+              inletLine=$inlet
               minX=[Math]::Round($minX,5)
               minY=[Math]::Round($minY,5)
               maxX=[Math]::Round($maxX,5)
@@ -150,10 +218,11 @@ jobs:
             }
           }
           $summary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $root "locales-summary.json") -Encoding utf8NoBOM
-          $summary | Sort-Object @{Expression="rectangle";Descending=$true}, id | Format-Table -AutoSize
-          Write-Host "ROOM_SPLIT_OK locales=$($summary.Count) rectangles=$(@($summary | Where-Object rectangle).Count)"
-
-      - name: Run each rectangular locale on Diego_Vittorio
+          $summary | Sort-Object @{Expression="rectangle";Descending=$true}, @{Expression="panelCandidate";Descending=$true}, id | Format-Table -AutoSize
+          $target=@($summary | Where-Object { $_.rectangle -and $_.panelCandidate })
+          Write-Host "ROOM_SPLIT_OK locales=$($summary.Count) panelLocales=$(@($summary|Where-Object panelCandidate).Count) rectangularPanelLocales=$($target.Count)"
+          Write-Host ("RECTANGULAR_PANEL_IDS="+(($target.id)-join ","))
+      - name: Run each rectangular panel locale on Diego_Vittorio
         shell: pwsh
         env:
           TERMODEL_DIEGO_VITTORIO_TRACE_RETURN: "true"
@@ -163,13 +232,13 @@ jobs:
           $summary = Get-Content -LiteralPath (Join-Path $root "locales-summary.json") -Raw | ConvertFrom-Json
           $outRoot = Join-Path $root "runs"
           New-Item -ItemType Directory -Path $outRoot -Force | Out-Null
-          foreach($room in @($summary | Where-Object rectangle)) {
+          foreach($room in @($summary | Where-Object { $_.rectangle -and $_.panelCandidate })) {
             $id=[string]$room.id
             $input=Join-Path $root ("locales\"+$id+".xml")
             $out=Join-Path $outRoot $id
             dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run --input $input --engine Diego_Vittorio --id $id --p 0.30 --out $out
             if ($LASTEXITCODE -ne 0) { throw "Harness fallito per $id" }
-            Write-Host "RECT_ROOM_RUN_OK id=$id"
+            Write-Host "RECT_ROOM_RUN_OK id=$id inlet=$($room.inletLine)"
             Get-Content -LiteralPath (Join-Path $out ($id+".log.txt")) | Where-Object {
               $_ -match 'Linea ingresso|Punto interno|Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida|Chiusura:'
             } | ForEach-Object { Write-Host ("ROOM_DIAG "+$id+" "+$_) }
