@@ -6661,7 +6661,7 @@ ricostruire l'intero percorso progetto → Service → Harness.
 
 ## DV-TEST-002 — Pannelli radianti pubblico: locali uno per uno
 
-**Stato:** CAMPAGNA ATTIVA — FASE 1 COMPLETATA / FASE 2 `locale_1` IN DIAGNOSI  
+**Stato:** CAMPAGNA ATTIVA — FASI 1-3 COMPLETATE / FASE 4 `locale_8` IN CORSO  
 **Origine:** collaudo utente 28/09/2026
 
 Il progetto pubblico **Pannelli radianti** mostra risultati non ripetibili e
@@ -6828,22 +6828,45 @@ Verifiche:
 Stato `locale_1`: **risolto tecnicamente e ispezionato sull'SVG Harness;
 conferma visiva dell'utente nel progetto completo ancora da effettuare**.
 
-### Prossimo caso: `locale_5`
+### Esito `locale_5` — trim Return e selezione LG-048 circoscritta
 
-`locale_5` resta bloccato con Return a 6 punti e offset 2/3 non collegati.
-Il varco della mandata fra due tratti verticali è ancora largo
-`2p = 0,60 m`, ma la quota critica viene ora raggiunta dal fallback. Il
-rifiuto residuo è di tipo **Self**: il candidato usa come primo tratto un
-rientro collineare all'indietro lungo l'ultimo segmento già occupato del
-Return.
+`locale_5` presentava due problemi distinti.
 
-Questo non va risolto ignorando l'autointersezione, perché produrrebbe tubo
-sovrapposto. L'ipotesi da verificare è invece un **accorciamento del terminale
-Return** prima del collegamento: il tratto finale già costruito viene
-sostituito/ritagliato fino alla quota critica e da lì parte il corridoio,
-senza percorrere due volte lo stesso tubo. Anche questo eventuale fallback
-deve attivarsi soltanto dopo il fallimento della ricerca esistente e deve
-lasciare invariata la baseline del quadrato.
+Il primo era nel Return: il collegamento verso il varco valido avrebbe dovuto
+ripercorrere all'indietro il terminale già occupato. Non è stata rilassata
+l'autointersezione. Il commit
+`ab09475b8afb482b6fa948aebb828f7356ad225e` introduce invece, soltanto dopo
+il fallimento della ricerca ordinaria, il trim/sostituzione del terminale
+Return e riusa gli stessi controlli geometrici. Il Return passa da 6 a
+**16 punti** e completa i 3 offset utili.
+
+Il secondo problema era la chiusura: il criterio storico `prima accettabile`
+selezionava `M3/R5`, obliqua da **2,454 m**, con una diagonale centrale
+visivamente non accettabile. La diagnostica completa ha enumerato anche
+`M2/RP3`, ortogonale da **1,24 m**.
+
+L'utente ha autorizzato un cambio circoscritto del criterio LG-048. Una prima
+preferenza assoluta per l'ortogonale più corta (`aedf756a`) è stata respinta
+dalla regression: il quadrato pubblico cambiava per un miglioramento minimo
+0,753 -> 0,740 m. Il criterio finale, commit
+`fb26ed054149a222c54cf706c099af9c066837ea`, conserva quindi il primo
+candidato valido storico, salvo quando:
+
+- il candidato storico è obliquo;
+- esiste una chiusura ortogonale già valida con gli stessi controlli;
+- la chiusura ortogonale riduce la lunghezza di almeno un intero passo `p`.
+
+Fra le ortogonali idonee si minimizza la lunghezza della chiusura, poi la
+lunghezza rimossa e infine il numero di tentativo. Nessun vincolo di
+lunghezza minima, angolo o intersezione viene rilassato.
+
+Regression dedicata aggiunta al Fast Harness nel commit
+`a6507361ef69fa8dcb7e3520888814abeb2396ec`. Run finale
+`36405693422`: **SUCCESS** con quadrato pubblico byte-identico
+`fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39`,
+`locale_1` invariato e `locale_5` chiuso con `M2/RP3`, 1,24 m.
+L'SVG artifact è stato ispezionato: la precedente diagonale lunga non è più
+presente.
 
 ---
 
@@ -6882,7 +6905,7 @@ Questa regola riguarda esclusivamente la copia indipendente
 28 settembre 2026 `Diego_Vittorio` è il motore predefinito del Service per i
 casi ortogonali; gli altri motori restano disponibili come override.
 
-La chiusura centrale usa una ricerca deterministica con arresto anticipato.
+La chiusura centrale usa una ricerca deterministica con selezione conservativa dei candidati validi.
 Un candidato è accettabile quando il segmento diretto fra mandata e ritorno:
 
 - ha lunghezza almeno `2p`;
@@ -6914,11 +6937,14 @@ Per ogni livello della mandata il ritorno costituisce il ciclo interno:
 6. `R5`: elimina gli ultimi due e accorcia il nuovo terminale a `p`;
 7. `R6`: elimina gli ultimi tre.
 
-L'ordine massimo è quindi `5 × 7 = 35` tentativi. Le configurazioni duplicate
-vengono saltate. La prima configurazione accettabile termina immediatamente la
-ricerca; se nessuna è accettabile, mandata e ritorno restano separati e il log
-deve dichiararlo. Un tratto più corto della lunghezza obiettivo non viene
-esteso artificialmente.
+L'ordine diretto massimo resta `5 × 7 = 35` tentativi e le configurazioni
+duplicate vengono saltate. Il primo candidato valido secondo questo ordine
+resta il riferimento storico. Le proiezioni ortogonali valide vengono inoltre
+enumerate; possono sostituire il candidato storico soltanto se quest'ultimo è
+obliquo e la migliore ortogonale riduce la lunghezza della chiusura di almeno
+un passo `p`. In caso contrario il candidato storico resta invariato. Se non
+esiste alcun candidato valido, mandata e ritorno restano separati. Un tratto
+più corto della lunghezza obiettivo non viene esteso artificialmente.
 
 ---
 
