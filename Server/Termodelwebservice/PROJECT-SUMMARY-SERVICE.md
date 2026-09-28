@@ -71,6 +71,22 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-28 — Stato strategie spirali e limite ritorno autonomo
+Stato: COMMISSIONATO
+
+Commissionato:
+- registrare `StrategiaDiego` come linea attualmente parcheggiata per costo computazionale molto elevato, con lavoro futuro orientato a ridurne il costo per l'uso su locali geometricamente molto complessi;
+- registrare `Diego_Vittorio` come derivazione da Vittorio con varie correzioni e una modifica strutturale fondamentale: il Return non è più il riflesso/parallelo della mandata ma viene generato autonomamente;
+- specificare che il Return autonomo è condizionato dal perimetro dell'edificio/locale, dalla mandata e dalla propria geometria già costruita;
+- registrare il principale limite osservato nel collaudo: la mandata può creare corridoi o “budelli” nei quali il Return autonomo resta imprigionato e può produrre arresti prematuri/non corretti;
+- trattare questo comportamento come limite noto da raccogliere in casi reali e future regression, senza modificare in questo incarico il motore.
+
+Criteri di completamento:
+- Summary e registri spirali allineati a questa distinzione architetturale;
+- nessuna modifica al codice geometrico, frontend o `definizionedati.json`;
+- incarico chiuso con commit documentali tracciati.
+
+
 ### INCARICO 2026-09-28 — Registrazione avvio test server `Diego_Vittorio`
 Stato: ESEGUITO
 
