@@ -161,6 +161,28 @@ jobs:
           }
           Write-Host "DIEGO_VITTORIO_PUBLIC_PANELS_LOCALE1_OK"
 
+      - name: Run public panels locale_5 regression
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioPanelsLocale5"
+          $caseId = "DV-PUBLIC-PANELS-RECT-05-P030-DIEGO-VITTORIO"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/$caseId.json `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Regression locale_5 fallita." }
+
+          $log = Join-Path $out "$caseId.log.txt"
+          if (-not (Test-Path -LiteralPath $log)) { throw "Log locale_5 mancante." }
+          $logText = Get-Content -LiteralPath $log -Raw
+          if ($logText -notmatch 'Ritorno autonomo:.*punti=16') {
+            throw "Regressione locale_5: Return non raggiunge 16 punti."
+          }
+          if ($logText -notmatch 'Chiusura rapida:.*sequenza=M2/RP3.*tipo=ortogonale.*lunghezza=1.24 m') {
+            throw "Regressione locale_5: chiusura ortogonale minima M2/RP3 da 1,24 m non selezionata."
+          }
+          Write-Host "DIEGO_VITTORIO_PUBLIC_PANELS_LOCALE5_OK"
+
       - name: Run fitting regression
         run: dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- fillet-check
 
@@ -173,6 +195,7 @@ jobs:
             ${{ runner.temp }}/DiegoVittorioFast
             ${{ runner.temp }}/DiegoVittorioPublicSquare
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1
+            ${{ runner.temp }}/DiegoVittorioPanelsLocale5
           if-no-files-found: warn
           retention-days: 14
 
