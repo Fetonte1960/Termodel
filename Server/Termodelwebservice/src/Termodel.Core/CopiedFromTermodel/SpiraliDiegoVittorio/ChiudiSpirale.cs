@@ -195,7 +195,7 @@ namespace SpiralHeatingDiegoVittorio
                         if (chiusuraOttimizzata == null)
                         {
                             Console.WriteLine(
-                                "  Chiusura rapida: nessuno dei 35 tentativi massimi è accettabile; circuito lasciato aperto.");
+                                "  Chiusura rapida: nessuna configurazione diretta o proiezione ortogonale è accettabile; circuito lasciato aperto.");
                         }
                         else
                         {
@@ -591,6 +591,62 @@ namespace SpiralHeatingDiegoVittorio
                         numeroTentativo);
                     if (candidato != null)
                         return candidato;
+                }
+            }
+
+            // DV-TEST-002 — fallback ortogonale circoscritto.
+            // Si attiva soltanto se tutte le configurazioni storiche hanno
+            // fallito, quindi non può cambiare i casi (quadrato compreso) che
+            // possiedono già una chiusura LG-048 valida. Permette di terminare
+            // il Return all'interno dell'ultimo segmento conservato, nel punto
+            // ottenuto proiettando ortogonalmente il terminale della mandata.
+            // È la generalizzazione minima del caso locale_1: 0,60 m = 2p.
+            foreach (var livelloMandata in livelliMandata.Reverse())
+            {
+                ConfigurazioneTerminale mandata =
+                    CreaConfigurazioneTerminale(
+                        mandataOriginale,
+                        livelloMandata.codice,
+                        livelloMandata.rimossi,
+                        livelloMandata.lunghezzaFinale);
+                if (mandata == null)
+                    continue;
+
+                for (int rimossiRitorno = 0;
+                    rimossiRitorno <= MaxTrattiTerminaliChiusura;
+                    rimossiRitorno++)
+                {
+                    ConfigurazioneTerminale ritorno =
+                        CreaConfigurazioneTerminaleProiettata(
+                            ritornoOriginale,
+                            $"RP{rimossiRitorno}",
+                            rimossiRitorno,
+                            mandata.Punti[^1]);
+                    if (ritorno == null)
+                        continue;
+
+                    string chiave = CreaChiaveConfigurazione(
+                        mandata.Punti,
+                        ritorno.Punti);
+                    if (!configurazioniGiaProvate.Add(chiave))
+                        continue;
+
+                    numeroTentativo++;
+                    CandidatoChiusura candidato = ValutaChiusura(
+                        mandata,
+                        ritorno,
+                        passo,
+                        numeroTentativo);
+                    if (candidato != null)
+                    {
+                        if (TraceClosureEnabled)
+                        {
+                            Console.WriteLine(
+                                $"  DV_CLOSURE_PROJECTION_ACCEPT attempt={numeroTentativo} " +
+                                $"seq={mandata.Codice}/{ritorno.Codice}.");
+                        }
+                        return candidato;
+                    }
                 }
             }
 
