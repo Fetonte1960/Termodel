@@ -7309,3 +7309,38 @@ Il punto naturale per introdurre in futuro una strategia a visione media non è
 eventualmente riusando la prova diagnostica già esistente
 `ProvaPortaleAnticipato(...)` come base per una valutazione finita di
 1–N passi futuri senza tornare al tree-search completo.
+
+### Evidenza diagnostica R001 / locale_1 — finestra dei portali
+
+Fast Harness #53 (run 36462466585) ha esteso **solo la diagnostica**
+`TRACE_PORTALS`: nessuna condizione o geometria del motore è stata modificata.
+
+Sul Return di `locale_1`, durante l'offset 2, il collegamento verso l'offset 3
+resta disponibile in **tutti** i punti osservati:
+
+- ingresso `(0,52;4,37)` -> portale valido, lunghezza `0,60 m`;
+- dopo il lato superiore `(-0,47;4,37)` -> portale valido, `0,60 m`;
+- dopo il lato sinistro `(-0,47;0,97)` -> portale valido, `0,60 m`;
+- dopo il lato inferiore `(0,52;0,97)` -> portale valido, `0,60 m`, ed è il
+  collegamento che il motore usa realmente.
+
+Quindi, in questo passaggio specifico, **il portale non si perde** durante la
+percorrenza dell'offset. Non è corretto dedurre che la soluzione sia
+“uscire appena compare il primo portale”: farlo ridurrebbe tubazione utile
+senza necessità.
+
+Nel quadrato pubblico la situazione è diversa:
+- i primi controlli non trovano un portale;
+- il portale compare solo più avanti;
+- continuando ancora, resta valido e il collegamento finale diventa più corto.
+
+Indicazione metodologica aggiornata:
+la visione media deve misurare non soltanto l'esistenza del prossimo portale,
+ma la **qualità della prosecuzione futura** e il momento oltre il quale quella
+qualità peggiora o scompare. Un portale anticipato è un'informazione, non una
+decisione automatica.
+
+Il test di inversione globale del verso (Fast Harness #52) ha inoltre
+mostrato che il verso opposto rende immediatamente impraticabile il Return sia
+nel `locale_1` sia nel quadrato: la causa non è un semplice errore
+orario/antiorario.
