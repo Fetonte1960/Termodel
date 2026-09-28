@@ -280,6 +280,23 @@ jobs:
             $_ -match 'DV_RETURN_PORTAL_|DV_CLOSURE_|Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida'
           } | ForEach-Object { Write-Host ("ROOM_PORTAL_DIAG "+$_) }
 
+      - name: Trace all closure candidates on locale_5
+        shell: pwsh
+        env:
+          TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE: "true"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioRoomExtraction"
+          $input = Join-Path $root "locales\locale_5.xml"
+          $out = Join-Path $root "closure-trace\locale_5"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run --input $input --engine Diego_Vittorio --id locale_5_CLOSURE_TRACE --p 0.30 --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Trace chiusura fallito per locale_5." }
+          $log = Join-Path $out "locale_5_CLOSURE_TRACE.log.txt"
+          Write-Host "LOCALE5_CLOSURE_TRACE_OK"
+          Get-Content -LiteralPath $log | Where-Object {
+            $_ -match 'DV_CLOSURE_|Ritorno parametrico|Ritorno autonomo|Chiusura rapida'
+          } | ForEach-Object { Write-Host ("ROOM5_CLOSURE_DIAG "+$_) }
+
       - name: Diagnose locale_1 with opposite Return side
         shell: pwsh
         env:
