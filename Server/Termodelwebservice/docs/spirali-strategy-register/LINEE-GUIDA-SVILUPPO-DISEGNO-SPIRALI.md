@@ -4,7 +4,7 @@ Classificazione: **SPECIFICA VIVA — IN DEFINIZIONE**
 Ambito: Termodel / pannelli radianti / generazione geometrica spirali  
 Destinazione prevista: futura strategia/classe **StrategiaDiego**
 
-## Stato operativo corrente — 25/09/2026
+## Stato operativo corrente — 28/09/2026
 
 > **Questa sezione è autorevole sullo stato runtime corrente.**
 > Le frasi "non ancora implementata" presenti nelle sezioni storiche delle
@@ -13,19 +13,24 @@ Destinazione prevista: futura strategia/classe **StrategiaDiego**
 
 ### Stato dell'algoritmo
 
-StrategiaDiego è oggi:
+Lo sviluppo ha oggi due riferimenti distinti da non confondere:
 
-- **progettata:** sì, specifica viva LG-001..LG-041;
-- **implementata:** sì, come terzo motore headless distinto da Vittorio e GPT;
-- **selezionabile:** sì, tramite `TERMODEL_SPIRAL_ENGINE=Vittorio|GPT|Diego`;
-- **default Service:** Diego quando la variabile non è impostata; per i test
-  dedicati viene comunque forzato esplicitamente `Diego`;
-- **compilata:** sì, build Release GitHub Actions verificata;
-- **testata sinteticamente:** sì, quadrato 4x4/un ingresso e concavo a L;
-- **inseguimento LG-033..LG-035:** implementato tramite sequenza `S_k -> S_k+1`;
-- **sostenibilità computazionale sintetica:** verificata sui casi correnti;
+- **StrategiaDiego:** resta implementata e selezionabile come motore autonomo
+  `Diego`, con il proprio storico LG e i propri checkpoint diagnostici;
+- **Diego_Vittorio:** è la copia indipendente evoluta a partire da
+  `SpiraliVittorio`, mantiene Vittorio intatto ed è il **default operativo
+  corrente del Service** per la fase di collaudo dei casi ortogonali;
+- **selettore runtime:** `TERMODEL_SPIRAL_ENGINE=Vittorio|GPT|Diego|Diego_Vittorio`;
+- **default Service:** `Diego_Vittorio` quando la variabile non è impostata;
+- **compilata:** sì, build Release verificata;
+- **verifica automatica/harness:** sì, quadrato canonico e controlli correnti
+  su distanze, ritorno autonomo, chiusura LG-048 e raccordi LG-049;
+- **SpiraliVittorio:** invariata, riferimento per confronto e rollback;
 - **Golden geometrico completo:** non ancora approvato;
-- **validazione su progetto reale complesso:** **in corso**.
+- **collaudo manuale sul Service pubblico:** **iniziato dall'utente il
+  28/09/2026** sul disegno spirali prodotto da `Diego_Vittorio`;
+- **validazione su casi reali:** **in corso**; i risultati manuali non vanno
+  considerati approvati finché non vengono registrati caso per caso.
 
 ### Direttiva permanente — banco prova operativo corrente
 
@@ -6517,3 +6522,29 @@ viene mantenuto il segmento rettilineo già validato.
 La regression obbligatoria comprende deviazioni sintetiche di 30°, 90° e
 150°, controllo di coordinate finite ed estremi conservati, oltre alla prova
 SVG reale con raccordi e chiusura attivi.
+
+---
+
+## Stato collaudo manuale sul Service pubblico — 28/09/2026
+
+L'utente ha iniziato il collaudo reale del **disegno spirali** sul Service
+pubblico con il motore predefinito `Diego_Vittorio`.
+
+Questo evento registra l'**avvio della fase di test**, non l'approvazione della
+strategia. Le verifiche Harness, locali e GitHub Actions già eseguite restano
+prove tecniche separate.
+
+Per ogni anomalia o comportamento geometrico significativo osservato durante
+il collaudo:
+
+1. conservare il progetto/caso che lo riproduce;
+2. descrivere l'osservazione senza correggere implicitamente il Golden;
+3. se emerge una regola generale, creare o aggiornare una scheda
+   `STRATEGY-xxx` nel presente registro;
+4. quando possibile trasformare il caso in regression riproducibile;
+5. distinguere sempre `progettato / implementato / compilato / eseguito /
+   testato / approvato`.
+
+Fino a conclusione del collaudo, `Diego_Vittorio` resta **motore corrente in
+test sul server**, mentre `SpiraliVittorio` resta il riferimento invariato di
+confronto e ripristino.
