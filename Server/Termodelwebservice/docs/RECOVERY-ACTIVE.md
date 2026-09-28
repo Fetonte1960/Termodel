@@ -871,3 +871,61 @@ Test avviato:
 **PROSSIMO PASSO ESATTO:** attendere il run 36438139064; se compila e il caso categorizzato passa,
 leggere il log `locale_1` e isolare i segmenti che toccano/intersecano o passano vicino al tratto interno T6.
 Se il run fallisce, leggere il primo errore e correggere esclusivamente la strumentazione.
+
+
+#### STEP 4C.2 — primo errore causale nella zona T6
+Stato: **COMPLETATO — PRIMA DECISIONE ERRATA IDENTIFICATA**
+
+Verifica reale:
+- Fast Harness run `36438139064` (#46), job `108981900699`: **SUCCESS**;
+- build Harness + Core: SUCCESS;
+- matrice Supply-only: SUCCESS;
+- log categorizzato `locale_1`: SUCCESS;
+- quadrato approvato e tutte le regression Diego_Vittorio: SUCCESS;
+- nessuna geometria produttiva modificata.
+
+Geometria accesso reale `R001 / locale_1 / T6`:
+- punto sul perimetro/start Supply: `(1,57000 ; 4,74316)`;
+- endpoint T6 interno al locale: `(1,31155 ; 4,74316)`;
+- tratto interno fisico T6: orizzontale, lungo circa 0,25845 m.
+
+Sequenza osservata:
+1. connessione iniziale Supply:
+   `(1,57000;4,74316) -> (1,42000;4,74316)`;
+   coincide con T6: è il tratto iniziale comune, quindi non è un ramo remoto;
+2. primo candidato:
+   `(1,42000;4,74316) -> (1,42000;5,27000)`;
+   parte dal tratto T6 ed è topologicamente adiacente;
+3. **primo ramo non adiacente**:
+   `(1,42000;5,27000) -> (-1,37000;5,27000)`;
+   distanza minima dal tratto T6 = **0,52684 m**;
+   distanza Supply-Supply richiesta = **0,60 m**;
+   deficit = **0,07316 m**;
+   il logger registra tuttavia `respectSelf=true` e il segmento viene accettato.
+
+Causa della decisione errata:
+- `SegmentoRispettaSpirale` controlla soltanto i segmenti già presenti in `spiral`;
+- il tratto fisico T6 non viene inserito in `spiral`: `Generate` riceveva storicamente solo lo `startPoint`;
+- quindi il ramo superiore viene accettato senza confrontarlo con il tubo di accesso reale;
+- geometricamente il corridoio disponibile fra T6 e il primo offset superiore misura
+  soltanto 0,52684 m, meno di 0,60 m: il problema nasce già al primo giro nella zona
+  indicata dall'utente come scavalcamento del punto di accesso.
+
+Conferma downstream:
+- offset 2, primo tratto verticale e successivo orizzontale arrivano a
+  **0,496964574 m** dal terminale interno T6, ancora sotto 0,60 m;
+- anche questi vengono accettati perché T6 non partecipa al controllo di autocondizionamento.
+
+Conclusione:
+- il collasso preventivo L3 resta un fatto reale per un anello rettangolare completo,
+  ma non è più corretto considerarlo il primo errore della Supply di `locale_1`;
+- la prima decisione geometricamente incoerente col vincolo Supply-Supply è già nel
+  primo giro, quando il motore percorre il lato superiore a 0,52684 m da T6;
+- l'indicazione visiva dell'utente sullo scavalcamento dell'accesso è quindi confermata
+  dal log numerico.
+
+Nessuna correzione applicata.
+Il prossimo intervento è una decisione algoritmica e richiede accordo umano:
+trattare il tratto interno T6 come parte della Supply esistente durante la validazione,
+definendo l'eccezione topologica per i segmenti iniziali realmente adiacenti e il
+comportamento quando il verso iniziale non dispone dei 0,60 m richiesti.
