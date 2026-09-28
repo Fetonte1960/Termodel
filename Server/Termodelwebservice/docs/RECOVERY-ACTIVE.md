@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 11:36 Europe/Rome
+Checkpoint: 2026-09-28 11:40 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -98,7 +98,7 @@ Nota:
 - conferma visiva utente nel progetto completo ancora da effettuare.
 
 ### FASE 3 — locale_5
-Stato: **BLOCCATA — richiesta decisione umana sul criterio di chiusura LG-048**
+Stato: **IN CORSO — cambio circoscritto del criterio LG-048 autorizzato dall'utente**
 
 Stato prima del trim:
 - Return 6 punti;
@@ -165,12 +165,18 @@ Risultato enumerazione `locale_5`:
   ma sceglierle richiederebbe cambiare il criterio `prima accettabile`
   di LG-048.
 
-Decisione obbligatoria:
-- **FASE 3 BLOCCATA IN ATTESA DI CONSENSO UMANO** prima di modificare la
-  politica di selezione della chiusura;
-- possibili criteri da discutere: preferire una chiusura ortogonale, oppure
-  minimizzare una metrica (lunghezza chiusura / lunghezza rimossa / combinazione);
-- nessuno di questi criteri viene introdotto automaticamente.
+Decisione utente ricevuta:
+- l'utente ha autorizzato il cambio circoscritto del criterio LG-048;
+- criterio definito prima dell'implementazione:
+  1. enumerare i candidati già validi senza rilassare alcun vincolo;
+  2. se esiste almeno una chiusura ortogonale, preferire le ortogonali;
+  3. tra le ortogonali scegliere quella con minore lunghezza di chiusura;
+  4. a parità di lunghezza scegliere minore lunghezza rimossa e poi il numero
+     di tentativo più basso per mantenere determinismo;
+  5. se non esiste alcuna ortogonale, conservare il primo candidato valido
+     secondo l'ordine storico LG-048;
+- vincolo di non regressione: quadrato base byte-identico e `locale_1`
+  ancora valido; nessun rilassamento di lunghezze, angoli o intersezioni.
 
 Nota di coerenza repository:
 - il commit successivo `d231bdf8c8c01354d5b54f34e7c4997f2fb17303`
@@ -191,12 +197,11 @@ Nota di coerenza repository:
   la decisione umana sul criterio LG-048 di `locale_5`.
 
 **PROSSIMO PASSO ESATTO:**
-1. chiedere all'utente se autorizza un cambio circoscritto del criterio LG-048;
-2. se autorizzato, definire prima il criterio preciso da usare e il vincolo
-   di non regressione;
-3. implementarlo con `locale_5` + quadrato base + `locale_1` come regression;
-4. se non autorizzato, lasciare `locale_5` aperto e non passare a
-   `locale_8` come fase consolidata.
+1. implementare in LG-048 la selezione ortogonale/minima definita sopra;
+2. aggiungere una regression dedicata per `locale_5`;
+3. eseguire Fast Harness con `locale_5` + quadrato base + `locale_1`;
+4. ispezionare l'output di `locale_5` e consolidare FASE 3 solo se la
+   chiusura scelta è quella attesa e le regression restano verdi.
 
 ### FASE 4 — locale_8
 Stato: **NON INIZIATA**
