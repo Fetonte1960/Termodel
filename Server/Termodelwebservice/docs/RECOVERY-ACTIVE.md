@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 11:40 Europe/Rome
+Checkpoint: 2026-09-28 11:46 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -167,16 +167,27 @@ Risultato enumerazione `locale_5`:
 
 Decisione utente ricevuta:
 - l'utente ha autorizzato il cambio circoscritto del criterio LG-048;
-- criterio definito prima dell'implementazione:
+- prima implementazione `aedf756a44beb9039e4faed76fdfda071a031e4f`:
+  enumerazione dei candidati validi e preferenza assoluta per l'ortogonale
+  più corta;
+- regression Fast Harness run `36405315739`: **FAILED correttamente sul
+  vincolo del quadrato base**. Build Core/Harness SUCCESS, ma il quadrato
+  pubblico passava dalla chiusura storica `M2/R6` obliqua 0,753 m alla
+  `M3/R3` ortogonale 0,740 m; SVG hash cambiato, quindi la correzione non
+  può essere consolidata in questa forma;
+- criterio raffinato per rispettare il vincolo di non regressione:
   1. enumerare i candidati già validi senza rilassare alcun vincolo;
-  2. se esiste almeno una chiusura ortogonale, preferire le ortogonali;
-  3. tra le ortogonali scegliere quella con minore lunghezza di chiusura;
-  4. a parità di lunghezza scegliere minore lunghezza rimossa e poi il numero
-     di tentativo più basso per mantenere determinismo;
-  5. se non esiste alcuna ortogonale, conservare il primo candidato valido
-     secondo l'ordine storico LG-048;
-- vincolo di non regressione: quadrato base byte-identico e `locale_1`
-  ancora valido; nessun rilassamento di lunghezze, angoli o intersezioni.
+  2. conservare come riferimento il primo candidato valido storico;
+  3. cercare la chiusura ortogonale più corta;
+  4. sostituire il candidato storico **solo se** l'ortogonale riduce la
+     lunghezza della chiusura di almeno un passo `p`;
+  5. tra ortogonali equivalenti scegliere minore lunghezza, poi minore
+     lunghezza rimossa e infine numero tentativo più basso;
+  6. in tutti gli altri casi conservare il primo candidato valido storico;
+- motivazione: sul quadrato il vantaggio era solo 0,013 m (< p=0,30 m), mentre
+  su `locale_5` il candidato atteso riduce 2,454 m a 1,240 m (> p);
+- vincolo di non regressione invariato: quadrato base byte-identico e
+  `locale_1` valido; nessun rilassamento di lunghezze, angoli o intersezioni.
 
 Nota di coerenza repository:
 - il commit successivo `d231bdf8c8c01354d5b54f34e7c4997f2fb17303`
@@ -197,11 +208,12 @@ Nota di coerenza repository:
   la decisione umana sul criterio LG-048 di `locale_5`.
 
 **PROSSIMO PASSO ESATTO:**
-1. implementare in LG-048 la selezione ortogonale/minima definita sopra;
-2. aggiungere una regression dedicata per `locale_5`;
-3. eseguire Fast Harness con `locale_5` + quadrato base + `locale_1`;
-4. ispezionare l'output di `locale_5` e consolidare FASE 3 solo se la
-   chiusura scelta è quella attesa e le regression restano verdi.
+1. restringere LG-048 alla soglia di miglioramento >= `p`;
+2. rieseguire Fast Harness con quadrato base + `locale_1` + `locale_5`;
+3. verificare che il quadrato torni byte-identico e che `locale_5` scelga
+   `M2/RP3` ortogonale da 1,24 m;
+4. ispezionare l'output di `locale_5` e consolidare FASE 3 solo se tutte le
+   regression restano verdi.
 
 ### FASE 4 — locale_8
 Stato: **NON INIZIATA**
