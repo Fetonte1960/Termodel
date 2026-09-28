@@ -291,6 +291,48 @@ jobs:
           Write-Host ("FULL_PROJECT_INPUT_SHA256=" + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash)
           Write-Host "FULL_PROJECT_RECTANGULAR_REGRESSION_OK"
 
+      - name: Run complete public panels model
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioRoomExtraction"
+          $full = Join-Path $root "pannelli-radianti.full.xml"
+          $out = Join-Path $root "full-project"
+          $caseId = "PannelliRadiantiPublicComplete"
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --input $full `
+            --engine Diego_Vittorio `
+            --id $caseId `
+            --p 0.30 `
+            --out $out
+          if ($LASTEXITCODE -ne 0) {
+            throw "Esecuzione completa del progetto pubblico pannelli non riuscita."
+          }
+
+          $metrics = Join-Path $out "$caseId.metrics.json"
+          $svg = Join-Path $out "$caseId.svg"
+          $log = Join-Path $out "$caseId.log.txt"
+          if (-not (Test-Path -LiteralPath $metrics) -or
+              -not (Test-Path -LiteralPath $svg) -or
+              -not (Test-Path -LiteralPath $log)) {
+            throw "Artifact del progetto completo mancanti."
+          }
+
+          $m = Get-Content -LiteralPath $metrics -Raw | ConvertFrom-Json
+          if ([int]$m.LocaleCount -ne 9) {
+            throw "Progetto completo: attesi 9 locali, ottenuti $($m.LocaleCount)."
+          }
+          if ([int]$m.SpiralPointCount -le 0) {
+            throw "Progetto completo: nessun punto spirale prodotto."
+          }
+
+          Write-Host "FULL_PROJECT_MODEL_OK locales=$($m.LocaleCount) spiralPoints=$($m.SpiralPointCount)"
+          Write-Host ("FULL_PROJECT_SVG_SHA256=" + (Get-FileHash -LiteralPath $svg -Algorithm SHA256).Hash)
+          Get-Content -LiteralPath $log | Where-Object {
+            $_ -match 'Ritorno parametrico|Ritorno autonomo|Chiusura rapida|Spirale'
+          } | ForEach-Object { Write-Host ("FULL_PROJECT_DIAG "+$_) }
+
       - name: Diagnose locale_5 without closure
         shell: pwsh
         env:
