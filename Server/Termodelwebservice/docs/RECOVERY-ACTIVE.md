@@ -1626,3 +1626,36 @@ Punto metodologico:
 `SpiralGenerator.Generate`: stesso perimetro, stesso start, stessa distanza,
 nessun condizionamento. Confrontare Vittorio e Diego_Vittorio prima delle
 euristiche Return. Se divergono, isolare la prima istruzione/decisione diversa.
+
+
+### STEP 4I — nuovo ramo pulito Vittorio_revisionato
+Stato: **FASE 1 IMPLEMENTATA — TEST EQUIVALENZA IN ESECUZIONE**
+
+Commissionato:
+1. creare una nuova copia pulita di Vittorio denominata
+   `Vittorio_revisionato`;
+2. verificare subito equivalenza sul quadrato;
+3. soltanto dopo, astrarre strutturalmente l'algoritmo per poterlo applicare
+   in modo indipendente a Supply e Return;
+4. il Return dovrà poter ricevere la Supply come linea condizionante;
+5. fermarsi dopo il secondo test e ragionare insieme prima di introdurre
+   euristiche ulteriori.
+
+Implementato finora:
+- nuova cartella
+  `CopiedFromTermodel/SpiraliVittorioRevisionato/`;
+- i quattro sorgenti derivano direttamente da `SpiraliVittorio` e nella
+  fotografia iniziale cambia esclusivamente il namespace;
+- facciata `StrategiaVittorioRevisionatoBenchmark`;
+- selettore Harness `Vittorio_revisionato`;
+- caso quadrato
+  `LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO.json`;
+- workflow Fast confronta SHA-256 di SVG e XML fra Vittorio e
+  Vittorio_revisionato e fallisce su qualsiasi differenza;
+- `TERMODEL-SYNC.md` aggiornato.
+
+Run equivalenza iniziale:
+- Fast Harness run `36465275147` (#56);
+- al momento del checkpoint: PENDING.
+
+Vincolo: nessuna modifica strutturale prima di esito SUCCESS della parità iniziale.
