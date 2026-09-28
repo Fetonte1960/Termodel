@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 13:35 Europe/Rome
+Checkpoint: 2026-09-28 13:45 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -322,7 +322,7 @@ Vincoli rispettati:
 3. riprendere quindi il collaudo geometrico della FASE 6 usando questi due statici come riferimenti rapidi.
 
 ## Sottofase FASE 6C — diagnosi mandata Supply prima di Return/chiusura
-Stato: **IN CORSO — 6C.1/6C.2 COMPLETATE, 6C.3 IN CORSO**
+Stato: **DIAGNOSI COMPLETATA — 6C.4 IN ATTESA DI AUTORIZZAZIONE**
 
 Origine utente 28/09/2026:
 - partendo dall'esecutivo `Pannelli radianti` congelato e approvato come migliorativo,
@@ -450,24 +450,68 @@ Conclusioni accertate:
   deve essere misurato separatamente.
 
 ### 6C.3 — causa comune
-Stato: **IN CORSO**
+Stato: **COMPLETATA**
 
-Prossima diagnostica:
-1. strumentare `ComputeOffset` / `FixIntersections` per distinguere perché
-   i rettangolari producono `invalid-offset`;
-2. sui concavi 2/6 identificare esattamente il lato corto che provoca il
-   rifiuto globale e verificare quale porzione del livello resterebbe
-   geometricamente percorribile;
-3. misurare la finalizzazione dell'ultimo offset:
-   terminale prima del rientro, terminale dopo il rientro, distanza sottratta;
-4. verificare, senza applicarlo, se dopo l'ultimo offset completo esiste un
-   segmento/percorso Supply parziale valido verso l'interno.
+Diagnostica aggiuntiva:
+- commit `466da9d141799ec2bcd548a83c1293ccd86b4543`: trace `ComputeOffset` + finalizzazione Supply; prima esecuzione non compilata esclusivamente per `CultureInfo` mancante nel codice diagnostico;
+- fix solo diagnostico `3bc7fae41e643a3baa1273a5cc3694da04d7ebb7`;
+- Fast Harness run `36417080491`, job `108910674388`: **SUCCESS**;
+- tutte le regression preesistenti, incluso il quadrato approvato, SUCCESS.
 
+Confronto col riferimento Desktop:
+- `SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/Spiralgenerator.cs` contiene sia la stessa logica `ComputeOffset` con `skipIndices`, sia la stessa finalizzazione storica del giro;
+- l'anomalia è quindi **ereditata dalla strategia storica** e non introdotta dalle recenti correzioni Return/LG-048 di `Diego_Vittorio`.
+
+Causa comune accertata:
+- la Supply storica evolve esclusivamente per **anelli chiusi completi**;
+- quando il successivo anello completo non è più ammissibile, non esiste una fase terminale che trasformi lo spazio residuo in un asse/ramo parziale verso il centro;
+- per i rettangoli `ComputeOffset` marca un lato come corto quando `edgeLength <= 3 * passoMandata` e il lato si è ridotto di oltre un passo; i due vertici del lato vengono esclusi;
+- se i due lati opposti corti soddisfano la condizione, gli `skipIndices` eliminano tutti e quattro i vertici e `ComputeOffset` restituisce `null`, anche se può esistere un singolo asse centrale ancora rispettoso della distanza Supply-Supply.
+
+Con `passoMandata = 0,60 m`:
+- un solo asse centrale richiede lato corto dell'ultimo anello >= `2 * passoMandata = 1,20 m`;
+- un ulteriore anello completo richiede invece spazio per due nuovi lati paralleli e viene escluso dal criterio storico prima del collasso.
+
+Matrice ultimo anello completo:
+- quadrato approvato: lato corto **1,04 m**, semilarghezza 0,52 m -> asse centrale **non ammissibile**;
+- `locale_1`: lato corto **1,59 m**, semilarghezza 0,795 m -> asse centrale possibile; residuo teorico **2,80 m**;
+- `locale_5`: lato corto **1,54 m**, semilarghezza 0,77 m -> asse centrale possibile; residuo teorico **1,53 m**;
+- `locale_8`: lato corto **1,21 m**, semilarghezza 0,605 m -> asse centrale appena possibile; residuo teorico **0,34 m**;
+- `locale_9`: lato corto **1,07 m**, semilarghezza 0,535 m -> asse centrale non ammissibile.
+
+Manifestazione concava dello stesso limite tutto-o-niente:
+- `locale_2`: il livello successivo ha 6 vertici; dopo `FixIntersections` conserva più lati lunghi ma contiene un lato da **0,36 m** e il lato di chiusura collassa a **0,00 m**; il filtro globale scarta l'intero livello;
+- `locale_6`: il livello successivo ha 6 vertici e cinque lati >= 0,60 m, ma un solo lato da **0,29 m** fa scartare l'intero livello;
+- per i concavi è dimostrato il rifiuto globale di una geometria parzialmente ancora sviluppabile, ma non è ancora autorizzata né definita una strategia locale di riduzione/scheletro.
+
+Secondaria anomalia diagnostica:
+- il calcolo storico `minEdgeLength` usa `j < nextOffset.Count - 1` e quindi non misura il lato di chiusura ultimo->primo;
+- in `locale_2` quel lato vale 0 dopo `FixIntersections`;
+- il caso viene comunque scartato per il lato da 0,36 m, quindi questa omissione non causa l'arresto corrente ma resta registrata.
+
+Finalizzazione Supply chiarita:
+- la regola storica lascia un'apertura di `passoMandata = 0,60 m` rispetto al punto di ingresso del giro, per permettere il passaggio al livello successivo;
+- i grandi valori misurati come spostamento del terminale non sono metri di percorso cancellati: il tratto di chiusura viene percorso fino al nuovo terminale e resta un'apertura finale di 0,60 m;
+- sull'ultimo anello l'apertura resta inutilizzata perché manca la fase terminale/parziale; è quindi un punto naturale da cui innestare una futura prosecuzione centrale, non una causa primaria separata.
+
+Conclusione 6C.3:
+- Return e LG-048 restano esclusi;
+- la causa primaria della mandata corta è la strategia **anelli chiusi completi oppure stop**, senza terminale mediale/parziale;
+- per i rettangoli esiste un criterio locale misurabile che può migliorare `locale_1/5/8` senza attivarsi sul quadrato approvato o su `locale_9`;
+- i concavi 2/6 richiedono una seconda strategia e non devono essere inclusi implicitamente nella prima correzione.
 ### 6C.4 — proposta circoscritta
-Stato: **BLOCCATA FINO ALLA DIAGNOSI**
+Stato: **IN ATTESA DI AUTORIZZAZIONE UMANA**
 
-Nessuna modifica strategica viene applicata senza evidenza Harness e nuova
-autorizzazione umana.
+Proposta limitata al primo banco rettangolare:
+- dopo l'ultimo anello completo, soltanto se il suo lato corto è `>= 2 * passoMandata` ma non esiste un ulteriore anello completo, provare un unico **asse terminale centrale** lungo la dimensione maggiore;
+- mantenere distanza almeno `passoMandata` dai due lati Supply paralleli;
+- arretrare gli estremi dell'asse di almeno `passoMandata` dai lati trasversali;
+- validare collegamento, distanza e intersezioni con gli stessi controlli già disponibili;
+- attivazione prevista su `locale_1/5/8`;
+- nessuna attivazione sul quadrato approvato e su `locale_9`;
+- `locale_2/6` esclusi da questa prima correzione.
+
+Prima applicazione proposta: **solo Harness/flag diagnostico**, per produrre SVG comparativi Supply-only. Nessuna attivazione nel percorso Service senza successiva approvazione visiva dell'utente.
 
 ### 6C.5 — regression e ricomposizione
 Stato: **NON INIZIATA**
@@ -482,10 +526,11 @@ Vincoli:
 - usare il Fast/Local Harness come percorso primario;
 - ogni nuova evidenza significativa aggiorna questo recovery e issue #1.
 
-**PROSSIMO PASSO ESATTO:** aggiungere esclusivamente diagnostica a
-`ComputeOffset`/finalizzazione Supply e rieseguire la matrice per determinare
-se l'assenza di un anello completo sta nascondendo un percorso terminale
-parziale ancora valido.
+**PROSSIMO PASSO ESATTO:** attendere autorizzazione utente per FASE 6C.4.
+Se autorizzata, implementare **solo nel percorso Harness diagnostico** il
+candidato asse terminale per i rettangoli `locale_1/5/8`, generare SVG
+comparativi e verificare esplicitamente che quadrato approvato e
+`locale_9` restino invariati.
 
 ## File/componenti attualmente coinvolti
 
