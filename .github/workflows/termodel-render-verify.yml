@@ -1,0 +1,114 @@
+name: Termodel Render Runtime Verify
+
+permissions:
+  contents: read
+  statuses: write
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/termodel-render-verify.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Mark Termodel job RUNNING
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+          $body = @{
+            state = "pending"
+            context = "Termodel/job"
+            description = "RUNNING - Render Verify #${{ github.run_number }}"
+            target_url = $runUrl
+          } | ConvertTo-Json
+          Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
+
+      - name: Verify latest main is running on Render
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+
+          $branch = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/branches/main" -Headers $headers
+          $expectedFull = [string]$branch.commit.sha
+          $expectedShort = $expectedFull.Substring(0,8)
+          Write-Host "Expected main commit: $expectedFull"
+
+          $healthUri = "https://termodel.onrender.com/health"
+          $last = $null
+          for ($attempt = 1; $attempt -le 30; $attempt++) {
+            try {
+              $last = Invoke-RestMethod -Uri $healthUri -Method Get -TimeoutSec 30
+              Write-Host ("Attempt {0}: status={1} commit={2} engine={3}" -f $attempt,$last.status,$last.serviceCommitShort,$last.spiralEngine)
+              if ($last.status -eq "ok" -and
+                  [string]$last.serviceCommitShort -eq $expectedShort -and
+                  [string]$last.spiralEngine -eq "Diego_Vittorio") {
+                Write-Host "RENDER_RUNTIME_VERIFY_OK"
+                Write-Host "serviceCommit=$($last.serviceCommit)"
+                Write-Host "serviceCommitShort=$($last.serviceCommitShort)"
+                Write-Host "spiralEngine=$($last.spiralEngine)"
+                exit 0
+              }
+            }
+            catch {
+              Write-Warning "Attempt $attempt health non disponibile: $($_.Exception.Message)"
+            }
+
+            if ($attempt -lt 30) { Start-Sleep -Seconds 10 }
+          }
+
+          $lastJson = if ($null -eq $last) { "<nessuna risposta>" } else { $last | ConvertTo-Json -Depth 10 -Compress }
+          throw "Render non espone l'ultimo main $expectedShort con Diego_Vittorio. Ultimo health: $lastJson"
+
+      - name: Publish final status and notify
+        if: always()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NTFY_TOPIC: ${{ secrets.TERMODEL_NTFY_TOPIC }}
+        run: |
+          $ok = "${{ job.status }}" -eq "success"
+          $state = if ($ok) { "success" } else { "failure" }
+          $label = if ($ok) { "SUCCESS" } else { "FAILED" }
+          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+          $body = @{
+            state = $state
+            context = "Termodel/job"
+            description = "$label - Render Verify #${{ github.run_number }}"
+            target_url = $runUrl
+          } | ConvertTo-Json
+          Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
+
+          if (-not [string]::IsNullOrWhiteSpace($env:NTFY_TOPIC)) {
+            try {
+              Invoke-RestMethod -Uri "https://ntfy.sh/$env:NTFY_TOPIC" -Method Post -Headers @{
+                "Title" = "Termodel Render Verify"
+                "Priority" = "low"
+                "Tags" = if ($ok) { "white_check_mark" } else { "x" }
+              } -Body "Render Verify #${{ github.run_number }} $label - $runUrl" | Out-Null
+            } catch {
+              Write-Warning "Notifica ntfy non riuscita: $($_.Exception.Message)"
+            }
+          }
