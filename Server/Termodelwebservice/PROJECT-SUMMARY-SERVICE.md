@@ -7216,3 +7216,65 @@ Analisi completata senza modifiche algoritmiche.
 - Service workflow sul commit diagnostico: fase `Build` SUCCESS; workflow
   complessivo rosso per Golden Darcy indipendente (dP 1,3136749 Pa contro
   golden 1,353675 Pa), non per compilazione o regression spirali.
+
+
+### 2026-09-28 — Vittorio_revisionato: copia pulita e prima astrazione controllata
+
+Obiettivo:
+- ripartire dal motore Vittorio stabile senza importare le euristiche accumulate
+  in `Diego_Vittorio`;
+- creare una copia separata `Vittorio_revisionato`;
+- provare prima la parità completa;
+- introdurre poi soltanto l'astrazione strutturale necessaria per invocare lo
+  stesso generatore su percorsi indipendenti, con Supply opzionalmente
+  condizionante il secondo percorso.
+
+Implementazione:
+- nuova cartella
+  `src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/`;
+- fotografia iniziale: quattro sorgenti Vittorio con solo namespace
+  `SpiralHeatingVittorioRevisionato`;
+- benchmark `StrategiaVittorioRevisionatoBenchmark`;
+- Harness engine `Vittorio_revisionato`;
+- caso `LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO.json`;
+- `SpiralGenerationInput` come ingresso neutro al ruolo;
+- condizionamento opzionale implementato come gate dentro il flusso Vittorio:
+  non cambia l'ordine di costruzione, non cerca alternative e si arresta al
+  primo segmento che viola la distanza dalla geometria condizionante;
+- nessun codice di rerouting/fallback/adiacenza importato da Diego_Vittorio.
+
+Verifiche:
+- run Fast `36465582271`: parità iniziale SUCCESS;
+  SVG SHA-256
+  `9673CD8D77A9963EC425FA69F54B8DCFF4C162312336D08D74AC722A2E0122A4`,
+  XML SHA-256
+  `9517A5BFFE56F7CCB2419F173A0020FAC0EEBF6B2FD3706C02CD29D32C0DDCA6`;
+- run Fast `36466606034` (#62): SUCCESS dopo l'astrazione;
+  la stessa parità completa Vittorio/Vittorio_revisionato resta verificata;
+- probe strutturale:
+  `neutralEquivalent=true`,
+  Supply 37 punti,
+  secondo percorso indipendente senza condizionamento 38 punti,
+  con Supply condizionante a 0,15 m: 1 punto;
+- tutte le regression Diego_Vittorio della run #62 sono SUCCESS;
+- Service Build sullo stesso commit: compilazione, health e smoke pannelli
+  precedenti SUCCESS; workflow finale FAILED nel test HTTP per il noto golden
+  Darcy sintetico fuori tolleranza, non nel codice Vittorio_revisionato.
+
+Interpretazione consolidata:
+- la copia pulita è stabile ed equivalente a Vittorio;
+- la sola astrazione del ruolo non rompe Vittorio;
+- applicare semplicemente lo stesso percorso Vittorio una seconda volta e
+  imporre un hard constraint rispetto alla Supply NON è sufficiente per
+  ottenere un Return autonomo utile: il percorso di prova viene bloccato
+  immediatamente;
+- non è ancora dimostrato quale regola strutturale minima debba differenziare
+  il Return (radice, lato/verso, ordine degli offset, distanza o altro);
+- fermarsi qui e decidere insieme prima di integrare un Return autonomo nel
+  flusso esecutivo o aggiungere qualsiasi euristica.
+
+Stato:
+- `Vittorio_revisionato` è sperimentale e non è motore di produzione;
+- normale esecutivo `Vittorio_revisionato` continua intenzionalmente a
+  riprodurre Vittorio;
+- duplicazione tracciata in `TERMODEL-SYNC.md` come PENDING.
