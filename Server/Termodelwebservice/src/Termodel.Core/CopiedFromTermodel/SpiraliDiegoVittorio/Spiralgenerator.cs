@@ -54,6 +54,8 @@ namespace SpiralHeatingDiegoVittorio
 	{
 		private const string TraceReturnEnvironmentVariable =
 			"TERMODEL_DIEGO_VITTORIO_TRACE_RETURN";
+		private const string TracePortalsEnvironmentVariable =
+			"TERMODEL_DIEGO_VITTORIO_TRACE_PORTALS";
 		private const string CollinearAdjacencyEnvironmentVariable =
 			"TERMODEL_DIEGO_VITTORIO_COLLINEAR_ADJACENCY";
 
@@ -64,6 +66,22 @@ namespace SpiralHeatingDiegoVittorio
 			{
 				string value = Environment.GetEnvironmentVariable(
 					TraceReturnEnvironmentVariable) ?? string.Empty;
+				return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("on", StringComparison.OrdinalIgnoreCase);
+			}
+		}
+
+		// Diagnostica DV-TEST-002: cerca un collegamento all'offset successivo
+		// senza applicarlo. Disattivata per default, quindi non può modificare
+		// la geometria né la baseline del quadrato approvato.
+		private static bool TracePortalsEnabled
+		{
+			get
+			{
+				string value = Environment.GetEnvironmentVariable(
+					TracePortalsEnvironmentVariable) ?? string.Empty;
 				return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
 					value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
 					value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
@@ -383,6 +401,51 @@ namespace SpiralHeatingDiegoVittorio
 						spiral.Add(puntoConnessione);
 				}
 				int puntiDopoIntersezione = spiral.Count;
+
+				bool portaleAnticipatoTrovato = false;
+				List<Punto> offsetSuccessivoDiagnostico =
+					TracePortalsEnabled && !ultimoOffset
+						? offsetsPercorso[indiceOffsetPercorso]
+						: null;
+
+				void ProvaPortaleAnticipato(string fase)
+				{
+					if (offsetSuccessivoDiagnostico == null ||
+						portaleAnticipatoTrovato)
+					{
+						return;
+					}
+
+					var prova = FindConnectionWithOffset(
+						spiral[^1],
+						offsetSuccessivoDiagnostico,
+						versoRivoluzione,
+						passoMandata,
+						lineeCondizionamento,
+						distanzaCondizionamento,
+						spiral,
+						distanzaAutocondizionamento);
+					if (prova.path == null || prova.intersection == null)
+						return;
+
+					portaleAnticipatoTrovato = true;
+					double lunghezza = 0.0;
+					Punto precedente = spiral[^1];
+					foreach (Punto punto in prova.path)
+					{
+						lunghezza += precedente.DistanceTo(punto);
+						precedente = punto;
+					}
+					Console.WriteLine(
+						$"  DV_RETURN_PORTAL_FOUND fromOffset={indiceOffsetPercorso} " +
+						$"toOffset={indiceOffsetPercorso + 1} phase={fase} " +
+						$"origin=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
+						$"target=({prova.intersection.X:R},{prova.intersection.Y:R}) " +
+						$"length={lunghezza:R} pathPoints={prova.path.Count}.");
+				}
+
+				if (TracePortalsEnabled)
+					ProvaPortaleAnticipato("entry");
 				
 				// Segue i vertici nel verso richiesto e si arresta prima di un
 				// tratto che violerebbe le linee di condizionamento.
@@ -432,6 +495,17 @@ namespace SpiralHeatingDiegoVittorio
 						break;
 					}
 					spiral.Add(candidato);
+					if (TracePortalsEnabled)
+						ProvaPortaleAnticipato("traversal");
+				}
+
+				if (TracePortalsEnabled &&
+					offsetSuccessivoDiagnostico != null &&
+					!portaleAnticipatoTrovato)
+				{
+					Console.WriteLine(
+						$"  DV_RETURN_PORTAL_NONE fromOffset={indiceOffsetPercorso} " +
+						$"toOffset={indiceOffsetPercorso + 1}.");
 				}
 
 				// Modificato da Codex per realizzare: se sull'offset non è stato
