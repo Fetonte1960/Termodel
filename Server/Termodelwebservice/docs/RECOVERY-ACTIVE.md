@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 13:24 Europe/Rome
+Checkpoint: 2026-09-28 13:35 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -322,7 +322,7 @@ Vincoli rispettati:
 3. riprendere quindi il collaudo geometrico della FASE 6 usando questi due statici come riferimenti rapidi.
 
 ## Sottofase FASE 6C — diagnosi mandata Supply prima di Return/chiusura
-Stato: **IN CORSO**
+Stato: **IN CORSO — 6C.1/6C.2 COMPLETATE, 6C.3 IN CORSO**
 
 Origine utente 28/09/2026:
 - partendo dall'esecutivo `Pannelli radianti` congelato e approvato come migliorativo,
@@ -341,37 +341,139 @@ Obiettivo tecnico:
 - distinguere errore di generazione Supply da effetti successivi di Return o
   LG-048, che in questa fase non devono influenzare la diagnosi.
 
-Casi iniziali:
-- fixture reale condivisa:
-  `tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml`;
-- quadrato protetto:
-  `DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO`;
-- locali rettangolari già isolati: `locale_1`, `locale_5`, `locale_8`,
-  `locale_9`;
-- estendere l'osservazione anche agli altri locali con circuito se il banco
-  permette di isolarli senza ricostruire input concorrenti.
+### 6C.1 — strumentazione diagnostica Supply
+Stato: **COMPLETATA**
 
-Fasi previste:
-1. **6C.1 — strumentazione diagnostica Supply** — IN CORSO:
-   trovare il punto esatto in cui la mandata è completa e aggiungere/riusare
-   una modalità Harness che la esporti prima di Return/chiusura, senza mutare
-   il percorso produttivo.
-2. **6C.2 — matrice locale-per-locale** — NON INIZIATA:
-   eseguire la fixture reale per tutti i locali con circuito e registrare
-   punti, livelli/offset Supply e motivo del primo arresto.
-3. **6C.3 — causa comune** — NON INIZIATA:
-   confrontare gli arresti e determinare se esiste una causa generalizzata
-   (offset non generabile, filtro, distanza, intersezione, scelta terminale,
-   discretizzazione o altra condizione) oppure più cause distinte.
-4. **6C.4 — proposta circoscritta** — BLOCCATA FINO ALLA DIAGNOSI:
-   proporre una correzione solo dopo evidenza Harness; nessun cambio strategico
-   globale senza nuova autorizzazione umana.
-5. **6C.5 — regression e ricomposizione** — NON INIZIATA:
-   proteggere quadrato e casi consolidati, quindi ricostruire il progetto
-   completo soltanto dopo eventuale correzione autorizzata.
+Commit:
+- `b2d9511a2721637bddeb838272163ca15e255513`.
+
+Implementazione diagnostica:
+- aggiunto `Program.AggiornaSoloMandata(p)`, che esegue esclusivamente
+  `GeneraSpirale` e non richiama `ChiudiSpiraleFiles`;
+- Harness: nuova opzione `--supply-only`, valida soltanto per
+  `Diego_Vittorio`;
+- benchmark: `StrategiaDiegoVittorioBenchmark.RunSupplyOnly`;
+- trace non invasivo `DV_SUPPLY_*` per generazione offset e percorrenza;
+- nessun criterio geometrico produttivo modificato.
+
+Verifica:
+- Fast Harness run `36416240750`, job `108907958748`: **SUCCESS**;
+- build Harness + Core SUCCESS;
+- tutte le regression preesistenti SUCCESS;
+- quadrato approvato byte-identico:
+  `fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39`.
+
+### 6C.2 — matrice locale-per-locale
+Stato: **COMPLETATA**
+
+Input condiviso:
+`tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml`.
+
+Risultati Supply-only, prima di Return/LG-048:
+
+- **quadrato pubblico di controllo**
+  - offset utili: 3;
+  - minEdge: 3,44 -> 2,24 -> 1,04 m;
+  - livello 4: `invalid-offset`, 0 punti;
+  - Supply: 16 punti;
+  - tutti gli offset ammessi vengono percorsi e finalizzati correttamente.
+
+- **locale_1**
+  - offset utili: 2;
+  - minEdge: 2,79 -> 1,59 m;
+  - livello 3: `invalid-offset`, 0 punti;
+  - Supply: 13 punti;
+  - SVG SHA-256:
+    `c4abe23db71675c15c17d2322a081020e54b54215390fed8b03302bf45d2ee46`.
+
+- **locale_2**
+  - offset utile: 1;
+  - livello 2 calcolato con 6 punti e minEdge **0,36 m**;
+  - rifiuto: `min-edge-below-step`, soglia 0,60 m;
+  - Supply: 8 punti;
+  - SVG SHA-256:
+    `a8d8dfa2f5888a96e574502f38f241e278653909b73cf3863861ba8f3eb888c0`.
+
+- **locale_5**
+  - offset utili: 3;
+  - minEdge: 3,94 -> 2,74 -> 1,54 m;
+  - livello 4: `invalid-offset`, 0 punti;
+  - Supply: 17 punti;
+  - SVG SHA-256:
+    `1ec390739cfeed733746ff4846492e2ae73428775a18a557ef7066190a2e0a59`.
+
+- **locale_6**
+  - offset utile: 1;
+  - livello 2 calcolato con 6 punti e minEdge **0,29 m**;
+  - rifiuto: `min-edge-below-step`, soglia 0,60 m;
+  - Supply: 8 punti;
+  - SVG SHA-256:
+    `0130cb668972ec9be246343f2c44eb731508a681539984d9f7ad6e86b250d260`.
+
+- **locale_8**
+  - offset utili: 3;
+  - minEdge: 3,61 -> 2,41 -> 1,21 m;
+  - livello 4: `invalid-offset`, 0 punti;
+  - Supply: 18 punti;
+  - SVG SHA-256:
+    `4a777551785a46e5504d4fcc71cc50926dae38d7b131fe5d8e0f7b90ebd06d00`.
+
+- **locale_9**
+  - offset utili: 2;
+  - minEdge: 2,27 -> 1,07 m;
+  - livello 3: `invalid-offset`, 0 punti;
+  - Supply: 13 punti;
+  - SVG SHA-256:
+    `91911b1160a8f91f5af560f9caa554e97c0af3dbbd999d20ab0c401616469454`.
+
+Conclusioni accertate:
+- l'arresto osservato dall'utente **esiste già nella Supply grezza**:
+  Return e LG-048 sono esclusi come causa;
+- non si osservano fallimenti di collegamento/percorrenza sugli offset ammessi:
+  tutti i livelli accettati vengono percorsi e finalizzati;
+- l'arresto avviene nella **generazione/ammissione del livello interno successivo**;
+- per `locale_2` e `locale_6` il livello successivo esiste come poligono
+  a 6 vertici, ma viene respinto globalmente perché un singolo lato misura
+  rispettivamente 0,36 m e 0,29 m contro `passoMandata = 0,60 m`;
+- per i rettangolari `locale_1/5/8/9` il livello successivo collassa già in
+  `ComputeOffset` e torna nullo/vuoto;
+- anche il quadrato approvato termina con un successivo offset invalido:
+  quindi il solo fatto che non esista un altro **anello chiuso completo** non
+  implica automaticamente un errore; va verificato se resta invece un
+  avanzamento Supply parziale utile verso il centro;
+- ipotesi corrente: il generatore Supply è quantizzato per anelli chiusi
+  completi e manca un percorso terminale/parziale dopo l'ultimo anello valido;
+  nei concavi 2/6 il filtro `minEdgeLength < passoMandata` dimostra già che
+  un intero offset viene scartato per un solo lato corto;
+- inoltre la finalizzazione di ogni offset arretra il terminale di un intero
+  `passoMandata`; questo può contribuire alla sensazione di Supply corta e
+  deve essere misurato separatamente.
+
+### 6C.3 — causa comune
+Stato: **IN CORSO**
+
+Prossima diagnostica:
+1. strumentare `ComputeOffset` / `FixIntersections` per distinguere perché
+   i rettangolari producono `invalid-offset`;
+2. sui concavi 2/6 identificare esattamente il lato corto che provoca il
+   rifiuto globale e verificare quale porzione del livello resterebbe
+   geometricamente percorribile;
+3. misurare la finalizzazione dell'ultimo offset:
+   terminale prima del rientro, terminale dopo il rientro, distanza sottratta;
+4. verificare, senza applicarlo, se dopo l'ultimo offset completo esiste un
+   segmento/percorso Supply parziale valido verso l'interno.
+
+### 6C.4 — proposta circoscritta
+Stato: **BLOCCATA FINO ALLA DIAGNOSI**
+
+Nessuna modifica strategica viene applicata senza evidenza Harness e nuova
+autorizzazione umana.
+
+### 6C.5 — regression e ricomposizione
+Stato: **NON INIZIATA**
 
 Vincoli:
-- durante 6C.1–6C.3 non modificare la geometria produttiva;
+- durante 6C.3 non modificare la geometria produttiva;
 - non usare Return o LG-048 per spiegare/arbitrare l'arresto Supply;
 - `SpiraliVittorio` invariata;
 - quadrato approvato invariato;
@@ -380,9 +482,10 @@ Vincoli:
 - usare il Fast/Local Harness come percorso primario;
 - ogni nuova evidenza significativa aggiorna questo recovery e issue #1.
 
-**PROSSIMO PASSO ESATTO:** leggere `Spiralgenerator.cs` e il Radiant Harness per
-individuare la mandata grezza pre-Return/pre-LG-048 e verificare se esiste già
-un trace o un export utilizzabile; aggiungere soltanto diagnostica se manca.
+**PROSSIMO PASSO ESATTO:** aggiungere esclusivamente diagnostica a
+`ComputeOffset`/finalizzazione Supply e rieseguire la matrice per determinare
+se l'assenza di un anello completo sta nascondendo un percorso terminale
+parziale ancora valido.
 
 ## File/componenti attualmente coinvolti
 
