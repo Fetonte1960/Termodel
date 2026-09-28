@@ -6,6 +6,18 @@ Stato generale: **IN SVILUPPO — BANCO PROVA APPARTAMENTO REALE CORRENTE**
 Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
+> **Aggiornamento 28/09/2026 — distinzione dal motore Service corrente**
+>
+> Questo registro resta autorevole per lo storico e lo sviluppo del motore
+> `StrategiaDiego` / selettore `Diego`, ma **non identifica più il default
+> operativo del Service**. Il default corrente è `Diego_Vittorio`, derivazione
+> indipendente che mantiene `SpiraliVittorio` invariata come riferimento.
+> L'utente ha iniziato il collaudo manuale sul Service pubblico del disegno
+> spirali `Diego_Vittorio` il 28/09/2026. Le nuove osservazioni relative a
+> quel collaudo vanno registrate nel registro
+> `docs/spirali-strategy-register/` e nelle relative regression, senza
+> confonderle con i checkpoint storici Rxx di StrategiaDiego.
+
 
 ## R30 — Nodo 22: scelta a 2p dal tratto SVG 5→6→7
 Stato: **ESEGUITO — HARNESS SUCCESS / CHECKPOINT CORRENTE**
