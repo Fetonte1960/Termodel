@@ -101,4 +101,125 @@ public static class StrategiaVittorioRevisionatoBenchmark
             }
         }
     }
+
+    public static StrategiaVittorioRevisionatoAbstractionCheck CheckAbstraction()
+    {
+        var perimeter = new List<SpiralHeatingVittorioRevisionato.Punto>
+        {
+            new(0.0, 0.0),
+            new(4.0, 0.0),
+            new(4.0, 4.0),
+            new(0.0, 4.0)
+        };
+        var supplyStart =
+            new SpiralHeatingVittorioRevisionato.Punto(0.0, 2.0);
+        const double step = 0.30;
+
+        var historical =
+            SpiralHeatingVittorioRevisionato.SpiralGenerator.Generate(
+                new List<SpiralHeatingVittorioRevisionato.Punto>(perimeter),
+                supplyStart,
+                step,
+                true);
+
+        var neutralInput = new SpiralHeatingVittorioRevisionato.SpiralGenerationInput
+        {
+            Perimetro =
+                new List<SpiralHeatingVittorioRevisionato.Punto>(perimeter),
+            StartPoint =
+                new SpiralHeatingVittorioRevisionato.Punto(
+                    supplyStart.X,
+                    supplyStart.Y),
+            Distanza = step,
+            DrawSpiral = true
+        };
+        var neutral =
+            SpiralHeatingVittorioRevisionato.SpiralGenerator.Generate(
+                neutralInput);
+
+        bool neutralEquivalent =
+            SamePoints(historical.spiral, neutral.spiral);
+        if (!neutralEquivalent)
+        {
+            throw new InvalidDataException(
+                "Astrazione Vittorio_revisionato: il percorso neutro diverge dal Generate storico.");
+        }
+
+        var returnStart =
+            new SpiralHeatingVittorioRevisionato.Punto(4.0, 2.0);
+        var unconditionedReturn =
+            SpiralHeatingVittorioRevisionato.SpiralGenerator.Generate(
+                new SpiralHeatingVittorioRevisionato.SpiralGenerationInput
+                {
+                    Perimetro =
+                        new List<SpiralHeatingVittorioRevisionato.Punto>(perimeter),
+                    StartPoint = returnStart,
+                    Distanza = step,
+                    DrawSpiral = true
+                });
+
+        var conditionedReturn =
+            SpiralHeatingVittorioRevisionato.SpiralGenerator.Generate(
+                new SpiralHeatingVittorioRevisionato.SpiralGenerationInput
+                {
+                    Perimetro =
+                        new List<SpiralHeatingVittorioRevisionato.Punto>(perimeter),
+                    StartPoint =
+                        new SpiralHeatingVittorioRevisionato.Punto(
+                            returnStart.X,
+                            returnStart.Y),
+                    Distanza = step,
+                    DrawSpiral = true,
+                    LineeCondizionamento =
+                        historical.spiral
+                            .Select(p =>
+                                new SpiralHeatingVittorioRevisionato.Punto(
+                                    p.X,
+                                    p.Y))
+                            .ToList(),
+                    DistanzaCondizionamento = step / 2.0
+                });
+
+        bool conditioningActive =
+            conditionedReturn.spiral.Count <
+            unconditionedReturn.spiral.Count;
+        if (!conditioningActive)
+        {
+            throw new InvalidDataException(
+                "Astrazione Vittorio_revisionato: la Supply non condiziona il percorso Return di prova.");
+        }
+
+        return new StrategiaVittorioRevisionatoAbstractionCheck(
+            neutralEquivalent,
+            historical.spiral.Count,
+            unconditionedReturn.spiral.Count,
+            conditionedReturn.spiral.Count,
+            step / 2.0);
+    }
+
+    private static bool SamePoints(
+        IReadOnlyList<SpiralHeatingVittorioRevisionato.Punto> a,
+        IReadOnlyList<SpiralHeatingVittorioRevisionato.Punto> b)
+    {
+        if (a.Count != b.Count)
+            return false;
+
+        const double tolerance = 1e-12;
+        for (int index = 0; index < a.Count; index++)
+        {
+            if (Math.Abs(a[index].X - b[index].X) > tolerance ||
+                Math.Abs(a[index].Y - b[index].Y) > tolerance)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 }
+
+public sealed record StrategiaVittorioRevisionatoAbstractionCheck(
+    bool NeutralEquivalent,
+    int SupplyPoints,
+    int UnconditionedReturnPoints,
+    int ConditionedReturnPoints,
+    double ConditioningDistanceMeters);
