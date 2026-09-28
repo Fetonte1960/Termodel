@@ -139,6 +139,40 @@ $env:TERMODEL_DIEGO_VITTORIO_RETURN_SIDE = "left"  # oppure right
 $env:TERMODEL_DIEGO_VITTORIO_AUTONOMOUS_RETURN = "false" # fallback derivato
 ```
 
+### Adiacenza collineare del Return — DV-TEST-001
+
+Dal 28 settembre 2026 è attiva una correzione locale del controllo
+Return-Return individuata sul vero esempio Web **Quadrato con pannelli**.
+
+Quando il tratto candidato è la prosecuzione esattamente collineare e nello
+stesso verso dell'ultimo tratto del Return, il segmento immediatamente
+precedente all'ultimo viene trattato come ancora **topologicamente adiacente**
+al gomito. Prima della correzione veniva invece classificato come ramo remoto:
+nel quadrato pubblico il raccordo arrivava a `(1,18;2,82)` con un ultimo
+tratto verticale di `p/2`, e la prosecuzione verticale veniva respinta perché
+misurata a 0,15 m dal tratto orizzontale adiacente al gomito. Il risultato era
+un falso arresto dell'offset 2.
+
+La correzione non cambia `p`, le distanze minime, la tolleranza geometrica o
+la strategia di ricerca. È disattivabile per confronto/rollback:
+
+```powershell
+$env:TERMODEL_DIEGO_VITTORIO_COLLINEAR_ADJACENCY = "false"
+```
+
+È inoltre ignorato un candidato coincidente col punto corrente: un segmento di
+lunghezza zero non rappresenta una nuova geometria da sottoporre ai vincoli di
+distanza.
+
+Per diagnostica dettagliata, senza modificare le decisioni:
+
+```powershell
+$env:TERMODEL_DIEGO_VITTORIO_TRACE_RETURN = "true"
+```
+
+Il caso pubblico è versionato come regression
+`DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO`.
+
 ## Matrice delle distanze
 
 Dal 27 settembre 2026 la derivazione applica le distanze geometriche delle
