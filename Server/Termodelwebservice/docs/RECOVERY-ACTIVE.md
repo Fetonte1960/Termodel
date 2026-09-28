@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 12:06 Europe/Rome
+Checkpoint: 2026-09-28 12:12 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -125,58 +125,60 @@ Verifica finale:
 - SVG artifact ispezionato: la precedente diagonale centrale da 2,454 m non è più presente e i livelli interni risultano ordinati.
 
 ### FASE 4 — locale_8
-Stato: **IN CORSO**
+Stato: **COMPLETATA TECNICAMENTE**
 
-Diagnostica già disponibile e da non ripetere:
-- run `36404366848`: lato Sinistro -> Return 3 punti, offset 2/3 bloccati, nessuna chiusura;
-- lato Destro -> peggiora a 2 punti, offset 1/2/3 bloccati;
-- esperimento `TERMODEL_DIEGO_VITTORIO_DIAG_LOCAL_ROOT_ADJACENCY=true` non cambia il risultato;
-- trace completo mostra due ostacoli dominanti:
-  - Supply `(8,49;4,01)->(8,49;3,41)`, che intercetta o resta troppo vicino ai candidati orizzontali;
-  - radice Return `(8,19;4,16)->(8,19;3,71)`, a 0,22 m dai candidati verticali su x=7,97 contro minimo 0,30 m.
+Causa:
+- il Return iniziale conteneva dogleg locali A-B -> B-C -> C-D;
+- `SegmentoRispettaSpirale` trattava A-B come ramo remoto rispetto a C-D,
+  imponendo `p` anche quando la distanza minima coincideva soltanto con la
+  lunghezza del raccordo B-C;
+- nel primo dogleg il raccordo è 0,22 m: i rami A-B e C-D non hanno sviluppo
+  parallelo sovrapposto e divergono sui lati opposti del raccordo;
+- lo stesso schema ricompare fra primo e secondo livello;
+- lato Destro e verso di costruzione opposto erano già stati provati e
+  peggioravano il risultato.
 
-Diagnosi topologica:
-- il flag local-root precedente non poteva intercettare il rifiuto principale:
-  era collocato nel ciclo di percorrenza dell'offset, mentre il rifiuto a
-  0,22 m nasce già dentro `FindConnectionWithOffset`;
-- geometria grezza locale:
-  radice Return `A=(8,19;4,16) -> B=(8,19;3,71)`,
-  raccordo `B -> C=(7,97;3,71)`,
-  candidato `C -> D` verso il basso;
-- il segmento A-B e il candidato C-D non hanno sviluppo parallelo
-  sovrapposto: terminano/partono ai due estremi del raccordo B-C e divergono
-  sui due lati opposti della sua retta;
-- la distanza minima 0,22 m coincide con la lunghezza del solo raccordo B-C;
-  quindi il controllo sta classificando come ramo remoto un segmento locale
-  separato da un unico raccordo;
-- lato Destro e verso di costruzione opposto sono già stati provati e
-  peggiorano il caso (2 punti).
+Diagnostica:
+- commit `d10e31d2b02b39b504dcde8db9e0d92f94e09619`: riconoscimento dogleg
+  solo sotto flag;
+- Fast Harness diagnostico `36406990692`: SUCCESS;
+- `locale_8`: 3 -> **18 punti** Return; due dogleg locali riconosciuti;
+- SVG ispezionato: percorso ordinato, nessun ramo remoto sovrapposto;
+- chiusura `M3/R5`, obliqua, 0,971 m.
 
-Prova diagnostica dogleg completata:
-- commit diagnostico `d10e31d2b02b39b504dcde8db9e0d92f94e09619`;
-- workflow diagnostico Fast `c1c25c61c802ce994e51cc17d5df6d427f92e17d`;
-- Fast Harness run `36406990692`: **SUCCESS**;
-- quadrato base, `locale_1`, `locale_5` e fitting regression tutti verdi;
-- sotto il solo flag diagnostico `locale_8` passa da 3 a **18 punti** Return;
-- il trace riconosce due dogleg locali:
-  1. obstacle 0, raccordo 0,22 m all'ingresso;
-  2. obstacle 6, analogo raccordo 0,22 m fra primo e secondo livello;
-- entrambi sono stati verificati sull'SVG: i segmenti non hanno sviluppo
-  parallelo sovrapposto, ma divergono ai lati opposti del raccordo;
-- chiusura risultante: `M3/R5`, obliqua, 0,971 m; circuito completo.
+Correzione consolidata:
+- commit `18cd798a22c72d39d5dfbbfaba647e1e91fdcf5a`: classificazione dogleg
+  locale attiva per default;
+- rollback: `TERMODEL_DIEGO_VITTORIO_LOCAL_DOGLEG_ADJACENCY=false`;
+- la regola si applica soltanto al penultimo ostacolo separato da un unico
+  raccordo, quando la distanza minima coincide con la lunghezza del raccordo
+  e i due rami divergono sui lati opposti;
+- tutti gli altri segmenti mantengono integralmente la distanza minima.
 
-**PROSSIMO PASSO ESATTO:**
-1. promuovere la sola classificazione dogleg locale a comportamento normale,
-   con flag di rollback separato e default ON;
-2. rimuovere la dipendenza dal vecchio flag diagnostico local-root per questa
-   regola e trasformare il test `locale_8` in regression ordinaria;
-3. rieseguire Fast Harness con quadrato + `locale_1` + `locale_5` +
-   `locale_8`;
-4. se tutto resta verde, consolidare FASE 4 e passare a `locale_9`.
+Regression:
+- commit `109dac86a8703f8d21b04b6486e00cda0fd49a01`: regression `locale_8`;
+- Fast Harness run `36407499506`: **SUCCESS** senza flag diagnostici;
+- quadrato approvato byte-identico;
+- `locale_1`, `locale_5`, `locale_8` e fitting regression tutti SUCCESS;
+- `locale_8`: Return 18 punti, chiusura presente 0,971 m.
 
 ### FASE 5 — locale_9
-Stato: **NON INIZIATA**
-Dipendenza: completamento FASE 4.
+Stato: **IN CORSO**
+
+Stato noto dai run di estrazione precedenti, da verificare sul codice corrente:
+- inizialmente la fixture aveva Return 6 punti e offset 2 bloccato;
+- dopo le correzioni circoscritte delle fasi precedenti, il run
+  `36405131885` mostrava già Return **13 punti**, 2 offset utili e chiusura
+  `M3/R5` obliqua da 1,875 m;
+- questo miglioramento è incidentale e non è ancora una regression dedicata.
+
+**PROSSIMO PASSO ESATTO:**
+1. eseguire `locale_9` sul codice corrente nel Fast Harness;
+2. ispezionare log/SVG e verificare se Return 13 punti e chiusura 1,875 m
+   costituiscono una geometria coerente;
+3. se coerente, aggiungere regression dedicata senza cambiare il motore;
+4. se emerge un'anomalia reale, isolarla senza modificare i casi già
+   consolidati.
 
 ### FASE 6 — ricomposizione progetto completo
 Stato: **NON INIZIATA**
