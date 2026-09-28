@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 14:07 Europe/Rome
+Checkpoint: 2026-09-28 14:18 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -533,43 +533,155 @@ Vincoli:
 **PROSSIMO PASSO ESATTO:** FASE 6D su `locale_1` soltanto; ricostruire il percorso di chiamata e il calcolo del livello 3 in `ComputeOffset`, senza alcuna modifica geometrica.
 
 ## FASE 6D — autopsia Supply `locale_1`
-Stato: **IN CORSO**
+Stato: **IN CORSO — STEP 1/2/3 COMPLETATI**
 
 Ambito rigidamente limitato:
 - unico caso: `locale_1` della fixture reale
   `tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml`;
 - ingresso reale: `T6`;
-- geometria locale: rettangolo 3,09 × 5,50 m;
+- geometria locale XML: 5 vertici utili + chiusura, con un vertice intermedio
+  collineare sul lato destro;
+- geometria usata dal generatore dopo normalizzazione: rettangolo 3,09 × 5,50 m;
 - passo `p = 0,30 m`;
 - `distanzaParete = p/2 = 0,15 m`;
 - `passoMandata = 2p = 0,60 m`;
 - Return, LG-048, raccordi finali e altri locali sono fuori discussione.
 
-Obiettivo:
-ricostruire senza scorciatoie la sequenza completa che porta il generatore
-a dichiarare `invalid-offset` al livello 3 di `locale_1`.
+### STEP 1 — percorso di chiamata reale
+Stato: **COMPLETATO**
 
-Metodo obbligatorio, uno step alla volta:
-1. identificare il chiamante e i parametri reali passati a `SpiralGenerator.Generate`;
-2. ricostruire il perimetro normalizzato realmente ricevuto;
-3. ricostruire offset 1 e offset 2, verificando formula, coordinate e trasformazioni;
-4. entrare nel tentativo di offset 3 e documentare ogni ramo di `ComputeOffset`:
-   lati correnti, lati precedenti, `edgeLength`, `edgeLength_pre`, `offset`,
-   condizione `edgeLength <= offset * 3`, condizione di shrink, `skipIndices`;
-5. stabilire se l'aborto è matematicamente necessario o è prodotto da una
-   regola euristica/storica che anticipa il collasso;
-6. soltanto dopo questa prova formulare possibili correzioni; nessuna modifica
-   del motore prima della diagnosi completa.
+Catena verificata:
+1. Harness `Run` legge l'intera fixture reale.
+2. `SelectSingleLocale` elimina soltanto gli altri elementi `<Locale>`;
+   **non elimina né ricostruisce le linee T1..T12**.
+3. per `--engine Diego_Vittorio --supply-only` il banco chiama
+   `RunCopiedSpiralStrategy`.
+4. `StrategiaDiegoVittorioBenchmark.RunSupplyOnly` crea il workspace
+   temporaneo e chiama `Program.AggiornaSoloMandata(0.30)`.
+5. `AggiornaSoloMandata` deriva:
+   - parete = 0,15 m;
+   - Supply-Supply = 0,60 m;
+   - Return = 0,30 m, non usato in supply-only;
+   e chiama `GeneraSpirale(... traceSupply:true)` senza `ChiudiSpiraleFiles`.
+6. `GeneraSpirale` seleziona realmente `T6`, calcola l'intersezione col
+   perimetro e passa a `SpiralGenerator.Generate`:
+   - start = `(1,5700000000000003 ; 4,74316)`;
+   - distanzaParete = 0,15;
+   - passoMandata = 0,60;
+   - `lineeCondizionamento = null`, quindi nessun Return condiziona la Supply.
 
-Evidenza già disponibile da preservare, ma da non assumere come spiegazione finale:
-- livello 1 accettato;
-- livello 2 accettato;
-- tentativo livello 3: `ComputeOffset` restituisce 0 vertici dopo gli skip;
-- trace precedente mostra sul livello 3 due lati da 1,59 m e due da 4,00 m;
-- i due lati da 1,59 m soddisfano la regola storica di skip e, aggiungendo
-  entrambi gli estremi, l'unione degli indici elimina tutti e quattro i vertici.
+Conclusione STEP 1:
+- il caso Harness riproduce il percorso Supply produttivo;
+- non è una geometria sintetica né ricostruita;
+- Return e LG-048 sono effettivamente esclusi.
 
-**PROSSIMO PASSO ESATTO:** leggere il percorso di chiamata `Harness -> benchmark -> Program.GeneraSpirale -> SpiralGenerator.Generate` per `locale_1`, quindi ricostruire numericamente il livello 3 dentro `ComputeOffset` senza cambiare codice produttivo.
+### STEP 2 — normalizzazione del perimetro
+Stato: **COMPLETATO**
+
+Input XML `locale_1` dopo arrotondamento a 2 decimali:
+- `(-1,52 ; -0,08)`;
+- `(-1,52 ; 5,42)`;
+- `(1,57 ; 5,42)`;
+- `(1,57 ; 4,29)`;
+- `(1,57 ; -0,08)`;
+- chiusura sul primo punto.
+
+`RoundAndSnapVertices` arrotonda e allinea coordinate quasi uguali.
+Il duplicato finale viene rimosso.
+`RemoveCollinearVertices` elimina `(1,57 ; 4,29)` perché è esattamente
+collineare fra `(1,57 ; 5,42)` e `(1,57 ; -0,08)`.
+`EnsureCounterClockwise` inverte solo l'ordine di percorrenza.
+
+Perimetro effettivamente passato agli offset:
+- A `(1,57 ; -0,08)`;
+- B `(1,57 ; 5,42)`;
+- C `(-1,52 ; 5,42)`;
+- D `(-1,52 ; -0,08)`.
+
+Conclusione STEP 2:
+- nessuna geometria significativa viene persa prima dell'aborto;
+- `locale_1` arriva a `ComputeOffset` come rettangolo ortogonale regolare
+  3,09 × 5,50 m.
+
+### STEP 3 — ricostruzione dell'aborto in `ComputeOffset`
+Stato: **COMPLETATO**
+
+Codice coinvolto:
+`SpiraliDiegoVittorio/Spiralgenerator.cs`, ciclo offset e
+`ComputeOffset(polygon, polygon_pre, offset, ...)`.
+
+Livello 1:
+- offset richiesto 0,15 m;
+- nessun lato viene marcato `skip`;
+- risultato 4 vertici, rettangolo 2,79 × 5,20 m;
+- livello accettato.
+
+Livello 2:
+- offset richiesto 0,60 m;
+- rettangolo corrente 2,79 × 5,20 m;
+- confronto col precedente 3,09 × 5,50 m;
+- shrink osservato 0,30 m;
+- nessun lato soddisfa la soglia di skip;
+- risultato 4 vertici, rettangolo 1,59 × 4,00 m;
+- livello accettato.
+
+Livello 3 — punto esatto dell'aborto:
+- offset richiesto 0,60 m;
+- poligono corrente:
+  - edge 0 = 4,00 m;
+  - edge 1 = 1,59 m;
+  - edge 2 = 4,00 m;
+  - edge 3 = 1,59 m;
+- poligono precedente:
+  - lati corrispondenti 5,20 / 2,79 / 5,20 / 2,79 m;
+- shrink = circa 1,20 m su tutti i lati.
+
+Regola storica:
+`skip = edgeLength <= offset * 3 && (edgeLength_pre - edgeLength) > offset`.
+
+Con `offset = 0,60`:
+- soglia `offset * 3 = 1,80 m`;
+- edge 1: 1,59 <= 1,80 e shrink 1,20 > 0,60 -> `skip=true`;
+  vengono aggiunti `skipIndices {1,2}`;
+- edge 3: 1,59 <= 1,80 e shrink 1,20 > 0,60 -> `skip=true`;
+  vengono aggiunti `skipIndices {3,0}`;
+- unione: `{0,1,2,3}`;
+- seconda passata: **tutti i vertici vengono saltati**;
+- `result.Count = 0` -> `ComputeOffset` restituisce `null`;
+- ciclo superiore emette `reason=invalid-offset` e interrompe la generazione.
+
+Fatto nuovo importante:
+- il trace diagnostico calcola anche i candidati che il codice produttivo
+  evita di creare;
+- senza applicare gli skip, il livello 3 sarebbe ancora un rettangolo
+  geometricamente finito **0,39 × 2,80 m**;
+- coordinate teoriche:
+  - `(0,22 ; 1,27)`;
+  - `(0,22 ; 4,07)`;
+  - `(-0,17 ; 4,07)`;
+  - `(-0,17 ; 1,27)`.
+
+Quindi:
+- l'aborto **non deriva da un fallimento numerico di ComputeOffset**;
+- l'aborto è causato intenzionalmente dalla regola preventiva dei
+  `skipIndices`, prima che `FixIntersections`, `NormalizePolygon` o la
+  percorrenza possano esaminare il terzo offset;
+- il codice non prova a validare il poligono 0,39 × 2,80: lo sopprime a monte.
+
+### STEP 4 — domanda aperta corrente
+Stato: **IN CORSO**
+
+Determinare il significato geometrico esatto della soglia `3 * offset`:
+- verificare se equivale a garantire che il nuovo offset conservi almeno
+  una distanza `offset` fra i due lati opposti;
+- distinguere una protezione geometrica corretta da una euristica che, nel
+  meccanismo a spirale aperta, elimina troppo presto un'evoluzione ancora
+  percorribile;
+- nessuna proposta di correzione finché questa distinzione non è provata.
+
+**PROSSIMO PASSO ESATTO:** analizzare matematicamente la regola `3*offset` su
+`locale_1` e verificare cosa intende proteggere rispetto al vero percorso
+Supply, senza bypassarla e senza modificare il motore.
 
 
 ## File/componenti attualmente coinvolti
