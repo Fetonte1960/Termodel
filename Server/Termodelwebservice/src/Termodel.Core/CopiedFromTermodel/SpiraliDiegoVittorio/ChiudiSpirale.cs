@@ -185,9 +185,10 @@ namespace SpiralHeatingDiegoVittorio
                     CandidatoChiusura chiusuraOttimizzata = null;
                     if (drawClosure && autonomousReturn)
                     {
-                        // Modificato da Codex per realizzare: provare in ordine
-                        // le 35 configurazioni terminali approvate e fermarsi
-                        // al primo collegamento non acuto lungo almeno 2p.
+                        // DV-TEST-002: enumerare i candidati validi mantenendo
+                        // invariati i controlli geometrici; se esistono chiusure
+                        // ortogonali scegliere la più corta, altrimenti conservare
+                        // il primo candidato valido secondo l'ordine storico.
                         chiusuraOttimizzata = GeneraPrimaChiusuraAccettabile(
                             spirale,
                             rientroRettilineo,
@@ -530,8 +531,6 @@ namespace SpiralHeatingDiegoVittorio
                 return null;
             }
 
-            // Modificato da Codex per realizzare: partire dal taglio storico
-            // dei tre tratti di mandata e riespanderla un livello alla volta.
             var livelliMandata = new (string codice, int rimossi, double? lunghezzaFinale)[]
             {
                 ("M0", 3, null),
@@ -553,6 +552,7 @@ namespace SpiralHeatingDiegoVittorio
 
             int numeroTentativo = 0;
             CandidatoChiusura primoAccettabile = null;
+            var candidatiAccettabili = new List<CandidatoChiusura>();
             var configurazioniGiaProvate = new HashSet<string>(
                 StringComparer.Ordinal);
 
@@ -590,22 +590,18 @@ namespace SpiralHeatingDiegoVittorio
                         ritorno,
                         passo,
                         numeroTentativo);
-                    if (candidato != null)
-                    {
-                        if (!TraceClosureEnabled)
-                            return candidato;
+                    if (candidato == null)
+                        continue;
 
-                        primoAccettabile ??= candidato;
-                    }
+                    primoAccettabile ??= candidato;
+                    candidatiAccettabili.Add(candidato);
                 }
             }
 
-            // DV-TEST-002 — fallback ortogonale circoscritto.
-            // In produzione viene raggiunto soltanto se tutte le configurazioni
-            // storiche hanno fallito. Con TRACE_CLOSURE attivo viene invece
-            // enumerato anche dopo un candidato diretto valido, esclusivamente
-            // per diagnosi: il candidato restituito resta comunque il primo
-            // accettabile secondo l'ordine storico.
+            // DV-TEST-002 — le proiezioni ortogonali non sono più soltanto
+            // un fallback successivo al fallimento delle configurazioni dirette:
+            // vengono enumerate insieme agli altri candidati già validi, senza
+            // rilassare alcun criterio geometrico.
             foreach (var livelloMandata in livelliMandata.Reverse())
             {
                 ConfigurazioneTerminale mandata =
@@ -642,32 +638,49 @@ namespace SpiralHeatingDiegoVittorio
                         ritorno,
                         passo,
                         numeroTentativo);
-                    if (candidato != null)
-                    {
-                        if (TraceClosureEnabled)
-                        {
-                            Console.WriteLine(
-                                $"  DV_CLOSURE_PROJECTION_ACCEPT attempt={numeroTentativo} " +
-                                $"seq={mandata.Codice}/{ritorno.Codice}.");
-                            primoAccettabile ??= candidato;
-                            continue;
-                        }
+                    if (candidato == null)
+                        continue;
 
-                        return candidato;
+                    if (TraceClosureEnabled)
+                    {
+                        Console.WriteLine(
+                            $"  DV_CLOSURE_PROJECTION_ACCEPT attempt={numeroTentativo} " +
+                            $"seq={mandata.Codice}/{ritorno.Codice}.");
                     }
+
+                    primoAccettabile ??= candidato;
+                    candidatiAccettabili.Add(candidato);
                 }
             }
 
-            if (TraceClosureEnabled && primoAccettabile != null)
+            if (candidatiAccettabili.Count == 0)
+                return null;
+
+            // Criterio autorizzato dall'utente per DV-TEST-002:
+            // 1) se esistono candidati ortogonali, scegliere soltanto tra questi;
+            // 2) minimizzare la lunghezza della chiusura;
+            // 3) a parità, minimizzare la lunghezza rimossa;
+            // 4) a ulteriore parità, mantenere l'ordine deterministico storico.
+            // Se non esiste alcun candidato ortogonale, resta il primo
+            // accettabile secondo l'ordine storico LG-048.
+            CandidatoChiusura selezionato = candidatiAccettabili
+                .Where(c => c.Ortogonale)
+                .OrderBy(c => c.LunghezzaChiusura)
+                .ThenBy(c => c.LunghezzaRimossa)
+                .ThenBy(c => c.NumeroTentativo)
+                .FirstOrDefault() ?? primoAccettabile;
+
+            if (TraceClosureEnabled)
             {
                 Console.WriteLine(
-                    $"  DV_CLOSURE_TRACE_FIRST_ACCEPT attempt={primoAccettabile.NumeroTentativo} " +
-                    $"seq={primoAccettabile.LivelloMandata}/{primoAccettabile.TentativoRitorno} " +
-                    $"length={primoAccettabile.LunghezzaChiusura:R} " +
-                    $"removed={primoAccettabile.LunghezzaRimossa:R}.");
+                    $"  DV_CLOSURE_SELECTED attempt={selezionato.NumeroTentativo} " +
+                    $"seq={selezionato.LivelloMandata}/{selezionato.TentativoRitorno} " +
+                    $"type={(selezionato.Ortogonale ? "orthogonal" : "historical-first")} " +
+                    $"length={selezionato.LunghezzaChiusura:R} " +
+                    $"removed={selezionato.LunghezzaRimossa:R}.");
             }
 
-            return primoAccettabile;
+            return selezionato;
         }
 
         private static ConfigurazioneTerminale CreaConfigurazioneTerminaleProiettata(
