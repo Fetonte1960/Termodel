@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 13:17 Europe/Rome
+Checkpoint: 2026-09-28 13:24 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -320,6 +320,69 @@ Vincoli rispettati:
 1. aprire `Quadrato con pannelli` e `Pannelli radianti` dal catalogo senza premere `Aggiorna Modello`;
 2. verificare che `Disegno esecutivo` sia subito disponibile e che il badge riporti `CONSOLIDATO NELL'ESEMPIO` + `Diego_Vittorio`;
 3. riprendere quindi il collaudo geometrico della FASE 6 usando questi due statici come riferimenti rapidi.
+
+## Sottofase FASE 6C — diagnosi mandata Supply prima di Return/chiusura
+Stato: **IN CORSO**
+
+Origine utente 28/09/2026:
+- partendo dall'esecutivo `Pannelli radianti` congelato e approvato come migliorativo,
+  si osserva un'anomalia quasi generalizzata: l'evoluzione della spirale di
+  **mandata rossa** sembra arrestarsi prima del previsto;
+- indagare in modalità Harness;
+- ignorare esplicitamente Return e chiusura LG-048 durante la diagnosi;
+- seguire il protocollo recovery e registrare ogni checkpoint.
+
+Obiettivo tecnico:
+- osservare la polilinea Supply grezza nel punto immediatamente precedente alla
+  costruzione del Return e alla chiusura;
+- misurare locale per locale quanti offset/livelli Supply vengono costruiti;
+- per ogni arresto identificare il primo livello non prodotto e la causa
+  concreta di rifiuto/assenza geometrica;
+- distinguere errore di generazione Supply da effetti successivi di Return o
+  LG-048, che in questa fase non devono influenzare la diagnosi.
+
+Casi iniziali:
+- fixture reale condivisa:
+  `tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml`;
+- quadrato protetto:
+  `DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO`;
+- locali rettangolari già isolati: `locale_1`, `locale_5`, `locale_8`,
+  `locale_9`;
+- estendere l'osservazione anche agli altri locali con circuito se il banco
+  permette di isolarli senza ricostruire input concorrenti.
+
+Fasi previste:
+1. **6C.1 — strumentazione diagnostica Supply** — IN CORSO:
+   trovare il punto esatto in cui la mandata è completa e aggiungere/riusare
+   una modalità Harness che la esporti prima di Return/chiusura, senza mutare
+   il percorso produttivo.
+2. **6C.2 — matrice locale-per-locale** — NON INIZIATA:
+   eseguire la fixture reale per tutti i locali con circuito e registrare
+   punti, livelli/offset Supply e motivo del primo arresto.
+3. **6C.3 — causa comune** — NON INIZIATA:
+   confrontare gli arresti e determinare se esiste una causa generalizzata
+   (offset non generabile, filtro, distanza, intersezione, scelta terminale,
+   discretizzazione o altra condizione) oppure più cause distinte.
+4. **6C.4 — proposta circoscritta** — BLOCCATA FINO ALLA DIAGNOSI:
+   proporre una correzione solo dopo evidenza Harness; nessun cambio strategico
+   globale senza nuova autorizzazione umana.
+5. **6C.5 — regression e ricomposizione** — NON INIZIATA:
+   proteggere quadrato e casi consolidati, quindi ricostruire il progetto
+   completo soltanto dopo eventuale correzione autorizzata.
+
+Vincoli:
+- durante 6C.1–6C.3 non modificare la geometria produttiva;
+- non usare Return o LG-048 per spiegare/arbitrare l'arresto Supply;
+- `SpiraliVittorio` invariata;
+- quadrato approvato invariato;
+- nessuna modifica frontend;
+- nessuna modifica a `definizionedati.json`;
+- usare il Fast/Local Harness come percorso primario;
+- ogni nuova evidenza significativa aggiorna questo recovery e issue #1.
+
+**PROSSIMO PASSO ESATTO:** leggere `Spiralgenerator.cs` e il Radiant Harness per
+individuare la mandata grezza pre-Return/pre-LG-048 e verificare se esiste già
+un trace o un export utilizzabile; aggiungere soltanto diagnostica se manca.
 
 ## File/componenti attualmente coinvolti
 
