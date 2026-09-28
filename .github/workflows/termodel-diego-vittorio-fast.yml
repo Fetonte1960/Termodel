@@ -316,6 +316,55 @@ jobs:
           Remove-Item Env:TERMODEL_DIEGO_VITTORIO_TRACE_PORTALS -ErrorAction SilentlyContinue
           Write-Host "DIEGO_VITTORIO_RETURN_BOTTLENECK_TRACE_OK"
 
+      - name: Diagnose reverse Return build direction
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $env:TERMODEL_DIEGO_VITTORIO_TRACE_RETURN = "true"
+          $env:TERMODEL_DIEGO_VITTORIO_TRACE_PORTALS = "true"
+          $env:TERMODEL_DIEGO_VITTORIO_DIAG_REVERSE_BUILD_DIRECTION = "true"
+          $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioReverseBuildDiagnostic"
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+
+          $cases = @(
+            @{
+              Name = "locale1"
+              Case = "tests/radiant-harness/cases/DV-PUBLIC-PANELS-RECT-01-P030-DIEGO-VITTORIO.json"
+              Id = "DV-REVERSE-LOCALE1-T6"
+            },
+            @{
+              Name = "square"
+              Case = "tests/radiant-harness/cases/DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json"
+              Id = "DV-REVERSE-PUBLIC-SQUARE"
+            }
+          )
+
+          foreach ($item in $cases) {
+            $out = Join-Path $root $item.Name
+            dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+              --case $item.Case `
+              --id $item.Id `
+              --skip-close `
+              --out $out
+            if ($LASTEXITCODE -ne 0) { throw "Reverse build diagnostic $($item.Name) fallito." }
+
+            $log = Join-Path $out "$($item.Id).log.txt"
+            $metrics = Join-Path $out "$($item.Id).metrics.json"
+            if (-not (Test-Path -LiteralPath $log)) { throw "Reverse log mancante: $log" }
+            if (-not (Test-Path -LiteralPath $metrics)) { throw "Reverse metrics mancanti: $metrics" }
+
+            $m = Get-Content -LiteralPath $metrics -Raw | ConvertFrom-Json
+            Write-Host ("=== REVERSE RETURN {0} spiralPoints={1} svg={2} ===" -f $item.Name,$m.SpiralPointCount,$m.svgSha256)
+            Get-Content -LiteralPath $log | Where-Object {
+              $_ -match 'DV_RETURN_DIAG_REVERSE_BUILD|DV_RETURN_CONNECTION_CHOSEN|DV_RETURN_TRAVERSE_ACCEPT|DV_RETURN_PORTAL_FOUND|Ritorno: offset|Ritorno autonomo|Ritorno parametrico'
+            } | Write-Host
+          }
+
+          Remove-Item Env:TERMODEL_DIEGO_VITTORIO_TRACE_RETURN -ErrorAction SilentlyContinue
+          Remove-Item Env:TERMODEL_DIEGO_VITTORIO_TRACE_PORTALS -ErrorAction SilentlyContinue
+          Remove-Item Env:TERMODEL_DIEGO_VITTORIO_DIAG_REVERSE_BUILD_DIRECTION -ErrorAction SilentlyContinue
+          Write-Host "DIEGO_VITTORIO_REVERSE_BUILD_DIAGNOSTIC_OK"
+
       - name: Run Vittorio reference locale_1 vs public square
         shell: pwsh
         run: |
@@ -466,6 +515,7 @@ jobs:
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1PreClosure
             ${{ runner.temp }}/DiegoVittorioReturnBottleneckTrace
+            ${{ runner.temp }}/DiegoVittorioReverseBuildDiagnostic
             ${{ runner.temp }}/VittorioReferenceComparison
             ${{ runner.temp }}/DiegoVittorioPanelsLocale5
             ${{ runner.temp }}/DiegoVittorioPanelsLocale8
