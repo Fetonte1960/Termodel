@@ -1469,3 +1469,37 @@ modifiche geometriche: invertire globalmente il verso di costruzione del Return
 (`TERMODEL_DIEGO_VITTORIO_DIAG_REVERSE_BUILD_DIRECTION=true`) su locale_1 e
 quadrato. Scopo: separare il problema “verso di percorrenza” dal problema
 “momento di uscita dall'offset”.
+
+
+#### STEP 4G.3 — inversione globale del verso: esclusa come causa principale
+Stato: **COMPLETATO**
+
+Test diagnostico con flag già esistente:
+`TERMODEL_DIEGO_VITTORIO_DIAG_REVERSE_BUILD_DIRECTION=true`.
+
+Riferimenti:
+- commit workflow `1975df1396507227423e0bccb8f87f3f76b1c2ca`;
+- Fast Harness run `36462013287` (#52): **SUCCESS**;
+- tutte le regression normali successive: SUCCESS.
+
+Esito con verso di costruzione invertito:
+- `locale_1`: il Return entra nell'offset 1 ma non trova alcun tratto
+  percorribile; offset 2 e 3 non trovano collegamento; Return finale = 2 punti;
+- quadrato pubblico: stesso comportamento, Return finale = 2 punti.
+
+Conclusione:
+- il difetto di `locale_1` NON si risolve invertendo globalmente il verso;
+- il verso corrente è strutturalmente coerente con il raccordo iniziale e con
+  l'ordine dei vertici degli offset;
+- la questione resta **quando abbandonare l'offset corrente**, non il semplice
+  senso orario/antiorario globale.
+
+Questo test evita di introdurre una falsa soluzione basata sul “girare
+dall'altra parte”.
+
+**PROSSIMO PASSO:** estendere esclusivamente la diagnostica `TRACE_PORTALS`
+per non fermarsi al primo portale trovato: a ogni ingresso e dopo ogni tratto
+accettato registrare se il prossimo offset è ancora raggiungibile, il path e
+la sua lunghezza. Obiettivo: ricostruire la finestra temporale
+`primo portale -> ultimo portale ancora valido` e confrontarla fra
+`locale_1` e quadrato.
