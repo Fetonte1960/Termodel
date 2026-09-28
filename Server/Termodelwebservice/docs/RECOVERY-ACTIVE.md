@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 12:02 Europe/Rome
+Checkpoint: 2026-09-28 12:06 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -152,15 +152,27 @@ Diagnosi topologica:
 - lato Destro e verso di costruzione opposto sono già stati provati e
   peggiorano il caso (2 punti).
 
+Prova diagnostica dogleg completata:
+- commit diagnostico `d10e31d2b02b39b504dcde8db9e0d92f94e09619`;
+- workflow diagnostico Fast `c1c25c61c802ce994e51cc17d5df6d427f92e17d`;
+- Fast Harness run `36406990692`: **SUCCESS**;
+- quadrato base, `locale_1`, `locale_5` e fitting regression tutti verdi;
+- sotto il solo flag diagnostico `locale_8` passa da 3 a **18 punti** Return;
+- il trace riconosce due dogleg locali:
+  1. obstacle 0, raccordo 0,22 m all'ingresso;
+  2. obstacle 6, analogo raccordo 0,22 m fra primo e secondo livello;
+- entrambi sono stati verificati sull'SVG: i segmenti non hanno sviluppo
+  parallelo sovrapposto, ma divergono ai lati opposti del raccordo;
+- chiusura risultante: `M3/R5`, obliqua, 0,971 m; circuito completo.
+
 **PROSSIMO PASSO ESATTO:**
-1. estendere soltanto sotto il flag diagnostico local-root la validazione
-   `SegmentoRispettaSpirale` per riconoscere il caso topologico
-   A-B -> B-C -> C-D quando la distanza minima coincide con B-C e A/D sono
-   sui lati opposti del raccordo;
-2. rieseguire la diagnostica `locale_8` già prevista dal workflow;
-3. mantenere quadrato + `locale_1` + `locale_5` invariati nel Fast Harness;
-4. promuovere la regola a comportamento normale soltanto se il risultato
-   `locale_8` è geometricamente coerente e le regression restano verdi.
+1. promuovere la sola classificazione dogleg locale a comportamento normale,
+   con flag di rollback separato e default ON;
+2. rimuovere la dipendenza dal vecchio flag diagnostico local-root per questa
+   regola e trasformare il test `locale_8` in regression ordinaria;
+3. rieseguire Fast Harness con quadrato + `locale_1` + `locale_5` +
+   `locale_8`;
+4. se tutto resta verde, consolidare FASE 4 e passare a `locale_9`.
 
 ### FASE 5 — locale_9
 Stato: **NON INIZIATA**
