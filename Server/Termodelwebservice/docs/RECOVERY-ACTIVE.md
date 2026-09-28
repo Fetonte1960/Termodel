@@ -1699,3 +1699,56 @@ Probe aggiunto:
 **PROSSIMO PASSO:** attendere il run Fast della fase 2. Se verde, fermarsi e
 ragionare con l'utente sui risultati prima di integrare il Return nel flusso
 esecutivo o aggiungere qualunque strategia di rerouting.
+
+
+#### STEP 4I.2 — test finale dell'astrazione: STOP PER DISCUSSIONE
+Stato: **COMPLETATO — FERMARSI QUI PRIMA DI NUOVE STRATEGIE**
+
+Sorgente testato:
+- `a1e86149577116ea6abc5d6009a3ebec0f52ff28`
+  `refactor(radiant): integra gate condizionante nel core Vittorio_revisionato`.
+
+Fast Harness:
+- run `36466606034` (#62): **SUCCESS**;
+- Build Harness + Core: SUCCESS;
+- parità iniziale Vittorio/Vittorio_revisionato: SUCCESS anche dopo
+  l'astrazione;
+- SVG SHA-256:
+  `9673CD8D77A9963EC425FA69F54B8DCFF4C162312336D08D74AC722A2E0122A4`;
+- XML SHA-256:
+  `9517A5BFFE56F7CCB2419F173A0020FAC0EEBF6B2FD3706C02CD29D32C0DDCA6`;
+- probe astrazione:
+  - `neutralEquivalent=true`;
+  - `supplyPoints=37`;
+  - `unconditionedReturnPoints=38`;
+  - `conditionedReturnPoints=1`;
+  - `conditioningDistance=0.15`;
+- tutte le regression Diego_Vittorio della run: SUCCESS.
+
+Service Build dello stesso commit:
+- build: SUCCESS;
+- smoke pannelli precedente: SUCCESS;
+- workflow complessivo FAILED nello smoke HTTP sul **golden Darcy sintetico
+  fuori tolleranza**, non su Vittorio_revisionato.
+
+Conclusione da preservare:
+- la copia pulita riproduce Vittorio;
+- l'astrazione neutra non rompe Vittorio;
+- il semplice riuso dello stesso algoritmo una seconda volta, con Supply come
+  vincolo hard, si blocca quasi immediatamente: 38 punti senza vincolo -> 1
+  punto con vincolo;
+- questo NON dimostra che Vittorio sia errato;
+- dimostra che “Vittorio due volte + vincolo Supply” non definisce ancora un
+  Return autonomo geometricamente utilizzabile;
+- non introdurre adesso rerouting, corridoi, fallback o fix di Diego_Vittorio.
+
+Documenti aggiornati:
+- `SpiraliVittorioRevisionato/README.md`;
+- `CopiedFromTermodel/TERMODEL-SYNC.md`;
+- `PROJECT-SUMMARY-SERVICE.md`.
+
+**RECOVERY POINT / PROSSIMA CONVERSAZIONE:** ragionare con l'utente su quale
+debba essere la minima differenza strutturale del secondo percorso rispetto alla
+Supply (punto/radice di partenza, lato e verso di percorrenza, ordine degli
+offset, distanza di generazione/condizionamento). Nessuna implementazione prima
+di questa decisione.
