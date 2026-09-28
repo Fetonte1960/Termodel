@@ -1,0 +1,59 @@
+name: Termodel Freeze Approved Executives
+
+permissions:
+  contents: write
+  actions: read
+
+on:
+  push:
+    paths:
+      - '.github/workflows/termodel-freeze-approved-executives.yml'
+
+jobs:
+  freeze:
+    if: ${{ !contains(github.event.head_commit.message, '[freeze-assets-done]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download approved artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/panels" "$RUNNER_TEMP/square"
+          gh run download 36411641717 --repo "$GITHUB_REPOSITORY" --name pannelli-radianti-public-model3d --dir "$RUNNER_TEMP/panels"
+          gh run download 36383027266 --repo "$GITHUB_REPOSITORY" --name diego-vittorio-public-square --dir "$RUNNER_TEMP/square"
+
+      - name: Verify approved SVG hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          PANELS="$RUNNER_TEMP/panels/pannelli-esecutivo.svg"
+          SQUARE="$RUNNER_TEMP/square/quadrato-con-pannelli-esecutivo.svg"
+          test -f "$PANELS"
+          test -f "$SQUARE"
+          echo "6a1c79ed23b8dcfde6fcffb484a029f54d5355793b32422e30c6e19cca0f2a3d  $PANELS" | sha256sum -c -
+          echo "1cd73beba29edb1c44adc7dd4719123872ed58de5f9f5c901a88f39a3f52f8f6  $SQUARE" | sha256sum -c -
+
+      - name: Freeze static example SVGs
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/panels/pannelli-esecutivo.svg" docs/termodel-ui-demo/examples/pannelli-radianti-esecutivo.svg
+          cp "$RUNNER_TEMP/square/quadrato-con-pannelli-esecutivo.svg" docs/termodel-ui-demo/examples/quadrato-con-pannelli-esecutivo.svg
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/termodel-ui-demo/examples/pannelli-radianti-esecutivo.svg docs/termodel-ui-demo/examples/quadrato-con-pannelli-esecutivo.svg
+
+          if git diff --cached --quiet; then
+            echo "Gli asset approvati sono già congelati."
+            exit 0
+          fi
+
+          git commit -m "assets(web): congela esecutivi Diego_Vittorio approvati [freeze-assets-done]"
+          git push origin HEAD:main
