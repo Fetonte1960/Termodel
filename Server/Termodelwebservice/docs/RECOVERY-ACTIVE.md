@@ -990,3 +990,34 @@ Artifact generato:
 
 **PROSSIMO PASSO ESATTO:** usare lo SVG pre-chiusura come riferimento visivo per
 analizzare il tratto di scavalcamento T6 senza l'interferenza della chiusura.
+
+
+### STEP 4E — focus decisionale sulla strettoia di scavalcamento T6
+Stato: **CONTESTO DEFINITO DALL'UTENTE — ANALISI DA AVVIARE**
+
+Contestualizzazione utente 28/09/2026, da assumere come riferimento per il debug:
+- il tratto evidenziato si è posizionato correttamente alla distanza imposta dal tratto frontale a destra;
+- nel punto critico l'algoritmo dovrebbe poi decidere se **girare a sinistra**;
+- la situazione è particolare perché lo scavalcamento dell'accesso genera una **curva convessa** e quindi una **strettoia geometrica**;
+- il problema centrale non è soltanto una distanza locale, ma la decisione fondamentale dell'algoritmo: **entrare o non entrare nella strettoia**;
+- questa decisione rappresenta il cuore della valutazione di bontà del percorso.
+
+Confronti obbligatori richiesti prima di qualsiasi correzione:
+1. ricostruire cosa decide **Diego_Vittorio** nella strettoia;
+2. ricostruire cosa decide **Vittorio** nella stessa situazione;
+3. produrre due diagrammi decisionali separati;
+4. confrontare il caso reale `R001 / locale_1 / T6` con il **progetto quadrato**, dove una situazione apparentemente equivalente funziona;
+5. ancora prima, spiegare perché nel caso reale il **primo giro funziona** e il **secondo no**, pur con contesto topologico apparentemente identico;
+6. verificare esplicitamente se la differenza dipende da:
+   - arrotondamenti/raccordi;
+   - geometria rettilinea pre-arrotondamento;
+   - soglie/tolleranze numeriche;
+   - ordine di costruzione e disponibilità dei segmenti nel controllo;
+   - differenze fra offset 1 e offset 2;
+   - differenze fra motore Vittorio e copia Diego_Vittorio.
+
+Vincolo:
+- usare come riferimento visivo lo SVG **pre-chiusura** `DV-LOCALE1-T6-PRECLOSE.svg`;
+- nessuna modifica algoritmica finché i quattro confronti sopra non sono ricostruiti.
+
+**PROSSIMO PASSO ESATTO:** leggere e confrontare i rami decisionali di Vittorio e Diego_Vittorio nelle funzioni di generazione Supply/offset/percorrenza, poi confrontare numericamente `locale_1` con il quadrato e con offset 1 vs offset 2; produrre due diagrammi decisionali e una tabella delle differenze causali.
