@@ -1503,3 +1503,65 @@ accettato registrare se il prossimo offset è ancora raggiungibile, il path e
 la sua lunghezza. Obiettivo: ricostruire la finestra temporale
 `primo portale -> ultimo portale ancora valido` e confrontarla fra
 `locale_1` e quadrato.
+
+#### STEP 4G.4 — finestra dei portali misurata
+Stato: **COMPLETATO — NESSUNA CORREZIONE AL MOTORE**
+
+Diagnostica aggiunta:
+- commit `de2dfde7d7cba1599c48bfe976ea7626a36ca123`;
+- solo sotto `TRACE_PORTALS`, il controllo viene eseguito a ingresso e dopo
+  ogni tratto accettato, registrando `found/none`, path e lunghezza;
+- nessuna condizione, tolleranza, ordinamento o geometria modificata.
+
+Fast Harness:
+- run `36462466585` (#53): **SUCCESS**;
+- build Harness + Core: SUCCESS;
+- tutte le regression Diego_Vittorio: SUCCESS.
+
+Risultato `locale_1`, offset 2 -> 3:
+- ingresso `(0,52;4,37)`: portale valido 0,60 m;
+- `(-0,47;4,37)`: portale valido 0,60 m;
+- `(-0,47;0,97)`: portale valido 0,60 m;
+- `(0,52;0,97)`: portale valido 0,60 m e poi realmente scelto.
+
+Quindi il passaggio al livello successivo NON viene perso durante il giro.
+L'ipotesi semplice “bisogna uscire appena compare il portale” è smentita:
+l'algoritmo può percorrere tutto l'offset e conserva comunque una uscita valida.
+
+Quadrato:
+- offset 1->2: none, none, none, found, found;
+- offset 2->3: none, none, found, found;
+- continuare fino all'ultimo punto mantiene il portale e riduce la lunghezza
+  del collegamento finale.
+
+Comprensione aggiornata:
+- `Diego_Vittorio` ha una parte AI adattiva per trovare i collegamenti;
+- la percorrenza ereditata da Vittorio è deterministica, ma in questi due casi
+  non distrugge il portale verso il livello successivo;
+- la futura “media visione” non deve premiare il primo portale in modo cieco;
+- occorre trovare il punto in cui la prosecuzione futura **peggiora davvero**
+  (portale perso, margine ridotto, ramo futuro accorciato/bloccato, minor
+  lunghezza utile globale).
+
+Verifica Service generale sul commit diagnostico:
+- `dotnet build` nello workflow Service: **SUCCESS**;
+- il workflow completo `36462466657` risulta FAILURE in uno smoke idraulico
+  indipendente dalla geometria spirali: Golden Darcy atteso dP=1,353675 Pa,
+  osservato dP=1,3136749 Pa (flow e Reynolds entro i valori attesi);
+- non è stata modificata in questo job alcuna logica Darcy/idraulica.
+
+Pulizia:
+- il test temporaneo di inversione globale del verso è stato rimosso dal
+  workflow dopo aver concluso la diagnosi, commit
+  `785cadb3ed4822713be0b8df57ef31724b432a72`;
+- i log `TRACE_RETURN/TRACE_PORTALS` restano disponibili solo su richiesta.
+
+Linee guida aggiornate con l'evidenza della finestra portali:
+- commit `49f02ded2d6306dd3981b47c670893ded1def3a4`.
+
+**PROSSIMO PASSO INTERATTIVO:** ritornare al particolare visivo indicato
+dall'utente e identificare con coordinate/colore quale svolta è giudicata
+errata. Il trace dimostra che, per il Return offset 2->3, la svolta a sinistra
+avviene e il portale resta valido; quindi non attribuire automaticamente il
+difetto a quel passaggio. Una volta identificato il tratto esatto, seguire
+solo la catena di decisione che lo genera.
