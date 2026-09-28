@@ -929,3 +929,21 @@ Il prossimo intervento è una decisione algoritmica e richiede accordo umano:
 trattare il tratto interno T6 come parte della Supply esistente durante la validazione,
 definendo l'eccezione topologica per i segmenti iniziali realmente adiacenti e il
 comportamento quando il verso iniziale non dispone dei 0,60 m richiesti.
+
+
+### STEP 4D — SVG completo senza chiusura
+Stato: **COMMISSIONATO / IN CORSO**
+
+Decisione utente 28/09/2026:
+- per il solo test diagnostico `R001 / locale_1 / T6`, mantenere Supply + Return autonomo;
+- sospendere la chiusura centrale perché può tagliare/sostituire segmenti terminali e nascondere il difetto;
+- generare uno SVG Harness pre-chiusura.
+
+Implementazione prevista:
+- non modificare l'algoritmo produttivo;
+- riusare il flag già esistente `TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE=false`;
+- esporlo nell'Harness con un'opzione diagnostica dedicata;
+- generare artifact SVG e log del solo `locale_1`;
+- confrontare visivamente e numericamente lo stato prima della chiusura.
+
+**PROSSIMO PASSO ESATTO:** aggiungere il flag Harness, lanciare il Fast Harness sul caso `locale_1`, recuperare lo SVG pre-chiusura e renderlo disponibile all'utente.
