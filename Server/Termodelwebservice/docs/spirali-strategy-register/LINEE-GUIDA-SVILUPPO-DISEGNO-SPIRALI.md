@@ -6931,6 +6931,86 @@ Regression dedicata aggiunta nel commit
 `36408292815`: **SUCCESS** con quadrato approvato e tutti i rettangolari
 `locale_1`, `locale_5`, `locale_8`, `locale_9` contemporaneamente verdi.
 
+### FASE 6C — arresto prematuro della Supply prima di Return/LG-048
+
+**Stato:** DIAGNOSI COMPLETATA / CORREZIONE NON AUTORIZZATA — 28/09/2026
+
+L'anomalia visiva di mandata corta è stata isolata con una modalità Harness
+`--supply-only` che non esegue né Return né `ChiudiSpirale`.
+
+Riferimenti:
+- commit diagnostica base: `b2d9511a2721637bddeb838272163ca15e255513`;
+- Fast Harness `36416240750`: SUCCESS;
+- trace approfondito `ComputeOffset`/finalizzazione: `3bc7fae41e643a3baa1273a5cc3694da04d7ebb7`;
+- Fast Harness `36417080491`: SUCCESS.
+
+Risultato fondamentale: tutti gli offset Supply ammessi sono collegati e
+percorsi correttamente. L'arresto nasce prima, quando il livello interno
+successivo deve essere costruito o ammesso.
+
+La strategia ereditata da Vittorio lavora per anelli chiusi completi. Nel
+riferimento Desktop:
+
+`SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/Spiralgenerator.cs`
+
+sono presenti sia lo stesso `ComputeOffset` con esclusione dei vertici sui
+lati corti, sia la stessa finalizzazione del giro.
+
+Per un rettangolo, quando due lati opposti diventano abbastanza corti,
+`ComputeOffset` esclude entrambi gli estremi di ciascun lato e può eliminare
+tutti i quattro vertici. Un nuovo anello chiuso non viene quindi prodotto.
+
+Con `passoMandata = 0,60 m` esiste però una fascia distinta:
+
+```text
+lato corto < 1,20 m
+    -> nemmeno un singolo asse centrale può stare a 0,60 m dai due lati
+
+1,20 m <= lato corto < 1,80 m
+    -> un nuovo anello doppio non entra
+    -> un singolo asse centrale può ancora entrare
+
+lato corto >= 1,80 m
+    -> può esistere il successivo anello completo
+```
+
+Casi reali:
+- quadrato approvato: 1,04 m -> nessun asse centrale;
+- `locale_1`: 1,59 m -> asse terminale potenziale, residuo 2,80 m;
+- `locale_5`: 1,54 m -> asse terminale potenziale, residuo 1,53 m;
+- `locale_8`: 1,21 m -> asse terminale potenziale, residuo 0,34 m;
+- `locale_9`: 1,07 m -> nessun asse centrale.
+
+Questa soglia offre un possibile intervento locale che non deve modificare
+il quadrato approvato.
+
+Nei concavi il limite si manifesta in forma diversa ma con la stessa natura
+`tutto o niente`:
+- `locale_2`: offset successivo a 6 vertici, un lato 0,36 m e lato di
+  chiusura collassato a 0,00 m; tutto il livello viene scartato;
+- `locale_6`: offset successivo a 6 vertici, cinque lati >= 0,60 m ma un
+  lato da 0,29 m; tutto il livello viene scartato.
+
+Non estendere automaticamente ai concavi la futura regola rettangolare.
+
+Nota secondaria: il calcolo storico di `minEdgeLength` non include il lato
+ultimo->primo. Nel caso attuale non è la causa dell'arresto perché
+`locale_2` viene già scartato per il lato da 0,36 m, ma la lacuna resta
+registrata.
+
+La finalizzazione storica lascia un'apertura pari a un `passoMandata` sul
+giro. I grandi spostamenti numerici osservati nel trace non corrispondono a
+metri di tubo cancellati: viene percorso il lato di chiusura lasciando 0,60 m
+liberi presso l'ingresso. Sull'ultimo anello quell'apertura resta disponibile
+come possibile innesto di una futura prosecuzione terminale.
+
+**Proposta non ancora implementata:** per il solo banco rettangolare,
+sperimentare prima in Harness un asse centrale terminale quando il lato corto
+dell'ultimo anello è almeno `2 * passoMandata` ma il successivo anello
+completo non è ammissibile. `locale_1/5/8` sono i candidati; quadrato e
+`locale_9` devono restare invariati. Attivazione produttiva solo dopo
+approvazione umana e regressioni dedicate.
+
 ---
 
 ## DV-KNOWN-001 — Intrappolamento del Return nel “budello” della mandata
