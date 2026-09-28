@@ -27,7 +27,7 @@ static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
     Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego_Vittorio|Diego] [--out <dir>] [opzioni diagnostiche Diego]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  fillet-check");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
@@ -141,6 +141,7 @@ static int Run(string[] args)
         string? idArg = Arg(args, "--id");
         string? stepArg = Arg(args, "--p");
         string? engineArg = Arg(args, "--engine");
+        string? localeArg = Arg(args, "--locale");
         string? rejectDecisionsArg = Arg(args, "--reject-decisions");
         string? lockSupplyPrefixArg = Arg(args, "--lock-supply-prefix");
         bool rejectCurrentSupply = HasFlag(args, "--reject-current-supply");
@@ -165,6 +166,7 @@ static int Run(string[] args)
             inputPath = Path.GetFullPath(
                 Path.Combine(caseDirectory, testCase.PreparedInput));
             idArg ??= testCase.Id;
+            localeArg ??= testCase.LocaleId;
         }
 
         if (string.IsNullOrWhiteSpace(inputPath))
@@ -202,6 +204,11 @@ static int Run(string[] args)
         Directory.CreateDirectory(outputDir);
 
         string localeXml = File.ReadAllText(fullInputPath, Encoding.UTF8);
+        if (!string.IsNullOrWhiteSpace(localeArg))
+        {
+            localeXml = SelectSingleLocale(localeXml, localeArg);
+            Console.WriteLine($"RADIANT_HARNESS_LOCALE_SELECTED id={localeArg}");
+        }
 
         string selectedEngine = (
             engineArg ??
@@ -1573,6 +1580,44 @@ static HashSet<string> LoadRejectedDecisionKeys(
     return result;
 }
 
+static string SelectSingleLocale(
+    string localeXml,
+    string localeId)
+{
+    XDocument document = XDocument.Parse(
+        localeXml,
+        LoadOptions.PreserveWhitespace);
+    XElement root = document.Root
+        ?? throw new InvalidDataException("Input pannelli privo di radice Locali.");
+
+    XElement[] matches = root
+        .Elements("Locale")
+        .Where(locale =>
+            string.Equals(
+                (string?)locale.Attribute("Id"),
+                localeId,
+                StringComparison.Ordinal))
+        .ToArray();
+
+    if (matches.Length != 1)
+    {
+        throw new InvalidDataException(
+            $"Locale '{localeId}' atteso una sola volta, trovato {matches.Length}.");
+    }
+
+    foreach (XElement locale in root
+        .Elements("Locale")
+        .Where(locale => !ReferenceEquals(locale, matches[0]))
+        .ToArray())
+    {
+        locale.Remove();
+    }
+
+    using var writer = new StringWriter(CultureInfo.InvariantCulture);
+    document.Save(writer, SaveOptions.DisableFormatting);
+    return writer.ToString();
+}
+
 static string? Arg(string[] args, string name)
 {
     for (int i = 0; i < args.Length - 1; i++)
@@ -1806,6 +1851,7 @@ internal sealed class HarnessCase
     public string Id { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string PreparedInput { get; set; } = string.Empty;
+    public string LocaleId { get; set; } = string.Empty;
     public double StepMeters { get; set; } = 0.30;
     public string Engine { get; set; } = "Diego";
 }
