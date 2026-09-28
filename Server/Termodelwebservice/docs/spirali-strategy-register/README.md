@@ -40,6 +40,26 @@ predefinito per la fase corrente di collaudo; gli override
 `Vittorio | GPT | Diego | Diego_Vittorio` restano disponibili.
 `SpiraliVittorio` rimane invariata come riferimento di confronto e rollback.
 
+`StrategiaDiego` / motore `Diego` è invece **PARKED**: l'architettura di
+ricerca ha mostrato un costo computazionale troppo elevato per l'uso operativo
+corrente. La linea resta work in progress per una futura riduzione del costo,
+con l'obiettivo di poterla usare soprattutto in locali/configurazioni molto
+complessi, dove una ricerca più ampia delle alternative può risultare utile.
+
+`Diego_Vittorio` deriva da Vittorio ma non è più una semplice variante con
+correzioni locali. Ha ricevuto una modifica strutturale fondamentale: il
+**Return è generato autonomamente** e non è più ottenuto come riflesso/parallelo
+della mandata. Durante la crescita il Return è condizionato contemporaneamente
+dal perimetro dell'edificio/locale, dalla mandata già costruita e dalla propria
+geometria già costruita.
+
+Questo approccio offre maggiore libertà geometrica ma introduce un limite noto:
+la mandata può creare corridoi stretti o una sorta di **“budello”** nel quale
+il Return autonomo resta imprigionato; in tali condizioni il generatore può
+arrestare il Return troppo presto o in una posizione geometricamente non
+corretta. Questo comportamento è un problema aperto della fase di collaudo,
+non una caratteristica approvata.
+
 L'utente ha avviato il **collaudo manuale sul Service pubblico** del disegno
 spirali prodotto da `Diego_Vittorio`. Questo stato è distinto dalle prove
 Harness/GitHub Actions già eseguite: i casi reali osservati durante il collaudo
