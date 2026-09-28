@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using Termodel.utilities;
 
 // Modificato da Codex per realizzare: isolare la copia sperimentale Diego_Vittorio mantenendo intatto il motore Vittorio.
 namespace SpiralHeatingDiegoVittorio
@@ -20,6 +21,19 @@ namespace SpiralHeatingDiegoVittorio
     
     class Program
     {
+        internal static bool LogSupplyEnabled =>
+            TermodelLog.IsEnabled(TermodelLog.LogCategory.SpiraliDiegoVittorio);
+
+        internal static void LogSupply(string tag, string message)
+        {
+            if (!LogSupplyEnabled)
+                return;
+
+            TermodelLog.WriteLog(
+                $"[SpiraliDiegoVittorio][{tag}] {message}",
+                TermodelLog.LogCategory.SpiraliDiegoVittorio);
+        }
+
         // Parametri di posa
         // Modificato da Codex per realizzare: applicare a Diego_Vittorio la
         // matrice distanze delle linee guida spirali senza toccare Vittorio.
@@ -222,6 +236,24 @@ namespace SpiralHeatingDiegoVittorio
                 
                 Console.WriteLine($"  Linea ingresso: {lineaIngresso.Id}");
                 Console.WriteLine($"  Punto interno (intersezione): ({lineaIngresso.PuntoInterno.X:F2}, {lineaIngresso.PuntoInterno.Y:F2})");
+
+                if (LogSupplyEnabled)
+                {
+                    string perimetroLog = string.Join(
+                        ";",
+                        perimetro.Select(p =>
+                            $"({p.X.ToString("R", ci)},{p.Y.ToString("R", ci)})"));
+                    LogSupply(
+                        "Supply.Context",
+                        $"locale={localeId} inlet={lineaIngresso.Id} " +
+                        $"start=({lineaIngresso.PuntoInterno.X.ToString("R", ci)}," +
+                        $"{lineaIngresso.PuntoInterno.Y.ToString("R", ci)}) " +
+                        $"p={passoTubi.ToString("R", ci)} " +
+                        $"wall={distanzaPareti.ToString("R", ci)} " +
+                        $"supplyStep={distanzaMandataMandata.ToString("R", ci)} " +
+                        $"perimeter=[{perimetroLog}]");
+                }
+
                 // Modificato da Codex per realizzare: rendere diagnosticabile
                 // la matrice geometrica realmente usata da Diego_Vittorio.
                 Console.WriteLine(
@@ -272,6 +304,15 @@ namespace SpiralHeatingDiegoVittorio
                         $"usefulOffsets={Math.Max(0, offsets.Count - 1)} " +
                         $"last=({(spiral.Count > 0 ? spiral[^1].X : double.NaN):R}," +
                         $"{(spiral.Count > 0 ? spiral[^1].Y : double.NaN):R})");
+                }
+                if (LogSupplyEnabled)
+                {
+                    LogSupply(
+                        "Supply.Result",
+                        $"locale={localeId} points={spiral.Count} " +
+                        $"usefulOffsets={Math.Max(0, offsets.Count - 1)} " +
+                        $"last=({(spiral.Count > 0 ? spiral[^1].X : double.NaN).ToString("R", ci)}," +
+                        $"{(spiral.Count > 0 ? spiral[^1].Y : double.NaN).ToString("R", ci)})");
                 }
                 
                 // Salva spirale nel locale XML

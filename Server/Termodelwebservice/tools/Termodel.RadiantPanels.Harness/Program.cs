@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using Termodel.Core.RadiantPanels;
 using Termodel.Core.ProjectFiles;
 using Termodel.Leggidxf;
+using Termodel.utilities;
 
 const double VittorioStepMeters = 0.30;
 
@@ -26,8 +27,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego_Vittorio|Diego] [--supply-only] [--out <dir>] [opzioni diagnostiche Diego]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--supply-only] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego_Vittorio|Diego] [--supply-only] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--supply-only] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  fillet-check");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
@@ -143,6 +144,10 @@ static int Run(string[] args)
         string? engineArg = Arg(args, "--engine");
         string? localeArg = Arg(args, "--locale");
         bool supplyOnly = HasFlag(args, "--supply-only");
+        string? logEnabledArg = Arg(args, "--log-enabled");
+        string? logCategoriesArg = Arg(args, "--log-categories");
+        TermodelLog.LogConfiguration? logConfiguration =
+            ParseHarnessLogConfiguration(logEnabledArg, logCategoriesArg);
         string? rejectDecisionsArg = Arg(args, "--reject-decisions");
         string? lockSupplyPrefixArg = Arg(args, "--lock-supply-prefix");
         bool rejectCurrentSupply = HasFlag(args, "--reject-current-supply");
@@ -260,7 +265,8 @@ static int Run(string[] args)
                 testCase?.Description,
                 selectedEngine,
                 stepMeters,
-                supplyOnly);
+                supplyOnly,
+                logConfiguration);
         }
         if (!selectedEngine.Equals("Diego", StringComparison.OrdinalIgnoreCase))
         {
@@ -518,14 +524,15 @@ static int RunCopiedSpiralStrategy(
     string? description,
     string selectedEngine,
     double stepMeters,
-    bool supplyOnly)
+    bool supplyOnly,
+    TermodelLog.LogConfiguration? logConfiguration)
 {
     // Modificato da Codex per realizzare: mantenere un solo percorso di output per Vittorio e Diego_Vittorio.
     StrategiaVittorioBenchmarkSample sample =
         selectedEngine.Equals("Diego_Vittorio", StringComparison.OrdinalIgnoreCase)
             ? supplyOnly
-                ? StrategiaDiegoVittorioBenchmark.RunSupplyOnly(localeXml, stepMeters)
-                : StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters)
+                ? StrategiaDiegoVittorioBenchmark.RunSupplyOnly(localeXml, stepMeters, logConfiguration)
+                : StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters, logConfiguration)
             : StrategiaVittorioBenchmark.Run(localeXml);
 
     string svgPath = Path.Combine(outputDir, caseId + ".svg");
@@ -555,6 +562,11 @@ static int RunCopiedSpiralStrategy(
         sample.ElapsedMilliseconds,
         sample.MemoryDeltaBytes,
         diagnosticsCount = sample.Diagnostics.Count,
+        logEnabled = logConfiguration?.Enabled,
+        logCategories = logConfiguration?.EnabledCategories?
+            .OrderBy(category => (int)category)
+            .Select(category => category.ToString())
+            .ToArray() ?? Array.Empty<string>(),
         svgSha256 = Sha256(sample.Svg)
     };
     File.WriteAllText(
@@ -1631,6 +1643,78 @@ static string SelectSingleLocale(
     // questa stringa su file UTF-8. ToString evita la dichiarazione incoerente
     // e lascia che il writer UTF-8 del benchmark definisca l'encoding reale.
     return document.ToString(SaveOptions.DisableFormatting);
+}
+
+static TermodelLog.LogConfiguration? ParseHarnessLogConfiguration(
+    string? enabledArg,
+    string? categoriesArg)
+{
+    if (string.IsNullOrWhiteSpace(enabledArg) &&
+        string.IsNullOrWhiteSpace(categoriesArg))
+    {
+        return null;
+    }
+
+    bool enabled = true;
+    if (!string.IsNullOrWhiteSpace(enabledArg) &&
+        !bool.TryParse(enabledArg, out enabled))
+    {
+        throw new ArgumentException("--log-enabled deve essere true oppure false.");
+    }
+
+    if (string.IsNullOrWhiteSpace(categoriesArg))
+        return new TermodelLog.LogConfiguration(enabled, null);
+
+    string[] tokens = categoriesArg
+        .Split(
+            ',',
+            StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries);
+
+    if (tokens.Length == 0)
+        throw new ArgumentException("--log-categories non può essere vuoto.");
+
+    if (tokens.Any(token =>
+            token.Equals("all", StringComparison.OrdinalIgnoreCase)))
+    {
+        if (tokens.Length != 1)
+            throw new ArgumentException("L'alias all deve essere usato da solo.");
+
+        return new TermodelLog.LogConfiguration(
+            enabled,
+            Enum.GetValues<TermodelLog.LogCategory>().ToHashSet());
+    }
+
+    if (tokens.Any(token =>
+            token.Equals("none", StringComparison.OrdinalIgnoreCase)))
+    {
+        if (tokens.Length != 1)
+            throw new ArgumentException("L'alias none deve essere usato da solo.");
+
+        return new TermodelLog.LogConfiguration(
+            enabled,
+            new HashSet<TermodelLog.LogCategory>());
+    }
+
+    var categories = new HashSet<TermodelLog.LogCategory>();
+    foreach (string token in tokens)
+    {
+        if (!Enum.TryParse(
+                token,
+                ignoreCase: true,
+                out TermodelLog.LogCategory category) ||
+            !Enum.IsDefined(category))
+        {
+            throw new ArgumentException(
+                $"Categoria log sconosciuta '{token}'. Valori ammessi: " +
+                string.Join(", ", Enum.GetNames<TermodelLog.LogCategory>()) +
+                ", all, none.");
+        }
+
+        categories.Add(category);
+    }
+
+    return new TermodelLog.LogConfiguration(enabled, categories);
 }
 
 static string? Arg(string[] args, string name)

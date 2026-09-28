@@ -319,10 +319,21 @@ namespace SpiralHeatingDiegoVittorio
 			bool supplyTrace =
 				traceSupply &&
 				(lineeCondizionamento == null || lineeCondizionamento.Count < 2);
+			bool supplyLog =
+				Program.LogSupplyEnabled &&
+				(lineeCondizionamento == null || lineeCondizionamento.Count < 2);
 			if (supplyTrace)
 			{
 				Console.WriteLine(
 					$"DV_SUPPLY_BEGIN start=({startPoint.X:R},{startPoint.Y:R}) " +
+					$"wall={distanzaParete:R} supplyStep={passoMandata:R} " +
+					$"perimeterVertices={perimetro.Count}");
+			}
+			if (supplyLog)
+			{
+				Program.LogSupply(
+					"Supply.Generate.Begin",
+					$"start=({startPoint.X:R},{startPoint.Y:R}) " +
 					$"wall={distanzaParete:R} supplyStep={passoMandata:R} " +
 					$"perimeterVertices={perimetro.Count}");
 			}
@@ -344,12 +355,21 @@ namespace SpiralHeatingDiegoVittorio
 				double distanzaOffset = i == 0
 					? distanzaParete
 					: passoMandata;
+				if (supplyLog)
+				{
+					Program.LogSupply(
+						"Supply.Offset.Begin",
+						$"level={i + 1} distance={distanzaOffset:R} " +
+						$"current=[{string.Join(";", offsetCalcoloCorrente.Select(p => $"({p.X:R},{p.Y:R})"))}] " +
+						$"previous=[{string.Join(";", offsetCalcoloPrecedente.Select(p => $"({p.X:R},{p.Y:R})"))}]");
+				}
 				var nextOffset = ComputeOffset(
 					offsetCalcoloCorrente,
 					offsetCalcoloPrecedente,
 					distanzaOffset,
 					supplyTrace,
-					i + 1);
+					i + 1,
+					supplyLog);
 
 				if (nextOffset == null || nextOffset.Count < 3)
 				{
@@ -357,6 +377,13 @@ namespace SpiralHeatingDiegoVittorio
 					{
 						Console.WriteLine(
 							$"DV_SUPPLY_OFFSET_STOP level={i + 1} reason=invalid-offset " +
+							$"distance={distanzaOffset:R} points={(nextOffset == null ? 0 : nextOffset.Count)}");
+					}
+					if (supplyLog)
+					{
+						Program.LogSupply(
+							"Supply.Offset.Stop",
+							$"level={i + 1} reason=invalid-offset " +
 							$"distance={distanzaOffset:R} points={(nextOffset == null ? 0 : nextOffset.Count)}");
 					}
 					break;
@@ -375,7 +402,7 @@ namespace SpiralHeatingDiegoVittorio
 					if (edgeLen < minEdgeLength)
 						minEdgeLength = edgeLen;
 				}
-				if (supplyTrace)
+				if (supplyTrace || supplyLog)
 				{
 					double closedMinEdge = double.MaxValue;
 					int closedMinEdgeIndex = -1;
@@ -392,12 +419,25 @@ namespace SpiralHeatingDiegoVittorio
 							closedMinEdgeIndex = j;
 						}
 					}
-					Console.WriteLine(
-						$"DV_SUPPLY_OFFSET_CANDIDATE level={i + 1} " +
-						$"distance={distanzaOffset:R} points={nextOffset.Count} " +
-						$"minEdgeHistorical={minEdgeLength:R} " +
-						$"minEdgeClosed={closedMinEdge:R} minEdgeIndex={closedMinEdgeIndex} " +
-						$"edges=[{string.Join(",", edgeLengths)}]");
+					if (supplyTrace)
+					{
+						Console.WriteLine(
+							$"DV_SUPPLY_OFFSET_CANDIDATE level={i + 1} " +
+							$"distance={distanzaOffset:R} points={nextOffset.Count} " +
+							$"minEdgeHistorical={minEdgeLength:R} " +
+							$"minEdgeClosed={closedMinEdge:R} minEdgeIndex={closedMinEdgeIndex} " +
+							$"edges=[{string.Join(",", edgeLengths)}]");
+					}
+					if (supplyLog)
+					{
+						Program.LogSupply(
+							"Supply.Offset.Candidate",
+							$"level={i + 1} distance={distanzaOffset:R} " +
+							$"points={nextOffset.Count} minEdgeHistorical={minEdgeLength:R} " +
+							$"minEdgeClosed={closedMinEdge:R} minEdgeIndex={closedMinEdgeIndex} " +
+							$"edges=[{string.Join(",", edgeLengths)}] " +
+							$"vertices=[{string.Join(";", nextOffset.Select(p => $"({p.X:R},{p.Y:R})"))}]");
+					}
 				}
 				if (minEdgeLength < passoMandata && minEdgeLength > 0.2)
 				{
@@ -405,6 +445,13 @@ namespace SpiralHeatingDiegoVittorio
 					{
 						Console.WriteLine(
 							$"DV_SUPPLY_OFFSET_STOP level={i + 1} reason=min-edge-below-step " +
+							$"minEdge={minEdgeLength:R} threshold={passoMandata:R} points={nextOffset.Count}");
+					}
+					if (supplyLog)
+					{
+						Program.LogSupply(
+							"Supply.Offset.Stop",
+							$"level={i + 1} reason=min-edge-below-step " +
 							$"minEdge={minEdgeLength:R} threshold={passoMandata:R} points={nextOffset.Count}");
 					}
 					break;
@@ -415,6 +462,13 @@ namespace SpiralHeatingDiegoVittorio
 					{
 						Console.WriteLine(
 							$"DV_SUPPLY_OFFSET_STOP level={i + 1} reason=min-edge-sparse-polygon " +
+							$"minEdge={minEdgeLength:R} threshold={(passoMandata * 1.2):R} points={nextOffset.Count}");
+					}
+					if (supplyLog)
+					{
+						Program.LogSupply(
+							"Supply.Offset.Stop",
+							$"level={i + 1} reason=min-edge-sparse-polygon " +
 							$"minEdge={minEdgeLength:R} threshold={(passoMandata * 1.2):R} points={nextOffset.Count}");
 					}
 					break;
@@ -440,6 +494,14 @@ namespace SpiralHeatingDiegoVittorio
 						Console.WriteLine(
 							$"DV_SUPPLY_OFFSET_ACCEPT level={i + 1} " +
 							$"usefulIndex={offsets.Count - 1} points={nextOffsetNormalizzato.Count}");
+					}
+					if (supplyLog)
+					{
+						Program.LogSupply(
+							"Supply.Offset.Accept",
+							$"level={i + 1} usefulIndex={offsets.Count - 1} " +
+							$"points={nextOffsetNormalizzato.Count} " +
+							$"vertices=[{string.Join(";", nextOffsetNormalizzato.Select(p => $"({p.X:R},{p.Y:R})"))}]");
 					}
 				}
 				else if (supplyTrace)
@@ -1668,7 +1730,8 @@ namespace SpiralHeatingDiegoVittorio
 			List<Punto> polygon_pre,
 			double offset,
 			bool traceSupply = false,
-			int supplyLevel = 0)
+			int supplyLevel = 0,
+			bool logSupply = false)
 		{
 			var result = new List<Punto>();
 			var skipIndices = new HashSet<int>();
@@ -1684,9 +1747,23 @@ namespace SpiralHeatingDiegoVittorio
 				var p2_pre = polygon_pre[(i + 1) % polygon_pre.Count];
 				double edgeLength_pre = p1_pre.DistanceTo(p2_pre);
 				double shrink = edgeLength_pre - edgeLength;
+				bool conditionShort = edgeLength <= offset * 3;
+				bool conditionShrink = shrink > offset;
 				bool skip =
-					edgeLength <= offset * 3 &&
-					shrink > offset;
+					conditionShort &&
+					conditionShrink;
+
+				if (logSupply)
+				{
+					Program.LogSupply(
+						"Supply.ComputeOffset.Edge",
+						$"level={supplyLevel} edge={i} offset={offset:R} " +
+						$"current={edgeLength:R} previous={edgeLength_pre:R} shrink={shrink:R} " +
+						$"shortLimit={(offset * 3):R} conditionShort={conditionShort.ToString().ToLowerInvariant()} " +
+						$"conditionShrink={conditionShrink.ToString().ToLowerInvariant()} " +
+						$"skip={skip.ToString().ToLowerInvariant()} " +
+						$"a=({p1.X:R},{p1.Y:R}) b=({p2.X:R},{p2.Y:R})");
+				}
 
 				if (traceSupply)
 				{
@@ -1705,7 +1782,7 @@ namespace SpiralHeatingDiegoVittorio
 			}
 
 			List<Punto> rawDiagnostic =
-				traceSupply ? new List<Punto>() : null;
+				(traceSupply || logSupply) ? new List<Punto>() : null;
 			
 			// Seconda passata: calcola offset solo per vertici non skippati.
 			for (int i = 0; i < polygon.Count; i++)
@@ -1735,23 +1812,47 @@ namespace SpiralHeatingDiegoVittorio
 					p1.X + bisector.X * offsetDist,
 					p1.Y + bisector.Y * offsetDist);
 
-				if (traceSupply)
+				if (traceSupply || logSupply)
 					rawDiagnostic.Add(candidate);
 
-				if (skipIndices.Contains(i))
+				bool skippedVertex = skipIndices.Contains(i);
+				if (logSupply)
+				{
+					Program.LogSupply(
+						"Supply.ComputeOffset.Vertex",
+						$"level={supplyLevel} vertex={i} " +
+						$"p0=({p0.X:R},{p0.Y:R}) p1=({p1.X:R},{p1.Y:R}) p2=({p2.X:R},{p2.Y:R}) " +
+						$"v1=({v1.X:R},{v1.Y:R}) v2=({v2.X:R},{v2.Y:R}) " +
+						$"n1=({n1.X:R},{n1.Y:R}) n2=({n2.X:R},{n2.Y:R}) " +
+						$"bisector=({bisector.X:R},{bisector.Y:R}) offsetDist={offsetDist:R} " +
+						$"candidate=({candidate.X:R},{candidate.Y:R}) skipped={skippedVertex.ToString().ToLowerInvariant()}");
+				}
+
+				if (skippedVertex)
 					continue;
 				
 				result.Add(candidate);
 			}
 
-			if (traceSupply)
+			if (traceSupply || logSupply)
 			{
 				string skipped =
 					string.Join(",", skipIndices.OrderBy(index => index));
-				Console.WriteLine(
-					$"DV_SUPPLY_COMPUTE_RESULT level={supplyLevel} " +
-					$"inputVertices={polygon.Count} skippedVertices=[{skipped}] " +
-					$"produced={result.Count}");
+				if (traceSupply)
+				{
+					Console.WriteLine(
+						$"DV_SUPPLY_COMPUTE_RESULT level={supplyLevel} " +
+						$"inputVertices={polygon.Count} skippedVertices=[{skipped}] " +
+						$"produced={result.Count}");
+				}
+				if (logSupply)
+				{
+					Program.LogSupply(
+						"Supply.ComputeOffset.Result",
+						$"level={supplyLevel} inputVertices={polygon.Count} " +
+						$"skippedVertices=[{skipped}] produced={result.Count} " +
+						$"result=[{string.Join(";", result.Select(p => $"({p.X:R},{p.Y:R})"))}]");
+				}
 
 				if (rawDiagnostic.Count >= 2)
 				{
@@ -1773,12 +1874,24 @@ namespace SpiralHeatingDiegoVittorio
 					double maxX = rawDiagnostic.Max(p => p.X);
 					double minY = rawDiagnostic.Min(p => p.Y);
 					double maxY = rawDiagnostic.Max(p => p.Y);
-					Console.WriteLine(
-						$"DV_SUPPLY_RAW_OFFSET level={supplyLevel} " +
-						$"points={rawDiagnostic.Count} " +
-						$"bboxWidth={(maxX - minX):R} " +
-						$"bboxHeight={(maxY - minY):R} " +
-						$"edges=[{string.Join(",", rawEdges)}]");
+					if (traceSupply)
+					{
+						Console.WriteLine(
+							$"DV_SUPPLY_RAW_OFFSET level={supplyLevel} " +
+							$"points={rawDiagnostic.Count} " +
+							$"bboxWidth={(maxX - minX):R} " +
+							$"bboxHeight={(maxY - minY):R} " +
+							$"edges=[{string.Join(",", rawEdges)}]");
+					}
+					if (logSupply)
+					{
+						Program.LogSupply(
+							"Supply.ComputeOffset.Raw",
+							$"level={supplyLevel} points={rawDiagnostic.Count} " +
+							$"bboxWidth={(maxX - minX):R} bboxHeight={(maxY - minY):R} " +
+							$"edges=[{string.Join(",", rawEdges)}] " +
+							$"raw=[{string.Join(";", rawDiagnostic.Select(p => $"({p.X:R},{p.Y:R})"))}]");
+					}
 				}
 			}
 			

@@ -113,6 +113,47 @@ jobs:
           }
           Write-Host "DIEGO_VITTORIO_SUPPLY_ONLY_MATRIX_OK"
 
+      - name: Inspect categorized Supply log locale_1
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $input = "tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml"
+          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioLocale1CategorizedLog"
+          $caseId = "DV-LOCALE1-CATEGORIZED-LOG"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --input $input `
+            --locale locale_1 `
+            --engine Diego_Vittorio `
+            --id $caseId `
+            --p 0.30 `
+            --supply-only `
+            --log-enabled true `
+            --log-categories SpiraliDiegoVittorio `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Harness categorizzato locale_1 fallito." }
+
+          $log = Join-Path $out "$caseId.log.txt"
+          if (-not (Test-Path -LiteralPath $log)) { throw "Log categorizzato locale_1 mancante." }
+          $content = Get-Content -LiteralPath $log -Raw
+          foreach ($marker in @(
+            "[SpiraliDiegoVittorio][Supply.Context]",
+            "[SpiraliDiegoVittorio][Supply.Offset.Begin]",
+            "[SpiraliDiegoVittorio][Supply.ComputeOffset.Edge] level=3 edge=1",
+            "conditionShort=true conditionShrink=true skip=true",
+            "[SpiraliDiegoVittorio][Supply.ComputeOffset.Result] level=3",
+            "skippedVertices=[0,1,2,3]",
+            "[SpiraliDiegoVittorio][Supply.ComputeOffset.Raw] level=3",
+            "[SpiraliDiegoVittorio][Supply.Offset.Stop] level=3 reason=invalid-offset"
+          )) {
+            if (-not $content.Contains($marker)) {
+              throw "Log categorizzato locale_1 privo del marker: $marker"
+            }
+          }
+
+          Write-Host "=== LOCALE_1 CATEGORIZED SUPPLY LOG ==="
+          Get-Content -LiteralPath $log | Where-Object { $_ -match '\[SpiraliDiegoVittorio\]' } | Write-Host
+          Write-Host "DIEGO_VITTORIO_LOCALE1_CATEGORY_LOG_OK"
+
       - name: Run Diego_Vittorio square
         shell: pwsh
         run: |
@@ -292,6 +333,7 @@ jobs:
           path: |
             ${{ runner.temp }}/DiegoVittorioFast
             ${{ runner.temp }}/DiegoVittorioSupplyOnly
+            ${{ runner.temp }}/DiegoVittorioLocale1CategorizedLog
             ${{ runner.temp }}/DiegoVittorioPublicSquare
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1
             ${{ runner.temp }}/DiegoVittorioPanelsLocale5

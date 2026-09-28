@@ -181,7 +181,8 @@ namespace Termodel.utilities
             GeneraModello,
             Performance,
             PontiAutomatici,
-            SpiraliDiego
+            SpiraliDiego,
+            SpiraliDiegoVittorio
         }
 
         public sealed record LogConfiguration(

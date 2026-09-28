@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
+using Termodel.utilities;
 
 namespace Termodel.Core.RadiantPanels;
 
@@ -16,20 +17,23 @@ public static class StrategiaDiegoVittorioBenchmark
     // Funzione realizzata da Codex in autonomia
     public static StrategiaVittorioBenchmarkSample Run(
         string localeXml,
-        double stepMeters = SpiralHeatingDiegoVittorio.Program.PassoTubi) =>
-        RunCore(localeXml, stepMeters, supplyOnly: false);
+        double stepMeters = SpiralHeatingDiegoVittorio.Program.PassoTubi,
+        TermodelLog.LogConfiguration? logConfiguration = null) =>
+        RunCore(localeXml, stepMeters, supplyOnly: false, logConfiguration);
 
     // Diagnostica FASE 6C: restituisce l'output della sola generazione Supply,
     // prima di Return e chiusura LG-048.
     public static StrategiaVittorioBenchmarkSample RunSupplyOnly(
         string localeXml,
-        double stepMeters = SpiralHeatingDiegoVittorio.Program.PassoTubi) =>
-        RunCore(localeXml, stepMeters, supplyOnly: true);
+        double stepMeters = SpiralHeatingDiegoVittorio.Program.PassoTubi,
+        TermodelLog.LogConfiguration? logConfiguration = null) =>
+        RunCore(localeXml, stepMeters, supplyOnly: true, logConfiguration);
 
     private static StrategiaVittorioBenchmarkSample RunCore(
         string localeXml,
         double stepMeters,
-        bool supplyOnly)
+        bool supplyOnly,
+        TermodelLog.LogConfiguration? logConfiguration)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Diego_Vittorio vuota.", nameof(localeXml));
@@ -65,6 +69,8 @@ public static class StrategiaDiegoVittorioBenchmark
                 {
                     Directory.SetCurrentDirectory(tempRoot);
                     Console.SetOut(capturedOut);
+                    if (logConfiguration is not null)
+                        TermodelLog.InitializeLog(logConfiguration);
                     if (supplyOnly)
                         SpiralHeatingDiegoVittorio.Program.AggiornaSoloMandata(stepMeters);
                     else
@@ -74,6 +80,11 @@ public static class StrategiaDiegoVittorioBenchmark
                 {
                     Console.SetOut(previousOut);
                     Directory.SetCurrentDirectory(previousDirectory);
+                    if (logConfiguration is not null)
+                    {
+                        diagnostics.AddRange(TermodelLog.Messages);
+                        TermodelLog.Reset();
+                    }
                 }
 
                 diagnostics.AddRange(
