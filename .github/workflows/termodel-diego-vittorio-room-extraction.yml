@@ -244,6 +244,24 @@ jobs:
             } | ForEach-Object { Write-Host ("ROOM_DIAG "+$id+" "+$_) }
           }
 
+      - name: Diagnose locale_1 with opposite Return side
+        shell: pwsh
+        env:
+          TERMODEL_DIEGO_VITTORIO_TRACE_RETURN: "true"
+          TERMODEL_DIEGO_VITTORIO_RETURN_SIDE: "right"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioRoomExtraction"
+          $input = Join-Path $root "locales\locale_1.xml"
+          $out = Join-Path $root "diagnostics-right\locale_1"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run --input $input --engine Diego_Vittorio --id locale_1_RIGHT --p 0.30 --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Diagnostica lato destro fallita per locale_1." }
+          $log = Join-Path $out "locale_1_RIGHT.log.txt"
+          Write-Host "LOCALE1_RIGHT_DIAGNOSTIC_OK"
+          Get-Content -LiteralPath $log | Where-Object {
+            $_ -match 'Linea ingresso|Punto interno|Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida|Chiusura:'
+          } | ForEach-Object { Write-Host ("ROOM_RIGHT_DIAG "+$_) }
+
       - name: Upload room extraction
         if: always()
         uses: actions/upload-artifact@v4
