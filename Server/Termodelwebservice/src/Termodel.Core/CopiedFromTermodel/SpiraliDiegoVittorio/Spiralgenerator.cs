@@ -346,7 +346,9 @@ namespace SpiralHeatingDiegoVittorio
 				var nextOffset = ComputeOffset(
 					offsetCalcoloCorrente,
 					offsetCalcoloPrecedente,
-					distanzaOffset);
+					distanzaOffset,
+					supplyTrace,
+					i + 1);
 
 				if (nextOffset == null || nextOffset.Count < 3)
 				{
@@ -374,10 +376,27 @@ namespace SpiralHeatingDiegoVittorio
 				}
 				if (supplyTrace)
 				{
+					double closedMinEdge = double.MaxValue;
+					int closedMinEdgeIndex = -1;
+					var edgeLengths = new List<string>();
+					for (int j = 0; j < nextOffset.Count; j++)
+					{
+						double edgeLen = nextOffset[j].DistanceTo(
+							nextOffset[(j + 1) % nextOffset.Count]);
+						edgeLengths.Add(
+							edgeLen.ToString("R", CultureInfo.InvariantCulture));
+						if (edgeLen < closedMinEdge)
+						{
+							closedMinEdge = edgeLen;
+							closedMinEdgeIndex = j;
+						}
+					}
 					Console.WriteLine(
 						$"DV_SUPPLY_OFFSET_CANDIDATE level={i + 1} " +
 						$"distance={distanzaOffset:R} points={nextOffset.Count} " +
-						$"minEdge={minEdgeLength:R}");
+						$"minEdgeHistorical={minEdgeLength:R} " +
+						$"minEdgeClosed={closedMinEdge:R} minEdgeIndex={closedMinEdgeIndex} " +
+						$"edges=[{string.Join(",", edgeLengths)}]");
 				}
 				if (minEdgeLength < passoMandata && minEdgeLength > 0.2)
 				{
@@ -753,6 +772,7 @@ namespace SpiralHeatingDiegoVittorio
 				// Calcola punto finale
 				Punto ultimoPunto;
 				Punto penultimoPunto;
+				Punto terminalePercorsoPrimaFinalizzazione = spiral[^1];
 
 				double distanzaSegmento = puntoIntersezione.DistanceTo(spiral[spiral.Count - 1]);
 				bool sostituisceUltimoPunto = false;
@@ -775,6 +795,15 @@ namespace SpiralHeatingDiegoVittorio
 					ultimoPunto.X + direzione.X * passoMandata,
 					ultimoPunto.Y + direzione.Y * passoMandata
 				);
+				if (supplyTrace)
+				{
+					Console.WriteLine(
+						$"DV_SUPPLY_FINALIZE_PLAN offset={indiceOffsetPercorso} ultimo={ultimoOffset} " +
+						$"intersection=({puntoIntersezione.X:R},{puntoIntersezione.Y:R}) " +
+						$"traversalTerminal=({terminalePercorsoPrimaFinalizzazione.X:R},{terminalePercorsoPrimaFinalizzazione.Y:R}) " +
+						$"segmentFromIntersection={distanzaSegmento:R} replaceLast={sostituisceUltimoPunto} " +
+						$"planned=({puntoFinale.X:R},{puntoFinale.Y:R}) step={passoMandata:R}");
+				}
 				bool finaleOriginaleAggiunto = false;
 				if (SegmentoRispettaCondizionamento(
 					penultimoPunto,
@@ -816,6 +845,13 @@ namespace SpiralHeatingDiegoVittorio
 
 				if (supplyTrace)
 				{
+					double terminalShift =
+						terminalePercorsoPrimaFinalizzazione.DistanceTo(spiral[^1]);
+					Console.WriteLine(
+						$"DV_SUPPLY_FINALIZE_RESULT offset={indiceOffsetPercorso} ultimo={ultimoOffset} " +
+						$"before=({terminalePercorsoPrimaFinalizzazione.X:R},{terminalePercorsoPrimaFinalizzazione.Y:R}) " +
+						$"after=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
+						$"shift={terminalShift:R} applied={finaleOriginaleAggiunto}");
 					Console.WriteLine(
 						$"DV_SUPPLY_TRAVERSE_END offset={indiceOffsetPercorso} " +
 						$"pointsAdded={spiral.Count - puntiPrimaOffset} points={spiral.Count} " +
@@ -1626,12 +1662,17 @@ namespace SpiralHeatingDiegoVittorio
 				p.Y <= Math.Max(a.Y, b.Y) + tolleranza;
 		}
 
-		private static List<Punto> ComputeOffset(List<Punto> polygon, List<Punto> polygon_pre, double offset)
+		private static List<Punto> ComputeOffset(
+			List<Punto> polygon,
+			List<Punto> polygon_pre,
+			double offset,
+			bool traceSupply = false,
+			int supplyLevel = 0)
 		{
 			var result = new List<Punto>();
 			var skipIndices = new HashSet<int>();
 			
-			// Prima passata: identifica i lati troppo corti
+			// Prima passata: identifica i lati troppo corti.
 			for (int i = 0; i < polygon.Count; i++)
 			{
 				var p1 = polygon[i];
@@ -1641,20 +1682,33 @@ namespace SpiralHeatingDiegoVittorio
 				var p1_pre = polygon_pre[i];
 				var p2_pre = polygon_pre[(i + 1) % polygon_pre.Count];
 				double edgeLength_pre = p1_pre.DistanceTo(p2_pre);
+				double shrink = edgeLength_pre - edgeLength;
+				bool skip =
+					edgeLength <= offset * 3 &&
+					shrink > offset;
+
+				if (traceSupply)
+				{
+					Console.WriteLine(
+						$"DV_SUPPLY_COMPUTE_EDGE level={supplyLevel} edge={i} " +
+						$"current={edgeLength:R} previous={edgeLength_pre:R} shrink={shrink:R} " +
+						$"limit={(offset * 3):R} skip={skip.ToString().ToLowerInvariant()} " +
+						$"a=({p1.X:R},{p1.Y:R}) b=({p2.X:R},{p2.Y:R})");
+				}
 				
-				if (edgeLength <= offset * 3 && edgeLength_pre - edgeLength > offset)
+				if (skip)
 				{
 					skipIndices.Add(i);
-					skipIndices.Add((i+1) % polygon.Count);
+					skipIndices.Add((i + 1) % polygon.Count);
 				}
 			}
+
+			List<Punto> rawDiagnostic =
+				traceSupply ? new List<Punto>() : null;
 			
-			// Seconda passata: calcola offset solo per vertici non skippati
+			// Seconda passata: calcola offset solo per vertici non skippati.
 			for (int i = 0; i < polygon.Count; i++)
 			{
-				if (skipIndices.Contains(i)) 
-					continue;
-					
 				var p1 = polygon[i];
 				var p2 = polygon[(i + 1) % polygon.Count];
 				var p0 = polygon[(i - 1 + polygon.Count) % polygon.Count];
@@ -1665,13 +1719,68 @@ namespace SpiralHeatingDiegoVittorio
 				var n1 = new Punto(-v1.Y, v1.X);
 				var n2 = new Punto(-v2.Y, v2.X);
 
-				var bisector = GeometryUtils.Normalize(new Punto(n1.X + n2.X, n1.Y + n2.Y));				
+				var bisector = GeometryUtils.Normalize(
+					new Punto(n1.X + n2.X, n1.Y + n2.Y));
 				
-				double offsetDist = (offset * Math.Sqrt(2)) / Math.Max(0.1, Math.Sqrt(1 + (n1.X * n2.X + n1.Y * n2.Y)));
+				double offsetDist =
+					(offset * Math.Sqrt(2)) /
+					Math.Max(
+						0.1,
+						Math.Sqrt(
+							1 +
+							(n1.X * n2.X + n1.Y * n2.Y)));
+
+				var candidate = new Punto(
+					p1.X + bisector.X * offsetDist,
+					p1.Y + bisector.Y * offsetDist);
+
+				if (traceSupply)
+					rawDiagnostic.Add(candidate);
+
+				if (skipIndices.Contains(i))
+					continue;
 				
-				result.Add(new Punto(p1.X + bisector.X * offsetDist, p1.Y + bisector.Y * offsetDist));
+				result.Add(candidate);
 			}
 
+			if (traceSupply)
+			{
+				string skipped =
+					string.Join(",", skipIndices.OrderBy(index => index));
+				Console.WriteLine(
+					$"DV_SUPPLY_COMPUTE_RESULT level={supplyLevel} " +
+					$"inputVertices={polygon.Count} skippedVertices=[{skipped}] " +
+					$"produced={result.Count}");
+
+				if (rawDiagnostic.Count >= 2)
+				{
+					var rawEdges = new List<string>();
+					for (int i = 0; i < rawDiagnostic.Count; i++)
+					{
+						rawEdges.Add(
+							rawDiagnostic[i]
+								.DistanceTo(
+									rawDiagnostic[
+										(i + 1) %
+										rawDiagnostic.Count])
+								.ToString(
+									"R",
+									CultureInfo.InvariantCulture));
+					}
+
+					double minX = rawDiagnostic.Min(p => p.X);
+					double maxX = rawDiagnostic.Max(p => p.X);
+					double minY = rawDiagnostic.Min(p => p.Y);
+					double maxY = rawDiagnostic.Max(p => p.Y);
+					Console.WriteLine(
+						$"DV_SUPPLY_RAW_OFFSET level={supplyLevel} " +
+						$"points={rawDiagnostic.Count} " +
+						$"bboxWidth={(maxX - minX):R} " +
+						$"bboxHeight={(maxY - minY):R} " +
+						$"edges=[{string.Join(",", rawEdges)}]");
+				}
+			}
+			
 			return result.Count >= 3 ? result : null;
 		}
 
