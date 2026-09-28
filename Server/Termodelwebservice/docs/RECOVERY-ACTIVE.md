@@ -820,3 +820,28 @@ Nessun bypass, nessuna modifica geometrica e nessun altro locale.
 - progetto completo rieseguito e sottoposto a conferma visiva utente;
 - Issue #1 notificata con esito finale;
 - solo allora eliminare questo file `RECOVERY-ACTIVE.md`.
+
+
+### STEP 4C — identificazione visiva del punto reale da indagare
+Stato: **IN CORSO — TARGET CONFERMATO DALL'UTENTE**
+
+Conferma utente 28/09/2026:
+- nel disegno pubblico il caso in esame è il locale visibile **R001**;
+- nel payload/Harness corrente questo locale corrisponde a **locale_1**;
+- il difetto da seguire non va cercato genericamente nel centro del locale:
+  il punto visivamente significativo è la zona di **scavalcamento del punto di accesso** mostrata nel dettaglio fornito dall'utente;
+- i punti di accesso/innesto sono storicamente una zona critica perché introducono una discontinuità/convessità nel percorso.
+
+Chiarimento sugli identificatori:
+- `R001` è l'identificatore/nome del locale nel disegno CAD;
+- `locale_1` è l'identificatore interno sequenziale generato nel payload pannelli;
+- nel progetto pubblico corrente la corrispondenza verificata è `R001 <-> locale_1`, ma i due nomi appartengono a livelli diversi e non devono essere assunti equivalenti per convenzione generale.
+
+Nuova evidenza dal codice reale:
+- `Program.GeneraSpirale` seleziona la linea di ingresso `T6` e ne calcola l'intersezione col perimetro:
+  circa `(1,5693 ; 4,74316)`;
+- subito dopo chiama `SpiralGenerator.Generate(perimetro, startPoint, ...)`;
+- la geometria completa di `T6` **non viene passata** al generatore Supply: dentro `Generate` resta soltanto il punto di intersezione `startPoint`;
+- quindi la fase Supply non possiede esplicitamente il segmento di accesso come geometria/ostacolo. Questa è ora un'ipotesi diagnostica prioritaria, non ancora una causa provata.
+
+**PROSSIMO PASSO ESATTO — SOLO locale_1/R001:** usare `Debug_Avanzato_harness_rapido` per tracciare dal primo ingresso T6 la sequenza reale di connessione/percorrenza degli offset nella zona del punto di accesso. Registrare per ogni tratto candidato: origine, destinazione, offset, relazione col punto/segmento T6 e decisione presa. Nessuna modifica geometrica finché non viene identificata la prima decisione errata.
