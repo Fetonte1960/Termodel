@@ -6659,6 +6659,147 @@ ricostruire l'intero percorso progetto → Service → Harness.
 
 ---
 
+## DV-TEST-002 — Pannelli radianti pubblico: locali uno per uno
+
+**Stato:** CAMPAGNA ATTIVA — FASE 1 COMPLETATA / FASE 2 `locale_1` IN DIAGNOSI  
+**Origine:** collaudo utente 28/09/2026
+
+Il progetto pubblico **Pannelli radianti** mostra risultati non ripetibili e
+geometricamente errati su più locali, mentre il quadrato base approvato
+`DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO` è corretto.
+
+### Vincolo di non regressione del quadrato
+
+Durante questa campagna il quadrato base è **protetto byte/geometricamente**:
+
+```text
+case: DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO
+SVG SHA-256:
+fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39
+SpiralPointCount: 16
+```
+
+Baseline versionata:
+
+```text
+tests/radiant-harness/baselines/
+  DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json
+```
+
+Il Fast Harness deve fallire se una correzione cambia hash SVG o numero punti
+del quadrato approvato. Una modifica che rompe questa baseline non può essere
+consolidata senza nuova approvazione umana.
+
+### Input reale del progetto pubblico
+
+Il vero progetto Web è stato passato al normale `GeneraModello`; il
+`RadiantPanelInputXml` estratto ha SHA-256:
+
+```text
+15E9F73DEB570F4E17385FF3CD7335916DD8023C69A630925CF083C24A41109A
+```
+
+Per evitare duplicazioni viene conservata **una sola** fixture completa:
+
+```text
+tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml
+```
+
+L'Harness accetta ora `localeId` nei case JSON / `--locale` da CLI e
+mantiene il Piano/Tubi reali eliminando soltanto gli altri elementi
+`<Locale>` prima dell'esecuzione. In questo modo tutti i locali condividono
+lo stesso input estratto dal Service.
+
+### Classificazione reale
+
+Dopo la stessa normalizzazione usata dal motore
+(arrotondamento a due decimali + eliminazione vertici collineari), l'input
+contiene:
+
+- **9 locali geometrici**;
+- **6 locali con un ingresso pannello realmente selezionabile**;
+- **4 locali rettangolari con pannello**, primo banco della campagna:
+
+| Caso | Locale | Dimensioni bbox | Ingresso | Stato Return corrente |
+| --- | --- | --- | --- | --- |
+| `RECT-01` | `locale_1` | 3,09 × 5,50 m | `T6`, intersezione (1,57;4,74) | offset 2/3 non collegati, 6 punti |
+| `RECT-05` | `locale_5` | 5,43 × 4,24 m | `T1`, intersezione (5,83;4,16) | offset 2/3 non collegati, 6 punti |
+| `RECT-08` | `locale_8` | 3,91 × 4,24 m | `T3`, intersezione (7,89;4,16) | offset 2/3 non collegati, 3 punti |
+| `RECT-09` | `locale_9` | 2,57 × 4,41 m | `T5`, intersezione (8,86;5,11) | offset 2 non collegato, 6 punti |
+
+I case versionati sono:
+
+```text
+DV-PUBLIC-PANELS-RECT-01-P030-DIEGO-VITTORIO
+DV-PUBLIC-PANELS-RECT-05-P030-DIEGO-VITTORIO
+DV-PUBLIC-PANELS-RECT-08-P030-DIEGO-VITTORIO
+DV-PUBLIC-PANELS-RECT-09-P030-DIEGO-VITTORIO
+```
+
+I rettangoli `locale_3` e `locale_7` non hanno un circuito radiante
+associabile e non sono casi spirale.
+
+### Prima diagnosi — `locale_1`
+
+La mandata grezza non è inizialmente corta: prima della chiusura contiene
+13 punti e raggiunge gli anelli interni. La forma rossa catastrofica mostrata
+nel collaudo nasce **dopo** il blocco del Return, quando LG-048 sceglie
+`M0/R1`, taglia tre tratti terminali della mandata e crea una chiusura lunga
+4,30 m, rimuovendo circa 10,35 m di geometria.
+
+Il problema primario è quindi il Return, non la chiusura.
+
+Con il lato corrente `Sinistro`:
+
+```text
+offset 2: nessun collegamento valido
+offset 3: nessun collegamento valido
+Return: 6 punti
+```
+
+La prova puramente diagnostica col lato `Destro` peggiora:
+
+```text
+offset 1/2/3: nessun collegamento valido
+Return: 2 punti
+nessuna chiusura
+```
+
+Quindi la scelta fissa Sinistro/Destro **non è la causa** di `locale_1`.
+
+I rifiuti sono geometrici reali, non numerici: la mandata contiene, fra gli
+altri, i tratti
+
+```text
+(-0,77;0,67) -> (0,82;0,67)
+(0,82;0,67)  -> (0,82;3,54)
+```
+
+e numerosi collegamenti tentati dal Return li intersecano oppure restano a
+0,06–0,21 m contro i 0,30 m richiesti.
+
+### Ipotesi causale da verificare prima di ogni correzione strutturale
+
+Il generatore corrente tenta il passaggio all'offset successivo **solo dopo**
+aver percorso il tratto disponibile dell'offset corrente. Nel `locale_1`
+sembra quindi superare un varco utile della mandata e arrivare al successivo
+tentativo quando il punto corrente è già confinato dal “budello”.
+
+`FindConnectionWithOffset` sa già provare percorso diretto, due L ortogonali
+e corridoi a due gomiti campionati a `p/2`; il sospetto non è quindi la forma
+dei collegamenti, ma **il momento nel quale vengono cercati**.
+
+Prima di modificare la strategia va aggiunta diagnostica non invasiva per
+verificare se, durante la percorrenza dell'offset corrente, esiste realmente
+un portale valido verso l'offset successivo che in seguito viene perso.
+
+Un eventuale **early-transition/lookahead del Return** costituisce modifica
+strategica e non può diventare comportamento di produzione senza accordo
+esplicito umano. Fino a quel momento sono ammessi soltanto trace/esperimenti
+disattivati per default che lascino invariata la baseline del quadrato.
+
+---
+
 ## DV-KNOWN-001 — Intrappolamento del Return nel “budello” della mandata
 
 **Stato:** PROBLEMA APERTO — OSSERVATO NEL COLLAUDO  
