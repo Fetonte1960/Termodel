@@ -52,6 +52,23 @@ namespace SpiralHeatingDiegoVittorio
 
 	public static class SpiralGenerator
 	{
+		private const string TraceReturnEnvironmentVariable =
+			"TERMODEL_DIEGO_VITTORIO_TRACE_RETURN";
+
+		// Diagnostica pura: non modifica accettazione, tolleranze o geometria.
+		private static bool TraceReturnEnabled
+		{
+			get
+			{
+				string value = Environment.GetEnvironmentVariable(
+					TraceReturnEnvironmentVariable) ?? string.Empty;
+				return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("on", StringComparison.OrdinalIgnoreCase);
+			}
+		}
+
 		// Funzione realizzata da Codex in autonomia
 		public static CollegamentoRitorno GeneraCollegamentoRitorno(
 			Punto puntoIngressoMandata,
@@ -714,7 +731,20 @@ namespace SpiralHeatingDiegoVittorio
 					spiraleCorrente[i],
 					spiraleCorrente[i + 1]);
 				if (distanza < distanzaMinima - tolleranza)
+				{
+					if (TraceReturnEnabled)
+					{
+						Console.WriteLine(
+							$"  DV_RETURN_REJECT source=Self " +
+							$"candidate=({inizio.X:R},{inizio.Y:R})->({fine.X:R},{fine.Y:R}) " +
+							$"obstacle={i} " +
+							$"segment=({spiraleCorrente[i].X:R},{spiraleCorrente[i].Y:R})->" +
+							$"({spiraleCorrente[i + 1].X:R},{spiraleCorrente[i + 1].Y:R}) " +
+							$"distance={distanza:R} required={distanzaMinima:R} " +
+							$"tolerance={tolleranza:R} deficit={(distanzaMinima - distanza):R}.");
+					}
 					return false;
+				}
 			}
 
 			return true;
@@ -845,7 +875,20 @@ namespace SpiralHeatingDiegoVittorio
 					lineeCondizionamento[i],
 					lineeCondizionamento[i + 1]);
 				if (distanza < distanzaMinima - tolleranza)
+				{
+					if (TraceReturnEnabled)
+					{
+						Console.WriteLine(
+							$"  DV_RETURN_REJECT source=Supply " +
+							$"candidate=({inizio.X:R},{inizio.Y:R})->({fine.X:R},{fine.Y:R}) " +
+							$"obstacle={i} " +
+							$"segment=({lineeCondizionamento[i].X:R},{lineeCondizionamento[i].Y:R})->" +
+							$"({lineeCondizionamento[i + 1].X:R},{lineeCondizionamento[i + 1].Y:R}) " +
+							$"distance={distanza:R} required={distanzaMinima:R} " +
+							$"tolerance={tolleranza:R} deficit={(distanzaMinima - distanza):R}.");
+					}
 					return false;
+				}
 			}
 
 			return true;
