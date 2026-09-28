@@ -18,6 +18,7 @@ on:
       - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
       - 'Server/Termodelwebservice/tests/radiant-harness/cases/*DIEGO-VITTORIO*.json'
       - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiegoSquare4x4.locale.xml'
+      - 'Server/Termodelwebservice/tests/fixtures/DiegoVittorioPublicSquareLeft.locale.xml'
       - 'Server/Termodelwebservice/tools/local-radiant-harness/Test-DiegoVittorio*.ps1'
       - '.github/workflows/termodel-diego-vittorio-fast.yml'
 
@@ -82,6 +83,43 @@ jobs:
           tools/local-radiant-harness/Test-DiegoVittorioDistances.ps1 -SvgPath $svg -StepMeters 0.30
           Write-Host "DIEGO_VITTORIO_FAST_SQUARE_OK"
 
+      - name: Run public square left inlet regression
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioPublicSquare"
+          $caseId = "DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Regression quadrato pubblico Diego_Vittorio fallita." }
+
+          $svg = Join-Path $out "$caseId.svg"
+          $log = Join-Path $out "$caseId.log.txt"
+          $metrics = Join-Path $out "$caseId.metrics.json"
+          foreach ($required in @($svg,$log,$metrics)) {
+            if (-not (Test-Path -LiteralPath $required)) { throw "Artifact regression mancante: $required" }
+          }
+
+          $logText = Get-Content -LiteralPath $log -Raw
+          if ($logText -match 'Ritorno: offset 2 senza tratto percorribile') {
+            throw "Regressione DV-TEST-001: offset 2 nuovamente bloccato."
+          }
+          if ($logText -match 'Ritorno: offset 3 senza collegamento valido') {
+            throw "Regressione DV-TEST-001: offset 3 nuovamente bloccato."
+          }
+          if ($logText -notmatch 'Ritorno autonomo:.*punti=17') {
+            throw "Regressione DV-TEST-001: Return non raggiunge i 17 punti attesi."
+          }
+          if ($logText -notmatch 'Chiusura rapida: tentativo=') {
+            throw "Regressione DV-TEST-001: chiusura rapida non trovata."
+          }
+
+          tools/local-radiant-harness/Test-DiegoVittorioDistances.ps1 -SvgPath $svg -StepMeters 0.30
+          if ($LASTEXITCODE -ne 0) { throw "Controllo distanze quadrato pubblico fallito." }
+
+          Write-Host "DIEGO_VITTORIO_PUBLIC_SQUARE_LEFT_OK"
+
       - name: Run fitting regression
         run: dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- fillet-check
 
@@ -90,7 +128,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: diego-vittorio-fast
-          path: ${{ runner.temp }}/DiegoVittorioFast
+          path: |
+            ${{ runner.temp }}/DiegoVittorioFast
+            ${{ runner.temp }}/DiegoVittorioPublicSquare
           if-no-files-found: warn
           retention-days: 14
 
