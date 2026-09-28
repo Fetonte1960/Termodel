@@ -19,6 +19,7 @@ return args.Length == 0
     : args[0].ToLowerInvariant() switch
     {
         "run" => Run(args.Skip(1).ToArray()),
+        "revisionato-check" => RunVittorioRevisionatoCheck(),
         "fillet-check" => RunFilletCheck(),
         "prepare" => await PrepareAsync(args.Skip(1).ToArray()),
         _ => Usage()
@@ -29,9 +30,25 @@ static int Usage()
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
     Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Vittorio_revisionato|Diego_Vittorio|Diego] [--supply-only] [--skip-close] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Vittorio_revisionato|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--supply-only] [--skip-close] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  revisionato-check");
     Console.Error.WriteLine("  fillet-check");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
+}
+
+static int RunVittorioRevisionatoCheck()
+{
+    StrategiaVittorioRevisionatoAbstractionCheck result =
+        StrategiaVittorioRevisionatoBenchmark.CheckAbstraction();
+
+    Console.WriteLine("VITTORIO_REVISIONATO_ABSTRACTION_OK");
+    Console.WriteLine($"neutralEquivalent={result.NeutralEquivalent.ToString().ToLowerInvariant()}");
+    Console.WriteLine($"supplyPoints={result.SupplyPoints}");
+    Console.WriteLine($"unconditionedReturnPoints={result.UnconditionedReturnPoints}");
+    Console.WriteLine($"conditionedReturnPoints={result.ConditionedReturnPoints}");
+    Console.WriteLine(
+        $"conditioningDistance={result.ConditioningDistanceMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
+    return 0;
 }
 
 // Funzione realizzata da Codex in autonomia
