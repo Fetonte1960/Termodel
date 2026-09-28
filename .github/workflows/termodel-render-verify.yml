@@ -46,10 +46,17 @@ jobs:
             "X-GitHub-Api-Version" = "2022-11-28"
           }
 
-          $branch = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/branches/main" -Headers $headers
-          $expectedFull = [string]$branch.commit.sha
+          # Render usa Server/Termodelwebservice come root del Service.
+          # Un commit che cambia soltanto .github o il frontend può non
+          # richiedere un nuovo deploy. Verifichiamo quindi l'ultimo commit
+          # di main che ha realmente toccato il Service.
+          $commits = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/commits?sha=main&path=Server%2FTermodelwebservice&per_page=1" -Headers $headers
+          if (@($commits).Count -lt 1) {
+            throw "Impossibile determinare l'ultimo commit Service su main."
+          }
+          $expectedFull = [string]$commits[0].sha
           $expectedShort = $expectedFull.Substring(0,8)
-          Write-Host "Expected main commit: $expectedFull"
+          Write-Host "Expected Service commit: $expectedFull"
 
           $healthUri = "https://termodel.onrender.com/health"
           $last = $null
@@ -75,7 +82,7 @@ jobs:
           }
 
           $lastJson = if ($null -eq $last) { "<nessuna risposta>" } else { $last | ConvertTo-Json -Depth 10 -Compress }
-          throw "Render non espone l'ultimo main $expectedShort con Diego_Vittorio. Ultimo health: $lastJson"
+          throw "Render non espone l'ultimo commit Service $expectedShort con Diego_Vittorio. Ultimo health: $lastJson"
 
       - name: Publish final status and notify
         if: always()
