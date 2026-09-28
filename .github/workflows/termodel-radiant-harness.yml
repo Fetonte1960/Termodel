@@ -663,7 +663,8 @@ jobs:
             'preserveAspectRatio="xMidYMid meet"',
             'class="architectural-contour"',
             'data-termodel-layer="architecture"',
-            'data-termodel-fittings="disabled"',
+            'data-termodel-fittings="enabled"',
+            'data-termodel-closure="enabled"',
             'stroke="blue"'
           )) {
             if (-not $svgText.Contains($marker)) { throw "Presentazione SVG Diego_Vittorio incompleta: $marker" }
@@ -673,25 +674,26 @@ jobs:
             throw "viewBox Diego_Vittorio assente o serializzato con virgola decimale."
           }
 
-          $env:TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS = "true"
+          $env:TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS = "false"
           try {
             dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
               --case tests/radiant-harness/cases/CURRENT-APARTMENT-P030-DIEGO-VITTORIO.json `
-              --id CURRENT-APARTMENT-P030-DIEGO-VITTORIO-FILLETS-ON `
+              --id CURRENT-APARTMENT-P030-DIEGO-VITTORIO-DEBUG-STRAIGHT `
               --out $out
           }
           finally {
             Remove-Item Env:TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS -ErrorAction SilentlyContinue
           }
-          $filletsOnSvg = Join-Path $out "CURRENT-APARTMENT-P030-DIEGO-VITTORIO-FILLETS-ON.svg"
-          if (-not (Test-Path -LiteralPath $filletsOnSvg)) { throw "SVG Diego_Vittorio con raccordi attivi mancante." }
-          $filletsOnText = Get-Content -LiteralPath $filletsOnSvg -Raw
-          if (-not $filletsOnText.Contains('data-termodel-fittings="enabled"')) {
-            throw "Il flag non ha riattivato i raccordi Diego_Vittorio."
+          $debugSvg = Join-Path $out "CURRENT-APARTMENT-P030-DIEGO-VITTORIO-DEBUG-STRAIGHT.svg"
+          if (-not (Test-Path -LiteralPath $debugSvg)) { throw "SVG Diego_Vittorio debug rettilineo mancante." }
+          $debugText = Get-Content -LiteralPath $debugSvg -Raw
+          if (-not $debugText.Contains('data-termodel-fittings="disabled"')) {
+            throw "Il flag false non ha disattivato i raccordi Diego_Vittorio."
           }
-          if ((Get-Item -LiteralPath $filletsOnSvg).Length -le (Get-Item -LiteralPath $svg).Length) {
-            throw "La modalità debug senza raccordi non ha ridotto il peso dell'SVG."
+          if ((Get-Item -LiteralPath $debugSvg).Length -ge (Get-Item -LiteralPath $svg).Length) {
+            throw "La modalità debug rettilinea non ha ridotto il peso dell'SVG."
           }
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- fillet-check
           Copy-Item -LiteralPath $svg -Destination (Join-Path $out "pannelli-esecutivo-diego-vittorio.svg") -Force
           Write-Host "RADIANT_HARNESS_CURRENT_APARTMENT_DIEGO_VITTORIO_OK"
 
