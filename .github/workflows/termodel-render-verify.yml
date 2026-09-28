@@ -4,6 +4,10 @@ permissions:
   contents: read
   statuses: write
 
+concurrency:
+  group: termodel-render-runtime-verify
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
