@@ -8,26 +8,11 @@ concurrency:
   group: termodel-radiant-harness-${{ github.ref }}
   cancel-in-progress: false
 
+# StrategiaDiego e il relativo workflow esplorativo sono PARKED dal
+# 28/09/2026 per costo computazionale. Il workflow completo resta disponibile
+# manualmente come laboratorio storico, ma non rallenta più ogni push.
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/**'
-      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorio/**'
-      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/**'
-      - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
-      - 'Server/Termodelwebservice/tests/radiant-harness/**'
-      - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiego*.locale.xml'
-      - '.github/workflows/termodel-radiant-harness.yml'
-  pull_request:
-    paths:
-      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/**'
-      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorio/**'
-      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/**'
-      - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
-      - 'Server/Termodelwebservice/tests/radiant-harness/**'
-      - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiego*.locale.xml'
-      - '.github/workflows/termodel-radiant-harness.yml'
 
 jobs:
   harness:
