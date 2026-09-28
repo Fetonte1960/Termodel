@@ -127,21 +127,30 @@ Verifiche già concluse:
     lunghezza 2,454 m, coseni 0,139/0,139,
     tagli 0/2, rimosso 3,75 m.
 
-Anomalia/decisione ancora aperta:
-- il miglioramento numerico è netto, ma il caso `locale_5` non è ancora
-  dichiarato risolto finché non viene ispezionata la geometria SVG e aggiunta
-  una regression dedicata che congeli il comportamento ritenuto corretto;
-- se l'SVG mostra ancora una chiusura/geometria inaccettabile, diagnosticare
-  quella causa senza introdurre nuove strategie globali.
+Verifica visiva eseguita sul vero artifact del run `36402954805`:
+- artifact `diego-vittorio-room-extraction` recuperato e ispezionato;
+- il Return a 16 punti percorre i tre livelli in modo ordinato;
+- la chiusura accettata `M3/R5` produce però una diagonale centrale lunga
+  **2,454 m** e rimuove **3,75 m** di Return;
+- questa chiusura non viene ancora considerata comportamento corretto da
+  congelare in regression: il locale resta **IN CORSO**.
+
+Ipotesi corrente:
+- il problema residuo non è più l'intrappolamento del Return;
+- LG-048 si ferma al **primo candidato valido** e può quindi non osservare
+  eventuali configurazioni successive più locali/naturali;
+- prima di modificare la selezione della chiusura bisogna enumerare in pura
+  diagnostica tutti i candidati diretti/proiettati che sarebbero accettabili.
 
 **PROSSIMO PASSO ESATTO:**
-1. recuperare artifact del run `36402954805`;
-2. ispezionare `locale_5.svg` e relativo result/log;
-3. se la geometria è coerente, aggiungere regression Fast dedicata a
-   `locale_5` mantenendo la baseline quadrato byte-identica;
-4. solo dopo regression verde chiudere FASE 3 e passare a `locale_8`;
-5. se la geometria non è coerente, registrare la causa e fermarsi prima di
-   qualunque modifica strutturale.
+1. aggiungere diagnostica non invasiva che, solo sotto flag trace, enumeri
+   tutti i candidati LG-048 accettabili senza cambiare quello restituito;
+2. includere anche le chiusure proiettate diagnostiche, anche quando una
+   chiusura diretta precedente è già valida;
+3. rieseguire `locale_5` e verificare se esiste una chiusura più corta/localizzata;
+4. mantenere obbligatoriamente verde e byte-identica la baseline del quadrato;
+5. se una migliore selezione richiede cambio di strategia/criterio, fermarsi
+   e chiedere consenso umano prima di renderla comportamento di produzione.
 
 ### FASE 4 — locale_8
 Stato: **NON INIZIATA**
