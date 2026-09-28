@@ -77,19 +77,22 @@ l'identità del Service realmente in esecuzione:
   "status": "ok",
   "serviceCommit": "<sha completo o stringa vuota>",
   "serviceCommitShort": "<prime 8 cifre o stringa vuota>",
-  "spiralEngine": "Diego"
+  "spiralEngine": "Diego_Vittorio"
 }
 ```
 
 Il commit runtime viene risolto, in ordine, da
 `RENDER_GIT_COMMIT -> GITHUB_SHA -> SOURCE_VERSION`. Il motore spirali
 viene invece letto dal resolver autorevole del Core; se
-`TERMODEL_SPIRAL_ENGINE` non è configurata il default corrente è `Diego`.
+`TERMODEL_SPIRAL_ENGINE` non è configurata il default corrente è
+`Diego_Vittorio`. `SpiraliVittorio` resta il riferimento invariato e
+`StrategiaDiego` / selettore `Diego` resta disponibile ma PARKED per il
+costo computazionale elevato.
 
 Il frontend v1.19 usa questi dati per mostrare nella status bar:
 
 ```text
-Server fc287c9b · Diego
+Server fc287c9b · Diego_Vittorio
 ```
 
 In ambiente locale privo di identificatore commit usa `Server locale · ...`.
