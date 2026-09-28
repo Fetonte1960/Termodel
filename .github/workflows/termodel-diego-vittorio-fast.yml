@@ -183,6 +183,26 @@ jobs:
           }
           Write-Host "DIEGO_VITTORIO_PUBLIC_PANELS_LOCALE5_OK"
 
+      - name: Diagnose locale_8 local dogleg adjacency
+        shell: pwsh
+        env:
+          TERMODEL_DIEGO_VITTORIO_TRACE_RETURN: "true"
+          TERMODEL_DIEGO_VITTORIO_DIAG_LOCAL_ROOT_ADJACENCY: "true"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioPanelsLocale8Dogleg"
+          $caseId = "DV-PUBLIC-PANELS-RECT-08-P030-DIEGO-VITTORIO"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/$caseId.json `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Diagnostica locale_8 dogleg fallita." }
+
+          $log = Join-Path $out "$caseId.log.txt"
+          if (-not (Test-Path -LiteralPath $log)) { throw "Log diagnostico locale_8 mancante." }
+          Get-Content -LiteralPath $log | Where-Object {
+            $_ -match 'DV_RETURN_DIAG_LOCAL_DOGLEG_ADJACENCY|DV_RETURN_DIAG_LOCAL_ROOT_ADJACENCY|Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida'
+          } | ForEach-Object { Write-Host ("LOCALE8_DOGLEG_DIAG "+$_) }
+
       - name: Run fitting regression
         run: dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- fillet-check
 
@@ -196,6 +216,7 @@ jobs:
             ${{ runner.temp }}/DiegoVittorioPublicSquare
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1
             ${{ runner.temp }}/DiegoVittorioPanelsLocale5
+            ${{ runner.temp }}/DiegoVittorioPanelsLocale8Dogleg
           if-no-files-found: warn
           retention-days: 14
 
