@@ -845,3 +845,29 @@ Nuova evidenza dal codice reale:
 - quindi la fase Supply non possiede esplicitamente il segmento di accesso come geometria/ostacolo. Questa è ora un'ipotesi diagnostica prioritaria, non ancora una causa provata.
 
 **PROSSIMO PASSO ESATTO — SOLO locale_1/R001:** usare `Debug_Avanzato_harness_rapido` per tracciare dal primo ingresso T6 la sequenza reale di connessione/percorrenza degli offset nella zona del punto di accesso. Registrare per ogni tratto candidato: origine, destinazione, offset, relazione col punto/segmento T6 e decisione presa. Nessuna modifica geometrica finché non viene identificata la prima decisione errata.
+
+
+#### STEP 4C.1 — strumentazione accesso T6
+Stato: **IMPLEMENTATA — TEST GITHUB ACTION IN CODA**
+
+Implementazione solo diagnostica, nessuna modifica geometrica:
+- commit `9923b5edad744249c47bc62284e3ae9f9d38adc2`:
+  `Program.GeneraSpirale` passa al logger Supply i due estremi reali della linea di ingresso selezionata;
+- commit `c3c8b254b0388588671671f152ef21ff4736cfb3`:
+  `SpiralGenerator.Generate` riceve i due estremi solo come parametri diagnostici opzionali;
+  registra `Supply.Access.Context`, `Supply.Access.Connection`,
+  distanza/intersezione T6 su ogni `Supply.Traverse.Candidate` e
+  `Supply.Access.Finalize`;
+- il controllo distingue la distanza dal segmento T6 completo e dal solo tratto interno
+  `startPoint -> endpoint interno`;
+- i valori osservati non entrano in nessuna decisione del motore.
+- commit `68e11f56acc4e83a1c100a8350f71468107bba36`:
+  Fast Harness richiede i nuovi marker diagnostici nel caso categorizzato `locale_1`.
+
+Test avviato:
+- workflow `Termodel Diego_Vittorio Fast Harness` run `36438139064`, run #46;
+- stato al checkpoint: **pending/in coda**.
+
+**PROSSIMO PASSO ESATTO:** attendere il run 36438139064; se compila e il caso categorizzato passa,
+leggere il log `locale_1` e isolare i segmenti che toccano/intersecano o passano vicino al tratto interno T6.
+Se il run fallisce, leggere il primo errore e correggere esclusivamente la strumentazione.
