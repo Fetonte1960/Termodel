@@ -302,7 +302,9 @@ namespace SpiralHeatingDiegoVittorio
 			List<Punto> trattoIniziale = null,
 			List<Punto> lineeCondizionamento = null,
 			double distanzaCondizionamento = 0.0,
-			bool traceSupply = false)
+			bool traceSupply = false,
+			Punto diagnosticAccessP0 = null,
+			Punto diagnosticAccessP1 = null)
 		{
 			if (distanzaParete <= 0)
 				throw new ArgumentOutOfRangeException(nameof(distanzaParete));
@@ -322,6 +324,38 @@ namespace SpiralHeatingDiegoVittorio
 			bool supplyLog =
 				Program.LogSupplyEnabled &&
 				(lineeCondizionamento == null || lineeCondizionamento.Count < 2);
+			Punto diagnosticAccessInside = null;
+			if (diagnosticAccessP0 != null && diagnosticAccessP1 != null)
+			{
+				bool p0Inside = GeometryUtils.IsInsidePolygon(diagnosticAccessP0, perimetro);
+				bool p1Inside = GeometryUtils.IsInsidePolygon(diagnosticAccessP1, perimetro);
+				if (p0Inside != p1Inside)
+					diagnosticAccessInside = p0Inside ? diagnosticAccessP0 : diagnosticAccessP1;
+			}
+
+			(double fullDistance, double insideDistance, bool crossesFull, bool crossesInside) AccessRelation(
+				Punto from,
+				Punto to)
+			{
+				double fullDistance = double.NaN;
+				double insideDistance = double.NaN;
+				bool crossesFull = false;
+				bool crossesInside = false;
+				if (diagnosticAccessP0 != null && diagnosticAccessP1 != null)
+				{
+					fullDistance = DistanzaSegmenti(from, to, diagnosticAccessP0, diagnosticAccessP1);
+					crossesFull = fullDistance <= 0.000001;
+				}
+				if (diagnosticAccessInside != null)
+				{
+					insideDistance = DistanzaSegmenti(from, to, startPoint, diagnosticAccessInside);
+					crossesInside = insideDistance <= 0.000001;
+				}
+				return (fullDistance, insideDistance, crossesFull, crossesInside);
+			}
+
+			string FormatAccessDistance(double value) =>
+				double.IsNaN(value) ? "n/a" : value.ToString("R", CultureInfo.InvariantCulture);
 			if (supplyTrace)
 			{
 				Console.WriteLine(
@@ -336,6 +370,15 @@ namespace SpiralHeatingDiegoVittorio
 					$"start=({startPoint.X:R},{startPoint.Y:R}) " +
 					$"wall={distanzaParete:R} supplyStep={passoMandata:R} " +
 					$"perimeterVertices={perimetro.Count}");
+			}
+			if (supplyLog && diagnosticAccessP0 != null && diagnosticAccessP1 != null)
+			{
+				Program.LogSupply(
+					"Supply.Access.Context",
+					$"start=({startPoint.X:R},{startPoint.Y:R}) " +
+					$"accessP0=({diagnosticAccessP0.X:R},{diagnosticAccessP0.Y:R}) " +
+					$"accessP1=({diagnosticAccessP1.X:R},{diagnosticAccessP1.Y:R}) " +
+					$"insideEnd={(diagnosticAccessInside == null ? "n/a" : $"({diagnosticAccessInside.X:R},{diagnosticAccessInside.Y:R})")}");
 			}
 			
 			// Verifica e correggi il senso di rotazione (deve essere antiorario)
@@ -607,6 +650,27 @@ namespace SpiralHeatingDiegoVittorio
 						$"intersection={(puntoIntersezione == null ? "null" : $"({puntoIntersezione.X:R},{puntoIntersezione.Y:R})")} " +
 						$"startVertexIndex={startVertexIndex} connection=[{connectionPath}]");
 				}
+				if (supplyLog &&
+					diagnosticAccessP0 != null &&
+					diagnosticAccessP1 != null &&
+					percorsoConnessione != null)
+				{
+					Punto accessFrom = ultimoPuntoSpiral;
+					for (int accessSegmentIndex = 0; accessSegmentIndex < percorsoConnessione.Count; accessSegmentIndex++)
+					{
+						Punto accessTo = percorsoConnessione[accessSegmentIndex];
+						var relation = AccessRelation(accessFrom, accessTo);
+						Program.LogSupply(
+							"Supply.Access.Connection",
+							$"offset={indiceOffsetPercorso} segment={accessSegmentIndex} " +
+							$"from=({accessFrom.X:R},{accessFrom.Y:R}) to=({accessTo.X:R},{accessTo.Y:R}) " +
+							$"distanceFull={FormatAccessDistance(relation.fullDistance)} " +
+							$"distanceInside={FormatAccessDistance(relation.insideDistance)} " +
+							$"crossesFull={relation.crossesFull.ToString().ToLowerInvariant()} " +
+							$"crossesInside={relation.crossesInside.ToString().ToLowerInvariant()}");
+						accessFrom = accessTo;
+					}
+				}
 
 				Punto terminalePrimaDelTrim = null;
 				if (percorsoConnessione == null || puntoIntersezione == null)
@@ -755,13 +819,18 @@ namespace SpiralHeatingDiegoVittorio
 
 					if (supplyLog)
 					{
+						var accessRelation = AccessRelation(spiral[^1], candidato);
 						Program.LogSupply(
 							"Supply.Traverse.Candidate",
 							$"offset={indiceOffsetPercorso} loopIndex={i} vertexIndex={vertexIndex} " +
 							$"from=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
 							$"candidate=({candidato.X:R},{candidato.Y:R}) " +
 							$"respectConditioning={rispettaSupply.ToString().ToLowerInvariant()} " +
-							$"respectSelf={rispettaSelf.ToString().ToLowerInvariant()}");
+							$"respectSelf={rispettaSelf.ToString().ToLowerInvariant()} " +
+							$"accessDistanceFull={FormatAccessDistance(accessRelation.fullDistance)} " +
+							$"accessDistanceInside={FormatAccessDistance(accessRelation.insideDistance)} " +
+							$"crossesAccessFull={accessRelation.crossesFull.ToString().ToLowerInvariant()} " +
+							$"crossesAccessInside={accessRelation.crossesInside.ToString().ToLowerInvariant()}");
 					}
 
 					// Esperimento diagnostico DV-TEST-002 / locale_8:
@@ -907,6 +976,18 @@ namespace SpiralHeatingDiegoVittorio
 						$"traversalTerminal=({terminalePercorsoPrimaFinalizzazione.X:R},{terminalePercorsoPrimaFinalizzazione.Y:R}) " +
 						$"segmentFromIntersection={distanzaSegmento:R} replaceLast={sostituisceUltimoPunto.ToString().ToLowerInvariant()} " +
 						$"planned=({puntoFinale.X:R},{puntoFinale.Y:R}) step={passoMandata:R}");
+				}
+				if (supplyLog && diagnosticAccessP0 != null && diagnosticAccessP1 != null)
+				{
+					var accessRelation = AccessRelation(penultimoPunto, puntoFinale);
+					Program.LogSupply(
+						"Supply.Access.Finalize",
+						$"offset={indiceOffsetPercorso} from=({penultimoPunto.X:R},{penultimoPunto.Y:R}) " +
+						$"to=({puntoFinale.X:R},{puntoFinale.Y:R}) " +
+						$"distanceFull={FormatAccessDistance(accessRelation.fullDistance)} " +
+						$"distanceInside={FormatAccessDistance(accessRelation.insideDistance)} " +
+						$"crossesFull={accessRelation.crossesFull.ToString().ToLowerInvariant()} " +
+						$"crossesInside={accessRelation.crossesInside.ToString().ToLowerInvariant()}");
 				}
 				bool finaleOriginaleAggiunto = false;
 				if (SegmentoRispettaCondizionamento(
