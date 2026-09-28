@@ -6617,6 +6617,23 @@ tests/fixtures/DiegoVittorioPublicSquareLeft.locale.xml
 tests/radiant-harness/cases/DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json
 ```
 
+La regression ordinaria è inclusa nel workflow
+`Termodel Diego_Vittorio Fast Harness`. Il run `36383265029` ha concluso
+**SUCCESS** con:
+
+- build Harness + Core;
+- quadrato sintetico storico;
+- quadrato pubblico ingresso sinistro DV-TEST-001;
+- controllo assenza degli stop offset 2/3;
+- Return a 17 punti;
+- chiusura rapida presente;
+- regression raccordi.
+
+Il workflow completo
+`Termodel Diego_Vittorio Public Square Investigation` resta disponibile solo
+con `workflow_dispatch` per ricostruire, quando necessario, l'intera catena
+progetto pubblico → WebService → input pannelli → Harness.
+
 ### Regola di velocità del ciclo umano
 
 Il percorso primario resta **locale**:
