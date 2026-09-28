@@ -1200,3 +1200,126 @@ Linee guida aggiornate:
 strettoia nel `locale_1` e seguire, chiamata per chiamata, quali candidati
 `FindConnectionWithOffset` costruisce, quali vengono respinti, quale viene
 premiato e quale informazione sul futuro manca al momento della scelta.
+
+
+## CONSAPEVOLEZZA OPERATIVA OBBLIGATORIA PER LA CHAT SUCCESSIVA
+
+Questa sezione è intenzionalmente ridondante rispetto ai checkpoint precedenti:
+serve a riportare rapidamente una nuova chat allo stesso livello di comprensione
+raggiunto nell'analisi corrente, senza ricostruzioni interpretative.
+
+### Modello mentale del problema
+
+Il problema da risolvere NON è:
+- “questo singolo segmento passa oppure no?”;
+- “la curva arrotondata è troppo vicina?”;
+- “il secondo giro è uguale al primo e quindi dovrebbe comportarsi uguale?”.
+
+Il problema corretto è:
+> **quando Diego_Vittorio incontra una strettoia, una scelta può essere
+> localmente valida ma strategicamente cattiva perché compromette i passi
+> successivi. Serve quindi distinguere validità locale e convenienza a medio
+> raggio.**
+
+La StrategiaDiego completa avrebbe risolto il problema esplorando un albero di
+rami alternativi e premiando la soluzione globalmente migliore, soprattutto
+per lunghezza utile di tubazione. Questo approccio è stato sospeso perché troppo
+costoso computazionalmente.
+
+Diego_Vittorio deve quindi restare una strategia intermedia:
+- più intelligente di Vittorio nelle strettoie;
+- visione più ampia del solo prossimo segmento;
+- niente tree-search combinatorio completo;
+- euristiche finite, deterministiche e a costo controllato.
+
+### Cosa fa Vittorio
+
+Vittorio NON possiede una vera decisione “entro/non entro nella strettoia” sul
+Return:
+- `ComputeOffset` e `minEdgeLength` filtrano localmente la formazione degli
+  anelli;
+- `FindIntersectionWithOffset` usa una connessione semplice e una piccola
+  euristica sul gomito;
+- una volta raggiunto un offset, lo percorre;
+- `CreaRientro` deriva il Return dalla Supply già arrotondata.
+
+Quindi Vittorio è un riferimento geometrico/storico, non un motore con ricerca
+autonoma della miglior scelta nella strettoia.
+
+### Cosa fa Diego_Vittorio
+
+La macchina decisionale corrente del Return è:
+1. `FindConnectionWithOffset` genera percorsi candidati finiti;
+2. `ConnectionPathIsValid` li verifica;
+3. `SegmentoRispettaCondizionamento` controlla Supply;
+4. `SegmentoRispettaSpirale` controlla Return già costruito;
+5. tra i candidati validi `FindConnectionWithOffset` sceglie oggi il
+   **più corto**;
+6. la successiva percorrenza dell'offset continua finché il prossimo tratto è
+   localmente valido;
+7. non viene ancora premiato o penalizzato il candidato in base a ciò che
+   succederà 1-N decisioni dopo.
+
+`ProvaPortaleAnticipato`, sotto `TracePortalsEnabled`, è già un embrione di
+look-ahead: verifica se dal punto corrente esiste un collegamento al prossimo
+offset, ma oggi produce solo diagnostica e NON modifica la scelta.
+
+### Caso R001 / locale_1 / T6 da non reinterpretare
+
+Riferimento visivo:
+- usare lo SVG `DV-LOCALE1-T6-PRECLOSE.svg`;
+- chiusura centrale disabilitata perché rimuove segmenti e maschera il fenomeno.
+
+Punti già stabiliti:
+- il primo scavalcamento e il secondo sono simili visivamente ma NON equivalenti
+  algoritmicamente;
+- primo scavalcamento: la mezzeria del varco viene costruita direttamente da
+  `GeneraCollegamentoRitorno`;
+- secondo scavalcamento: deve essere scoperto da `FindConnectionWithOffset`;
+- sul secondo varco il campione y=3,82 è invalido (0,28 m < p=0,30), mentre la
+  coordinata critica y=3,84 è valida;
+- il passaggio raw valido è
+  `(1,12;3,84) -> (0,52;3,84)`;
+- dopo essere stato aggiunto, questo stesso segmento entra nella storia del
+  Return e può diventare ostacolo per le decisioni successive;
+- il quadrato pubblico è un caso diverso: lì il problema era una prosecuzione
+  collineare risolta da `CandidatoProsegueUltimoSegmento` /
+  `DV_RETURN_SKIP_COLLINEAR_ADJACENT`;
+- l'arrotondamento NON causa la decisione Diego_Vittorio perché avviene dopo
+  `GenerateReturn`.
+
+### Ipotesi di lavoro corrente — NON ancora regola
+
+Il limite probabile non è che Diego_Vittorio non trovi il varco: nel caso
+`locale_1` il secondo varco viene trovato. Il limite da verificare è che la
+scelta viene premiata con criteri troppo locali (validità + lunghezza del
+collegamento) senza valutare abbastanza ciò che rimarrà percorribile dopo.
+
+NON trasformare questa ipotesi in una correzione senza trace causale.
+
+### Prossimo debug esatto
+
+Sul singolo punto di strettoia del `locale_1`:
+1. enumerare TUTTI i candidati prodotti da `FindConnectionWithOffset`;
+2. per ciascuno registrare:
+   - geometria completa del path;
+   - lunghezza;
+   - validità Supply;
+   - validità Self;
+   - motivo preciso di eventuale rigetto;
+3. identificare il candidato oggi vincente e il criterio con cui viene premiato;
+4. per ogni candidato localmente valido eseguire SOLO diagnosticamente una
+   previsione finita:
+   - esiste un portale verso l'offset successivo?
+   - quanti segmenti/vertici successivi risultano immediatamente percorribili?
+   - quale margine minimo resta rispetto a Supply e Return?
+5. confrontare il vincitore locale con almeno un'alternativa valida;
+6. NON cambiare ancora il motore;
+7. solo dopo questi numeri proporre un'euristica di “media visione”.
+
+Obiettivo del debug:
+> capire quale informazione sul futuro manca esattamente nel momento in cui
+> `FindConnectionWithOffset` sceglie il percorso più corto.
+
+Questa è la conoscenza minima che una chat di recovery deve possedere prima di
+toccare il codice.
