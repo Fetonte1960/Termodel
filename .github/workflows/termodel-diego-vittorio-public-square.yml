@@ -71,6 +71,8 @@ jobs:
 
       - name: Generate public square and compare same input
         shell: pwsh
+        env:
+          TERMODEL_DIEGO_VITTORIO_TRACE_RETURN: "true"
         run: |
           $ErrorActionPreference = "Stop"
           tools/generate-public-square-executive.ps1 -Engine Diego_Vittorio -CaptureHarnessInput -CompareHarness
