@@ -554,7 +554,11 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Benchmark StrategiaDiego regression fixtures
+      # StrategiaDiego è PARKED dal 28/09/2026 per costo computazionale.
+      # Il benchmark completo resta nel workflow manuale Termodel Radiant Harness
+      # e non deve più rallentare/far fallire la build ordinaria del Service.
+      - name: Benchmark StrategiaDiego regression fixtures (PARKED)
+        if: ${{ false }}
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -598,8 +602,8 @@ jobs:
               "| $fixture | $($report.iterationsCompleted) | $($report.maxTotalNodes) | $($report.acceptedTerminals) | $($report.p95ElapsedMs) | $($report.maxMemoryDeltaBytes) | $($report.deterministic) |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
             }
 
-      - name: Upload StrategiaDiego benchmark
-        if: ${{ always() }}
+      - name: Upload StrategiaDiego benchmark (PARKED)
+        if: ${{ false }}
         uses: actions/upload-artifact@v4
         with:
           name: strategia-diego-benchmark
