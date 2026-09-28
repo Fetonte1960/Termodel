@@ -88,6 +88,16 @@ Risultato:
 - registrata la regola di non modificare geometria/strategie durante la sola osservazione e di consolidare poi con regression;
 - riferimento autorevole: `Server/Termodelwebservice/docs/ISTRUZIONI_DEBUG.md`.
 
+### INCARICO 2026-09-28 — SVG pre-chiusura diagnostico locale_1
+Stato: ESEGUITO
+
+- aggiunto all'Harness Diego_Vittorio il flag diagnostico `--skip-close`, commit `50e8808769343f5500af095a5f62fd656e045173`;
+- il flag riusa `TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE=false`: mantiene Supply + Return autonomo e sospende esclusivamente la chiusura centrale;
+- workflow Fast commit `39c83fd1194acacbb5a9e129418c2f4eb828d8ac`;
+- run `36441043047` SUCCESS, artifact `DV-LOCALE1-T6-PRECLOSE.svg`, SHA-256 `8620835cf47f6b47f55942f55ae5b628db53033557beb0eb862aaa0104bec5db`;
+- confronto verificato: Return pre-chiusura 66 punti SVG contro 54 dopo chiusura; la chiusura M4/RP3 dichiara `tagli=0/3` e 3,81 m rimossi dal Return;
+- nessuna modifica alla geometria produttiva; modalità destinata al debug avanzato.
+
 ### INCARICO 2026-09-28 — Indagine locali esempio pannelli radianti uno per uno
 Stato: COMMISSIONATO
 
