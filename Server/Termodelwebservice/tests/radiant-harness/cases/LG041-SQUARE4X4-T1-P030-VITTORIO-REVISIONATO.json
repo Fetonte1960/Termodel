@@ -1,0 +1,7 @@
+{
+  "id": "LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO",
+  "description": "Quadrato storico 4x4 m/T1/p=0,30 m; equivalenza iniziale Vittorio vs Vittorio_revisionato.",
+  "preparedInput": "../../fixtures/StrategiaDiegoSquare4x4.locale.xml",
+  "stepMeters": 0.30,
+  "engine": "Vittorio_revisionato"
+}
