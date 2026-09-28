@@ -295,7 +295,9 @@ namespace SpiralHeatingDiegoVittorio
                     distanzaPareti,
                     distanzaMandataMandata,
                     true,  // writeSvg non usato in SpiralGenerator
-                    traceSupply: traceSupply
+                    traceSupply: traceSupply,
+                    diagnosticAccessP0: lineaIngresso.P0,
+                    diagnosticAccessP1: lineaIngresso.P1
                 );
                 if (traceSupply)
                 {
