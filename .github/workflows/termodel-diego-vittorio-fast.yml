@@ -209,22 +209,30 @@ jobs:
           }
           Write-Host "DIEGO_VITTORIO_PUBLIC_PANELS_LOCALE8_OK"
 
-      - name: Inspect public panels locale_9
+      - name: Run public panels locale_9 regression
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioPanelsLocale9Inspect"
+          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioPanelsLocale9"
           $caseId = "DV-PUBLIC-PANELS-RECT-09-P030-DIEGO-VITTORIO"
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/$caseId.json `
             --out $out
-          if ($LASTEXITCODE -ne 0) { throw "Ispezione locale_9 fallita." }
+          if ($LASTEXITCODE -ne 0) { throw "Regression locale_9 fallita." }
 
           $log = Join-Path $out "$caseId.log.txt"
           if (-not (Test-Path -LiteralPath $log)) { throw "Log locale_9 mancante." }
-          Get-Content -LiteralPath $log | Where-Object {
-            $_ -match 'Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida|DV_RETURN_SKIP_LOCAL_DOGLEG_ADJACENT'
-          } | ForEach-Object { Write-Host ("LOCALE9_INSPECT "+$_) }
+          $logText = Get-Content -LiteralPath $log -Raw
+          if ($logText -match 'Ritorno: offset 2 senza collegamento valido') {
+            throw "Regressione locale_9: Return nuovamente bloccato."
+          }
+          if ($logText -notmatch 'Ritorno autonomo:.*punti=13') {
+            throw "Regressione locale_9: Return non raggiunge 13 punti."
+          }
+          if ($logText -notmatch 'Chiusura rapida:.*sequenza=M3/RP2.*tipo=ortogonale.*lunghezza=0.77 m') {
+            throw "Regressione locale_9: chiusura M3/RP2 ortogonale da 0,77 m non presente."
+          }
+          Write-Host "DIEGO_VITTORIO_PUBLIC_PANELS_LOCALE9_OK"
 
       - name: Run fitting regression
         run: dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- fillet-check
@@ -240,7 +248,7 @@ jobs:
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1
             ${{ runner.temp }}/DiegoVittorioPanelsLocale5
             ${{ runner.temp }}/DiegoVittorioPanelsLocale8
-            ${{ runner.temp }}/DiegoVittorioPanelsLocale9Inspect
+            ${{ runner.temp }}/DiegoVittorioPanelsLocale9
           if-no-files-found: warn
           retention-days: 14
 
