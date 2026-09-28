@@ -27,8 +27,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego_Vittorio|Diego] [--supply-only] [--skip-close] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--supply-only] [--skip-close] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Vittorio_revisionato|Diego_Vittorio|Diego] [--supply-only] [--skip-close] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Vittorio_revisionato|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--supply-only] [--skip-close] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  fillet-check");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
@@ -223,6 +223,7 @@ static int Run(string[] args)
             "Diego").Trim();
         // Modificato da Codex per realizzare: trattare Vittorio e la sua copia Diego_Vittorio tramite lo stesso contratto Harness.
         if (selectedEngine.Equals("Vittorio", StringComparison.OrdinalIgnoreCase) ||
+            selectedEngine.Equals("Vittorio_revisionato", StringComparison.OrdinalIgnoreCase) ||
             selectedEngine.Equals("Diego_Vittorio", StringComparison.OrdinalIgnoreCase))
         {
             bool hasDiegoOnlyOptions =
@@ -261,7 +262,8 @@ static int Run(string[] args)
 
             // Modificato da Codex per realizzare: Vittorio resta congelato a
             // 0,30 m; la copia sperimentale Diego_Vittorio accetta --p.
-            if (selectedEngine.Equals("Vittorio", StringComparison.OrdinalIgnoreCase) &&
+            if ((selectedEngine.Equals("Vittorio", StringComparison.OrdinalIgnoreCase) ||
+                 selectedEngine.Equals("Vittorio_revisionato", StringComparison.OrdinalIgnoreCase)) &&
                 Math.Abs(stepMeters - VittorioStepMeters) > 1e-9)
             {
                 throw new ArgumentException(
@@ -284,7 +286,7 @@ static int Run(string[] args)
         if (!selectedEngine.Equals("Diego", StringComparison.OrdinalIgnoreCase))
         {
             throw new ArgumentException(
-                $"Motore Harness non riconosciuto: '{selectedEngine}'. Valori ammessi: Vittorio, Diego_Vittorio, Diego.");
+                $"Motore Harness non riconosciuto: '{selectedEngine}'. Valori ammessi: Vittorio, Vittorio_revisionato, Diego_Vittorio, Diego.");
         }
 
         HashSet<string> rejectedDecisionKeys =
@@ -561,7 +563,9 @@ static int RunCopiedSpiralStrategy(
                 ? supplyOnly
                     ? StrategiaDiegoVittorioBenchmark.RunSupplyOnly(localeXml, stepMeters, logConfiguration)
                     : StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters, logConfiguration)
-                : StrategiaVittorioBenchmark.Run(localeXml);
+                : selectedEngine.Equals("Vittorio_revisionato", StringComparison.OrdinalIgnoreCase)
+                    ? StrategiaVittorioRevisionatoBenchmark.Run(localeXml)
+                    : StrategiaVittorioBenchmark.Run(localeXml);
     }
     finally
     {
