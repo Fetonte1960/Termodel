@@ -1613,9 +1613,10 @@ static string SelectSingleLocale(
         locale.Remove();
     }
 
-    using var writer = new StringWriter(CultureInfo.InvariantCulture);
-    document.Save(writer, SaveOptions.DisableFormatting);
-    return writer.ToString();
+    // XDocument.Save(StringWriter) dichiara UTF-16; il benchmark scrive poi
+    // questa stringa su file UTF-8. ToString evita la dichiarazione incoerente
+    // e lascia che il writer UTF-8 del benchmark definisca l'encoding reale.
+    return document.ToString(SaveOptions.DisableFormatting);
 }
 
 static string? Arg(string[] args, string name)
