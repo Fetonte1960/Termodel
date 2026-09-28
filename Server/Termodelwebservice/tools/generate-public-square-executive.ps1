@@ -1,8 +1,15 @@
+param(
+  [ValidateSet("GPT", "Vittorio", "Diego", "Diego_Vittorio")]
+  [string]$Engine = "GPT",
+  [switch]$CaptureHarnessInput,
+  [switch]$CompareHarness
+)
+
 $ErrorActionPreference = "Stop"
 
 $base = "http://127.0.0.1:5084"
 $env:ASPNETCORE_URLS = $base
-$env:TERMODEL_SPIRAL_ENGINE = "GPT"
+$env:TERMODEL_SPIRAL_ENGINE = $Engine
 $env:TERMODEL_SAVED_PROJECTS_DIR = Join-Path $env:RUNNER_TEMP ("TermodelPublicSquareExecutive-" + [guid]::NewGuid().ToString("N"))
 $artifactDir = Join-Path $env:RUNNER_TEMP "PublicSquareExecutiveArtifacts"
 New-Item -ItemType Directory -Path $env:TERMODEL_SAVED_PROJECTS_DIR -Force | Out-Null
@@ -123,6 +130,9 @@ try {
   $project = Add-SquareFixture $project $floorName
   $headers = @{ "X-Termodel-Project-Lock" = [string]$allocation.projectLockToken }
 
+  $projectPath = Join-Path $artifactDir "quadrato-con-pannelli.project.tmdl"
+  [System.IO.File]::WriteAllText($projectPath,$project,[System.Text.UTF8Encoding]::new($false))
+
   $responsePath = Join-Path $artifactDir "quadrato-con-pannelli-esecutivo.svg"
   $response = Invoke-WebRequest -Uri "$base/api/calculations?responseArtifact=pannelli-esecutivo-svg" -Method Post -Headers $headers -ContentType "text/plain; charset=utf-8" -Body $project -OutFile $responsePath -PassThru
   if ($response.StatusCode -ne 200) { throw "Calcolo quadrato: HTTP $($response.StatusCode)." }
@@ -139,8 +149,38 @@ try {
     }
   }
 
+  if ($CaptureHarnessInput -or $CompareHarness) {
+    $preparedXml = Join-Path $artifactDir "quadrato-con-pannelli.radiant-input.xml"
+    dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release -- prepare `
+      --project $projectPath `
+      --output $preparedXml
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $preparedXml)) {
+      throw "Preparazione input Harness del quadrato pubblico non riuscita."
+    }
+    Write-Host "PUBLIC_SQUARE_HARNESS_INPUT_OK"
+    Write-Host "preparedInput=$preparedXml"
+
+    if ($CompareHarness) {
+      $compareDir = Join-Path $artifactDir "same-input-harness"
+      dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+        --input $preparedXml `
+        --engine $Engine `
+        --id PUBLIC-SQUARE-SAME-INPUT `
+        --p 0.30 `
+        --out $compareDir
+      if ($LASTEXITCODE -ne 0) { throw "Confronto Harness sullo stesso input non riuscito." }
+      $compareSvg = Join-Path $compareDir "PUBLIC-SQUARE-SAME-INPUT.svg"
+      if (-not (Test-Path -LiteralPath $compareSvg)) {
+        throw "Confronto Harness privo di SVG: $compareSvg"
+      }
+      Write-Host "PUBLIC_SQUARE_SAME_INPUT_HARNESS_OK"
+      Write-Host "compareSvg=$compareSvg"
+    }
+  }
+
   Write-Host "PUBLIC_SQUARE_EXECUTIVE_OK"
-  Write-Host "engine=GPT"
+  Write-Host "engine=$Engine"
+  Write-Host "project=$projectPath"
   Write-Host "file=$responsePath"
 }
 finally {
