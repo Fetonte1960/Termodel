@@ -1,0 +1,8 @@
+{
+  "caseId": "DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO",
+  "approvedByHumanUtc": "2026-09-28",
+  "purpose": "Vincolo regressione: il quadrato base esempio 1 approvato dall'utente non deve cambiare durante l'indagine dei locali del progetto Pannelli radianti.",
+  "svgSha256": "fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39",
+  "spiralPointCount": 16,
+  "note": "Hash dell'SVG Harness corrente approvato; qualsiasi correzione che lo modifica deve essere respinta o esplicitamente riapprovata dall'utente."
+}
