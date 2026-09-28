@@ -1,10 +1,10 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 11:32 Europe/Rome
+Checkpoint: 2026-09-28 11:36 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
-HEAD verificato dopo ripresa: `d231bdf8c8c01354d5b54f34e7c4997f2fb17303`
+HEAD verificato prima del presente checkpoint: `56b9a03002633a8e3454a854a9d7ad2f23adc744`
 
 ## Attività corrente
 
@@ -179,6 +179,16 @@ Nota di coerenza repository:
   (2 punti, offset 1/2/3 non collegati);
 - questo **non chiude FASE 3 e non avvia formalmente FASE 4**: è sola
   diagnostica anticipata e non contiene modifiche al motore.
+- dopo quel checkpoint sono presenti anche:
+  - `5320ad392abc9a010010d3d9ac4a3111529b3a80`, esperimento
+    `TERMODEL_DIEGO_VITTORIO_DIAG_LOCAL_ROOT_ADJACENCY` su `locale_8`,
+    spento di default e quindi senza effetto sul comportamento di produzione;
+  - `56b9a03002633a8e3454a854a9d7ad2f23adc744`, solo workflow diagnostico
+    che abilita il flag precedente per `locale_8`;
+- Fast Harness run `36404331770`: **SUCCESS** sul commit diagnostico;
+- Room Extraction run `36404366848`: **SUCCESS**;
+- i due commit non modificano il blocco di FASE 3: il prossimo passo resta
+  la decisione umana sul criterio LG-048 di `locale_5`.
 
 **PROSSIMO PASSO ESATTO:**
 1. chiedere all'utente se autorizza un cambio circoscritto del criterio LG-048;
