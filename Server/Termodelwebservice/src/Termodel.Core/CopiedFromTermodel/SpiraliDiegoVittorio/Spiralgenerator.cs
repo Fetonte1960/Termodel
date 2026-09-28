@@ -385,7 +385,43 @@ namespace SpiralHeatingDiegoVittorio
 					distanzaCondizionamento,
 					spiral,
 					distanzaAutocondizionamento);
-				
+
+				Punto terminalePrimaDelTrim = null;
+				if (percorsoConnessione == null || puntoIntersezione == null)
+				{
+					// DV-TEST-002 locale_5 — fallback terminale.
+					// Se il collegamento ordinario fallisce, prova ad accorciare
+					// l'ultimo segmento già costruito del Return a una coordinata
+					// critica del varco. Non aggiunge un tratto sovrapposto:
+					// sostituisce il terminale e poi riusa integralmente la
+					// validazione normale di FindConnectionWithOffset.
+					var trim = FindConnectionWithTerminalTrim(
+						currentOffset,
+						versoRivoluzione,
+						passoMandata,
+						lineeCondizionamento,
+						distanzaCondizionamento,
+						spiral,
+						distanzaAutocondizionamento);
+					if (trim.path != null &&
+						trim.intersection != null &&
+						trim.trimPoint != null)
+					{
+						terminalePrimaDelTrim = spiral[^1];
+						spiral[^1] = trim.trimPoint;
+						percorsoConnessione = trim.path;
+						puntoIntersezione = trim.intersection;
+						startVertexIndex = trim.nextVertexIndex;
+						if (TraceReturnEnabled)
+						{
+							Console.WriteLine(
+								$"  DV_RETURN_TERMINAL_TRIM from=({terminalePrimaDelTrim.X:R},{terminalePrimaDelTrim.Y:R}) " +
+								$"to=({trim.trimPoint.X:R},{trim.trimPoint.Y:R}) " +
+								$"offset={indiceOffsetPercorso}.");
+						}
+					}
+				}
+
 				if (percorsoConnessione == null || puntoIntersezione == null)
 				{
 					// Modificato da Codex per realizzare: diagnosticare un arresto
@@ -522,6 +558,8 @@ namespace SpiralHeatingDiegoVittorio
 						spiral.RemoveRange(
 							puntiPrimaOffset,
 							spiral.Count - puntiPrimaOffset);
+					if (terminalePrimaDelTrim != null && spiral.Count > 0)
+						spiral[^1] = terminalePrimaDelTrim;
 					continue;
 				}
 
@@ -594,6 +632,109 @@ namespace SpiralHeatingDiegoVittorio
 			}
 
 			return (spiral, offsets);
+		}
+
+		private static (
+			Punto trimPoint,
+			List<Punto> path,
+			Punto intersection,
+			int nextVertexIndex) FindConnectionWithTerminalTrim(
+			List<Punto> offset,
+			VersoRivoluzioneRitorno versoRivoluzione,
+			double passo,
+			List<Punto> lineeCondizionamento,
+			double distanzaCondizionamento,
+			List<Punto> spiraleCorrente,
+			double distanzaAutocondizionamento)
+		{
+			const double tolleranza = 0.000001;
+			if (spiraleCorrente == null ||
+				spiraleCorrente.Count < 2 ||
+				lineeCondizionamento == null ||
+				lineeCondizionamento.Count < 2 ||
+				distanzaCondizionamento <= 0)
+			{
+				return (null, null, null, 0);
+			}
+
+			Punto a = spiraleCorrente[^2];
+			Punto b = spiraleCorrente[^1];
+			double dx = b.X - a.X;
+			double dy = b.Y - a.Y;
+			bool verticale = Math.Abs(dx) <= tolleranza &&
+				Math.Abs(dy) > tolleranza;
+			bool orizzontale = Math.Abs(dy) <= tolleranza &&
+				Math.Abs(dx) > tolleranza;
+			if (!verticale && !orizzontale)
+				return (null, null, null, 0);
+
+			var candidati = new List<Punto>();
+			if (verticale)
+			{
+				double min = Math.Min(a.Y, b.Y);
+				double max = Math.Max(a.Y, b.Y);
+				foreach (Punto obstaclePoint in lineeCondizionamento)
+				{
+					foreach (double y in new[]
+					{
+						obstaclePoint.Y - distanzaCondizionamento,
+						obstaclePoint.Y + distanzaCondizionamento
+					})
+					{
+						if (y <= min + tolleranza || y >= max - tolleranza)
+							continue;
+						candidati.Add(new Punto(a.X, y));
+					}
+				}
+			}
+			else
+			{
+				double min = Math.Min(a.X, b.X);
+				double max = Math.Max(a.X, b.X);
+				foreach (Punto obstaclePoint in lineeCondizionamento)
+				{
+					foreach (double x in new[]
+					{
+						obstaclePoint.X - distanzaCondizionamento,
+						obstaclePoint.X + distanzaCondizionamento
+					})
+					{
+						if (x <= min + tolleranza || x >= max - tolleranza)
+							continue;
+						candidati.Add(new Punto(x, a.Y));
+					}
+				}
+			}
+
+			foreach (Punto trimPoint in candidati
+				.GroupBy(p => (
+					Math.Round(p.X, 9),
+					Math.Round(p.Y, 9)))
+				.Select(g => g.First())
+				.OrderBy(p => b.DistanceTo(p)))
+			{
+				var trimmedSpiral = new List<Punto>(spiraleCorrente);
+				trimmedSpiral[^1] = trimPoint;
+				var connection = FindConnectionWithOffset(
+					trimPoint,
+					offset,
+					versoRivoluzione,
+					passo,
+					lineeCondizionamento,
+					distanzaCondizionamento,
+					trimmedSpiral,
+					distanzaAutocondizionamento);
+				if (connection.path == null || connection.intersection == null)
+					continue;
+
+				return (
+					trimPoint,
+					connection.path,
+					connection.intersection,
+					connection.nextVertexIndex);
+			}
+
+			return (null, null, null, 0);
 		}
 
 		// Funzione realizzata da Codex in autonomia
