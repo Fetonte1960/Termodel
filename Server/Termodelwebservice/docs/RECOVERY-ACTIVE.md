@@ -947,3 +947,46 @@ Implementazione prevista:
 - confrontare visivamente e numericamente lo stato prima della chiusura.
 
 **PROSSIMO PASSO ESATTO:** aggiungere il flag Harness, lanciare il Fast Harness sul caso `locale_1`, recuperare lo SVG pre-chiusura e renderlo disponibile all'utente.
+
+
+#### STEP 4D.1 — SVG pre-chiusura generato e confronto eseguito
+Stato: **COMPLETATO**
+
+Implementazione:
+- commit `50e8808769343f5500af095a5f62fd656e045173`:
+  Harness Diego_Vittorio espone `--skip-close`;
+- il flag è valido solo per `Diego_Vittorio`, è incompatibile con `--supply-only`
+  e riusa esclusivamente `TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE=false`;
+- il valore precedente della variabile d'ambiente viene ripristinato a fine run;
+- nessuna modifica alla geometria produttiva del motore;
+- commit `39c83fd1194acacbb5a9e129418c2f4eb828d8ac`:
+  workflow Fast aggiunge il caso `DV-LOCALE1-T6-PRECLOSE` e pubblica lo SVG.
+
+Verifica:
+- GitHub Actions Fast Harness run `36441043047`, job `108991866603`: **SUCCESS**;
+- build Harness + Core: SUCCESS;
+- step `Generate locale_1 pre-closure SVG`: SUCCESS;
+- tutte le regression Diego_Vittorio successive: SUCCESS;
+- SVG SHA-256:
+  `8620835cf47f6b47f55942f55ae5b628db53033557beb0eb862aaa0104bec5db`;
+- SVG dichiara:
+  `data-termodel-closure="disabled"`,
+  `data-termodel-autonomous-return="enabled"`;
+- Return autonomo mantenuto: **18 punti** prima dell'arrotondamento.
+
+Confronto con l'esecutivo chiuso dello stesso locale:
+- pre-chiusura: mandata rossa arrotondata 46 punti SVG, Return blu 66 punti SVG;
+- chiuso: mandata rossa principale 46 punti SVG + collegamento rosso di chiusura 9 punti,
+  Return blu ridotto a 54 punti SVG;
+- log della chiusura normale:
+  `M4/RP3`, lunghezza 0,60 m, `tagli=0/3`, **3,81 m rimossi dal Return**;
+- quindi l'osservazione utente è confermata: la chiusura modifica effettivamente la
+  geometria terminale e rimuove segmenti; il nuovo SVG pre-chiusura è il riferimento
+  corretto per proseguire il debug del punto di accesso T6.
+
+Artifact generato:
+- `DV-LOCALE1-T6-PRECLOSE.svg`;
+- artifact workflow `diego-vittorio-fast`, id `10979495282`.
+
+**PROSSIMO PASSO ESATTO:** usare lo SVG pre-chiusura come riferimento visivo per
+analizzare il tratto di scavalcamento T6 senza l'interferenza della chiusura.
