@@ -1,7 +1,7 @@
-# Registro strategie geometriche SpiraliGPT
+# Registro strategie geometriche spirali
 
 Classificazione: **AUTOREVOLE — vincoli strategici per evoluzioni future**  
-Ambito: Termodel.Core / pannelli radianti / SpiraliGPT
+Ambito: Termodel.Core / pannelli radianti / strategie di generazione spirali
 
 Questo registro conserva le **decisioni strategiche** concordate sui casi
 geometrici reali osservati durante lo sviluppo del generatore di spirali.
@@ -17,7 +17,7 @@ qui entrano soltanto principi strategici esplicitamente concordati.
 
 ## Regola d'uso
 
-Prima di modificare la strategia geometrica di SpiraliGPT:
+Prima di modificare una strategia geometrica delle spirali:
 
 1. leggere tutte le schede con stato **ATTIVA**;
 2. verificare che la nuova strategia non violi nessuno dei comportamenti
@@ -32,13 +32,22 @@ descrivono il **risultato strategico da preservare**.
 
 ## Linee guida generali
 
-La specifica viva della futura **StrategiaDiego** è mantenuta in
+La specifica viva e lo stato operativo corrente sono mantenuti in
 [LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md](LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md).
 
-La StrategiaDiego è prevista come terza strategia concorrente rispetto a
-Vittorio e GPT, selezionabile esplicitamente e verificabile sugli stessi casi
-di regression. Le schede di questo registro restano i vincoli geometrici
-puntuali che la futura strategia dovrà rispettare.
+Dal 28/09/2026 il Service usa **`Diego_Vittorio`** come motore spirali
+predefinito per la fase corrente di collaudo; gli override
+`Vittorio | GPT | Diego | Diego_Vittorio` restano disponibili.
+`SpiraliVittorio` rimane invariata come riferimento di confronto e rollback.
+
+L'utente ha avviato il **collaudo manuale sul Service pubblico** del disegno
+spirali prodotto da `Diego_Vittorio`. Questo stato è distinto dalle prove
+Harness/GitHub Actions già eseguite: i casi reali osservati durante il collaudo
+devono essere registrati qui come nuove schede quando producono una regola
+geometrica riutilizzabile, e trasformati in regression quando possibile.
+
+Le schede di questo registro restano i vincoli geometrici puntuali che ogni
+evoluzione della strategia deve rispettare.
 
 ## Indice
 
