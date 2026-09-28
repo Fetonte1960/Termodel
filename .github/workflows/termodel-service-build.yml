@@ -676,8 +676,8 @@ jobs:
             if ([string]::IsNullOrWhiteSpace([string]$health.serviceCommitShort)) {
               throw "Health Service privo del commit runtime."
             }
-            if ([string]$health.spiralEngine -ne "Diego") {
-              throw "Health Service deve esporre Diego come strategia default."
+            if ([string]$health.spiralEngine -ne "Diego_Vittorio") {
+              throw "Health Service deve esporre Diego_Vittorio come strategia default."
             }
             if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_SHA) -and
                 [string]$health.serviceCommitShort -ne $env:GITHUB_SHA.Substring(0,8)) {
