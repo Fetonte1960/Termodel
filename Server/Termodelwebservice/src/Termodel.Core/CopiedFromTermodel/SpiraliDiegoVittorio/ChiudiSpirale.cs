@@ -50,6 +50,8 @@ namespace SpiralHeatingDiegoVittorio
             "TERMODEL_DIEGO_VITTORIO_AUTONOMOUS_RETURN";
         private const string ReturnSideEnvironmentVariable =
             "TERMODEL_DIEGO_VITTORIO_RETURN_SIDE";
+        private const string TraceClosureEnvironmentVariable =
+            "TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE";
 
         public static void Chiudi(
             string xmlFile,
@@ -644,6 +646,11 @@ namespace SpiralHeatingDiegoVittorio
             };
         }
 
+        private static bool TraceClosureEnabled =>
+            ReadBooleanEnvironment(
+                TraceClosureEnvironmentVariable,
+                defaultValue: false);
+
         // Funzione realizzata da Codex in autonomia
         private static CandidatoChiusura ValutaChiusura(
             ConfigurazioneTerminale mandata,
@@ -656,7 +663,17 @@ namespace SpiralHeatingDiegoVittorio
             Punto fine = ritorno.Punti[^1];
             double lunghezza = inizio.DistanceTo(fine);
             if (lunghezza < 2.0 * passo - tolleranza)
+            {
+                if (TraceClosureEnabled)
+                {
+                    Console.WriteLine(
+                        $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
+                        $"seq={mandata.Codice}/{ritorno.Codice} reason=length " +
+                        $"length={lunghezza:R} required={(2.0 * passo):R} " +
+                        $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}).");
+                }
                 return null;
+            }
 
             Punto ingressoMandata = new Punto(
                 inizio.X - mandata.Punti[^2].X,
@@ -676,22 +693,50 @@ namespace SpiralHeatingDiegoVittorio
             if (qualitaMandata < -tolleranza ||
                 qualitaRitorno < -tolleranza)
             {
+                if (TraceClosureEnabled)
+                {
+                    Console.WriteLine(
+                        $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
+                        $"seq={mandata.Codice}/{ritorno.Codice} reason=acute " +
+                        $"cosSupply={qualitaMandata:R} cosReturn={qualitaRitorno:R} " +
+                        $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}).");
+                }
                 return null;
             }
 
             // Modificato da Codex per realizzare: scartare una chiusura che
             // attraversa tubi già conservati. I soli segmenti esclusi sono i
             // due terminali adiacenti ai rispettivi innesti.
-            if (IntersecaTrattiNonAdiacenti(
-                    inizio,
-                    fine,
-                    mandata.Punti) ||
-                IntersecaTrattiNonAdiacenti(
-                    inizio,
-                    fine,
-                    ritorno.Punti))
+            bool intersecaMandata = IntersecaTrattiNonAdiacenti(
+                inizio,
+                fine,
+                mandata.Punti);
+            bool intersecaRitorno = IntersecaTrattiNonAdiacenti(
+                inizio,
+                fine,
+                ritorno.Punti);
+            if (intersecaMandata || intersecaRitorno)
             {
+                if (TraceClosureEnabled)
+                {
+                    Console.WriteLine(
+                        $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
+                        $"seq={mandata.Codice}/{ritorno.Codice} reason=intersection " +
+                        $"supply={intersecaMandata} return={intersecaRitorno} " +
+                        $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}) " +
+                        $"length={lunghezza:R}.");
+                }
                 return null;
+            }
+
+            if (TraceClosureEnabled)
+            {
+                Console.WriteLine(
+                    $"  DV_CLOSURE_ACCEPT attempt={numeroTentativo} " +
+                    $"seq={mandata.Codice}/{ritorno.Codice} " +
+                    $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}) " +
+                    $"length={lunghezza:R} cosSupply={qualitaMandata:R} " +
+                    $"cosReturn={qualitaRitorno:R}.");
             }
 
             bool ortogonale = Math.Abs(inizio.X - fine.X) <= tolleranza ||
