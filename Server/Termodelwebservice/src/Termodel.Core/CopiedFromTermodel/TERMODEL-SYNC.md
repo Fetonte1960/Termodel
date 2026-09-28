@@ -99,3 +99,16 @@ Copie temporanee integrate il 23 settembre 2026 per attivare l'esecutivo pannell
 
 Obiettivo progressivo: eliminare le copie quando il codice cruciale potrà essere
 condiviso realmente fra desktop e Service senza dipendenze WPF, Helix o IFC.
+
+
+Ramo sperimentale creato il 28 settembre 2026:
+- `SpiraliVittorioRevisionato/*.cs`: nuova copia di `SpiraliVittorio` usata
+  esclusivamente per ricostruire in modo controllato l'astrazione Supply/Return.
+  La fotografia iniziale differisce dal riferimento Vittorio soltanto per il
+  namespace `SpiralHeatingVittorioRevisionato`.
+- selettore Harness: `Vittorio_revisionato`;
+- primo vincolo: parità byte-funzionale sul quadrato prima di qualsiasi
+  astrazione;
+- vietato importare euristiche da `SpiraliDiegoVittorio` senza test e
+  decisione esplicita.
+- stato duplicazione: PENDING.
