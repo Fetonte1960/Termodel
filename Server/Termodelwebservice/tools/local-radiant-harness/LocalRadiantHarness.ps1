@@ -6,6 +6,12 @@ param(
     [int]$Port = 5081,
     [switch]$Rebuild,
     [switch]$Fillets,
+    [switch]$Closure,
+    [ValidateSet("left", "right")]
+    [string]$ReturnSide = "left",
+    [ValidateRange(0.001, 10.0)]
+    [double]$StepMeters = 0.30,
+    [switch]$LegacyReturn,
     [switch]$OpenBrowser,
     [switch]$ConfirmRestore
 )
@@ -22,8 +28,8 @@ $LatestRoot = Join-Path $StateRoot "Latest"
 $LogRoot = Join-Path $StateRoot "Logs"
 $FingerprintPath = Join-Path $StateRoot "source-fingerprint.txt"
 $HarnessProjectRelative = "tools\Termodel.RadiantPanels.Harness\Termodel.RadiantPanels.Harness.csproj"
-$CaseRelative = "tests\radiant-harness\cases\CURRENT-APARTMENT-P030-DIEGO-VITTORIO.json"
-$CaseId = "CURRENT-APARTMENT-P030-DIEGO-VITTORIO"
+$CaseRelative = "tests\radiant-harness\cases\LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO.json"
+$CaseId = "LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO"
 
 function Write-Utf8Text([string]$Path, [string]$Text) {
     [IO.File]::WriteAllText($Path, $Text, $Utf8NoBom)
@@ -152,8 +158,8 @@ function Get-SnapshotSourceFiles {
         "src\Termodel.Core\RadiantPanels\StrategiaDiegoBenchmark.cs",
         "src\Termodel.Core\RadiantPanels\StrategiaDiegoEngine.cs",
         "tools\Termodel.RadiantPanels.Harness",
-        "tests\radiant-harness\cases\CURRENT-APARTMENT-P030-DIEGO-VITTORIO.json",
-        "tests\radiant-harness\prepared\StrategiaDiegoCurrentApartment.pannelli.xml"
+        "tests\radiant-harness\cases\LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO.json",
+        "tests\fixtures\StrategiaDiegoSquare4x4.locale.xml"
     )
     $seen = @{}
     foreach ($relative in $relativeItems) {
@@ -268,6 +274,10 @@ function Write-PreviewFiles([string]$OutputRoot, [string]$RunOutput) {
         caseId = $CaseId
         engine = "Diego_Vittorio"
         fittings = if ($Fillets) { "enabled" } else { "disabled" }
+        closure = if ($Closure) { "enabled" } else { "disabled" }
+        autonomousReturn = if ($LegacyReturn) { "disabled" } else { "enabled" }
+        returnSide = $ReturnSide
+        stepMeters = $StepMeters
         svgSha256 = (Get-FileHash -LiteralPath $sourceSvg -Algorithm SHA256).Hash
     }
     Write-Utf8Text (Join-Path $OutputRoot "state.json") (($state | ConvertTo-Json) + "`n")
@@ -287,7 +297,7 @@ function Write-PreviewFiles([string]$OutputRoot, [string]$RunOutput) {
   <div class="bar"><strong>Diego_Vittorio — Harness locale</strong><a href="/latest.svg" target="_blank">SVG</a><a href="/metrics.json" target="_blank">metriche</a><a href="/harness.log.txt" target="_blank">log</a><a href="/result.locale.xml" target="_blank">XML</a><span class="state" id="state">controllo aggiornamenti…</span></div>
   <div class="view"><object id="svg" type="image/svg+xml" data="/latest.svg"></object></div>
   <script>
-  let stamp=""; async function refresh(){try{const r=await fetch('/state.json?'+Date.now(),{cache:'no-store'});const s=await r.json();const next=s.generatedAtUtc+'|'+s.svgSha256;if(stamp&&next!==stamp)document.getElementById('svg').data='/latest.svg?'+Date.now();stamp=next;document.getElementById('state').textContent=new Date(s.generatedAtUtc).toLocaleString()+' · raccordi '+s.fittings;}catch(e){document.getElementById('state').textContent='server non disponibile';}}refresh();setInterval(refresh,800);
+  let stamp=""; async function refresh(){try{const r=await fetch('/state.json?'+Date.now(),{cache:'no-store'});const s=await r.json();const next=s.generatedAtUtc+'|'+s.svgSha256;if(stamp&&next!==stamp)document.getElementById('svg').data='/latest.svg?'+Date.now();stamp=next;document.getElementById('state').textContent=new Date(s.generatedAtUtc).toLocaleString()+' · raccordi '+s.fittings+' · chiusura '+s.closure+' · ritorno '+s.autonomousReturn+'/'+s.returnSide;}catch(e){document.getElementById('state').textContent='server non disponibile';}}refresh();setInterval(refresh,800);
   </script>
 </body>
 </html>
@@ -306,9 +316,18 @@ function Invoke-HarnessRun {
     Assert-ChildPath $tempOutput $StateRoot "output temporaneo Harness" | Out-Null
     New-Item -ItemType Directory -Path $tempOutput -Force | Out-Null
     $oldFlag = [Environment]::GetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS", "Process")
+    $oldClosureFlag = [Environment]::GetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE", "Process")
+    $oldAutonomousReturnFlag = [Environment]::GetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_AUTONOMOUS_RETURN", "Process")
+    $oldReturnSideFlag = [Environment]::GetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_RETURN_SIDE", "Process")
     try {
         [Environment]::SetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS", $(if ($Fillets) { "true" } else { "false" }), "Process")
-        $runOutput = & dotnet $dll run --case $casePath --out $tempOutput 2>&1
+        [Environment]::SetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE", $(if ($Closure) { "true" } else { "false" }), "Process")
+        [Environment]::SetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_AUTONOMOUS_RETURN", $(if ($LegacyReturn) { "false" } else { "true" }), "Process")
+        [Environment]::SetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_RETURN_SIDE", $ReturnSide, "Process")
+        # Modificato da Codex per realizzare: sovrascrivere il passo del caso
+        # standard senza duplicare fixture JSON per ogni prova.
+        $stepInvariant = $StepMeters.ToString("0.############", [Globalization.CultureInfo]::InvariantCulture)
+        $runOutput = & dotnet $dll run --case $casePath --p $stepInvariant --out $tempOutput 2>&1
         $exitCode = $LASTEXITCODE
         $runText = ($runOutput | Out-String)
         Write-Utf8Text (Join-Path $LogRoot "run-latest.log") $runText
@@ -325,6 +344,9 @@ function Invoke-HarnessRun {
     }
     finally {
         [Environment]::SetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS", $oldFlag, "Process")
+        [Environment]::SetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE", $oldClosureFlag, "Process")
+        [Environment]::SetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_AUTONOMOUS_RETURN", $oldAutonomousReturnFlag, "Process")
+        [Environment]::SetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_RETURN_SIDE", $oldReturnSideFlag, "Process")
         if (Test-Path -LiteralPath $tempOutput) {
             $validatedTemp = Assert-ChildPath $tempOutput $StateRoot "pulizia output temporaneo"
             Remove-Item -LiteralPath $validatedTemp -Recurse -Force
@@ -333,6 +355,9 @@ function Invoke-HarnessRun {
     $metrics = Get-Content -LiteralPath (Join-Path $LatestRoot "metrics.json") -Raw | ConvertFrom-Json
     Write-Host "HARNESS OK: $($metrics.spiralPointCount) punti in $($metrics.elapsedMilliseconds) ms" -ForegroundColor Green
     Write-Host "Raccordi: $(if ($Fillets) { 'ON' } else { 'OFF (debug rapido)' })"
+    Write-Host "Chiusura: $(if ($Closure) { 'ON' } else { 'OFF (circuiti separati)' })"
+    Write-Host "Ritorno: $(if ($LegacyReturn) { 'LEGACY derivato' } else { "AUTONOMO lato $ReturnSide" })"
+    Write-Host "Passo: $($StepMeters.ToString('0.###', [Globalization.CultureInfo]::InvariantCulture)) m"
     Write-Host "Artifact: $LatestRoot"
     Write-Host "Anteprima: http://127.0.0.1:$Port/ (avviare il comando server preview)"
 }

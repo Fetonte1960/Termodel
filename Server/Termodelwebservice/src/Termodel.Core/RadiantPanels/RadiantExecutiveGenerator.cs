@@ -9,7 +9,8 @@ namespace Termodel.Core.RadiantPanels;
 
 /// <summary>
 /// Genera l'esecutivo pannelli con un motore selezionabile
-/// Vittorio | GPT | Diego | Diego_Vittorio. Il default operativo e' GPT per compatibilita e sostenibilita sul Service.
+/// Vittorio | GPT | Diego | Diego_Vittorio. Il default operativo e'
+/// Diego_Vittorio; gli altri motori restano selezionabili per confronto e rollback.
 /// DXF e SVG vengono serializzati dallo stesso modello grafico neutro.
 /// La pianta pulita generata nella stessa elaborazione viene incorporata
 /// come base architettonica prima delle primitive delle spirali.
@@ -62,7 +63,10 @@ public static class RadiantExecutiveGenerator
         var drawing = new RadiantExecutiveDrawing();
         var diagnostics = new List<string>();
         RadiantSpiralEngine selectedEngine = ResolveSpiralEngine();
-        double selectedStepMeters = SpiralHeatingGPT.Program.PassoTubi;
+        // Modificato da Codex per realizzare: allineare anche il valore iniziale
+        // del passo al nuovo motore predefinito Diego_Vittorio.
+        double selectedStepMeters =
+            SpiralHeatingDiegoVittorio.Program.PassoTubi;
         int generatedFloors = 0;
 
         diagnostics.Add($"Motore spirali selezionato: {selectedEngine}.");
@@ -199,8 +203,10 @@ public static class RadiantExecutiveGenerator
         string? configured =
             Environment.GetEnvironmentVariable("TERMODEL_SPIRAL_ENGINE");
 
+        // Modificato da Codex per realizzare: rendere Diego_Vittorio il motore
+        // Service corrente, lasciando invariati gli override espliciti.
         if (string.IsNullOrWhiteSpace(configured))
-            return RadiantSpiralEngine.GPT;
+            return RadiantSpiralEngine.Diego_Vittorio;
 
         if (Enum.TryParse(
                 configured.Trim(),

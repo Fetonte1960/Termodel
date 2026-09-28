@@ -7,8 +7,8 @@
 > `Termodel/job` con `RUNNING -> SUCCESS/FAILED` e push telefono a
 > SUCCESS/FAILED. La regola è permanente e già verificata end-to-end.
 
-Ultimo aggiornamento: **2026-09-27**  
-Branch GitHub di riferimento: **main**  
+Ultimo aggiornamento: **2026-09-28**
+Branch GitHub di riferimento: **main**
 Repository: `https://github.com/Fetonte1960/Termodel`
 
 Questo è il documento autorevole di continuità per **Termodel.Core** e
@@ -70,6 +70,28 @@ Prima di intervenire:
 15. **Protocollo anti-timeout chat — IMPORTANTE:** per incarichi lunghi applicare `.github/TERMODEL-CHAT-ANTI-TIMEOUT.md`. La chat è il punto di comando, GitHub è lo stato persistente: registrare subito `COMMISSIONATO`, lavorare per checkpoint piccoli, demandare build/test lunghi a GitHub Actions, evitare di riversare log enormi nella chat e riprendere dopo timeout da Summary, commit, status e artifact senza rifare lavoro già verificato.
 
 ## 1.1 Registro incarichi autorizzati
+
+### INCARICO 2026-09-28 — Consolidamento e attivazione Service di `Diego_Vittorio`
+Stato: COMMISSIONATO
+
+Commissionato:
+- consolidare su GitHub lo stato corrente della strategia indipendente
+  `Diego_Vittorio`, considerata la migliore disponibile per i casi ortogonali;
+- mantenere `SpiraliVittorio` rigorosamente invariata come riferimento e
+  possibilità di confronto/ripristino;
+- impostare `Diego_Vittorio` come motore predefinito del WebService, lasciando
+  disponibili gli override `Vittorio | GPT | Diego | Diego_Vittorio`;
+- attivare nel percorso Service corrente ritorno autonomo, chiusura rapida
+  LG-048 e raccordi adattivi LG-049, conservando i flag per il debug;
+- verificare build e regression del quadrato ortogonale, quindi eseguire commit
+  e push su `main`;
+- usare la GitHub issue #1 se è necessario un intervento umano.
+
+Criteri di completamento:
+- sorgenti `Diego_Vittorio`, test e linee guida pubblicati;
+- default Service e capability coerenti con `Diego_Vittorio`;
+- build senza errori e prove geometriche correnti superate;
+- commissione chiusa come `ESEGUITO` con risultati e commit registrati.
 
 
 ### INCARICO 2026-09-27 — Help Web PC e istruzione AI Termodel Web

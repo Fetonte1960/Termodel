@@ -34,23 +34,95 @@ senza deformazioni. Dimensioni, trasformazione e `viewBox` sono serializzati
 con cultura invariant. Questa estensione è soltanto grafica: non modifica XML,
 mandata, ritorno o sorgenti `SpiraliVittorio`.
 
-### Flag raccordi durante il debug
+### Raccordi adattivi e flag durante il debug
 
-Nell'attuale fase di debug i raccordi arrotondati sono disattivati per default:
-l'SVG usa mandata, ritorno e collegamento a segmenti rettilinei, evitando la
-generazione dei punti intermedi delle curve. La radice dichiara
-`data-termodel-fittings="disabled"`.
+I raccordi adattivi sono attivi per default nel motore `Diego_Vittorio`. Il
+calcolo geometrico del circuito resta sulle polilinee rettilinee; la
+presentazione SVG usa archi circolari tangenti con passo angolare di circa 30°,
+da 2 a 6 segmenti per vertice. Ogni raccordo occupa al massimo il 45% dei due
+tratti adiacenti, evitando sovrapposizioni nei segmenti corti. La stessa
+routine gestisce deviazioni acute, rette, ottuse e oblique.
 
-Per riattivare integralmente i raccordi originali prima di eseguire Harness o
-Service:
+La chiusura usa una Bézier cubica tangente ai due circuiti, da 6 a 8 segmenti,
+con campioni concentrati presso gli innesti per conservare la tangenza anche
+nell'SVG discretizzato. Se la curva rischia di intersecare tubi conservati, la
+maniglia viene ridotta progressivamente; come ultima sicurezza resta la retta
+già validata da LG-048.
+
+Per forzare l'attivazione o disattivare temporaneamente i raccordi:
 
 ```powershell
 $env:TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS = "true"
+$env:TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS = "false" # debug rettilineo
 ```
 
 Valori veri ammessi: `true`, `1`, `yes`, `on`. Valori falsi: `false`, `0`,
 `no`, `off`. Con raccordi attivi la radice SVG dichiara
-`data-termodel-fittings="enabled"`.
+`data-termodel-fittings="enabled"`. L'Harness locale conserva il default
+rettilineo per il ciclo rapido e li attiva esplicitamente con `-Fillets`.
+
+### Flag chiusura durante il debug
+
+La procedura di chiusura è attiva per default nel motore. Per sospenderla
+temporaneamente durante il debug, mantenendo mandata e ritorno separati:
+
+```powershell
+$env:TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE = "false"
+```
+
+La radice SVG dichiara lo stato con `data-termodel-closure`. Nell'Harness
+locale il ciclo rapido resta aperto salvo l'opzione esplicita `-Closure`.
+
+La chiusura è un solo segmento fra i terminali di mandata e ritorno. La
+ricerca rapida è locale, deterministica e si arresta al primo candidato con
+entrambi gli innesti non acuti e lunghezza almeno `2p`. Parte eliminando i tre
+tratti terminali della mandata, come nell'euristica Vittorio, e la riespande
+progressivamente accorciando il nuovo terminale a `2p`; per ogni livello prova
+il ritorno integro, accorciato a `p` ed eliminato progressivamente fino a tre
+tratti. Le configurazioni massime sono 5 × 7 = 35 e quelle geometricamente
+duplicate vengono saltate. Una soluzione che interseca un tratto non adiacente
+della mandata o del ritorno viene scartata; pareti e distanze positive restano
+invece diagnostiche e non sono vincoli di accettazione. Se nessuna
+configurazione è accettabile, il circuito resta aperto e il log lo dichiara.
+
+### Collegamento iniziale del ritorno autonomo
+
+`SpiralGenerator.GeneraCollegamentoRitorno(...)` prepara il tratto iniziale
+prima della generazione autonoma del ritorno. Il ritorno nasce dal parallelo
+gemello del tubo d'ingresso della mandata: la radice sulla parete è spostata
+lateralmente di `p`, mentre il raccordo raggiunge la prima traccia a `1,5p`
+dalla parete. Il lato è riferito al verso esterno→interno dell'ingresso:
+
+```text
+Destro   -> normale destra   -> rivoluzione antioraria
+Sinistro -> normale sinistra -> rivoluzione oraria
+```
+
+Il verso indicato è quello del flusso idraulico reale, dal centro verso
+l'uscita. Poiché il calcolo costruisce la geometria in ordine inverso,
+dall'ingresso verso il centro, la percorrenza tecnica degli offset usa il verso
+opposto senza cambiare la semantica della configurazione.
+
+Il risultato contiene radice del ritorno, punto interno raggiunto dal raccordo,
+lato, verso di rivoluzione e i due punti del collegamento. `GenerateReturn(...)`
+lo esegue per primo e poi riusa `Generate(...)` dall'ingresso verso l'interno.
+Il primo offset è la traccia esterna raggiunta dal raccordo; la mandata condiziona ogni
+tratto a distanza minima `p` e il ritorno condiziona sé stesso alla stessa
+distanza. La disattivazione della chiusura centrale non elimina il raccordo
+d'ingresso del ritorno.
+
+Nel passaggio fra offset il generatore valuta entrambe le connessioni
+ortogonali possibili verso ogni lato candidato. Ogni tratto viene verificato
+separatamente rispetto a mandata e ritorno; fra i percorsi validi viene scelto
+quello più corto. Questo consente di attraversare un varco quando la proiezione
+diretta verso l'offset successivo risulta invece bloccata.
+
+Il ritorno autonomo è attivo per default. Configurazione:
+
+```powershell
+$env:TERMODEL_DIEGO_VITTORIO_RETURN_SIDE = "left"  # oppure right
+$env:TERMODEL_DIEGO_VITTORIO_AUTONOMOUS_RETURN = "false" # fallback derivato
+```
 
 ## Matrice delle distanze
 
@@ -65,12 +137,10 @@ Return - Return     = p   = 0,30 m (LG-046)
 ```
 
 Il primo offset della mandata è distinto dai successivi: nasce a `p/2` dalla
-parete, mentre le evoluzioni Supply avanzano di `2p`. Il ritorno derivato viene
-collocato sul lato interno della mandata a distanza `p`.
-
-Il ritorno resta ancora derivato dalla mandata: rispetta la distanza minima
-Return-Return ma non possiede ancora una ricerca autonoma capace di sfruttare
-tutti i corridoi a passo `p` previsti da LG-046.
+parete, mentre le evoluzioni Supply avanzano di `2p`. Il ritorno autonomo usa
+passo richiesto `p`, scarta gli offset sovrapposti alla mandata, percorre gli
+offset ammessi nel verso stabilito dal lato e verifica le distanze minime fra
+segmenti. Il vecchio ritorno derivato resta disponibile solo come fallback.
 
 Il confronto prestazionale canonico usa la fixture Git
 `tests/fixtures/StrategiaDiegoSquare4x4.locale.xml`, SHA-256

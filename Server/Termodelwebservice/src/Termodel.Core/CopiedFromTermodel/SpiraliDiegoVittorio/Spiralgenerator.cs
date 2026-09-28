@@ -6,8 +6,178 @@ using System.Linq;
 // Modificato da Codex per realizzare: isolare la copia sperimentale Diego_Vittorio mantenendo intatto il motore Vittorio.
 namespace SpiralHeatingDiegoVittorio
 {
+	public enum LatoCollegamentoRitorno
+	{
+		Destro,
+		Sinistro
+	}
+
+	public enum VersoRivoluzioneRitorno
+	{
+		Orario,
+		Antiorario
+	}
+
+	public enum DirezioneSviluppoSpirale
+	{
+		EsternoVersoInterno,
+		InternoVersoEsterno
+	}
+
+	public sealed class CollegamentoRitorno
+	{
+		public CollegamentoRitorno(
+			Punto origine,
+			Punto puntoInizialeRitorno,
+			LatoCollegamentoRitorno lato,
+			VersoRivoluzioneRitorno versoRivoluzione)
+		{
+			Origine = origine;
+			PuntoInizialeRitorno = puntoInizialeRitorno;
+			Lato = lato;
+			VersoRivoluzione = versoRivoluzione;
+		}
+
+		public Punto Origine { get; }
+		public Punto PuntoInizialeRitorno { get; }
+		public LatoCollegamentoRitorno Lato { get; }
+		public VersoRivoluzioneRitorno VersoRivoluzione { get; }
+
+		public List<Punto> Punti => new List<Punto>
+		{
+			Origine,
+			PuntoInizialeRitorno
+		};
+	}
+
 	public static class SpiralGenerator
 	{
+		// Funzione realizzata da Codex in autonomia
+		public static CollegamentoRitorno GeneraCollegamentoRitorno(
+			Punto puntoIngressoMandata,
+			Punto primoPuntoInternoMandata,
+			double distanzaTraIngressi,
+			double profonditaCollegamento,
+			LatoCollegamentoRitorno lato)
+		{
+			if (puntoIngressoMandata == null)
+				throw new ArgumentNullException(nameof(puntoIngressoMandata));
+			if (primoPuntoInternoMandata == null)
+				throw new ArgumentNullException(nameof(primoPuntoInternoMandata));
+			if (distanzaTraIngressi <= 0)
+				throw new ArgumentOutOfRangeException(nameof(distanzaTraIngressi));
+			if (profonditaCollegamento <= 0)
+				throw new ArgumentOutOfRangeException(nameof(profonditaCollegamento));
+			if (!Enum.IsDefined(typeof(LatoCollegamentoRitorno), lato))
+				throw new ArgumentOutOfRangeException(nameof(lato));
+
+			double dx = primoPuntoInternoMandata.X - puntoIngressoMandata.X;
+			double dy = primoPuntoInternoMandata.Y - puntoIngressoMandata.Y;
+			double lunghezzaDirezione = Math.Sqrt(dx * dx + dy * dy);
+			if (lunghezzaDirezione <= 0.000001)
+				throw new ArgumentException(
+					"Il tratto d'ingresso della mandata deve definire una direzione valida.",
+					nameof(primoPuntoInternoMandata));
+
+			dx /= lunghezzaDirezione;
+			dy /= lunghezzaDirezione;
+
+			// Modificato da Codex per realizzare: costruire il tubo di ritorno
+			// come parallelo gemello del tubo d'ingresso della mandata. Il lato
+			// è riferito al verso esterno->interno del tratto d'ingresso.
+			double normaleX = lato == LatoCollegamentoRitorno.Destro
+				? dy
+				: -dy;
+			double normaleY = lato == LatoCollegamentoRitorno.Destro
+				? -dx
+				: dx;
+
+			var radiceRitorno = new Punto(
+				puntoIngressoMandata.X + normaleX * distanzaTraIngressi,
+				puntoIngressoMandata.Y + normaleY * distanzaTraIngressi);
+			var puntoInizialeRitorno = new Punto(
+				radiceRitorno.X + dx * profonditaCollegamento,
+				radiceRitorno.Y + dy * profonditaCollegamento);
+			var verso = lato == LatoCollegamentoRitorno.Destro
+				? VersoRivoluzioneRitorno.Antiorario
+				: VersoRivoluzioneRitorno.Orario;
+
+			return new CollegamentoRitorno(
+				radiceRitorno,
+				puntoInizialeRitorno,
+				lato,
+				verso);
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		public static (List<Punto> spiral, List<List<Punto>> offsets, CollegamentoRitorno collegamento) GenerateReturn(
+			List<Punto> perimetro,
+			List<Punto> mandata,
+			double distanzaPareteMandata,
+			double passo,
+			LatoCollegamentoRitorno lato)
+		{
+			if (mandata == null || mandata.Count < 2)
+				throw new ArgumentException(
+					"La mandata deve contenere almeno due punti.",
+					nameof(mandata));
+
+			// Modificato da Codex per realizzare: il ritorno nasce dal parallelo
+			// gemello del tubo d'ingresso della mandata, non dal suo terminale.
+			// La radice è spostata lungo la parete di p; il raccordo parallelo
+			// raggiunge la prima traccia a distanza parete p/2+p = 1,5p.
+			CollegamentoRitorno collegamento = GeneraCollegamentoRitorno(
+				mandata[0],
+				mandata[1],
+				passo,
+				distanzaPareteMandata + passo,
+				lato);
+			// Modificato da Codex per realizzare: la geometria viene costruita
+			// dall'ingresso verso il centro, cioè nel verso opposto al flusso
+			// idraulico del ritorno (centro->uscita). La specifica pubblica del
+			// verso resta quindi riferita al flusso reale.
+			VersoRivoluzioneRitorno versoCostruzione =
+				collegamento.VersoRivoluzione == VersoRivoluzioneRitorno.Orario
+					? VersoRivoluzioneRitorno.Antiorario
+					: VersoRivoluzioneRitorno.Orario;
+
+			var perimetroNormalizzato = GeometryUtils.RoundAndSnapVertices(
+				new List<Punto>(perimetro),
+				2);
+			if (perimetroNormalizzato.Count > 1 &&
+				perimetroNormalizzato[0].DistanceTo(perimetroNormalizzato[^1]) < 0.001)
+			{
+				perimetroNormalizzato.RemoveAt(perimetroNormalizzato.Count - 1);
+			}
+			perimetroNormalizzato = GeometryUtils.RemoveCollinearVertices(
+				perimetroNormalizzato);
+
+			var risultato = Generate(
+				perimetroNormalizzato,
+				collegamento.PuntoInizialeRitorno,
+				distanzaPareteMandata + passo,
+				passo,
+				true,
+				versoCostruzione,
+				DirezioneSviluppoSpirale.EsternoVersoInterno,
+				collegamento.Punti,
+				mandata,
+				passo);
+
+			// Modificato da Codex per realizzare: rendere verificabile la
+			// parametrizzazione del ritorno nei test a passo diverso dal default.
+			Console.WriteLine(
+				$"  Ritorno parametrico: p={passo:0.###}; " +
+				$"parete={distanzaPareteMandata + passo:0.###}; " +
+				$"offset-utili={Math.Max(0, risultato.offsets.Count - 1)}; " +
+				$"punti={risultato.spiral.Count}.");
+
+			return (
+				GeometryUtils.EliminaDuplicati(risultato.spiral),
+				risultato.offsets,
+				collegamento);
+		}
+
 		// Modificato da Codex per realizzare: separare il distacco iniziale
 		// tubo-parete p/2 dal passo Supply-Supply 2p previsto dalle linee guida.
 		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(
@@ -15,12 +185,23 @@ namespace SpiralHeatingDiegoVittorio
 			Punto startPoint,
 			double distanzaParete,
 			double passoMandata,
-			bool drawSpiral = true)
+			bool drawSpiral = true,
+			VersoRivoluzioneRitorno versoRivoluzione = VersoRivoluzioneRitorno.Antiorario,
+			DirezioneSviluppoSpirale direzioneSviluppo = DirezioneSviluppoSpirale.EsternoVersoInterno,
+			List<Punto> trattoIniziale = null,
+			List<Punto> lineeCondizionamento = null,
+			double distanzaCondizionamento = 0.0)
 		{
 			if (distanzaParete <= 0)
 				throw new ArgumentOutOfRangeException(nameof(distanzaParete));
 			if (passoMandata <= 0)
 				throw new ArgumentOutOfRangeException(nameof(passoMandata));
+			if (lineeCondizionamento != null &&
+				lineeCondizionamento.Count >= 2 &&
+				distanzaCondizionamento <= 0)
+			{
+				throw new ArgumentOutOfRangeException(nameof(distanzaCondizionamento));
+			}
 
 			List<Punto> spiral = new List<Punto>();
 			
@@ -28,7 +209,10 @@ namespace SpiralHeatingDiegoVittorio
 			perimetro = GeometryUtils.EnsureCounterClockwise(perimetro);
 
 			List<List<Punto>> offsets = new List<List<Punto>>();
-			offsets.Add(GeometryUtils.NormalizePolygon(new List<Punto>(perimetro)));
+			var offsetCalcoloCorrente =
+				GeometryUtils.NormalizePolygon(new List<Punto>(perimetro));
+			var offsetCalcoloPrecedente = new List<Punto>(perimetro);
+			offsets.Add(offsetCalcoloCorrente);
 
 			// Genera offset successivi
 			for (int i = 0; i < 100; i++)
@@ -38,14 +222,19 @@ namespace SpiralHeatingDiegoVittorio
 				double distanzaOffset = i == 0
 					? distanzaParete
 					: passoMandata;
-				var previousOffset = i > 0 ? offsets[offsets.Count - 2] : perimetro;
-				var nextOffset = ComputeOffset(offsets.Last(), previousOffset, distanzaOffset);
+				var nextOffset = ComputeOffset(
+					offsetCalcoloCorrente,
+					offsetCalcoloPrecedente,
+					distanzaOffset);
 
 				if (nextOffset == null || nextOffset.Count < 3)
 					break;
 				
 				// Correggi vertici che intersecano il perimetro precedente
-				nextOffset = FixIntersections(nextOffset, offsets.Last(), distanzaOffset);
+				nextOffset = FixIntersections(
+					nextOffset,
+					offsetCalcoloCorrente,
+					distanzaOffset);
 				
 				double minEdgeLength = double.MaxValue;
 				for (int j = 0; j < nextOffset.Count - 1; j++)
@@ -59,7 +248,22 @@ namespace SpiralHeatingDiegoVittorio
 				if (minEdgeLength < passoMandata * 1.2 && nextOffset.Count < 5)
 					break;
 					
-				offsets.Add(GeometryUtils.NormalizePolygon(nextOffset));
+				var nextOffsetNormalizzato =
+					GeometryUtils.NormalizePolygon(nextOffset);
+				offsetCalcoloPrecedente = offsetCalcoloCorrente;
+				offsetCalcoloCorrente = nextOffsetNormalizzato;
+
+				// Modificato da Codex per realizzare: gli offset del ritorno
+				// quasi coincidenti e paralleli alla mandata vengono scartati;
+				// gli attraversamenti puntuali restano invece varchi da gestire
+				// durante la percorrenza della polilinea.
+				if (!OffsetHaTrattoParalleloTroppoVicino(
+					nextOffsetNormalizzato,
+					lineeCondizionamento,
+					distanzaCondizionamento))
+				{
+					offsets.Add(nextOffsetNormalizzato);
+				}
 				//offsets.Add(nextOffset);
 
 			}
@@ -68,7 +272,15 @@ namespace SpiralHeatingDiegoVittorio
 			if (!drawSpiral)
 				return (spiral, offsets);
 
-			spiral.Add(startPoint);
+			if (trattoIniziale != null && trattoIniziale.Count > 0)
+				spiral.AddRange(GeometryUtils.EliminaDuplicati(trattoIniziale));
+			else
+				spiral.Add(startPoint);
+			int puntiInizialiProtetti = spiral.Count;
+			double distanzaAutocondizionamento =
+				lineeCondizionamento != null && lineeCondizionamento.Count >= 2
+					? passoMandata
+					: 0.0;
 			
 			// Avanza perpendicolarmente fino al primo offset
 			Punto puntoEsterno = startPoint;
@@ -76,88 +288,124 @@ namespace SpiralHeatingDiegoVittorio
 			if (offsets.Count < 2)
 				return (spiral, offsets);
 			
-			// Itera su tutti gli offset generati (dal primo all'ultimo)
-			for (int offsetIdx = 1; offsetIdx < offsets.Count; offsetIdx++)
+			// Modificato da Codex per realizzare: la mandata percorre gli
+			// offset dall'esterno all'interno; il ritorno autonomo li percorre
+			// nell'ordine inverso partendo dal collegamento appena generato.
+			var offsetsUtili = offsets.Skip(1).ToList();
+			IEnumerable<List<Punto>> offsetsDaPercorrere = offsetsUtili;
+			if (direzioneSviluppo == DirezioneSviluppoSpirale.InternoVersoEsterno)
 			{
-				var currentOffset = offsets[offsetIdx];
-				
-				// Trova intersezione con l'offset corrente dall'ultimo punto della spirale
-				var ultimoPuntoSpiral = spiral[spiral.Count - 1];
-				var (puntoIntersezione, startVertexIndex) = FindIntersectionWithOffset(ultimoPuntoSpiral, currentOffset);
-				
-				if (puntoIntersezione == null)
-					break;	
-
-				spiral.Add(puntoIntersezione);
-				
-				double distPuntoIntersezione = ultimoPuntoSpiral.DistanceTo(puntoIntersezione);
-				
-				if (distPuntoIntersezione > passoMandata)
+				int indiceIniziale = 0;
+				double distanzaMigliore = double.MaxValue;
+				for (int i = 0; i < offsetsUtili.Count; i++)
 				{
-					double dx = Math.Abs(puntoIntersezione.X - ultimoPuntoSpiral.X);
-					double dy = Math.Abs(puntoIntersezione.Y - ultimoPuntoSpiral.Y);
-					bool areCollinear = false;
-					
-					// Controlla se i tre punti sono allineati
-					if (spiral.Count >= 3)
+					double distanza = DistanzaPuntoDaOffset(
+						spiral[^1],
+						offsetsUtili[i]);
+					if (distanza < distanzaMigliore)
 					{
-						var penultimoPuntoSpiral = spiral[spiral.Count - 3];
-						areCollinear = Math.Abs((puntoIntersezione.Y - penultimoPuntoSpiral.Y) * (ultimoPuntoSpiral.X - penultimoPuntoSpiral.X) - 
-													  (ultimoPuntoSpiral.Y - penultimoPuntoSpiral.Y) * (puntoIntersezione.X - penultimoPuntoSpiral.X)) < 0.001;
+						distanzaMigliore = distanza;
+						indiceIniziale = i;
 					}
-					
-					if (areCollinear)
-					{
-						spiral.RemoveAt(spiral.Count - 2);
-					}
-					
-					else {
-					
-						Punto puntoIntermedio;
-						if (dy > dx)
-							puntoIntermedio = new Punto(puntoIntersezione.X, ultimoPuntoSpiral.Y);
-						else
-							puntoIntermedio = new Punto(ultimoPuntoSpiral.X, puntoIntersezione.Y);
-						
-						
-						bool isTooCloseToSpiral = false;
-						for (int j = 0; j < spiral.Count - 1; j++)
-						{
-							double dist = GeometryUtils.DistancePointToSegment(puntoIntermedio, spiral[j], spiral[j + 1]);
-							if (dist < passoMandata * 0.8 && dist > 0.01)
-							{
-								isTooCloseToSpiral = true;
-								break;
-							}
-						}
-						
-						if (isTooCloseToSpiral)
-						{
-							if (dy > dx)
-								puntoIntermedio = new Punto(ultimoPuntoSpiral.X, puntoIntersezione.Y);
-							else
-								puntoIntermedio = new Punto(puntoIntersezione.X, ultimoPuntoSpiral.Y);
-							
-							spiral.RemoveAt(spiral.Count - 2);
-						}
-						
-						spiral.Insert(spiral.Count - 1, puntoIntermedio);
-					}
-					
 				}
+
+				offsetsDaPercorrere = offsetsUtili
+					.Take(indiceIniziale + 1)
+					.Reverse();
+			}
+
+			List<List<Punto>> offsetsPercorso = offsetsDaPercorrere.ToList();
+			int indiceOffsetPercorso = 0;
+			foreach (var currentOffset in offsetsPercorso)
+			{
+				indiceOffsetPercorso++;
+				bool ultimoOffset = indiceOffsetPercorso == offsetsPercorso.Count;
+				int puntiPrimaOffset = spiral.Count;
+				// Trova un collegamento valido con l'offset corrente dall'ultimo punto della spirale.
+				var ultimoPuntoSpiral = spiral[spiral.Count - 1];
+				var (percorsoConnessione, puntoIntersezione, startVertexIndex) = FindConnectionWithOffset(
+					ultimoPuntoSpiral,
+					currentOffset,
+					versoRivoluzione,
+					passoMandata,
+					lineeCondizionamento,
+					distanzaCondizionamento,
+					spiral,
+					distanzaAutocondizionamento);
 				
-				// Segue tutti i vertici dell'offset corrente in ordine (senso antiorario)
+				if (percorsoConnessione == null || puntoIntersezione == null)
+				{
+					// Modificato da Codex per realizzare: diagnosticare un arresto
+					// del ritorno parametrico senza alterare la geometria prodotta.
+					if (lineeCondizionamento != null)
+						Console.WriteLine($"  Ritorno: offset {indiceOffsetPercorso} senza collegamento valido.");
+					continue;
+				}
+
+				foreach (Punto puntoConnessione in percorsoConnessione)
+				{
+					if (spiral[^1].DistanceTo(puntoConnessione) > 0.000001)
+						spiral.Add(puntoConnessione);
+				}
+				int puntiDopoIntersezione = spiral.Count;
+				
+				// Segue i vertici nel verso richiesto e si arresta prima di un
+				// tratto che violerebbe le linee di condizionamento.
+				Punto candidatoTerminaleRespinto = null;
 				for (int i = 0; i < currentOffset.Count; i++)
 				{
-					int vertexIndex = (startVertexIndex + i) % currentOffset.Count;
-					spiral.Add(currentOffset[vertexIndex]);
+					int delta = versoRivoluzione == VersoRivoluzioneRitorno.Antiorario
+						? i
+						: -i;
+					int vertexIndex =
+						(startVertexIndex + delta + currentOffset.Count) %
+						currentOffset.Count;
+					Punto candidato = currentOffset[vertexIndex];
+					if (!SegmentoRispettaCondizionamento(
+						spiral[^1],
+						candidato,
+						lineeCondizionamento,
+						distanzaCondizionamento) ||
+						!SegmentoRispettaSpirale(
+							spiral[^1],
+							candidato,
+							spiral,
+							distanzaAutocondizionamento))
+					{
+						// Modificato da Codex per realizzare: non perdere l'ultima
+						// parte lecita del lato quando soltanto la sua estremità
+						// invaderebbe la fascia di rispetto della mandata/ritorno.
+						if (ultimoOffset)
+							candidatoTerminaleRespinto = candidato;
+						break;
+					}
+					spiral.Add(candidato);
 				}
+
+				// Modificato da Codex per realizzare: se sull'offset non è stato
+				// accettato alcun tratto, ripristinare lo stato precedente. Senza
+				// questa protezione il calcolo finale aggiungeva un falso segmento
+				// all'indietro lungo il raccordo d'ingresso.
+				if (spiral.Count == puntiDopoIntersezione)
+				{
+					if (lineeCondizionamento != null)
+						Console.WriteLine($"  Ritorno: offset {indiceOffsetPercorso} senza tratto percorribile.");
+					if (spiral.Count > puntiPrimaOffset)
+						spiral.RemoveRange(
+							puntiPrimaOffset,
+							spiral.Count - puntiPrimaOffset);
+					continue;
+				}
+
+				if (spiral.Count < 2)
+					continue;
 				
 				// Calcola punto finale
 				Punto ultimoPunto;
 				Punto penultimoPunto;
 
 				double distanzaSegmento = puntoIntersezione.DistanceTo(spiral[spiral.Count - 1]);
+				bool sostituisceUltimoPunto = false;
 				if (distanzaSegmento > 2 * passoMandata) {
 					ultimoPunto = puntoIntersezione;
 					penultimoPunto = spiral[spiral.Count - 1];
@@ -165,7 +413,7 @@ namespace SpiralHeatingDiegoVittorio
 				else {
 					ultimoPunto = spiral[spiral.Count - 1];
 					penultimoPunto = spiral[spiral.Count - 2];
-					spiral.RemoveAt(spiral.Count - 1);
+					sostituisceUltimoPunto = true;
 				}
 
 				// Torna indietro di un passo mandata lungo l'ultimo segmento.
@@ -177,39 +425,491 @@ namespace SpiralHeatingDiegoVittorio
 					ultimoPunto.X + direzione.X * passoMandata,
 					ultimoPunto.Y + direzione.Y * passoMandata
 				);
-				spiral.Add(puntoFinale);
+				bool finaleOriginaleAggiunto = false;
+				if (SegmentoRispettaCondizionamento(
+					penultimoPunto,
+					puntoFinale,
+					lineeCondizionamento,
+					distanzaCondizionamento) &&
+					SegmentoRispettaSpirale(
+						penultimoPunto,
+						puntoFinale,
+						spiral,
+						distanzaAutocondizionamento))
+				{
+					if (sostituisceUltimoPunto &&
+						spiral.Count - 1 >= puntiInizialiProtetti)
+						spiral.RemoveAt(spiral.Count - 1);
+					spiral.Add(puntoFinale);
+					finaleOriginaleAggiunto = true;
+				}
+
+				// Modificato da Codex per realizzare: prolungare l'ultimo lato
+				// soltanto quando la finalizzazione storica non ha prodotto un
+				// punto, preservando byte per byte i casi già validi.
+				if (!finaleOriginaleAggiunto &&
+					candidatoTerminaleRespinto != null)
+				{
+					Punto terminaleParziale = TrovaMassimoPrefissoValido(
+						spiral[^1],
+						candidatoTerminaleRespinto,
+						lineeCondizionamento,
+						distanzaCondizionamento,
+						spiral,
+						distanzaAutocondizionamento);
+					if (terminaleParziale != null &&
+						spiral[^1].DistanceTo(terminaleParziale) > 0.000001)
+					{
+						spiral.Add(terminaleParziale);
+					}
+				}
 			}
 
 			return (spiral, offsets);
 		}
 
-		private static (Punto intersection, int nextVertexIndex) FindIntersectionWithOffset(Punto start, List<Punto> offset)
+		// Funzione realizzata da Codex in autonomia
+		private static double DistanzaPuntoDaOffset(
+			Punto punto,
+			List<Punto> offset)
 		{
+			double distanzaMinima = double.MaxValue;
+			for (int i = 0; i < offset.Count; i++)
+			{
+				double distanza = GeometryUtils.DistancePointToSegment(
+					punto,
+					offset[i],
+					offset[(i + 1) % offset.Count]);
+				if (distanza < distanzaMinima)
+					distanzaMinima = distanza;
+			}
+
+			return distanzaMinima;
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static (List<Punto> path, Punto intersection, int nextVertexIndex) FindConnectionWithOffset(
+			Punto start,
+			List<Punto> offset,
+			VersoRivoluzioneRitorno versoRivoluzione,
+			double passo,
+			List<Punto> lineeCondizionamento,
+			double distanzaCondizionamento,
+			List<Punto> spiraleCorrente,
+			double distanzaAutocondizionamento)
+		{
+			List<Punto> bestPath = null;
 			Punto bestIntersection = null;
 			int bestSegmentIndex = -1;
-			double minDist = double.MaxValue;
+			double bestLength = double.MaxValue;
+			const double tolleranza = 0.000001;
 			
+			// Modificato da Codex per realizzare: centralizzare la valutazione
+			// dei collegamenti e consentire un fallback nei varchi della mandata.
+			void ValutaPuntoOffset(Punto intersection, int segmentIndex)
+			{
+				var candidatePaths = new List<List<Punto>>();
+				double directDistance = start.DistanceTo(intersection);
+				if (directDistance <= passo + tolleranza)
+				{
+					candidatePaths.Add(new List<Punto> { intersection });
+				}
+				else
+				{
+					// Modificato da Codex per realizzare: esplorare entrambe le
+					// connessioni ortogonali. Una diagonale può attraversare la
+					// mandata anche quando esiste un percorso valido nel suo varco.
+					candidatePaths.Add(new List<Punto>
+					{
+						new Punto(intersection.X, start.Y),
+						intersection
+					});
+					candidatePaths.Add(new List<Punto>
+					{
+						new Punto(start.X, intersection.Y),
+						intersection
+					});
+
+					// Modificato da Codex per realizzare: esplorare anche un
+					// corridoio ortogonale a due gomiti quando i varchi della
+					// mandata sono sfalsati. Il campionamento deriva da p/2.
+					double passoCorridoio = Math.Max(passo / 2.0, tolleranza * 10.0);
+					double minX = Math.Min(start.X, intersection.X);
+					double maxX = Math.Max(start.X, intersection.X);
+					for (double x = minX + passoCorridoio;
+						x < maxX - tolleranza;
+						x += passoCorridoio)
+					{
+						candidatePaths.Add(new List<Punto>
+						{
+							new Punto(x, start.Y),
+							new Punto(x, intersection.Y),
+							intersection
+						});
+					}
+
+					double minY = Math.Min(start.Y, intersection.Y);
+					double maxY = Math.Max(start.Y, intersection.Y);
+					for (double y = minY + passoCorridoio;
+						y < maxY - tolleranza;
+						y += passoCorridoio)
+					{
+						candidatePaths.Add(new List<Punto>
+						{
+							new Punto(start.X, y),
+							new Punto(intersection.X, y),
+							intersection
+						});
+					}
+				}
+
+				foreach (List<Punto> rawPath in candidatePaths)
+				{
+					var path = new List<Punto>();
+					Punto previous = start;
+					foreach (Punto point in rawPath)
+					{
+						if (previous.DistanceTo(point) <= tolleranza)
+							continue;
+						path.Add(point);
+						previous = point;
+					}
+
+					if (!ConnectionPathIsValid(
+						start,
+						path,
+						lineeCondizionamento,
+						distanzaCondizionamento,
+						spiraleCorrente,
+						distanzaAutocondizionamento))
+					{
+						continue;
+					}
+
+					double length = 0.0;
+					previous = start;
+					foreach (Punto point in path)
+					{
+						length += previous.DistanceTo(point);
+						previous = point;
+					}
+
+					if (length < bestLength - tolleranza)
+					{
+						bestLength = length;
+						bestPath = path;
+						bestIntersection = intersection;
+						bestSegmentIndex = segmentIndex;
+					}
+				}
+			}
+
 			for (int i = 0; i < offset.Count; i++)
 			{
 				var p1 = offset[i];
 				var p2 = offset[(i + 1) % offset.Count];
-				
 				Punto intersection = GeometryUtils.ProjectPointOnSegment(start, p1, p2);
-				
 				if (intersection != null)
+					ValutaPuntoOffset(intersection, i);
+			}
+
+			if (bestPath == null)
+			{
+				// Modificato da Codex per realizzare: se la proiezione più vicina
+				// è ostruita, campionare l'offset ogni p/2 per trovare il varco
+				// lasciato dalla mandata senza introdurre un albero combinatorio.
+				double passoRicerca = Math.Max(passo / 2.0, tolleranza * 10.0);
+				for (int i = 0; i < offset.Count; i++)
 				{
-					double dist = start.DistanceTo(intersection);
-					if (dist < minDist)
+					Punto p1 = offset[i];
+					Punto p2 = offset[(i + 1) % offset.Count];
+					double lunghezza = p1.DistanceTo(p2);
+					if (lunghezza <= tolleranza)
+						continue;
+
+					double dx = (p2.X - p1.X) / lunghezza;
+					double dy = (p2.Y - p1.Y) / lunghezza;
+					for (double distanza = passoRicerca;
+						distanza < lunghezza - tolleranza;
+						distanza += passoRicerca)
 					{
-						minDist = dist;
-						bestIntersection = intersection;
-						bestSegmentIndex = i;
+						ValutaPuntoOffset(
+							new Punto(
+								p1.X + dx * distanza,
+								p1.Y + dy * distanza),
+							i);
 					}
 				}
 			}
 			
-			int nextVertex = bestSegmentIndex >= 0 ? (bestSegmentIndex + 1) % offset.Count : 0;
-			return (bestIntersection, nextVertex);
+			int nextVertex = bestSegmentIndex < 0
+				? 0
+				: versoRivoluzione == VersoRivoluzioneRitorno.Antiorario
+					? (bestSegmentIndex + 1) % offset.Count
+					: bestSegmentIndex;
+			return (bestPath, bestIntersection, nextVertex);
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static bool ConnectionPathIsValid(
+			Punto start,
+			List<Punto> path,
+			List<Punto> lineeCondizionamento,
+			double distanzaCondizionamento,
+			List<Punto> spiraleCorrente,
+			double distanzaAutocondizionamento)
+		{
+			var temporarySpiral = spiraleCorrente == null
+				? new List<Punto>()
+				: new List<Punto>(spiraleCorrente);
+			Punto previous = start;
+			foreach (Punto point in path)
+			{
+				if (!SegmentoRispettaCondizionamento(
+					previous,
+					point,
+					lineeCondizionamento,
+					distanzaCondizionamento) ||
+					!SegmentoRispettaSpirale(
+						previous,
+						point,
+						temporarySpiral,
+						distanzaAutocondizionamento))
+				{
+					return false;
+				}
+
+				if (temporarySpiral.Count == 0 ||
+					temporarySpiral[^1].DistanceTo(point) > 0.000001)
+				{
+					temporarySpiral.Add(point);
+				}
+				previous = point;
+			}
+
+			return true;
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static bool SegmentoRispettaSpirale(
+			Punto inizio,
+			Punto fine,
+			List<Punto> spiraleCorrente,
+			double distanzaMinima)
+		{
+			if (spiraleCorrente == null ||
+				spiraleCorrente.Count < 3 ||
+				distanzaMinima <= 0)
+			{
+				return true;
+			}
+
+			const double tolleranza = 0.000001;
+			// L'ultimo segmento è adiacente al candidato e condivide l'inizio.
+			for (int i = 0; i < spiraleCorrente.Count - 2; i++)
+			{
+				double distanza = DistanzaSegmenti(
+					inizio,
+					fine,
+					spiraleCorrente[i],
+					spiraleCorrente[i + 1]);
+				if (distanza < distanzaMinima - tolleranza)
+					return false;
+			}
+
+			return true;
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static Punto TrovaMassimoPrefissoValido(
+			Punto inizio,
+			Punto fine,
+			List<Punto> lineeCondizionamento,
+			double distanzaCondizionamento,
+			List<Punto> spiraleCorrente,
+			double distanzaAutocondizionamento)
+		{
+			if (inizio == null || fine == null ||
+				inizio.DistanceTo(fine) <= 0.000001)
+			{
+				return null;
+			}
+
+			double valido = 0.0;
+			double nonValido = 1.0;
+			for (int i = 0; i < 48; i++)
+			{
+				double t = (valido + nonValido) / 2.0;
+				var candidato = new Punto(
+					inizio.X + (fine.X - inizio.X) * t,
+					inizio.Y + (fine.Y - inizio.Y) * t);
+				bool accettato = SegmentoRispettaCondizionamento(
+					inizio,
+					candidato,
+					lineeCondizionamento,
+					distanzaCondizionamento) &&
+					SegmentoRispettaSpirale(
+						inizio,
+						candidato,
+						spiraleCorrente,
+						distanzaAutocondizionamento);
+				if (accettato)
+					valido = t;
+				else
+					nonValido = t;
+			}
+
+			if (valido <= 0.000001)
+				return null;
+
+			return new Punto(
+				inizio.X + (fine.X - inizio.X) * valido,
+				inizio.Y + (fine.Y - inizio.Y) * valido);
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static bool OffsetHaTrattoParalleloTroppoVicino(
+			List<Punto> offset,
+			List<Punto> lineeCondizionamento,
+			double distanzaMinima)
+		{
+			if (lineeCondizionamento == null ||
+				lineeCondizionamento.Count < 2 ||
+				distanzaMinima <= 0)
+			{
+				return false;
+			}
+
+			const double tolleranza = 0.000001;
+			for (int i = 0; i < offset.Count; i++)
+			{
+				Punto a = offset[i];
+				Punto b = offset[(i + 1) % offset.Count];
+				double adx = b.X - a.X;
+				double ady = b.Y - a.Y;
+				double alen = Math.Sqrt(adx * adx + ady * ady);
+				if (alen <= tolleranza)
+					continue;
+
+				Punto medio = new Punto(
+					(a.X + b.X) / 2.0,
+					(a.Y + b.Y) / 2.0);
+				for (int j = 0; j < lineeCondizionamento.Count - 1; j++)
+				{
+					Punto c = lineeCondizionamento[j];
+					Punto d = lineeCondizionamento[j + 1];
+					double bdx = d.X - c.X;
+					double bdy = d.Y - c.Y;
+					double blen = Math.Sqrt(bdx * bdx + bdy * bdy);
+					if (blen <= tolleranza)
+						continue;
+
+					double prodottoVettorialeNormalizzato =
+						Math.Abs(adx * bdy - ady * bdx) /
+						(alen * blen);
+					if (prodottoVettorialeNormalizzato > 0.001)
+						continue;
+
+					double distanza = GeometryUtils.DistancePointToSegment(
+						medio,
+						c,
+						d);
+					if (distanza < distanzaMinima - tolleranza)
+						return true;
+				}
+			}
+
+			return false;
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static bool SegmentoRispettaCondizionamento(
+			Punto inizio,
+			Punto fine,
+			List<Punto> lineeCondizionamento,
+			double distanzaMinima)
+		{
+			if (lineeCondizionamento == null ||
+				lineeCondizionamento.Count < 2 ||
+				distanzaMinima <= 0)
+			{
+				return true;
+			}
+
+			const double tolleranza = 0.000001;
+			for (int i = 0; i < lineeCondizionamento.Count - 1; i++)
+			{
+				double distanza = DistanzaSegmenti(
+					inizio,
+					fine,
+					lineeCondizionamento[i],
+					lineeCondizionamento[i + 1]);
+				if (distanza < distanzaMinima - tolleranza)
+					return false;
+			}
+
+			return true;
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static double DistanzaSegmenti(
+			Punto a0,
+			Punto a1,
+			Punto b0,
+			Punto b1)
+		{
+			if (SegmentiIntersecano(a0, a1, b0, b1))
+				return 0.0;
+
+			return Math.Min(
+				Math.Min(
+					GeometryUtils.DistancePointToSegment(a0, b0, b1),
+					GeometryUtils.DistancePointToSegment(a1, b0, b1)),
+				Math.Min(
+					GeometryUtils.DistancePointToSegment(b0, a0, a1),
+					GeometryUtils.DistancePointToSegment(b1, a0, a1)));
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static bool SegmentiIntersecano(
+			Punto a0,
+			Punto a1,
+			Punto b0,
+			Punto b1)
+		{
+			double o1 = Orientamento(a0, a1, b0);
+			double o2 = Orientamento(a0, a1, b1);
+			double o3 = Orientamento(b0, b1, a0);
+			double o4 = Orientamento(b0, b1, a1);
+			const double tolleranza = 0.000001;
+
+			if (((o1 > tolleranza && o2 < -tolleranza) ||
+				 (o1 < -tolleranza && o2 > tolleranza)) &&
+				((o3 > tolleranza && o4 < -tolleranza) ||
+				 (o3 < -tolleranza && o4 > tolleranza)))
+			{
+				return true;
+			}
+
+			return Math.Abs(o1) <= tolleranza && PuntoSulSegmento(b0, a0, a1) ||
+				Math.Abs(o2) <= tolleranza && PuntoSulSegmento(b1, a0, a1) ||
+				Math.Abs(o3) <= tolleranza && PuntoSulSegmento(a0, b0, b1) ||
+				Math.Abs(o4) <= tolleranza && PuntoSulSegmento(a1, b0, b1);
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static double Orientamento(Punto a, Punto b, Punto c) =>
+			(b.X - a.X) * (c.Y - a.Y) -
+			(b.Y - a.Y) * (c.X - a.X);
+
+		// Funzione realizzata da Codex in autonomia
+		private static bool PuntoSulSegmento(Punto p, Punto a, Punto b)
+		{
+			const double tolleranza = 0.000001;
+			return p.X >= Math.Min(a.X, b.X) - tolleranza &&
+				p.X <= Math.Max(a.X, b.X) + tolleranza &&
+				p.Y >= Math.Min(a.Y, b.Y) - tolleranza &&
+				p.Y <= Math.Max(a.Y, b.Y) + tolleranza;
 		}
 
 		private static List<Punto> ComputeOffset(List<Punto> polygon, List<Punto> polygon_pre, double offset)

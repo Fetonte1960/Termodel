@@ -297,11 +297,17 @@ namespace SpiralHeatingDiegoVittorio
             return risultato;
         }
         
+        // Modificato da Codex per realizzare: raccordi circolari tangenti con
+        // frammentazione adattiva per angoli acuti, retti, ottusi e obliqui.
         public static List<Punto> ArrotondaSpirale(List<Punto> spirale, double raggio)
         {
-            List<Punto> risultato = new List<Punto>();
-            risultato.Add(spirale[0]);
-            
+            if (spirale == null || spirale.Count < 3 || raggio <= 0.000001)
+                return spirale?.ToList() ?? new List<Punto>();
+
+            const double epsilon = 0.000001;
+            const double passoAngolare = Math.PI / 6.0;
+            var risultato = new List<Punto> { spirale[0] };
+
             for (int i = 1; i < spirale.Count - 1; i++)
             {
                 var p0 = spirale[i - 1];
@@ -314,36 +320,128 @@ namespace SpiralHeatingDiegoVittorio
                 double len1 = Math.Sqrt(v1.X * v1.X + v1.Y * v1.Y);
                 double len2 = Math.Sqrt(v2.X * v2.X + v2.Y * v2.Y);
                 
-                if (len1 < 0.001 || len2 < 0.001)
+                if (len1 < epsilon || len2 < epsilon)
                 {
-                    risultato.Add(p1);
+                    AggiungiSeDistinto(risultato, p1);
                     continue;
                 }
-                
+
                 v1 = new Punto(v1.X / len1, v1.Y / len1);
                 v2 = new Punto(v2.X / len2, v2.Y / len2);
-                
-                double distMax = Math.Min(len1, len2) / 2.0;
-                double dist = Math.Min(raggio, distMax);
-                
-                var pStart = new Punto(p1.X - v1.X * dist, p1.Y - v1.Y * dist);
-                var pEnd = new Punto(p1.X + v2.X * dist, p1.Y + v2.Y * dist);
-                
-                risultato.Add(pStart);
-                
-                for (int j = 1; j < 10; j++)
+
+                double prodotto = Math.Max(
+                    -1.0,
+                    Math.Min(1.0, v1.X * v2.X + v1.Y * v2.Y));
+                double angoloDeviazione = Math.Acos(prodotto);
+                double verso = v1.X * v2.Y - v1.Y * v2.X;
+                if (angoloDeviazione < Math.PI / 180.0 ||
+                    Math.Abs(verso) < epsilon)
                 {
-                    double t = (double)j / 10;
-                    double x = (1 - t) * (1 - t) * pStart.X + 2 * (1 - t) * t * p1.X + t * t * pEnd.X;
-                    double y = (1 - t) * (1 - t) * pStart.Y + 2 * (1 - t) * t * p1.Y + t * t * pEnd.Y;
-                    risultato.Add(new Punto(x, y));
+                    AggiungiSeDistinto(risultato, p1);
+                    continue;
                 }
-                
-                risultato.Add(pEnd);
+
+                double fattoreTangente = Math.Tan(angoloDeviazione / 2.0);
+                double distanzaMassima = 0.45 * Math.Min(len1, len2);
+                double distanzaTangente = Math.Min(
+                    raggio * fattoreTangente,
+                    distanzaMassima);
+                if (!double.IsFinite(distanzaTangente) ||
+                    distanzaTangente < epsilon ||
+                    fattoreTangente < epsilon)
+                {
+                    AggiungiSeDistinto(risultato, p1);
+                    continue;
+                }
+
+                double raggioEffettivo = distanzaTangente / fattoreTangente;
+                var pStart = new Punto(
+                    p1.X - v1.X * distanzaTangente,
+                    p1.Y - v1.Y * distanzaTangente);
+                var pEnd = new Punto(
+                    p1.X + v2.X * distanzaTangente,
+                    p1.Y + v2.Y * distanzaTangente);
+                Punto normale1 = verso > 0
+                    ? new Punto(-v1.Y, v1.X)
+                    : new Punto(v1.Y, -v1.X);
+                Punto normale2 = verso > 0
+                    ? new Punto(-v2.Y, v2.X)
+                    : new Punto(v2.Y, -v2.X);
+                var centro1 = new Punto(
+                    pStart.X + normale1.X * raggioEffettivo,
+                    pStart.Y + normale1.Y * raggioEffettivo);
+                var centro2 = new Punto(
+                    pEnd.X + normale2.X * raggioEffettivo,
+                    pEnd.Y + normale2.Y * raggioEffettivo);
+                var centro = new Punto(
+                    (centro1.X + centro2.X) / 2.0,
+                    (centro1.Y + centro2.Y) / 2.0);
+
+                double angoloInizio = Math.Atan2(
+                    pStart.Y - centro.Y,
+                    pStart.X - centro.X);
+                double angoloFine = Math.Atan2(
+                    pEnd.Y - centro.Y,
+                    pEnd.X - centro.X);
+                double sviluppo = NormalizzaSviluppoAngolare(
+                    angoloInizio,
+                    angoloFine,
+                    verso > 0);
+                int segmenti = Math.Max(
+                    2,
+                    Math.Min(
+                        6,
+                        (int)Math.Ceiling(
+                            Math.Abs(sviluppo) / passoAngolare)));
+
+                AggiungiSeDistinto(risultato, pStart);
+                for (int j = 1; j <= segmenti; j++)
+                {
+                    double angolo = angoloInizio +
+                                    sviluppo * j / segmenti;
+                    AggiungiSeDistinto(
+                        risultato,
+                        new Punto(
+                            centro.X + raggioEffettivo * Math.Cos(angolo),
+                            centro.Y + raggioEffettivo * Math.Sin(angolo)));
+                }
             }
-            
-            risultato.Add(spirale[spirale.Count - 1]);
+
+            AggiungiSeDistinto(risultato, spirale[^1]);
             return risultato;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static double NormalizzaSviluppoAngolare(
+            double inizio,
+            double fine,
+            bool antiorario)
+        {
+            double sviluppo = fine - inizio;
+            if (antiorario)
+            {
+                while (sviluppo < 0)
+                    sviluppo += 2.0 * Math.PI;
+            }
+            else
+            {
+                while (sviluppo > 0)
+                    sviluppo -= 2.0 * Math.PI;
+            }
+
+            return sviluppo;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static void AggiungiSeDistinto(
+            List<Punto> punti,
+            Punto candidato)
+        {
+            if (punti.Count == 0 ||
+                punti[^1].DistanceTo(candidato) > TolleranzaDuplicati)
+            {
+                punti.Add(candidato);
+            }
         }
     }
 

@@ -11,20 +11,74 @@ namespace SpiralHeatingDiegoVittorio
 {
     public static class ChiudiSpirale
     {
+        private const int MaxTrattiTerminaliChiusura = 3;
+
+        // Funzione realizzata da Codex in autonomia
+        private sealed class CandidatoChiusura
+        {
+            public List<Punto> Mandata { get; init; }
+            public List<Punto> Ritorno { get; init; }
+            public Punto Inizio { get; init; }
+            public Punto Fine { get; init; }
+            public string LivelloMandata { get; init; }
+            public string TentativoRitorno { get; init; }
+            public int NumeroTentativo { get; init; }
+            public int TrattiRimossiMandata { get; init; }
+            public int TrattiRimossiRitorno { get; init; }
+            public double LunghezzaRimossa { get; init; }
+            public double LunghezzaChiusura { get; init; }
+            public double QualitaMandata { get; init; }
+            public double QualitaRitorno { get; init; }
+            public double QualitaAngolare { get; init; }
+            public bool Ortogonale { get; init; }
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private sealed class ConfigurazioneTerminale
+        {
+            public List<Punto> Punti { get; init; }
+            public string Codice { get; init; }
+            public int TrattiRimossi { get; init; }
+            public double LunghezzaRimossa { get; init; }
+        }
+
         private const string DrawFilletsEnvironmentVariable =
             "TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS";
+        private const string DrawClosureEnvironmentVariable =
+            "TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE";
+        private const string AutonomousReturnEnvironmentVariable =
+            "TERMODEL_DIEGO_VITTORIO_AUTONOMOUS_RETURN";
+        private const string ReturnSideEnvironmentVariable =
+            "TERMODEL_DIEGO_VITTORIO_RETURN_SIDE";
 
-        public static void Chiudi(string xmlFile, double raggioCurvatura, double distanzaRitorno, double distanzaRotazioneUltimoPunto, bool debug)
+        public static void Chiudi(
+            string xmlFile,
+            double raggioCurvatura,
+            double distanzaPareteMandata,
+            double distanzaRitorno,
+            double distanzaRotazioneUltimoPunto,
+            bool debug)
         {
             try
             {
                 XDocument doc = XDocument.Load(xmlFile);
                 CultureInfo ci = CultureInfo.InvariantCulture;
                 bool drawFillets = ShouldDrawFillets();
+                bool drawClosure = ShouldDrawClosure();
+                bool autonomousReturn = ShouldUseAutonomousReturn();
+                LatoCollegamentoRitorno returnSide = ReadReturnSide();
                 Console.WriteLine(
                     drawFillets
                         ? "Raccordi SVG Diego_Vittorio: ATTIVI."
                         : $"Raccordi SVG Diego_Vittorio: DISATTIVATI; riattivare con {DrawFilletsEnvironmentVariable}=true.");
+                Console.WriteLine(
+                    drawClosure
+                        ? "Chiusura SVG Diego_Vittorio: ATTIVA."
+                        : $"Chiusura SVG Diego_Vittorio: DISATTIVATA; riattivare con {DrawClosureEnvironmentVariable}=true.");
+                Console.WriteLine(
+                    autonomousReturn
+                        ? $"Ritorno autonomo Diego_Vittorio: ATTIVO; lato {returnSide}."
+                        : $"Ritorno autonomo Diego_Vittorio: DISATTIVATO; fallback derivato attivo tramite {AutonomousReturnEnvironmentVariable}=false.");
                 
                 // Leggi tutte le linee (tubi)
                 var linee = doc.Descendants("Linea")
@@ -86,16 +140,7 @@ namespace SpiralHeatingDiegoVittorio
                         Console.WriteLine($"  Spirale troppo corta in {localeId}");
                         continue;
                     }
-                    
-                    // Modificato da Codex per realizzare: ripristino delle
-                    // preparazioni geometriche necessarie al corretto sviluppo
-                    // del ritorno; viene disattivata più sotto soltanto la curva
-                    // di chiusura originale di Vittorio.
-                    spirale = SpostaUltimoPuntoASinistra(
-                        spirale,
-                        distanzaRotazioneUltimoPunto);
-                    spirale = AggiungiPuntoIntermedio(spirale);
-                    
+
                     var perimetro = locale.Descendants("PerimetroInterno")
                         .Elements("Punto")
                         .Select(p => new Punto(
@@ -103,48 +148,140 @@ namespace SpiralHeatingDiegoVittorio
                             double.Parse(p.Attribute("Y").Value, ci)
                         ))
                         .ToList();
-                    
-                    // Modificato da Codex per realizzare: il ritorno Vittorio
-                    // dipende strutturalmente dai campioni arrotondati. Questi
-                    // restano nel calcolo interno; in debug viene serializzata
-                    // una polilinea semplificata e priva dei raccordi grafici.
+
+                    // Modificato da Codex per realizzare: il nuovo ritorno
+                    // esegue per prima la generazione del collegamento e poi
+                    // riusa SpiralGenerator dall'ingresso verso l'interno,
+                    // passo p e mandata come condizionamento a distanza p.
+                    List<Punto> rientroRettilineo = null;
+                    if (autonomousReturn)
+                    {
+                        var risultatoRitorno = SpiralGenerator.GenerateReturn(
+                            perimetro,
+                            spirale,
+                            distanzaPareteMandata,
+                            distanzaRitorno,
+                            returnSide);
+                        rientroRettilineo = risultatoRitorno.spiral;
+
+						// Modificato da Codex per realizzare: il flag di chiusura
+						// riguarda soltanto la connessione centrale. Il raccordo
+						// d'ingresso del ritorno è geometria fisica e resta sempre.
+
+                        if (rientroRettilineo.Count < 2)
+                        {
+                            throw new InvalidDataException(
+                                $"Ritorno autonomo insufficiente in {localeId}.");
+                        }
+
+                        Console.WriteLine(
+                            $"  Ritorno autonomo: lato={risultatoRitorno.collegamento.Lato}; " +
+                            $"verso={risultatoRitorno.collegamento.VersoRivoluzione}; " +
+                            $"punti={rientroRettilineo.Count}.");
+                    }
+
+                    CandidatoChiusura chiusuraOttimizzata = null;
+                    if (drawClosure && autonomousReturn)
+                    {
+                        // Modificato da Codex per realizzare: provare in ordine
+                        // le 35 configurazioni terminali approvate e fermarsi
+                        // al primo collegamento non acuto lungo almeno 2p.
+                        chiusuraOttimizzata = GeneraPrimaChiusuraAccettabile(
+                            spirale,
+                            rientroRettilineo,
+                            distanzaRitorno);
+                        if (chiusuraOttimizzata == null)
+                        {
+                            Console.WriteLine(
+                                "  Chiusura rapida: nessuno dei 35 tentativi massimi è accettabile; circuito lasciato aperto.");
+                        }
+                        else
+                        {
+                            spirale = chiusuraOttimizzata.Mandata;
+                            rientroRettilineo = chiusuraOttimizzata.Ritorno;
+                            Console.WriteLine(
+                                "  Chiusura rapida: " +
+                                $"tentativo={chiusuraOttimizzata.NumeroTentativo}; " +
+                                $"sequenza={chiusuraOttimizzata.LivelloMandata}/{chiusuraOttimizzata.TentativoRitorno}; " +
+                                $"tipo={(chiusuraOttimizzata.Ortogonale ? "ortogonale" : "obliqua")}; " +
+                                $"lunghezza={chiusuraOttimizzata.LunghezzaChiusura.ToString("0.###", ci)} m; " +
+                                $"coseni={chiusuraOttimizzata.QualitaMandata.ToString("0.###", ci)}/" +
+                                $"{chiusuraOttimizzata.QualitaRitorno.ToString("0.###", ci)}; " +
+                                $"tagli={chiusuraOttimizzata.TrattiRimossiMandata}/{chiusuraOttimizzata.TrattiRimossiRitorno}; " +
+                                $"rimosso={chiusuraOttimizzata.LunghezzaRimossa.ToString("0.###", ci)} m.");
+                        }
+                    }
+
+                    // Modificato da Codex per realizzare: sospendere con flag
+                    // anche la preparazione geometrica della chiusura, così
+                    // mandata e ritorno restano due polilinee indipendenti.
+                    if (drawClosure && !autonomousReturn)
+                    {
+                        spirale = SpostaUltimoPuntoASinistra(
+                            spirale,
+                            distanzaRotazioneUltimoPunto);
+                        spirale = AggiungiPuntoIntermedio(spirale);
+                    }
+
                     var spiraleArrotondataCalcolo =
                         GeometryUtils.ArrotondaSpirale(
                             spirale,
                             raggioCurvatura);
-                    var rientroCalcolo = CreaRientro(
-                        spiraleArrotondataCalcolo,
-                        distanzaRitorno);
+                    var rientroCalcolo = autonomousReturn
+                        ? GeometryUtils.ArrotondaSpirale(
+                            rientroRettilineo,
+                            raggioCurvatura)
+                        : CreaRientro(
+                            spiraleArrotondataCalcolo,
+                            distanzaRitorno);
                     var spiraleArrotondata = drawFillets
                         ? spiraleArrotondataCalcolo
                         : spirale;
                     var rientro = drawFillets
                         ? rientroCalcolo
-                        : SemplificaPolilinea(
-                            rientroCalcolo,
-                            Math.Max(
-                                raggioCurvatura * 0.35,
-                                0.001));
-                    // Modificato da Codex per realizzare: ripristino integrale
-                    // della chiusura geometrica originale di Vittorio,
-                    // mantenendo anche il box numerato ChiusuraGPT.
-                    var curvaCollegamento = drawFillets
-                        ? CreaCurvaCollegamento(
-                            spiraleArrotondata,
-                            rientro)
-                        : CreaCollegamentoDritto(
-                            spiraleArrotondata,
-                            rientro);
+                        : autonomousReturn
+                            ? rientroRettilineo
+                            : CreaRientroRettilineo(
+                                spirale,
+                                rientroCalcolo,
+                                distanzaRitorno);
+                    // Modificato da Codex per realizzare: rendere opzionali
+                    // collegamento finale e box numerato ChiusuraGPT.
+                    var curvaCollegamento = autonomousReturn
+                        ? drawClosure && chiusuraOttimizzata != null
+                            ? drawFillets
+                                ? CreaCurvaCollegamentoAdattiva(
+                                    spirale,
+                                    rientroRettilineo,
+                                    raggioCurvatura)
+                                : new List<Punto>
+                                {
+                                    spiraleArrotondata[^1],
+                                    rientro[^1]
+                                }
+                            : new List<Punto>()
+                        : !drawClosure
+                            ? new List<Punto>()
+                            : drawFillets
+                            ? CreaCurvaCollegamento(
+                                spiraleArrotondata,
+                                rientro)
+                            : CreaCollegamentoDritto(
+                                spiraleArrotondata,
+                                rientro);
                     
                     // Punto finale del rientro (per collegare la linea di ritorno del tubo)
                     Punto fineRientro = rientro.Count > 0 ? rientro[rientro.Count - 1] : null;
 
-                    string chiusuraGptSvg = ChiusuraGPT(
-                        perimetro,
-                        spiraleArrotondata,
-                        rientro,
-                        curvaCollegamento,
-                        numeroCircuito++);
+                    string chiusuraGptSvg = drawClosure &&
+                                             curvaCollegamento.Count > 1
+                        ? ChiusuraGPT(
+                            perimetro,
+                            spiraleArrotondata,
+                            rientro,
+                            curvaCollegamento,
+                            numeroCircuito++)
+                        : string.Empty;
 
                     tutteLeSpiraliChiuse.Add((localeId, perimetro, spiraleArrotondata, rientro, curvaCollegamento, fineRientro, chiusuraGptSvg));
                     
@@ -162,7 +299,10 @@ namespace SpiralHeatingDiegoVittorio
                     "locale.svg",
                     tutteLeSpiraliChiuse,
                     linee,
-                    drawFillets);
+                    drawFillets,
+                    drawClosure,
+                    autonomousReturn,
+                    returnSide);
                 Console.WriteLine($"Salvato: locale.svg");
                 
                 Console.WriteLine("Completato!");
@@ -176,7 +316,10 @@ namespace SpiralHeatingDiegoVittorio
         private static void SalvaSvgCombinato<T>(string filePath, 
             List<(string localeId, List<Punto> perimetro, List<Punto> spiraleArrotondata, List<Punto> rientro, List<Punto> curvaCollegamento, Punto fineRientro, string chiusuraGptSvg)> spirali,
             List<T> linee,
-            bool drawFillets) where T : class
+            bool drawFillets,
+            bool drawClosure,
+            bool autonomousReturn,
+            LatoCollegamentoRitorno returnSide) where T : class
         {
             if (spirali.Count == 0) return;
             
@@ -215,13 +358,18 @@ namespace SpiralHeatingDiegoVittorio
             string heightSvg = SvgNumber(height);
             string flipTranslateSvg = SvgNumber(-(minY + maxY));
             string filletsSvg = drawFillets ? "enabled" : "disabled";
+            string closureSvg = drawClosure ? "enabled" : "disabled";
+            string autonomousReturnSvg = autonomousReturn ? "enabled" : "disabled";
+            string returnSideSvg = returnSide == LatoCollegamentoRitorno.Destro
+                ? "right"
+                : "left";
 
             using (StreamWriter sw = new StreamWriter(filePath))
             {
                 sw.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                 // Modificato da Codex per realizzare: SVG responsivo, non
                 // deformato e numericamente valido anche con cultura italiana.
-                sw.WriteLine($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"{minXSvg} {minYSvg} {widthSvg} {heightSvg}\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;height:100%;background:#ffffff\" role=\"img\" aria-labelledby=\"termodel-svg-title\" data-termodel-fittings=\"{filletsSvg}\">");
+                sw.WriteLine($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\" viewBox=\"{minXSvg} {minYSvg} {widthSvg} {heightSvg}\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;height:100%;background:#ffffff\" role=\"img\" aria-labelledby=\"termodel-svg-title\" data-termodel-fittings=\"{filletsSvg}\" data-termodel-closure=\"{closureSvg}\" data-termodel-autonomous-return=\"{autonomousReturnSvg}\" data-termodel-return-side=\"{returnSideSvg}\">");
                 sw.WriteLine("<title id=\"termodel-svg-title\">Esecutivo pannelli Diego_Vittorio</title>");
                 sw.WriteLine($"<g transform=\"scale(1,-1) translate(0,{flipTranslateSvg})\" shape-rendering=\"geometricPrecision\">");
 
@@ -302,21 +450,342 @@ namespace SpiralHeatingDiegoVittorio
         // Funzione realizzata da Codex in autonomia
         private static bool ShouldDrawFillets()
         {
+            // Modificato da Codex per realizzare: raccordi adattivi nuovamente
+            // attivi per default; il flag false conserva il debug rettilineo.
+            return ReadBooleanFlag(
+                DrawFilletsEnvironmentVariable,
+                defaultValue: true);
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static bool ShouldDrawClosure()
+        {
+            // Modificato da Codex per realizzare: nel motore Service corrente
+            // il circuito viene chiuso; false resta disponibile per il debug.
+            return ReadBooleanFlag(
+                DrawClosureEnvironmentVariable,
+                defaultValue: true);
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static bool ShouldUseAutonomousReturn()
+        {
+            return ReadBooleanFlag(
+                AutonomousReturnEnvironmentVariable,
+                defaultValue: true);
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static LatoCollegamentoRitorno ReadReturnSide()
+        {
             string value = (
                 Environment.GetEnvironmentVariable(
-                    DrawFilletsEnvironmentVariable) ?? string.Empty)
+                    ReturnSideEnvironmentVariable) ?? "sinistro")
+                .Trim()
+                .ToLowerInvariant();
+
+            return value switch
+            {
+                "left" or "sinistro" => LatoCollegamentoRitorno.Sinistro,
+                "right" or "destro" => LatoCollegamentoRitorno.Destro,
+                _ => throw new InvalidDataException(
+                    $"{ReturnSideEnvironmentVariable} non riconosciuto: '{value}'. Valori ammessi: left/sinistro, right/destro.")
+            };
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static bool ReadBooleanFlag(
+            string variableName,
+            bool defaultValue = false)
+        {
+            string value = (
+                Environment.GetEnvironmentVariable(
+                    variableName) ?? string.Empty)
                 .Trim();
 
             if (value.Length == 0)
-                return false;
+                return defaultValue;
 
             return value.ToLowerInvariant() switch
             {
                 "1" or "true" or "yes" or "on" => true,
                 "0" or "false" or "no" or "off" => false,
                 _ => throw new InvalidDataException(
-                    $"{DrawFilletsEnvironmentVariable} non riconosciuto: '{value}'. Valori ammessi: true/false, 1/0, yes/no, on/off.")
+                    $"{variableName} non riconosciuto: '{value}'. Valori ammessi: true/false, 1/0, yes/no, on/off.")
             };
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static CandidatoChiusura GeneraPrimaChiusuraAccettabile(
+            List<Punto> mandataOriginale,
+            List<Punto> ritornoOriginale,
+            double passo)
+        {
+            if (mandataOriginale == null || mandataOriginale.Count < 2 ||
+                ritornoOriginale == null || ritornoOriginale.Count < 2 ||
+                passo <= 0)
+            {
+                return null;
+            }
+
+            // Modificato da Codex per realizzare: partire dal taglio storico
+            // dei tre tratti di mandata e riespanderla un livello alla volta.
+            var livelliMandata = new (string codice, int rimossi, double? lunghezzaFinale)[]
+            {
+                ("M0", 3, null),
+                ("M1", 2, 2.0 * passo),
+                ("M2", 1, 2.0 * passo),
+                ("M3", 0, 2.0 * passo),
+                ("M4", 0, null)
+            };
+            var tentativiRitorno = new (string codice, int rimossi, double? lunghezzaFinale)[]
+            {
+                ("R0", 0, null),
+                ("R1", 0, passo),
+                ("R2", 1, null),
+                ("R3", 1, passo),
+                ("R4", 2, null),
+                ("R5", 2, passo),
+                ("R6", 3, null)
+            };
+
+            int numeroTentativo = 0;
+            var configurazioniGiaProvate = new HashSet<string>(
+                StringComparer.Ordinal);
+
+            foreach (var livelloMandata in livelliMandata)
+            {
+                ConfigurazioneTerminale mandata =
+                    CreaConfigurazioneTerminale(
+                        mandataOriginale,
+                        livelloMandata.codice,
+                        livelloMandata.rimossi,
+                        livelloMandata.lunghezzaFinale);
+                if (mandata == null)
+                    continue;
+
+                foreach (var tentativoRitorno in tentativiRitorno)
+                {
+                    ConfigurazioneTerminale ritorno =
+                        CreaConfigurazioneTerminale(
+                            ritornoOriginale,
+                            tentativoRitorno.codice,
+                            tentativoRitorno.rimossi,
+                            tentativoRitorno.lunghezzaFinale);
+                    if (ritorno == null)
+                        continue;
+
+                    string chiave = CreaChiaveConfigurazione(
+                        mandata.Punti,
+                        ritorno.Punti);
+                    if (!configurazioniGiaProvate.Add(chiave))
+                        continue;
+
+                    numeroTentativo++;
+                    CandidatoChiusura candidato = ValutaChiusura(
+                        mandata,
+                        ritorno,
+                        passo,
+                        numeroTentativo);
+                    if (candidato != null)
+                        return candidato;
+                }
+            }
+
+            return null;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static ConfigurazioneTerminale CreaConfigurazioneTerminale(
+            List<Punto> originale,
+            string codice,
+            int trattiRimossi,
+            double? lunghezzaFinale)
+        {
+            if (trattiRimossi < 0 ||
+                trattiRimossi > MaxTrattiTerminaliChiusura ||
+                originale.Count - trattiRimossi < 2)
+            {
+                return null;
+            }
+
+            var punti = originale
+                .Take(originale.Count - trattiRimossi)
+                .ToList();
+            double lunghezzaRimossa = LunghezzaCodaRimossa(
+                originale,
+                trattiRimossi);
+
+            if (lunghezzaFinale.HasValue)
+            {
+                Punto inizio = punti[^2];
+                Punto fine = punti[^1];
+                double lunghezza = inizio.DistanceTo(fine);
+                if (lunghezza <= 0.000001)
+                    return null;
+
+                double obiettivo = lunghezzaFinale.Value;
+                if (lunghezza > obiettivo + 0.000001)
+                {
+                    double rapporto = obiettivo / lunghezza;
+                    punti[^1] = new Punto(
+                        inizio.X + (fine.X - inizio.X) * rapporto,
+                        inizio.Y + (fine.Y - inizio.Y) * rapporto);
+                    lunghezzaRimossa += lunghezza - obiettivo;
+                }
+            }
+
+            return new ConfigurazioneTerminale
+            {
+                Punti = punti,
+                Codice = codice,
+                TrattiRimossi = trattiRimossi,
+                LunghezzaRimossa = lunghezzaRimossa
+            };
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static CandidatoChiusura ValutaChiusura(
+            ConfigurazioneTerminale mandata,
+            ConfigurazioneTerminale ritorno,
+            double passo,
+            int numeroTentativo)
+        {
+            const double tolleranza = 0.000001;
+            Punto inizio = mandata.Punti[^1];
+            Punto fine = ritorno.Punti[^1];
+            double lunghezza = inizio.DistanceTo(fine);
+            if (lunghezza < 2.0 * passo - tolleranza)
+                return null;
+
+            Punto ingressoMandata = new Punto(
+                inizio.X - mandata.Punti[^2].X,
+                inizio.Y - mandata.Punti[^2].Y);
+            Punto uscitaRitorno = new Punto(
+                ritorno.Punti[^2].X - fine.X,
+                ritorno.Punti[^2].Y - fine.Y);
+            Punto direzioneChiusura = new Punto(
+                fine.X - inizio.X,
+                fine.Y - inizio.Y);
+            double qualitaMandata = CosenoDirezioni(
+                ingressoMandata,
+                direzioneChiusura);
+            double qualitaRitorno = CosenoDirezioni(
+                direzioneChiusura,
+                uscitaRitorno);
+            if (qualitaMandata < -tolleranza ||
+                qualitaRitorno < -tolleranza)
+            {
+                return null;
+            }
+
+            // Modificato da Codex per realizzare: scartare una chiusura che
+            // attraversa tubi già conservati. I soli segmenti esclusi sono i
+            // due terminali adiacenti ai rispettivi innesti.
+            if (IntersecaTrattiNonAdiacenti(
+                    inizio,
+                    fine,
+                    mandata.Punti) ||
+                IntersecaTrattiNonAdiacenti(
+                    inizio,
+                    fine,
+                    ritorno.Punti))
+            {
+                return null;
+            }
+
+            bool ortogonale = Math.Abs(inizio.X - fine.X) <= tolleranza ||
+                              Math.Abs(inizio.Y - fine.Y) <= tolleranza;
+            return new CandidatoChiusura
+            {
+                Mandata = mandata.Punti,
+                Ritorno = ritorno.Punti,
+                Inizio = inizio,
+                Fine = fine,
+                LivelloMandata = mandata.Codice,
+                TentativoRitorno = ritorno.Codice,
+                NumeroTentativo = numeroTentativo,
+                TrattiRimossiMandata = mandata.TrattiRimossi,
+                TrattiRimossiRitorno = ritorno.TrattiRimossi,
+                LunghezzaRimossa = mandata.LunghezzaRimossa +
+                                    ritorno.LunghezzaRimossa,
+                LunghezzaChiusura = lunghezza,
+                QualitaMandata = qualitaMandata,
+                QualitaRitorno = qualitaRitorno,
+                QualitaAngolare = Math.Min(
+                    qualitaMandata,
+                    qualitaRitorno),
+                Ortogonale = ortogonale
+            };
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static bool IntersecaTrattiNonAdiacenti(
+            Punto inizioChiusura,
+            Punto fineChiusura,
+            List<Punto> polilinea)
+        {
+            for (int i = 0; i < polilinea.Count - 2; i++)
+            {
+                if (SegmentiIntersecano(
+                    inizioChiusura,
+                    fineChiusura,
+                    polilinea[i],
+                    polilinea[i + 1]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static string CreaChiaveConfigurazione(
+            List<Punto> mandata,
+            List<Punto> ritorno)
+        {
+            Punto m0 = mandata[^2];
+            Punto m1 = mandata[^1];
+            Punto r0 = ritorno[^2];
+            Punto r1 = ritorno[^1];
+            return string.Join(
+                "|",
+                mandata.Count,
+                m0.X.ToString("R", CultureInfo.InvariantCulture),
+                m0.Y.ToString("R", CultureInfo.InvariantCulture),
+                m1.X.ToString("R", CultureInfo.InvariantCulture),
+                m1.Y.ToString("R", CultureInfo.InvariantCulture),
+                ritorno.Count,
+                r0.X.ToString("R", CultureInfo.InvariantCulture),
+                r0.Y.ToString("R", CultureInfo.InvariantCulture),
+                r1.X.ToString("R", CultureInfo.InvariantCulture),
+                r1.Y.ToString("R", CultureInfo.InvariantCulture));
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static double LunghezzaCodaRimossa(
+            List<Punto> polilinea,
+            int trattiRimossi)
+        {
+            double risultato = 0.0;
+            for (int i = 0; i < trattiRimossi; i++)
+            {
+                int fine = polilinea.Count - 1 - i;
+                risultato += polilinea[fine - 1].DistanceTo(polilinea[fine]);
+            }
+            return risultato;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static double CosenoDirezioni(Punto a, Punto b)
+        {
+            double lunghezzaA = Math.Sqrt(a.X * a.X + a.Y * a.Y);
+            double lunghezzaB = Math.Sqrt(b.X * b.X + b.Y * b.Y);
+            if (lunghezzaA <= 0.000001 || lunghezzaB <= 0.000001)
+                return -1.0;
+            return (a.X * b.X + a.Y * b.Y) /
+                   (lunghezzaA * lunghezzaB);
         }
 
         // Funzione realizzata da Codex in autonomia
@@ -379,6 +848,186 @@ namespace SpiralHeatingDiegoVittorio
             return punti
                 .Where((_, indice) => conserva[indice])
                 .ToList();
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static List<Punto> CreaRientroRettilineo(
+            List<Punto> andataRettilinea,
+            List<Punto> rientroConRaccordi,
+            double distanza)
+        {
+            if (andataRettilinea.Count < 2)
+                return new List<Punto>();
+
+            // Modificato da Codex per realizzare: quando il flag raccordi è
+            // disattivato, il ritorno nasce dai tratti rettilinei della
+            // mandata e non dai campioni delle curve arrotondate.
+            var offset = CreaOffsetRettilineo(andataRettilinea, distanza);
+            if (offset.Count < 2)
+                return offset;
+
+            Punto riferimento = rientroConRaccordi.Count > 0
+                ? rientroConRaccordi[0]
+                : offset[^1];
+            int segmentoMigliore = offset.Count - 2;
+            Punto proiezioneMigliore = offset[^1];
+            double distanzaMigliore = double.MaxValue;
+
+            for (int i = 0; i < offset.Count - 1; i++)
+            {
+                Punto proiezione = ProiettaSulSegmento(
+                    riferimento,
+                    offset[i],
+                    offset[i + 1]);
+                double dx = riferimento.X - proiezione.X;
+                double dy = riferimento.Y - proiezione.Y;
+                double distanzaQuadrata = dx * dx + dy * dy;
+                if (distanzaQuadrata >= distanzaMigliore)
+                    continue;
+
+                distanzaMigliore = distanzaQuadrata;
+                segmentoMigliore = i;
+                proiezioneMigliore = proiezione;
+            }
+
+            var rientro = new List<Punto> { proiezioneMigliore };
+            for (int i = segmentoMigliore; i >= 0; i--)
+            {
+                Punto ultimo = rientro[^1];
+                Punto candidato = offset[i];
+                if (Math.Abs(ultimo.X - candidato.X) > 0.000001 ||
+                    Math.Abs(ultimo.Y - candidato.Y) > 0.000001)
+                {
+                    rientro.Add(candidato);
+                }
+            }
+
+            return rientro;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static List<Punto> CreaOffsetRettilineo(
+            List<Punto> punti,
+            double distanza)
+        {
+            punti = GeometryUtils.EliminaDuplicati(punti);
+            if (punti.Count < 2)
+                return new List<Punto>();
+
+            var segmenti = new List<(Punto Origine, Punto Direzione, Punto Normale)>();
+            for (int i = 0; i < punti.Count - 1; i++)
+            {
+                double dx = punti[i + 1].X - punti[i].X;
+                double dy = punti[i + 1].Y - punti[i].Y;
+                double lunghezza = Math.Sqrt(dx * dx + dy * dy);
+                if (lunghezza <= 0.000001)
+                    continue;
+
+                var direzione = new Punto(dx / lunghezza, dy / lunghezza);
+                var normale = new Punto(-direzione.Y, direzione.X);
+                segmenti.Add((punti[i], direzione, normale));
+            }
+
+            if (segmenti.Count == 0)
+                return new List<Punto>();
+
+            var offset = new List<Punto>
+            {
+                Sposta(punti[0], segmenti[0].Normale, distanza)
+            };
+
+            for (int i = 1; i < punti.Count - 1; i++)
+            {
+                var precedente = segmenti[Math.Min(i - 1, segmenti.Count - 1)];
+                var successivo = segmenti[Math.Min(i, segmenti.Count - 1)];
+                Punto originePrecedente = Sposta(
+                    punti[i],
+                    precedente.Normale,
+                    distanza);
+                Punto origineSuccessiva = Sposta(
+                    punti[i],
+                    successivo.Normale,
+                    distanza);
+
+                if (IntersecaRette(
+                    originePrecedente,
+                    precedente.Direzione,
+                    origineSuccessiva,
+                    successivo.Direzione,
+                    out Punto intersezione))
+                {
+                    offset.Add(intersezione);
+                }
+                else
+                {
+                    offset.Add(originePrecedente);
+                }
+            }
+
+            offset.Add(Sposta(
+                punti[^1],
+                segmenti[^1].Normale,
+                distanza));
+            return GeometryUtils.EliminaDuplicati(offset);
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static Punto Sposta(
+            Punto punto,
+            Punto direzione,
+            double distanza) =>
+            new Punto(
+                punto.X + direzione.X * distanza,
+                punto.Y + direzione.Y * distanza);
+
+        // Funzione realizzata da Codex in autonomia
+        private static bool IntersecaRette(
+            Punto origineA,
+            Punto direzioneA,
+            Punto origineB,
+            Punto direzioneB,
+            out Punto intersezione)
+        {
+            double determinante =
+                direzioneA.X * direzioneB.Y -
+                direzioneA.Y * direzioneB.X;
+            if (Math.Abs(determinante) <= 0.000001)
+            {
+                intersezione = origineA;
+                return false;
+            }
+
+            double deltaX = origineB.X - origineA.X;
+            double deltaY = origineB.Y - origineA.Y;
+            double t =
+                (deltaX * direzioneB.Y - deltaY * direzioneB.X) /
+                determinante;
+            intersezione = new Punto(
+                origineA.X + t * direzioneA.X,
+                origineA.Y + t * direzioneA.Y);
+            return true;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static Punto ProiettaSulSegmento(
+            Punto punto,
+            Punto inizio,
+            Punto fine)
+        {
+            double dx = fine.X - inizio.X;
+            double dy = fine.Y - inizio.Y;
+            double lunghezzaQuadrata = dx * dx + dy * dy;
+            if (lunghezzaQuadrata <= 0.000000000001)
+                return inizio;
+
+            double t =
+                ((punto.X - inizio.X) * dx +
+                 (punto.Y - inizio.Y) * dy) /
+                lunghezzaQuadrata;
+            t = Math.Max(0.0, Math.Min(1.0, t));
+            return new Punto(
+                inizio.X + t * dx,
+                inizio.Y + t * dy);
         }
 
         // Funzione realizzata da Codex in autonomia
@@ -858,8 +1507,14 @@ namespace SpiralHeatingDiegoVittorio
         private static List<Punto> CreaRientro(List<Punto> andata, double distanza)
         {
             List<Punto> rientro = new List<Punto>();
-                       
-            for (int i = andata.Count - 24; i >= 0; i--)
+
+            // Modificato da Codex per realizzare: escludere soltanto gli
+            // ultimi due tratti della mandata anziché gli ultimi tre. Ogni
+            // raccordo interno contiene 11 campioni; 13 conserva il vertice
+            // precedente ai due tratti finali. Il ciclo decrescente mantiene
+            // il vincolo di verso del ritorno, opposto alla mandata.
+            const int campioniFinaliEsclusi = 13;
+            for (int i = andata.Count - campioniFinaliEsclusi; i >= 0; i--)
             {
                 var p = andata[i];
                 
@@ -913,6 +1568,135 @@ namespace SpiralHeatingDiegoVittorio
             }
             
             return rientro;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static List<Punto> CreaCurvaCollegamentoAdattiva(
+            List<Punto> mandata,
+            List<Punto> ritorno,
+            double raggio)
+        {
+            if (mandata.Count < 2 || ritorno.Count < 2)
+                return new List<Punto>();
+
+            Punto inizio = mandata[^1];
+            Punto fine = ritorno[^1];
+            Punto precedenteMandata = mandata[^2];
+            Punto precedenteRitorno = ritorno[^2];
+            double lunghezzaMandata = precedenteMandata.DistanceTo(inizio);
+            double lunghezzaRitorno = fine.DistanceTo(precedenteRitorno);
+            double lunghezzaChiusura = inizio.DistanceTo(fine);
+            if (lunghezzaMandata <= 0.000001 ||
+                lunghezzaRitorno <= 0.000001 ||
+                lunghezzaChiusura <= 0.000001)
+            {
+                return new List<Punto> { inizio, fine };
+            }
+
+            var tangenteMandata = new Punto(
+                (inizio.X - precedenteMandata.X) / lunghezzaMandata,
+                (inizio.Y - precedenteMandata.Y) / lunghezzaMandata);
+            var tangenteRitorno = new Punto(
+                (precedenteRitorno.X - fine.X) / lunghezzaRitorno,
+                (precedenteRitorno.Y - fine.Y) / lunghezzaRitorno);
+            double manigliaMassima = Math.Min(
+                Math.Min(raggio, lunghezzaChiusura / 3.0),
+                0.45 * Math.Min(lunghezzaMandata, lunghezzaRitorno));
+
+            foreach (double fattore in new[] { 1.0, 0.75, 0.5, 0.25 })
+            {
+                List<Punto> curva = CreaBezierCubicaAdattiva(
+                    inizio,
+                    fine,
+                    tangenteMandata,
+                    tangenteRitorno,
+                    manigliaMassima * fattore);
+                if (!CurvaIntersecaTrattiNonAdiacenti(curva, mandata) &&
+                    !CurvaIntersecaTrattiNonAdiacenti(curva, ritorno))
+                {
+                    return curva;
+                }
+            }
+
+            // La retta è già stata validata da LG-048: se nessuna curvatura
+            // resta libera, si conserva la chiusura sicura senza raccordo.
+            return new List<Punto> { inizio, fine };
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static List<Punto> CreaBezierCubicaAdattiva(
+            Punto inizio,
+            Punto fine,
+            Punto tangenteInizio,
+            Punto tangenteFine,
+            double maniglia)
+        {
+            if (maniglia <= 0.000001)
+                return new List<Punto> { inizio, fine };
+
+            var controllo1 = new Punto(
+                inizio.X + tangenteInizio.X * maniglia,
+                inizio.Y + tangenteInizio.Y * maniglia);
+            var controllo2 = new Punto(
+                fine.X - tangenteFine.X * maniglia,
+                fine.Y - tangenteFine.Y * maniglia);
+            double prodotto = Math.Max(
+                -1.0,
+                Math.Min(
+                    1.0,
+                    tangenteInizio.X * tangenteFine.X +
+                    tangenteInizio.Y * tangenteFine.Y));
+            double variazione = Math.Acos(prodotto);
+            int segmenti = Math.Max(
+                6,
+                Math.Min(
+                    8,
+                    4 + (int)Math.Ceiling(
+                        variazione / (Math.PI / 6.0))));
+            var curva = new List<Punto>();
+            for (int i = 0; i <= segmenti; i++)
+            {
+                double frazione = (double)i / segmenti;
+                // Modificato da Codex per realizzare: concentrare i campioni
+                // presso gli innesti, dove una Bézier lunga cambia direzione
+                // più rapidamente e la tangenza deve restare visibile.
+                double t = frazione <= 0.5
+                    ? 0.5 * Math.Pow(2.0 * frazione, 3.0)
+                    : 1.0 - 0.5 * Math.Pow(
+                        2.0 * (1.0 - frazione),
+                        3.0);
+                double unoMenoT = 1.0 - t;
+                curva.Add(new Punto(
+                    unoMenoT * unoMenoT * unoMenoT * inizio.X +
+                    3.0 * unoMenoT * unoMenoT * t * controllo1.X +
+                    3.0 * unoMenoT * t * t * controllo2.X +
+                    t * t * t * fine.X,
+                    unoMenoT * unoMenoT * unoMenoT * inizio.Y +
+                    3.0 * unoMenoT * unoMenoT * t * controllo1.Y +
+                    3.0 * unoMenoT * t * t * controllo2.Y +
+                    t * t * t * fine.Y));
+            }
+
+            return curva;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static bool CurvaIntersecaTrattiNonAdiacenti(
+            List<Punto> curva,
+            List<Punto> polilinea)
+        {
+            for (int i = 0; i < curva.Count - 1; i++)
+            {
+                if (IntersecaTrattiNonAdiacenti(
+                    curva[i],
+                    curva[i + 1],
+                    polilinea))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
         
         private static List<Punto> CreaCurvaCollegamento(List<Punto> andata, List<Punto> rientro)

@@ -9,13 +9,16 @@ using Termodel.Core.RadiantPanels;
 using Termodel.Core.ProjectFiles;
 using Termodel.Leggidxf;
 
-const double SpiralHeatingStepMeters = 0.30;
+const double VittorioStepMeters = 0.30;
 
+// Modificato da Codex per realizzare: aggiungere la regression sintetica dei
+// raccordi adattivi senza avviare il WebService.
 return args.Length == 0
     ? Usage()
     : args[0].ToLowerInvariant() switch
     {
         "run" => Run(args.Skip(1).ToArray()),
+        "fillet-check" => RunFilletCheck(),
         "prepare" => await PrepareAsync(args.Skip(1).ToArray()),
         _ => Usage()
     };
@@ -25,8 +28,107 @@ static int Usage()
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
     Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego_Vittorio|Diego] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  run --input <locale.xml> [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  fillet-check");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
+}
+
+// Funzione realizzata da Codex in autonomia
+static int RunFilletCheck()
+{
+    // Modificato da Codex per realizzare: verificare il default Service senza
+    // dipendere da un eventuale override ereditato dalla shell del test.
+    string? previousEngine =
+        Environment.GetEnvironmentVariable("TERMODEL_SPIRAL_ENGINE");
+    string defaultEngine;
+    try
+    {
+        Environment.SetEnvironmentVariable("TERMODEL_SPIRAL_ENGINE", null);
+        defaultEngine = RadiantExecutiveGenerator.GetSelectedSpiralEngineName();
+    }
+    finally
+    {
+        Environment.SetEnvironmentVariable(
+            "TERMODEL_SPIRAL_ENGINE",
+            previousEngine);
+    }
+
+    if (!defaultEngine.Equals(
+            "Diego_Vittorio",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidDataException(
+            $"Motore Service predefinito inatteso: {defaultEngine}.");
+    }
+
+    var risultati = new List<object>();
+    foreach (double gradi in new[] { 30.0, 90.0, 150.0 })
+    {
+        double radianti = gradi * Math.PI / 180.0;
+        var ingresso = new SpiralHeatingDiegoVittorio.Punto(0.0, 0.0);
+        var vertice = new SpiralHeatingDiegoVittorio.Punto(1.0, 0.0);
+        var uscita = new SpiralHeatingDiegoVittorio.Punto(
+            1.0 + Math.Cos(radianti),
+            Math.Sin(radianti));
+        List<SpiralHeatingDiegoVittorio.Punto> raccordo =
+            SpiralHeatingDiegoVittorio.GeometryUtils.ArrotondaSpirale(
+                new List<SpiralHeatingDiegoVittorio.Punto>
+                {
+                    ingresso,
+                    vertice,
+                    uscita
+                },
+                0.10);
+
+        bool finito = raccordo.All(p =>
+            double.IsFinite(p.X) && double.IsFinite(p.Y));
+        bool estremiConservati =
+            raccordo[0].DistanceTo(ingresso) <= 0.000001 &&
+            raccordo[^1].DistanceTo(uscita) <= 0.000001;
+        double dxIngresso = raccordo[1].X - raccordo[0].X;
+        double dyIngresso = raccordo[1].Y - raccordo[0].Y;
+        double dxPrimoArco = raccordo[2].X - raccordo[1].X;
+        double dyPrimoArco = raccordo[2].Y - raccordo[1].Y;
+        double dxUltimoArco = raccordo[^2].X - raccordo[^3].X;
+        double dyUltimoArco = raccordo[^2].Y - raccordo[^3].Y;
+        double dxUscita = raccordo[^1].X - raccordo[^2].X;
+        double dyUscita = raccordo[^1].Y - raccordo[^2].Y;
+        double cosenoIngresso =
+            (dxIngresso * dxPrimoArco + dyIngresso * dyPrimoArco) /
+            (Math.Sqrt(dxIngresso * dxIngresso + dyIngresso * dyIngresso) *
+             Math.Sqrt(dxPrimoArco * dxPrimoArco + dyPrimoArco * dyPrimoArco));
+        double cosenoUscita =
+            (dxUltimoArco * dxUscita + dyUltimoArco * dyUscita) /
+            (Math.Sqrt(dxUltimoArco * dxUltimoArco + dyUltimoArco * dyUltimoArco) *
+             Math.Sqrt(dxUscita * dxUscita + dyUscita * dyUscita));
+        if (!finito || !estremiConservati ||
+            raccordo.Count < 5 || raccordo.Count > 9 ||
+            cosenoIngresso < 0.95 || cosenoUscita < 0.95)
+        {
+            throw new InvalidDataException(
+                $"Raccordo sintetico non valido a {gradi:0} gradi: " +
+                $"punti={raccordo.Count}, finito={finito}, estremi={estremiConservati}, " +
+                $"tangenza={cosenoIngresso:0.###}/{cosenoUscita:0.###}.");
+        }
+
+        risultati.Add(new
+        {
+            deviationDegrees = gradi,
+            pointCount = raccordo.Count,
+            finite = finito,
+            endpointsPreserved = estremiConservati,
+            entryTangentCosine = Math.Round(cosenoIngresso, 6),
+            exitTangentCosine = Math.Round(cosenoUscita, 6)
+        });
+    }
+
+    Console.WriteLine(
+        $"RADIANT_DEFAULT_ENGINE_OK engine={defaultEngine}");
+    Console.WriteLine("RADIANT_FILLET_CHECK_OK");
+    Console.WriteLine(JsonSerializer.Serialize(
+        risultati,
+        new JsonSerializerOptions { WriteIndented = true }));
+    return 0;
 }
 
 static int Run(string[] args)
@@ -125,10 +227,13 @@ static int Run(string[] args)
                 throw new ArgumentException(
                     "Explorer, replay, prefix lock e branch inspector sono opzioni specifiche di StrategiaDiego.");
             }
-            if (Math.Abs(stepMeters - SpiralHeatingStepMeters) > 1e-9)
+            // Modificato da Codex per realizzare: Vittorio resta congelato a
+            // 0,30 m; la copia sperimentale Diego_Vittorio accetta --p.
+            if (selectedEngine.Equals("Vittorio", StringComparison.OrdinalIgnoreCase) &&
+                Math.Abs(stepMeters - VittorioStepMeters) > 1e-9)
             {
                 throw new ArgumentException(
-                    $"Strategia {selectedEngine} usa il passo reale fisso {SpiralHeatingStepMeters.ToString("0.###", CultureInfo.InvariantCulture)} m; " +
+                    $"Strategia {selectedEngine} usa il passo reale fisso {VittorioStepMeters.ToString("0.###", CultureInfo.InvariantCulture)} m; " +
                     $"il caso richiede {stepMeters.ToString("0.###", CultureInfo.InvariantCulture)} m.");
             }
 
@@ -138,7 +243,8 @@ static int Run(string[] args)
                 caseId,
                 outputDir,
                 testCase?.Description,
-                selectedEngine);
+                selectedEngine,
+                stepMeters);
         }
         if (!selectedEngine.Equals("Diego", StringComparison.OrdinalIgnoreCase))
         {
@@ -394,12 +500,13 @@ static int RunCopiedSpiralStrategy(
     string caseId,
     string outputDir,
     string? description,
-    string selectedEngine)
+    string selectedEngine,
+    double stepMeters)
 {
     // Modificato da Codex per realizzare: mantenere un solo percorso di output per Vittorio e Diego_Vittorio.
     StrategiaVittorioBenchmarkSample sample =
         selectedEngine.Equals("Diego_Vittorio", StringComparison.OrdinalIgnoreCase)
-            ? StrategiaDiegoVittorioBenchmark.Run(localeXml)
+            ? StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters)
             : StrategiaVittorioBenchmark.Run(localeXml);
 
     string svgPath = Path.Combine(outputDir, caseId + ".svg");

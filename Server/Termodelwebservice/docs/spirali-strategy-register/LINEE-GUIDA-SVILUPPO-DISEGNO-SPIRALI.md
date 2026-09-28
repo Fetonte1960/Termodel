@@ -6442,3 +6442,78 @@ Ordine corrente, obbligatorio finché non viene aggiornato questo checkpoint:
 
 Il checkpoint R30/R31 non va cancellato quando si avanza: deve restare come
 regression stabile del ramo approvato.
+
+---
+
+## LG-048 — Chiusura rapida terminale `Diego_Vittorio`
+
+Questa regola riguarda esclusivamente la copia indipendente
+`Diego_Vittorio` e non modifica `SpiraliVittorio`. Dal consolidamento del
+28 settembre 2026 `Diego_Vittorio` è il motore predefinito del Service per i
+casi ortogonali; gli altri motori restano disponibili come override.
+
+La chiusura centrale usa una ricerca deterministica con arresto anticipato.
+Un candidato è accettabile quando il segmento diretto fra mandata e ritorno:
+
+- ha lunghezza almeno `2p`;
+- non forma un angolo acuto all'innesto con la mandata;
+- non forma un angolo acuto all'innesto con il ritorno;
+- non interseca tratti non adiacenti della mandata o del ritorno conservati.
+
+Non vengono applicati altri vincoli in questa fase sperimentale. Distanze
+positive e posizione rispetto al perimetro possono essere misurate e mostrate
+nel report, ma non respingono il candidato. I due tratti terminali adiacenti
+alla chiusura sono esclusi dal controllo di intersezione perché condividono
+necessariamente gli estremi del nuovo segmento.
+
+La mandata costituisce il ciclo esterno:
+
+1. `M0`: elimina gli ultimi tre tratti;
+2. `M1`: elimina gli ultimi due e accorcia il nuovo terminale a `2p`;
+3. `M2`: elimina l'ultimo e accorcia il nuovo terminale a `2p`;
+4. `M3`: conserva tutti i tratti e accorcia l'ultimo a `2p`;
+5. `M4`: conserva la mandata integra.
+
+Per ogni livello della mandata il ritorno costituisce il ciclo interno:
+
+1. `R0`: integro;
+2. `R1`: ultimo tratto accorciato a `p`;
+3. `R2`: elimina l'ultimo tratto;
+4. `R3`: elimina l'ultimo e accorcia il nuovo terminale a `p`;
+5. `R4`: elimina gli ultimi due;
+6. `R5`: elimina gli ultimi due e accorcia il nuovo terminale a `p`;
+7. `R6`: elimina gli ultimi tre.
+
+L'ordine massimo è quindi `5 × 7 = 35` tentativi. Le configurazioni duplicate
+vengono saltate. La prima configurazione accettabile termina immediatamente la
+ricerca; se nessuna è accettabile, mandata e ritorno restano separati e il log
+deve dichiararlo. Un tratto più corto della lunghezza obiettivo non viene
+esteso artificialmente.
+
+---
+
+## LG-049 — Raccordi adattivi a frammentazione limitata `Diego_Vittorio`
+
+Questa regola riguarda la sola presentazione raccordata della copia
+sperimentale `Diego_Vittorio`. Le polilinee rettilinee restano la geometria
+autorevole usata per generazione e scelta della chiusura.
+
+I vertici interni vengono sostituiti da archi circolari tangenti capaci di
+gestire deviazioni acute, rette, ottuse e oblique. La discretizzazione usa:
+
+- passo angolare indicativo di 30°;
+- minimo 2 e massimo 6 segmenti per arco;
+- occupazione massima del 45% di ciascun tratto adiacente;
+- conservazione degli estremi originali della polilinea;
+- nessuna estensione artificiale dei tratti corti.
+
+I due innesti della chiusura LG-048 sono raccordati da una Bézier cubica
+tangente, discretizzata con 6–8 segmenti e campioni concentrati presso gli
+estremi. La maniglia è limitata dal raggio, dalla lunghezza della chiusura e
+dai terminali disponibili. Se la curva interseca tratti non adiacenti, la
+maniglia viene ridotta progressivamente; se nessuna curvatura resta libera,
+viene mantenuto il segmento rettilineo già validato.
+
+La regression obbligatoria comprende deviazioni sintetiche di 30°, 90° e
+150°, controllo di coordinate finite ed estremi conservati, oltre alla prova
+SVG reale con raccordi e chiusura attivi.

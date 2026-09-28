@@ -199,10 +199,11 @@ GET /api/projects/{projectId}/artifacts/pannelli-esecutivo-dxf
 DXF e SVG derivano dallo **stesso modello grafico esecutivo** del Core. Il
 motore geometrico è selezionabile tramite `TERMODEL_SPIRAL_ENGINE` con i
 valori `Vittorio | GPT | Diego | Diego_Vittorio`; quando la variabile non è
-configurata il Service usa **SpiraliGPT (GPT)** come default operativo.
-StrategiaDiego e Diego_Vittorio restano disponibili tramite override esplicito
-per sviluppo, confronto e rollback. Il passo corrente resta 0,30 m. Il grafo/collettore
-resta fuori scope e viene rimandato a Tubi universale.
+configurata il Service usa **Diego_Vittorio** come default operativo, con
+ritorno autonomo, chiusura LG-048 e raccordi adattivi LG-049 attivi. Gli altri
+motori restano disponibili tramite override esplicito per confronto e rollback.
+Il passo corrente resta 0,30 m. Il grafo/collettore resta fuori scope e viene
+rimandato a Tubi universale.
 
 ## Canale universale file generati
 

@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$SvgPath,
+    [double]$StepMeters = 0.30,
     [double]$Tolerance = 0.002
 )
 
@@ -49,21 +50,29 @@ function Assert-Coordinate(
 $supply = @(Convert-Points ([string]$supplyNode.points))
 $return = @(Convert-Points ([string]$returnNode.points))
 
+if ([double]::IsNaN($StepMeters) -or [double]::IsInfinity($StepMeters) -or $StepMeters -le 0) {
+    throw "StepMeters deve essere finito e positivo."
+}
+
+$halfStep = $StepMeters / 2.0
+$doubleStep = $StepMeters * 2.0
+$wallReturn = $halfStep + $StepMeters
+
 # Funzione realizzata da Codex in autonomia: regression geometrica specifica
-# del quadrato Git 4x4/T1/p=0,30, usato come riferimento prestazionale.
-foreach ($value in @(0.15, 3.85)) {
+# del quadrato Git 4x4/T1 a passo variabile, usato come riferimento prestazionale.
+foreach ($value in @($halfStep, (4.0 - $halfStep))) {
     Assert-Coordinate $supply "X" $value "parete-Supply=p/2"
     Assert-Coordinate $supply "Y" $value "parete-Supply=p/2"
 }
-foreach ($value in @(0.75, 3.25)) {
+foreach ($value in @(($halfStep + $doubleStep), (4.0 - $halfStep - $doubleStep))) {
     Assert-Coordinate $supply "X" $value "Supply-Supply=2p"
     Assert-Coordinate $supply "Y" $value "Supply-Supply=2p"
 }
-foreach ($value in @(0.45, 3.55)) {
+foreach ($value in @($wallReturn, (4.0 - $wallReturn))) {
     Assert-Coordinate $return "X" $value "Supply-Return=p"
     Assert-Coordinate $return "Y" $value "Supply-Return=p"
 }
-foreach ($value in @(1.05, 2.95)) {
+foreach ($value in @(($wallReturn + $doubleStep), (4.0 - $wallReturn - $doubleStep))) {
     Assert-Coordinate $return "X" $value "Return successivo conforme"
     Assert-Coordinate $return "Y" $value "Return successivo conforme"
 }
@@ -71,13 +80,13 @@ foreach ($value in @(1.05, 2.95)) {
 $report = [ordered]@{
     status = "ok"
     fixture = "StrategiaDiegoSquare4x4.locale.xml"
-    stepMeters = 0.30
-    wallSupplyMeters = 0.15
-    supplySupplyMeters = 0.60
-    supplyReturnMeters = 0.30
-    wallReturnMeters = 0.45
-    returnReturnObservedMeters = 0.60
-    returnReturnMinimumMeters = 0.30
+    stepMeters = $StepMeters
+    wallSupplyMeters = $halfStep
+    supplySupplyMeters = $doubleStep
+    supplyReturnMeters = $StepMeters
+    wallReturnMeters = $wallReturn
+    returnReturnObservedMeters = $doubleStep
+    returnReturnMinimumMeters = $StepMeters
     supplyPoints = $supply.Count
     returnPoints = $return.Count
     svgSha256 = (Get-FileHash -LiteralPath $SvgPath -Algorithm SHA256).Hash

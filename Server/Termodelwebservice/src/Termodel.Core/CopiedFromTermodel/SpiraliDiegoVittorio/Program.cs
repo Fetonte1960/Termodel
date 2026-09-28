@@ -24,12 +24,9 @@ namespace SpiralHeatingDiegoVittorio
         // Modificato da Codex per realizzare: applicare a Diego_Vittorio la
         // matrice distanze delle linee guida spirali senza toccare Vittorio.
         public const double PassoTubi = 0.30;
-        private const double DistanzaPareti = PassoTubi / 2.0;
-        private const double DistanzaMandataMandata = PassoTubi * 2.0;
         
         // Parametri chiusura spirale
         private const double RaggioCurvatura = 0.10;
-        private const double DistanzaRitorno = PassoTubi;
         private const double DistanzaRotazioneUltimoPunto = 0.20;
         
         // Modalità debug
@@ -72,10 +69,34 @@ namespace SpiralHeatingDiegoVittorio
         */
         public static void AggiornaSpirali()
         {
-            GeneraSpirale();
-            ChiudiSpiraleFiles();
+            AggiornaSpirali(PassoTubi);
         }
-        static void GeneraSpirale()
+
+        // Funzione realizzata da Codex in autonomia
+        public static void AggiornaSpirali(double passoTubi)
+        {
+            if (!double.IsFinite(passoTubi) || passoTubi <= 0)
+                throw new ArgumentOutOfRangeException(nameof(passoTubi), "Il passo deve essere finito e positivo.");
+
+            // Modificato da Codex per realizzare: calcolare tutte le distanze
+            // correlate dalla p della singola esecuzione, senza stato globale.
+            double distanzaPareti = passoTubi / 2.0;
+            double distanzaMandataMandata = passoTubi * 2.0;
+            double distanzaRitorno = passoTubi;
+
+            GeneraSpirale(
+                passoTubi,
+                distanzaPareti,
+                distanzaMandataMandata,
+                distanzaRitorno);
+            ChiudiSpiraleFiles(distanzaPareti, distanzaRitorno);
+        }
+
+        static void GeneraSpirale(
+            double passoTubi,
+            double distanzaPareti,
+            double distanzaMandataMandata,
+            double distanzaRitorno)
         {
             string xmlFile = "locale.xml";
             
@@ -182,11 +203,11 @@ namespace SpiralHeatingDiegoVittorio
                 // la matrice geometrica realmente usata da Diego_Vittorio.
                 Console.WriteLine(
                     "  Distanze Diego_Vittorio: " +
-                    $"p={PassoTubi.ToString("0.###", ci)} m; " +
-                    $"parete={DistanzaPareti.ToString("0.###", ci)} m; " +
-                    $"Supply-Supply={DistanzaMandataMandata.ToString("0.###", ci)} m; " +
-                    $"Supply-Return={DistanzaRitorno.ToString("0.###", ci)} m; " +
-                    $"Return-Return(min)={PassoTubi.ToString("0.###", ci)} m");
+                    $"p={passoTubi.ToString("0.###", ci)} m; " +
+                    $"parete={distanzaPareti.ToString("0.###", ci)} m; " +
+                    $"Supply-Supply={distanzaMandataMandata.ToString("0.###", ci)} m; " +
+                    $"Supply-Return={distanzaRitorno.ToString("0.###", ci)} m; " +
+                    $"Return-Return(min)={passoTubi.ToString("0.###", ci)} m");
                 
                 // Salva P3 nel XML
                 var lineaXml = doc.Descendants("Linea")
@@ -210,8 +231,8 @@ namespace SpiralHeatingDiegoVittorio
                 (spiral, offsets) = SpiralGenerator.Generate(
                     perimetro,
                     lineaIngresso.PuntoInterno,
-                    DistanzaPareti,
-                    DistanzaMandataMandata,
+                    distanzaPareti,
+                    distanzaMandataMandata,
                     true  // writeSvg non usato in SpiralGenerator
                 );
                 
@@ -488,7 +509,9 @@ namespace SpiralHeatingDiegoVittorio
             }
         }
         
-        static void ChiudiSpiraleFiles()
+        static void ChiudiSpiraleFiles(
+            double distanzaPareti,
+            double distanzaRitorno)
         {
             string xmlFile = "locale.xml";
             
@@ -498,7 +521,15 @@ namespace SpiralHeatingDiegoVittorio
                 return;
             }
             
-            ChiudiSpirale.Chiudi(xmlFile, RaggioCurvatura, DistanzaRitorno, DistanzaRotazioneUltimoPunto, Debug);
+            // Modificato da Codex per realizzare: fornire al ritorno autonomo
+            // anche la distanza iniziale della mandata dalla parete.
+            ChiudiSpirale.Chiudi(
+                xmlFile,
+                RaggioCurvatura,
+                distanzaPareti,
+                distanzaRitorno,
+                DistanzaRotazioneUltimoPunto,
+                Debug);
         }
     }
 }

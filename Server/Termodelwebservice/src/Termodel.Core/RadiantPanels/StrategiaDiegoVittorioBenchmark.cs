@@ -14,10 +14,16 @@ public static class StrategiaDiegoVittorioBenchmark
     private static readonly object EngineGate = new();
 
     // Funzione realizzata da Codex in autonomia
-    public static StrategiaVittorioBenchmarkSample Run(string localeXml)
+    public static StrategiaVittorioBenchmarkSample Run(
+        string localeXml,
+        double stepMeters = SpiralHeatingDiegoVittorio.Program.PassoTubi)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Diego_Vittorio vuota.", nameof(localeXml));
+        // Modificato da Codex per realizzare: accettare il passo richiesto
+        // dall'Harness e rifiutare valori geometricamente non validi.
+        if (!double.IsFinite(stepMeters) || stepMeters <= 0)
+            throw new ArgumentOutOfRangeException(nameof(stepMeters));
 
         XDocument.Parse(localeXml, LoadOptions.PreserveWhitespace);
 
@@ -46,7 +52,7 @@ public static class StrategiaDiegoVittorioBenchmark
                 {
                     Directory.SetCurrentDirectory(tempRoot);
                     Console.SetOut(capturedOut);
-                    SpiralHeatingDiegoVittorio.Program.AggiornaSpirali();
+                    SpiralHeatingDiegoVittorio.Program.AggiornaSpirali(stepMeters);
                 }
                 finally
                 {
@@ -81,7 +87,7 @@ public static class StrategiaDiegoVittorioBenchmark
             return new StrategiaVittorioBenchmarkSample(
                 File.ReadAllText(svgPath, Encoding.UTF8),
                 resultXml,
-                SpiralHeatingDiegoVittorio.Program.PassoTubi,
+                stepMeters,
                 localeCount,
                 spiralPointCount,
                 stopwatch.ElapsedMilliseconds,
