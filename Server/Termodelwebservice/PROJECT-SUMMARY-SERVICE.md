@@ -67,12 +67,13 @@ Prima di intervenire:
    o a un impedimento concreto. Al termine rimuovere la strumentazione
    occasionale e lasciare solo correzioni/regression test utili.
 14. **Notifica GitHub Actions — IMPORTANTE:** ogni Action usata per un incarico operativo o debug deve seguire `.github/TERMODEL-ACTION-NOTIFICATIONS.md`. All'avvio pubblicare `RUNNING` nel Commit Status `Termodel/job`; nello step finale `always()` pubblicare `SUCCESS` o `FAILED` e inviare una sola notifica push tramite il secret `TERMODEL_NTFY_TOPIC`. Non usare polling e non esporre mai il valore del secret.
-15. **Protocollo anti-timeout chat — IMPORTANTE:** per incarichi lunghi applicare `.github/TERMODEL-CHAT-ANTI-TIMEOUT.md`. La chat è il punto di comando, GitHub è lo stato persistente: registrare subito `COMMISSIONATO`, lavorare per checkpoint piccoli, demandare build/test lunghi a GitHub Actions, evitare di riversare log enormi nella chat e riprendere dopo timeout da Summary, commit, status e artifact senza rifare lavoro già verificato.
+15. **Protocollo anti-timeout chat — IMPORTANTE:** per incarichi lunghi applicare `.github/TERMODEL-CHAT-ANTI-TIMEOUT.md`. La chat è il punto di comando, GitHub è lo stato persistente: registrare subito `COMMISSIONATO`, **suddividere gli incarichi gravosi in fasi autonome e riprendibili**, lasciare checkpoint persistenti fra una fase e l'altra, demandare build/test lunghi a GitHub Actions, evitare di riversare log enormi nella chat e riprendere dopo timeout da Summary, commit, status e artifact senza rifare lavoro già verificato.
+16. **Notifica fine fase con Issue #1 — IMPORTANTE:** alla conclusione di ogni fase significativa di un incarico gravoso aggiornare e chiudere la Issue #1 come `Completed` se riuscita o `Not planned` se fallita/non proseguibile. Non notificare ogni commit, micro-passaggio o singola build: le build hanno già le notifiche GitHub Actions. Issue #1 serve a segnalare la conclusione di una **fase di lavoro utile e autonoma**; alla fase successiva può essere riaperta e riutilizzata.
 
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-28 — Direttiva fasi anti-blocco e notifiche Issue #1
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - rendere permanente la regola che gli incarichi gravosi devono essere suddivisi prima dell'esecuzione in fasi coerenti, autonome e riprendibili;
@@ -85,6 +86,13 @@ Criteri di completamento:
 - protocollo anti-timeout aggiornato;
 - regola riportata nel Summary autorevole;
 - nessuna modifica a codice applicativo o `definizionedati.json`.
+
+Esito:
+- `.github/TERMODEL-CHAT-ANTI-TIMEOUT.md` aggiornato nel commit `87da7b30d4d9431c05748a5f0beab11255ca6742`;
+- gli incarichi gravosi devono ora essere suddivisi preventivamente in fasi coerenti, autonome e riprendibili;
+- ogni fase significativa deve lasciare un checkpoint persistente e terminare con notifica tramite Issue #1;
+- Issue #1 non va usata per ogni commit o build, per evitare duplicazioni con le notifiche GitHub Actions già attive;
+- nessuna modifica a codice applicativo, frontend o `definizionedati.json`; nessuna build necessaria.
 
 
 ### INCARICO 2026-09-28 — Stato strategie spirali e limite ritorno autonomo
