@@ -8,15 +8,11 @@ concurrency:
   group: termodel-diego-vittorio-public-square-${{ github.ref }}
   cancel-in-progress: true
 
+# Diagnostica completa progetto -> Service -> Harness.
+# Dopo il consolidamento DV-TEST-001 resta intenzionalmente manuale:
+# il ciclo automatico ordinario è coperto dal Fast Harness.
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'Server/Termodelwebservice/tools/generate-public-square-executive.ps1'
-      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/**'
-      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/StrategiaDiegoVittorioBenchmark.cs'
-      - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
-      - '.github/workflows/termodel-diego-vittorio-public-square.yml'
 
 jobs:
   investigate:
