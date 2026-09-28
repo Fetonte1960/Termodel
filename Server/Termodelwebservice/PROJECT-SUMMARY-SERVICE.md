@@ -72,6 +72,41 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-28 — Indagine locali esempio pannelli radianti uno per uno
+Stato: COMMISSIONATO
+
+Origine:
+- il quadrato base dell'esempio 1 è giudicato corretto dall'utente;
+- il secondo esempio pubblico **Pannelli radianti** mostra risultati non ripetibili e più locali con geometrie gravemente errate;
+- l'indagine deve procedere **locale per locale**, iniziando dai locali rettangolari più semplici, usando il Fast Harness.
+
+Vincolo di regressione prioritario:
+- il risultato corrente del **quadrato base esempio 1** è il riferimento protetto;
+- ogni correzione candidata deve essere verificata contro il quadrato base;
+- se modifica il risultato geometrico del quadrato base, la correzione deve essere respinta o resa più circoscritta prima di essere consolidata;
+- nessuna modifica strutturale generale del motore senza nuovo accordo umano.
+
+Fasi anti-timeout:
+- **FASE 1 — estrazione casi reali:** partire dal vero progetto pubblico `Pannelli radianti`, produrre il medesimo `RadiantPanelInputXml` del Service, classificare i locali e creare fixture Harness indipendenti iniziando dai rettangolari;
+- **FASE 2 — primo locale rettangolare:** riprodurre il risultato attuale, tracciare Supply/Return e isolare il primo errore causale; applicare soltanto correzioni locali che lascino invariato il quadrato base;
+- **FASE 3+ — locali successivi:** procedere uno per volta, aggiungendo ogni caso risolto alla regression Fast prima di passare al successivo;
+- ogni fase significativa termina con checkpoint persistente e Issue #1; le singole build restano notificate dalle Actions e non richiedono Issue dedicate.
+
+Regole:
+- usare il percorso locale/Fast Harness come banco primario e GitHub Actions solo per consolidamento;
+- preservare `SpiraliVittorio`;
+- `StrategiaDiego` resta PARKED;
+- nessuna modifica frontend o `definizionedati.json`;
+- non usare il risultato corretto di un locale per mascherare regressioni in altri: ogni locale deve avere fixture, log e regression propri;
+- aggiornare le linee guida spirali con i casi e le cause realmente accertate.
+
+Criteri FASE 1:
+- input reale del progetto pubblico estratto senza ricostruzione manuale;
+- elenco dei locali con perimetro, ingresso e classificazione geometrica;
+- fixture indipendenti per i locali rettangolari;
+- baseline del quadrato base protetta nel Fast Harness.
+
+
 ### INCARICO 2026-09-28 — Pubblicazione correzione quadrato e aggiornamento Render
 Stato: ESEGUITO
 
