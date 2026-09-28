@@ -8,7 +8,16 @@
       "project": "./examples/pannelli-radianti.tmdl.txt",
       "executive": true,
       "default": true,
-      "executiveSvg": "./examples/pannelli-radianti-esecutivo.svg"
+      "executiveSvg": "./examples/pannelli-radianti-esecutivo.svg",
+      "executiveProvenance": {
+        "kind": "consolidated-example",
+        "generator": "Termodel Service",
+        "spiralEngine": "GPT",
+        "serviceCommit": "aba9bd293936396c9861f521d5ffebdb0fe8b769",
+        "consolidatedCommit": "9a4c0b7d982ea42c1b73a4a5a36975935d1bfece",
+        "generatedDate": "2026-09-27",
+        "workflowRun": "36301010185"
+      }
     },
     {
       "id": "quadrato-con-pannelli",
@@ -17,7 +26,16 @@
       "geometry": "./examples/quadrato-con-pannelli.svg",
       "executive": true,
       "default": false,
-      "executiveSvg": "./examples/quadrato-con-pannelli-esecutivo.svg"
+      "executiveSvg": "./examples/quadrato-con-pannelli-esecutivo.svg",
+      "executiveProvenance": {
+        "kind": "consolidated-example",
+        "generator": "Termodel Service",
+        "spiralEngine": "GPT",
+        "serviceCommit": "aba9bd293936396c9861f521d5ffebdb0fe8b769",
+        "consolidatedCommit": "9a4c0b7d982ea42c1b73a4a5a36975935d1bfece",
+        "generatedDate": "2026-09-27",
+        "workflowRun": "36301010185"
+      }
     }
   ]
 }

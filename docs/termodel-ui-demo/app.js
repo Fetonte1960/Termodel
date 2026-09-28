@@ -68,7 +68,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.33';
+const APP_VERSION = '1.34';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -216,6 +216,7 @@ const cadAddBackground = document.getElementById('cadAddBackground');
 const cadBackgroundFile = document.getElementById('cadBackgroundFile');
 const cadLoadGeneratedExecutive = document.getElementById('cadLoadGeneratedExecutive');
 const cadShowGeneratedExecutive = document.getElementById('cadShowGeneratedExecutive');
+const cadExecutiveProvenance = document.getElementById('cadExecutiveProvenance');
 const cadShowBackground = document.getElementById('cadShowBackground');
 const cadShowInput = document.getElementById('cadShowInput');
 const pdfImportModal = document.getElementById('pdfImportModal');
@@ -348,6 +349,8 @@ let lastTermodelLogProjectId = '';
 let termodelServiceReadyAt = 0;
 let termodelServiceCapabilities = null;
 let termodelServiceRuntimeLabel = '';
+let termodelServiceRuntimeCommit = '';
+let termodelServiceRuntimeEngine = '';
 let termodelServiceProgressHideTimer = null;
 let projectBrowserExamples = [];
 let projectBrowserExamplesPromise = null;
@@ -1139,6 +1142,92 @@ function currentProjectBrowserExample() {
   ) || null;
 }
 
+function cadShortCommit(value) {
+  const commit = String(value || '').trim();
+  return commit ? commit.slice(0, 8) : 'n/d';
+}
+
+function cadSpiralEngineLabel(value) {
+  const engine = String(value || '').trim();
+  if (!engine) return 'n/d';
+  return engine.toUpperCase() === 'GPT' ? 'GPT / SpiraliGPT' : engine;
+}
+
+function cadUpdateExecutiveProvenance() {
+  if (!cadExecutiveProvenance) return;
+
+  const overlay = cadGeneratedExecutiveOverlay;
+  const visible =
+    Boolean(overlay) &&
+    cadShowGeneratedExecutive?.checked !== false;
+
+  if (!visible) {
+    cadExecutiveProvenance.hidden = true;
+    cadExecutiveProvenance.textContent = '';
+    cadExecutiveProvenance.classList.remove('consolidated', 'runtime');
+    cadExecutiveProvenance.removeAttribute('title');
+    return;
+  }
+
+  const provenance = overlay.provenance || {};
+  const consolidated = overlay.sourceType === 'example-static';
+  const generator = String(provenance.generator || 'Termodel Service').trim();
+  const engine = cadSpiralEngineLabel(
+    provenance.spiralEngine || termodelServiceRuntimeEngine
+  );
+  const serviceCommit =
+    provenance.serviceCommit || termodelServiceRuntimeCommit || '';
+  const projectId = String(overlay.projectId || '').trim();
+  const stale = Boolean(overlay.stale);
+
+  const head = document.createElement('strong');
+  head.textContent = consolidated
+    ? 'ESECUTIVO PANNELLI · CONSOLIDATO NELL’ESEMPIO'
+    : 'ESECUTIVO PANNELLI · CALCOLO CORRENTE · NON CONSOLIDATO';
+
+  const generated = document.createElement('span');
+  generated.textContent =
+    'Generato da: ' + generator +
+    ' · motore ' + engine +
+    ' · Service ' + cadShortCommit(serviceCommit);
+
+  const detail = document.createElement('span');
+  if (consolidated) {
+    const consolidatedCommit = cadShortCommit(provenance.consolidatedCommit);
+    const date = String(provenance.generatedDate || '').trim();
+    detail.textContent =
+      'Consolidato: commit ' + consolidatedCommit +
+      (date ? ' · ' + date : '');
+  } else {
+    detail.textContent =
+      'projectId ' + (projectId ? projectId.slice(0, 12) : 'n/d') +
+      (stale ? ' · ATTENZIONE: artifact non aggiornato' : ' · artifact ultimo calcolo');
+  }
+
+  cadExecutiveProvenance.replaceChildren(head, generated, detail);
+  cadExecutiveProvenance.hidden = false;
+  cadExecutiveProvenance.classList.toggle('consolidated', consolidated);
+  cadExecutiveProvenance.classList.toggle('runtime', !consolidated);
+
+  const fullDetails = [
+    consolidated ? 'Stato: consolidato nell’esempio' : 'Stato: calcolo corrente non consolidato',
+    'Generatore: ' + generator,
+    'Motore: ' + engine,
+    'Service commit: ' + (serviceCommit || 'n/d')
+  ];
+  if (consolidated) {
+    fullDetails.push(
+      'Commit consolidamento: ' + (provenance.consolidatedCommit || 'n/d'),
+      'Workflow: ' + (provenance.workflowRun || 'n/d'),
+      'Data: ' + (provenance.generatedDate || 'n/d')
+    );
+  } else {
+    fullDetails.push('ProjectId: ' + (projectId || 'n/d'));
+    if (stale) fullDetails.push('Artifact: non aggiornato');
+  }
+  cadExecutiveProvenance.title = fullDetails.join('\n');
+}
+
 function applyProjectBrowserCadInitialSetup() {
   if (cadShowGeneratedExecutive) {
     cadShowGeneratedExecutive.disabled = !cadGeneratedExecutiveAvailable();
@@ -1202,6 +1291,7 @@ async function loadProjectBrowserStaticExecutive(example, options = {}) {
       projectId: currentProjectId || '',
       exampleId: example.id,
       sourceType: 'example-static',
+      provenance: example.executiveProvenance || null,
       svgText: parsed.svgText,
       sourcePath: example.executiveSvg,
       stale: false,
@@ -3735,10 +3825,15 @@ async function ensureTermodelServiceReady(force = false) {
     if (String(health?.status || '').toLowerCase() !== 'ok')
       throw new Error('Health Service non valido.');
 
+    const serviceCommitFull = String(
+      health?.serviceCommit || health?.serviceCommitShort || ''
+    ).trim();
     const serviceCommit = String(
-      health?.serviceCommitShort || health?.serviceCommit || ''
+      health?.serviceCommitShort || serviceCommitFull || ''
     ).trim();
     const spiralEngine = String(health?.spiralEngine || '').trim();
+    termodelServiceRuntimeCommit = serviceCommitFull || serviceCommit;
+    termodelServiceRuntimeEngine = spiralEngine;
     termodelServiceRuntimeLabel =
       'Server ' +
       (serviceCommit ? serviceCommit.slice(0, 8) : 'locale') +
@@ -3770,6 +3865,8 @@ async function ensureTermodelServiceReady(force = false) {
     termodelServiceReadyAt = 0;
     termodelServiceCapabilities = null;
     termodelServiceRuntimeLabel = '';
+    termodelServiceRuntimeCommit = '';
+    termodelServiceRuntimeEngine = '';
     setTermodelServiceProgress(
       'Service non disponibile: ' + (error?.message || error),
       100
@@ -6030,6 +6127,13 @@ async function cadLoadGeneratedExecutiveBackground(options = {}) {
 
     cadGeneratedExecutiveOverlay = {
       projectId: currentProjectId,
+      sourceType: 'service-runtime',
+      provenance: {
+        kind: 'service-runtime',
+        generator: 'Termodel Service',
+        spiralEngine: termodelServiceRuntimeEngine,
+        serviceCommit: termodelServiceRuntimeCommit
+      },
       svgText: parsed.svgText,
       sourcePath: cadText(record.path),
       stale: fetched.stale || Boolean(record.stale),
@@ -9898,6 +10002,8 @@ function applyCadLayerVisibility() {
 
   const handles = cadCanvas.querySelector('#cadHandlesLayer');
   if (handles) handles.style.display = cadShowInput?.checked === false ? 'none' : '';
+
+  cadUpdateExecutiveProvenance();
 }
 
 function renderCadComparison() {

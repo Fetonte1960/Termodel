@@ -73,8 +73,10 @@ jobs:
           $ErrorActionPreference = "Stop"
           $appPath = "..\..\docs\termodel-ui-demo\app.js"
           $indexPath = "..\..\docs\termodel-ui-demo\index.html"
+          $catalogPath = "..\..\docs\termodel-ui-demo\examples\catalog.json"
           $app = Get-Content -LiteralPath $appPath -Raw
           $index = Get-Content -LiteralPath $indexPath -Raw
+          $catalog = Get-Content -LiteralPath $catalogPath -Raw
 
           foreach ($marker in @(
             "await cadLoadGeneratedExecutiveBackground({",
@@ -89,18 +91,54 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.33';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.34';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.33")) {
-            throw "Cache-busting app.js v1.33 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.34")) {
+            throw "Cache-busting app.js v1.34 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.33") {
+          if ($frontendVersion -ne "1.34") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
+
+          foreach ($marker in @(
+            'id="cadExecutiveProvenance"',
+            'class="cad-executive-provenance"'
+          )) {
+            if (-not $index.Contains($marker)) {
+              throw "Zona provenienza esecutivo CAD mancante: $marker"
+            }
+          }
+
+          foreach ($marker in @(
+            "function cadUpdateExecutiveProvenance()",
+            "termodelServiceRuntimeCommit",
+            "termodelServiceRuntimeEngine",
+            "sourceType: 'service-runtime'",
+            "provenance: example.executiveProvenance || null",
+            "CALCOLO CORRENTE · NON CONSOLIDATO",
+            "CONSOLIDATO NELL’ESEMPIO"
+          )) {
+            if (-not $app.Contains($marker)) {
+              throw "Wiring provenienza esecutivo CAD mancante: $marker"
+            }
+          }
+
+          foreach ($marker in @(
+            '"executiveProvenance"',
+            '"spiralEngine": "GPT"',
+            '"serviceCommit": "aba9bd293936396c9861f521d5ffebdb0fe8b769"',
+            '"consolidatedCommit": "9a4c0b7d982ea42c1b73a4a5a36975935d1bfece"',
+            '"workflowRun": "36301010185"'
+          )) {
+            if (-not $catalog.Contains($marker)) {
+              throw "Metadata provenienza esecutivo statico mancanti: $marker"
+            }
+          }
+          Write-Host "CAD_EXECUTIVE_PROVENANCE_OK"
 
           foreach ($marker in @(
             "const TERMODEL_SERVICE_WAIT_STATUS = 'In Attesa di una risposta del server';",
@@ -432,8 +470,8 @@ jobs:
           if (-not $myHomeHtml.Contains("MYHOME3D MOBILE")) {
             throw "Pagina pubblica MyHome3D.html non contiene l'istruzione Mobile."
           }
-          if (-not $index.Contains("./app.js?v=1.33")) {
-            throw "Cache-busting MyHome3D v1.33 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.34")) {
+            throw "Cache-busting MyHome3D v1.34 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -1074,7 +1112,7 @@ jobs:
             # acqua 35/30 °C, coefficiente resa 5 W/m2K.
             if ([Math]::Abs([double]$circuit.flowLitersHour - 3.1826793) -gt 0.01 -or
                 [Math]::Abs([double]$circuit.reynolds - 123.4017) -gt 0.5 -or
-                [Math]::Abs([double]$circuit.pressureLossPa - 1.333675) -gt 0.02) {
+                [Math]::Abs([double]$circuit.pressureLossPa - 1.343675) -gt 0.02) {
               throw "Golden Darcy sintetico fuori tolleranza: flow=$($circuit.flowLitersHour) L/h, Re=$($circuit.reynolds), dP=$($circuit.pressureLossPa) Pa."
             }
 
