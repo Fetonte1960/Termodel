@@ -1,4 +1,5 @@
 name: Termodel Diego_Vittorio Room Extraction
+# Harness localeId serializza senza declaration encoding; input reale resta UTF-8.
 
 permissions:
   contents: read
