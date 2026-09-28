@@ -7142,3 +7142,170 @@ il collaudo:
 Fino a conclusione del collaudo, `Diego_Vittorio` resta **motore corrente in
 test sul server**, mentre `SpiraliVittorio` resta il riferimento invariato di
 confronto e ripristino.
+
+
+---
+
+## LG-050 — Strettoie: decisione a visione media, non solo locale
+
+**Stato:** PRINCIPIO DI SVILUPPO CONSOLIDATO — 28/09/2026
+
+Una strettoia non può essere giudicata soltanto dal nodo corrente e dal tratto
+immediatamente successivo. Un tratto localmente valido può impegnare un
+corridoio che, pochi passi dopo, intrappola la spirale o riduce la lunghezza
+utile complessiva.
+
+La StrategiaDiego originaria puntava alla soluzione radicale: costruire un
+albero di decisione, sviluppare i rami alternativi (per esempio
+`entra nella strettoia` / `non entra`), simulare le conseguenze e premiare
+il ramo che produce la migliore soluzione globale, con la lunghezza utile del
+circuito fra i criteri principali. Questa ricerca ad albero ha però mostrato
+un costo computazionale troppo elevato per l'uso corrente.
+
+La direzione corrente **Diego_Vittorio** è quindi deliberatamente intermedia:
+migliorare le scelte locali ereditate da Vittorio introducendo una
+**visione a medio raggio**, senza riesplorare l'intero spazio combinatorio.
+
+Principio operativo:
+- distinguere sempre **validità locale** e **convenienza a medio raggio**;
+- una scelta non è buona solo perché il prossimo segmento rispetta le distanze;
+- prima di impegnare una strettoia occorre stimare se resta almeno una
+  prosecuzione utile e se il passaggio appena creato non diventa subito un
+  ostacolo che chiude il ramo;
+- preferire euristiche finite e deterministiche a un tree-search completo;
+- conservare la StrategiaDiego ad albero come riferimento concettuale per
+  future ottimizzazioni del costo computazionale.
+
+### Mappa del codice attuale che influenza le strettoie
+
+#### Vittorio originale
+
+Riferimento operativo:
+`src/Termodel.Core/CopiedFromTermodel/SpiraliVittorio/`.
+
+Il file Service
+`Spiralgenerator.cs` è byte-per-byte identico al riferimento Desktop
+`SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/Spiralgenerator.cs`.
+Anche `ChiudiSpirale.cs` è identico al riferimento Desktop.
+
+Le strettoie sono valutate solo **implicitamente**:
+
+1. `SpiralGenerator.ComputeOffset(...)`
+   - misura la lunghezza del lato corrente e del corrispondente lato
+     dell'offset precedente;
+   - se `edgeLength <= 3 * offset` e la contrazione supera `offset`,
+     elimina i due vertici del lato;
+   - è una decisione locale di collasso della geometria, non una scelta di
+     percorso.
+
+2. `SpiralGenerator.Generate(...)` dopo `FixIntersections(...)`
+   - arresta la creazione di nuovi anelli se il lato minimo scende sotto le
+     soglie storiche;
+   - le soglie sono locali e riguardano l'anello corrente.
+
+3. Connessione all'offset successivo
+   - `FindIntersectionWithOffset(...)` prende la proiezione più vicina;
+   - se serve un raccordo ortogonale, viene provato un solo gomito e,
+     se il punto intermedio è troppo vicino alla spirale precedente,
+     viene invertito l'ordine del gomito;
+   - non esiste esplorazione del corridoio futuro.
+
+4. Percorrenza
+   - una volta raggiunto l'offset, Vittorio percorre tutti i suoi vertici
+     nell'ordine prefissato;
+   - non esiste una funzione `entra/non entra nella strettoia`.
+
+5. Return
+   - `ChiudiSpirale.CreaRientro(...)` riceve la mandata già arrotondata e
+     costruisce il rientro traslando all'indietro i campioni lungo la normale;
+   - il Return non effettua alcuna valutazione autonoma della strettoia.
+
+Conclusione: Vittorio possiede filtri locali sulla **formazione degli offset**
+e una piccola euristica sul gomito di connessione, ma non una vera decisione
+di instradamento nella strettoia.
+
+#### Diego_Vittorio
+
+Riferimento:
+`src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/`.
+
+Per la Supply restano attive le euristiche ereditate:
+- `ComputeOffset(...)`;
+- `FixIntersections(...)`;
+- soglie su `minEdgeLength`.
+
+Il Return autonomo aggiunge invece la vera macchina decisionale:
+
+1. `GenerateReturn(...)`
+   - costruisce il raccordo iniziale con `GeneraCollegamentoRitorno(...)`;
+   - normalizza il perimetro;
+   - richiama `Generate(...)` passando la Supply come
+     `lineeCondizionamento`.
+
+2. `OffsetHaTrattoParalleloTroppoVicino(...)`
+   - scarta un offset Return quando contiene un tratto parallelo alla Supply
+     a distanza inferiore a `p`;
+   - è ancora un filtro locale sull'offset.
+
+3. `FindConnectionWithOffset(...)` — **cuore attuale della strettoia**
+   - prova collegamento diretto;
+   - prova entrambe le L ortogonali;
+   - prova corridoi a due gomiti campionati a `p/2`;
+   - se necessario prova le coordinate critiche Supply `+/- p`;
+   - campiona anche il bordo dell'offset;
+   - fra i percorsi validi sceglie quello di lunghezza minima.
+
+4. `ConnectionPathIsValid(...)`
+   - verifica in sequenza ogni segmento del candidato;
+   - aggiorna temporaneamente la spirale durante la verifica del percorso.
+
+5. `SegmentoRispettaCondizionamento(...)`
+   - verifica distanza/intersezione del candidato contro tutta la Supply.
+
+6. `SegmentoRispettaSpirale(...)`
+   - verifica il candidato contro tutto il Return già costruito;
+   - contiene le eccezioni topologiche
+     `CandidatoProsegueUltimoSegmento(...)` e
+     `CandidatoDivergeDopoRaccordoLocale(...)`.
+
+7. Percorrenza dell'offset
+   - i vertici vengono provati nel verso configurato;
+   - il primo segmento non valido interrompe la percorrenza di quell'offset;
+   - non vengono sviluppati e confrontati rami alternativi futuri.
+
+8. `FindConnectionWithTerminalTrim(...)`
+   - se non esiste collegamento, accorcia localmente il terminale a coordinate
+     critiche e riprova;
+   - è un fallback locale, non look-ahead.
+
+9. `TrovaMassimoPrefissoValido(...)`
+   - conserva con ricerca binaria la massima parte valida dell'ultimo tratto;
+   - ancora una decisione locale.
+
+10. `ProvaPortaleAnticipato(...)` sotto `TracePortalsEnabled`
+    - prova diagnosticamente se dal punto corrente esiste già un collegamento
+      all'offset successivo;
+    - **è l'unico vero embrione di visione in avanti già presente**, ma oggi
+      registra soltanto `PORTAL_FOUND/PORTAL_NONE` e non modifica la scelta.
+
+### Distinzione importante sull'arrotondamento
+
+Nel percorso decisionale di **Diego_Vittorio** il Return viene generato sulla
+polilinea rettilinea. `GeometryUtils.ArrotondaSpirale(...)` viene applicato
+dopo `GenerateReturn(...)`, in `ChiudiSpirale`, quindi il raccordo visibile
+non decide se entrare nella strettoia.
+
+In **Vittorio** invece `CreaRientro(...)` riceve
+`spiraleArrotondata`: l'arrotondamento partecipa direttamente alla geometria
+da cui viene derivato il Return.
+
+### Conseguenza per lo sviluppo
+
+Il punto naturale per introdurre in futuro una strategia a visione media non è
+`ArrotondaSpirale` e non è la chiusura centrale. È la coppia:
+
+`FindConnectionWithOffset(...) + percorrenza dell'offset`
+
+eventualmente riusando la prova diagnostica già esistente
+`ProvaPortaleAnticipato(...)` come base per una valutazione finita di
+1–N passi futuri senza tornare al tree-search completo.
