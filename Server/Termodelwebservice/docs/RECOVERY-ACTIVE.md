@@ -4,7 +4,7 @@ Checkpoint: 2026-09-28 12:26 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
-HEAD verificato prima del presente checkpoint: `56b9a03002633a8e3454a854a9d7ad2f23adc744`
+HEAD tecnico validato prima del presente checkpoint: `a4f478c9a44c7764df45b8ce8b2801938c96fde7`
 
 ## Attività corrente
 
@@ -181,27 +181,41 @@ Regression:
   fitting regression tutti verdi.
 
 ### FASE 6 — ricomposizione progetto completo
-Stato: **IN CORSO**
+Stato: **VALIDATA TECNICAMENTE — IN ATTESA DI CONFERMA VISIVA UTENTE**
 
-Obiettivo:
-- rieseguire il vero progetto pubblico `Pannelli radianti` attraverso il
-  percorso completo `GeneraModello`;
-- verificare che l'input reale estratto resti coerente e che i quattro
-  rettangolari consolidati mantengano i risultati correnti;
-- produrre artifact/log/SVG per controllo finale;
-- sottoporre il progetto completo a conferma visiva dell'utente prima di
-  dichiarare conclusa la campagna.
+Verifica completa eseguita:
+- commit workflow `a4f478c9a44c7764df45b8ce8b2801938c96fde7`;
+- Room Extraction run `36408840730`: **SUCCESS**;
+- build Harness + Core: 0 errori;
+- vero progetto pubblico ricostruito attraverso `GeneraModello`;
+- input estratto SHA-256:
+  `15E9F73DEB570F4E17385FF3CD7335916DD8023C69A630925CF083C24A41109A`,
+  identico alla fixture reale già consolidata;
+- verifiche sul progetto reale:
+  - `locale_1`: Return 18 punti, `M4/RP3` ortogonale 0,60 m;
+  - `locale_5`: Return 16 punti, `M2/RP3` ortogonale 1,24 m;
+  - `locale_8`: Return 18 punti, `M3/R5` obliqua 0,971 m;
+  - `locale_9`: Return 13 punti, `M3/RP2` ortogonale 0,77 m;
+- marker workflow `FULL_PROJECT_RECTANGULAR_REGRESSION_OK`;
+- artifact finale `diego-vittorio-room-extraction` prodotto e ispezionato;
+- SVG dei quattro rettangolari ispezionati: geometrie ordinate, nessuna
+  ricomparsa della diagonale patologica di `locale_5`.
+
+Anomalia esterna alla presente campagna:
+- durante `GeneraModello` compaiono messaggi
+  `Il valore 'Solaio piano' non è un numero intero valido per il colore della copertura`;
+- il workflow e le regression pannelli restano SUCCESS;
+- non viene corretta in DV-TEST-002 perché non riguarda il motore spirali.
 
 **PROSSIMO PASSO ESATTO:**
-1. leggere e aggiornare il workflow Room Extraction esistente senza creare
-   un percorso alternativo;
-2. eseguire il progetto pubblico completo sul codice corrente;
-3. verificare `locale_1`, `locale_5`, `locale_8`, `locale_9` contro le
-   regression consolidate e controllare gli altri locali senza trasformarli
-   implicitamente in Golden;
-4. ispezionare gli artifact finali e chiedere conferma visiva utente;
-5. solo dopo la conferma aggiornare i registri finali, notificare issue #1
-   e rimuovere `RECOVERY-ACTIVE.md`.
+1. l'utente apre il progetto pubblico `Pannelli radianti` sul frontend aggiornato;
+2. esegue `Aggiorna Modello` e visualizza l'esecutivo pannelli;
+3. conferma se il risultato complessivo è visivamente corretto;
+4. solo dopo conferma positiva aggiornare registri permanenti finali,
+   notificare la conclusione sulla issue #1 e rimuovere
+   `RECOVERY-ACTIVE.md`;
+5. in caso di anomalia, conservare screenshot/caso e riaprire soltanto il
+   locale o la geometria effettivamente difettosa.
 
 ## File/componenti attualmente coinvolti
 
