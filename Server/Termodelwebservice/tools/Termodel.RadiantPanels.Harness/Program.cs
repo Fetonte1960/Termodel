@@ -27,8 +27,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego_Vittorio|Diego] [--supply-only] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--supply-only] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego_Vittorio|Diego] [--supply-only] [--skip-close] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--supply-only] [--skip-close] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  fillet-check");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
@@ -144,6 +144,7 @@ static int Run(string[] args)
         string? engineArg = Arg(args, "--engine");
         string? localeArg = Arg(args, "--locale");
         bool supplyOnly = HasFlag(args, "--supply-only");
+        bool skipClose = HasFlag(args, "--skip-close");
         string? logEnabledArg = Arg(args, "--log-enabled");
         string? logCategoriesArg = Arg(args, "--log-categories");
         TermodelLog.LogConfiguration? logConfiguration =
@@ -246,6 +247,17 @@ static int Run(string[] args)
                 throw new ArgumentException(
                     "--supply-only è disponibile esclusivamente per Diego_Vittorio.");
             }
+            if (skipClose &&
+                !selectedEngine.Equals("Diego_Vittorio", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException(
+                    "--skip-close è disponibile esclusivamente per Diego_Vittorio.");
+            }
+            if (supplyOnly && skipClose)
+            {
+                throw new ArgumentException(
+                    "--supply-only e --skip-close sono modalità diagnostiche alternative.");
+            }
 
             // Modificato da Codex per realizzare: Vittorio resta congelato a
             // 0,30 m; la copia sperimentale Diego_Vittorio accetta --p.
@@ -266,6 +278,7 @@ static int Run(string[] args)
                 selectedEngine,
                 stepMeters,
                 supplyOnly,
+                skipClose,
                 logConfiguration);
         }
         if (!selectedEngine.Equals("Diego", StringComparison.OrdinalIgnoreCase))
@@ -525,15 +538,40 @@ static int RunCopiedSpiralStrategy(
     string selectedEngine,
     double stepMeters,
     bool supplyOnly,
+    bool skipClose,
     TermodelLog.LogConfiguration? logConfiguration)
 {
     // Modificato da Codex per realizzare: mantenere un solo percorso di output per Vittorio e Diego_Vittorio.
-    StrategiaVittorioBenchmarkSample sample =
-        selectedEngine.Equals("Diego_Vittorio", StringComparison.OrdinalIgnoreCase)
-            ? supplyOnly
-                ? StrategiaDiegoVittorioBenchmark.RunSupplyOnly(localeXml, stepMeters, logConfiguration)
-                : StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters, logConfiguration)
-            : StrategiaVittorioBenchmark.Run(localeXml);
+    StrategiaVittorioBenchmarkSample sample;
+    string? previousDrawClosure =
+        Environment.GetEnvironmentVariable("TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE");
+    try
+    {
+        if (skipClose)
+        {
+            Environment.SetEnvironmentVariable(
+                "TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE",
+                "false");
+            Console.WriteLine(
+                "RADIANT_HARNESS_SKIP_CLOSE active=true; Return autonomo mantenuto, chiusura centrale disattivata.");
+        }
+
+        sample =
+            selectedEngine.Equals("Diego_Vittorio", StringComparison.OrdinalIgnoreCase)
+                ? supplyOnly
+                    ? StrategiaDiegoVittorioBenchmark.RunSupplyOnly(localeXml, stepMeters, logConfiguration)
+                    : StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters, logConfiguration)
+                : StrategiaVittorioBenchmark.Run(localeXml);
+    }
+    finally
+    {
+        if (skipClose)
+        {
+            Environment.SetEnvironmentVariable(
+                "TERMODEL_DIEGO_VITTORIO_DRAW_CLOSURE",
+                previousDrawClosure);
+        }
+    }
 
     string svgPath = Path.Combine(outputDir, caseId + ".svg");
     string resultXmlPath = Path.Combine(
@@ -554,7 +592,8 @@ static int RunCopiedSpiralStrategy(
         caseId,
         description,
         engine = selectedEngine,
-        mode = supplyOnly ? "supply-only" : "full",
+        mode = supplyOnly ? "supply-only" : skipClose ? "pre-close" : "full",
+        skipClose,
         input = fullInputPath,
         stepMeters = sample.StepMeters,
         sample.LocaleCount,
@@ -579,7 +618,7 @@ static int RunCopiedSpiralStrategy(
     Console.WriteLine("RADIANT_HARNESS_OK");
     Console.WriteLine($"case={caseId}");
     Console.WriteLine($"engine={selectedEngine}");
-    Console.WriteLine($"mode={(supplyOnly ? "supply-only" : "full")}");
+    Console.WriteLine($"mode={(supplyOnly ? "supply-only" : skipClose ? "pre-close" : "full")}");
     Console.WriteLine($"input={fullInputPath}");
     Console.WriteLine($"p={sample.StepMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
     Console.WriteLine($"locales={sample.LocaleCount}");
