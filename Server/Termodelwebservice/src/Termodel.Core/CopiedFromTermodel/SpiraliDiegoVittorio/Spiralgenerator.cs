@@ -723,6 +723,26 @@ namespace SpiralHeatingDiegoVittorio
 					continue;
 				}
 
+				if (TraceReturnEnabled)
+				{
+					double lunghezzaConnessione = 0.0;
+					Punto precedenteConnessione = spiral[^1];
+					foreach (Punto puntoConnessione in percorsoConnessione)
+					{
+						lunghezzaConnessione += precedenteConnessione.DistanceTo(puntoConnessione);
+						precedenteConnessione = puntoConnessione;
+					}
+					string pathConnessione = string.Join(
+						";",
+						percorsoConnessione.Select(p => $"({p.X:R},{p.Y:R})"));
+					Console.WriteLine(
+						$"  DV_RETURN_CONNECTION_CHOSEN offset={indiceOffsetPercorso} " +
+						$"origin=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
+						$"target=({puntoIntersezione.X:R},{puntoIntersezione.Y:R}) " +
+						$"length={lunghezzaConnessione:R} startVertexIndex={startVertexIndex} " +
+						$"path=[{pathConnessione}].");
+				}
+
 				foreach (Punto puntoConnessione in percorsoConnessione)
 				{
 					if (spiral[^1].DistanceTo(puntoConnessione) > 0.000001)
@@ -766,12 +786,16 @@ namespace SpiralHeatingDiegoVittorio
 						lunghezza += precedente.DistanceTo(punto);
 						precedente = punto;
 					}
+					string portalPath = string.Join(
+						";",
+						prova.path.Select(p => $"({p.X:R},{p.Y:R})"));
 					Console.WriteLine(
 						$"  DV_RETURN_PORTAL_FOUND fromOffset={indiceOffsetPercorso} " +
 						$"toOffset={indiceOffsetPercorso + 1} phase={fase} " +
 						$"origin=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
 						$"target=({prova.intersection.X:R},{prova.intersection.Y:R}) " +
-						$"length={lunghezza:R} pathPoints={prova.path.Count}.");
+						$"length={lunghezza:R} pathPoints={prova.path.Count} " +
+						$"path=[{portalPath}].");
 				}
 
 				if (TracePortalsEnabled)
@@ -884,6 +908,14 @@ namespace SpiralHeatingDiegoVittorio
 						if (ultimoOffset)
 							candidatoTerminaleRespinto = candidato;
 						break;
+					}
+					if (TraceReturnEnabled)
+					{
+						Console.WriteLine(
+							$"  DV_RETURN_TRAVERSE_ACCEPT offset={indiceOffsetPercorso} " +
+							$"from=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
+							$"to=({candidato.X:R},{candidato.Y:R}) " +
+							$"vertexIndex={vertexIndex}.");
 					}
 					spiral.Add(candidato);
 					if (supplyLog)
