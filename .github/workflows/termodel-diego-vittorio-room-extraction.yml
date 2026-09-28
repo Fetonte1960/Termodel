@@ -244,6 +244,24 @@ jobs:
             } | ForEach-Object { Write-Host ("ROOM_DIAG "+$id+" "+$_) }
           }
 
+      - name: Trace early portals on locale_1 default side
+        shell: pwsh
+        env:
+          TERMODEL_DIEGO_VITTORIO_TRACE_PORTALS: "true"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioRoomExtraction"
+          $out = Join-Path $root "portal-trace\locale_1"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/DV-PUBLIC-PANELS-RECT-01-P030-DIEGO-VITTORIO.json `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Trace portali fallito per locale_1." }
+          $log = Join-Path $out "DV-PUBLIC-PANELS-RECT-01-P030-DIEGO-VITTORIO.log.txt"
+          Write-Host "LOCALE1_PORTAL_TRACE_OK"
+          Get-Content -LiteralPath $log | Where-Object {
+            $_ -match 'DV_RETURN_PORTAL_|Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida'
+          } | ForEach-Object { Write-Host ("ROOM_PORTAL_DIAG "+$_) }
+
       - name: Diagnose locale_1 with opposite Return side
         shell: pwsh
         env:
