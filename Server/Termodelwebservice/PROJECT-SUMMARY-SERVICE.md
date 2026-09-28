@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-28 — Stato strategie spirali e limite ritorno autonomo
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - registrare `StrategiaDiego` come linea attualmente parcheggiata per costo computazionale molto elevato, con lavoro futuro orientato a ridurne il costo per l'uso su locali geometricamente molto complessi;
@@ -85,6 +85,13 @@ Criteri di completamento:
 - Summary e registri spirali allineati a questa distinzione architetturale;
 - nessuna modifica al codice geometrico, frontend o `definizionedati.json`;
 - incarico chiuso con commit documentali tracciati.
+
+Esito:
+- `STRATEGIADIEGO-DEVELOPMENT-REGISTER.md` marcato **PARKED** e corretto il ruolo futuro della linea nel commit `cfd5a18cb6ba7814517d9560dbde7bb10b048128`;
+- registro strategie aggiornato con distinzione `StrategiaDiego` / `Diego_Vittorio`, architettura del Return autonomo e problema del “budello” nel commit `827112662e37bdea037b0ecb61bd19ad6225795c`;
+- linee guida aggiornate nel commit `de9308fb4c794c1e19a8b8898df2df36f01da529`, includendo `DV-ARCH-001` e `DV-KNOWN-001`, e corretti i riferimenti obsoleti che indicavano StrategiaDiego come default;
+- README della derivazione Core aggiornato nel commit `e787ac9424632594f08679c2fed5d5653b29f2e4` per chiarire che il parallelo gemello riguarda solo il collegamento iniziale e non la generazione dell'intero Return;
+- nessuna modifica al codice geometrico, frontend o `definizionedati.json`; incarico esclusivamente documentale, quindi nessuna nuova build necessaria.
 
 
 ### INCARICO 2026-09-28 — Registrazione avvio test server `Diego_Vittorio`
@@ -6903,16 +6910,34 @@ Incompleto:
 ## 13. Strategia spirali Service corrente — `Diego_Vittorio`
 
 Dal 28 settembre 2026 il motore predefinito del Service è
-`Diego_Vittorio`, scelto come migliore stato disponibile per i casi
-ortogonali. La selezione resta reversibile tramite
+`Diego_Vittorio`. La selezione resta reversibile tramite
 `TERMODEL_SPIRAL_ENGINE=Vittorio|GPT|Diego|Diego_Vittorio`.
 
-Lo stato consolidato comprende:
+Distinzione progettuale corrente:
+
+- `StrategiaDiego` / motore `Diego` è **PARKED** perché il costo
+  computazionale osservato è troppo elevato per l'uso operativo corrente. Il
+  work in progress futuro dovrà ridurne drasticamente il costo per renderla
+  utile soprattutto in configurazioni/locali geometricamente molto complessi;
+- `Diego_Vittorio` deriva da `SpiraliVittorio` ma ha ricevuto una modifica
+  strutturale fondamentale: il Return non è più il riflesso/parallelo della
+  mandata, bensì un percorso generato autonomamente;
+- la radice iniziale del Return nasce ancora dal parallelo gemello del tubo
+  d'ingresso della mandata, ma **solo come collegamento iniziale**; lo sviluppo
+  successivo è autonomo;
+- ogni tratto del Return è condizionato dal perimetro disponibile del
+  locale/edificio, dalla mandata già costruita e dal Return già costruito;
+- questa libertà geometrica ha vantaggi ma introduce un limite noto:
+  la mandata può creare corridoi o “budelli” nei quali il Return autonomo resta
+  imprigionato, causando stop prematuri o geometricamente non corretti;
+- il problema del “budello” è aperto e deve essere raccolto durante il collaudo
+  in casi reali riproducibili e future regression, prima di definire una
+  correzione generale.
+
+Lo stato consolidato comprende inoltre:
 
 - passo `p` variabile e derivazione coerente di `p/2`, `p` e `2p`;
 - mandata a inseguimento ortogonale;
-- ritorno autonomo dal parallelo gemello del tubo di ingresso, lato
-  sinistro/destro configurabile;
 - condizionamento mandata-ritorno e ritorno-ritorno a distanza minima `p`;
 - chiusura terminale deterministica LG-048, con massimo 35 configurazioni,
   arresto al primo candidato senza angoli acuti, lungo almeno `2p` e privo di
@@ -6922,6 +6947,5 @@ Lo stato consolidato comprende:
   cambiare il comportamento operativo predefinito.
 
 `SpiraliVittorio` resta intatta e costituisce il riferimento per confronto e
-ripristino. Le verifiche correnti certificano il quadrato ortogonale canonico;
-prima di generalizzare la superiorità del motore servono ancora regression su
-locale concavo e su geometrie non ortogonali.
+ripristino. Il collaudo manuale corrente di `Diego_Vittorio` sul Service
+pubblico è ancora in corso e non equivale ad approvazione geometrica generale.
