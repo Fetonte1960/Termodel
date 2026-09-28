@@ -109,6 +109,15 @@ Esito:
 - SVG raccordato finale: 59 punti mandata, 51 ritorno, chiusura a 7 punti,
   nessuna intersezione e SHA-256
   `69193E08D795A184D54F4BBC7FDEF9A86C48F691054ED20622026E1A6A594962`.
+- il primo run cloud ha mostrato che lo step `Run Diego_Vittorio current
+  apartment copy` verificava ancora il precedente default con raccordi
+  disattivati; il workflow è stato allineato al nuovo default nel commit
+  `4f30bf29082aad07c54375169a688fcdc8750be3` e lo step corretto è stato
+  riprodotto localmente con esito `WORKFLOW_DIEGO_VITTORIO_STEP_OK`;
+- i fallimenti cloud residui `Run Decision Reject Replay` e `Benchmark
+  StrategiaDiego regression fixtures` sono preesistenti e compaiono invariati
+  anche nei run precedenti, su sorgenti `StrategiaDiego` non modificati da
+  questo incarico.
 
 
 ### INCARICO 2026-09-27 — Help Web PC e istruzione AI Termodel Web
