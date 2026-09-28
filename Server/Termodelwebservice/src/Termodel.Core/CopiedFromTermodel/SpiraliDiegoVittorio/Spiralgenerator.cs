@@ -750,7 +750,8 @@ namespace SpiralHeatingDiegoVittorio
 				}
 				int puntiDopoIntersezione = spiral.Count;
 
-				bool portaleAnticipatoTrovato = false;
+				bool almenoUnPortaleAnticipatoTrovato = false;
+				int indiceControlloPortale = 0;
 				List<Punto> offsetSuccessivoDiagnostico =
 					TracePortalsEnabled &&
 					lineeCondizionamento != null &&
@@ -760,14 +761,13 @@ namespace SpiralHeatingDiegoVittorio
 
 				void ProvaPortaleAnticipato(string fase)
 				{
-					if (offsetSuccessivoDiagnostico == null ||
-						portaleAnticipatoTrovato)
-					{
+					if (offsetSuccessivoDiagnostico == null)
 						return;
-					}
 
+					indiceControlloPortale++;
+					Punto originePortale = spiral[^1];
 					var prova = FindConnectionWithOffset(
-						spiral[^1],
+						originePortale,
 						offsetSuccessivoDiagnostico,
 						versoRivoluzione,
 						passoMandata,
@@ -776,11 +776,18 @@ namespace SpiralHeatingDiegoVittorio
 						spiral,
 						distanzaAutocondizionamento);
 					if (prova.path == null || prova.intersection == null)
+					{
+						Console.WriteLine(
+							$"  DV_RETURN_PORTAL_CHECK fromOffset={indiceOffsetPercorso} " +
+							$"toOffset={indiceOffsetPercorso + 1} check={indiceControlloPortale} " +
+							$"phase={fase} origin=({originePortale.X:R},{originePortale.Y:R}) " +
+							$"status=none.");
 						return;
+					}
 
-					portaleAnticipatoTrovato = true;
+					almenoUnPortaleAnticipatoTrovato = true;
 					double lunghezza = 0.0;
-					Punto precedente = spiral[^1];
+					Punto precedente = originePortale;
 					foreach (Punto punto in prova.path)
 					{
 						lunghezza += precedente.DistanceTo(punto);
@@ -790,9 +797,16 @@ namespace SpiralHeatingDiegoVittorio
 						";",
 						prova.path.Select(p => $"({p.X:R},{p.Y:R})"));
 					Console.WriteLine(
+						$"  DV_RETURN_PORTAL_CHECK fromOffset={indiceOffsetPercorso} " +
+						$"toOffset={indiceOffsetPercorso + 1} check={indiceControlloPortale} " +
+						$"phase={fase} origin=({originePortale.X:R},{originePortale.Y:R}) " +
+						$"status=found target=({prova.intersection.X:R},{prova.intersection.Y:R}) " +
+						$"length={lunghezza:R} pathPoints={prova.path.Count} " +
+						$"path=[{portalPath}].");
+					Console.WriteLine(
 						$"  DV_RETURN_PORTAL_FOUND fromOffset={indiceOffsetPercorso} " +
 						$"toOffset={indiceOffsetPercorso + 1} phase={fase} " +
-						$"origin=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
+						$"origin=({originePortale.X:R},{originePortale.Y:R}) " +
 						$"target=({prova.intersection.X:R},{prova.intersection.Y:R}) " +
 						$"length={lunghezza:R} pathPoints={prova.path.Count} " +
 						$"path=[{portalPath}].");
@@ -931,11 +945,11 @@ namespace SpiralHeatingDiegoVittorio
 
 				if (TracePortalsEnabled &&
 					offsetSuccessivoDiagnostico != null &&
-					!portaleAnticipatoTrovato)
+					!almenoUnPortaleAnticipatoTrovato)
 				{
 					Console.WriteLine(
 						$"  DV_RETURN_PORTAL_NONE fromOffset={indiceOffsetPercorso} " +
-						$"toOffset={indiceOffsetPercorso + 1}.");
+						$"toOffset={indiceOffsetPercorso + 1} checks={indiceControlloPortale}.");
 				}
 
 				// Modificato da Codex per realizzare: se sull'offset non è stato
