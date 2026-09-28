@@ -1,5 +1,5 @@
 name: Termodel Diego_Vittorio Room Extraction
-# Harness localeId serializza senza declaration encoding; DV-TEST-002 verifica fallback corridoi e chiusura proiettata su locale_1.
+# Harness localeId serializza senza declaration encoding; DV-TEST-002 verifica locale_1 consolidato e terminal trim diagnostico su locale_5.
 
 permissions:
   contents: read
