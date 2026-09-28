@@ -83,6 +83,11 @@ Fasi:
 - **FASE 1 — consolidamento/pubblicazione:** registrare l'approvazione umana e lasciare su `main` lo stato approvato, senza ulteriori modifiche geometriche;
 - **FASE 2 — deploy e verifica pubblica:** lasciare partire il normale auto-deploy Render da `main`, verificare `/health` e, se possibile, riprodurre il quadrato pubblico sul Service ospitato per confermare che il Return aggiornato sia effettivamente in esecuzione.
 
+Stato fasi:
+- **FASE 1 — ESEGUITA:** approvazione umana registrata; stato approvato pubblicato su `main`. Allineato il controllo CI di `/health` al default `Diego_Vittorio` nel commit `264cd2c7beee303d9dbfca20bd8444cc10ee768d`; aggiornato il contratto runtime nel commit `456d6577c278a94afdc55db715cbbe4f695f6bc5`. Nessuna modifica geometrica aggiuntiva.
+- **FASE 2 — IN CORSO:** auto-deploy Render innescato dal push su `main`; in verifica build Service e identità runtime pubblica via `/health`, quindi prova funzionale del quadrato se il Service remoto espone il commit atteso.
+
+
 Vincoli:
 - nessuna ulteriore modifica strutturale o geometrica in questa pubblicazione;
 - `SpiraliVittorio` invariata;
