@@ -115,6 +115,14 @@ jobs:
           Write-Host "SVG_SHA256=$vSvgHash"
           Write-Host "XML_SHA256=$vXmlHash"
 
+      - name: Verify Vittorio_revisionato structural abstraction
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- revisionato-check
+          if ($LASTEXITCODE -ne 0) { throw "Check astrazione Vittorio_revisionato fallito." }
+          Write-Host "VITTORIO_REVISIONATO_STRUCTURAL_ABSTRACTION_OK"
+
       - name: Inspect Supply only on public cases
         shell: pwsh
         run: |
