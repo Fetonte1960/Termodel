@@ -54,8 +54,8 @@ namespace SpiralHeatingDiegoVittorio
 	{
 		private const string TraceReturnEnvironmentVariable =
 			"TERMODEL_DIEGO_VITTORIO_TRACE_RETURN";
-		private const string DiagnosticRelaxCollinearSelfEnvironmentVariable =
-			"TERMODEL_DIEGO_VITTORIO_DIAG_RELAX_COLLINEAR_SELF";
+		private const string CollinearAdjacencyEnvironmentVariable =
+			"TERMODEL_DIEGO_VITTORIO_COLLINEAR_ADJACENCY";
 
 		// Diagnostica pura: non modifica accettazione, tolleranze o geometria.
 		private static bool TraceReturnEnabled
@@ -71,16 +71,19 @@ namespace SpiralHeatingDiegoVittorio
 			}
 		}
 
-		private static bool DiagnosticRelaxCollinearSelfEnabled
+		private static bool CollinearAdjacencyEnabled
 		{
 			get
 			{
 				string value = Environment.GetEnvironmentVariable(
-					DiagnosticRelaxCollinearSelfEnvironmentVariable) ?? string.Empty;
-				return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
-					value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
-					value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
-					value.Equals("on", StringComparison.OrdinalIgnoreCase);
+					CollinearAdjacencyEnvironmentVariable) ?? string.Empty;
+				if (string.IsNullOrWhiteSpace(value))
+					return true;
+
+				return !value.Equals("false", StringComparison.OrdinalIgnoreCase) &&
+					!value.Equals("0", StringComparison.OrdinalIgnoreCase) &&
+					!value.Equals("no", StringComparison.OrdinalIgnoreCase) &&
+					!value.Equals("off", StringComparison.OrdinalIgnoreCase);
 			}
 		}
 
@@ -757,13 +760,13 @@ namespace SpiralHeatingDiegoVittorio
 			// L'ultimo segmento è adiacente al candidato e condivide l'inizio.
 			for (int i = 0; i < spiraleCorrente.Count - 2; i++)
 			{
-				// Esperimento diagnostico DV-TEST-001, disattivato per default.
-				// Se il nuovo tratto prosegue esattamente il tratto corrente,
-				// il segmento immediatamente precedente al tratto corrente resta
-				// topologicamente adiacente al gomito dopo la fusione dei due
-				// segmenti collineari. Ignorarlo qui permette di verificare se il
-				// blocco del "budello" dipende da questa sola classificazione.
-				if (DiagnosticRelaxCollinearSelfEnabled &&
+				// Correzione locale DV-TEST-001. Se il nuovo tratto prosegue
+				// esattamente il tratto corrente, il segmento immediatamente
+				// precedente resta topologicamente adiacente al gomito dopo la
+				// fusione dei due segmenti collineari. Non deve quindi essere
+				// trattato come ramo remoto del Return. Il comportamento è attivo
+				// per default e resta disattivabile via flag per confronto/debug.
+				if (CollinearAdjacencyEnabled &&
 					i == spiraleCorrente.Count - 3 &&
 					CandidatoProsegueUltimoSegmento(
 						spiraleCorrente[^2],
@@ -773,7 +776,7 @@ namespace SpiralHeatingDiegoVittorio
 					if (TraceReturnEnabled)
 					{
 						Console.WriteLine(
-							$"  DV_RETURN_DIAG_SKIP_ADJACENT obstacle={i} " +
+							$"  DV_RETURN_SKIP_COLLINEAR_ADJACENT obstacle={i} " +
 							$"candidate=({inizio.X:R},{inizio.Y:R})->({fine.X:R},{fine.Y:R}).");
 					}
 					continue;
