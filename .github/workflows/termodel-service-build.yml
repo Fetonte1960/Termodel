@@ -146,7 +146,7 @@ jobs:
             "function endTermodelServiceRequest()",
             "async function fetchTermodelService(path, options = {})",
             "cadSetStatus(TERMODEL_SERVICE_WAIT_STATUS);",
-            "health?.serviceCommitShort || health?.serviceCommit",
+            "health?.serviceCommit || health?.serviceCommitShort",
             "health?.spiralEngine",
             "'Server '",
             "'SpiraliDiego'",
