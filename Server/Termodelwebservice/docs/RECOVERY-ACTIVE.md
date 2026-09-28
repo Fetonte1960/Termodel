@@ -1394,3 +1394,78 @@ Questa è un'ipotesi causale forte, NON ancora una regola produttiva.
 - il path geometrico del portale anticipato.
 Poi rieseguire `locale_1` e quadrato per confrontare il ramo effettivo con
 l'uscita anticipata già disponibile.
+
+
+#### STEP 4G.2 — trace non decisionale del ramo effettivo
+Stato: **COMPLETATO**
+
+Sono stati aggiunti esclusivamente log dietro `TRACE_RETURN` /
+`TRACE_PORTALS`, senza alterare condizioni, tolleranze, ordinamento o
+geometria:
+- `DV_RETURN_CONNECTION_CHOSEN`: path realmente scelto per entrare in ogni offset;
+- `DV_RETURN_TRAVERSE_ACCEPT`: segmenti realmente accettati sulla percorrenza;
+- `DV_RETURN_PORTAL_FOUND`: ora include anche il path geometrico del portale.
+
+Commit diagnostico:
+- `9a7abdeef2cd76ab36e4b36b4240bc66fc8a1ade`.
+
+Verifica:
+- Fast Harness run `36461538127` (#51): **SUCCESS**;
+- tutte le regression Diego_Vittorio successive: SUCCESS.
+
+### Ramo effettivo locale_1 / Return
+
+Offset 1:
+- ingresso: `(1,12;4,44)`;
+- percorre quasi integralmente l'anello esterno;
+- da `(1,12;0,37)` trova il primo portale verso offset 2:
+  `[(1,12;3,84);(0,52;3,84);(0,52;4,37)]`, lunghezza 4,60 m;
+- questo stesso path viene poi scelto realmente per entrare in offset 2.
+
+Offset 2:
+- ingresso reale `(0,52;4,37)`;
+- **prima di percorrere un solo lato**, esiste già un portale valido verso
+  offset 3:
+  `[(0,22;4,37);(0,22;4,07)]`, lunghezza 0,60 m;
+- il motore lo ignora perché il portale è solo diagnostico;
+- percorre invece:
+  `(0,52;4,37)->(-0,47;4,37)->(-0,47;0,97)->(0,52;0,97)`;
+- soltanto da `(0,52;0,97)` entra davvero nell'offset 3 con:
+  `[(0,52;1,27);(0,22;1,27)]`, lunghezza 0,60 m.
+
+Offset 3:
+- percorre:
+  `(0,22;1,27)->(0,22;4,07)->(-0,17;4,07)->(-0,17;1,27)`;
+- la finalizzazione conserva poi il terminale ammesso.
+
+### Confronto col quadrato
+
+Nel quadrato:
+- i portali verso l'offset successivo compaiono DURANTE la percorrenza;
+- il motore continua comunque fino al proprio terminale storico e poi usa un
+  collegamento diverso/più corto verso l'offset successivo;
+- quindi anche nel quadrato il trace anticipato non guida la scelta, ma il
+  contesto regolare non produce l'intrappolamento osservato nel caso reale.
+
+### Nuova comprensione architetturale
+
+`Diego_Vittorio` è un ibrido:
+- ha aggiunto con AI una ricerca intelligente del collegamento fra offset
+  (`FindConnectionWithOffset`);
+- ma conserva da Vittorio la regola strutturale “una volta entrato
+  nell'offset, percorri i vertici nel verso prefissato finché puoi”.
+
+Questo accoppiamento è il punto sospetto:
+il collegamento fra offset è diventato adattivo, mentre la decisione
+**quando abbandonare l'offset corrente** è rimasta sostanzialmente
+deterministica e locale.
+
+Non è ancora dimostrato che il portale anticipato vada preso appena appare:
+farlo subito potrebbe ridurre inutilmente la lunghezza di tubo. Il problema
+da misurare è piuttosto il **momento ultimo conveniente/sicuro di uscita**.
+
+**PROSSIMO PASSO:** test diagnostico già supportato dal codice, senza nuove
+modifiche geometriche: invertire globalmente il verso di costruzione del Return
+(`TERMODEL_DIEGO_VITTORIO_DIAG_REVERSE_BUILD_DIRECTION=true`) su locale_1 e
+quadrato. Scopo: separare il problema “verso di percorrenza” dal problema
+“momento di uscita dall'offset”.
