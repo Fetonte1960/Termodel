@@ -2,7 +2,7 @@
 
 Classificazione: **SPECIFICA VIVA — IN DEFINIZIONE**  
 Ambito: Termodel / pannelli radianti / generazione geometrica spirali  
-Destinazione prevista: futura strategia/classe **StrategiaDiego**
+Destinazione: storico **StrategiaDiego** + sviluppo/collaudo corrente **Diego_Vittorio**
 
 ## Stato operativo corrente — 28/09/2026
 
@@ -15,11 +15,23 @@ Destinazione prevista: futura strategia/classe **StrategiaDiego**
 
 Lo sviluppo ha oggi due riferimenti distinti da non confondere:
 
-- **StrategiaDiego:** resta implementata e selezionabile come motore autonomo
-  `Diego`, con il proprio storico LG e i propri checkpoint diagnostici;
-- **Diego_Vittorio:** è la copia indipendente evoluta a partire da
+- **StrategiaDiego / motore `Diego`: PARKED.** La ricerca ad albero resta
+  disponibile come patrimonio di sviluppo, ma il costo computazionale
+  osservato è troppo elevato per l'uso operativo corrente. Il work in progress
+  futuro deve concentrarsi sulla riduzione drastica del costo per renderla
+  utilizzabile soprattutto in locali/configurazioni geometricamente molto
+  complessi;
+- **Diego_Vittorio:** derivazione indipendente evoluta a partire da
   `SpiraliVittorio`, mantiene Vittorio intatto ed è il **default operativo
-  corrente del Service** per la fase di collaudo dei casi ortogonali;
+  corrente del Service** per la fase di collaudo;
+- **modifica strutturale Diego_Vittorio:** il Return non è più un
+  riflesso/parallelo della mandata; è generato autonomamente ed è condizionato
+  dal perimetro del locale/edificio, dalla mandata e dalla propria geometria
+  già costruita;
+- **limite noto Diego_Vittorio:** la mandata può creare corridoi/budelli nei
+  quali il Return autonomo resta imprigionato, causando arresti prematuri o
+  geometricamente non corretti; il problema è aperto e deve produrre casi di
+  regression durante il collaudo;
 - **selettore runtime:** `TERMODEL_SPIRAL_ENGINE=Vittorio|GPT|Diego|Diego_Vittorio`;
 - **default Service:** `Diego_Vittorio` quando la variabile non è impostata;
 - **compilata:** sì, build Release verificata;
@@ -32,9 +44,13 @@ Lo sviluppo ha oggi due riferimenti distinti da non confondere:
 - **validazione su casi reali:** **in corso**; i risultati manuali non vanno
   considerati approvati finché non vengono registrati caso per caso.
 
-### Direttiva permanente — banco prova operativo corrente
+### Banco prova storico StrategiaDiego — PARKED
 
-Dal 25/09/2026 il banco prova primario dello sviluppo spirali è:
+Dal 28/09/2026 questo banco prova non è più il percorso operativo corrente del
+Service. Resta congelato come riferimento per la futura ripresa di
+StrategiaDiego dopo la riduzione del costo computazionale.
+
+Il banco prova primario usato nello sviluppo StrategiaDiego dal 25/09/2026 è stato:
 
 ```text
 tests/fixtures/StrategiaDiegoCurrentApartment.project.tmdl
@@ -6401,7 +6417,7 @@ DistanzaR31: 0,60 m = 2p
 RegolaSottoTest: LG-047, spareggio Supply tramite somma delle distanze minime fra punti medi
 CondizionePrincipale: a parità della lunghezza primaria selezionare la mandata col merito secondario minimo prima di costruire il Return
 MotoreRiferimento: StrategiaDiegoEngine reale
-RuntimeService: StrategiaDiego è il default; il Service NON usa Prefix Lock
+RuntimeService: StrategiaDiego è PARKED e NON è il default; il Service corrente usa Diego_Vittorio; il Prefix Lock resta solo diagnostica storica StrategiaDiego
 SetupDiagnostico: Termodel.RadiantPanels.Harness
 WorkingDirectory: Server/Termodelwebservice
 OutputRichiesto: decisionKeys + log nodo/divergenza + SVG standard reale + solutions.json
@@ -6411,7 +6427,7 @@ UltimoRunR31Main: 36250164600
 UltimoArtifactR31: radiant-harness-fast / 10908514063
 CommitCoreR31Pubblicato: 77ae7b81dd82afb157b4f54a15a45c77cf9d1d63
 StatoMotoreReale: R30/R31 implementati e verificati; il tentativo di confrontare più Return globali è respinto per costo combinatorio e LG-047 è specificata ma non implementata
-ProssimoPasso: implementare il merito secondario cumulativo solo Supply, collaudare lo spareggio e verificare SVG/costi senza Prefix Lock nel runtime
+ProssimoPasso: PARKED; alla riapertura partire dalla riduzione del costo computazionale, quindi riprendere i checkpoint R30/R31 e il merito secondario senza introdurre Prefix Lock nel runtime
 ```
 ### Regola di manutenzione
 
@@ -6426,9 +6442,11 @@ o checkpoint consolidati devono essere registrate nel registro di sviluppo o
 nelle fixture, mentre questa variabile continua a indicare soltanto il test
 corrente.
 
-## Punti successivi
+## Punti per eventuale ripresa StrategiaDiego — PARKED
 
-Ordine corrente, obbligatorio finché non viene aggiornato questo checkpoint:
+Questa sequenza è congelata e non è il lavoro operativo corrente. Diventerà
+nuovamente attiva soltanto dopo decisione esplicita di riaprire StrategiaDiego
+e dopo un intervento prioritario di riduzione del costo computazionale:
 
 1. aggiungere al nodo Supply il merito secondario cumulativo LG-047;
 2. calcolare per ogni nuovo tratto la distanza minima fra il proprio punto
@@ -6447,6 +6465,55 @@ Ordine corrente, obbligatorio finché non viene aggiornato questo checkpoint:
 
 Il checkpoint R30/R31 non va cancellato quando si avanza: deve restare come
 regression stabile del ramo approvato.
+
+---
+
+## DV-ARCH-001 — Return autonomo di `Diego_Vittorio`
+
+**Stato:** ARCHITETTURA CORRENTE — IN COLLAUDO  
+**Origine:** consolidamento utente 28/09/2026
+
+`Diego_Vittorio` nasce come derivazione di `SpiraliVittorio` con correzioni
+progressive, ma ha ricevuto una modifica strutturale che ne cambia il
+comportamento rispetto a Vittorio: il **Return non è più il riflesso
+parallelo della mandata**.
+
+Il Return viene generato come percorso autonomo. Ogni sua prosecuzione è
+condizionata contemporaneamente da:
+
+1. geometria/perimetro disponibile del locale o edificio;
+2. mandata già costruita;
+3. tratti del Return già costruiti.
+
+Questa indipendenza può permettere al Return di utilizzare percorsi che una
+semplice copia parallela della mandata non potrebbe percorrere, ma rende il
+problema geometrico più vincolato e introduce nuovi modi di fallimento.
+
+## DV-KNOWN-001 — Intrappolamento del Return nel “budello” della mandata
+
+**Stato:** PROBLEMA APERTO — OSSERVATO NEL COLLAUDO  
+**Origine:** osservazione utente 28/09/2026
+
+Durante il collaudo di `Diego_Vittorio` è stato osservato un limite
+caratteristico del Return autonomo: la mandata può costruire una sequenza di
+tratti che delimita un corridoio stretto, assimilabile a un **budello**.
+Il Return, dovendo rispettare contemporaneamente edificio, mandata e se stesso,
+può entrare nel corridoio e perdere progressivamente le possibilità di uscita.
+
+Effetto noto:
+
+- il Return può risultare geometricamente “imprigionato”;
+- il generatore può dichiarare uno stop quando esisterebbe una strategia
+  complessiva migliore;
+- l'arresto può quindi essere prematuro o non corretto rispetto al risultato
+  desiderato del circuito.
+
+Per ora questa sezione **registra il problema e non prescrive una correzione**.
+Ogni caso reale osservato deve essere conservato con progetto, locale e
+screenshot/output; quando il comportamento sarà riproducibile deve diventare
+una regression specifica. Solo dopo il confronto di più casi si definirà una
+regola generale per evitare l'intrappolamento o riconoscere in anticipo i
+corridoi senza uscita.
 
 ---
 
