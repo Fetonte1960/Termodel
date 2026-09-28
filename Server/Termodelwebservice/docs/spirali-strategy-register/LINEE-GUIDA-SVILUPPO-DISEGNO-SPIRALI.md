@@ -6661,7 +6661,7 @@ ricostruire l'intero percorso progetto → Service → Harness.
 
 ## DV-TEST-002 — Pannelli radianti pubblico: locali uno per uno
 
-**Stato:** CAMPAGNA ATTIVA — FASI 1-4 COMPLETATE / FASE 5 `locale_9` IN CORSO  
+**Stato:** CAMPAGNA ATTIVA — FASI 1-5 COMPLETATE / FASE 6 RICOMPOSIZIONE COMPLETA  
 **Origine:** collaudo utente 28/09/2026
 
 Il progetto pubblico **Pannelli radianti** mostra risultati non ripetibili e
@@ -6909,6 +6909,27 @@ Regression dedicata `locale_8` aggiunta nel commit
 `36407499506`: **SUCCESS** senza flag diagnostici, con quadrato pubblico
 byte-identico e regression `locale_1`, `locale_5`, `locale_8` tutte verdi.
 `locale_8`: Return 18 punti, chiusura `M3/R5` da 0,971 m.
+
+### Esito `locale_9` — risolto dalle regole già consolidate
+
+`locale_9` non ha richiesto una nuova modifica al motore. Sul codice corrente
+il Return percorre i due offset utili con **13 punti** e senza arresti.
+
+Il precedente output intermedio usava una chiusura `M3/R5` obliqua da
+1,875 m. Dopo il criterio LG-048 consolidato in `locale_5`, il candidato
+selezionato è invece:
+
+```text
+M3/RP2 — ortogonale — 0,77 m
+```
+
+Fast Harness inspection `36407962757`: SUCCESS e SVG ispezionato. La
+geometria risulta ordinata e non richiede una nuova eccezione o strategia.
+
+Regression dedicata aggiunta nel commit
+`3f055f37132643e4e09b9ec0bc3dc3615b122b75`. Fast Harness finale
+`36408292815`: **SUCCESS** con quadrato approvato e tutti i rettangolari
+`locale_1`, `locale_5`, `locale_8`, `locale_9` contemporaneamente verdi.
 
 ---
 
