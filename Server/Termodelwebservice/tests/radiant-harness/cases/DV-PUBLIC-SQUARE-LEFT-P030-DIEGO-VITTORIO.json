@@ -1,0 +1,7 @@
+{
+  "id": "DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO",
+  "description": "Quadrato pubblico 4x4 m con ingresso da sinistra, regression DV-TEST-001 sul vero RadiantPanelInputXml estratto dal progetto Web.",
+  "preparedInput": "../../fixtures/DiegoVittorioPublicSquareLeft.locale.xml",
+  "stepMeters": 0.3,
+  "engine": "Diego_Vittorio"
+}
