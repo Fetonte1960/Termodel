@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 14:18 Europe/Rome
+Checkpoint: 2026-09-28 14:27 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -667,6 +667,26 @@ Quindi:
   `skipIndices`, prima che `FixIntersections`, `NormalizePolygon` o la
   percorrenza possano esaminare il terzo offset;
 - il codice non prova a validare il poligono 0,39 × 2,80: lo sopprime a monte.
+
+### Decisione metodo diagnostico — logging categorizzato
+Stato: **APPROVATA DALL'UTENTE**
+
+Decisione 28/09/2026:
+- non introdurre snapshot JSON o un secondo sistema di debug;
+- riusare `Termodel.utilities.TermodelLog`, già adottato dal Service;
+- aggiungere una categoria permanente `SpiraliDiegoVittorio`, normalmente
+  disattivabile tramite i parametri generali `logEnabled/logCategories`;
+- usare sottotag testuali stabili per distinguere il contesto interno Supply
+  (`Supply.Context`, `Supply.ComputeOffset.Edge`, `Supply.Offset.Stop`, ecc.);
+- l'Harness deve poter abilitare la stessa categoria e riversare
+  `TermodelLog.Messages` nel consueto `.log.txt`;
+- dopo ogni elaborazione leggere il log; se una variabile necessaria manca,
+  aggiungere il solo punto di log mancante e rieseguire;
+- unico caso corrente sempre `locale_1`.
+
+Obiettivo metodologico:
+trasformare il log esistente nel corrispettivo remoto e ripetibile della
+sessione Watch/Locals di Visual Studio, senza alterare la geometria.
 
 ### STEP 4 — domanda aperta corrente
 Stato: **IN CORSO**
