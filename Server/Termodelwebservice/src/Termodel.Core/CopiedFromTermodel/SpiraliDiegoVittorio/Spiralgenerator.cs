@@ -300,7 +300,8 @@ namespace SpiralHeatingDiegoVittorio
 			DirezioneSviluppoSpirale direzioneSviluppo = DirezioneSviluppoSpirale.EsternoVersoInterno,
 			List<Punto> trattoIniziale = null,
 			List<Punto> lineeCondizionamento = null,
-			double distanzaCondizionamento = 0.0)
+			double distanzaCondizionamento = 0.0,
+			bool traceSupply = false)
 		{
 			if (distanzaParete <= 0)
 				throw new ArgumentOutOfRangeException(nameof(distanzaParete));
@@ -314,6 +315,16 @@ namespace SpiralHeatingDiegoVittorio
 			}
 
 			List<Punto> spiral = new List<Punto>();
+			bool supplyTrace =
+				traceSupply &&
+				(lineeCondizionamento == null || lineeCondizionamento.Count < 2);
+			if (supplyTrace)
+			{
+				Console.WriteLine(
+					$"DV_SUPPLY_BEGIN start=({startPoint.X:R},{startPoint.Y:R}) " +
+					$"wall={distanzaParete:R} supplyStep={passoMandata:R} " +
+					$"perimeterVertices={perimetro.Count}");
+			}
 			
 			// Verifica e correggi il senso di rotazione (deve essere antiorario)
 			perimetro = GeometryUtils.EnsureCounterClockwise(perimetro);
@@ -338,7 +349,15 @@ namespace SpiralHeatingDiegoVittorio
 					distanzaOffset);
 
 				if (nextOffset == null || nextOffset.Count < 3)
+				{
+					if (supplyTrace)
+					{
+						Console.WriteLine(
+							$"DV_SUPPLY_OFFSET_STOP level={i + 1} reason=invalid-offset " +
+							$"distance={distanzaOffset:R} points={(nextOffset == null ? 0 : nextOffset.Count)}");
+					}
 					break;
+				}
 				
 				// Correggi vertici che intersecano il perimetro precedente
 				nextOffset = FixIntersections(
@@ -353,10 +372,33 @@ namespace SpiralHeatingDiegoVittorio
 					if (edgeLen < minEdgeLength)
 						minEdgeLength = edgeLen;
 				}
+				if (supplyTrace)
+				{
+					Console.WriteLine(
+						$"DV_SUPPLY_OFFSET_CANDIDATE level={i + 1} " +
+						$"distance={distanzaOffset:R} points={nextOffset.Count} " +
+						$"minEdge={minEdgeLength:R}");
+				}
 				if (minEdgeLength < passoMandata && minEdgeLength > 0.2)
+				{
+					if (supplyTrace)
+					{
+						Console.WriteLine(
+							$"DV_SUPPLY_OFFSET_STOP level={i + 1} reason=min-edge-below-step " +
+							$"minEdge={minEdgeLength:R} threshold={passoMandata:R} points={nextOffset.Count}");
+					}
 					break;
+				}
 				if (minEdgeLength < passoMandata * 1.2 && nextOffset.Count < 5)
+				{
+					if (supplyTrace)
+					{
+						Console.WriteLine(
+							$"DV_SUPPLY_OFFSET_STOP level={i + 1} reason=min-edge-sparse-polygon " +
+							$"minEdge={minEdgeLength:R} threshold={(passoMandata * 1.2):R} points={nextOffset.Count}");
+					}
 					break;
+				}
 					
 				var nextOffsetNormalizzato =
 					GeometryUtils.NormalizePolygon(nextOffset);
@@ -373,9 +415,26 @@ namespace SpiralHeatingDiegoVittorio
 					distanzaCondizionamento))
 				{
 					offsets.Add(nextOffsetNormalizzato);
+					if (supplyTrace)
+					{
+						Console.WriteLine(
+							$"DV_SUPPLY_OFFSET_ACCEPT level={i + 1} " +
+							$"usefulIndex={offsets.Count - 1} points={nextOffsetNormalizzato.Count}");
+					}
+				}
+				else if (supplyTrace)
+				{
+					Console.WriteLine(
+						$"DV_SUPPLY_OFFSET_SKIP level={i + 1} reason=conditioning");
 				}
 				//offsets.Add(nextOffset);
 
+			}
+
+			if (supplyTrace)
+			{
+				Console.WriteLine(
+					$"DV_SUPPLY_OFFSETS_READY useful={Math.Max(0, offsets.Count - 1)} total={offsets.Count}");
 			}
 
 			// Se non si deve disegnare la spirale, restituisci solo gli offset
@@ -396,7 +455,11 @@ namespace SpiralHeatingDiegoVittorio
 			Punto puntoEsterno = startPoint;
 			
 			if (offsets.Count < 2)
+			{
+				if (supplyTrace)
+				Console.WriteLine($"DV_SUPPLY_END points={spiral.Count} usefulOffsets=0 reason=no-useful-offset");
 				return (spiral, offsets);
+			}
 			
 			// Modificato da Codex per realizzare: la mandata percorre gli
 			// offset dall'esterno all'interno; il ritorno autonomo li percorre
@@ -431,6 +494,13 @@ namespace SpiralHeatingDiegoVittorio
 				indiceOffsetPercorso++;
 				bool ultimoOffset = indiceOffsetPercorso == offsetsPercorso.Count;
 				int puntiPrimaOffset = spiral.Count;
+				if (supplyTrace)
+				{
+					Console.WriteLine(
+						$"DV_SUPPLY_TRAVERSE_BEGIN offset={indiceOffsetPercorso} " +
+						$"offsetPoints={currentOffset.Count} pointsBefore={spiral.Count} " +
+						$"start=({spiral[^1].X:R},{spiral[^1].Y:R})");
+				}
 				// Trova un collegamento valido con l'offset corrente dall'ultimo punto della spirale.
 				var ultimoPuntoSpiral = spiral[spiral.Count - 1];
 				var (percorsoConnessione, puntoIntersezione, startVertexIndex) = FindConnectionWithOffset(
@@ -485,6 +555,12 @@ namespace SpiralHeatingDiegoVittorio
 					// del ritorno parametrico senza alterare la geometria prodotta.
 					if (lineeCondizionamento != null)
 						Console.WriteLine($"  Ritorno: offset {indiceOffsetPercorso} senza collegamento valido.");
+					if (supplyTrace)
+					{
+						Console.WriteLine(
+							$"DV_SUPPLY_TRAVERSE_SKIP offset={indiceOffsetPercorso} reason=no-connection " +
+							$"points={spiral.Count}");
+					}
 					continue;
 				}
 
@@ -614,6 +690,19 @@ namespace SpiralHeatingDiegoVittorio
 
 					if (!rispettaSupply || !rispettaSelf)
 					{
+						if (supplyTrace)
+						{
+							string reason =
+								!rispettaSupply && !rispettaSelf
+									? "conditioning+self"
+									: !rispettaSupply
+										? "conditioning"
+										: "self";
+							Console.WriteLine(
+								$"DV_SUPPLY_TRAVERSE_STOP offset={indiceOffsetPercorso} reason={reason} " +
+								$"from=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
+								$"candidate=({candidato.X:R},{candidato.Y:R})");
+						}
 						// Modificato da Codex per realizzare: non perdere l'ultima
 						// parte lecita del lato quando soltanto la sua estremità
 						// invaderebbe la fascia di rispetto della mandata/ritorno.
@@ -643,6 +732,12 @@ namespace SpiralHeatingDiegoVittorio
 				{
 					if (lineeCondizionamento != null)
 						Console.WriteLine($"  Ritorno: offset {indiceOffsetPercorso} senza tratto percorribile.");
+					if (supplyTrace)
+					{
+						Console.WriteLine(
+							$"DV_SUPPLY_TRAVERSE_SKIP offset={indiceOffsetPercorso} " +
+							$"reason=no-traversable-segment points={spiral.Count}");
+					}
 					if (spiral.Count > puntiPrimaOffset)
 						spiral.RemoveRange(
 							puntiPrimaOffset,
@@ -718,8 +813,23 @@ namespace SpiralHeatingDiegoVittorio
 						spiral.Add(terminaleParziale);
 					}
 				}
+
+				if (supplyTrace)
+				{
+					Console.WriteLine(
+						$"DV_SUPPLY_TRAVERSE_END offset={indiceOffsetPercorso} " +
+						$"pointsAdded={spiral.Count - puntiPrimaOffset} points={spiral.Count} " +
+						$"last=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
+						$"finalized={finaleOriginaleAggiunto}");
+				}
 			}
 
+			if (supplyTrace)
+			{
+				Console.WriteLine(
+					$"DV_SUPPLY_END points={spiral.Count} usefulOffsets={offsetsPercorso.Count} " +
+					$"last=({spiral[^1].X:R},{spiral[^1].Y:R})");
+			}
 			return (spiral, offsets);
 		}
 

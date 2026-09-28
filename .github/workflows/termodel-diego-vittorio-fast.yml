@@ -66,6 +66,53 @@ jobs:
       - name: Build Harness + Core
         run: dotnet build tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-restore --nologo --verbosity:minimal -p:BuildInParallel=true
 
+      - name: Inspect Supply only on public cases
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $input = "tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml"
+          $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioSupplyOnly"
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+
+          # Controllo quadrato pubblico approvato: stessa pipeline Supply, senza Return/LG-048.
+          $squareOut = Join-Path $root "public-square"
+          $squareId = "DV-SUPPLY-PUBLIC-SQUARE"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json `
+            --id $squareId `
+            --supply-only `
+            --out $squareOut
+          if ($LASTEXITCODE -ne 0) { throw "Supply-only quadrato pubblico fallito." }
+          $squareLog = Join-Path $squareOut "$squareId.log.txt"
+          Write-Host "=== SUPPLY_ONLY public-square ==="
+          Get-Content -LiteralPath $squareLog | Where-Object { $_ -match 'DV_SUPPLY_' } | Write-Host
+
+          foreach ($locale in @("locale_1","locale_2","locale_5","locale_6","locale_8","locale_9")) {
+            $safe = $locale.Replace("_","-")
+            $caseId = "DV-SUPPLY-$safe"
+            $out = Join-Path $root $locale
+            dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+              --input $input `
+              --locale $locale `
+              --engine Diego_Vittorio `
+              --id $caseId `
+              --p 0.30 `
+              --supply-only `
+              --out $out
+            if ($LASTEXITCODE -ne 0) { throw "Supply-only $locale fallito." }
+
+            $log = Join-Path $out "$caseId.log.txt"
+            $metricsPath = Join-Path $out "$caseId.metrics.json"
+            if (-not (Test-Path -LiteralPath $log) -or -not (Test-Path -LiteralPath $metricsPath)) {
+              throw "Artifact Supply-only mancante per $locale."
+            }
+            $metrics = Get-Content -LiteralPath $metricsPath -Raw | ConvertFrom-Json
+            Write-Host "=== SUPPLY_ONLY $locale ==="
+            Get-Content -LiteralPath $log | Where-Object { $_ -match 'DV_SUPPLY_' } | Write-Host
+            Write-Host ("SUPPLY_ONLY_RESULT locale={0} points={1} svg={2}" -f $locale,$metrics.SpiralPointCount,$metrics.svgSha256)
+          }
+          Write-Host "DIEGO_VITTORIO_SUPPLY_ONLY_MATRIX_OK"
+
       - name: Run Diego_Vittorio square
         shell: pwsh
         run: |
@@ -244,6 +291,7 @@ jobs:
           name: diego-vittorio-fast
           path: |
             ${{ runner.temp }}/DiegoVittorioFast
+            ${{ runner.temp }}/DiegoVittorioSupplyOnly
             ${{ runner.temp }}/DiegoVittorioPublicSquare
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1
             ${{ runner.temp }}/DiegoVittorioPanelsLocale5

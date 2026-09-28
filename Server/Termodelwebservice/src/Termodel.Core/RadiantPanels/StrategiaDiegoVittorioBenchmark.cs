@@ -16,7 +16,20 @@ public static class StrategiaDiegoVittorioBenchmark
     // Funzione realizzata da Codex in autonomia
     public static StrategiaVittorioBenchmarkSample Run(
         string localeXml,
-        double stepMeters = SpiralHeatingDiegoVittorio.Program.PassoTubi)
+        double stepMeters = SpiralHeatingDiegoVittorio.Program.PassoTubi) =>
+        RunCore(localeXml, stepMeters, supplyOnly: false);
+
+    // Diagnostica FASE 6C: restituisce l'output della sola generazione Supply,
+    // prima di Return e chiusura LG-048.
+    public static StrategiaVittorioBenchmarkSample RunSupplyOnly(
+        string localeXml,
+        double stepMeters = SpiralHeatingDiegoVittorio.Program.PassoTubi) =>
+        RunCore(localeXml, stepMeters, supplyOnly: true);
+
+    private static StrategiaVittorioBenchmarkSample RunCore(
+        string localeXml,
+        double stepMeters,
+        bool supplyOnly)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Diego_Vittorio vuota.", nameof(localeXml));
@@ -52,7 +65,10 @@ public static class StrategiaDiegoVittorioBenchmark
                 {
                     Directory.SetCurrentDirectory(tempRoot);
                     Console.SetOut(capturedOut);
-                    SpiralHeatingDiegoVittorio.Program.AggiornaSpirali(stepMeters);
+                    if (supplyOnly)
+                        SpiralHeatingDiegoVittorio.Program.AggiornaSoloMandata(stepMeters);
+                    else
+                        SpiralHeatingDiegoVittorio.Program.AggiornaSpirali(stepMeters);
                 }
                 finally
                 {

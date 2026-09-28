@@ -26,8 +26,8 @@ return args.Length == 0
 static int Usage()
 {
     Console.Error.WriteLine("Termodel.RadiantPanels.Harness");
-    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego_Vittorio|Diego] [--out <dir>] [opzioni diagnostiche Diego]");
-    Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Diego_Vittorio|Diego] [--supply-only] [--out <dir>] [opzioni diagnostiche Diego]");
+    Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--supply-only] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  fillet-check");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
@@ -142,6 +142,7 @@ static int Run(string[] args)
         string? stepArg = Arg(args, "--p");
         string? engineArg = Arg(args, "--engine");
         string? localeArg = Arg(args, "--locale");
+        bool supplyOnly = HasFlag(args, "--supply-only");
         string? rejectDecisionsArg = Arg(args, "--reject-decisions");
         string? lockSupplyPrefixArg = Arg(args, "--lock-supply-prefix");
         bool rejectCurrentSupply = HasFlag(args, "--reject-current-supply");
@@ -234,6 +235,13 @@ static int Run(string[] args)
                 throw new ArgumentException(
                     "Explorer, replay, prefix lock e branch inspector sono opzioni specifiche di StrategiaDiego.");
             }
+            if (supplyOnly &&
+                !selectedEngine.Equals("Diego_Vittorio", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException(
+                    "--supply-only è disponibile esclusivamente per Diego_Vittorio.");
+            }
+
             // Modificato da Codex per realizzare: Vittorio resta congelato a
             // 0,30 m; la copia sperimentale Diego_Vittorio accetta --p.
             if (selectedEngine.Equals("Vittorio", StringComparison.OrdinalIgnoreCase) &&
@@ -251,7 +259,8 @@ static int Run(string[] args)
                 outputDir,
                 testCase?.Description,
                 selectedEngine,
-                stepMeters);
+                stepMeters,
+                supplyOnly);
         }
         if (!selectedEngine.Equals("Diego", StringComparison.OrdinalIgnoreCase))
         {
@@ -508,12 +517,15 @@ static int RunCopiedSpiralStrategy(
     string outputDir,
     string? description,
     string selectedEngine,
-    double stepMeters)
+    double stepMeters,
+    bool supplyOnly)
 {
     // Modificato da Codex per realizzare: mantenere un solo percorso di output per Vittorio e Diego_Vittorio.
     StrategiaVittorioBenchmarkSample sample =
         selectedEngine.Equals("Diego_Vittorio", StringComparison.OrdinalIgnoreCase)
-            ? StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters)
+            ? supplyOnly
+                ? StrategiaDiegoVittorioBenchmark.RunSupplyOnly(localeXml, stepMeters)
+                : StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters)
             : StrategiaVittorioBenchmark.Run(localeXml);
 
     string svgPath = Path.Combine(outputDir, caseId + ".svg");
@@ -535,6 +547,7 @@ static int RunCopiedSpiralStrategy(
         caseId,
         description,
         engine = selectedEngine,
+        mode = supplyOnly ? "supply-only" : "full",
         input = fullInputPath,
         stepMeters = sample.StepMeters,
         sample.LocaleCount,
@@ -554,6 +567,7 @@ static int RunCopiedSpiralStrategy(
     Console.WriteLine("RADIANT_HARNESS_OK");
     Console.WriteLine($"case={caseId}");
     Console.WriteLine($"engine={selectedEngine}");
+    Console.WriteLine($"mode={(supplyOnly ? "supply-only" : "full")}");
     Console.WriteLine($"input={fullInputPath}");
     Console.WriteLine($"p={sample.StepMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
     Console.WriteLine($"locales={sample.LocaleCount}");

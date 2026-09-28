@@ -88,15 +88,38 @@ namespace SpiralHeatingDiegoVittorio
                 passoTubi,
                 distanzaPareti,
                 distanzaMandataMandata,
-                distanzaRitorno);
+                distanzaRitorno,
+                traceSupply: false);
             ChiudiSpiraleFiles(distanzaPareti, distanzaRitorno);
+        }
+
+        // Diagnostica Harness DV-TEST-002 / FASE 6C:
+        // esegue esclusivamente la generazione Supply, senza Return e senza LG-048.
+        // Non è usata dal percorso produttivo del Service.
+        public static void AggiornaSoloMandata(double passoTubi)
+        {
+            if (!double.IsFinite(passoTubi) || passoTubi <= 0)
+                throw new ArgumentOutOfRangeException(nameof(passoTubi), "Il passo deve essere finito e positivo.");
+
+            double distanzaPareti = passoTubi / 2.0;
+            double distanzaMandataMandata = passoTubi * 2.0;
+            double distanzaRitorno = passoTubi;
+
+            Console.WriteLine("DV_SUPPLY_ONLY_MODE active=true");
+            GeneraSpirale(
+                passoTubi,
+                distanzaPareti,
+                distanzaMandataMandata,
+                distanzaRitorno,
+                traceSupply: true);
         }
 
         static void GeneraSpirale(
             double passoTubi,
             double distanzaPareti,
             double distanzaMandataMandata,
-            double distanzaRitorno)
+            double distanzaRitorno,
+            bool traceSupply = false)
         {
             string xmlFile = "locale.xml";
             
@@ -228,13 +251,28 @@ namespace SpiralHeatingDiegoVittorio
                 // Genera spirale (sempre generata per salvarla nell'XML)
                 List<Punto> spiral;
                 List<List<Punto>> offsets;
+                if (traceSupply)
+                {
+                    Console.WriteLine(
+                        $"DV_SUPPLY_LOCALE_BEGIN id={localeId} inlet={lineaIngresso.Id} " +
+                        $"start=({lineaIngresso.PuntoInterno.X:R},{lineaIngresso.PuntoInterno.Y:R})");
+                }
                 (spiral, offsets) = SpiralGenerator.Generate(
                     perimetro,
                     lineaIngresso.PuntoInterno,
                     distanzaPareti,
                     distanzaMandataMandata,
-                    true  // writeSvg non usato in SpiralGenerator
+                    true,  // writeSvg non usato in SpiralGenerator
+                    traceSupply: traceSupply
                 );
+                if (traceSupply)
+                {
+                    Console.WriteLine(
+                        $"DV_SUPPLY_LOCALE_END id={localeId} points={spiral.Count} " +
+                        $"usefulOffsets={Math.Max(0, offsets.Count - 1)} " +
+                        $"last=({(spiral.Count > 0 ? spiral[^1].X : double.NaN):R}," +
+                        $"{(spiral.Count > 0 ? spiral[^1].Y : double.NaN):R})");
+                }
                 
                 // Salva spirale nel locale XML
                 SalvaSpiralInLocale(locale, spiral);
