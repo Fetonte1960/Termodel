@@ -104,11 +104,22 @@ condiviso realmente fra desktop e Service senza dipendenze WPF, Helix o IFC.
 Ramo sperimentale creato il 28 settembre 2026:
 - `SpiraliVittorioRevisionato/*.cs`: nuova copia di `SpiraliVittorio` usata
   esclusivamente per ricostruire in modo controllato l'astrazione Supply/Return.
-  La fotografia iniziale differisce dal riferimento Vittorio soltanto per il
+  La fotografia iniziale differiva dal riferimento Vittorio soltanto per il
   namespace `SpiralHeatingVittorioRevisionato`.
 - selettore Harness: `Vittorio_revisionato`;
-- primo vincolo: parità byte-funzionale sul quadrato prima di qualsiasi
-  astrazione;
+- parità iniziale sul quadrato verificata nel run `36465582271`: SVG e XML
+  byte-identici al riferimento Vittorio;
+- prima astrazione controllata introdotta in `Spiralgenerator.cs`:
+  `SpiralGenerationInput` + linee/distanza di condizionamento opzionali;
+- il core mantiene l'ordine geometrico di Vittorio e il condizionamento agisce
+  soltanto come gate: arresta il percorso al primo segmento non ammesso, senza
+  rerouting, corridoi, trim o fallback;
+- run `36466606034` SUCCESS: parità Vittorio ancora conservata;
+  probe neutro equivalente, Supply 37 punti, secondo percorso non condizionato
+  38 punti, percorso condizionato dalla Supply a 0,15 m fermo a 1 punto;
+- questa copia NON è ancora un motore di produzione e NON genera ancora un
+  Return autonomo utilizzabile; il risultato serve a decidere insieme la minima
+  differenza strutturale necessaria prima di qualsiasi nuova strategia;
 - vietato importare euristiche da `SpiraliDiegoVittorio` senza test e
-  decisione esplicita.
+  decisione esplicita;
 - stato duplicazione: PENDING.
