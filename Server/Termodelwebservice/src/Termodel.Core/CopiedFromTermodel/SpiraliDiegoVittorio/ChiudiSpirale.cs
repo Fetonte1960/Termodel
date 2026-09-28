@@ -653,6 +653,51 @@ namespace SpiralHeatingDiegoVittorio
             return null;
         }
 
+        private static ConfigurazioneTerminale CreaConfigurazioneTerminaleProiettata(
+            List<Punto> originale,
+            string codice,
+            int trattiRimossi,
+            Punto origineProiezione)
+        {
+            const double tolleranza = 0.000001;
+            if (originale == null ||
+                origineProiezione == null ||
+                trattiRimossi < 0 ||
+                trattiRimossi > MaxTrattiTerminaliChiusura ||
+                originale.Count - trattiRimossi < 2)
+            {
+                return null;
+            }
+
+            var punti = originale
+                .Take(originale.Count - trattiRimossi)
+                .ToList();
+            Punto a = punti[^2];
+            Punto b = punti[^1];
+            Punto proiezione = GeometryUtils.ProjectPointOnSegment(
+                origineProiezione,
+                a,
+                b);
+            if (proiezione == null ||
+                a.DistanceTo(proiezione) <= tolleranza)
+            {
+                return null;
+            }
+
+            double lunghezzaRimossa =
+                LunghezzaCodaRimossa(originale, trattiRimossi) +
+                b.DistanceTo(proiezione);
+            punti[^1] = proiezione;
+
+            return new ConfigurazioneTerminale
+            {
+                Punti = punti,
+                Codice = codice,
+                TrattiRimossi = trattiRimossi,
+                LunghezzaRimossa = lunghezzaRimossa
+            };
+        }
+
         // Funzione realizzata da Codex in autonomia
         private static ConfigurazioneTerminale CreaConfigurazioneTerminale(
             List<Punto> originale,
