@@ -71,6 +71,22 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-28 — Direttiva fasi anti-blocco e notifiche Issue #1
+Stato: COMMISSIONATO
+
+Commissionato:
+- rendere permanente la regola che gli incarichi gravosi devono essere suddivisi prima dell'esecuzione in fasi coerenti, autonome e riprendibili;
+- ogni fase deve lasciare un checkpoint persistente sufficiente a permettere a una nuova chat di continuare senza rifare il lavoro precedente;
+- alla conclusione di ogni fase significativa usare la Issue #1 per notificare esito riuscito/fallito;
+- evitare notifiche eccessive: non usare Issue #1 per ogni commit, micro-passaggio o build, perché le build dispongono già delle notifiche GitHub Actions;
+- mantenere distinta la notifica di fase dalla notifica automatica delle build.
+
+Criteri di completamento:
+- protocollo anti-timeout aggiornato;
+- regola riportata nel Summary autorevole;
+- nessuna modifica a codice applicativo o `definizionedati.json`.
+
+
 ### INCARICO 2026-09-28 — Stato strategie spirali e limite ritorno autonomo
 Stato: ESEGUITO
 
