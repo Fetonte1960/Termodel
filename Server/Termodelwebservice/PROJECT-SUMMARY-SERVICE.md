@@ -82,7 +82,7 @@ Autorizzazione utente:
 - il setup deve riusare `TermodelLog`, categorie selettive e Harness rapido, senza introdurre sistemi diagnostici paralleli.
 
 Risultato:
-- documento creato su `main` nel commit `70411ac00260048e8763f2553d9acfb32f210f20`;
+- documento creato su `main` nel commit `70411ac00260048e8763f2553d9acfb32f210f20` e chiave resa univoca nel commit `80913c103c26bc8a430975eaac86ce350e21a633`;
 - chiave `Debug_Avanzato_harness_rapido` presente come setup operativo permanente;
 - documentati `TermodelLog`, `SpiraliDiegoVittorio`, parametri Service `logEnabled/logCategories`, equivalenti Harness `--log-enabled/--log-categories`, sottotag stabili e ciclo esegui -> leggi log -> aggiungi solo il log mancante -> riesegui;
 - registrata la regola di non modificare geometria/strategie durante la sola osservazione e di consolidare poi con regression;
