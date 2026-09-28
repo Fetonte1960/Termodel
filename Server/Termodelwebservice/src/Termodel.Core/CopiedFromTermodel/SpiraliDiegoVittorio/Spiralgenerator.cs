@@ -634,7 +634,10 @@ namespace SpiralHeatingDiegoVittorio
 			
 			// Modificato da Codex per realizzare: centralizzare la valutazione
 			// dei collegamenti e consentire un fallback nei varchi della mandata.
-			void ValutaPuntoOffset(Punto intersection, int segmentIndex)
+			void ValutaPuntoOffset(
+				Punto intersection,
+				int segmentIndex,
+				bool includeCriticalClearancePaths = false)
 			{
 				var candidatePaths = new List<List<Punto>>();
 				double directDistance = start.DistanceTo(intersection);
@@ -688,6 +691,52 @@ namespace SpiralHeatingDiegoVittorio
 							new Punto(intersection.X, y),
 							intersection
 						});
+					}
+
+					// DV-TEST-002 — fallback geometrico circoscritto.
+					// Viene attivato soltanto dopo che la ricerca storica non ha
+					// trovato alcun collegamento. Nei corridoi larghi esattamente
+					// 2p il campionamento p/2 può non colpire l'unica mezzeria
+					// valida; i valori estremo-mandata +/- distanza di rispetto
+					// rappresentano invece le coordinate critiche esatte.
+					if (includeCriticalClearancePaths &&
+						lineeCondizionamento != null &&
+						lineeCondizionamento.Count > 0 &&
+						distanzaCondizionamento > 0)
+					{
+						var criticalX = new SortedSet<double>();
+						var criticalY = new SortedSet<double>();
+						foreach (Punto obstaclePoint in lineeCondizionamento)
+						{
+							criticalX.Add(obstaclePoint.X - distanzaCondizionamento);
+							criticalX.Add(obstaclePoint.X + distanzaCondizionamento);
+							criticalY.Add(obstaclePoint.Y - distanzaCondizionamento);
+							criticalY.Add(obstaclePoint.Y + distanzaCondizionamento);
+						}
+
+						foreach (double x in criticalX)
+						{
+							if (x <= minX + tolleranza || x >= maxX - tolleranza)
+								continue;
+							candidatePaths.Add(new List<Punto>
+							{
+								new Punto(x, start.Y),
+								new Punto(x, intersection.Y),
+								intersection
+							});
+						}
+
+						foreach (double y in criticalY)
+						{
+							if (y <= minY + tolleranza || y >= maxY - tolleranza)
+								continue;
+							candidatePaths.Add(new List<Punto>
+							{
+								new Punto(start.X, y),
+								new Punto(intersection.X, y),
+								intersection
+							});
+						}
 					}
 				}
 
@@ -766,6 +815,53 @@ namespace SpiralHeatingDiegoVittorio
 								p1.X + dx * distanza,
 								p1.Y + dy * distanza),
 							i);
+					}
+				}
+			}
+
+			if (bestPath == null &&
+				lineeCondizionamento != null &&
+				lineeCondizionamento.Count > 0)
+			{
+				// Secondo livello di fallback DV-TEST-002: ripete la stessa
+				// famiglia finita di punti dell'offset, ma abilita corridoi
+				// ortogonali sulle coordinate critiche della mandata. Essendo
+				// eseguito solo con bestPath ancora nullo, non può cambiare il
+				// percorso dei casi che la ricerca precedente risolve già.
+				for (int i = 0; i < offset.Count; i++)
+				{
+					Punto projection = GeometryUtils.ProjectPointOnSegment(
+						start,
+						offset[i],
+						offset[(i + 1) % offset.Count]);
+					if (projection != null)
+						ValutaPuntoOffset(projection, i, includeCriticalClearancePaths: true);
+				}
+
+				if (bestPath == null)
+				{
+					double passoRicerca = Math.Max(passo / 2.0, tolleranza * 10.0);
+					for (int i = 0; i < offset.Count; i++)
+					{
+						Punto p1 = offset[i];
+						Punto p2 = offset[(i + 1) % offset.Count];
+						double lunghezza = p1.DistanceTo(p2);
+						if (lunghezza <= tolleranza)
+							continue;
+
+						double dx = (p2.X - p1.X) / lunghezza;
+						double dy = (p2.Y - p1.Y) / lunghezza;
+						for (double distanza = passoRicerca;
+							distanza < lunghezza - tolleranza;
+							distanza += passoRicerca)
+						{
+							ValutaPuntoOffset(
+								new Punto(
+									p1.X + dx * distanza,
+									p1.Y + dy * distanza),
+								i,
+								includeCriticalClearancePaths: true);
+						}
 					}
 				}
 			}
