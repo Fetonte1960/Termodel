@@ -1,20 +1,32 @@
 # STRATEGIADIEGO — REGISTRO DI SVILUPPO
 
 Data avvio: **25/09/2026**  
-Stato generale: **IN SVILUPPO — BANCO PROVA APPARTAMENTO REALE CORRENTE**
+Stato generale: **PARKED — RIPRESA PREVISTA DOPO RIDUZIONE DEL COSTO COMPUTAZIONALE**
 
 Scopo: registrare fasi indipendenti e recuperabili dell'implementazione,
 attivazione e benchmark della StrategiaDiego.
 
-> **Aggiornamento 28/09/2026 — distinzione dal motore Service corrente**
+> **Aggiornamento 28/09/2026 — linea StrategiaDiego parcheggiata**
 >
-> Questo registro resta autorevole per lo storico e lo sviluppo del motore
-> `StrategiaDiego` / selettore `Diego`, ma **non identifica più il default
-> operativo del Service**. Il default corrente è `Diego_Vittorio`, derivazione
-> indipendente che mantiene `SpiraliVittorio` invariata come riferimento.
-> L'utente ha iniziato il collaudo manuale sul Service pubblico del disegno
-> spirali `Diego_Vittorio` il 28/09/2026. Le nuove osservazioni relative a
-> quel collaudo vanno registrate nel registro
+> Questo registro resta autorevole per lo storico e l'eventuale sviluppo futuro
+> del motore `StrategiaDiego` / selettore `Diego`, ma la linea è
+> **PARKED**: il costo computazionale osservato è troppo elevato per l'uso
+> operativo corrente.
+>
+> L'obiettivo del lavoro futuro su StrategiaDiego non è abbandonarne
+> l'architettura di ricerca, ma **ridurne drasticamente il costo
+> computazionale** per poterla usare dove può avere maggiore valore:
+> configurazioni/locali geometricamente molto complessi, nei quali una ricerca
+> più ampia delle alternative può essere giustificata.
+>
+> StrategiaDiego **non è il default del Service** e i checkpoint Rxx di questo
+> documento restano congelati come patrimonio di ricerca finché la linea non
+> verrà esplicitamente riaperta.
+>
+> Il default corrente è `Diego_Vittorio`, derivazione indipendente da
+> `SpiraliVittorio`. L'utente ha iniziato il collaudo manuale sul Service
+> pubblico di `Diego_Vittorio` il 28/09/2026. Le nuove osservazioni relative
+> a quel collaudo vanno registrate nel registro
 > `docs/spirali-strategy-register/` e nelle relative regression, senza
 > confonderle con i checkpoint storici Rxx di StrategiaDiego.
 
