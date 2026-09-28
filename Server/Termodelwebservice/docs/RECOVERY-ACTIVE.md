@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 13:48 Europe/Rome
+Checkpoint: 2026-09-28 14:07 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -323,7 +323,7 @@ Vincoli rispettati:
 3. riprendere quindi il collaudo geometrico della FASE 6 usando questi due statici come riferimenti rapidi.
 
 ## Sottofase FASE 6C — diagnosi mandata Supply prima di Return/chiusura
-Stato: **DIAGNOSI COMPLETATA — 6C.4 IN ATTESA DI AUTORIZZAZIONE**
+Stato: **DIAGNOSI GENERALE COMPLETATA — PROPOSTA 6C.4 RESPINTA — INDAGINE LOCALE_1 IN CORSO**
 
 Origine utente 28/09/2026:
 - partendo dall'esecutivo `Pannelli radianti` congelato e approvato come migliorativo,
@@ -503,19 +503,20 @@ Conclusione 6C.3:
 - per i rettangoli esiste un criterio locale misurabile che può migliorare `locale_1/5/8` senza attivarsi sul quadrato approvato o su `locale_9`;
 - i concavi 2/6 richiedono una seconda strategia e non devono essere inclusi implicitamente nella prima correzione.
 ### 6C.4 — proposta circoscritta
-Stato: **IN ATTESA DI AUTORIZZAZIONE UMANA**
+Stato: **RESPINTA DALL'UTENTE — NON IMPLEMENTARE**
 
-Proposta limitata al primo banco rettangolare:
-- dopo l'ultimo anello completo, soltanto se il suo lato corto è `>= 2 * passoMandata` ma non esiste un ulteriore anello completo, provare un unico **asse terminale centrale** lungo la dimensione maggiore;
-- mantenere distanza almeno `passoMandata` dai due lati Supply paralleli;
-- arretrare gli estremi dell'asse di almeno `passoMandata` dai lati trasversali;
-- validare collegamento, distanza e intersezioni con gli stessi controlli già disponibili;
-- attivazione prevista su `locale_1/5/8`;
-- nessuna attivazione sul quadrato approvato e su `locale_9`;
-- `locale_2/6` esclusi da questa prima correzione.
+Decisione utente 28/09/2026:
+- esclusa esplicitamente la scorciatoia dell'asse terminale centrale;
+- non correggere l'effetto dopo l'aborto;
+- indagare invece le cause dell'**aborto spontaneo della mandata**;
+- lavorare step by step;
+- discutere **un solo caso alla volta**;
+- primo e unico caso corrente: `locale_1`;
+- per ogni passo documentare quale codice ha lavorato, in quale contesto, quale decisione ha preso e perché ha fallito.
 
-Prima applicazione proposta: **solo Harness/flag diagnostico**, per produrre SVG comparativi Supply-only. Nessuna attivazione nel percorso Service senza successiva approvazione visiva dell'utente.
-
+Conseguenza:
+- ogni ipotesi/prototipo di asse centrale terminale è archiviato come **non autorizzato**;
+- nessuna modifica geometrica verrà introdotta finché non sarà compreso il fallimento interno di `locale_1`.
 ### 6C.5 — regression e ricomposizione
 Stato: **NON INIZIATA**
 
@@ -529,11 +530,47 @@ Vincoli:
 - usare il Fast/Local Harness come percorso primario;
 - ogni nuova evidenza significativa aggiorna questo recovery e issue #1.
 
-**PROSSIMO PASSO ESATTO:** attendere autorizzazione utente per FASE 6C.4.
-Se autorizzata, implementare **solo nel percorso Harness diagnostico** il
-candidato asse terminale per i rettangoli `locale_1/5/8`, generare SVG
-comparativi e verificare esplicitamente che quadrato approvato e
-`locale_9` restino invariati.
+**PROSSIMO PASSO ESATTO:** FASE 6D su `locale_1` soltanto; ricostruire il percorso di chiamata e il calcolo del livello 3 in `ComputeOffset`, senza alcuna modifica geometrica.
+
+## FASE 6D — autopsia Supply `locale_1`
+Stato: **IN CORSO**
+
+Ambito rigidamente limitato:
+- unico caso: `locale_1` della fixture reale
+  `tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml`;
+- ingresso reale: `T6`;
+- geometria locale: rettangolo 3,09 × 5,50 m;
+- passo `p = 0,30 m`;
+- `distanzaParete = p/2 = 0,15 m`;
+- `passoMandata = 2p = 0,60 m`;
+- Return, LG-048, raccordi finali e altri locali sono fuori discussione.
+
+Obiettivo:
+ricostruire senza scorciatoie la sequenza completa che porta il generatore
+a dichiarare `invalid-offset` al livello 3 di `locale_1`.
+
+Metodo obbligatorio, uno step alla volta:
+1. identificare il chiamante e i parametri reali passati a `SpiralGenerator.Generate`;
+2. ricostruire il perimetro normalizzato realmente ricevuto;
+3. ricostruire offset 1 e offset 2, verificando formula, coordinate e trasformazioni;
+4. entrare nel tentativo di offset 3 e documentare ogni ramo di `ComputeOffset`:
+   lati correnti, lati precedenti, `edgeLength`, `edgeLength_pre`, `offset`,
+   condizione `edgeLength <= offset * 3`, condizione di shrink, `skipIndices`;
+5. stabilire se l'aborto è matematicamente necessario o è prodotto da una
+   regola euristica/storica che anticipa il collasso;
+6. soltanto dopo questa prova formulare possibili correzioni; nessuna modifica
+   del motore prima della diagnosi completa.
+
+Evidenza già disponibile da preservare, ma da non assumere come spiegazione finale:
+- livello 1 accettato;
+- livello 2 accettato;
+- tentativo livello 3: `ComputeOffset` restituisce 0 vertici dopo gli skip;
+- trace precedente mostra sul livello 3 due lati da 1,59 m e due da 4,00 m;
+- i due lati da 1,59 m soddisfano la regola storica di skip e, aggiungendo
+  entrambi gli estremi, l'unione degli indici elimina tutti e quattro i vertici.
+
+**PROSSIMO PASSO ESATTO:** leggere il percorso di chiamata `Harness -> benchmark -> Program.GeneraSpirale -> SpiralGenerator.Generate` per `locale_1`, quindi ricostruire numericamente il livello 3 dentro `ComputeOffset` senza cambiare codice produttivo.
+
 
 ## File/componenti attualmente coinvolti
 
