@@ -72,6 +72,32 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-28 — Pubblicazione correzione quadrato e aggiornamento Render
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- la correzione `DV-TEST-001` del quadrato `Diego_Vittorio` è giudicata soddisfacente;
+- autorizzata la pubblicazione dello stato corrente e l'aggiornamento del Service pubblico su Render.
+
+Fasi:
+- **FASE 1 — consolidamento/pubblicazione:** registrare l'approvazione umana e lasciare su `main` lo stato approvato, senza ulteriori modifiche geometriche;
+- **FASE 2 — deploy e verifica pubblica:** lasciare partire il normale auto-deploy Render da `main`, verificare `/health` e, se possibile, riprodurre il quadrato pubblico sul Service ospitato per confermare che il Return aggiornato sia effettivamente in esecuzione.
+
+Vincoli:
+- nessuna ulteriore modifica strutturale o geometrica in questa pubblicazione;
+- `SpiraliVittorio` invariata;
+- `StrategiaDiego` resta PARKED;
+- nessuna modifica frontend o `definizionedati.json`;
+- distinguere approvazione utente, commit pubblicato, deploy Render e verifica HTTP reale.
+
+Criteri di completamento:
+- approvazione umana registrata;
+- `main` contiene lo stato approvato;
+- auto-deploy Render attivato dal push su `main`;
+- Service pubblico verificato almeno via `/health`; preferibile verifica funzionale del quadrato sul Service remoto;
+- Issue #1 chiusa per ogni fase significativa.
+
+
 ### INCARICO 2026-09-28 — Indagine anomalie quadrato `Diego_Vittorio` e Harness rapido
 Stato: ESEGUITO
 
