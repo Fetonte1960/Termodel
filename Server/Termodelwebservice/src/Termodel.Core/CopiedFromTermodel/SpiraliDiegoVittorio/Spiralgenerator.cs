@@ -404,7 +404,9 @@ namespace SpiralHeatingDiegoVittorio
 
 				bool portaleAnticipatoTrovato = false;
 				List<Punto> offsetSuccessivoDiagnostico =
-					TracePortalsEnabled && !ultimoOffset
+					TracePortalsEnabled &&
+					lineeCondizionamento != null &&
+					!ultimoOffset
 						? offsetsPercorso[indiceOffsetPercorso]
 						: null;
 
