@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 12:18 Europe/Rome
+Checkpoint: 2026-09-28 12:26 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -163,38 +163,45 @@ Regression:
 - `locale_8`: Return 18 punti, chiusura presente 0,971 m.
 
 ### FASE 5 — locale_9
-Stato: **IN CORSO**
+Stato: **COMPLETATA TECNICAMENTE**
 
-Stato noto dai run di estrazione precedenti, da verificare sul codice corrente:
-- inizialmente la fixture aveva Return 6 punti e offset 2 bloccato;
-- dopo le correzioni circoscritte delle fasi precedenti, il run
-  `36405131885` mostrava già Return **13 punti**, 2 offset utili e chiusura
-  `M3/R5` obliqua da 1,875 m;
-- questo miglioramento è incidentale e non è ancora una regression dedicata.
-
-Verifica corrente:
+Verifica:
 - workflow inspection commit `6f4abb6a56ed515ddae776c4ed08c27e9f2dd28b`;
-- Fast Harness run `36407962757`: **SUCCESS**;
-- quadrato + `locale_1` + `locale_5` + `locale_8` tutti verdi;
+- Fast Harness run `36407962757`: SUCCESS;
 - `locale_9`: Return **13 punti**, 2 offset utili, nessun arresto;
-- la selezione LG-048 già consolidata sostituisce la precedente chiusura
-  obliqua 1,875 m con `M3/RP2`, ortogonale, **0,77 m**;
-- SVG ispezionato: due livelli Return ordinati e chiusura locale; nessuna
-  anomalia che richieda una nuova modifica del motore.
+- la selezione LG-048 già consolidata usa `M3/RP2`, ortogonale, **0,77 m**
+  invece della precedente `M3/R5` obliqua 1,875 m;
+- SVG ispezionato: geometria ordinata e chiusura locale;
+- nessuna nuova modifica al motore necessaria.
 
-**PROSSIMO PASSO ESATTO:**
-1. trasformare lo step di inspection `locale_9` in regression ordinaria
-   (13 punti + `M3/RP2` 0,77 m);
-2. rieseguire Fast Harness completo con tutti e quattro i rettangolari;
-3. se verde, chiudere FASE 5 e avviare FASE 6 di ricomposizione del progetto
-   pubblico completo.
+Regression:
+- commit `3f055f37132643e4e09b9ec0bc3dc3615b122b75`: regression `locale_9`;
+- Fast Harness run `36408292815`: **SUCCESS**;
+- quadrato approvato + `locale_1` + `locale_5` + `locale_8` + `locale_9` +
+  fitting regression tutti verdi.
 
 ### FASE 6 — ricomposizione progetto completo
-Stato: **NON INIZIATA**
+Stato: **IN CORSO**
+
 Obiettivo:
-- rieseguire il progetto pubblico completo;
-- verificare che i locali risolti mantengano i propri regression;
-- chiedere conferma visiva utente prima di dichiarare conclusa la campagna.
+- rieseguire il vero progetto pubblico `Pannelli radianti` attraverso il
+  percorso completo `GeneraModello`;
+- verificare che l'input reale estratto resti coerente e che i quattro
+  rettangolari consolidati mantengano i risultati correnti;
+- produrre artifact/log/SVG per controllo finale;
+- sottoporre il progetto completo a conferma visiva dell'utente prima di
+  dichiarare conclusa la campagna.
+
+**PROSSIMO PASSO ESATTO:**
+1. leggere e aggiornare il workflow Room Extraction esistente senza creare
+   un percorso alternativo;
+2. eseguire il progetto pubblico completo sul codice corrente;
+3. verificare `locale_1`, `locale_5`, `locale_8`, `locale_9` contro le
+   regression consolidate e controllare gli altri locali senza trasformarli
+   implicitamente in Golden;
+4. ispezionare gli artifact finali e chiedere conferma visiva utente;
+5. solo dopo la conferma aggiornare i registri finali, notificare issue #1
+   e rimuovere `RECOVERY-ACTIVE.md`.
 
 ## File/componenti attualmente coinvolti
 
