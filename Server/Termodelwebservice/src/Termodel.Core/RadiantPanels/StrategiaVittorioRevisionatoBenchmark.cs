@@ -14,7 +14,7 @@ public static class StrategiaVittorioRevisionatoBenchmark
     private static readonly object EngineGate = new();
 
     // Funzione realizzata da Codex in autonomia
-    public static StrategiaVittorioRevisionatoBenchmarkSample Run(string localeXml)
+    public static StrategiaVittorioBenchmarkSample Run(string localeXml)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Vittorio vuota.", nameof(localeXml));
@@ -78,7 +78,7 @@ public static class StrategiaVittorioRevisionatoBenchmark
                 .Elements("Punto")
                 .Count();
 
-            return new StrategiaVittorioRevisionatoBenchmarkSample(
+            return new StrategiaVittorioBenchmarkSample(
                 File.ReadAllText(svgPath, Encoding.UTF8),
                 resultXml,
                 SpiralHeatingVittorioRevisionato.Program.PassoTubi,
@@ -102,13 +102,3 @@ public static class StrategiaVittorioRevisionatoBenchmark
         }
     }
 }
-
-public sealed record StrategiaVittorioRevisionatoBenchmarkSample(
-    string Svg,
-    string ResultLocaleXml,
-    double StepMeters,
-    int LocaleCount,
-    int SpiralPointCount,
-    long ElapsedMilliseconds,
-    long MemoryDeltaBytes,
-    IReadOnlyList<string> Diagnostics);
