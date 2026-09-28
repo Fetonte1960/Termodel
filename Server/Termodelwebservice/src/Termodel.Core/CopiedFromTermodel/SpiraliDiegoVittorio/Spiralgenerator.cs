@@ -595,6 +595,19 @@ namespace SpiralHeatingDiegoVittorio
 					spiral,
 					distanzaAutocondizionamento);
 
+				if (supplyLog)
+				{
+					string connectionPath =
+						percorsoConnessione == null
+							? "null"
+							: string.Join(";", percorsoConnessione.Select(p => $"({p.X:R},{p.Y:R})"));
+					Program.LogSupply(
+						"Supply.Traverse.Connection",
+						$"offset={indiceOffsetPercorso} from=({ultimoPuntoSpiral.X:R},{ultimoPuntoSpiral.Y:R}) " +
+						$"intersection={(puntoIntersezione == null ? "null" : $"({puntoIntersezione.X:R},{puntoIntersezione.Y:R})")} " +
+						$"startVertexIndex={startVertexIndex} connection=[{connectionPath}]");
+				}
+
 				Punto terminalePrimaDelTrim = null;
 				if (percorsoConnessione == null || puntoIntersezione == null)
 				{
@@ -740,6 +753,17 @@ namespace SpiralHeatingDiegoVittorio
 						spiral,
 						distanzaAutocondizionamento);
 
+					if (supplyLog)
+					{
+						Program.LogSupply(
+							"Supply.Traverse.Candidate",
+							$"offset={indiceOffsetPercorso} loopIndex={i} vertexIndex={vertexIndex} " +
+							$"from=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
+							$"candidate=({candidato.X:R},{candidato.Y:R}) " +
+							$"respectConditioning={rispettaSupply.ToString().ToLowerInvariant()} " +
+							$"respectSelf={rispettaSelf.ToString().ToLowerInvariant()}");
+					}
+
 					// Esperimento diagnostico DV-TEST-002 / locale_8:
 					// esclusivamente sul primo tratto percorso del primo offset,
 					// se il solo ostacolo è il segmento radice del Return,
@@ -793,6 +817,13 @@ namespace SpiralHeatingDiegoVittorio
 						break;
 					}
 					spiral.Add(candidato);
+					if (supplyLog)
+					{
+						Program.LogSupply(
+							"Supply.Traverse.Accept",
+							$"offset={indiceOffsetPercorso} vertexIndex={vertexIndex} " +
+							$"point=({candidato.X:R},{candidato.Y:R}) points={spiral.Count}");
+					}
 					if (TracePortalsEnabled)
 						ProvaPortaleAnticipato("traversal");
 				}
@@ -867,6 +898,16 @@ namespace SpiralHeatingDiegoVittorio
 						$"segmentFromIntersection={distanzaSegmento:R} replaceLast={sostituisceUltimoPunto} " +
 						$"planned=({puntoFinale.X:R},{puntoFinale.Y:R}) step={passoMandata:R}");
 				}
+				if (supplyLog)
+				{
+					Program.LogSupply(
+						"Supply.Finalize.Plan",
+						$"offset={indiceOffsetPercorso} ultimo={ultimoOffset.ToString().ToLowerInvariant()} " +
+						$"intersection=({puntoIntersezione.X:R},{puntoIntersezione.Y:R}) " +
+						$"traversalTerminal=({terminalePercorsoPrimaFinalizzazione.X:R},{terminalePercorsoPrimaFinalizzazione.Y:R}) " +
+						$"segmentFromIntersection={distanzaSegmento:R} replaceLast={sostituisceUltimoPunto.ToString().ToLowerInvariant()} " +
+						$"planned=({puntoFinale.X:R},{puntoFinale.Y:R}) step={passoMandata:R}");
+				}
 				bool finaleOriginaleAggiunto = false;
 				if (SegmentoRispettaCondizionamento(
 					penultimoPunto,
@@ -920,6 +961,22 @@ namespace SpiralHeatingDiegoVittorio
 						$"pointsAdded={spiral.Count - puntiPrimaOffset} points={spiral.Count} " +
 						$"last=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
 						$"finalized={finaleOriginaleAggiunto}");
+				}
+				if (supplyLog)
+				{
+					double terminalShift =
+						terminalePercorsoPrimaFinalizzazione.DistanceTo(spiral[^1]);
+					Program.LogSupply(
+						"Supply.Finalize.Result",
+						$"offset={indiceOffsetPercorso} ultimo={ultimoOffset.ToString().ToLowerInvariant()} " +
+						$"before=({terminalePercorsoPrimaFinalizzazione.X:R},{terminalePercorsoPrimaFinalizzazione.Y:R}) " +
+						$"after=({spiral[^1].X:R},{spiral[^1].Y:R}) shift={terminalShift:R} " +
+						$"applied={finaleOriginaleAggiunto.ToString().ToLowerInvariant()}");
+					Program.LogSupply(
+						"Supply.Traverse.End",
+						$"offset={indiceOffsetPercorso} pointsAdded={spiral.Count - puntiPrimaOffset} " +
+						$"points={spiral.Count} last=({spiral[^1].X:R},{spiral[^1].Y:R}) " +
+						$"path=[{string.Join(";", spiral.Skip(puntiPrimaOffset).Select(p => $"({p.X:R},{p.Y:R})"))}]");
 				}
 			}
 

@@ -143,7 +143,11 @@ jobs:
             "[SpiraliDiegoVittorio][Supply.ComputeOffset.Result] level=3",
             "skippedVertices=[0,1,2,3]",
             "[SpiraliDiegoVittorio][Supply.ComputeOffset.Raw] level=3",
-            "[SpiraliDiegoVittorio][Supply.Offset.Stop] level=3 reason=invalid-offset"
+            "[SpiraliDiegoVittorio][Supply.Offset.Stop] level=3 reason=invalid-offset",
+            "[SpiraliDiegoVittorio][Supply.Traverse.Connection] offset=2",
+            "[SpiraliDiegoVittorio][Supply.Traverse.Candidate] offset=2",
+            "[SpiraliDiegoVittorio][Supply.Finalize.Result] offset=2",
+            "[SpiraliDiegoVittorio][Supply.Traverse.End] offset=2"
           )) {
             if (-not $content.Contains($marker)) {
               throw "Log categorizzato locale_1 privo del marker: $marker"
