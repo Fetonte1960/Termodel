@@ -1,5 +1,5 @@
 name: Termodel Diego_Vittorio Room Extraction
-# Harness localeId serializza senza declaration encoding; DV-TEST-002 verifica locale_1 consolidato e terminal trim diagnostico su locale_5.
+# DV-TEST-002 fase finale: ricostruisce il vero progetto pubblico e verifica i quattro rettangolari consolidati sull'input estratto da GeneraModello.
 
 permissions:
   contents: read
@@ -244,6 +244,52 @@ jobs:
               $_ -match 'Linea ingresso|Punto interno|Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida|Chiusura:'
             } | ForEach-Object { Write-Host ("ROOM_DIAG "+$id+" "+$_) }
           }
+
+      - name: Validate consolidated rectangular locales
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioRoomExtraction"
+          $outRoot = Join-Path $root "runs"
+
+          $expected = @{
+            "locale_1" = @{
+              points = 18
+              closure = 'Chiusura rapida:.*sequenza=M4/RP3.*tipo=ortogonale.*lunghezza=0.6 m'
+            }
+            "locale_5" = @{
+              points = 16
+              closure = 'Chiusura rapida:.*sequenza=M2/RP3.*tipo=ortogonale.*lunghezza=1.24 m'
+            }
+            "locale_8" = @{
+              points = 18
+              closure = 'Chiusura rapida:.*sequenza=M3/R5.*lunghezza=0.971 m'
+            }
+            "locale_9" = @{
+              points = 13
+              closure = 'Chiusura rapida:.*sequenza=M3/RP2.*tipo=ortogonale.*lunghezza=0.77 m'
+            }
+          }
+
+          foreach ($id in @("locale_1","locale_5","locale_8","locale_9")) {
+            $log = Join-Path (Join-Path $outRoot $id) ($id + ".log.txt")
+            if (-not (Test-Path -LiteralPath $log)) {
+              throw "Log del progetto reale mancante per $id."
+            }
+            $text = Get-Content -LiteralPath $log -Raw
+            $points = [int]$expected[$id].points
+            if ($text -notmatch ("Ritorno autonomo:.*punti=" + $points)) {
+              throw "Progetto reale: $id non conserva il numero punti Return atteso ($points)."
+            }
+            if ($text -notmatch [string]$expected[$id].closure) {
+              throw "Progetto reale: $id non conserva la chiusura consolidata."
+            }
+            Write-Host "FULL_PROJECT_RECT_REGRESSION_OK id=$id returnPoints=$points"
+          }
+
+          $full = Join-Path $root "pannelli-radianti.full.xml"
+          Write-Host ("FULL_PROJECT_INPUT_SHA256=" + (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash)
+          Write-Host "FULL_PROJECT_RECTANGULAR_REGRESSION_OK"
 
       - name: Diagnose locale_5 without closure
         shell: pwsh
