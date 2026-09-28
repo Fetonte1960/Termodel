@@ -265,6 +265,36 @@ Vincoli rispettati:
 3. eseguire `Aggiorna Modello` e verificare che lo stesso box passi a `CALCOLO CORRENTE · NON CONSOLIDATO` mostrando il motore e commit Service correnti;
 4. proseguire quindi con la conferma visiva finale della FASE 6.
 
+## Sottofase FASE 6B — congelamento esecutivi Diego_Vittorio negli esempi
+Stato: **IN CORSO**
+
+Decisione utente 28/09/2026:
+- il nuovo esecutivo `Pannelli radianti` mostrato dal Service corrente è giudicato sicuramente migliorativo;
+- congelare gli esecutivi dei due esempi pubblici:
+  - `Pannelli radianti`;
+  - `Quadrato con pannelli`;
+- l'utente deve poterli ispezionare senza interrogare il Service;
+- `Aggiorna Modello` resta disponibile per produrre un nuovo esecutivo runtime e confrontarlo col consolidato.
+
+Sorgenti da congelare:
+- `Pannelli radianti`: artifact `pannelli-esecutivo.svg` del run Service `36411641717`, head/service commit `e23f3a6698f0166a6752fbdd3aac5fd6346cada7`, motore `Diego_Vittorio`; SHA-256 artifact `6a1c79ed23b8dcfde6fcffb484a029f54d5355793b32422e30c6e19cca0f2a3d`;
+- `Quadrato con pannelli`: `quadrato-con-pannelli-esecutivo.svg` del workflow pubblico run `36383027266`, head `5de2ccab955dd3146ee23089afe41fb9040eb3ac`, motore `Diego_Vittorio`; il medesimo input Harness produce la baseline umana protetta SHA-256 `fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39`.
+
+Piano:
+1. sostituire i due SVG statici pubblici con gli artifact Diego_Vittorio approvati;
+2. aggiornare il catalogo con provenienza separata e corretta dei due esecutivi;
+3. aggiornare le regression CI che ancora richiedono metadata GPT;
+4. verificare che i due esempi restino caricabili localmente senza Service e che GitHub Pages pubblichi gli asset;
+5. aggiornare recovery/summary e issue #1.
+
+Vincoli:
+- nessuna modifica a Termodel.Core o al motore;
+- nessuna modifica a `definizionedati.json`;
+- nessuna modifica ai progetti di input;
+- congelare soltanto gli output SVG approvati.
+
+**PROSSIMO PASSO ESATTO:** sostituire i due asset SVG statici e registrare il commit di congelamento; poi usare quel commit come riferimento `consolidatedCommit` nel catalogo.
+
 ## File/componenti attualmente coinvolti
 
 - `src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/Spiralgenerator.cs`
