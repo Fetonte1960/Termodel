@@ -58,6 +58,8 @@ namespace SpiralHeatingDiegoVittorio
 			"TERMODEL_DIEGO_VITTORIO_TRACE_PORTALS";
 		private const string CollinearAdjacencyEnvironmentVariable =
 			"TERMODEL_DIEGO_VITTORIO_COLLINEAR_ADJACENCY";
+		private const string LocalDoglegAdjacencyEnvironmentVariable =
+			"TERMODEL_DIEGO_VITTORIO_LOCAL_DOGLEG_ADJACENCY";
 		private const string DiagnosticLocalRootAdjacencyEnvironmentVariable =
 			"TERMODEL_DIEGO_VITTORIO_DIAG_LOCAL_ROOT_ADJACENCY";
 		private const string DiagnosticReverseBuildDirectionEnvironmentVariable =
@@ -99,6 +101,22 @@ namespace SpiralHeatingDiegoVittorio
 			{
 				string value = Environment.GetEnvironmentVariable(
 					CollinearAdjacencyEnvironmentVariable) ?? string.Empty;
+				if (string.IsNullOrWhiteSpace(value))
+					return true;
+
+				return !value.Equals("false", StringComparison.OrdinalIgnoreCase) &&
+					!value.Equals("0", StringComparison.OrdinalIgnoreCase) &&
+					!value.Equals("no", StringComparison.OrdinalIgnoreCase) &&
+					!value.Equals("off", StringComparison.OrdinalIgnoreCase);
+			}
+		}
+
+		private static bool LocalDoglegAdjacencyEnabled
+		{
+			get
+			{
+				string value = Environment.GetEnvironmentVariable(
+					LocalDoglegAdjacencyEnvironmentVariable) ?? string.Empty;
 				if (string.IsNullOrWhiteSpace(value))
 					return true;
 
@@ -1166,14 +1184,14 @@ namespace SpiralHeatingDiegoVittorio
 					continue;
 				}
 
-				// Diagnostica DV-TEST-002 / locale_8. Il penultimo ostacolo
+				// Correzione locale DV-TEST-002 / locale_8. Il penultimo ostacolo
 				// può essere il ramo immediatamente precedente a un unico raccordo
 				// locale: A-B -> B-C -> C-D. Se la distanza minima A-B/C-D
 				// coincide esattamente con la lunghezza B-C e A e D divergono
 				// sui lati opposti del raccordo, il deficit deriva dal raccordo
-				// stesso e non da due rami remoti affiancati. Per ora questa
-				// classificazione è attiva solo sotto il flag diagnostico.
-				if (DiagnosticLocalRootAdjacencyEnabled &&
+				// stesso e non da due rami remoti affiancati. Gli altri segmenti
+				// continuano a rispettare integralmente la distanza minima.
+				if (LocalDoglegAdjacencyEnabled &&
 					i == spiraleCorrente.Count - 3 &&
 					CandidatoDivergeDopoRaccordoLocale(
 						spiraleCorrente[i],
@@ -1186,7 +1204,7 @@ namespace SpiralHeatingDiegoVittorio
 					if (TraceReturnEnabled)
 					{
 						Console.WriteLine(
-							$"  DV_RETURN_DIAG_LOCAL_DOGLEG_ADJACENCY obstacle={i} " +
+							$"  DV_RETURN_SKIP_LOCAL_DOGLEG_ADJACENT obstacle={i} " +
 							$"candidate=({inizio.X:R},{inizio.Y:R})->({fine.X:R},{fine.Y:R}).");
 					}
 					continue;
