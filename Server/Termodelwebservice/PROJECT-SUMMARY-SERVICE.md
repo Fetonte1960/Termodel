@@ -72,6 +72,37 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-28 — Indagine anomalie quadrato `Diego_Vittorio` e Harness rapido
+Stato: COMMISSIONATO
+
+Obiettivo:
+- eliminare le anomalie osservate nel disegno spirali dell'esempio quadrato sul Service, pur essendo il quadrato apparso corretto nel precedente Harness locale;
+- verificare come primo sospetto differenze di approssimazione/tolleranza e perdita di spazio di manovra del Return autonomo quando resta confinato nel “budello” generato dalla mandata;
+- non introdurre modifiche strutturali a `Diego_Vittorio` senza accordo esplicito dell'utente; sono autorizzati soltanto interventi circoscritti, diagnostici, di Harness/test o correzioni locali chiaramente motivate;
+- ricostruire e aggiornare il banco Harness/Git in modo da rendere il ciclo umano `modifica -> esegui -> osserva` il più rapido possibile, minimizzando commit/push/Action non necessari;
+- aggiornare le linee guida spirali con questa modalità operativa;
+- procedere con l'indagine fino alla prima causa riproducibile o fino a una decisione strutturale che richieda consenso umano.
+
+Suddivisione anti-timeout:
+- **FASE 1 — ricostruzione banco e stato reale:** leggere Harness, workflow, fixture quadrato, direttive e sorgenti pertinenti; definire il percorso rapido e il caso canonico corrente;
+- **FASE 2 — Harness rapido:** applicare solo modifiche circoscritte agli strumenti di test/workflow per ridurre tempi e dipendenza da GitHub, mantenendo riproducibilità;
+- **FASE 3 — indagine quadrato:** riprodurre e confrontare Harness/Service, isolare tolleranze/decisioni/stop del Return e proporre o applicare solo correzioni locali autorizzate;
+- ogni fase significativa termina con checkpoint persistente e notifica tramite Issue #1; le singole build restano coperte dalle notifiche Actions e non generano Issue dedicate.
+
+Vincoli:
+- `SpiraliVittorio` invariata;
+- `StrategiaDiego` resta PARKED;
+- nessuna modifica al frontend o a `definizionedati.json`;
+- nessun cambio strutturale dell'algoritmo `Diego_Vittorio` senza consenso umano;
+- distinguere sempre Harness locale, GitHub Actions e comportamento reale del Service pubblico.
+
+Criteri di completamento:
+- ambiente Harness rapido documentato e riproducibile;
+- anomalia quadrato riprodotta e prima causa tecnica identificata, oppure impedimento documentato;
+- eventuali correzioni limitate e verificabili, senza introdurre nuove euristiche strutturali non concordate;
+- Summary e linee guida aggiornati con esito delle singole fasi.
+
+
 ### INCARICO 2026-09-28 — Direttiva fasi anti-blocco e notifiche Issue #1
 Stato: ESEGUITO
 
