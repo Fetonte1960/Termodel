@@ -7159,3 +7159,38 @@ Stato: ANALISI COMPLETATA, NESSUNA CORREZIONE APPLICATA
   del Return derivato.
 - Riferimenti Vittorio run #49: locale_1 28 punti, quadrato pubblico 33 punti.
 
+
+
+### 2026-09-28 — Mappa codice strettoie Vittorio vs Diego_Vittorio
+
+Analisi completata senza modifiche algoritmiche.
+
+- `SpiraliVittorio/Spiralgenerator.cs` e `ChiudiSpirale.cs` nel Service
+  risultano byte-per-byte identici ai corrispondenti riferimenti Desktop in
+  `SorgentiTermodel/Library/Impianti/Pannelli/Termodel-Vittorio-main/Termodel_new/`.
+- Vittorio valuta le strettoie solo implicitamente tramite:
+  `ComputeOffset` (lati corti/contrazione), soglie `minEdgeLength`,
+  scelta del gomito verso il nuovo offset e controllo locale del punto
+  intermedio; il Return è derivato dalla Supply già arrotondata con
+  `CreaRientro` e non possiede una decisione autonoma entra/non entra.
+- Diego_Vittorio eredita i filtri Supply di Vittorio e aggiunge sul Return:
+  `OffsetHaTrattoParalleloTroppoVicino`,
+  `FindConnectionWithOffset`,
+  `ConnectionPathIsValid`,
+  `SegmentoRispettaCondizionamento`,
+  `SegmentoRispettaSpirale`,
+  `FindConnectionWithTerminalTrim`,
+  `TrovaMassimoPrefissoValido`.
+- Il cuore attuale dell'ingresso nelle strettoie è
+  `FindConnectionWithOffset`: genera percorsi locali finiti e sceglie il
+  più corto fra quelli validi, senza valutarne la convenienza futura.
+- `ProvaPortaleAnticipato` / `TracePortalsEnabled` costituisce già un
+  look-ahead diagnostico di un offset, ma non influenza le decisioni.
+- L'arrotondamento non decide l'ingresso in Diego_Vittorio perché viene
+  applicato dopo la generazione del Return; in Vittorio invece il Return
+  viene derivato dalla Supply già arrotondata.
+- Linea guida consolidata: `LG-050 — Strettoie: decisione a visione media,
+  non solo locale`. StrategiaDiego ad albero resta il riferimento
+  concettuale globale, mentre Diego_Vittorio deve cercare euristiche finite a
+  medio raggio per contenere il costo computazionale.
+
