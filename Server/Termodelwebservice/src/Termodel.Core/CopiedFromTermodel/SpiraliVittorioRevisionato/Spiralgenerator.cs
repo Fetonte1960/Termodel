@@ -44,31 +44,41 @@ namespace SpiralHeatingVittorioRevisionato
 			if (input.DistanzaCondizionamento < 0)
 				throw new ArgumentOutOfRangeException(nameof(input.DistanzaCondizionamento));
 
-			var risultato = Generate(
+			return GenerateCore(
 				new List<Punto>(input.Perimetro),
 				input.StartPoint,
 				input.Distanza,
-				input.DrawSpiral);
-
-			if (!input.DrawSpiral ||
-				input.LineeCondizionamento == null ||
-				input.LineeCondizionamento.Count < 2 ||
-				input.DistanzaCondizionamento <= 0)
-			{
-				return risultato;
-			}
-
-			return (
-				ApplicaCondizionamento(
-					risultato.spiral,
-					input.LineeCondizionamento,
-					input.DistanzaCondizionamento),
-				risultato.offsets);
+				input.DrawSpiral,
+				input.LineeCondizionamento,
+				input.DistanzaCondizionamento);
 		}
 
-		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(List<Punto> perimetro, Punto startPoint, double distanza, bool drawSpiral = true)
+		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(
+			List<Punto> perimetro,
+			Punto startPoint,
+			double distanza,
+			bool drawSpiral = true) =>
+			GenerateCore(
+				perimetro,
+				startPoint,
+				distanza,
+				drawSpiral,
+				null,
+				0.0);
+
+		private static (List<Punto> spiral, List<List<Punto>> offsets) GenerateCore(
+			List<Punto> perimetro,
+			Punto startPoint,
+			double distanza,
+			bool drawSpiral,
+			List<Punto> lineeCondizionamento,
+			double distanzaCondizionamento)
 		{
 			List<Punto> spiral = new List<Punto>();
+			bool usaCondizionamento =
+				lineeCondizionamento != null &&
+				lineeCondizionamento.Count >= 2 &&
+				distanzaCondizionamento > 0;
 			
 			// Verifica e correggi il senso di rotazione (deve essere antiorario)
 			perimetro = GeometryUtils.EnsureCounterClockwise(perimetro);
@@ -119,10 +129,13 @@ namespace SpiralHeatingVittorioRevisionato
 			if (offsets.Count < 2)
 				return (spiral, offsets);
 			
-			// Itera su tutti gli offset generati (dal primo all'ultimo)
+			// Itera su tutti gli offset generati (dal primo all'ultimo).
+			// La sequenza e la geometria restano quelle originali di Vittorio.
+			bool stopPerCondizionamento = false;
 			for (int offsetIdx = 1; offsetIdx < offsets.Count; offsetIdx++)
 			{
 				var currentOffset = offsets[offsetIdx];
+				int puntiPrimaOffset = spiral.Count;
 				
 				// Trova intersezione con l'offset corrente dall'ultimo punto della spirale
 				var ultimoPuntoSpiral = spiral[spiral.Count - 1];
@@ -189,12 +202,44 @@ namespace SpiralHeatingVittorioRevisionato
 					
 				}
 				
+				// Se il raccordo storico verso l'offset attraversa la geometria
+				// condizionante, il percorso indipendente si arresta qui.
+				// Non si prova un gomito alternativo: quella sarebbe già una
+				// strategia nuova, da discutere separatamente.
+				if (usaCondizionamento &&
+					!NuoviSegmentiRispettanoCondizionamento(
+						spiral,
+						puntiPrimaOffset,
+						lineeCondizionamento,
+						distanzaCondizionamento))
+				{
+					if (spiral.Count > puntiPrimaOffset)
+						spiral.RemoveRange(
+							puntiPrimaOffset,
+							spiral.Count - puntiPrimaOffset);
+					break;
+				}
+
 				// Segue tutti i vertici dell'offset corrente in ordine (senso antiorario)
 				for (int i = 0; i < currentOffset.Count; i++)
 				{
 					int vertexIndex = (startVertexIndex + i) % currentOffset.Count;
-					spiral.Add(currentOffset[vertexIndex]);
+					Punto candidato = currentOffset[vertexIndex];
+					if (usaCondizionamento &&
+						!SegmentoRispettaCondizionamento(
+							spiral[spiral.Count - 1],
+							candidato,
+							lineeCondizionamento,
+							distanzaCondizionamento))
+					{
+						stopPerCondizionamento = true;
+						break;
+					}
+					spiral.Add(candidato);
 				}
+
+				if (stopPerCondizionamento)
+					break;
 				
 				// Calcola punto finale
 				Punto ultimoPunto;
@@ -220,6 +265,24 @@ namespace SpiralHeatingVittorioRevisionato
 					ultimoPunto.X + direzione.X * distanza,
 					ultimoPunto.Y + direzione.Y * distanza
 				);
+				if (usaCondizionamento &&
+					!SegmentoRispettaCondizionamento(
+						penultimoPunto,
+						puntoFinale,
+						lineeCondizionamento,
+						distanzaCondizionamento))
+				{
+					// Nel ramo storico "corto" l'ultimo vertice era già stato
+					// rimosso per essere sostituito da puntoFinale: se il gate lo
+					// rifiuta lo ripristiniamo, senza inventare nuova geometria.
+					if (spiral.Count > 0 &&
+						spiral[spiral.Count - 1].DistanceTo(ultimoPunto) > 0.000001 &&
+						ultimoPunto != puntoIntersezione)
+					{
+						spiral.Add(ultimoPunto);
+					}
+					break;
+				}
 				spiral.Add(puntoFinale);
 			}
 
@@ -255,32 +318,27 @@ namespace SpiralHeatingVittorioRevisionato
 			return (bestIntersection, nextVertex);
 		}
 
-		// Astrazione strutturale: la geometria condizionante non modifica
-		// l'algoritmo Vittorio; limita soltanto il prefisso utilizzabile del
-		// percorso indipendente. È intenzionalmente semplice per separare
-		// l'astrazione dalla futura strategia di scelta nelle strettoie.
-		private static List<Punto> ApplicaCondizionamento(
+		// Verifica i segmenti aggiunti dal raccordo storico verso un nuovo
+		// offset. Il primo segmento parte dall'ultimo punto già esistente.
+		private static bool NuoviSegmentiRispettanoCondizionamento(
 			List<Punto> percorso,
+			int puntiPrimaOffset,
 			List<Punto> lineeCondizionamento,
 			double distanzaMinima)
 		{
-			if (percorso == null || percorso.Count == 0)
-				return new List<Punto>();
-
-			var risultato = new List<Punto> { percorso[0] };
-			for (int i = 1; i < percorso.Count; i++)
+			int primoIndiceNuovo = Math.Max(1, puntiPrimaOffset);
+			for (int i = primoIndiceNuovo; i < percorso.Count; i++)
 			{
 				if (!SegmentoRispettaCondizionamento(
-					risultato[risultato.Count - 1],
+					percorso[i - 1],
 					percorso[i],
 					lineeCondizionamento,
 					distanzaMinima))
 				{
-					break;
+					return false;
 				}
-				risultato.Add(percorso[i]);
 			}
-			return risultato;
+			return true;
 		}
 
 		private static bool SegmentoRispettaCondizionamento(
