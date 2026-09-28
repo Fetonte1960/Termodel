@@ -7132,3 +7132,30 @@ Lo stato consolidato comprende inoltre:
 `SpiraliVittorio` resta intatta e costituisce il riferimento per confronto e
 ripristino. Il collaudo manuale corrente di `Diego_Vittorio` sul Service
 pubblico è ancora in corso e non equivale ad approvazione geometrica generale.
+
+
+### FASE 6D / STEP 4E — DECISIONE STRETTOIA T6: VITTORIO VS DIEGO_VITTORIO
+Stato: ANALISI COMPLETATA, NESSUNA CORREZIONE APPLICATA
+
+- Fast Harness run `36443765112` SUCCESS; tutte le regression Diego_Vittorio verdi.
+- Vittorio originale non prende una decisione esplicita “entra/non entra” nel
+  varco: arrotonda la Supply e deriva il Return traslando all'indietro i
+  campioni tramite `CreaRientro`.
+- Diego_Vittorio genera invece il Return autonomo sulla geometria rettilinea
+  prima dei raccordi; ricerca e valida corridoi contro Supply e Return.
+- Nel `locale_1` il primo varco 2p è prescritto direttamente da
+  `GeneraCollegamentoRitorno` sulla mezzeria; il secondo varco, visivamente
+  analogo, deve essere ritrovato da `FindConnectionWithOffset`.
+- Sul secondo varco il candidato campionato y=3,82 fallisce a 0,28 m dalla
+  Supply; la coordinata critica esatta y=3,84 è valida e produce il passaggio
+  `(1,12;3,84)->(0,52;3,84)`.
+- Dopo il passaggio, quel segmento entra nella storia Return e diventa
+  ostacolo di autocondizionamento per le evoluzioni successive.
+- Il quadrato pubblico funziona per una ragione diversa: il passaggio critico
+  è una prosecuzione collineare riconosciuta come adiacenza topologica da
+  `CandidatoProsegueUltimoSegmento` (DV-TEST-001).
+- Arrotondamento: non può causare la decisione Diego_Vittorio perché viene
+  applicato dopo `GenerateReturn`; in Vittorio invece partecipa alla forma
+  del Return derivato.
+- Riferimenti Vittorio run #49: locale_1 28 punti, quadrato pubblico 33 punti.
+
