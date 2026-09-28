@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 11:50 Europe/Rome
+Checkpoint: 2026-09-28 12:02 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -135,11 +135,32 @@ Diagnostica già disponibile e da non ripetere:
   - Supply `(8,49;4,01)->(8,49;3,41)`, che intercetta o resta troppo vicino ai candidati orizzontali;
   - radice Return `(8,19;4,16)->(8,19;3,71)`, a 0,22 m dai candidati verticali su x=7,97 contro minimo 0,30 m.
 
+Diagnosi topologica:
+- il flag local-root precedente non poteva intercettare il rifiuto principale:
+  era collocato nel ciclo di percorrenza dell'offset, mentre il rifiuto a
+  0,22 m nasce già dentro `FindConnectionWithOffset`;
+- geometria grezza locale:
+  radice Return `A=(8,19;4,16) -> B=(8,19;3,71)`,
+  raccordo `B -> C=(7,97;3,71)`,
+  candidato `C -> D` verso il basso;
+- il segmento A-B e il candidato C-D non hanno sviluppo parallelo
+  sovrapposto: terminano/partono ai due estremi del raccordo B-C e divergono
+  sui due lati opposti della sua retta;
+- la distanza minima 0,22 m coincide con la lunghezza del solo raccordo B-C;
+  quindi il controllo sta classificando come ramo remoto un segmento locale
+  separato da un unico raccordo;
+- lato Destro e verso di costruzione opposto sono già stati provati e
+  peggiorano il caso (2 punti).
+
 **PROSSIMO PASSO ESATTO:**
-1. ricostruire la topologia del primo offset di `locale_8` dal trace già acquisito e verificare se il segmento radice Return è realmente adiacente al raccordo iniziale o è un ostacolo remoto;
-2. capire perché il flag diagnostico local-root non si è attivato nel punto di rifiuto osservato;
-3. applicare solo una correzione topologica circoscritta se il segmento è effettivamente adiacente, senza rilassare la distanza Return-Return;
-4. rieseguire `locale_8` con quadrato + `locale_1` + `locale_5` come regression obbligatorie.
+1. estendere soltanto sotto il flag diagnostico local-root la validazione
+   `SegmentoRispettaSpirale` per riconoscere il caso topologico
+   A-B -> B-C -> C-D quando la distanza minima coincide con B-C e A/D sono
+   sui lati opposti del raccordo;
+2. rieseguire la diagnostica `locale_8` già prevista dal workflow;
+3. mantenere quadrato + `locale_1` + `locale_5` invariati nel Fast Harness;
+4. promuovere la regola a comportamento normale soltanto se il risultato
+   `locale_8` è geometricamente coerente e le regression restano verdi.
 
 ### FASE 5 — locale_9
 Stato: **NON INIZIATA**
