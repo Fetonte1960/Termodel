@@ -90,6 +90,7 @@ Esito:
 - aggiornato `docs/spirali-strategy-register/README.md` nel commit `9fb08fd3a290a564471c1f50efbe36f888b29b94`, eliminando il riferimento ormai obsoleto alla sola futura StrategiaDiego e registrando `Diego_Vittorio` come default corrente in test;
 - aggiornato `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md` nel commit `84d5c51da601ee6a6ce486ec4d88583520d573dd`: stato runtime portato al 28/09/2026 e nuova sezione dedicata all'avvio del collaudo manuale sul Service pubblico;
 - distinta esplicitamente la fase di test manuale reale dalle prove Harness/locali/GitHub Actions già eseguite;
+- aggiornato anche `docs/STRATEGIADIEGO-DEVELOPMENT-REGISTER.md` nel commit `50946c5cd91c7836ab443074687717335223f217`, chiarendo che quel registro resta autorevole per lo storico del motore `Diego` ma non rappresenta più il default del Service;
 - nessuna modifica al motore, al frontend o a `definizionedati.json`; nessuna build necessaria per questo incarico esclusivamente documentale.
 
 
