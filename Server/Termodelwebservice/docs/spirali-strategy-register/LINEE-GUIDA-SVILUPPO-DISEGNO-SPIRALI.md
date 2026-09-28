@@ -6778,25 +6778,72 @@ altri, i tratti
 e numerosi collegamenti tentati dal Return li intersecano oppure restano a
 0,06–0,21 m contro i 0,30 m richiesti.
 
-### Ipotesi causale da verificare prima di ogni correzione strutturale
+### Esito `locale_1` — causa e correzioni locali
 
-Il generatore corrente tenta il passaggio all'offset successivo **solo dopo**
-aver percorso il tratto disponibile dell'offset corrente. Nel `locale_1`
-sembra quindi superare un varco utile della mandata e arrivare al successivo
-tentativo quando il punto corrente è già confinato dal “budello”.
+Il trace dei portali ha **respinto** l'ipotesi iniziale di un varco valido
+superato troppo presto: prima della correzione risultava
+`DV_RETURN_PORTAL_NONE`.
 
-`FindConnectionWithOffset` sa già provare percorso diretto, due L ortogonali
-e corridoi a due gomiti campionati a `p/2`; il sospetto non è quindi la forma
-dei collegamenti, ma **il momento nel quale vengono cercati**.
+La causa reale era la discretizzazione del corridoio. Fra due tratti della
+mandata esiste un passaggio largo esattamente `2p = 0,60 m`; la sola
+traiettoria valida del centro tubo è quindi la mezzeria del corridoio.
+Il campionamento storico a `p/2 = 0,15 m` provava quote adiacenti ma non
+quella esatta e respingeva entrambe per distanza inferiore a `p`.
 
-Prima di modificare la strategia va aggiunta diagnostica non invasiva per
-verificare se, durante la percorrenza dell'offset corrente, esiste realmente
-un portale valido verso l'offset successivo che in seguito viene perso.
+È stato aggiunto un fallback deterministico **solo dopo il fallimento della
+ricerca precedente**: vengono provate anche le coordinate critiche ricavate
+dagli estremi della mandata `± distanzaCondizionamento`. In questo modo i
+casi già risolti dal percorso storico non cambiano.
 
-Un eventuale **early-transition/lookahead del Return** costituisce modifica
-strategica e non può diventare comportamento di produzione senza accordo
-esplicito umano. Fino a quel momento sono ammessi soltanto trace/esperimenti
-disattivati per default che lascino invariata la baseline del quadrato.
+Risultato `locale_1`:
+- Return: **6 → 18 punti**;
+- offset 2 e 3 raggiunti;
+- portale 1→2 trovato da `(1,12;0,37)` a `(0,52;4,37)`;
+- portale 2→3 trovato da `(0,52;4,37)` a `(0,22;4,07)`.
+
+Dopo questa correzione LG-048 lasciava ancora il circuito aperto. Tutte le
+configurazioni dirette erano realmente respinte per angolo acuto o
+intersezione, ma esisteva una chiusura ortogonale naturale lunga `2p`:
+terminale Supply `(0,82;3,54)` e proiezione sul tratto Return verticale
+`(0,22;3,54)`.
+
+È quindi stato aggiunto un secondo fallback, anch'esso **solo dopo il
+fallimento di tutte le configurazioni LG-048 dirette**: il terminale Return
+può essere accorciato al punto di proiezione ortogonale interno al suo ultimo
+tratto conservato e poi viene rivalidato con gli stessi vincoli di lunghezza,
+angolo e intersezione. Per `locale_1` viene accettato
+`M4/RP3`, lunghezza `0,60 m`.
+
+Non sono stati modificati passo, tolleranze, distanze minime o strategia
+globale. La baseline approvata del quadrato resta byte-identica.
+
+Verifiche:
+- Fast Harness run `36401804056`: quadrato approvato invariato;
+- Room Extraction run `36401842384`: Return 18 punti e chiusura
+  `M4/RP3`;
+- Fast Harness run `36402218998`: **SUCCESS** con regression dedicata
+  `DIEGO_VITTORIO_PUBLIC_PANELS_LOCALE1_OK` e
+  `DIEGO_VITTORIO_APPROVED_SQUARE_BASELINE_OK`.
+
+Stato `locale_1`: **risolto tecnicamente e ispezionato sull'SVG Harness;
+conferma visiva dell'utente nel progetto completo ancora da effettuare**.
+
+### Prossimo caso: `locale_5`
+
+`locale_5` resta bloccato con Return a 6 punti e offset 2/3 non collegati.
+Il varco della mandata fra due tratti verticali è ancora largo
+`2p = 0,60 m`, ma la quota critica viene ora raggiunta dal fallback. Il
+rifiuto residuo è di tipo **Self**: il candidato usa come primo tratto un
+rientro collineare all'indietro lungo l'ultimo segmento già occupato del
+Return.
+
+Questo non va risolto ignorando l'autointersezione, perché produrrebbe tubo
+sovrapposto. L'ipotesi da verificare è invece un **accorciamento del terminale
+Return** prima del collegamento: il tratto finale già costruito viene
+sostituito/ritagliato fino alla quota critica e da lì parte il corridoio,
+senza percorrere due volte lo stesso tubo. Anche questo eventuale fallback
+deve attivarsi soltanto dopo il fallimento della ricerca esistente e deve
+lasciare invariata la baseline del quadrato.
 
 ---
 
