@@ -19,9 +19,16 @@ GitHub Actions. Non sostituisce i test finali del repository.
 4. il browser ricarica automaticamente l'SVG quando cambia;
 5. usare GitHub soltanto per il consolidamento e le verifiche finali.
 
-La prima esecuzione crea e compila un mirror sotto
-`%LOCALAPPDATA%\Termodel\RadiantHarness\SourceMirror`. Le successive saltano
-la build se l'impronta dei sorgenti non è cambiata. `Latest` contiene SVG,
+Dal 28/09/2026 il percorso predefinito è ancora più rapido: compila
+**direttamente il working tree locale** e usa uno stamp leggero basato su
+percorso/dimensione/data dei sorgenti. Se lo stamp non cambia, non viene nemmeno
+invocato MSBuild; quando cambia, viene eseguita la build incrementale del solo
+Harness + Termodel.Core. Non vengono più riletti con SHA-256 e ricopiati tutti
+i file del Core a ogni prova.
+
+Il vecchio mirror sotto
+`%LOCALAPPDATA%\Termodel\RadiantHarness\SourceMirror` resta disponibile
+soltanto come fallback esplicito con `-UseMirror`. `Latest` contiene SVG,
 XML, metriche e log dell'ultima prova.
 
 Il banco predefinito è il quadrato storico consolidato 4x4 m, ingresso T1:
@@ -55,6 +62,9 @@ tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action run -Fillets -Closur
 tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action run -ReturnSide right
 tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action run -StepMeters 0.20
 tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action run -LegacyReturn
+tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action run -NoBuild
+tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action run -UseMirror
+tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action run -PreparedInput C:\TEMP\quadrato.radiant-input.xml -RunId PUBLIC-SQUARE-SAME-INPUT
 tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action snapshot -SnapshotLabel prima-della-prova
 tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action status
 tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action serve -Port 5081 -OpenBrowser
@@ -115,3 +125,46 @@ Verifica deviazioni di 30°, 90° e 150°, estremi conservati, coordinate finite
 e frammentazione compresa nel limite adattivo. Il test della chiusura accetta
 una polilinea raccordata, verifica le tangenti ai due innesti e impone al
 massimo nove punti per la Bézier centrale.
+
+
+## Quadrato pubblico: confronto sullo stesso input del Service
+
+Il quadrato sintetico storico e l'esempio Web pubblico hanno ingresso tubo
+diverso. Per l'indagine corrente non vanno più confrontati come se fossero lo
+stesso caso.
+
+Una volta compilato il Service locale, preparare il caso pubblico con:
+
+```powershell
+tools\generate-public-square-executive.ps1 -Engine Diego_Vittorio -CaptureHarnessInput -CompareHarness
+```
+
+Fuori da GitHub Actions gli artifact vengono scritti in:
+
+```text
+%LOCALAPPDATA%\Termodel\RadiantHarness\PreparedPublicSquare
+```
+
+Il file importante per le iterazioni successive è:
+
+```text
+quadrato-con-pannelli.radiant-input.xml
+```
+
+Da quel momento il Service completo non serve più a ogni tentativo. Eseguire
+direttamente:
+
+```powershell
+tools\local-radiant-harness\LocalRadiantHarness.ps1 -Action run `
+  -PreparedInput "$env:LOCALAPPDATA\Termodel\RadiantHarness\PreparedPublicSquare\quadrato-con-pannelli.radiant-input.xml" `
+  -RunId PUBLIC-SQUARE-SAME-INPUT `
+  -Fillets -Closure
+```
+
+Per una pura riesecuzione dello stesso binario è disponibile `-NoBuild`.
+Usarlo solo quando i sorgenti non sono stati modificati. `-UseMirror` ripristina
+il vecchio percorso di build isolato e non è il default.
+
+Questo ciclo è il banco primario per l'interazione umana corrente:
+GitHub/Actions resta verifica di consolidamento, non passaggio obbligatorio fra
+due tentativi locali.
