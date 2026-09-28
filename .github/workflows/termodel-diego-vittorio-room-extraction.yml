@@ -297,6 +297,25 @@ jobs:
             $_ -match 'DV_CLOSURE_|Ritorno parametrico|Ritorno autonomo|Chiusura rapida'
           } | ForEach-Object { Write-Host ("ROOM5_CLOSURE_DIAG "+$_) }
 
+      - name: Diagnose locale_8 with opposite Return side
+        shell: pwsh
+        env:
+          TERMODEL_DIEGO_VITTORIO_TRACE_RETURN: "true"
+          TERMODEL_DIEGO_VITTORIO_RETURN_SIDE: "right"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioRoomExtraction"
+          $out = Join-Path $root "diagnostics-right\locale_8"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/DV-PUBLIC-PANELS-RECT-08-P030-DIEGO-VITTORIO.json `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Diagnostica lato destro fallita per locale_8." }
+          $log = Join-Path $out "DV-PUBLIC-PANELS-RECT-08-P030-DIEGO-VITTORIO.log.txt"
+          Write-Host "LOCALE8_RIGHT_DIAGNOSTIC_OK"
+          Get-Content -LiteralPath $log | Where-Object {
+            $_ -match 'Linea ingresso|Punto interno|Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida'
+          } | ForEach-Object { Write-Host ("ROOM8_RIGHT_DIAG "+$_) }
+
       - name: Diagnose locale_1 with opposite Return side
         shell: pwsh
         env:
