@@ -130,7 +130,73 @@ Il contenuto deve essere sufficiente affinché una nuova esecuzione, leggendo Gi
 
 Durante un lavoro lungo, il recovery point deve essere aggiornato ogni volta che cambia significativamente lo stato: nuovo risultato diagnostico, nuovo commit, test importante, decisione dell'utente o cambio del prossimo passo.
 
-### Ripresa dopo sospensione
+### Suddivisione obbligatoria dell'incarico in fasi
+
+Ogni incarico operativo deve essere suddiviso, per quanto tecnicamente possibile, in **fasi brevi, autonome, verificabili e riprendibili**.
+
+La suddivisione deve essere progettata in modo che ogni fase:
+
+- abbia un obiettivo chiaro e limitato;
+- possa essere verificata con un risultato osservabile;
+- riduca al minimo la quantità di lavoro che potrebbe andare persa in caso di sospensione;
+- lasci GitHub in uno stato coerente e documentato;
+- definisca in modo esplicito il passo successivo.
+
+Prima di iniziare, `RECOVERY-ACTIVE.md` deve contenere anche l'elenco delle fasi previste, indicando per ciascuna:
+
+- identificatore o numero della fase;
+- obiettivo;
+- stato: non iniziata / in corso / completata / bloccata;
+- file o componenti coinvolti;
+- test o verifica prevista;
+- eventuali dipendenze;
+- prossimo passo.
+
+### Regola di checkpoint a ogni fase
+
+Al completamento di **ogni singola fase o step significativo** devono essere eseguite entrambe queste operazioni:
+
+1. aggiornare `RECOVERY-ACTIVE.md` con:
+   - fase appena conclusa;
+   - risultato ottenuto;
+   - commit o file modificati;
+   - test eseguiti e relativo esito;
+   - anomalie o decisioni emerse;
+   - nuova fase corrente;
+   - prossimo passo preciso;
+
+2. aggiungere un commento alla issue GitHub **#1** con una sintesi del checkpoint raggiunto.
+
+Formato preferito del commento di avanzamento:
+
+```
+Recovery checkpoint — fase <n>/<totale>
+Attività: <titolo attività>
+Fase completata: <descrizione>
+Esito: <risultato>
+Commit: <sha o nessun commit>
+Test: <sintesi>
+Prossima fase: <descrizione>
+Recovery point aggiornato: Server/Termodelwebservice/docs/RECOVERY-ACTIVE.md
+```
+
+Se il numero totale delle fasi non è ancora determinabile, usare:
+
+```
+Recovery checkpoint — fase <n>
+```
+
+Non attendere la fine dell'intero incarico per aggiornare il recovery point. L'obiettivo è mantenere sempre il massimo avanzamento documentato possibile, così che una nuova esecuzione possa riprendere dal checkpoint più recente con perdita minima o nulla.
+
+Se una fase risulta bloccata, registrare il blocco sia in `RECOVERY-ACTIVE.md` sia sulla issue #1, specificando:
+
+- motivo del blocco;
+- cosa è già stato verificato;
+- cosa manca;
+- eventuale decisione richiesta all'utente;
+- punto esatto da cui riprendere.
+
+## Ripresa dopo sospensione
 
 Quando l'operazione programmata trova `RECOVERY-ACTIVE.md` e verifica che il lavoro non è concluso:
 
