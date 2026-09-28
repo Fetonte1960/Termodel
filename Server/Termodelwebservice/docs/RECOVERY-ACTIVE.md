@@ -1021,3 +1021,124 @@ Vincolo:
 - nessuna modifica algoritmica finché i quattro confronti sopra non sono ricostruiti.
 
 **PROSSIMO PASSO ESATTO:** leggere e confrontare i rami decisionali di Vittorio e Diego_Vittorio nelle funzioni di generazione Supply/offset/percorrenza, poi confrontare numericamente `locale_1` con il quadrato e con offset 1 vs offset 2; produrre due diagrammi decisionali e una tabella delle differenze causali.
+
+
+#### STEP 4E.1 — confronto decisionale completato
+Stato: **ANALISI COMPLETATA — NESSUNA CORREZIONE APPLICATA**
+
+Verifica reale:
+- Fast Harness run `36443765112` (#49): **SUCCESS**;
+- commit diagnostico workflow `d391ca359906865e9289e7e6236f732cb1591aca`;
+- trace Return Diego_Vittorio eseguito su `locale_1` e sul quadrato pubblico;
+- riferimento Vittorio eseguito sugli stessi due casi;
+- tutte le regression Diego_Vittorio successive sono rimaste verdi.
+
+### 1. Differenza strutturale Vittorio / Diego_Vittorio
+
+**Vittorio originale**
+- genera la mandata con offset chiusi e percorrenza deterministica;
+- in `ChiudiSpirale` arrotonda PRIMA la mandata con `ArrotondaSpirale`;
+- il Return viene poi DERIVATO dalla mandata arrotondata tramite `CreaRientro`;
+- `CreaRientro` percorre i campioni della mandata all'indietro e li trasla di
+  `distanzaRitorno` lungo la normale locale;
+- non esistono ricerca di corridoi, scelta entra/non entra nella strettoia,
+  `SegmentoRispettaCondizionamento` o autocondizionamento Return-Return.
+
+Conclusione: in Vittorio la strettoia non è una decisione esplicita; il Return
+eredita la forma della mandata (già arrotondata).
+
+**Diego_Vittorio**
+- il Return è autonomo e viene generato sulla geometria RETTILINEA, prima
+  dell'arrotondamento;
+- costruisce un collegamento iniziale esplicito;
+- calcola offset Return, scarta quelli paralleli troppo vicini alla Supply;
+- per collegarsi all'offset successivo `FindConnectionWithOffset` prova:
+  diretto, due L ortogonali, corridoi a due gomiti campionati p/2 e infine
+  coordinate critiche Supply +/- p;
+- ogni tratto è validato a distanza p dalla Supply e p dal Return già costruito;
+- sceglie il percorso valido più corto;
+- solo dopo la generazione completa `ChiudiSpirale` arrotonda Supply e Return
+  per l'esecutivo SVG.
+
+Conclusione: in Diego_Vittorio la domanda **entrare o non entrare nella
+strettoia** è realmente una decisione geometrica del motore.
+
+### 2. Perché NON è un problema di arrotondamento in Diego_Vittorio
+
+L'arrotondamento avviene DOPO `GenerateReturn`.
+Quindi le curve convesse visibili nello SVG non partecipano alla decisione:
+la decisione viene presa sui segmenti ortogonali raw.
+
+L'arrotondamento può rendere meno evidente il punto di decisione nel disegno,
+ma non può essere la causa del rifiuto/accettazione in Diego_Vittorio.
+
+In Vittorio, invece, l'arrotondamento è parte della costruzione del Return,
+perché `CreaRientro` riceve la mandata già arrotondata.
+
+### 3. Perché il primo scavalcamento funziona e il secondo è diverso
+
+Sul `locale_1` la mandata lascia due varchi verticali destri larghi esattamente
+`2p = 0,60 m`.
+
+Primo varco:
+- Supply esterna x=1,42, apertura y=4,14..4,74;
+- il Return non deve scoprirlo;
+- `GeneraCollegamentoRitorno` costruisce direttamente la radice
+  `(1,57;4,44) -> (1,12;4,44)`, cioè sulla mezzeria esatta del varco;
+- quindi il primo ingresso è **prescritto**, non selezionato dalla ricerca.
+
+Secondo varco:
+- Supply interna x=0,82, apertura y=3,54..4,14;
+- mezzeria geometrica esatta: y=3,84;
+- qui il Return deve invece **ritrovare** il corridoio con
+  `FindConnectionWithOffset`;
+- il campionamento p/2 produce, fra gli altri, y=3,82: viene respinto perché
+  resta a 0,28 m dal tratto Supply (deficit 0,02 m);
+- il fallback sulle coordinate critiche individua y=3,84 e consente il
+  collegamento raw `(1,12;3,84) -> (0,52;3,84)`.
+
+Quindi il contesto visivo è simile ma il contesto algoritmico NON è identico:
+**primo varco = collegamento costruito a priori; secondo varco = corridoio
+cercato e validato**.
+
+Dopo il secondo scavalcamento il segmento
+`(1,12;3,84) -> (0,52;3,84)` entra inoltre nella storia del Return e diventa
+a sua volta ostacolo di autocondizionamento per le evoluzioni successive.
+Il trace mostra, per esempio, candidati verticali successivi respinti perché
+intersecano o passano a meno di p da quel segmento.
+
+### 4. Perché il quadrato pubblico funziona
+
+Il quadrato pubblico aveva un difetto diverso già isolato come DV-TEST-001:
+- il raccordo arriva a circa `(1,18;2,82)`;
+- il passo successivo è una prosecuzione COLLINEARE nello stesso verso;
+- il vecchio controllo la scambiava per un ramo remoto e la respingeva;
+- Diego_Vittorio ora riconosce la continuità topologica con
+  `CandidatoProsegueUltimoSegmento` e applica
+  `DV_RETURN_SKIP_COLLINEAR_ADJACENT`;
+- trace run #49 conferma:
+  `DV_RETURN_SKIP_ZERO candidate=(1.18,2.82)`
+  e
+  `DV_RETURN_SKIP_COLLINEAR_ADJACENT ... (1.18,2.82)->(1.18,1.18)`.
+
+Nel `locale_1`, invece, lo scavalcamento richiesto è una svolta/corridoio
+ortogonale attraverso un'apertura esatta 2p; non è una semplice prosecuzione
+collineare e quindi la regola che salva il quadrato non descrive questo caso.
+
+### 5. Esito riferimenti Vittorio
+
+Run #49, stesso input:
+- Vittorio `locale_1`: 28 punti, SVG SHA
+  `50a67c7cf7958c966381a399139c23c9ebaef7fb46761f0aea6a3753db83feae`;
+- Vittorio quadrato pubblico: 33 punti, SVG SHA
+  `0688a4e4bed2a7e07ad84174f1862c6a95df544d52853a6ecbcd2742e3cfdb1a`.
+
+Questi risultati non sono direttamente comparabili punto-per-punto col Return
+autonomo Diego_Vittorio perché Vittorio costruisce il rientro per offset dei
+campioni della mandata arrotondata, non mediante la stessa macchina decisionale.
+
+**CONCLUSIONE OPERATIVA:** prima di correggere, il focus deve restare sulla
+macchina decisionale Diego_Vittorio nel passaggio fra offset: riconoscere la
+strettoia 2p, distinguere adiacenza topologica da ostacolo remoto e decidere se
+il corridoio è realmente percorribile. L'arrotondamento non è la causa nel
+motore Diego_Vittorio.
