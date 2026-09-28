@@ -245,10 +245,11 @@ jobs:
             } | ForEach-Object { Write-Host ("ROOM_DIAG "+$id+" "+$_) }
           }
 
-      - name: Trace early portals on locale_1 default side
+      - name: Trace early portals and closure on locale_1 default side
         shell: pwsh
         env:
           TERMODEL_DIEGO_VITTORIO_TRACE_PORTALS: "true"
+          TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE: "true"
         run: |
           $ErrorActionPreference = "Stop"
           $root = Join-Path $env:RUNNER_TEMP "DiegoVittorioRoomExtraction"
@@ -260,7 +261,7 @@ jobs:
           $log = Join-Path $out "DV-PUBLIC-PANELS-RECT-01-P030-DIEGO-VITTORIO.log.txt"
           Write-Host "LOCALE1_PORTAL_TRACE_OK"
           Get-Content -LiteralPath $log | Where-Object {
-            $_ -match 'DV_RETURN_PORTAL_|Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida'
+            $_ -match 'DV_RETURN_PORTAL_|DV_CLOSURE_|Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida'
           } | ForEach-Object { Write-Host ("ROOM_PORTAL_DIAG "+$_) }
 
       - name: Diagnose locale_1 with opposite Return side
