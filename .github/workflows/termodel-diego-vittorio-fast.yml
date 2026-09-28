@@ -209,6 +209,23 @@ jobs:
           }
           Write-Host "DIEGO_VITTORIO_PUBLIC_PANELS_LOCALE8_OK"
 
+      - name: Inspect public panels locale_9
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioPanelsLocale9Inspect"
+          $caseId = "DV-PUBLIC-PANELS-RECT-09-P030-DIEGO-VITTORIO"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/$caseId.json `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Ispezione locale_9 fallita." }
+
+          $log = Join-Path $out "$caseId.log.txt"
+          if (-not (Test-Path -LiteralPath $log)) { throw "Log locale_9 mancante." }
+          Get-Content -LiteralPath $log | Where-Object {
+            $_ -match 'Ritorno: offset|Ritorno parametrico|Ritorno autonomo|Chiusura rapida|DV_RETURN_SKIP_LOCAL_DOGLEG_ADJACENT'
+          } | ForEach-Object { Write-Host ("LOCALE9_INSPECT "+$_) }
+
       - name: Run fitting regression
         run: dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- fillet-check
 
@@ -223,6 +240,7 @@ jobs:
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1
             ${{ runner.temp }}/DiegoVittorioPanelsLocale5
             ${{ runner.temp }}/DiegoVittorioPanelsLocale8
+            ${{ runner.temp }}/DiegoVittorioPanelsLocale9Inspect
           if-no-files-found: warn
           retention-days: 14
 
