@@ -1347,3 +1347,50 @@ Metodo:
 `GenerateReturn`, `FindConnectionWithOffset`, validatori, traversal,
 portali anticipati e fallback, quindi lanciare un test mirato con i trace già
 esistenti su `R001 / locale_1 / T6` e sul quadrato pubblico.
+
+
+#### STEP 4G.1 — trace esistente dei portali: primo risultato decisivo
+Stato: **COMPLETATO**
+
+Nessun log nuovo nel motore in questa fase. È stato attivato soltanto il trace
+già esistente `TERMODEL_DIEGO_VITTORIO_TRACE_PORTALS=true` nel Fast Harness.
+
+Riferimenti:
+- commit workflow `5ecf0d1b7a59c49e11d914fc3c270bb99585b01f`;
+- Fast Harness run `36461086582` (#50): **SUCCESS**;
+- tutte le regression successive: SUCCESS.
+
+Risultato `R001 / locale_1 / T6`:
+- offset 1 -> offset 2: il primo portale utile viene trovato durante la
+  percorrenza, da `(1,12;0,37)` verso `(0,52;4,37)`, lunghezza 4,60 m;
+- **offset 2 -> offset 3: un portale valido esiste già all'INGRESSO
+  dell'offset 2**, da `(0,52;4,37)` verso `(0,22;4,07)`,
+  lunghezza 0,60 m, pathPoints=2;
+- nonostante questo, `ProvaPortaleAnticipato` è solo diagnostica:
+  il motore non usa il portale trovato e continua a percorrere l'offset 2;
+- subito dopo compaiono numerosi rifiuti Self causati anche dal segmento
+  di scavalcamento `(1,12;3,84)->(0,52;3,84)`, ormai entrato nella memoria
+  geometrica del Return.
+
+Confronto quadrato pubblico:
+- offset 1 -> 2: portale trovato solo DURANTE la percorrenza;
+- offset 2 -> 3: portale trovato solo DURANTE la percorrenza, non all'ingresso;
+- quindi il quadrato non presenta la stessa opportunità immediata del
+  `locale_1`.
+
+Interpretazione corrente, ancora diagnostica:
+- il caso `locale_1` mostra già nel codice una informazione di medio raggio
+  utile che viene calcolata e poi ignorata;
+- il problema potrebbe quindi non essere soltanto “scegliere male il
+  collegamento verso l'offset corrente”, ma anche “continuare troppo a lungo
+  sull'offset corrente quando esiste già una uscita valida verso il successivo”.
+
+Questa è un'ipotesi causale forte, NON ancora una regola produttiva.
+
+**PROSSIMO PASSO:** aggiungere solo diagnostica non decisionale, dietro
+`TRACE_RETURN`, per registrare:
+- il path realmente scelto per entrare in ogni offset;
+- ogni tratto realmente accettato durante la percorrenza;
+- il path geometrico del portale anticipato.
+Poi rieseguire `locale_1` e quadrato per confrontare il ramo effettivo con
+l'uscita anticipata già disponibile.
