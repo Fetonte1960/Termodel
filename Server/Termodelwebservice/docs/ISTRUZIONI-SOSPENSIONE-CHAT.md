@@ -99,6 +99,86 @@ Quando possibile, prima di terminare una lunga fase di lavoro aggiornare GitHub 
 
 Il checkpoint può essere scritto nel registro pertinente, nel PROJECT-SUMMARY-SERVICE oppure in un file di handoff dedicato.
 
+## Recovery point obbligatorio dell'attività in corso
+
+Per ogni incarico operativo che può richiedere più passaggi, prima di iniziare modifiche sostanziali deve essere mantenuto su GitHub un recovery point corrente nel file:
+
+`Server/Termodelwebservice/docs/RECOVERY-ACTIVE.md`
+
+Questo file rappresenta **l'unica attività attualmente in sospeso/riprendibile**. Non deve contenere vecchi lavori già conclusi.
+
+Prima di iniziare il lavoro, il recovery point deve registrare con sufficiente dettaglio:
+
+- data e ora del checkpoint;
+- origine dell'incarico e, quando disponibile, nome/identificatore della conversazione;
+- richiesta/commento commissionato dall'utente che ha dato origine al lavoro, riassunto senza perderne i vincoli;
+- cosa l'esecuzione si propone concretamente di fare;
+- stato tecnico iniziale;
+- file e componenti coinvolti;
+- branch e ultimo commit di riferimento;
+- modifiche già effettuate;
+- test già eseguiti e relativo risultato;
+- anomalie ancora presenti;
+- ipotesi tecniche correnti;
+- decisioni già concordate con l'utente;
+- vincoli e cose che non devono essere modificate;
+- eventuali modifiche che richiedono consenso umano;
+- prossimo passo esatto da eseguire;
+- criteri che permettono di stabilire quando l'incarico può considerarsi concluso.
+
+Il contenuto deve essere sufficiente affinché una nuova esecuzione, leggendo GitHub senza poter accedere alla chat precedente, possa ripartire **senza perdita di informazioni operative**.
+
+Durante un lavoro lungo, il recovery point deve essere aggiornato ogni volta che cambia significativamente lo stato: nuovo risultato diagnostico, nuovo commit, test importante, decisione dell'utente o cambio del prossimo passo.
+
+### Ripresa dopo sospensione
+
+Quando l'operazione programmata trova `RECOVERY-ACTIVE.md` e verifica che il lavoro non è concluso:
+
+1. legge integralmente il recovery point e i documenti di progetto richiamati;
+2. verifica su commit, file e test che lo stato sia ancora coerente;
+3. segnala sulla issue GitHub **#1** che il lavoro viene ripreso dopo sospensione;
+4. se disponibile indica nome/identificatore della chat precedente; altrimenti usa una formulazione neutra;
+5. riprende effettivamente l'attività dal **prossimo passo registrato**, senza ricominciare da zero;
+6. aggiorna `RECOVERY-ACTIVE.md` man mano che avanza.
+
+Formato preferito della notifica di ripresa:
+
+```
+Ripresa dopo sospensione: <attività>.
+Recovery point: Server/Termodelwebservice/docs/RECOVERY-ACTIVE.md
+Prossimo passo: <passo>.
+```
+
+Se il nome/identificatore della chat è noto, aggiungere:
+
+```
+La chat <nome/identificatore> è stata ripresa da un'altra esecuzione ChatGPT.
+```
+
+### Conclusione dell'attività recuperata
+
+Un'attività può essere rimossa dallo stato di sospensione soltanto quando i criteri di conclusione registrati nel recovery point risultano soddisfatti.
+
+Alla conclusione:
+
+1. verificare il risultato e gli eventuali test di regressione previsti;
+2. aggiornare i normali registri e summary di progetto con ciò che deve restare nella storia tecnica;
+3. pubblicare sulla issue GitHub **#1** una notifica esplicita di termine del lavoro con risultato, commit finale e test principali;
+4. solo dopo la notifica e la registrazione dello stato definitivo, eliminare `RECOVERY-ACTIVE.md`, perché l'attività non è più sospesa né da riprendere;
+5. al controllo orario successivo l'assenza di `RECOVERY-ACTIVE.md` impedisce di riaprire accidentalmente un lavoro già terminato.
+
+Formato preferito della notifica di conclusione:
+
+```
+Lavoro concluso: <attività>.
+Esito: <risultato>.
+Commit finale: <sha>.
+Test: <sintesi>.
+Recovery point chiuso e attività rimossa dallo stato di sospensione.
+```
+
+Se una scrittura GitHub fallisce, non dichiarare come eseguita né la notifica né la chiusura del recovery point.
+
 ## Comportamento dell'operazione programmata di recovery
 
 L'operazione programmata che controlla periodicamente Termodel Service deve:
