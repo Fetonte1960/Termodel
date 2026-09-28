@@ -87,6 +87,21 @@ configurazione è accettabile, il circuito resta aperto e il log lo dichiara.
 
 ### Collegamento iniziale del ritorno autonomo
 
+> **Nota architetturale 28/09/2026**
+>
+> Questa parte distingue strutturalmente `Diego_Vittorio` da Vittorio:
+> dopo il raccordo iniziale, il Return **non è una copia riflessa/parallela
+> della mandata**. Viene costruito autonomamente e ogni tratto deve rispettare
+> contemporaneamente il perimetro disponibile, la mandata e il Return già
+> costruito.
+>
+> Il vantaggio è una maggiore libertà geometrica. Il limite noto emerso nel
+> collaudo è l'**intrappolamento**: la mandata può creare un corridoio stretto
+> o “budello” nel quale il Return entra senza avere poi una prosecuzione utile.
+> In questi casi l'algoritmo può fermarsi prematuramente o in una posizione non
+> corretta rispetto al circuito desiderato. Il problema è registrato come
+> aperto e non viene corretto automaticamente in questa milestone.
+
 `SpiralGenerator.GeneraCollegamentoRitorno(...)` prepara il tratto iniziale
 prima della generazione autonoma del ritorno. Il ritorno nasce dal parallelo
 gemello del tubo d'ingresso della mandata: la radice sulla parete è spostata
