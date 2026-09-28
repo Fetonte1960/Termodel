@@ -5,6 +5,10 @@ param(
     [string]$SnapshotLabel = "manuale",
     [int]$Port = 5081,
     [switch]$Rebuild,
+    [switch]$NoBuild,
+    [switch]$UseMirror,
+    [string]$PreparedInput = "",
+    [string]$RunId = "",
     [switch]$Fillets,
     [switch]$Closure,
     [ValidateSet("left", "right")]
@@ -27,9 +31,17 @@ $MirrorRoot = Join-Path $StateRoot "SourceMirror"
 $LatestRoot = Join-Path $StateRoot "Latest"
 $LogRoot = Join-Path $StateRoot "Logs"
 $FingerprintPath = Join-Path $StateRoot "source-fingerprint.txt"
+$SourceStampPath = Join-Path $StateRoot "source-stamp.txt"
 $HarnessProjectRelative = "tools\Termodel.RadiantPanels.Harness\Termodel.RadiantPanels.Harness.csproj"
 $CaseRelative = "tests\radiant-harness\cases\LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO.json"
-$CaseId = "LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO"
+$DefaultCaseId = "LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO"
+$CaseId = if (-not [string]::IsNullOrWhiteSpace($RunId)) {
+    $RunId
+} elseif (-not [string]::IsNullOrWhiteSpace($PreparedInput)) {
+    [IO.Path]::GetFileNameWithoutExtension($PreparedInput)
+} else {
+    $DefaultCaseId
+}
 
 function Write-Utf8Text([string]$Path, [string]$Text) {
     [IO.File]::WriteAllText($Path, $Text, $Utf8NoBom)
@@ -85,6 +97,82 @@ function Get-SourceFingerprint {
     }
 }
 
+function Get-SourceStamp {
+    # Il ciclo rapido usa solo metadati filesystem, non rilegge/hash-a il
+    # contenuto di tutto Termodel.Core ad ogni prova. MSBuild resta
+    # responsabile della build incrementale quando lo stamp cambia.
+    $rows = foreach ($file in Get-SourceFiles) {
+        $relative = Get-RelativePath $ServiceRoot $file.FullName
+        "$relative|$($file.Length)|$($file.LastWriteTimeUtc.Ticks)"
+    }
+    return ($rows -join "`n")
+}
+
+function Ensure-DirectBuild {
+    New-Item -ItemType Directory -Path $StateRoot, $LogRoot -Force | Out-Null
+    $project = Join-Path $ServiceRoot $HarnessProjectRelative
+    $dll = Join-Path $ServiceRoot "tools\Termodel.RadiantPanels.Harness\bin\Release\net8.0\Termodel.RadiantPanels.Harness.dll"
+    $assets = Join-Path $ServiceRoot "tools\Termodel.RadiantPanels.Harness\obj\project.assets.json"
+
+    if ($NoBuild) {
+        if (-not (Test-Path -LiteralPath $dll)) {
+            throw "-NoBuild richiesto ma il binario Harness non esiste: $dll"
+        }
+        Write-Host "BUILD FAST: salto build su richiesta (-NoBuild)." -ForegroundColor Green
+        return $dll
+    }
+
+    $stamp = Get-SourceStamp
+    $knownStamp = if (Test-Path -LiteralPath $SourceStampPath) {
+        Get-Content -LiteralPath $SourceStampPath -Raw
+    } else { "" }
+
+    if (-not $Rebuild -and
+        $stamp -eq $knownStamp -and
+        (Test-Path -LiteralPath $dll)) {
+        Write-Host "BUILD FAST: riuso binario working tree; metadati sorgenti invariati." -ForegroundColor Green
+        return $dll
+    }
+
+    if ($Rebuild -or -not (Test-Path -LiteralPath $assets)) {
+        Write-Host "BUILD FAST: restore Harness/Core necessario." -ForegroundColor Yellow
+        $restoreLog = Join-Path $LogRoot "restore-latest.log"
+        $restoreOutput = & dotnet restore $project --nologo --verbosity:quiet 2>&1
+        $restoreExit = $LASTEXITCODE
+        Write-Utf8Text $restoreLog (($restoreOutput | Out-String).TrimEnd() + "`n")
+        if ($restoreExit -ne 0) {
+            Write-Host ($restoreOutput | Select-Object -Last 30 | Out-String)
+            throw "Restore Harness locale non riuscito. Log: $restoreLog"
+        }
+    }
+
+    Write-Host "BUILD FAST: build incrementale diretto sul working tree." -ForegroundColor Yellow
+    $buildLog = Join-Path $LogRoot "build-latest.log"
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    $buildArguments = @(
+        "build", $project,
+        "-c", "Release",
+        "--no-restore",
+        "--nologo",
+        "--verbosity:quiet",
+        "-p:BuildInParallel=true"
+    )
+    if ($Rebuild) { $buildArguments += "--no-incremental" }
+    $output = & dotnet @buildArguments 2>&1
+    $exitCode = $LASTEXITCODE
+    $sw.Stop()
+    Write-Utf8Text $buildLog (($output | Out-String).TrimEnd() + "`n")
+    if ($exitCode -ne 0 -or -not (Test-Path -LiteralPath $dll)) {
+        Write-Host ($output | Select-Object -Last 30 | Out-String)
+        throw "Build Harness locale non riuscita. Log: $buildLog"
+    }
+
+    # Lo stamp viene scritto soltanto dopo una build riuscita.
+    Write-Utf8Text $SourceStampPath $stamp
+    Write-Host ("BUILD FAST OK: {0} ms" -f $sw.ElapsedMilliseconds) -ForegroundColor Green
+    return $dll
+}
+
 function Sync-SourceMirror([string]$Fingerprint) {
     New-Item -ItemType Directory -Path $MirrorRoot -Force | Out-Null
     $mirrorManifestPath = Join-Path $StateRoot "mirror-files.txt"
@@ -117,7 +205,7 @@ function Sync-SourceMirror([string]$Fingerprint) {
     Write-Utf8Text $FingerprintPath ($Fingerprint + "`n")
 }
 
-function Ensure-LocalBuild {
+function Ensure-MirrorBuild {
     New-Item -ItemType Directory -Path $StateRoot, $LogRoot -Force | Out-Null
     $fingerprint = Get-SourceFingerprint
     $knownFingerprint = if (Test-Path -LiteralPath $FingerprintPath) {
@@ -147,6 +235,16 @@ function Ensure-LocalBuild {
     Write-Host "BUILD OK: $dll" -ForegroundColor Green
     Write-Host "Log completo: $buildLog"
     return $dll
+}
+
+function Ensure-LocalBuild {
+    if ($UseMirror) {
+        Write-Host "BUILD MODE: mirror legacy in LOCALAPPDATA." -ForegroundColor Cyan
+        return Ensure-MirrorBuild
+    }
+
+    Write-Host "BUILD MODE: working tree diretto + cache metadati." -ForegroundColor Cyan
+    return Ensure-DirectBuild
 }
 
 function Get-SnapshotSourceFiles {
@@ -327,7 +425,21 @@ function Invoke-HarnessRun {
         # Modificato da Codex per realizzare: sovrascrivere il passo del caso
         # standard senza duplicare fixture JSON per ogni prova.
         $stepInvariant = $StepMeters.ToString("0.############", [Globalization.CultureInfo]::InvariantCulture)
-        $runOutput = & dotnet $dll run --case $casePath --p $stepInvariant --out $tempOutput 2>&1
+        $runArgs = @($dll, "run")
+        if (-not [string]::IsNullOrWhiteSpace($PreparedInput)) {
+            $preparedFull = [IO.Path]::GetFullPath($PreparedInput)
+            if (-not (Test-Path -LiteralPath $preparedFull -PathType Leaf)) {
+                throw "Prepared input non trovato: $preparedFull"
+            }
+            $runArgs += @("--input", $preparedFull, "--engine", "Diego_Vittorio", "--id", $CaseId)
+            Write-Host "INPUT: XML preparato reale $preparedFull" -ForegroundColor Cyan
+        }
+        else {
+            $runArgs += @("--case", $casePath)
+            Write-Host "INPUT: case Git $CaseRelative" -ForegroundColor Cyan
+        }
+        $runArgs += @("--p", $stepInvariant, "--out", $tempOutput)
+        $runOutput = & dotnet @runArgs 2>&1
         $exitCode = $LASTEXITCODE
         $runText = ($runOutput | Out-String)
         Write-Utf8Text (Join-Path $LogRoot "run-latest.log") $runText
@@ -427,7 +539,8 @@ function Start-PreviewServer {
 function Show-Status {
     Write-Host "Service root : $ServiceRoot"
     Write-Host "Stato locale : $StateRoot"
-    Write-Host "Mirror build  : $MirrorRoot"
+    Write-Host "Build default : working tree diretto (mirror solo con -UseMirror)"
+    Write-Host "Mirror legacy : $MirrorRoot"
     Write-Host "Ultimo output : $LatestRoot"
     Write-Host "Preview       : http://127.0.0.1:$Port/"
     Write-Host "WebService    : http://localhost:5080/ (separato)"
