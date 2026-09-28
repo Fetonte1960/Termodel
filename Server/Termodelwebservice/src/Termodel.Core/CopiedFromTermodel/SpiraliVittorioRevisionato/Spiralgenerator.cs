@@ -5,8 +5,67 @@ using System.Linq;
 
 namespace SpiralHeatingVittorioRevisionato
 {
+	/// <summary>
+	/// Ingresso neutro rispetto al ruolo: lo stesso generatore Vittorio può
+	/// essere invocato per un percorso di mandata o di ritorno.
+	/// Il condizionamento è volutamente un hard gate post-generazione:
+	/// non introduce ricerca di percorsi, fallback o euristiche nuove.
+	/// </summary>
+	public sealed class SpiralGenerationInput
+	{
+		public List<Punto> Perimetro { get; set; } = new List<Punto>();
+		public Punto StartPoint { get; set; }
+		public double Distanza { get; set; }
+		public bool DrawSpiral { get; set; } = true;
+		public List<Punto> LineeCondizionamento { get; set; } = new List<Punto>();
+		public double DistanzaCondizionamento { get; set; }
+	}
+
 	public static class SpiralGenerator
 	{
+		/// <summary>
+		/// Astrazione strutturale iniziale di Vittorio.
+		/// Esegue prima il generatore storico INVARIATO; se sono presenti linee
+		/// condizionanti tronca il percorso al primo segmento che violerebbe la
+		/// distanza richiesta. Non cerca alternative e non cambia le decisioni
+		/// geometriche di Vittorio.
+		/// </summary>
+		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(
+			SpiralGenerationInput input)
+		{
+			if (input == null)
+				throw new ArgumentNullException(nameof(input));
+			if (input.Perimetro == null)
+				throw new ArgumentException("Perimetro mancante.", nameof(input));
+			if (input.StartPoint == null)
+				throw new ArgumentException("StartPoint mancante.", nameof(input));
+			if (input.Distanza <= 0)
+				throw new ArgumentOutOfRangeException(nameof(input.Distanza));
+			if (input.DistanzaCondizionamento < 0)
+				throw new ArgumentOutOfRangeException(nameof(input.DistanzaCondizionamento));
+
+			var risultato = Generate(
+				new List<Punto>(input.Perimetro),
+				input.StartPoint,
+				input.Distanza,
+				input.DrawSpiral);
+
+			if (!input.DrawSpiral ||
+				input.LineeCondizionamento == null ||
+				input.LineeCondizionamento.Count < 2 ||
+				input.DistanzaCondizionamento <= 0)
+			{
+				return risultato;
+			}
+
+			return (
+				ApplicaCondizionamento(
+					risultato.spiral,
+					input.LineeCondizionamento,
+					input.DistanzaCondizionamento),
+				risultato.offsets);
+		}
+
 		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(List<Punto> perimetro, Punto startPoint, double distanza, bool drawSpiral = true)
 		{
 			List<Punto> spiral = new List<Punto>();
@@ -194,6 +253,115 @@ namespace SpiralHeatingVittorioRevisionato
 			
 			int nextVertex = bestSegmentIndex >= 0 ? (bestSegmentIndex + 1) % offset.Count : 0;
 			return (bestIntersection, nextVertex);
+		}
+
+		// Astrazione strutturale: la geometria condizionante non modifica
+		// l'algoritmo Vittorio; limita soltanto il prefisso utilizzabile del
+		// percorso indipendente. È intenzionalmente semplice per separare
+		// l'astrazione dalla futura strategia di scelta nelle strettoie.
+		private static List<Punto> ApplicaCondizionamento(
+			List<Punto> percorso,
+			List<Punto> lineeCondizionamento,
+			double distanzaMinima)
+		{
+			if (percorso == null || percorso.Count == 0)
+				return new List<Punto>();
+
+			var risultato = new List<Punto> { percorso[0] };
+			for (int i = 1; i < percorso.Count; i++)
+			{
+				if (!SegmentoRispettaCondizionamento(
+					risultato[risultato.Count - 1],
+					percorso[i],
+					lineeCondizionamento,
+					distanzaMinima))
+				{
+					break;
+				}
+				risultato.Add(percorso[i]);
+			}
+			return risultato;
+		}
+
+		private static bool SegmentoRispettaCondizionamento(
+			Punto inizio,
+			Punto fine,
+			List<Punto> lineeCondizionamento,
+			double distanzaMinima)
+		{
+			const double tolleranza = 0.000001;
+			for (int i = 0; i < lineeCondizionamento.Count - 1; i++)
+			{
+				if (DistanzaSegmenti(
+					inizio,
+					fine,
+					lineeCondizionamento[i],
+					lineeCondizionamento[i + 1]) <
+					distanzaMinima - tolleranza)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
+		private static double DistanzaSegmenti(
+			Punto a0,
+			Punto a1,
+			Punto b0,
+			Punto b1)
+		{
+			if (SegmentiIntersecano(a0, a1, b0, b1))
+				return 0.0;
+
+			return Math.Min(
+				Math.Min(
+					GeometryUtils.DistancePointToSegment(a0, b0, b1),
+					GeometryUtils.DistancePointToSegment(a1, b0, b1)),
+				Math.Min(
+					GeometryUtils.DistancePointToSegment(b0, a0, a1),
+					GeometryUtils.DistancePointToSegment(b1, a0, a1)));
+		}
+
+		private static bool SegmentiIntersecano(
+			Punto a0,
+			Punto a1,
+			Punto b0,
+			Punto b1)
+		{
+			double o1 = Orientamento(a0, a1, b0);
+			double o2 = Orientamento(a0, a1, b1);
+			double o3 = Orientamento(b0, b1, a0);
+			double o4 = Orientamento(b0, b1, a1);
+			const double tolleranza = 0.000001;
+
+			if (((o1 > tolleranza && o2 < -tolleranza) ||
+				 (o1 < -tolleranza && o2 > tolleranza)) &&
+				((o3 > tolleranza && o4 < -tolleranza) ||
+				 (o3 < -tolleranza && o4 > tolleranza)))
+			{
+				return true;
+			}
+
+			return
+				Math.Abs(o1) <= tolleranza && PuntoSulSegmento(b0, a0, a1) ||
+				Math.Abs(o2) <= tolleranza && PuntoSulSegmento(b1, a0, a1) ||
+				Math.Abs(o3) <= tolleranza && PuntoSulSegmento(a0, b0, b1) ||
+				Math.Abs(o4) <= tolleranza && PuntoSulSegmento(a1, b0, b1);
+		}
+
+		private static double Orientamento(Punto a, Punto b, Punto c) =>
+			(b.X - a.X) * (c.Y - a.Y) -
+			(b.Y - a.Y) * (c.X - a.X);
+
+		private static bool PuntoSulSegmento(Punto p, Punto a, Punto b)
+		{
+			const double tolleranza = 0.000001;
+			return
+				p.X >= Math.Min(a.X, b.X) - tolleranza &&
+				p.X <= Math.Max(a.X, b.X) + tolleranza &&
+				p.Y >= Math.Min(a.Y, b.Y) - tolleranza &&
+				p.Y <= Math.Max(a.Y, b.Y) + tolleranza;
 		}
 
 		private static List<Punto> ComputeOffset(List<Punto> polygon, List<Punto> polygon_pre, double offset)
