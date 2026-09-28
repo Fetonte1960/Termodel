@@ -1,10 +1,10 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 11:00 Europe/Rome
+Checkpoint: 2026-09-28 11:32 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
-HEAD verificato all'avvio recovery: `f3f9be2e2785229fd20be7bda05c5e3b1f21aac7`
+HEAD verificato dopo ripresa: `d231bdf8c8c01354d5b54f34e7c4997f2fb17303`
 
 ## Attività corrente
 
@@ -98,7 +98,7 @@ Nota:
 - conferma visiva utente nel progetto completo ancora da effettuare.
 
 ### FASE 3 — locale_5
-Stato: **IN CORSO — correzione candidata già eseguita e testata, da consolidare/valutare**
+Stato: **BLOCCATA — richiesta decisione umana sul criterio di chiusura LG-048**
 
 Stato prima del trim:
 - Return 6 punti;
@@ -138,19 +138,55 @@ Verifica visiva eseguita sul vero artifact del run `36402954805`:
 Ipotesi corrente:
 - il problema residuo non è più l'intrappolamento del Return;
 - LG-048 si ferma al **primo candidato valido** e può quindi non osservare
-  eventuali configurazioni successive più locali/naturali;
-- prima di modificare la selezione della chiusura bisogna enumerare in pura
-  diagnostica tutti i candidati diretti/proiettati che sarebbero accettabili.
+  configurazioni successive più locali/naturali.
+
+Diagnostica già eseguita dopo il precedente checkpoint:
+- commit `2afc42b87fc2d90826d9e8f79a6e75c0c703dda3`:
+  sotto `TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE=true` enumera tutti i
+  candidati validi ma continua a restituire il **primo** accettabile, quindi
+  non cambia il comportamento di produzione;
+- commit `25a562e9a93ab2b40003493691e7af67878a159f`:
+  aggiunge il trace completo di `locale_5`;
+- Fast Harness run `36403714418`: **SUCCESS**, inclusa baseline quadrato
+  approvato invariata;
+- Room Extraction run `36403744027`: **SUCCESS**.
+
+Risultato enumerazione `locale_5`:
+- primo candidato valido e ancora scelto in produzione:
+  `M3/R5`, attempt 27, obliquo, lunghezza **2,45367 m**,
+  rimozione **3,75 m**;
+- altri candidati diretti validi:
+  `M4/R5`, attempt 34, lunghezza **2,43 m**;
+- candidati proiettati validi:
+  `M4/RP2`, attempt 37, ortogonale, lunghezza **2,43 m**;
+  `M3/RP2`, attempt 38, ortogonale, lunghezza **2,43 m**;
+  `M2/RP3`, attempt 40, ortogonale, lunghezza **1,24 m**.
+- quindi è confermato che esistono chiusure successive più corte e più locali,
+  ma sceglierle richiederebbe cambiare il criterio `prima accettabile`
+  di LG-048.
+
+Decisione obbligatoria:
+- **FASE 3 BLOCCATA IN ATTESA DI CONSENSO UMANO** prima di modificare la
+  politica di selezione della chiusura;
+- possibili criteri da discutere: preferire una chiusura ortogonale, oppure
+  minimizzare una metrica (lunghezza chiusura / lunghezza rimossa / combinazione);
+- nessuno di questi criteri viene introdotto automaticamente.
+
+Nota di coerenza repository:
+- il commit successivo `d231bdf8c8c01354d5b54f34e7c4997f2fb17303`
+  aggiunge soltanto una diagnostica lato Return opposto su `locale_8`;
+- run `36403952397` conferma che lato Destro peggiora `locale_8`
+  (2 punti, offset 1/2/3 non collegati);
+- questo **non chiude FASE 3 e non avvia formalmente FASE 4**: è sola
+  diagnostica anticipata e non contiene modifiche al motore.
 
 **PROSSIMO PASSO ESATTO:**
-1. aggiungere diagnostica non invasiva che, solo sotto flag trace, enumeri
-   tutti i candidati LG-048 accettabili senza cambiare quello restituito;
-2. includere anche le chiusure proiettate diagnostiche, anche quando una
-   chiusura diretta precedente è già valida;
-3. rieseguire `locale_5` e verificare se esiste una chiusura più corta/localizzata;
-4. mantenere obbligatoriamente verde e byte-identica la baseline del quadrato;
-5. se una migliore selezione richiede cambio di strategia/criterio, fermarsi
-   e chiedere consenso umano prima di renderla comportamento di produzione.
+1. chiedere all'utente se autorizza un cambio circoscritto del criterio LG-048;
+2. se autorizzato, definire prima il criterio preciso da usare e il vincolo
+   di non regressione;
+3. implementarlo con `locale_5` + quadrato base + `locale_1` come regression;
+4. se non autorizzato, lasciare `locale_5` aperto e non passare a
+   `locale_8` come fase consolidata.
 
 ### FASE 4 — locale_8
 Stato: **NON INIZIATA**
