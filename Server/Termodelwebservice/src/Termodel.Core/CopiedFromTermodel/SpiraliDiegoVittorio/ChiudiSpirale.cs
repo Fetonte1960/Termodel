@@ -656,26 +656,37 @@ namespace SpiralHeatingDiegoVittorio
             if (candidatiAccettabili.Count == 0)
                 return null;
 
-            // Criterio autorizzato dall'utente per DV-TEST-002:
-            // 1) se esistono candidati ortogonali, scegliere soltanto tra questi;
-            // 2) minimizzare la lunghezza della chiusura;
-            // 3) a parità, minimizzare la lunghezza rimossa;
-            // 4) a ulteriore parità, mantenere l'ordine deterministico storico.
-            // Se non esiste alcun candidato ortogonale, resta il primo
-            // accettabile secondo l'ordine storico LG-048.
-            CandidatoChiusura selezionato = candidatiAccettabili
+            // Criterio autorizzato e raffinato dopo regression DV-TEST-002:
+            // conservare il primo candidato storico salvo che sia obliquo e
+            // una chiusura ortogonale valida lo accorci di almeno un passo p.
+            // Questo evita variazioni marginali dei casi già approvati e
+            // consente la correzione circoscritta di locale_5.
+            CandidatoChiusura miglioreOrtogonale = candidatiAccettabili
                 .Where(c => c.Ortogonale)
                 .OrderBy(c => c.LunghezzaChiusura)
                 .ThenBy(c => c.LunghezzaRimossa)
                 .ThenBy(c => c.NumeroTentativo)
-                .FirstOrDefault() ?? primoAccettabile;
+                .FirstOrDefault();
+
+            const double tolleranzaSelezione = 0.000001;
+            bool usaOrtogonaleMigliorativa =
+                primoAccettabile != null &&
+                !primoAccettabile.Ortogonale &&
+                miglioreOrtogonale != null &&
+                primoAccettabile.LunghezzaChiusura -
+                    miglioreOrtogonale.LunghezzaChiusura >=
+                    passo - tolleranzaSelezione;
+
+            CandidatoChiusura selezionato = usaOrtogonaleMigliorativa
+                ? miglioreOrtogonale
+                : primoAccettabile;
 
             if (TraceClosureEnabled)
             {
                 Console.WriteLine(
                     $"  DV_CLOSURE_SELECTED attempt={selezionato.NumeroTentativo} " +
                     $"seq={selezionato.LivelloMandata}/{selezionato.TentativoRitorno} " +
-                    $"type={(selezionato.Ortogonale ? "orthogonal" : "historical-first")} " +
+                    $"type={(usaOrtogonaleMigliorativa ? "orthogonal-improvement" : "historical-first")} " +
                     $"length={selezionato.LunghezzaChiusura:R} " +
                     $"removed={selezionato.LunghezzaRimossa:R}.");
             }
