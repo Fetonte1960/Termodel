@@ -115,9 +115,10 @@ jobs:
             throw "Regressione DV-TEST-001: chiusura rapida non trovata."
           }
 
-          tools/local-radiant-harness/Test-DiegoVittorioDistances.ps1 -SvgPath $svg -StepMeters 0.30
-          if ($LASTEXITCODE -ne 0) { throw "Controllo distanze quadrato pubblico fallito." }
-
+          # Test-DiegoVittorioDistances.ps1 resta volutamente specifico del
+          # quadrato sintetico 0..4 e viene già eseguito nello step precedente.
+          # Questa regression verifica il difetto DV-TEST-001 sul vero input
+          # pubblico, il completamento del Return e la chiusura.
           Write-Host "DIEGO_VITTORIO_PUBLIC_SQUARE_LEFT_OK"
 
       - name: Run fitting regression
