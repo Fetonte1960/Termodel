@@ -1,0 +1,148 @@
+name: Termodel Diego_Vittorio Public Square Investigation
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: termodel-diego-vittorio-public-square-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Server/Termodelwebservice/tools/generate-public-square-executive.ps1'
+      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/**'
+      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/StrategiaDiegoVittorioBenchmark.cs'
+      - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
+      - '.github/workflows/termodel-diego-vittorio-public-square.yml'
+
+jobs:
+  investigate:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Server/Termodelwebservice
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Mark Termodel job RUNNING
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+          $body = @{
+            state = "pending"
+            context = "Termodel/job"
+            description = "RUNNING - Public Square Investigation #${{ github.run_number }}"
+            target_url = $runUrl
+          } | ConvertTo-Json
+          Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Service and Harness
+        shell: pwsh
+        run: |
+          dotnet restore src/Termodel.WebService/Termodel.WebService.csproj --nologo --verbosity:quiet
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet restore tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj --nologo --verbosity:quiet
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build Service and Harness
+        shell: pwsh
+        run: |
+          dotnet build src/Termodel.WebService/Termodel.WebService.csproj -c Release --no-restore --nologo --verbosity:minimal -p:BuildInParallel=true
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-restore --nologo --verbosity:minimal -p:BuildInParallel=true
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Generate public square and compare same input
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          tools/generate-public-square-executive.ps1 -Engine Diego_Vittorio -CaptureHarnessInput -CompareHarness
+
+          $root = Join-Path $env:RUNNER_TEMP "PublicSquareExecutiveArtifacts"
+          $input = Join-Path $root "quadrato-con-pannelli.radiant-input.xml"
+          $project = Join-Path $root "quadrato-con-pannelli.project.tmdl"
+          $serviceSvg = Join-Path $root "quadrato-con-pannelli-esecutivo.svg"
+          $harnessSvg = Join-Path $root "same-input-harness/PUBLIC-SQUARE-SAME-INPUT.svg"
+          $harnessLog = Join-Path $root "same-input-harness/PUBLIC-SQUARE-SAME-INPUT.log.txt"
+          $metrics = Join-Path $root "same-input-harness/PUBLIC-SQUARE-SAME-INPUT.metrics.json"
+          foreach ($required in @($input,$project,$serviceSvg,$harnessSvg,$harnessLog,$metrics)) {
+            if (-not (Test-Path -LiteralPath $required)) { throw "Artifact diagnostico mancante: $required" }
+          }
+
+          Write-Host "=== PREPARED RADIANT INPUT BEGIN ==="
+          Get-Content -LiteralPath $input
+          Write-Host "=== PREPARED RADIANT INPUT END ==="
+          Write-Host "=== HARNESS RETURN DIAGNOSTICS BEGIN ==="
+          Get-Content -LiteralPath $harnessLog | Where-Object {
+            $_ -match 'Ritorno|Return|offset|collegamento|p='
+          }
+          Write-Host "=== HARNESS RETURN DIAGNOSTICS END ==="
+
+          $m = Get-Content -LiteralPath $metrics -Raw | ConvertFrom-Json
+          Write-Host ("HARNESS_METRICS engine={0} points={1} elapsedMs={2}" -f $m.engine,$m.spiralPointCount,$m.elapsedMilliseconds)
+          Write-Host ("INPUT_SHA256=" + (Get-FileHash -LiteralPath $input -Algorithm SHA256).Hash)
+          Write-Host ("SERVICE_SVG_SHA256=" + (Get-FileHash -LiteralPath $serviceSvg -Algorithm SHA256).Hash)
+          Write-Host ("HARNESS_SVG_SHA256=" + (Get-FileHash -LiteralPath $harnessSvg -Algorithm SHA256).Hash)
+
+      - name: Upload public square investigation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diego-vittorio-public-square
+          path: ${{ runner.temp }}/PublicSquareExecutiveArtifacts
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Publish final status and notify
+        if: always()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NTFY_TOPIC: ${{ secrets.TERMODEL_NTFY_TOPIC }}
+        run: |
+          $jobStatus = "${{ job.status }}"
+          $ok = $jobStatus -eq "success"
+          $state = if ($ok) { "success" } else { "failure" }
+          $label = if ($ok) { "SUCCESS" } else { "FAILED" }
+          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+          $body = @{
+            state = $state
+            context = "Termodel/job"
+            description = "$label - Public Square Investigation #${{ github.run_number }}"
+            target_url = $runUrl
+          } | ConvertTo-Json
+          Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
+          if (-not [string]::IsNullOrWhiteSpace($env:NTFY_TOPIC)) {
+            try {
+              $message = "Termodel Public Square Investigation #${{ github.run_number }} $label - $runUrl"
+              Invoke-RestMethod -Uri "https://ntfy.sh/$env:NTFY_TOPIC" -Method Post -Headers @{
+                "Title" = "Termodel Public Square Investigation"
+                "Priority" = "low"
+                "Tags" = if ($ok) { "white_check_mark" } else { "x" }
+              } -Body $message | Out-Null
+            } catch {
+              Write-Warning "Notifica ntfy non riuscita: $($_.Exception.Message)"
+            }
+          }
