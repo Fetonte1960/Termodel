@@ -275,13 +275,8 @@ discussa solo dopo.**
 
 ### Quando usare questa chiave
 
-Quando una chat o un incarico richiede:
-
-```text
-Debug_Avanzato_harness_rapido
-```
-
-la chat deve:
+Quando una chat o un incarico richiama la chiave definita nel titolo di questo
+setup, la chat deve:
 1. leggere questo documento;
 2. individuare il caso reale corrente;
 3. verificare quali categorie/log esistono già;
