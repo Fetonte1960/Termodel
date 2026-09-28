@@ -647,7 +647,7 @@ namespace SpiralHeatingDiegoVittorio
         }
 
         private static bool TraceClosureEnabled =>
-            ReadBooleanEnvironment(
+            ReadBooleanFlag(
                 TraceClosureEnvironmentVariable,
                 defaultValue: false);
 
