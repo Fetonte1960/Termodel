@@ -217,6 +217,35 @@ Anomalia esterna alla presente campagna:
 5. in caso di anomalia, conservare screenshot/caso e riaprire soltanto il
    locale o la geometria effettivamente difettosa.
 
+## Sottofase FASE 6A — provenienza visibile dell'esecutivo CAD2D
+Stato: **IN CORSO**
+
+Origine richiesta utente:
+- prima del collaudo finale, rendere immediatamente visibile nel CAD2D / Disegno esecutivo chi ha generato il disegno;
+- indicare se l'esecutivo è consolidato nell'esempio oppure calcolato dal Service corrente;
+- mostrare motore spirali e versione/commit del Service;
+- mantenere la zona informativa discreta e non interferente con il disegno.
+
+Provenienza storica verificata:
+- gli esecutivi statici degli esempi furono generati dal vero Termodel WebService nel workflow run `36301010185`, sul commit sorgente `aba9bd293936396c9861f521d5ffebdb0fe8b769`;
+- il motore usato era `GPT / SpiraliGPT`;
+- i file furono consolidati nel catalogo pubblico dal commit `9a4c0b7d982ea42c1b73a4a5a36975935d1bfece` del 27/09/2026;
+- per gli esecutivi runtime la fonte autorevole deve essere `GET /health` del Service corrente (`serviceCommit`, `spiralEngine`).
+
+Piano:
+1. aggiungere metadata di provenienza agli esempi statici nel catalogo;
+2. aggiungere badge/box discreto nel CAD2D e logica di aggiornamento per statico/runtime;
+3. incrementare versione frontend e allineare cache-busting/regression CI;
+4. eseguire verifica sintattica/CI e aggiornare il checkpoint.
+
+Vincoli:
+- nessuna modifica al motore geometrico;
+- nessuna modifica a `definizionedati.json`;
+- nessuna alterazione dell'SVG esecutivo;
+- la FASE 6 principale resta tecnicamente validata e in attesa del collaudo visivo utente.
+
+**PROSSIMO PASSO ESATTO:** implementare esclusivamente il badge di provenienza e i metadata associati, quindi verificarne il wiring.
+
 ## File/componenti attualmente coinvolti
 
 - `src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/Spiralgenerator.cs`
