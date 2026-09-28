@@ -1555,6 +1555,7 @@ Pulizia:
   workflow dopo aver concluso la diagnosi, commit
   `785cadb3ed4822713be0b8df57ef31724b432a72`;
 - i log `TRACE_RETURN/TRACE_PORTALS` restano disponibili solo su richiesta.
+- Fast Harness di pulizia `36463116793` (#54): **SUCCESS**, confermando il workflow senza il test temporaneo.
 
 Linee guida aggiornate con l'evidenza della finestra portali:
 - commit `49f02ded2d6306dd3981b47c670893ded1def3a4`.
