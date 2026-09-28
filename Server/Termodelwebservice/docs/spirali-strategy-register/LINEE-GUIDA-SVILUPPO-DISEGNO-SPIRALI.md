@@ -6489,65 +6489,137 @@ Questa indipendenza può permettere al Return di utilizzare percorsi che una
 semplice copia parallela della mandata non potrebbe percorrere, ma rende il
 problema geometrico più vincolato e introduce nuovi modi di fallimento.
 
-## DV-TEST-001 — Campagna corrente: anomalia quadrato Service vs Harness
+## DV-TEST-001 — Quadrato pubblico: stop prematuro del Return
 
-**Stato:** INDAGINE ATTIVA — 28/09/2026  
+**Stato:** CAUSA ISOLATA / CORREZIONE LOCALE VALIDATA SUL SERVICE — 28/09/2026  
 **Origine:** direttiva utente 28/09/2026
 
-Obiettivo corrente: eliminare le anomalie osservate nel disegno spirali
+Obiettivo della campagna: eliminare le anomalie osservate nel disegno spirali
 dell'esempio pubblico **Quadrato con pannelli** usando `Diego_Vittorio`,
 senza introdurre modifiche strutturali non concordate con l'utente.
 
-### Prima non-equivalenza già accertata
+### Non-equivalenza del vecchio banco accertata
 
 Il precedente quadrato sintetico del Harness e l'esempio Web pubblico hanno
 la stessa stanza 4×4 m, ma **non lo stesso ingresso tubo**:
 
-- fixture Harness
+- fixture Harness storica
   `tests/fixtures/StrategiaDiegoSquare4x4.locale.xml`:
   ingresso `(2,-1) -> (2,1)`, verticale dal lato inferiore;
-- esempio Web
-  `docs/termodel-ui-demo/examples/quadrato-con-pannelli.svg`:
+- esempio Web pubblico:
   ingresso `(-0,5,2) -> (0,5,2)`, orizzontale dal lato sinistro.
 
-Di conseguenza il fatto che il quadrato sintetico fosse corretto nel Harness
-non dimostra che il caso pubblico attraversi le stesse decisioni geometriche.
+L'esecutivo statico pubblico storico era inoltre generato forzando `GPT`;
+non costituisce quindi un Golden geometrico di `Diego_Vittorio`.
 
-Inoltre
-`tools/generate-public-square-executive.ps1` forza storicamente
-`TERMODEL_SPIRAL_ENGINE=GPT`: l'esecutivo statico
-`quadrato-con-pannelli-esecutivo.svg` è quindi utile come riferimento
-grafico storico, ma **non è un Golden di Diego_Vittorio**.
+Per la diagnosi il vero progetto pubblico è stato passato al normale
+`GeneraModello` e il suo `RadiantPanelInputXml` è stato conservato e
+rieseguito direttamente nell'Harness. SHA-256 dell'input diagnostico:
 
-### Ipotesi da verificare
+```text
+EE34962A077971B81E00EE64186A1A52881159303E20230A6FBC8D87FAB47C44
+```
 
-L'ipotesi utente resta prioritaria dopo avere reso identico l'input:
-il Return autonomo può trovarsi in un budello con spazio di manovra prossimo
-al limite. In questa condizione piccole differenze di coordinate,
-normalizzazione, arrotondamento o tolleranza possono trasformare una
-connessione da valida a respinta e produrre uno stop prematuro.
+Service e Harness hanno riprodotto lo stesso difetto sullo stesso input,
+escludendo frontend e conversione progetto come causa primaria.
 
-Il codice corrente contiene effettivamente decisioni di frontiera con
-tolleranze dell'ordine di `1e-6` e una normalizzazione del perimetro del
-Return a due decimali; questi elementi sono **sospetti da misurare**, non
-ancora cause accertate.
+### Ipotesi approssimazioni: respinta come causa primaria
 
-### Ordine obbligatorio dell'indagine
+Il sospetto iniziale era una differenza di approssimazione/tolleranza in uno
+spazio di manovra molto stretto. Il trace reale ha invece mostrato rifiuti con
+deficit tipici di **0,08–0,30 m**, e in diversi casi intersezioni vere con
+distanza zero, contro una tolleranza numerica di `1e-6 m`.
 
-1. costruire dal **medesimo progetto quadrato pubblico** l'input reale usato
-   dal Service;
-2. conservare l'XML/fixture estratto senza ricostruirlo a mano;
-3. eseguire quello stesso input nel Harness `Diego_Vittorio`;
-4. confrontare Harness e percorso Service, registrando coordinate e motivo del
-   primo stop/rifiuto del Return;
-5. soltanto dopo provare variazioni diagnostiche circoscritte di precisione o
-   tolleranza;
-6. nessuna nuova euristica, backtracking, ricerca globale o modifica
-   strutturale del Return può essere introdotta senza accordo umano.
+Le approssimazioni restano un tema generale da sorvegliare, ma **non spiegano
+lo stop del quadrato pubblico**.
+
+### Causa locale accertata
+
+Il Return autonomo raggiungeva l'offset 2 tramite un raccordo il cui ultimo
+tratto verticale, lungo circa `p/2`, terminava in `(1,18;2,82)`.
+La prosecuzione richiesta era ancora verticale e nello stesso verso:
+
+```text
+(1,18;2,82) -> (1,18;1,18)
+```
+
+Il controllo Return-Return la respingeva perché considerava come ramo remoto
+il segmento orizzontale immediatamente precedente al raccordo:
+
+```text
+(0,58;2,97) -> (1,18;2,97)
+```
+
+distanza misurata `0,15 m`, minima richiesta `0,30 m`.
+
+Questa classificazione era topologicamente errata: quando il candidato
+prosegue esattamente l'ultimo tratto collineare e nello stesso verso, il
+segmento immediatamente precedente all'ultimo resta il tratto **adiacente al
+gomito** dopo la fusione dei due segmenti collineari e non va trattato come un
+ramo remoto del Return.
+
+È stato inoltre corretto un caso locale secondario: un candidato coincidente
+con il punto corrente non rappresenta un nuovo segmento e viene saltato prima
+dei controlli di distanza.
+
+### Correzione autorizzata e limiti
+
+La correzione è volutamente circoscritta:
+
+- nessun backtracking;
+- nessuna ricerca globale;
+- nessuna nuova euristica di fuga dal budello;
+- nessuna modifica a `p`, matrice delle distanze o tolleranza;
+- nessuna modifica a `SpiraliVittorio`;
+- viene modificata esclusivamente la classificazione di adiacenza quando il
+  candidato è la prosecuzione esattamente collineare, nello stesso verso,
+  dell'ultimo tratto.
+
+La regola è attiva per default in `Diego_Vittorio` e può essere disattivata
+per confronto/rollback:
+
+```text
+TERMODEL_DIEGO_VITTORIO_COLLINEAR_ADJACENCY=false
+```
+
+Il trace puro resta disponibile con:
+
+```text
+TERMODEL_DIEGO_VITTORIO_TRACE_RETURN=true
+```
+
+### Verifica reale
+
+Nel test diagnostico prima della correzione:
+
+- offset 2: `senza tratto percorribile`;
+- offset 3: `senza collegamento valido`;
+- Return autonomo: **6 punti**.
+
+Con la sola correzione di adiacenza collineare:
+
+- gli arresti offset 2/3 scompaiono;
+- Return autonomo: **17 punti**;
+- la chiusura LG-048 trova una soluzione;
+- controllo geometrico dell'SVG: nessuna auto-intersezione osservata;
+- distanza minima non locale Supply-Return conservata a circa **0,30 m**.
+
+La configurazione operativa di default, senza flag diagnostico di rilassamento,
+è stata verificata dal workflow pubblico
+`Termodel Diego_Vittorio Public Square Investigation`, run
+`36383027266`: **SUCCESS**, input SHA-256 invariato, Return a 17 punti e
+nessuno stop offset 2/3.
+
+Il caso è ora versionato come:
+
+```text
+tests/fixtures/DiegoVittorioPublicSquareLeft.locale.xml
+tests/radiant-harness/cases/DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json
+```
 
 ### Regola di velocità del ciclo umano
 
-Per questa campagna il percorso primario deve essere **locale**:
+Il percorso primario resta **locale**:
 
 ```text
 modifica circoscritta
@@ -6557,11 +6629,16 @@ modifica circoscritta
   -> valutazione umana
 ```
 
-GitHub serve a persistere checkpoint e verifiche finali, non come trasporto
-obbligatorio di ogni tentativo. GitHub Actions va usata per la verifica
-riproducibile di una fase o di una correzione candidata, non per ogni
-micro-iterazione. Le build hanno già le proprie notifiche; Issue #1 segnala
-soltanto la conclusione delle fasi significative.
+`LocalRadiantHarness.ps1` usa per default il working tree diretto e una build
+incrementale; `-PreparedInput` permette di riusare l'XML estratto dal Service,
+`-NoBuild` una pura riesecuzione e `-UseMirror` mantiene il vecchio mirror
+solo come fallback.
+
+GitHub Actions è un controllo di consolidamento, non il trasporto obbligatorio
+di ogni micro-iterazione. Il workflow Fast copre i regression ordinari;
+l'indagine Service completa va mantenuta come strumento manuale quando serve
+ricostruire l'intero percorso progetto → Service → Harness.
+
 
 ---
 
