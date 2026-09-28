@@ -73,6 +73,7 @@ jobs:
         shell: pwsh
         env:
           TERMODEL_DIEGO_VITTORIO_TRACE_RETURN: "true"
+          TERMODEL_DIEGO_VITTORIO_DIAG_RELAX_COLLINEAR_SELF: "true"
         run: |
           $ErrorActionPreference = "Stop"
           tools/generate-public-square-executive.ps1 -Engine Diego_Vittorio -CaptureHarnessInput -CompareHarness
