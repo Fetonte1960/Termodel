@@ -1,0 +1,8 @@
+{
+  "id": "DV-PUBLIC-PANELS-RECT-08-P030-DIEGO-VITTORIO",
+  "description": "Rettangolo reale locale_8 del progetto pubblico Pannelli radianti; ingresso T3; baseline diagnostica DV-TEST-002.",
+  "preparedInput": "../prepared/PannelliRadiantiPublic.pannelli.xml",
+  "localeId": "locale_8",
+  "stepMeters": 0.3,
+  "engine": "Diego_Vittorio"
+}
