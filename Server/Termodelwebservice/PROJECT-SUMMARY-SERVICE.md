@@ -89,6 +89,11 @@ Suddivisione anti-timeout:
 - **FASE 3 — indagine quadrato:** riprodurre e confrontare Harness/Service, isolare tolleranze/decisioni/stop del Return e proporre o applicare solo correzioni locali autorizzate;
 - ogni fase significativa termina con checkpoint persistente e notifica tramite Issue #1; le singole build restano coperte dalle notifiche Actions e non generano Issue dedicate.
 
+Stato fasi:
+- **FASE 1 — ESEGUITA:** ricostruito il banco corrente e accertato che il precedente quadrato sintetico Harness non è equivalente al quadrato pubblico: la fixture Harness usa ingresso verticale `(2,-1)->(2,1)`, mentre l'esempio Web usa ingresso orizzontale da sinistra `(-0,5,2)->(0,5,2)`. Accertato inoltre che l'esecutivo statico pubblico era stato generato forzando `GPT`, quindi non è Golden di `Diego_Vittorio`. Registrata la campagna `DV-TEST-001` nelle linee guida nel commit `b370a42b894a40eedc1a33a38c0a4e332be4c8f9`. Primo sospetto precisione/tolleranze mantenuto come ipotesi da misurare, non come causa ancora dimostrata.
+- **FASE 2 — DA ESEGUIRE:** velocizzazione Harness locale/Git mirata al ciclo quadrato reale.
+- **FASE 3 — DA ESEGUIRE:** riproduzione stesso input Service/Harness, isolamento del primo stop/rifiuto e valutazione di eventuale correzione locale.
+
 Vincoli:
 - `SpiraliVittorio` invariata;
 - `StrategiaDiego` resta PARKED;
