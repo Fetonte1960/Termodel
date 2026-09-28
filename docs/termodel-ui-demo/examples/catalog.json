@@ -12,11 +12,12 @@
       "executiveProvenance": {
         "kind": "consolidated-example",
         "generator": "Termodel Service",
-        "spiralEngine": "GPT",
-        "serviceCommit": "aba9bd293936396c9861f521d5ffebdb0fe8b769",
-        "consolidatedCommit": "9a4c0b7d982ea42c1b73a4a5a36975935d1bfece",
-        "generatedDate": "2026-09-27",
-        "workflowRun": "36301010185"
+        "spiralEngine": "Diego_Vittorio",
+        "serviceCommit": "e23f3a6698f0166a6752fbdd3aac5fd6346cada7",
+        "consolidatedCommit": "e0121145ca88014edb6204e2d97bf99366497989",
+        "generatedDate": "2026-09-28",
+        "workflowRun": "36411641717",
+        "svgSha256": "6a1c79ed23b8dcfde6fcffb484a029f54d5355793b32422e30c6e19cca0f2a3d"
       }
     },
     {
@@ -30,11 +31,13 @@
       "executiveProvenance": {
         "kind": "consolidated-example",
         "generator": "Termodel Service",
-        "spiralEngine": "GPT",
-        "serviceCommit": "aba9bd293936396c9861f521d5ffebdb0fe8b769",
-        "consolidatedCommit": "9a4c0b7d982ea42c1b73a4a5a36975935d1bfece",
-        "generatedDate": "2026-09-27",
-        "workflowRun": "36301010185"
+        "spiralEngine": "Diego_Vittorio",
+        "serviceCommit": "5de2ccab955dd3146ee23089afe41fb9040eb3ac",
+        "consolidatedCommit": "e0121145ca88014edb6204e2d97bf99366497989",
+        "generatedDate": "2026-09-28",
+        "workflowRun": "36383027266",
+        "svgSha256": "1cd73beba29edb1c44adc7dd4719123872ed58de5f9f5c901a88f39a3f52f8f6",
+        "baselineHarnessSha256": "fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39"
       }
     }
   ]

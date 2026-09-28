@@ -91,16 +91,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.34';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.35';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.34")) {
-            throw "Cache-busting app.js v1.34 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.35")) {
+            throw "Cache-busting app.js v1.35 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.34") {
+          if ($frontendVersion -ne "1.35") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -129,14 +129,22 @@ jobs:
 
           foreach ($marker in @(
             '"executiveProvenance"',
-            '"spiralEngine": "GPT"',
-            '"serviceCommit": "aba9bd293936396c9861f521d5ffebdb0fe8b769"',
-            '"consolidatedCommit": "9a4c0b7d982ea42c1b73a4a5a36975935d1bfece"',
-            '"workflowRun": "36301010185"'
+            '"spiralEngine": "Diego_Vittorio"',
+            '"serviceCommit": "e23f3a6698f0166a6752fbdd3aac5fd6346cada7"',
+            '"serviceCommit": "5de2ccab955dd3146ee23089afe41fb9040eb3ac"',
+            '"consolidatedCommit": "e0121145ca88014edb6204e2d97bf99366497989"',
+            '"workflowRun": "36411641717"',
+            '"workflowRun": "36383027266"',
+            '"svgSha256": "6a1c79ed23b8dcfde6fcffb484a029f54d5355793b32422e30c6e19cca0f2a3d"',
+            '"svgSha256": "1cd73beba29edb1c44adc7dd4719123872ed58de5f9f5c901a88f39a3f52f8f6"'
           )) {
             if (-not $catalog.Contains($marker)) {
-              throw "Metadata provenienza esecutivo statico mancanti: $marker"
+              throw "Metadata provenienza esecutivo statico Diego_Vittorio mancanti: $marker"
             }
+          }
+          if (-not $app.Contains("executiveProvenance:") -or
+              -not $app.Contains("? { ...item.executiveProvenance }")) {
+            throw "Il catalogo non trasferisce executiveProvenance agli esempi runtime."
           }
           Write-Host "CAD_EXECUTIVE_PROVENANCE_OK"
 
@@ -470,8 +478,8 @@ jobs:
           if (-not $myHomeHtml.Contains("MYHOME3D MOBILE")) {
             throw "Pagina pubblica MyHome3D.html non contiene l'istruzione Mobile."
           }
-          if (-not $index.Contains("./app.js?v=1.34")) {
-            throw "Cache-busting MyHome3D v1.34 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.35")) {
+            throw "Cache-busting MyHome3D v1.35 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -1112,7 +1120,7 @@ jobs:
             # acqua 35/30 °C, coefficiente resa 5 W/m2K.
             if ([Math]::Abs([double]$circuit.flowLitersHour - 3.1826793) -gt 0.01 -or
                 [Math]::Abs([double]$circuit.reynolds - 123.4017) -gt 0.5 -or
-                [Math]::Abs([double]$circuit.pressureLossPa - 1.343675) -gt 0.02) {
+                [Math]::Abs([double]$circuit.pressureLossPa - 1.353675) -gt 0.02) {
               throw "Golden Darcy sintetico fuori tolleranza: flow=$($circuit.flowLitersHour) L/h, Re=$($circuit.reynolds), dP=$($circuit.pressureLossPa) Pa."
             }
 
