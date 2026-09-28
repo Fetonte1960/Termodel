@@ -58,3 +58,51 @@ Poi il loop veloce usa
 Il passaggio a GitHub Actions avviene quando una fase o una correzione candidata
 deve essere consolidata. Non va usato come sostituto del loop locale
 modifica → build incrementale → SVG/log → controllo umano.
+
+
+## Logging categorizzato Diego_Vittorio
+
+Per le indagini mirate il banco riusa il `TermodelLog` del Core invece di
+creare file diagnostici paralleli. Il comando `run` accetta:
+
+```text
+--log-enabled true|false
+--log-categories <categoria1,categoria2|all|none>
+```
+
+Per la diagnostica Supply di `Diego_Vittorio`:
+
+```powershell
+dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release -- run `
+  --input tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml `
+  --locale locale_1 `
+  --engine Diego_Vittorio `
+  --p 0.30 `
+  --supply-only `
+  --log-enabled true `
+  --log-categories SpiraliDiegoVittorio `
+  --out <cartella-output>
+```
+
+Il file `<case-id>.log.txt` contiene sia la diagnostica storica ancora
+presente sia i messaggi strutturati `TermodelLog` della categoria selezionata.
+I sottotag principali sono:
+- `Supply.Context`;
+- `Supply.Generate.Begin`;
+- `Supply.Offset.Begin/Candidate/Accept/Stop`;
+- `Supply.ComputeOffset.Edge/Vertex/Result/Raw`;
+- `Supply.Traverse.Connection/Candidate/Accept/End`;
+- `Supply.Finalize.Plan/Result`;
+- `Supply.Result`.
+
+Regola operativa della FASE 6D: eseguire **un solo locale alla volta**,
+leggere il log dopo ogni prova e aggiungere un nuovo punto diagnostico solo
+quando il dato necessario non è già presente. I log devono osservare il
+motore; non devono cambiare geometria, tolleranze o criteri di accettazione.
+
+Verifica iniziale:
+- categoria/wiring: commit `e35f05099179aae5f1af6df80527c00d0704c1c5`,
+  Fast Harness `36422697579` SUCCESS;
+- percorrenza/finalizzazione: commit
+  `49f28610128096e87db27fbea58f5d7f73f9d27d`,
+  Fast Harness `36423105809` SUCCESS.

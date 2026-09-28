@@ -1,10 +1,10 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 14:27 Europe/Rome
+Checkpoint: 2026-09-28 14:43 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
-HEAD tecnico validato: `3bc7fae41e643a3baa1273a5cc3694da04d7ebb7`
+HEAD tecnico validato: `49f28610128096e87db27fbea58f5d7f73f9d27d`
 HEAD documentale prima del presente checkpoint: `4c79d1ad8bad407d9998bc2605f4e943cf5ffffa`
 
 ## Attività corrente
@@ -669,39 +669,122 @@ Quindi:
 - il codice non prova a validare il poligono 0,39 × 2,80: lo sopprime a monte.
 
 ### Decisione metodo diagnostico — logging categorizzato
-Stato: **APPROVATA DALL'UTENTE**
+Stato: **IMPLEMENTATA E VERIFICATA**
 
 Decisione 28/09/2026:
 - non introdurre snapshot JSON o un secondo sistema di debug;
 - riusare `Termodel.utilities.TermodelLog`, già adottato dal Service;
-- aggiungere una categoria permanente `SpiraliDiegoVittorio`, normalmente
-  disattivabile tramite i parametri generali `logEnabled/logCategories`;
-- usare sottotag testuali stabili per distinguere il contesto interno Supply
-  (`Supply.Context`, `Supply.ComputeOffset.Edge`, `Supply.Offset.Stop`, ecc.);
-- l'Harness deve poter abilitare la stessa categoria e riversare
+- categoria permanente Service/Core `SpiraliDiegoVittorio`, controllabile
+  con gli stessi parametri generali `logEnabled/logCategories`;
+- sottotag testuali stabili per il contesto Supply;
+- l'Harness abilita la stessa categoria con
+  `--log-enabled true --log-categories SpiraliDiegoVittorio` e riversa
   `TermodelLog.Messages` nel consueto `.log.txt`;
-- dopo ogni elaborazione leggere il log; se una variabile necessaria manca,
-  aggiungere il solo punto di log mancante e rieseguire;
+- dopo ogni elaborazione si legge il log; se manca una variabile necessaria,
+  si aggiunge esclusivamente quel punto di log e si riesegue;
 - unico caso corrente sempre `locale_1`.
 
-Obiettivo metodologico:
-trasformare il log esistente nel corrispettivo remoto e ripetibile della
-sessione Watch/Locals di Visual Studio, senza alterare la geometria.
+Implementazione:
+- commit `e35f05099179aae5f1af6df80527c00d0704c1c5`:
+  - aggiunta `LogCategory.SpiraliDiegoVittorio` nell'adattatore headless;
+  - collegato `Program` / `SpiralGenerator` a `TermodelLog` senza modificare
+    la Library Desktop;
+  - benchmark/Harness accettano la configurazione log;
+  - eventi permanenti iniziali: `Supply.Context`, `Supply.Generate.Begin`,
+    `Supply.Offset.Begin`, `Supply.ComputeOffset.Edge`,
+    `Supply.ComputeOffset.Vertex`, `Supply.ComputeOffset.Result`,
+    `Supply.ComputeOffset.Raw`, `Supply.Offset.Candidate`,
+    `Supply.Offset.Accept`, `Supply.Offset.Stop`, `Supply.Result`;
+  - `logCategories=all` del Service aggiornato da 10 a 11 categorie;
+- Fast Harness run `36422697579`, job `108929052555`: **SUCCESS**;
+  il log categorizzato di `locale_1` riproduce integralmente l'aborto L3;
+- dopo lettura del primo log mancava il percorso reale dell'ultimo offset;
+  come da protocollo è stato aggiunto soltanto quel dettaglio;
+- commit `49f28610128096e87db27fbea58f5d7f73f9d27d`:
+  `Supply.Traverse.Connection`, `Supply.Traverse.Candidate`,
+  `Supply.Traverse.Accept`, `Supply.Finalize.Plan`,
+  `Supply.Finalize.Result`, `Supply.Traverse.End`;
+- Fast Harness run `36423105809`, job `108930409465`: **SUCCESS**;
+- tutte le regression Fast Diego_Vittorio sono rimaste verdi.
 
-### STEP 4 — domanda aperta corrente
-Stato: **IN CORSO**
+Verifica Service:
+- TermodelService Build run `36423105927`: build **0 errori**,
+  public Pannelli radianti model3d SUCCESS;
+- il nuovo `logCategories=all` con 11 categorie viene eseguito nel medesimo
+  smoke; il workflow si arresta successivamente sul Golden Darcy sintetico
+  già noto e indipendente:
+  `dP=1,31367490344266 Pa` contro golden `1,343675 Pa`;
+- nessuna geometria, tolleranza o regola del motore è stata modificata.
 
-Determinare il significato geometrico esatto della soglia `3 * offset`:
-- verificare se equivale a garantire che il nuovo offset conservi almeno
-  una distanza `offset` fra i due lati opposti;
-- distinguere una protezione geometrica corretta da una euristica che, nel
-  meccanismo a spirale aperta, elimina troppo presto un'evoluzione ancora
-  percorribile;
-- nessuna proposta di correzione finché questa distinzione non è provata.
+Obiettivo metodologico raggiunto:
+il log esistente è ora il corrispettivo remoto e ripetibile della sessione
+Watch/Locals di Visual Studio per `Diego_Vittorio`, senza infrastruttura
+diagnostica parallela.
 
-**PROSSIMO PASSO ESATTO:** analizzare matematicamente la regola `3*offset` su
-`locale_1` e verificare cosa intende proteggere rispetto al vero percorso
-Supply, senza bypassarla e senza modificare il motore.
+### STEP 4 — significato del limite e stato reale dell'ultimo anello
+Stato: **IN CORSO — PRIMA PARTE CHIARITA**
+
+#### 4A — cosa protegge `3 * offset`
+
+Sul solo `locale_1`:
+- ultimo rettangolo accettato: 1,59 × 4,00 m;
+- tentativo successivo a `offset=0,60`: raw 0,39 × 2,80 m;
+- per un rettangolo vale `nuova_larghezza = larghezza_corrente - 2*offset`;
+- chiedere `larghezza_corrente > 3*offset` equivale a chiedere che la
+  nuova larghezza resti maggiore di `offset`;
+- il raw L3 avrebbe due rami Supply paralleli distanti **0,39 m**, quindi
+  meno dei **0,60 m** richiesti.
+
+Conclusione 4A:
+- il fattore `3*offset` non è casuale nel rettangolo;
+- un **anello chiuso completo** L3 da 0,39 × 2,80 m non è ammissibile come
+  nuovo giro Supply completo;
+- anche bypassando `skipIndices`, il successivo controllo storico
+  `minEdgeLength < passoMandata` respingerebbe indipendentemente il lato
+  da 0,39 m;
+- pertanto non va rimossa semplicemente la protezione e non va forzato il
+  rettangolo L3.
+
+#### 4B — limite strutturale da indagare
+
+Il codice genera la lista degli offset chiusi **prima** di costruire la
+polilinea reale:
+- `SpiralGenerator.Generate`, blocco pre-generazione offset circa righe
+  333–452;
+- solo dopo, da circa riga 464, `FindConnectionWithOffset` e la percorrenza
+  costruiscono la spirale aperta.
+
+Quindi l'aborto L3 viene deciso quando `ComputeOffset` non conosce ancora:
+- il punto reale di ingresso nel giro;
+- la sequenza già percorsa;
+- il varco lasciato dalla finalizzazione;
+- il terminale reale della mandata.
+
+Il nuovo log categorizzato ha ricostruito l'offset 2 reale:
+- connessione da `(1,42 ; 4,14316)` a `(0,82 ; 4,14316)`;
+- percorso:
+  `(0,82;4,14316) -> (0,82;4,67) -> (-0,77;4,67) ->`
+  `(-0,77;0,67) -> (0,82;0,67) -> (0,82;3,54316)`;
+- tutti i candidati sono `respectConditioning=true` e `respectSelf=true`;
+- terminale reale `(0,82 ; 3,54316)`;
+- sul lato destro resta un'apertura esatta di **0,60 m** rispetto al punto
+  di connessione `(0,82 ; 4,14316)`.
+
+Conclusione provvisoria 4B:
+- il percorso effettivamente accettato non fallisce;
+- l'unico aborto avviene nella rappresentazione preventiva del *prossimo*
+  livello come poligono chiuso completo;
+- non è ancora dimostrato che esista una prosecuzione corretta;
+- va ora individuato il **primo tratto geometricamente illegale** di una
+  eventuale evoluzione successiva, partendo dallo stato reale della spirale
+  e non dall'ipotesi di anello intero.
+
+**PROSSIMO PASSO ESATTO — SOLO `locale_1`:** usare il log categorizzato per
+diagnosticare, senza applicarla, la transizione dal terminale reale
+`(0,82 ; 3,54316)` verso la geometria raw L3. Per ogni segmento candidato
+registrare raggiungibilità e distanza minima dalla Supply già costruita,
+finché si identifica il primo segmento che viola realmente `0,60 m`.
+Nessun bypass, nessuna modifica geometrica e nessun altro locale.
 
 
 ## File/componenti attualmente coinvolti

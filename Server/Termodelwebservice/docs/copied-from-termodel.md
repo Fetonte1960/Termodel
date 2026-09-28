@@ -113,9 +113,11 @@ Entrambe le implementazioni espongono il nucleo usato dalle classi migrate:
 - l'adattatore conserva le nove categorie autorevoli Desktop:
   `Sempre`, `colmi`, `spezza`, `Error`, `Svg`, `RedrawHelix`,
   `GeneraModello`, `Performance`, `PontiAutomatici`;
-- il Service aggiunge la categoria headless `SpiraliDiego`, usata solo per
-  l'instrumentazione del motore sperimentale Diego; questa estensione non
-  modifica la Library Desktop e non va sincronizzata indietro nel sorgente storico;
+- il Service aggiunge le categorie headless `SpiraliDiego` e
+  `SpiraliDiegoVittorio`, usate rispettivamente per l'instrumentazione dei
+  motori sperimentali `Diego` e `Diego_Vittorio`; entrambe sono estensioni
+  dell'adattatore Core e **non** modificano `SorgentiTermodel/Library` né vanno
+  sincronizzate indietro nel sorgente Desktop storico;
 - senza configurazione esplicita viene mantenuta la compatibilità Service già
   verificata: le scritture dirette vengono raccolte, mentre
   `IsEnabled(...)` resta falso;
@@ -140,6 +142,26 @@ Conclusione: il riferimento acquisito chiude la lacuna documentale, ma non
 giustifica la sostituzione dell'adattatore. L'equivalenza richiesta è di
 contratto per i chiamanti; la configurazione runtime per richiesta è una
 responsabilità specifica del Service.
+
+
+## Diagnostica categorizzata Diego_Vittorio
+
+Dal 28 settembre 2026 il ramo derivato
+`CopiedFromTermodel/SpiraliDiegoVittorio` usa anche la categoria headless
+`SpiraliDiegoVittorio` del `TermodelLog` adattato. Lo scopo è rendere
+permanenti e filtrabili i punti di osservazione usati dal banco Harness,
+senza introdurre un logger parallelo e senza modificare la Library Desktop.
+
+Commit principali:
+- `e35f05099179aae5f1af6df80527c00d0704c1c5` — categoria, wiring
+  benchmark/Harness e log Supply;
+- `49f28610128096e87db27fbea58f5d7f73f9d27d` — dettaglio
+  percorrenza/finalizzazione aggiunto dopo l'ispezione del primo log.
+
+Il Service continua a governare la categoria tramite `logEnabled` e
+`logCategories`; l'Harness espone gli equivalenti `--log-enabled` e
+`--log-categories`. Nessuna delle due modifiche va riportata nel file
+`SorgentiTermodel/Library/utilities/TermodelLog.cs`.
 
 `GeneraPianta` conserva temporaneamente il nome storico `SalvaDXF` per ridurre
 il delta con il desktop, ma nel percorso Web non legge né scrive DXF: pubblica

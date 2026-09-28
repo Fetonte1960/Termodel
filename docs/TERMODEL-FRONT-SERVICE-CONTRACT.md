@@ -137,8 +137,27 @@ una categoria log attiva, il frontend legge e mantiene in cache il log
 corrente; il click successivo esegue soltanto la copia negli appunti, evitando
 di dipendere da autorizzazioni clipboard dopo una fetch asincrona.
 
-`logCategories=all` abilita ora dieci categorie headless:
-le nove categorie Desktop più `SpiraliDiego`.
+`logCategories=all` abilita ora undici categorie headless:
+le nove categorie Desktop più `SpiraliDiego` e `SpiraliDiegoVittorio`.
+
+La categoria aggiuntiva:
+
+```text
+SpiraliDiegoVittorio
+```
+
+è una categoria **Service/Core** dedicata alla diagnostica permanente ma
+selettiva del motore `Diego_Vittorio`. Usa lo stesso contratto generale:
+
+```http
+POST /api/calculations?logEnabled=true&logCategories=SpiraliDiegoVittorio
+```
+
+I messaggi hanno sottotag stabili come `Supply.Context`,
+`Supply.ComputeOffset.Edge`, `Supply.Offset.Stop`, `Supply.Traverse.*` e
+`Supply.Finalize.*`. La categoria non modifica geometria o selezione del
+motore; quando non è richiesta i blocchi diagnostici governati da
+`IsEnabled(...)` restano inattivi. La Library Desktop non è modificata.
 
 ## 0.6 Decisione 2026-09-26 — numerazione diagnostica nodi StrategiaDiego
 
