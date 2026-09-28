@@ -54,6 +54,8 @@ namespace SpiralHeatingDiegoVittorio
 	{
 		private const string TraceReturnEnvironmentVariable =
 			"TERMODEL_DIEGO_VITTORIO_TRACE_RETURN";
+		private const string DiagnosticRelaxCollinearSelfEnvironmentVariable =
+			"TERMODEL_DIEGO_VITTORIO_DIAG_RELAX_COLLINEAR_SELF";
 
 		// Diagnostica pura: non modifica accettazione, tolleranze o geometria.
 		private static bool TraceReturnEnabled
@@ -62,6 +64,19 @@ namespace SpiralHeatingDiegoVittorio
 			{
 				string value = Environment.GetEnvironmentVariable(
 					TraceReturnEnvironmentVariable) ?? string.Empty;
+				return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("on", StringComparison.OrdinalIgnoreCase);
+			}
+		}
+
+		private static bool DiagnosticRelaxCollinearSelfEnabled
+		{
+			get
+			{
+				string value = Environment.GetEnvironmentVariable(
+					DiagnosticRelaxCollinearSelfEnvironmentVariable) ?? string.Empty;
 				return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
 					value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
 					value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
@@ -742,6 +757,28 @@ namespace SpiralHeatingDiegoVittorio
 			// L'ultimo segmento è adiacente al candidato e condivide l'inizio.
 			for (int i = 0; i < spiraleCorrente.Count - 2; i++)
 			{
+				// Esperimento diagnostico DV-TEST-001, disattivato per default.
+				// Se il nuovo tratto prosegue esattamente il tratto corrente,
+				// il segmento immediatamente precedente al tratto corrente resta
+				// topologicamente adiacente al gomito dopo la fusione dei due
+				// segmenti collineari. Ignorarlo qui permette di verificare se il
+				// blocco del "budello" dipende da questa sola classificazione.
+				if (DiagnosticRelaxCollinearSelfEnabled &&
+					i == spiraleCorrente.Count - 3 &&
+					CandidatoProsegueUltimoSegmento(
+						spiraleCorrente[^2],
+						spiraleCorrente[^1],
+						fine))
+				{
+					if (TraceReturnEnabled)
+					{
+						Console.WriteLine(
+							$"  DV_RETURN_DIAG_SKIP_ADJACENT obstacle={i} " +
+							$"candidate=({inizio.X:R},{inizio.Y:R})->({fine.X:R},{fine.Y:R}).");
+					}
+					continue;
+				}
+
 				double distanza = DistanzaSegmenti(
 					inizio,
 					fine,
@@ -765,6 +802,26 @@ namespace SpiralHeatingDiegoVittorio
 			}
 
 			return true;
+		}
+
+		private static bool CandidatoProsegueUltimoSegmento(
+			Punto precedente,
+			Punto corrente,
+			Punto candidato)
+		{
+			const double tolleranza = 0.000001;
+			double ax = corrente.X - precedente.X;
+			double ay = corrente.Y - precedente.Y;
+			double bx = candidato.X - corrente.X;
+			double by = candidato.Y - corrente.Y;
+			double lenA = Math.Sqrt(ax * ax + ay * ay);
+			double lenB = Math.Sqrt(bx * bx + by * by);
+			if (lenA <= tolleranza || lenB <= tolleranza)
+				return false;
+
+			double crossNormalizzato = Math.Abs(ax * by - ay * bx) / (lenA * lenB);
+			double dot = ax * bx + ay * by;
+			return crossNormalizzato <= tolleranza && dot > 0;
 		}
 
 		// Funzione realizzata da Codex in autonomia
