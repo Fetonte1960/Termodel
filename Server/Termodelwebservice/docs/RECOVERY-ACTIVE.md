@@ -1566,3 +1566,63 @@ errata. Il trace dimostra che, per il Return offset 2->3, la svolta a sinistra
 avviene e il portale resta valido; quindi non attribuire automaticamente il
 difetto a quel passaggio. Una volta identificato il tratto esatto, seguire
 solo la catena di decisione che lo genera.
+
+
+### STEP 4H — revisione critica della storia Diego_Vittorio
+Stato: **PRIMA AUTOPSIA STORICA COMPLETATA — NESSUNA CORREZIONE APPLICATA**
+
+Nuova chiave stabilita dall'utente:
+- `Diego_Vittorio` doveva nascere come copia fedele di Vittorio, resa astratta
+  per poter applicare lo stesso algoritmo indipendentemente alla Supply e al Return;
+- dopo l'astrazione iniziale sono emerse anomalie;
+- molte anomalie sono state interpretate come difetti già presenti in Vittorio;
+- sono quindi state introdotte numerose correzioni/migliorie;
+- oggi `Diego_Vittorio` appare instabile anche in casi in cui Vittorio è stabile;
+- missione corrente: determinare quali anomalie erano realmente ereditate e quali
+  sono state introdotte o amplificate dalla copia/astrazione AI.
+
+Prima ricostruzione verificata:
+1. commit `d4f4a57ab8b373ff7382585084d3f31b719adb83`
+   - creazione `Diego_Vittorio`;
+   - copia indipendente di Vittorio con solo namespace separato;
+   - parità iniziale dichiarata e verificata su rettangolare e concavo;
+   - `Spiralgenerator.cs`: ~272 righe, sostanzialmente copia del Vittorio da ~270.
+2. commit `faa8c7122f45f6700b26b9e3bcb8581ce0081771`
+   - prima deviazione semantica intenzionale:
+     separazione `distanzaParete` e `passoMandata`,
+     parete Supply = p/2, Supply-Supply = 2p, Supply-Return = p;
+   - la struttura dell'algoritmo resta ancora quasi quella Vittorio;
+   - `ComputeOffset` e `FixIntersections` risultano ancora identici al riferimento.
+3. commit `9c311cb96738c2c82d3da5a1f5d3b4c533f036b0`
+   - salto architetturale principale;
+   - `Spiralgenerator.cs` passa da ~287 a ~987 righe;
+   - introdotto Return autonomo;
+   - `Generate` non è più soltanto parametrizzato: riceve direzione, tratto iniziale,
+     linee di condizionamento e autocondizionamento;
+   - `FindIntersectionWithOffset` viene di fatto sostituito nel percorso operativo da
+     `FindConnectionWithOffset`, che esplora più collegamenti e sceglie il valido più corto;
+   - la percorrenza storica "raggiungi l'offset e percorri tutti i vertici" viene sostituita
+     da validazione tratto-per-tratto con arresto sul primo tratto non valido;
+   - aggiunti `SegmentoRispettaCondizionamento`, `SegmentoRispettaSpirale`,
+     `TrovaMassimoPrefissoValido`, `OffsetHaTrattoParalleloTroppoVicino`;
+   - `ChiudiSpirale` smette, nel percorso autonomo, di derivare il Return dalla Supply
+     arrotondata con `CreaRientro` e usa invece `GenerateReturn`.
+   Questa fase non è più una semplice astrazione di Vittorio ma una nuova strategia AI.
+4. dal 28/09 in poi
+   - i fix DV-TEST-001/002 (zero segment, adiacenza collineare, dogleg locale,
+     corridoi fallback, terminal trim, ecc.) sono correzioni di anomalie osservate
+     dentro questa nuova macchina decisionale, non prove che Vittorio possedesse
+     gli stessi difetti.
+
+Punto metodologico:
+- non assumere più che un difetto di Diego_Vittorio sia un difetto di Vittorio;
+- per ogni anomalia va verificata prima la parità del comportamento Vittorio;
+- il test chiave deve essere una **prova di equivalenza della generalizzazione**:
+  la versione astratta, con condizionamenti disabilitati e parametri equivalenti,
+  deve riprodurre Vittorio prima di poter essere usata come base affidabile per
+  Supply e Return.
+
+**PROSSIMO PASSO ESATTO:** costruire un confronto di equivalenza sul solo
+`SpiralGenerator.Generate`: stesso perimetro, stesso start, stessa distanza,
+nessun condizionamento. Confrontare Vittorio e Diego_Vittorio prima delle
+euristiche Return. Se divergono, isolare la prima istruzione/decisione diversa.
