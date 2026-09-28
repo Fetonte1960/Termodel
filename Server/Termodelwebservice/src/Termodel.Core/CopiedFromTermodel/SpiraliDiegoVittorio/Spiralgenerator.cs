@@ -60,6 +60,8 @@ namespace SpiralHeatingDiegoVittorio
 			"TERMODEL_DIEGO_VITTORIO_COLLINEAR_ADJACENCY";
 		private const string DiagnosticLocalRootAdjacencyEnvironmentVariable =
 			"TERMODEL_DIEGO_VITTORIO_DIAG_LOCAL_ROOT_ADJACENCY";
+		private const string DiagnosticReverseBuildDirectionEnvironmentVariable =
+			"TERMODEL_DIEGO_VITTORIO_DIAG_REVERSE_BUILD_DIRECTION";
 
 		// Diagnostica pura: non modifica accettazione, tolleranze o geometria.
 		private static bool TraceReturnEnabled
@@ -113,6 +115,19 @@ namespace SpiralHeatingDiegoVittorio
 			{
 				string value = Environment.GetEnvironmentVariable(
 					DiagnosticLocalRootAdjacencyEnvironmentVariable) ?? string.Empty;
+				return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("on", StringComparison.OrdinalIgnoreCase);
+			}
+		}
+
+		private static bool DiagnosticReverseBuildDirectionEnabled
+		{
+			get
+			{
+				string value = Environment.GetEnvironmentVariable(
+					DiagnosticReverseBuildDirectionEnvironmentVariable) ?? string.Empty;
 				return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
 					value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
 					value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
@@ -208,6 +223,15 @@ namespace SpiralHeatingDiegoVittorio
 				collegamento.VersoRivoluzione == VersoRivoluzioneRitorno.Orario
 					? VersoRivoluzioneRitorno.Antiorario
 					: VersoRivoluzioneRitorno.Orario;
+			if (DiagnosticReverseBuildDirectionEnabled)
+			{
+				versoCostruzione =
+					versoCostruzione == VersoRivoluzioneRitorno.Orario
+						? VersoRivoluzioneRitorno.Antiorario
+						: VersoRivoluzioneRitorno.Orario;
+				if (TraceReturnEnabled)
+					Console.WriteLine($"  DV_RETURN_DIAG_REVERSE_BUILD direction={versoCostruzione}.");
+			}
 
 			var perimetroNormalizzato = GeometryUtils.RoundAndSnapVertices(
 				new List<Punto>(perimetro),
