@@ -58,6 +58,8 @@ namespace SpiralHeatingDiegoVittorio
 			"TERMODEL_DIEGO_VITTORIO_TRACE_PORTALS";
 		private const string CollinearAdjacencyEnvironmentVariable =
 			"TERMODEL_DIEGO_VITTORIO_COLLINEAR_ADJACENCY";
+		private const string DiagnosticLocalRootAdjacencyEnvironmentVariable =
+			"TERMODEL_DIEGO_VITTORIO_DIAG_LOCAL_ROOT_ADJACENCY";
 
 		// Diagnostica pura: non modifica accettazione, tolleranze o geometria.
 		private static bool TraceReturnEnabled
@@ -102,6 +104,19 @@ namespace SpiralHeatingDiegoVittorio
 					!value.Equals("0", StringComparison.OrdinalIgnoreCase) &&
 					!value.Equals("no", StringComparison.OrdinalIgnoreCase) &&
 					!value.Equals("off", StringComparison.OrdinalIgnoreCase);
+			}
+		}
+
+		private static bool DiagnosticLocalRootAdjacencyEnabled
+		{
+			get
+			{
+				string value = Environment.GetEnvironmentVariable(
+					DiagnosticLocalRootAdjacencyEnvironmentVariable) ?? string.Empty;
+				return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
+					value.Equals("on", StringComparison.OrdinalIgnoreCase);
 			}
 		}
 
@@ -514,16 +529,48 @@ namespace SpiralHeatingDiegoVittorio
 						continue;
 					}
 
-					if (!SegmentoRispettaCondizionamento(
+					bool rispettaSupply = SegmentoRispettaCondizionamento(
 						spiral[^1],
 						candidato,
 						lineeCondizionamento,
-						distanzaCondizionamento) ||
-						!SegmentoRispettaSpirale(
+						distanzaCondizionamento);
+					bool rispettaSelf = SegmentoRispettaSpirale(
+						spiral[^1],
+						candidato,
+						spiral,
+						distanzaAutocondizionamento);
+
+					// Esperimento diagnostico DV-TEST-002 / locale_8:
+					// esclusivamente sul primo tratto percorso del primo offset,
+					// se il solo ostacolo è il segmento radice del Return,
+					// ripetere il controllo senza quella radice. Non cambia il
+					// comportamento di produzione finché il flag resta spento.
+					if (rispettaSupply &&
+						!rispettaSelf &&
+						DiagnosticLocalRootAdjacencyEnabled &&
+						indiceOffsetPercorso == 1 &&
+						spiral.Count == puntiDopoIntersezione &&
+						spiral.Count >= 3)
+					{
+						var spiraleSenzaRadice = spiral.Skip(1).ToList();
+						if (SegmentoRispettaSpirale(
 							spiral[^1],
 							candidato,
-							spiral,
+							spiraleSenzaRadice,
 							distanzaAutocondizionamento))
+						{
+							rispettaSelf = true;
+							if (TraceReturnEnabled)
+							{
+								Console.WriteLine(
+									$"  DV_RETURN_DIAG_LOCAL_ROOT_ADJACENCY " +
+									$"candidate=({spiral[^1].X:R},{spiral[^1].Y:R})->" +
+									$"({candidato.X:R},{candidato.Y:R}).");
+							}
+						}
+					}
+
+					if (!rispettaSupply || !rispettaSelf)
 					{
 						// Modificato da Codex per realizzare: non perdere l'ultima
 						// parte lecita del lato quando soltanto la sua estremità
