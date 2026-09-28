@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-28 — Indagine anomalie quadrato `Diego_Vittorio` e Harness rapido
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Obiettivo:
 - eliminare le anomalie osservate nel disegno spirali dell'esempio quadrato sul Service, pur essendo il quadrato apparso corretto nel precedente Harness locale;
@@ -90,22 +90,23 @@ Suddivisione anti-timeout:
 - ogni fase significativa termina con checkpoint persistente e notifica tramite Issue #1; le singole build restano coperte dalle notifiche Actions e non generano Issue dedicate.
 
 Stato fasi:
-- **FASE 1 — ESEGUITA:** ricostruito il banco corrente e accertato che il precedente quadrato sintetico Harness non è equivalente al quadrato pubblico: la fixture Harness usa ingresso verticale `(2,-1)->(2,1)`, mentre l'esempio Web usa ingresso orizzontale da sinistra `(-0,5,2)->(0,5,2)`. Accertato inoltre che l'esecutivo statico pubblico era stato generato forzando `GPT`, quindi non è Golden di `Diego_Vittorio`. Registrata la campagna `DV-TEST-001` nelle linee guida nel commit `b370a42b894a40eedc1a33a38c0a4e332be4c8f9`. Primo sospetto precisione/tolleranze mantenuto come ipotesi da misurare, non come causa ancora dimostrata.
-- **FASE 2 — DA ESEGUIRE:** velocizzazione Harness locale/Git mirata al ciclo quadrato reale.
-- **FASE 3 — DA ESEGUIRE:** riproduzione stesso input Service/Harness, isolamento del primo stop/rifiuto e valutazione di eventuale correzione locale.
+- **FASE 1 — ESEGUITA:** ricostruito il banco corrente e accertato che il precedente quadrato sintetico Harness non è equivalente al quadrato pubblico: la fixture Harness usa ingresso verticale `(2,-1)->(2,1)`, mentre l'esempio Web usa ingresso orizzontale da sinistra `(-0,5,2)->(0,5,2)`. Accertato inoltre che l'esecutivo statico pubblico era stato generato forzando `GPT`, quindi non è Golden di `Diego_Vittorio`. Registrata la campagna `DV-TEST-001` nelle linee guida nel commit `b370a42b894a40eedc1a33a38c0a4e332be4c8f9`.
+- **FASE 2 — ESEGUITA:** `LocalRadiantHarness.ps1` usa ora per default working tree diretto + stamp leggero e build incrementale, con `-NoBuild`, `-PreparedInput` e mirror legacy solo con `-UseMirror` (commit `89da0bd5cc6872c40bf445db65f7ea9a08b61873`). Il progetto quadrato pubblico può essere preparato una sola volta nel vero percorso `GeneraModello` e poi rieseguito direttamente nell'Harness (commit `f3df3663cc755d81b8d129746ad3a802580d8b4c`, `a1054fc37ca76d3687d6de4a68c8a1be051fb7d6`). Creato il workflow leggero `Termodel Diego_Vittorio Fast Harness`; il workflow completo StrategiaDiego, PARKED, è ora manuale e il suo benchmark è escluso dalla build Service ordinaria. Primo Fast Harness verificato SUCCESS nel run `36381719445`.
+- **FASE 3 — ESEGUITA:** estratto dal vero progetto pubblico il medesimo `RadiantPanelInputXml`, SHA-256 `EE34962A077971B81E00EE64186A1A52881159303E20230A6FBC8D87FAB47C44`, e riprodotto lo stesso stop in Service/Harness, escludendo frontend e conversione progetto. Il trace ha respinto l'ipotesi precisione come causa primaria: i deficit erano `0,08–0,30 m` contro tolleranza `1e-6 m`. Isolato invece un errore locale di classificazione dell'adiacenza Return-Return: la prosecuzione collineare del raccordo veniva confrontata contro il segmento immediatamente precedente al gomito come se fosse un ramo remoto. Corretti il candidato di lunghezza zero (commit `abbfc149bfb99eac8193a42a244704612c4877ab`) e l'adiacenza collineare (commit `7f87d36a717bea7608452d8d6d550fb9f6fafbb7`), senza backtracking, nuove euristiche, variazione delle distanze o delle tolleranze. La correzione è attiva per default e disattivabile con `TERMODEL_DIEGO_VITTORIO_COLLINEAR_ADJACENCY=false`.
+- **VALIDAZIONE FASE 3:** workflow completo sul progetto quadrato pubblico, run `36383027266`: SUCCESS con configurazione default, Return da 6 a **17 punti**, scomparsa degli stop offset 2/3, input invariato. Nuova fixture reale `DiegoVittorioPublicSquareLeft.locale.xml` + case `DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO`; Fast Harness run `36383265029`: **SUCCESS** su build Core/Harness, quadrato storico, quadrato pubblico, Return 17 punti, chiusura rapida e raccordi. Il workflow diagnostico completo progetto -> Service -> Harness è stato poi reso manuale nel commit `ca8c851efadca9e22cc399edebfb2b9628b1e8f9`.
+- **DOCUMENTAZIONE:** README Core aggiornato nel commit `46e757f00a887506212f61b65feb61ade0261eee`; linee guida consolidate con causa, correzione, rollback e regression nei commit `8e218ec1866eead86cfc1122a65029da7d13c7fe` e `c6cb751a2078b1b0c67f3ce7345dc9bd3c34c120`.
 
-Vincoli:
+Vincoli rispettati:
 - `SpiraliVittorio` invariata;
 - `StrategiaDiego` resta PARKED;
 - nessuna modifica al frontend o a `definizionedati.json`;
-- nessun cambio strutturale dell'algoritmo `Diego_Vittorio` senza consenso umano;
-- distinguere sempre Harness locale, GitHub Actions e comportamento reale del Service pubblico.
+- nessun cambio strutturale dell'algoritmo `Diego_Vittorio`: la correzione riguarda soltanto la classificazione topologica locale di un segmento adiacente collineare;
+- `DV-KNOWN-001` resta aperto per i veri casi di Return intrappolato: la correzione del quadrato elimina un falso stop specifico, non introduce una strategia generale di fuga dal “budello”.
 
-Criteri di completamento:
-- ambiente Harness rapido documentato e riproducibile;
-- anomalia quadrato riprodotta e prima causa tecnica identificata, oppure impedimento documentato;
-- eventuali correzioni limitate e verificabili, senza introdurre nuove euristiche strutturali non concordate;
-- Summary e linee guida aggiornati con esito delle singole fasi.
+Verifica reale:
+- implementato, compilato ed eseguito in GitHub Actions;
+- confrontato sul medesimo input pannelli estratto dal progetto quadrato Web;
+- **non ancora dichiarato verificato sul processo Render pubblico post-deploy**: il collaudo finale sul Service ospitato resta distinto dalle prove GHA e potrà essere confermato dal normale test utente dopo il deploy.
 
 
 ### INCARICO 2026-09-28 — Direttiva fasi anti-blocco e notifiche Issue #1
@@ -6990,9 +6991,16 @@ Distinzione progettuale corrente:
 - questa libertà geometrica ha vantaggi ma introduce un limite noto:
   la mandata può creare corridoi o “budelli” nei quali il Return autonomo resta
   imprigionato, causando stop prematuri o geometricamente non corretti;
-- il problema del “budello” è aperto e deve essere raccolto durante il collaudo
-  in casi reali riproducibili e future regression, prima di definire una
-  correzione generale.
+- **DV-TEST-001, quadrato pubblico:** uno stop che inizialmente sembrava un caso
+  di intrappolamento è stato isolato come errore locale di classificazione
+  dell'adiacenza Return-Return. La prosecuzione collineare dell'ultimo tratto
+  non deve trattare il segmento immediatamente precedente al gomito come ramo
+  remoto. La correzione è attiva per default e disattivabile con
+  `TERMODEL_DIEGO_VITTORIO_COLLINEAR_ADJACENCY=false`; regression Fast
+  `DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO` verificata;
+- il problema generale del “budello” **resta aperto** per casi realmente
+  intrappolati e deve continuare a essere raccolto in regression prima di
+  introdurre strategie strutturali di fuga.
 
 Lo stato consolidato comprende inoltre:
 
