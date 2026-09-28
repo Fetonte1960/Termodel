@@ -1323,3 +1323,27 @@ Obiettivo del debug:
 
 Questa è la conoscenza minima che una chat di recovery deve possedere prima di
 toccare il codice.
+
+
+### STEP 4G — nuova analisi strutturale strettoie, prima dei nuovi log
+Stato: **IN CORSO**
+
+Decisione utente:
+- ripartire con una nuova analisi dopo il consolidamento concettuale;
+- aggiungere nuovi log solo se la comprensione del software è sufficiente;
+- tenere esplicitamente conto che `Diego_Vittorio` è stato scritto interamente da AI a partire da una copia di Vittorio, quindi ogni euristica aggiunta va distinta dal comportamento ereditato.
+
+Metodo:
+1. mappa di provenienza funzione-per-funzione:
+   - invariato da Vittorio;
+   - adattato;
+   - nuovo codice AI;
+2. ricostruzione del flusso strettoie senza modificare il motore;
+3. uso prioritario dei log già esistenti (`TRACE_RETURN`, `TRACE_PORTALS`, log Supply);
+4. solo se restano buchi causali, introdurre log diagnostici minimi e non decisionali;
+5. nessuna correzione algoritmica in questa fase.
+
+**PROSSIMO PASSO:** confrontare Vittorio/Diego_Vittorio sulle funzioni
+`GenerateReturn`, `FindConnectionWithOffset`, validatori, traversal,
+portali anticipati e fallback, quindi lanciare un test mirato con i trace già
+esistenti su `R001 / locale_1 / T6` e sul quadrato pubblico.
