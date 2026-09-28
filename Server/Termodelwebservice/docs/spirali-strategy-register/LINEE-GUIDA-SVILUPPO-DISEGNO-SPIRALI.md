@@ -6661,7 +6661,7 @@ ricostruire l'intero percorso progetto → Service → Harness.
 
 ## DV-TEST-002 — Pannelli radianti pubblico: locali uno per uno
 
-**Stato:** CAMPAGNA ATTIVA — FASI 1-3 COMPLETATE / FASE 4 `locale_8` IN CORSO  
+**Stato:** CAMPAGNA ATTIVA — FASI 1-4 COMPLETATE / FASE 5 `locale_9` IN CORSO  
 **Origine:** collaudo utente 28/09/2026
 
 Il progetto pubblico **Pannelli radianti** mostra risultati non ripetibili e
@@ -6867,6 +6867,48 @@ Regression dedicata aggiunta al Fast Harness nel commit
 `locale_1` invariato e `locale_5` chiuso con `M2/RP3`, 1,24 m.
 L'SVG artifact è stato ispezionato: la precedente diagonale lunga non è più
 presente.
+
+### Esito `locale_8` — adiacenza dogleg locale del Return
+
+`locale_8` restava inizialmente a 3 punti Return con offset 2/3 bloccati.
+Il lato opposto e il verso di costruzione opposto peggioravano il caso.
+
+Il trace ha isolato un errore di classificazione topologica. Nel percorso
+
+```text
+A -> B -> C -> D
+```
+
+`A-B` è il penultimo segmento, `B-C` un unico raccordo locale corto e
+`C-D` il nuovo candidato. Il controllo di autocondizionamento trattava
+`A-B` come ramo remoto anche quando:
+
+- la distanza minima tra `A-B` e `C-D` coincideva esattamente con la
+  lunghezza del raccordo `B-C`;
+- `A` e `D` si trovavano sui lati opposti della retta `B-C`, quindi i due
+  rami divergevano invece di svilupparsi affiancati;
+- non esisteva sovrapposizione parallela dei due rami.
+
+Nel primo caso reale il raccordo misurava 0,22 m. Una prova diagnostica
+(`d10e31d2b02b39b504dcde8db9e0d92f94e09619`) ha riconosciuto due dogleg
+locali di questo tipo e portato il Return da 3 a **18 punti**. Fast Harness
+`36406990692`: SUCCESS e SVG ispezionato.
+
+La regola finale, commit
+`18cd798a22c72d39d5dfbbfaba647e1e91fdcf5a`, esclude dal controllo di
+distanza soltanto questo penultimo segmento topologicamente locale. Tutti gli
+altri segmenti continuano a rispettare integralmente la distanza minima
+Return-Return. Rollback:
+
+```text
+TERMODEL_DIEGO_VITTORIO_LOCAL_DOGLEG_ADJACENCY=false
+```
+
+Regression dedicata `locale_8` aggiunta nel commit
+`109dac86a8703f8d21b04b6486e00cda0fd49a01`. Fast Harness finale
+`36407499506`: **SUCCESS** senza flag diagnostici, con quadrato pubblico
+byte-identico e regression `locale_1`, `locale_5`, `locale_8` tutte verdi.
+`locale_8`: Return 18 punti, chiusura `M3/R5` da 0,971 m.
 
 ---
 
