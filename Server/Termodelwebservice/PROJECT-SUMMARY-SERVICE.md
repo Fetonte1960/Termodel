@@ -72,6 +72,22 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-28 — Istruzioni debug avanzato Harness rapido
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- creare, se assente, un documento Git del progetto Termodel dedicato alle istruzioni di debug;
+- nome documento: `Server/Termodelwebservice/docs/ISTRUZIONI_DEBUG.md`;
+- registrare il setup concordato con chiave esatta `Debug_Avanzato_harness_rapido`;
+- il setup deve riusare `TermodelLog`, categorie selettive e Harness rapido, senza introdurre sistemi diagnostici paralleli.
+
+Criteri di completamento:
+- documento creato su `main`;
+- chiave presente in modo univoco;
+- descritti parametri Service/Harness, ciclo esegui -> leggi log -> aggiungi solo log mancante -> riesegui;
+- Summary aggiornato con riferimento al documento;
+- Issue #1 chiusa `Completed` a fine job.
+
 ### INCARICO 2026-09-28 — Indagine locali esempio pannelli radianti uno per uno
 Stato: COMMISSIONATO
 
