@@ -1659,3 +1659,43 @@ Run equivalenza iniziale:
 - al momento del checkpoint: PENDING.
 
 Vincolo: nessuna modifica strutturale prima di esito SUCCESS della parità iniziale.
+
+
+#### STEP 4I.1 — parità iniziale confermata e astrazione strutturale introdotta
+Stato: **FASE 1 COMPLETATA / FASE 2 IN TEST**
+
+Parità iniziale:
+- Fast Harness run `36465582271` (#57): **SUCCESS**;
+- step `Verify Vittorio_revisionato initial equivalence`: SUCCESS;
+- SVG Vittorio e Vittorio_revisionato identici:
+  `9673CD8D77A9963EC425FA69F54B8DCFF4C162312336D08D74AC722A2E0122A4`;
+- XML risultato identico:
+  `9517A5BFFE56F7CCB2419F173A0020FAC0EEBF6B2FD3706C02CD29D32C0DDCA6`;
+- tutte le regression Diego_Vittorio della stessa run sono rimaste verdi.
+
+Astrazione introdotta:
+- `SpiralGenerationInput` è un ingresso neutro rispetto al ruolo;
+- il metodo storico `Generate(List<Punto>, Punto, double, bool)` è rimasto
+  letteralmente intatto e continua a essere il core usato da Program;
+- il nuovo overload `Generate(SpiralGenerationInput)` richiama prima il
+  Generate storico;
+- opzionalmente riceve `LineeCondizionamento` e
+  `DistanzaCondizionamento`;
+- il condizionamento iniziale è deliberatamente minimale: tronca il percorso
+  al primo segmento che viola la distanza dalla Supply;
+- NON cerca percorsi alternativi, NON introduce fallback, NON cambia la
+  selezione geometrica Vittorio;
+- questa scelta serve a separare nettamente “astrazione” da “strategia nelle
+  strettoie”.
+
+Probe aggiunto:
+- verifica che l'ingresso neutro senza condizionamento produca punto-per-punto
+  lo stesso percorso del Generate storico;
+- genera un secondo percorso indipendente e verifica che la Supply lo
+  condizioni realmente a distanza p/2;
+- Harness command `revisionato-check`;
+- workflow Fast ora verifica sia la parità completa Vittorio sia il probe.
+
+**PROSSIMO PASSO:** attendere il run Fast della fase 2. Se verde, fermarsi e
+ragionare con l'utente sui risultati prima di integrare il Return nel flusso
+esecutivo o aggiungere qualunque strategia di rerouting.
