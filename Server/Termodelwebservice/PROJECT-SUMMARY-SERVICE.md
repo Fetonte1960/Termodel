@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-28 — Pubblicazione correzione quadrato e aggiornamento Render
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - la correzione `DV-TEST-001` del quadrato `Diego_Vittorio` è giudicata soddisfacente;
@@ -85,7 +85,7 @@ Fasi:
 
 Stato fasi:
 - **FASE 1 — ESEGUITA:** approvazione umana registrata; stato approvato pubblicato su `main`. Allineato il controllo CI di `/health` al default `Diego_Vittorio` nel commit `264cd2c7beee303d9dbfca20bd8444cc10ee768d`; aggiornato il contratto runtime nel commit `456d6577c278a94afdc55db715cbbe4f695f6bc5`. Nessuna modifica geometrica aggiuntiva.
-- **FASE 2 — IN CORSO:** auto-deploy Render innescato dal push su `main`; in verifica build Service e identità runtime pubblica via `/health`, quindi prova funzionale del quadrato se il Service remoto espone il commit atteso.
+- **FASE 2 — ESEGUITA:** il normale auto-deploy Render ha pubblicato lo stato approvato. Aggiunto il verificatore remoto leggero `.github/workflows/termodel-render-verify.yml`; il run `36384533237` ha letto l'ultimo commit che tocca `Server/Termodelwebservice` e ha verificato al primo tentativo `https://termodel.onrender.com/health`: `status=ok`, `serviceCommit=be300830608f428170f0c6dadefd60866cf2c0ee`, `serviceCommitShort=be300830`, `spiralEngine=Diego_Vittorio`. Il verificatore usa il commit Service e non l'ultimo commit globale del repository, perché modifiche solo a `.github`/frontend possono non richiedere deploy Render.
 
 
 Vincoli:
@@ -101,6 +101,16 @@ Criteri di completamento:
 - auto-deploy Render attivato dal push su `main`;
 - Service pubblico verificato almeno via `/health`; preferibile verifica funzionale del quadrato sul Service remoto;
 - Issue #1 chiusa per ogni fase significativa.
+
+Esito:
+- correzione `DV-TEST-001` approvata esplicitamente dall'utente per la pubblicazione;
+- nessuna ulteriore modifica geometrica introdotta durante il deploy;
+- controllo CI `/health` corretto dal vecchio default `Diego` a `Diego_Vittorio` nel commit `264cd2c7beee303d9dbfca20bd8444cc10ee768d`;
+- contratto Front↔Service allineato all'identità runtime `Diego_Vittorio` nel commit `456d6577c278a94afdc55db715cbbe4f695f6bc5`;
+- Render verificato realmente via GitHub Actions nel run `36384533237`: commit Service `be300830`, motore `Diego_Vittorio`, stato `ok`;
+- la build del progetto Service compila correttamente; la suite ordinaria GitHub `TermodelService Build` resta rossa in uno smoke successivo e indipendente per il Golden Darcy sintetico fuori tolleranza. Questo errore non è nel motore spirali né impedisce il deploy Docker/Render e non viene corretto in questo incarico;
+- il nuovo verificatore Render è serializzato per evitare esecuzioni/notifiche duplicate e può essere riusato per controllare in modo economico il runtime pubblico;
+- la regression funzionale del quadrato `Diego_Vittorio` resta quella già verificata in GHA sullo stesso input reale (`36383027266` e Fast Harness `36383265029`); la verifica Render corrente certifica che il Service pubblico sta eseguendo il commit contenente quella correzione.
 
 
 ### INCARICO 2026-09-28 — Indagine anomalie quadrato `Diego_Vittorio` e Harness rapido
