@@ -231,6 +231,48 @@ jobs:
           # pubblico, il completamento del Return e la chiusura.
           Write-Host "DIEGO_VITTORIO_PUBLIC_SQUARE_LEFT_OK"
 
+      - name: Generate locale_1 pre-closure SVG
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "DiegoVittorioPanelsLocale1PreClosure"
+          $caseId = "DV-LOCALE1-T6-PRECLOSE"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/DV-PUBLIC-PANELS-RECT-01-P030-DIEGO-VITTORIO.json `
+            --id $caseId `
+            --skip-close `
+            --log-enabled true `
+            --log-categories SpiraliDiegoVittorio `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Generazione SVG pre-chiusura locale_1 fallita." }
+
+          $svg = Join-Path $out "$caseId.svg"
+          $log = Join-Path $out "$caseId.log.txt"
+          $metrics = Join-Path $out "$caseId.metrics.json"
+          foreach ($required in @($svg,$log,$metrics)) {
+            if (-not (Test-Path -LiteralPath $required)) {
+              throw "Artifact pre-chiusura mancante: $required"
+            }
+          }
+
+          $svgText = Get-Content -LiteralPath $svg -Raw
+          $logText = Get-Content -LiteralPath $log -Raw
+          $metricsObject = Get-Content -LiteralPath $metrics -Raw | ConvertFrom-Json
+          if ($svgText -notmatch 'data-termodel-closure="disabled"') {
+            throw "SVG pre-chiusura non dichiara closure=disabled."
+          }
+          if ($logText -notmatch 'Chiusura SVG Diego_Vittorio: DISATTIVATA') {
+            throw "Log pre-chiusura non conferma la chiusura disattivata."
+          }
+          if ($logText -notmatch 'Ritorno autonomo:.*punti=18') {
+            throw "Il Return autonomo locale_1 non è stato mantenuto."
+          }
+          if ([string]$metricsObject.mode -ne "pre-close") {
+            throw "Modalità metrics inattesa: $($metricsObject.mode)"
+          }
+          Write-Host "DIEGO_VITTORIO_LOCALE1_PRECLOSE_SVG_OK"
+          Write-Host "PRECLOSE_SVG=$svg"
+
       - name: Run public panels locale_1 regression
         shell: pwsh
         run: |
@@ -344,6 +386,7 @@ jobs:
             ${{ runner.temp }}/DiegoVittorioLocale1CategorizedLog
             ${{ runner.temp }}/DiegoVittorioPublicSquare
             ${{ runner.temp }}/DiegoVittorioPanelsLocale1
+            ${{ runner.temp }}/DiegoVittorioPanelsLocale1PreClosure
             ${{ runner.temp }}/DiegoVittorioPanelsLocale5
             ${{ runner.temp }}/DiegoVittorioPanelsLocale8
             ${{ runner.temp }}/DiegoVittorioPanelsLocale9
