@@ -7194,3 +7194,25 @@ Analisi completata senza modifiche algoritmiche.
   concettuale globale, mentre Diego_Vittorio deve cercare euristiche finite a
   medio raggio per contenere il costo computazionale.
 
+
+### 2026-09-28 — Debug strettoie: finestra dei portali e provenienza algoritmo
+
+- `Diego_Vittorio` è stato analizzato esplicitamente come copia AI di Vittorio:
+  ricerca adattiva fra offset aggiunta dall'AI, percorrenza dell'offset ancora
+  strutturalmente derivata dal flusso deterministico Vittorio.
+- Nuovi log puramente diagnostici (commit `9a7abde...` e `de2dfde...`) mostrano
+  path scelti, segmenti accettati e portale verso l'offset successivo a ogni
+  passo; default produttivo invariato.
+- Fast Harness #51 e #53: SUCCESS, tutte le regression Diego_Vittorio verdi.
+- `locale_1`, Return offset 2->3: il portale da 0,60 m è valido all'ingresso e
+  resta valido dopo ogni lato dell'offset; l'ultimo portale è quello usato
+  realmente. Quindi non è corretto correggere il caso uscendo al primo portale.
+- Quadrato: i portali compaiono più tardi e restano validi; proseguire rende
+  inoltre più corto il collegamento finale.
+- Test verso di costruzione opposto (#52): fallisce immediatamente sia su
+  `locale_1` sia sul quadrato; escluso un semplice errore orario/antiorario.
+- Linea guida `LG-050` aggiornata: la futura media visione deve valutare la
+  qualità futura del ramo, non la mera presenza del primo portale.
+- Service workflow sul commit diagnostico: fase `Build` SUCCESS; workflow
+  complessivo rosso per Golden Darcy indipendente (dP 1,3136749 Pa contro
+  golden 1,353675 Pa), non per compilazione o regression spirali.
