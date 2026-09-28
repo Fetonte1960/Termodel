@@ -17,7 +17,7 @@
 Ultimo aggiornamento: **2026-09-28**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
-`90bb914e7bcdb0cff17d9bd19d1bf2701ccf8424` — `test(web): allinea check identità Service esecutivo`  
+`ed87c6ad59cd60d008e7ffe2ed13885bea3dcaf3` — `feat(web): consolida esempi Diego_Vittorio offline`  
 Commit che ha creato questo summary:  
 `39433b20c90bd7a2ff3b5976d0a007180d96fc71` — `Add project continuity summary`
 
@@ -299,6 +299,33 @@ Verifica:
 - lo stesso workflow resta rosso solo sul Golden Darcy sintetico già noto e indipendente (dP 1,313675 Pa contro golden 1,343675 Pa);
 - GitHub Pages run `36411205191`: build e deploy SUCCESS;
 - resta da verificare visivamente nel browser il posizionamento/leggibilità del box e il passaggio statico consolidato → runtime non consolidato dopo `Aggiorna Modello`.
+
+
+## 0.9 Modifica 2026-09-28 — esempi esecutivi Diego_Vittorio congelati offline
+
+Stato: **ESEGUITO**.
+
+Decisione:
+- i due esempi pubblici devono poter mostrare immediatamente il proprio esecutivo senza interrogare Render;
+- gli esecutivi statici precedenti GPT sono stati sostituiti con gli output Diego_Vittorio approvati/migliorativi;
+- `Aggiorna Modello` resta disponibile e sostituisce temporaneamente lo statico con l'artifact runtime corrente per il confronto.
+
+Asset:
+- commit di congelamento: `e0121145ca88014edb6204e2d97bf99366497989`;
+- `Pannelli radianti`: Service `e23f3a66`, run `36411641717`, SHA-256 `6a1c79ed23b8dcfde6fcffb484a029f54d5355793b32422e30c6e19cca0f2a3d`;
+- `Quadrato con pannelli`: Service `5de2ccab`, run `36383027266`, SHA-256 `1cd73beba29edb1c44adc7dd4719123872ed58de5f9f5c901a88f39a3f52f8f6`; baseline Harness approvata `fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39`.
+
+Frontend:
+- v**1.35**;
+- corretto `loadProjectBrowserExamples()`: ora conserva `executiveProvenance` dal catalogo;
+- il badge degli statici può quindi mostrare `CONSOLIDATO NELL'ESEMPIO` + `Diego_Vittorio` e i commit corretti;
+- provenance separata per ciascun esempio in `examples/catalog.json`;
+- nessuna modifica a motore, Core, progetti di input o `definizionedati.json`.
+
+Verifica:
+- workflow trasferimento asset `36414320457`: SUCCESS con verifica hash;
+- TermodelService Build `36414512616`: JavaScript, provenance, static executives, build e smoke Pannelli radianti SUCCESS; stop successivo sul Golden Darcy indipendente già noto;
+- GitHub Pages `36414512118`: build + deploy SUCCESS.
 
 
 ## 1. Regola obbligatoria per nuove chat

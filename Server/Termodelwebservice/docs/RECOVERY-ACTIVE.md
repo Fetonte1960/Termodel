@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 12:44 Europe/Rome
+Checkpoint: 2026-09-28 13:17 Europe/Rome
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -266,34 +266,60 @@ Vincoli rispettati:
 4. proseguire quindi con la conferma visiva finale della FASE 6.
 
 ## Sottofase FASE 6B — congelamento esecutivi Diego_Vittorio negli esempi
-Stato: **IN CORSO**
+Stato: **COMPLETATA**
 
 Decisione utente 28/09/2026:
 - il nuovo esecutivo `Pannelli radianti` mostrato dal Service corrente è giudicato sicuramente migliorativo;
-- congelare gli esecutivi dei due esempi pubblici:
+- congelati gli esecutivi dei due esempi pubblici:
   - `Pannelli radianti`;
   - `Quadrato con pannelli`;
-- l'utente deve poterli ispezionare senza interrogare il Service;
+- l'ispezione degli esempi non richiede più un calcolo Service;
 - `Aggiorna Modello` resta disponibile per produrre un nuovo esecutivo runtime e confrontarlo col consolidato.
 
-Sorgenti da congelare:
-- `Pannelli radianti`: artifact `pannelli-esecutivo.svg` del run Service `36411641717`, head/service commit `e23f3a6698f0166a6752fbdd3aac5fd6346cada7`, motore `Diego_Vittorio`; SHA-256 artifact `6a1c79ed23b8dcfde6fcffb484a029f54d5355793b32422e30c6e19cca0f2a3d`;
-- `Quadrato con pannelli`: `quadrato-con-pannelli-esecutivo.svg` del workflow pubblico run `36383027266`, head `5de2ccab955dd3146ee23089afe41fb9040eb3ac`, motore `Diego_Vittorio`; il medesimo input Harness produce la baseline umana protetta SHA-256 `fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39`.
+Asset congelati:
+- commit asset `e0121145ca88014edb6204e2d97bf99366497989`;
+- `Pannelli radianti`:
+  - sorgente artifact run `36411641717`;
+  - Service/head `e23f3a6698f0166a6752fbdd3aac5fd6346cada7`;
+  - motore `Diego_Vittorio`;
+  - SHA-256 statico `6a1c79ed23b8dcfde6fcffb484a029f54d5355793b32422e30c6e19cca0f2a3d`;
+- `Quadrato con pannelli`:
+  - sorgente workflow pubblico run `36383027266`;
+  - Service/head `5de2ccab955dd3146ee23089afe41fb9040eb3ac`;
+  - motore `Diego_Vittorio`;
+  - SHA-256 statico `1cd73beba29edb1c44adc7dd4719123872ed58de5f9f5c901a88f39a3f52f8f6`;
+  - baseline Harness umana protetta `fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39`.
 
-Piano:
-1. sostituire i due SVG statici pubblici con gli artifact Diego_Vittorio approvati;
-2. aggiornare il catalogo con provenienza separata e corretta dei due esecutivi;
-3. aggiornare le regression CI che ancora richiedono metadata GPT;
-4. verificare che i due esempi restino caricabili localmente senza Service e che GitHub Pages pubblichi gli asset;
-5. aggiornare recovery/summary e issue #1.
+Frontend:
+- versione portata a **v1.35** nel commit `ed87c6ad59cd60d008e7ffe2ed13885bea3dcaf3`;
+- `loadProjectBrowserExamples()` trasferisce ora anche `executiveProvenance`;
+- il badge dello statico mostra quindi correttamente `CONSOLIDATO NELL'ESEMPIO`, motore Diego_Vittorio, commit Service sorgente e commit di consolidamento;
+- catalogo aggiornato con provenance separata per i due esempi;
+- il workflow temporaneo usato esclusivamente per trasferire gli artifact è stato rimosso nello stesso commit v1.35.
 
-Vincoli:
+Verifica:
+- workflow di trasferimento `36414320457`: **SUCCESS**, inclusa verifica SHA-256 dei due artifact prima del commit;
+- TermodelService Build `36414512616`:
+  - sintassi JavaScript: **SUCCESS**;
+  - `CAD_EXECUTIVE_PROVENANCE_OK`: **SUCCESS**;
+  - `RADIANT_STATIC_EXECUTIVES_OK`: **SUCCESS**;
+  - `RADIANT_PUBLIC_EXAMPLE_OK`: **SUCCESS**;
+  - build: **SUCCESS**, 0 errori;
+  - smoke progetto pubblico `Pannelli radianti`: **SUCCESS**;
+  - `RADIANT_REFERENCE_PROJECT_OK`: **SUCCESS**;
+  - il workflow termina poi rosso esclusivamente sul Golden Darcy sintetico già noto e indipendente: dP corrente 1,3136749 Pa contro golden storico 1,343675 Pa;
+- GitHub Pages run `36414512118`: build + deploy **SUCCESS**.
+
+Vincoli rispettati:
 - nessuna modifica a Termodel.Core o al motore;
 - nessuna modifica a `definizionedati.json`;
 - nessuna modifica ai progetti di input;
-- congelare soltanto gli output SVG approvati.
+- modificati solo gli output SVG statici, catalogo/provenienza e wiring frontend necessario a mostrarla.
 
-**PROSSIMO PASSO ESATTO:** sostituire i due asset SVG statici e registrare il commit di congelamento; poi usare quel commit come riferimento `consolidatedCommit` nel catalogo.
+**PROSSIMO PASSO ESATTO:**
+1. aprire `Quadrato con pannelli` e `Pannelli radianti` dal catalogo senza premere `Aggiorna Modello`;
+2. verificare che `Disegno esecutivo` sia subito disponibile e che il badge riporti `CONSOLIDATO NELL'ESEMPIO` + `Diego_Vittorio`;
+3. riprendere quindi il collaudo geometrico della FASE 6 usando questi due statici come riferimenti rapidi.
 
 ## File/componenti attualmente coinvolti
 
