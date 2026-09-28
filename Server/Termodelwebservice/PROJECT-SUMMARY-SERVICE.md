@@ -72,7 +72,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-28 — Consolidamento e attivazione Service di `Diego_Vittorio`
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Commissionato:
 - consolidare su GitHub lo stato corrente della strategia indipendente
@@ -92,6 +92,23 @@ Criteri di completamento:
 - default Service e capability coerenti con `Diego_Vittorio`;
 - build senza errori e prove geometriche correnti superate;
 - commissione chiusa come `ESEGUITO` con risultati e commit registrati.
+
+Esito:
+- consolidamento funzionale registrato nel commit
+  `9c311cb96738c2c82d3da5a1f5d3b4c533f036b0`;
+- `SpiraliVittorio` verificata invariata;
+- `RadiantExecutiveGenerator` usa `Diego_Vittorio` quando
+  `TERMODEL_SPIRAL_ENGINE` non è valorizzata; gli override storici restano
+  disponibili;
+- ritorno autonomo, chiusura LG-048 e raccordi LG-049 sono attivi per default
+  nel motore, con flag `false` disponibili per il debug;
+- build Release completa: 0 errori, 494 warning storici;
+- `/health` verificato localmente con `spiralEngine: Diego_Vittorio`;
+- quadrato canonico p=0,30 m: distanze, ritorno autonomo, chiusura rettilinea,
+  chiusura raccordata e raccordi sintetici 30°/90°/150° superati;
+- SVG raccordato finale: 59 punti mandata, 51 ritorno, chiusura a 7 punti,
+  nessuna intersezione e SHA-256
+  `69193E08D795A184D54F4BBC7FDEF9A86C48F691054ED20622026E1A6A594962`.
 
 
 ### INCARICO 2026-09-27 — Help Web PC e istruzione AI Termodel Web
@@ -6834,3 +6851,29 @@ Incompleto:
   dopo autorizzazione esplicita e verifica SHA-256;
 - nessun risultato proposto è dichiarato verificato senza build/test reali;
 - compatibilità e reversibilità prevalgono sui refactoring opportunistici.
+
+## 13. Strategia spirali Service corrente — `Diego_Vittorio`
+
+Dal 28 settembre 2026 il motore predefinito del Service è
+`Diego_Vittorio`, scelto come migliore stato disponibile per i casi
+ortogonali. La selezione resta reversibile tramite
+`TERMODEL_SPIRAL_ENGINE=Vittorio|GPT|Diego|Diego_Vittorio`.
+
+Lo stato consolidato comprende:
+
+- passo `p` variabile e derivazione coerente di `p/2`, `p` e `2p`;
+- mandata a inseguimento ortogonale;
+- ritorno autonomo dal parallelo gemello del tubo di ingresso, lato
+  sinistro/destro configurabile;
+- condizionamento mandata-ritorno e ritorno-ritorno a distanza minima `p`;
+- chiusura terminale deterministica LG-048, con massimo 35 configurazioni,
+  arresto al primo candidato senza angoli acuti, lungo almeno `2p` e privo di
+  incroci;
+- raccordi adattivi LG-049 e chiusura raccordata con frammentazione limitata;
+- flag diagnostici per disattivare raccordi, chiusura o ritorno autonomo senza
+  cambiare il comportamento operativo predefinito.
+
+`SpiraliVittorio` resta intatta e costituisce il riferimento per confronto e
+ripristino. Le verifiche correnti certificano il quadrato ortogonale canonico;
+prima di generalizzare la superiorità del motore servono ancora regression su
+locale concavo e su geometrie non ortogonali.
