@@ -544,6 +544,34 @@ namespace SpiralHeatingDiegoVittorio
                 raccordo.Count > 1);
         }
 
+        // Adattatore per il solo Return Vittorio: usa gli helper Diego_Vittorio
+        // già esistenti per ricondurre il Return raccordato alla sua polilinea
+        // rettilinea parallela PRIMA della combinatoria. Nessuna nuova euristica
+        // di chiusura viene introdotta.
+        public static (List<Punto> Mandata, List<Punto> Ritorno, List<Punto> Raccordo, bool Applicata)
+            ApplicaChiusuraCombinatoriaSuRitornoVittorio(
+                List<Punto> mandataRettilinea,
+                List<Punto> ritornoVittorioRaccordato,
+                double passo,
+                double raggio)
+        {
+            var ritornoDalCentro =
+                CreaRientroRettilineo(
+                    mandataRettilinea,
+                    ritornoVittorioRaccordato,
+                    passo);
+            var ritornoVersoCentro = ritornoDalCentro
+                .AsEnumerable()
+                .Reverse()
+                .ToList();
+
+            return ApplicaChiusuraCombinatoriaConRaccordo(
+                mandataRettilinea,
+                ritornoVersoCentro,
+                passo,
+                raggio);
+        }
+
         // Funzione realizzata da Codex in autonomia
         private static CandidatoChiusura GeneraPrimaChiusuraAccettabile(
             List<Punto> mandataOriginale,
