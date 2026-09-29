@@ -553,7 +553,7 @@ namespace SpiralHeatingVittorioRevisionato
                 return;
             }
             
-            ChiudiSpirale.Chiudi(xmlFile, RaggioCurvatura, DistanzaRitorno, DistanzaRotazioneUltimoPunto, Debug);
+            ChiudiSpirale.Chiudi(xmlFile, RaggioCurvatura, DistanzaRitorno, DistanzaRotazioneUltimoPunto, Debug, usaRaccordoAdattivoDiego: true);
         }
     }
 }
