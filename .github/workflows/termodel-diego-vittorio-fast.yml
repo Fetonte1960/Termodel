@@ -72,6 +72,8 @@ jobs:
 
       - name: Harness quadrato Vittorio_revisionato public closure
         shell: pwsh
+        env:
+          TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE: "true"
         run: |
           $ErrorActionPreference = "Stop"
           $out = Join-Path $env:RUNNER_TEMP "RevisionatoPublicSquareClosure"
