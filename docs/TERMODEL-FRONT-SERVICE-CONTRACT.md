@@ -2131,3 +2131,44 @@ Il principio non aperto è già deciso:
 > il file locale `TERMODEL-PROJECT-TEXT-V1` è la copia autorevole del
 > progetto; il `projectId` è soltanto la chiave tecnica degli artifact sul
 > Service e un nuovo `AggiornaCalcolo` può ricreare interamente il workspace.
+
+
+### Selezione motore spirali per singola elaborazione — test pubblico
+
+Dal 29 settembre 2026 `POST /api/calculations` accetta il parametro query
+opzionale:
+
+```http
+POST /api/calculations?spiralEngine=Vittorio_revisionato
+```
+
+Valori ammessi:
+
+```text
+Vittorio
+Vittorio_revisionato
+GPT
+Diego
+Diego_Vittorio
+```
+
+Regole:
+- se `spiralEngine` è omesso, resta valido il default del Service
+  (attualmente `Diego_Vittorio`) o l'eventuale configurazione
+  `TERMODEL_SPIRAL_ENGINE`;
+- la selezione è **per-request**: non modifica variabili globali, il progetto
+  `TERMODEL-PROJECT-TEXT-V1` né le elaborazioni di altri utenti;
+- `Vittorio_revisionato` è pubblicato per collaudo collaborativo e non
+  sostituisce il default;
+- la risposta JSON di `POST /api/calculations` riporta
+  `spiralEngine` con il motore effettivamente usato;
+- con `responseArtifact=...` lo stesso valore è esposto nell'header
+  `X-Termodel-Spiral-Engine`;
+- `/health` continua a riportare in `spiralEngine` il default del Service e
+  pubblica anche `spiralEngines`, elenco dei motori disponibili.
+
+Il frontend pubblico v1.36 espone in **Help → Motore spirali — test pubblico**
+una scelta esplicita. `Predefinito Service` non invia il parametro;
+`Vittorio_revisionato` consente di ripetere `Aggiorna Modello` su progetti
+reali senza modificare il file salvato. La provenienza dell'esecutivo runtime
+mostra il motore restituito dalla singola elaborazione.
