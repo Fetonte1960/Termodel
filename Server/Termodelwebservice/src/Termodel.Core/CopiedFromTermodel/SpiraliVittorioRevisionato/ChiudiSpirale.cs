@@ -100,11 +100,13 @@ namespace SpiralHeatingVittorioRevisionato
                     var rientro = CreaRientro(spiraleArrotondata, distanzaRitorno);
 
                     // Return invariato: resta la duplicazione/offset Vittorio.
-                    // Per la chiusura pubblica NON inventiamo strategie ulteriori:
-                    // passiamo mandata + Return Vittorio (solo orientato nel verso
-                    // atteso da Diego) alla procedura combinatoria Diego_Vittorio,
-                    // che esegue M0..M4, R0..R6, RP, cancella/accorcia/testa e
-                    // produce infine il raccordo sulla configurazione selezionata.
+                    // distanzaRitorno e' P: distanza Mandata <-> Ripresa.
+                    // Di conseguenza 2P e' Mandata <-> Mandata e P/2 e'
+                    // Mandata <-> Parete. Per la chiusura pubblica NON
+                    // introduciamo strategie ulteriori: la combinatoria
+                    // Diego_Vittorio prova simmetricamente 0..2 tratti rimossi
+                    // e terminale invariato oppure portato esattamente a P,
+                    // fermandosi al primo raccordo completo valido.
                     List<Punto> curvaCollegamento;
                     if (usaRaccordoAdattivoDiego)
                     {
@@ -884,3 +886,4 @@ namespace SpiralHeatingVittorioRevisionato
         }
     }
 }
+
