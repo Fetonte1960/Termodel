@@ -155,6 +155,14 @@ namespace SpiralHeatingVittorioRevisionato
                                     raggioCurvatura)
                                 .Select(p => new Punto(p.X, p.Y))
                                 .ToList();
+
+                        // Se Diego esclude il raccordo per intersezione, non
+                        // introdurre alcun segmento sostitutivo: il circuito
+                        // resta aperto e soprattutto non attraversa le serpentine.
+                        if (curvaCollegamento.Count < 2)
+                        {
+                            curvaCollegamento.Clear();
+                        }
                     }
                     else
                     {
