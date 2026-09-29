@@ -70,6 +70,30 @@ jobs:
       - name: Build Harness + Core
         run: dotnet build tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-restore --nologo --verbosity:minimal -p:BuildInParallel=true
 
+      - name: Harness quadrato Vittorio_revisionato public closure
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "RevisionatoPublicSquareClosure"
+          $id = "REVISIONATO-PUBLIC-SQUARE-CLOSURE"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO.json `
+            --engine Vittorio_revisionato `
+            --revisionato-public `
+            --id $id `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Harness quadrato pubblico revisionato fallito." }
+          $log = Join-Path $out "$id.log.txt"
+          $svg = Join-Path $out "$id.svg"
+          if (-not (Test-Path $log) -or -not (Test-Path $svg)) { throw "Artifact quadrato pubblico mancanti." }
+          $logText = Get-Content $log -Raw
+          if ($logText -notmatch 'Chiusura Diego combinatoria: APPLICATA') {
+            Get-Content $log | Write-Host
+            throw "Quadrato pubblico: procedura combinatoria Diego non ha chiuso il circuito."
+          }
+          Write-Host "REVISIONATO_PUBLIC_SQUARE_DIEGO_CLOSURE_OK"
+          Write-Host "SVG=$svg"
+
       - name: Verify Vittorio_revisionato initial equivalence
         shell: pwsh
         run: |
