@@ -9,23 +9,8 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  # Harness fermato per verifica generale: avvio solo manuale.
   workflow_dispatch:
-  push:
-    paths:
-      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/RadiantExecutiveGenerator.cs'
-      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/StrategiaDiegoVittorioBenchmark.cs'
-      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/StrategiaVittorioRevisionatoBenchmark.cs'
-      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/**'
-      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/**'
-      - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/**'
-      - 'Server/Termodelwebservice/tests/radiant-harness/cases/*DIEGO-VITTORIO*.json'
-      - 'Server/Termodelwebservice/tests/radiant-harness/cases/*VITTORIO-REVISIONATO*.json'
-      - 'Server/Termodelwebservice/tests/fixtures/StrategiaDiegoSquare4x4.locale.xml'
-      - 'Server/Termodelwebservice/tests/fixtures/DiegoVittorioPublicSquareLeft.locale.xml'
-      - 'Server/Termodelwebservice/tests/radiant-harness/prepared/PannelliRadiantiPublic.pannelli.xml'
-      - 'Server/Termodelwebservice/tools/local-radiant-harness/Test-DiegoVittorio*.ps1'
-      - 'Server/Termodelwebservice/tools/local-radiant-harness/Test-VittorioRevisionato*.ps1'
-      - '.github/workflows/termodel-diego-vittorio-fast.yml'
 
 jobs:
   fast:
