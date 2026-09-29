@@ -565,6 +565,15 @@ namespace SpiralHeatingDiegoVittorio
                 .Reverse()
                 .ToList();
 
+            if (TraceClosureEnabled)
+            {
+                Console.WriteLine($"  DV_SETUP_INPUT P={passo:R} mandataCount={mandataRettilinea.Count} ritornoCount={ritornoVersoCentro.Count}");
+                for (int i = Math.Max(0, mandataRettilinea.Count - 6); i < mandataRettilinea.Count; i++)
+                    Console.WriteLine($"  DV_SETUP_SUPPLY[{i}]=({mandataRettilinea[i].X:R},{mandataRettilinea[i].Y:R})");
+                for (int i = Math.Max(0, ritornoVersoCentro.Count - 6); i < ritornoVersoCentro.Count; i++)
+                    Console.WriteLine($"  DV_SETUP_RETURN[{i}]=({ritornoVersoCentro[i].X:R},{ritornoVersoCentro[i].Y:R})");
+            }
+
             var candidato = GeneraPrimaChiusuraAccettabile(
                 mandataRettilinea,
                 ritornoVersoCentro,
