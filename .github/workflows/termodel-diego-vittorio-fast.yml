@@ -9,8 +9,12 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  # Harness fermato per verifica generale: avvio solo manuale.
   workflow_dispatch:
+  # Trigger temporaneo e mirato per diagnosticare/collaudare la chiusura quadrato.
+  push:
+    paths:
+      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/ChiudiSpirale.cs'
+      - '.github/workflows/termodel-diego-vittorio-fast.yml'
 
 jobs:
   fast:
