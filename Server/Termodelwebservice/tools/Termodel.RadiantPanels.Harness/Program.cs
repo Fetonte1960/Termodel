@@ -162,6 +162,7 @@ static int Run(string[] args)
         string? localeArg = Arg(args, "--locale");
         bool supplyOnly = HasFlag(args, "--supply-only");
         bool skipClose = HasFlag(args, "--skip-close");
+        bool revisionatoPublic = HasFlag(args, "--revisionato-public");
         string? logEnabledArg = Arg(args, "--log-enabled");
         string? logCategoriesArg = Arg(args, "--log-categories");
         TermodelLog.LogConfiguration? logConfiguration =
@@ -298,6 +299,7 @@ static int Run(string[] args)
                 stepMeters,
                 supplyOnly,
                 skipClose,
+                revisionatoPublic,
                 logConfiguration);
         }
         if (!selectedEngine.Equals("Diego", StringComparison.OrdinalIgnoreCase))
@@ -558,6 +560,7 @@ static int RunCopiedSpiralStrategy(
     double stepMeters,
     bool supplyOnly,
     bool skipClose,
+    bool revisionatoPublic,
     TermodelLog.LogConfiguration? logConfiguration)
 {
     // Modificato da Codex per realizzare: mantenere un solo percorso di output per Vittorio e Diego_Vittorio.
@@ -581,7 +584,7 @@ static int RunCopiedSpiralStrategy(
                     ? StrategiaDiegoVittorioBenchmark.RunSupplyOnly(localeXml, stepMeters, logConfiguration)
                     : StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters, logConfiguration)
                 : selectedEngine.Equals("Vittorio_revisionato", StringComparison.OrdinalIgnoreCase)
-                    ? StrategiaVittorioRevisionatoBenchmark.Run(localeXml)
+                    ? StrategiaVittorioRevisionatoBenchmark.Run(localeXml, publicPath: revisionatoPublic)
                     : StrategiaVittorioBenchmark.Run(localeXml);
     }
     finally
