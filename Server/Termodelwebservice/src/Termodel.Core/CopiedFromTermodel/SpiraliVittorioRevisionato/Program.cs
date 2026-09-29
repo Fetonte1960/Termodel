@@ -82,7 +82,7 @@ namespace SpiralHeatingVittorioRevisionato
             // 3) solo raccordo finale riusa la procedura adattiva Diego_Vittorio.
             // La chiusura/etichetta resta nel post-processore revisionato.
             GeneraSpirale(terminalCenterline: true);
-            ChiudiSpiraleFiles();
+            ChiudiSpiraleFiles(usaRaccordoAdattivoDiego: true);
         }
 
         public static void AggiornaSpirali(bool soloMandataPerEsameVisivo)
@@ -98,7 +98,7 @@ namespace SpiralHeatingVittorioRevisionato
                 return;
             }
 
-            ChiudiSpiraleFiles();
+            ChiudiSpiraleFiles(usaRaccordoAdattivoDiego: false);
         }
 
         private static void ColoraMandataPreChiusuraInRosso(string svgFile)
@@ -543,7 +543,7 @@ namespace SpiralHeatingVittorioRevisionato
                 Debug);
         }
 
-        static void ChiudiSpiraleFiles()
+        static void ChiudiSpiraleFiles(bool usaRaccordoAdattivoDiego = false)
         {
             string xmlFile = "locale.xml";
             
@@ -553,7 +553,7 @@ namespace SpiralHeatingVittorioRevisionato
                 return;
             }
             
-            ChiudiSpirale.Chiudi(xmlFile, RaggioCurvatura, DistanzaRitorno, DistanzaRotazioneUltimoPunto, Debug, usaRaccordoAdattivoDiego: true);
+            ChiudiSpirale.Chiudi(xmlFile, RaggioCurvatura, DistanzaRitorno, DistanzaRotazioneUltimoPunto, Debug, usaRaccordoAdattivoDiego);
         }
     }
 }
