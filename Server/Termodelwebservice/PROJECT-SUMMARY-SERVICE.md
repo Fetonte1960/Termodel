@@ -7491,3 +7491,17 @@ La ricerca della chiusura centrale di `Vittorio_revisionato` usa ora la stessa m
 La ricerca è ora realmente first-success: ogni coppia viene tagliata/accorciata, valutata, raccordata e controllata per intersezioni sulla geometria risultante; il primo raccordo completo valido interrompe immediatamente la combinatoria. Sono state rimosse dalla selezione le proiezioni `RP*` e la successiva scelta del candidato “migliore”, che potevano selezionare un candidato prima della verifica finale del raccordo.
 
 Stato: implementato e pubblicato su GitHub; compilazione/esecuzione Visual Studio locale ancora da verificare.
+
+
+### 2026-09-29 — Direttiva rigida sul significato geometrico di P nelle spirali
+
+Questa convenzione è vincolante per lo sviluppo delle spirali e prevale su formulazioni precedenti ambigue:
+
+- `P` = distanza tra un tubo di **mandata** e il tubo di **ripresa/ritorno** adiacente;
+- `2*P` = distanza tra **due tubi di mandata** adiacenti;
+- `P/2` = distanza tra il tubo di **mandata** e le **linee della parete**;
+- non chiamare genericamente `passo` una grandezza che vale `P/2` o `2*P`: ogni derivazione deve restare esplicita;
+- gli adattatori Vittorio/Diego_Vittorio non possono ridefinire semanticamente `P` per comodità implementativa;
+- prima di modificare algoritmi di generazione, Return o chiusura, verificare ogni uso di `P`, `P/2` e `2*P` contro questa convenzione.
+
+La precedente descrizione di `P` come distanza tra due mandate / passo mandata-mandata è da considerarsi superata: quella distanza è `2*P`.
