@@ -1990,3 +1990,19 @@ Verifica:
 - failure globale successiva nello smoke storage/lock, indipendente dalla geometria spirali.
 
 **RECOVERY POINT:** chiedere conferma visiva dell'utente sul nuovo centro dei rettangoli. Se il risultato non è soddisfacente, disattivare `TerminalCenterline` senza toccare Vittorio/Diego_Vittorio.
+
+
+### 2026-09-29 — Vittorio_revisionato: chiusura e raccordi riattivati da Diego_Vittorio
+Stato: **IMPLEMENTATO, PUBBLICATO, SMOKE SPECIFICO VERDE**
+
+Su approvazione visiva della nuova mandata centrale, il percorso pubblico è ora volutamente ibrido e chirurgico:
+- Supply: `Vittorio_revisionato` con `TerminalCenterline=true`;
+- Return, raccordi e chiusura: riuso diretto di `SpiralHeatingDiegoVittorio.ChiudiSpirale.Chiudi`;
+- nessuna copia delle euristiche Diego_Vittorio dentro Vittorio_revisionato;
+- benchmark storico `AggiornaSpirali(false)` resta invariato e continua a usare la chiusura Vittorio_revisionato originale.
+
+Commit funzionale: `d86a96cc1dcc3cd4293a99da4712184088175b57`.
+Smoke aggiornato al nuovo contratto: `1c6966e289ec6173938452b12765059271d101ba`.
+Fast Harness #75: **SUCCESS completo**. Service Build #1089: build SUCCESS, smoke pannelli SUCCESS, smoke override Vittorio_revisionato con Return Diego SUCCESS, verifica deploy pubblico SUCCESS. Workflow globale resta rosso solo nello smoke HTTP storage/lock indipendente.
+
+**RECOVERY POINT:** il prossimo controllo è esclusivamente visivo sul progetto reale: verificare che la mandata approvata sia rimasta identica e che Return/raccordi/chiusura corrispondano alla qualità Diego_Vittorio.
