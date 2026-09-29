@@ -1820,9 +1820,20 @@ namespace SpiralHeatingDiegoVittorio
                 }
             }
 
-            // La retta è già stata validata da LG-048: se nessuna curvatura
-            // resta libera, si conserva la chiusura sicura senza raccordo.
-            return new List<Punto> { inizio, fine };
+            // Non forzare mai una chiusura che interseca il circuito.
+            // Nel percorso ibrido Vittorio_revisionato la geometria ricevuta
+            // può essere stata arrotondata/adattata dopo la selezione LG-048:
+            // l'assunzione storica che la retta sia ancora sicuramente libera
+            // non è quindi valida. Se anche la retta finale interseca mandata
+            // o ritorno, la soluzione viene esclusa come in Diego_Vittorio.
+            var retta = new List<Punto> { inizio, fine };
+            if (!CurvaIntersecaTrattiNonAdiacenti(retta, mandata) &&
+                !CurvaIntersecaTrattiNonAdiacenti(retta, ritorno))
+            {
+                return retta;
+            }
+
+            return new List<Punto>();
         }
 
         // Funzione realizzata da Codex in autonomia
