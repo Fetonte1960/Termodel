@@ -1936,3 +1936,32 @@ Vincolo:
 
 **PROSSIMO PASSO:** attendere build/smoke, verificare deploy Render aggiornato,
 poi chiudere Issue #1 Completed se il percorso pubblico è disponibile.
+
+
+#### 2026-09-29 — Vittorio_revisionato solo mandata PUBBLICATO
+Stato: **COMPLETATO**
+
+Verifica:
+- Service Build #1076 / run `36509662811`;
+- build: SUCCESS;
+- smoke default pannelli: SUCCESS;
+- smoke override `Vittorio_revisionato`: SUCCESS;
+- `VITTORIO_REVISIONATO_SUPPLY_ONLY_OK`;
+- layer Mandata presente;
+- layer Ritorno assente;
+- layer NumeriCircuiti/chiusura assente;
+- deploy pubblico: SUCCESS;
+- commit pubblico:
+  `bdb1861be127fa977543b3c86cb0384cc0d6ebb2`;
+- default pubblico invariato: `Diego_Vittorio`;
+- frontend pubblico invariato: v1.36.
+
+Nota:
+- il rosso complessivo del Service Build resta dovuto al Golden Darcy
+  sintetico già noto e non alla modifica spirali;
+- chiusura e Return sono sospesi solo per il percorso pubblico
+  `Vittorio_revisionato`; il benchmark completo continua a usare
+  `AggiornaSpirali(false)`.
+
+**RECOVERY POINT:** continuare il collaudo visivo della sola mandata su
+progetti reali. Non modificare Return/chiusura finché l'utente non lo richiede.
