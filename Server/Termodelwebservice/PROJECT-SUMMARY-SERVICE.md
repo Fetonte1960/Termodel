@@ -7428,3 +7428,12 @@ Stato:
 - per ripristinare il flusso completo basta disattivare
   `SoloMandataPerEsameVisivo` oppure usare
   `AggiornaSpirali(false)`.
+
+
+### Aggiornamento 2026-09-29 — Vittorio_revisionato, copertura centrale Supply
+- Pubblicata una correzione circoscritta alla modalità SOLO MANDATA di `Vittorio_revisionato`: nei soli ultimi anelli rettangolari ortogonali con fascia residua sfruttabile viene aggiunto un asse terminale centrale.
+- La logica storica Vittorio resta invariata; benchmark/regression la eseguono con `TerminalCenterline=false`. Il percorso pubblico usa `true` ed è ripristinabile impostandolo a `false`.
+- Fast Harness run `36510946051`: SUCCESS completo, inclusa equivalenza multi-progetto e tutte le regression Diego_Vittorio.
+- Service Build run `36510945902`: build + smoke pannelli + override Vittorio_revisionato + verifica deploy pubblico SUCCESS; failure globale successiva nello smoke storage/lock, indipendente dalle spirali.
+- Commit finale funzionale: `514bb71add522115dfb8358514ce712aa1d8bdf2`.
+- Stato: pubblicato, in attesa di conferma visiva utente sul progetto reale.
