@@ -7595,3 +7595,40 @@ Verifica Service, run `36553567271`:
 
 Il Fast Harness automatico e' stato nuovamente fermato dopo la verifica.
 
+### 2026-09-29 — rollback completo dopo regressione visiva del Return blu esterno
+
+Il collaudo manuale sul server ha evidenziato una regressione grave introdotta
+dalla sequenza di modifiche successiva a `c4c7f1ff2b621090a74ec258b3e730377006a728`:
+il Return blu usciva all'esterno della stanza e la successiva patch
+"no acute angles" non correggeva la cuspide rossa.
+
+Per disposizione utente sono state annullate **tutte e cinque** le modifiche
+successive al baseline, non soltanto l'ultimo gate angolare:
+- `699359e16202cb4e2a0bf0e88a2120fd4f6ee4a8` — normalizzazione runtime P=0,30;
+- `17403b42ee52e04603cb6357027fbcab007a23e0` — Harness P=0,30;
+- `cfae98d64beffe3d614545c15e0ee35fb88bb706` — documentazione P=0,30;
+- `00802024038225314a5b682787395b1f6b0f82f5` — gate no-acute;
+- `10e77fa647c0024cd046c65d7e2fd7625a9ccc64` — documentazione no-acute.
+
+Il commit di rollback `db13de55c3589a2d6ef8ad5380944295758d7570`
+usa esattamente lo stesso tree del baseline
+`c4c7f1ff2b621090a74ec258b3e730377006a728`: il confronto Git tra i due
+commit riporta **0 file differenti**.
+
+Stato runtime ripristinato:
+- `PassoTubi=0,30 m` come nel baseline storico;
+- distanza Supply-parete del baseline: `0,30 m`;
+- distanza Return usata dalla chiusura revisionata: `0,15 m`;
+- chiusura quadrato precedente `M2P/R0P` e vincolo lunghezza reale raccordo
+  `>=2P` restano quelli del baseline;
+- la normalizzazione P=0,30 e il gate finale sugli angoli acuti **non sono
+  attivi** dopo il rollback.
+
+Motivo del rollback: ripristinare prima la geometria stabile in cui il Return
+blu non veniva spinto fuori parete; la semantica P=0,30 potrà essere
+reintrodotta solo con una modifica che preservi il lato corretto del Return.
+
+La scomparsa visiva del blu esterno richiede conferma nel browser dell'utente;
+build/deploy server verificano soltanto che il baseline sia stato pubblicato
+correttamente.
+

@@ -198,3 +198,16 @@ Correzione verificata e pubblicata nel commit `e60d9ed9c5536852dbb60c146cdb6abb7
 ### 2026-09-29 — vincolo finale 2P sulla curva di raccordo
 Ulteriore chiarimento alla chiusura M2P/R0P: `2P` non e' il minimo della corda rettilinea fra gli estremi, ma il minimo della **lunghezza reale del raccordo curvo finale**. Il bridge Vittorio_revisionato passa ora `2P` a `CreaCurvaCollegamentoAdattiva`; la Bezier viene estesa progressivamente entro la lunghezza dei terminali e accettata solo se la sua polilinea misura almeno `2P` e resta priva di intersezioni. Sul quadrato P=0,15 il gate ha misurato `0,300501402127749 m >= 0,30 m`, mantenendo la selezione `M2P/R0P`. Commit funzionale `d0fd8c372792998a16bb3c78c998d86498a7872c`, diagnostica finale `633acf94f27c797580402c24de762592bb9c7af7`, Harness run `36553567099` SUCCESS sul gate mirato.
 
+### 2026-09-29 — rollback alla geometria pre-P030 per regressione blu esterno
+Il collaudo server ha mostrato il Return blu all'esterno della stanza dopo la
+normalizzazione runtime P=0,30; il successivo gate "no acute angles" non ha
+risolto la cuspide. Su richiesta utente main e' stato riportato con un normale
+commit (nessun force-push) al tree esatto di
+`c4c7f1ff2b621090a74ec258b3e730377006a728`.
+Commit rollback: `db13de55c3589a2d6ef8ad5380944295758d7570`.
+Sono quindi inattive le modifiche `699359e`, `17403b4`, `cfae98d`,
+`0080202` e `10e77fa`. Il baseline torna a `PassoTubi=0,30`,
+distanza parete Supply `0,30` e distanza Return/chiusura `0,15`.
+La conferma che il blu esterno sia scomparso resta una prova visiva manuale
+successiva al deploy.
+
