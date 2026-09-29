@@ -1900,3 +1900,39 @@ Verifica:
 
 Regola corrente:
 > **nessuna notifica di build; unica notifica telefonica = chiusura Issue #1.**
+
+
+### 2026-09-29 — Vittorio_revisionato solo mandata per esame visivo
+Stato: **IMPLEMENTATO — BUILD/DEPLOY IN VERIFICA**
+
+Commissionato:
+- riprendere il lavoro su `Vittorio_revisionato`;
+- sospendere temporaneamente chiusura e ritorno;
+- lasciare visibile esclusivamente la mandata per agevolare il confronto
+  visivo dell'utente;
+- pubblicare e notificare il completamento tramite Issue #1.
+
+Implementazione:
+- `SpiraliVittorioRevisionato/Program.cs`:
+  - aggiunta costante `SoloMandataPerEsameVisivo = true`;
+  - il percorso pubblico `AggiornaSpirali()` esegue soltanto
+    `GeneraSpirale()`, non `ChiudiSpiraleFiles()`;
+  - lo SVG pre-chiusura viene riclassificato da blu a rosso affinché
+    `RadiantExecutiveGenerator` lo esponga come
+    `*_PannelliMandata_Output`;
+  - chiusura e Return restano nel codice e sono semplicemente sospesi;
+- `StrategiaVittorioRevisionatoBenchmark` chiama esplicitamente
+  `AggiornaSpirali(false)`: la regression completa contro Vittorio resta
+  quindi separata e continua a verificare il flusso storico completo;
+- `smoke-radiant-reference.ps1` per override
+  `Vittorio_revisionato` verifica:
+  - presenza layer Mandata;
+  - assenza layer Ritorno;
+  - assenza layer NumeriCircuiti/annotazione chiusura.
+
+Vincolo:
+- nessuna modifica a `SpiralGenerator` o alla geometria della mandata;
+- modalità dichiaratamente temporanea e reversibile.
+
+**PROSSIMO PASSO:** attendere build/smoke, verificare deploy Render aggiornato,
+poi chiudere Issue #1 Completed se il percorso pubblico è disponibile.
