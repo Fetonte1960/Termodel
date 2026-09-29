@@ -207,7 +207,11 @@ public static class StrategiaVittorioRevisionatoBenchmark
             historical.spiral.Count,
             unconditionedReturn.spiral.Count,
             conditionedReturn.spiral.Count,
-            step / 2.0);
+            step / 2.0,
+            SpiralHeatingVittorioRevisionato.Program.P,
+            SpiralHeatingVittorioRevisionato.Program.DistanzaPareti,
+            SpiralHeatingVittorioRevisionato.Program.DistanzaMandataMandata,
+            SpiralHeatingVittorioRevisionato.Program.DistanzaRitorno);
     }
 
     private static bool SamePoints(
@@ -235,4 +239,8 @@ public sealed record StrategiaVittorioRevisionatoAbstractionCheck(
     int SupplyPoints,
     int UnconditionedReturnPoints,
     int ConditionedReturnPoints,
-    double ConditioningDistanceMeters);
+    double ConditioningDistanceMeters,
+    double PMeters,
+    double WallDistanceMeters,
+    double SupplyToSupplyMeters,
+    double ReturnDistanceMeters);
