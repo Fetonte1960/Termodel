@@ -700,12 +700,11 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Publish final status and notify
+      - name: Publish final status
         if: ${{ always() && github.event_name != 'pull_request' }}
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          NTFY_TOPIC: ${{ secrets.TERMODEL_NTFY_TOPIC }}
         run: |
           $jobStatus = "${{ job.status }}"
           $ok = $jobStatus -eq "success"
@@ -725,16 +724,3 @@ jobs:
           } | ConvertTo-Json
           Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
           Write-Host "TERMODEL_JOB_STATUS=$label"
-          if (-not [string]::IsNullOrWhiteSpace($env:NTFY_TOPIC)) {
-            try {
-              $message = "Termodel Radiant Harness #${{ github.run_number }} $label - ${{ github.sha }} - $runUrl"
-              Invoke-RestMethod -Uri "https://ntfy.sh/$env:NTFY_TOPIC" -Method Post -Headers @{
-                "Title" = "Termodel Radiant Harness"
-                "Priority" = "low"
-                "Tags" = if ($ok) { "white_check_mark" } else { "x" }
-              } -Body $message | Out-Null
-              Write-Host "PHONE_NOTIFICATION_SENT status=$label"
-            } catch {
-              Write-Warning "Notifica ntfy non riuscita: $($_.Exception.Message)"
-            }
-          }
