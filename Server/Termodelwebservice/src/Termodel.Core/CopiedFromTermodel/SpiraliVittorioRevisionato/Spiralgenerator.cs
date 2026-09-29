@@ -19,6 +19,7 @@ namespace SpiralHeatingVittorioRevisionato
 		public bool DrawSpiral { get; set; } = true;
 		public List<Punto> LineeCondizionamento { get; set; } = new List<Punto>();
 		public double DistanzaCondizionamento { get; set; }
+		public bool TerminalCenterline { get; set; }
 	}
 
 	public static class SpiralGenerator
@@ -50,7 +51,8 @@ namespace SpiralHeatingVittorioRevisionato
 				input.Distanza,
 				input.DrawSpiral,
 				input.LineeCondizionamento,
-				input.DistanzaCondizionamento);
+				input.DistanzaCondizionamento,
+				input.TerminalCenterline);
 		}
 
 		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(
@@ -64,7 +66,8 @@ namespace SpiralHeatingVittorioRevisionato
 				distanza,
 				drawSpiral,
 				null,
-				0.0);
+				0.0,
+				false);
 
 		private static (List<Punto> spiral, List<List<Punto>> offsets) GenerateCore(
 			List<Punto> perimetro,
@@ -72,7 +75,8 @@ namespace SpiralHeatingVittorioRevisionato
 			double distanza,
 			bool drawSpiral,
 			List<Punto> lineeCondizionamento,
-			double distanzaCondizionamento)
+			double distanzaCondizionamento,
+			bool terminalCenterline)
 		{
 			List<Punto> spiral = new List<Punto>();
 			bool usaCondizionamento =
@@ -290,18 +294,10 @@ namespace SpiralHeatingVittorioRevisionato
 			// termina su un ultimo anello rettangolare lasciando ancora una fascia
 			// centrale sfruttabile, prolunga la sola mandata con una piega a p e
 			// un asse centrale. Non altera la generazione degli offset storici.
-			if (TerminalCenterlineEnabled())
+			if (terminalCenterline)
 				TryAppendTerminalCenterline(spiral, offsets, distanza);
 
 			return (spiral, offsets);
-		}
-
-		private static bool TerminalCenterlineEnabled()
-		{
-			string value = Environment.GetEnvironmentVariable(
-				"TERMODEL_VITTORIO_REVISIONATO_TERMINAL_CENTERLINE");
-			return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase) &&
-				!string.Equals(value, "0", StringComparison.OrdinalIgnoreCase);
 		}
 
 		private static void TryAppendTerminalCenterline(
