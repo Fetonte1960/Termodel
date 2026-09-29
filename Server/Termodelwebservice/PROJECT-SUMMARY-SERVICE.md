@@ -7480,3 +7480,14 @@ Correzione verificata dal gate dedicato Harness #100. Causa finale: l'adattament
 
 ### 2026-09-29 — vincolo chiusura minimo 2P ripristinato
 Corretto l'adattatore Vittorio/Diego: la scala geometrica del Return resta P/2, ma il criterio di accettazione della chiusura resta quello originale umano `lunghezza >= 2P` riferito al passo nominale. Prima il passaggio di P/2 alla combinatoria riduceva involontariamente la soglia a P. Commit `9f178819b9412d212fa06091c25c66b62216583d`. Harness #101: build SUCCESS e gate quadrato pubblico con vincolo corretto SUCCESS; suite restante in esecuzione al momento della pubblicazione.
+
+
+### 2026-09-29 — Chiusura Diego_Vittorio: combinatoria simmetrica first-success
+
+Commit `f2b78af0e860a5a52b3d7cc8fe833b799b271d93`.
+
+La ricerca della chiusura centrale di `Vittorio_revisionato` usa ora la stessa matrice per mandata e ritorno: per 0..3 tratti terminali rimossi prova terminale invariato oppure accorciato a `P`; sono stati eliminati tutti i casi di accorciamento a `2P`. Il vincolo di accettazione sulla distanza tra gli estremi resta separato e pari a `>= 2P` nominale.
+
+La ricerca è ora realmente first-success: ogni coppia viene tagliata/accorciata, valutata, raccordata e controllata per intersezioni sulla geometria risultante; il primo raccordo completo valido interrompe immediatamente la combinatoria. Sono state rimosse dalla selezione le proiezioni `RP*` e la successiva scelta del candidato “migliore”, che potevano selezionare un candidato prima della verifica finale del raccordo.
+
+Stato: implementato e pubblicato su GitHub; compilazione/esecuzione Visual Studio locale ancora da verificare.
