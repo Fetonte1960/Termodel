@@ -607,9 +607,16 @@ namespace SpiralHeatingDiegoVittorio
             var livelliMandata = new (string codice, int rimossi, double? lunghezzaFinale)[]
             {
                 ("M0", 3, null),
+                ("M0P", 3, passo),
+                ("M0_2P", 3, 2.0 * passo),
                 ("M1", 2, 2.0 * passo),
+                ("M1P", 2, passo),
+                ("M1I", 2, null),
                 ("M2", 1, 2.0 * passo),
+                ("M2P", 1, passo),
+                ("M2I", 1, null),
                 ("M3", 0, 2.0 * passo),
+                ("M3P", 0, passo),
                 ("M4", 0, null)
             };
             var tentativiRitorno = new (string codice, int rimossi, double? lunghezzaFinale)[]
