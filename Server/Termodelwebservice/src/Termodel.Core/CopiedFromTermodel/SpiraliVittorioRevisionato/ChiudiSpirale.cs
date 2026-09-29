@@ -76,14 +76,17 @@ namespace SpiralHeatingVittorioRevisionato
                         continue;
                     }
                     
-                    // Modificato da Codex per realizzare: ripristino delle
-                    // preparazioni geometriche necessarie al corretto sviluppo
-                    // del ritorno; viene disattivata più sotto soltanto la curva
-                    // di chiusura originale di Vittorio.
-                    spirale = SpostaUltimoPuntoASinistra(
-                        spirale,
-                        distanzaRotazioneUltimoPunto);
-                    spirale = AggiungiPuntoIntermedio(spirale);
+                    // Nel percorso pubblico con chiusura Diego NON applicare
+                    // la vecchia preparazione terminale Vittorio: era l'origine
+                    // del segmento diagonale rosso osservato nel collaudo.
+                    // Il benchmark storico conserva invece il comportamento originale.
+                    if (!usaRaccordoAdattivoDiego)
+                    {
+                        spirale = SpostaUltimoPuntoASinistra(
+                            spirale,
+                            distanzaRotazioneUltimoPunto);
+                        spirale = AggiungiPuntoIntermedio(spirale);
+                    }
                     
                     var perimetro = locale.Descendants("PerimetroInterno")
                         .Elements("Punto")
@@ -95,6 +98,30 @@ namespace SpiralHeatingVittorioRevisionato
                     
                     var spiraleArrotondata = GeometryUtils.ArrotondaSpirale(spirale, raggioCurvatura);
                     var rientro = CreaRientro(spiraleArrotondata, distanzaRitorno);
+
+                    // Il Return è già stato costruito dalla duplicazione/offset Vittorio.
+                    // Diego interviene SOLO sui terminali per scegliere una chiusura
+                    // valida, senza rigenerare il percorso di ritorno.
+                    if (usaRaccordoAdattivoDiego)
+                    {
+                        var chiusuraDiego =
+                            SpiralHeatingDiegoVittorio.ChiudiSpirale.ApplicaChiusuraOttimizzata(
+                                spiraleArrotondata
+                                    .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                                    .ToList(),
+                                rientro
+                                    .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                                    .ToList(),
+                                distanzaRitorno);
+                        if (chiusuraDiego.Applicata)
+                        {
+                            spiraleArrotondata = chiusuraDiego.Mandata
+                                .Select(p => new Punto(p.X, p.Y)).ToList();
+                            rientro = chiusuraDiego.Ritorno
+                                .Select(p => new Punto(p.X, p.Y)).ToList();
+                        }
+                    }
+
                     // Modificato da Codex per realizzare: ripristino integrale
                     // della chiusura geometrica originale di Vittorio,
                     // mantenendo anche il box numerato ChiusuraGPT.
