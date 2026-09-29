@@ -11,7 +11,7 @@ namespace SpiralHeatingDiegoVittorio
 {
     public static class ChiudiSpirale
     {
-        private const int MaxTrattiTerminaliChiusura = 3;
+        private const int MaxTrattiTerminaliChiusura = 2;
 
         // Funzione realizzata da Codex in autonomia
         private sealed class CandidatoChiusura
@@ -192,7 +192,8 @@ namespace SpiralHeatingDiegoVittorio
                         chiusuraOttimizzata = GeneraPrimaChiusuraAccettabile(
                             spirale,
                             rientroRettilineo,
-                            distanzaRitorno);
+                            distanzaRitorno,
+                            raggioCurvatura);
                         if (chiusuraOttimizzata == null)
                         {
                             Console.WriteLine(
@@ -548,6 +549,11 @@ namespace SpiralHeatingDiegoVittorio
         // già esistenti per ricondurre il Return raccordato alla sua polilinea
         // rettilinea parallela PRIMA della combinatoria. Nessuna nuova euristica
         // di chiusura viene introdotta.
+        //
+        // Convenzione geometrica vincolante:
+        // passo = P = distanza Mandata <-> Ripresa;
+        // 2*P = distanza Mandata <-> Mandata;
+        // P/2 = distanza Mandata <-> Parete.
         public static (List<Punto> Mandata, List<Punto> Ritorno, List<Punto> Raccordo, bool Applicata)
             ApplicaChiusuraCombinatoriaSuRitornoVittorio(
                 List<Punto> mandataRettilinea,
@@ -577,7 +583,7 @@ namespace SpiralHeatingDiegoVittorio
             var candidato = GeneraPrimaChiusuraAccettabile(
                 mandataRettilinea,
                 ritornoVersoCentro,
-                passo / 2.0,
+                passo,
                 raggio,
                 lunghezzaMinimaChiusura: 2.0 * passo);
             if (candidato == null)
@@ -616,9 +622,12 @@ namespace SpiralHeatingDiegoVittorio
             }
 
             // Matrice combinatoria simmetrica concordata: per entrambi i lati
-            // si provano 0..3 tratti rimossi e, sul nuovo terminale, soltanto
-            // invarianza oppure accorciamento a P. La distanza tra gli estremi
-            // resta filtrata separatamente dal vincolo >= 2P.
+            // si provano 0..2 tratti rimossi e, sul nuovo terminale, soltanto
+            // invarianza oppure lunghezza esattamente P. Se il terminale e'
+            // maggiore di P viene accorciato; se e' minore viene allungato.
+            // In questo modo si coinvolgono al massimo 3 tratti originali
+            // per lato. La distanza tra gli estremi resta filtrata
+            // separatamente dal vincolo >= 2P.
             var azioniTerminali = new (int rimossi, double? lunghezzaFinale)[]
             {
                 (0, null),
@@ -626,9 +635,7 @@ namespace SpiralHeatingDiegoVittorio
                 (1, null),
                 (1, passo),
                 (2, null),
-                (2, passo),
-                (3, null),
-                (3, passo)
+                (2, passo)
             };
 
             int numeroTentativo = 0;
@@ -803,14 +810,17 @@ namespace SpiralHeatingDiegoVittorio
                     return null;
 
                 double obiettivo = lunghezzaFinale.Value;
-                if (lunghezza > obiettivo + 0.000001)
-                {
-                    double rapporto = obiettivo / lunghezza;
-                    punti[^1] = new Punto(
-                        inizio.X + (fine.X - inizio.X) * rapporto,
-                        inizio.Y + (fine.Y - inizio.Y) * rapporto);
+                double rapporto = obiettivo / lunghezza;
+                punti[^1] = new Punto(
+                    inizio.X + (fine.X - inizio.X) * rapporto,
+                    inizio.Y + (fine.Y - inizio.Y) * rapporto);
+
+                // La modalita P impone la lunghezza esatta: accorcia se il
+                // terminale e' maggiore di P e allunga se e' minore di P.
+                // LunghezzaRimossa resta una metrica di materiale eliminato,
+                // quindi non diventa negativa quando il terminale viene esteso.
+                if (lunghezza > obiettivo)
                     lunghezzaRimossa += lunghezza - obiettivo;
-                }
             }
 
             return new ConfigurazioneTerminale
@@ -1497,7 +1507,6 @@ namespace SpiralHeatingDiegoVittorio
                 perimetro,
                 true);
         }
-
         // Funzione realizzata da Codex in autonomia
         private static bool RettangoloIntersecaTubazioni(
             Punto centro,
