@@ -1786,3 +1786,44 @@ FASE 2 prevista solo dopo FASE 1 verde:
 - selezione frontend pubblica esplicita;
 - provenienza runtime coerente con il motore richiesto;
 - build/regression/deploy pubblico.
+
+
+#### STEP 4J.1 — FASE 1 collaudo multi-progetto completata
+Stato: **COMPLETATO — EQUIVALENZA CONFERMATA SU 6 CASI**
+
+Fast Harness:
+- run `36503404032` (#64): **SUCCESS**;
+- Build Harness + Core: SUCCESS;
+- step `Verify Vittorio_revisionato multi-project equivalence`: SUCCESS;
+- tutte le regression Diego_Vittorio successive: SUCCESS.
+
+Confronto Vittorio vs Vittorio_revisionato, SVG + XML byte-identici:
+- `square-4x4`:
+  SVG `9673CD8D77A9963EC425FA69F54B8DCFF4C162312336D08D74AC722A2E0122A4`;
+  XML `9517A5BFFE56F7CCB2419F173A0020FAC0EEBF6B2FD3706C02CD29D32C0DDCA6`;
+- `concave-l`:
+  SVG `8B969D9C25D5EB20F759EF6C0BF9407A190F87F770D01D776EFD7E6DEE80EB0C`;
+  XML `3187DCA854CEE0BF7FA8313FCDC1640EF12C6F8E1A3886B4DBD4403ED0387E23`;
+- `oblique-trapezoid`:
+  SVG `9C2A4934ABE4C6715801DEE649A373D3C0EED720121FF8B200AEDA37C0E9BAA0`;
+  XML `4535E93D4AAB0D08FB86CED3A595307E3F2FEB55B880DD1DDB3ACE966A6C1772`;
+- `connection-terminal`:
+  SVG `954C1952BA521452572CBFF449066F044AE33DA864CDB7B00185AD421DFA2CFA`;
+  XML `5BA66E35EB23F32B5F05A32C78F674E00F7DF7C3496DF67B6A23F8AFC6233BB3`;
+- `current-apartment`:
+  SVG `90A8695EFFFF896587742ADD4D785ACD060DC71ED533A6DF6C9779D7B6E057C6`;
+  XML `07221BD4633D0A2726054EF6D578B67C414779C7B1EB5383C9AD389CAA410442`;
+- `public-radiant-panels` completo:
+  SVG `41E7E4D89BE381FA8C1C9704C6CBCC87C052EF0206322733DF78CEF30FD5A222`;
+  XML `2E89EE98F7065C93911096650CFC1C9D5546CB0DD89823C46686B8ECA32E2A13`.
+
+Conclusione procedurale:
+- il precedente collaudo sul solo quadrato è superato;
+- la base `Vittorio_revisionato` è ora confrontata su casi rettangolari,
+  concavi, obliqui, terminali e due progetti complessi;
+- è autorizzata la FASE 2 di pubblicazione come motore **selezionabile per
+  richiesta**, senza cambiare il default `Diego_Vittorio`.
+
+**PROSSIMO PASSO:** implementare selezione per-request nel Service, selettore
+pubblico Web e provenienza esecutivo col motore realmente usato; poi build,
+regression e verifica deploy Render + Pages.
