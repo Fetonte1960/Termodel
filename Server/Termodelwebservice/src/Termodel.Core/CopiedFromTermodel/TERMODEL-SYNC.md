@@ -188,3 +188,7 @@ Correzione verificata dal gate dedicato Harness #100. Causa finale: l'adattament
 
 ### 2026-09-29 — vincolo chiusura minimo 2P ripristinato
 Corretto l'adattatore Vittorio/Diego: la scala geometrica del Return resta P/2, ma il criterio di accettazione della chiusura resta quello originale umano `lunghezza >= 2P` riferito al passo nominale. Prima il passaggio di P/2 alla combinatoria riduceva involontariamente la soglia a P. Commit `9f178819b9412d212fa06091c25c66b62216583d`. Harness #101: build SUCCESS e gate quadrato pubblico con vincolo corretto SUCCESS; suite restante in esecuzione al momento della pubblicazione.
+
+### 2026-09-29 — convenzione P corretta e limite chiusura Vittorio_revisionato
+Questa nota prevale sulle descrizioni storiche sopra che parlano di Return a "meta passo". Convenzione vincolante: `P` = Mandata-Ripresa, `2P` = Mandata-Mandata, `P/2` = Mandata-Parete. L'adattatore Vittorio_revisionato passa ora `P` direttamente alla combinatoria Diego_Vittorio; la soglia di chiusura resta `>= 2P`. La ricerca e' limitata a 0..2 tratti rimossi per lato e il terminale in modalita' `P` viene portato esattamente a `P`, anche allungandolo quando necessario. Fast Harness non eseguito per disposizione utente.
+
