@@ -56,6 +56,7 @@ const helpOpenWebHelp = document.getElementById('helpOpenWebHelp');
 const helpExplorationMode = document.getElementById('helpExplorationMode');
 const helpCopyProjectClipboard = document.getElementById('helpCopyProjectClipboard');
 const helpCopyLogClipboard = document.getElementById('helpCopyLogClipboard');
+const helpSpiralEngine = document.getElementById('helpSpiralEngine');
 const TERMODEL_LOG_CATEGORIES = [
   'Sempre',
   'colmi',
@@ -68,7 +69,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.35';
+const APP_VERSION = '1.36';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -344,6 +345,7 @@ let currentProjectText = '';
 let currentProjectFileName = '';
 let currentProjectId = '';
 let currentServiceManifest = null;
+let currentCalculationSpiralEngine = '';
 let lastTermodelLogText = '';
 let lastTermodelLogProjectId = '';
 let termodelServiceReadyAt = 0;
@@ -884,6 +886,10 @@ function selectedTermodelLogCategories() {
   });
 }
 
+function selectedTermodelSpiralEngine() {
+  return String(helpSpiralEngine?.value || '').trim();
+}
+
 function buildTermodelCalculationPath() {
   const categories = selectedTermodelLogCategories();
   const query = new URLSearchParams();
@@ -893,6 +899,11 @@ function buildTermodelCalculationPath() {
     query.set('logEnabled', 'true');
     query.set('logCategories', categories.join(','));
   }
+
+  const spiralEngine = selectedTermodelSpiralEngine();
+  if (spiralEngine)
+    query.set('spiralEngine', spiralEngine);
+
   return '/api/calculations?' + query.toString();
 }
 
@@ -4142,6 +4153,9 @@ async function loadCalculatedModelFromService() {
 
     const data = await modelResponse.json();
     currentServiceManifest = calculation;
+    currentCalculationSpiralEngine = String(
+      calculation.spiralEngine || termodelServiceRuntimeEngine || ''
+    ).trim();
     // Un nuovo calcolo può aver sostituito l'esecutivo precedente. L'overlay
     // CAD è runtime: viene invalidato e ricaricato esplicitamente dal catalogo
     // universale dei file generati.
@@ -4177,11 +4191,14 @@ async function loadCalculatedModelFromService() {
     status.textContent =
       'PROGETTO CORRENTE · SERVER · ' +
       (data.primitiveCount ?? data.primitives.length) +
-      ' primitive · ' + diagnostics.length + ' diagnostica/e' +
+      ' primitive · motore ' +
+      (currentCalculationSpiralEngine || termodelServiceRuntimeEngine || 'n/d') +
+      ' · ' + diagnostics.length + ' diagnostica/e' +
       (copied ? ' · risposta copiata negli appunti' : ' · copia appunti non riuscita');
   } catch (error) {
     console.error(error);
     currentServiceManifest = null;
+    currentCalculationSpiralEngine = '';
     exchange.error = error?.message || String(error);
     const copied = await copyTermodelServerExchange(exchange);
     status.textContent =
@@ -6135,7 +6152,8 @@ async function cadLoadGeneratedExecutiveBackground(options = {}) {
       provenance: {
         kind: 'service-runtime',
         generator: 'Termodel Service',
-        spiralEngine: termodelServiceRuntimeEngine,
+        spiralEngine:
+          currentCalculationSpiralEngine || termodelServiceRuntimeEngine,
         serviceCommit: termodelServiceRuntimeCommit
       },
       svgText: parsed.svgText,
@@ -10869,6 +10887,12 @@ helpCopyProjectClipboard?.addEventListener('click', async event => {
     console.error('Copia progetto negli appunti non riuscita:', error);
     window.alert('Impossibile copiare il progetto negli appunti.\n\n' + error.message);
   }
+});
+
+helpSpiralEngine?.addEventListener('change', () => {
+  const selected = selectedTermodelSpiralEngine();
+  const label = selected || ('Predefinito Service (' + (termodelServiceRuntimeEngine || 'da /health') + ')');
+  status.textContent = 'Motore spirali prossimo Aggiorna Modello: ' + label;
 });
 
 helpCopyLogClipboard?.addEventListener('click', async event => {
