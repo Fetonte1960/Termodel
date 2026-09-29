@@ -46,7 +46,7 @@ public static class StrategiaVittorioRevisionatoBenchmark
                 {
                     Directory.SetCurrentDirectory(tempRoot);
                     Console.SetOut(capturedOut);
-                    SpiralHeatingVittorioRevisionato.Program.AggiornaSpirali();
+                    SpiralHeatingVittorioRevisionato.Program.AggiornaSpirali(soloMandataPerEsameVisivo: false);
                 }
                 finally
                 {
