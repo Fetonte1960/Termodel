@@ -678,9 +678,6 @@ jobs:
           function Start-ServiceProcess {
             $p = Start-Process dotnet -ArgumentList @("run","--project","src/Termodel.WebService/Termodel.WebService.csproj","--configuration","Release","--no-build","--no-launch-profile") -PassThru
             for ($attempt = 0; $attempt -lt 40; $attempt++) {
-              try {
-                if ((Invoke-RestMethod -Uri "$base/health" -Method Get).status -eq "ok") { return $p }
-              } catch { Start-Sleep -Milliseconds 500 }
             }
             if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force }
             throw "Termodel.WebService non ha risposto a /health."
@@ -1512,13 +1509,12 @@ jobs:
         shell: pwsh
         run: ./tools/smoke-github-snapshot.ps1
 
-      - name: Finalize Termodel job status and notify phone
+      - name: Finalize Termodel job status
         if: ${{ always() && github.event_name != 'pull_request' }}
         shell: pwsh
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          TERMODEL_NTFY_TOPIC: ${{ secrets.TERMODEL_NTFY_TOPIC }}
         run: |
           $ErrorActionPreference = "Continue"
           $finalStatus = if ("${{ job.status }}" -eq "success") { "SUCCESS" } else { "FAILED" }
@@ -1543,17 +1539,6 @@ jobs:
             Write-Warning "Impossibile aggiornare il Commit Status GitHub: $($_.Exception.Message)"
           }
 
-          if ([string]::IsNullOrWhiteSpace($env:TERMODEL_NTFY_TOPIC)) {
-            Write-Warning "TERMODEL_NTFY_TOPIC non configurato: notifica telefono non inviata."
-            exit 0
-          }
-
-          $topic = [uri]::EscapeDataString($env:TERMODEL_NTFY_TOPIC)
-          $message = "TermodelService Build #${{ github.run_number }}: $finalStatus" + [Environment]::NewLine + "Commit: ${{ github.sha }}"
-          # Le build sono notifiche operative: sempre bassa intensita.
-          # La massima intensita e' riservata alla chiusura della Issue #1.
-          $priority = "low"
-          $tags = if ($finalStatus -eq "SUCCESS") { "white_check_mark" } else { "rotating_light" }
 
           try {
             $notifyHeaders = @{
