@@ -122,6 +122,9 @@ namespace SpiralHeatingVittorioRevisionato
                                     distanzaRitorno,
                                     raggioCurvatura);
 
+                        Console.WriteLine(
+                            $"  Chiusura Diego combinatoria: {(esitoDiego.Applicata ? "APPLICATA" : "NON APPLICATA")}; " +
+                            $"mandata={esitoDiego.Mandata.Count}; ritorno={esitoDiego.Ritorno.Count}; raccordo={esitoDiego.Raccordo.Count}.");
                         if (esitoDiego.Applicata)
                         {
                             spiraleArrotondata = esitoDiego.Mandata
