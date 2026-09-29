@@ -7437,3 +7437,14 @@ Stato:
 - Service Build run `36510945902`: build + smoke pannelli + override Vittorio_revisionato + verifica deploy pubblico SUCCESS; failure globale successiva nello smoke storage/lock, indipendente dalle spirali.
 - Commit finale funzionale: `514bb71add522115dfb8358514ce712aa1d8bdf2`.
 - Stato: pubblicato, in attesa di conferma visiva utente sul progetto reale.
+
+
+### Aggiornamento 2026-09-29 — Vittorio_revisionato ibrido con chiusura Diego_Vittorio
+- Approvata dall'utente la mandata con completamento centrale.
+- Il percorso pubblico `Vittorio_revisionato` genera ora quella mandata e passa lo stesso `locale.xml` direttamente al post-processore `SpiralHeatingDiegoVittorio.ChiudiSpirale.Chiudi` per Return, raccordi e chiusura.
+- Nessuna duplicazione nuova delle euristiche Diego: riuso diretto del codice esistente.
+- Il benchmark storico resta separato tramite `AggiornaSpirali(false)`.
+- Fast Harness #75: SUCCESS completo.
+- Service Build #1089: build, smoke pannelli, smoke pubblico `Vittorio_revisionato` completo e verifica deploy: SUCCESS; failure globale successiva nello smoke storage/lock indipendente.
+- Commit funzionale `d86a96cc1dcc3cd4293a99da4712184088175b57`; smoke adeguato al nuovo contratto `1c6966e289ec6173938452b12765059271d101ba`.
+- Stato: **pubblicato**, in attesa del controllo visivo dell'utente.
