@@ -652,7 +652,8 @@ namespace SpiralHeatingDiegoVittorio
                         mandata,
                         ritorno,
                         passo,
-                        numeroTentativo);
+                        numeroTentativo,
+                        lunghezzaMinimaChiusura);
                     if (candidato == null)
                         continue;
 
@@ -700,7 +701,8 @@ namespace SpiralHeatingDiegoVittorio
                         mandata,
                         ritorno,
                         passo,
-                        numeroTentativo);
+                        numeroTentativo,
+                        lunghezzaMinimaChiusura);
                     if (candidato == null)
                         continue;
 
