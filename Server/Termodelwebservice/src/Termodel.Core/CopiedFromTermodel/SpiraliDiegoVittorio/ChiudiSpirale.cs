@@ -592,16 +592,20 @@ namespace SpiralHeatingDiegoVittorio
                 raggio,
                 lunghezzaMinimaChiusura: null,
                 preferisciTerminaleP: true,
-                applicaFiltriCordaRettilinea: false);
+                applicaFiltriCordaRettilinea: false,
+                lunghezzaMinimaRaccordo: 2.0 * passo);
             if (candidato == null)
                 return (mandataRettilinea, ritornoVersoCentro, new List<Punto>(), false);
 
             var raccordo = CreaCurvaCollegamentoAdattiva(
                 candidato.Mandata,
                 candidato.Ritorno,
-                raggio);
+                raggio,
+                lunghezzaMinima: 2.0 * passo);
+            double lunghezzaRaccordo = LunghezzaPolilinea(raccordo);
             bool raccordoLibero =
                 raccordo.Count > 1 &&
+                lunghezzaRaccordo + 0.000001 >= 2.0 * passo &&
                 !CurvaIntersecaTrattiNonAdiacenti(raccordo, candidato.Mandata) &&
                 !CurvaIntersecaTrattiNonAdiacenti(raccordo, candidato.Ritorno);
             if (!raccordoLibero)
@@ -621,7 +625,8 @@ namespace SpiralHeatingDiegoVittorio
             double raggio,
             double? lunghezzaMinimaChiusura = null,
             bool preferisciTerminaleP = false,
-            bool applicaFiltriCordaRettilinea = true)
+            bool applicaFiltriCordaRettilinea = true,
+            double? lunghezzaMinimaRaccordo = null)
         {
             if (mandataOriginale == null || mandataOriginale.Count < 2 ||
                 ritornoOriginale == null || ritornoOriginale.Count < 2 ||
@@ -722,9 +727,14 @@ namespace SpiralHeatingDiegoVittorio
                     List<Punto> raccordo = CreaCurvaCollegamentoAdattiva(
                         candidato.Mandata,
                         candidato.Ritorno,
-                        raggio);
+                        raggio,
+                        lunghezzaMinimaRaccordo);
+                    double lunghezzaRaccordo = LunghezzaPolilinea(raccordo);
                     bool raccordoLibero =
                         raccordo.Count > 1 &&
+                        (!lunghezzaMinimaRaccordo.HasValue ||
+                         lunghezzaRaccordo + 0.000001 >=
+                            lunghezzaMinimaRaccordo.Value) &&
                         !CurvaIntersecaTrattiNonAdiacenti(
                             raccordo,
                             candidato.Mandata) &&
@@ -735,10 +745,17 @@ namespace SpiralHeatingDiegoVittorio
                     {
                         if (TraceClosureEnabled)
                         {
+                            string motivo =
+                                lunghezzaMinimaRaccordo.HasValue &&
+                                lunghezzaRaccordo + 0.000001 <
+                                    lunghezzaMinimaRaccordo.Value
+                                    ? "curve-length"
+                                    : "intersection-after-trim";
                             Console.WriteLine(
                                 $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
                                 $"seq={codiceMandata}/{codiceRitorno} " +
-                                "reason=intersection-after-trim.");
+                                $"reason={motivo} curveLength={lunghezzaRaccordo:R} " +
+                                $"requiredCurveLength={lunghezzaMinimaRaccordo.GetValueOrDefault():R}.");
                         }
                         continue;
                     }
@@ -749,7 +766,9 @@ namespace SpiralHeatingDiegoVittorio
                             $"  DV_CLOSURE_SELECTED attempt={numeroTentativo} " +
                             $"seq={codiceMandata}/{codiceRitorno} " +
                             $"type=first-complete-success " +
-                            $"length={candidato.LunghezzaChiusura:R}.");
+                            $"length={candidato.LunghezzaChiusura:R} " +
+                            $"curveLength={lunghezzaRaccordo:R} " +
+                            $"requiredCurveLength={lunghezzaMinimaRaccordo.GetValueOrDefault():R}.");
                     }
 
                     return candidato;
@@ -1023,6 +1042,19 @@ namespace SpiralHeatingDiegoVittorio
         }
 
         // Funzione realizzata da Codex in autonomia
+        private static double LunghezzaPolilinea(
+            List<Punto> punti)
+        {
+            if (punti == null || punti.Count < 2)
+                return 0.0;
+
+            double lunghezza = 0.0;
+            for (int i = 0; i < punti.Count - 1; i++)
+                lunghezza += punti[i].DistanceTo(punti[i + 1]);
+
+            return lunghezza;
+        }
+
         private static double LunghezzaCodaRimossa(
             List<Punto> polilinea,
             int trattiRimossi)
@@ -1832,7 +1864,8 @@ namespace SpiralHeatingDiegoVittorio
         private static List<Punto> CreaCurvaCollegamentoAdattiva(
             List<Punto> mandata,
             List<Punto> ritorno,
-            double raggio)
+            double raggio,
+            double? lunghezzaMinima = null)
         {
             if (mandata.Count < 2 || ritorno.Count < 2)
                 return new List<Punto>();
@@ -1848,7 +1881,12 @@ namespace SpiralHeatingDiegoVittorio
                 lunghezzaRitorno <= 0.000001 ||
                 lunghezzaChiusura <= 0.000001)
             {
-                return new List<Punto> { inizio, fine };
+                var rettaDegenera = new List<Punto> { inizio, fine };
+                return !lunghezzaMinima.HasValue ||
+                       LunghezzaPolilinea(rettaDegenera) + 0.000001 >=
+                            lunghezzaMinima.Value
+                    ? rettaDegenera
+                    : new List<Punto>();
             }
 
             var tangenteMandata = new Punto(
@@ -1857,9 +1895,47 @@ namespace SpiralHeatingDiegoVittorio
             var tangenteRitorno = new Punto(
                 (precedenteRitorno.X - fine.X) / lunghezzaRitorno,
                 (precedenteRitorno.Y - fine.Y) / lunghezzaRitorno);
-            double manigliaMassima = Math.Min(
+            double manigliaBase = Math.Min(
                 Math.Min(raggio, lunghezzaChiusura / 3.0),
                 0.45 * Math.Min(lunghezzaMandata, lunghezzaRitorno));
+
+            if (lunghezzaMinima.HasValue)
+            {
+                // Per il bridge Vittorio_revisionato il vincolo >= 2P riguarda
+                // la lunghezza REALE del raccordo curvo, non la corda tra gli
+                // estremi. Si aumenta progressivamente la maniglia fino alla
+                // lunghezza disponibile dei due terminali e si accetta il
+                // primo raccordo che soddisfa sia la lunghezza sia le
+                // intersezioni finali.
+                double manigliaEstesaMassima =
+                    Math.Min(lunghezzaMandata, lunghezzaRitorno);
+                const int tentativiEstesi = 16;
+                for (int i = 0; i <= tentativiEstesi; i++)
+                {
+                    double frazione = (double)i / tentativiEstesi;
+                    double maniglia =
+                        manigliaBase +
+                        (manigliaEstesaMassima - manigliaBase) * frazione;
+                    List<Punto> curva = CreaBezierCubicaAdattiva(
+                        inizio,
+                        fine,
+                        tangenteMandata,
+                        tangenteRitorno,
+                        maniglia);
+                    double lunghezzaCurva = LunghezzaPolilinea(curva);
+                    if (lunghezzaCurva + 0.000001 < lunghezzaMinima.Value)
+                        continue;
+                    if (CurvaIntersecaTrattiNonAdiacenti(curva, mandata) ||
+                        CurvaIntersecaTrattiNonAdiacenti(curva, ritorno))
+                    {
+                        continue;
+                    }
+
+                    return curva;
+                }
+
+                return new List<Punto>();
+            }
 
             foreach (double fattore in new[] { 1.0, 0.75, 0.5, 0.25 })
             {
@@ -1868,7 +1944,7 @@ namespace SpiralHeatingDiegoVittorio
                     fine,
                     tangenteMandata,
                     tangenteRitorno,
-                    manigliaMassima * fattore);
+                    manigliaBase * fattore);
                 if (!CurvaIntersecaTrattiNonAdiacenti(curva, mandata) &&
                     !CurvaIntersecaTrattiNonAdiacenti(curva, ritorno))
                 {
@@ -1876,8 +1952,8 @@ namespace SpiralHeatingDiegoVittorio
                 }
             }
 
-            // La retta è già stata validata da LG-048: se nessuna curvatura
-            // resta libera, si conserva la chiusura sicura senza raccordo.
+            // Percorso storico: se nessuna curvatura resta libera, conserva
+            // la chiusura retta già validata dai filtri storici.
             return new List<Punto> { inizio, fine };
         }
 
