@@ -231,10 +231,17 @@ namespace SpiralHeatingVittorioRevisionato
                 List<Punto> spiral;
                 List<List<Punto>> offsets;
                 (spiral, offsets) = SpiralGenerator.Generate(
-                    perimetro,
-                    lineaIngresso.PuntoInterno,
-                    DistanzaPareti,
-                    true  // writeSvg non usato in SpiralGenerator
+                    new SpiralGenerationInput
+                    {
+                        Perimetro = perimetro,
+                        StartPoint = lineaIngresso.PuntoInterno,
+                        Distanza = DistanzaPareti,
+                        DrawSpiral = true,
+                        // Solo nel percorso pubblico Vittorio_revisionato:
+                        // completa l'ultima fascia rettangolare con asse centrale.
+                        // Rollback immediato: impostare false.
+                        TerminalCenterline = true
+                    }
                 );
                 
                 // Salva spirale nel locale XML
