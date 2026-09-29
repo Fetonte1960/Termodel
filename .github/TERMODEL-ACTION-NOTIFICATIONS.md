@@ -2,26 +2,35 @@
 
 Classificazione: **IMPORTANTE — REGOLA PERMANENTE DI PROGETTO**  
 Introduzione: **24 settembre 2026**  
-Stato: **IMPLEMENTATO E VERIFICATO END-TO-END**
+Aggiornamento operativo: **29 settembre 2026**  
+Stato: **NOTIFICHE BUILD SOSPESE — RESTA SOLO ISSUE #1**
 
 Questa specifica è il riferimento canonico per lo stato degli incarichi eseguiti
-con GitHub Actions e per la notifica push sul telefono al termine del lavoro.
+con GitHub Actions e per la notifica push sul telefono.
 
-## Regola obbligatoria
+## Regola corrente
 
-Per ogni GitHub Action usata come incarico operativo, debug avanzato, build/test
-significativo o altra elaborazione la cui conclusione interessa l'utente:
+Le GitHub Actions possono continuare a pubblicare lo stato tecnico tramite
+Commit Status GitHub, ma **non devono più inviare notifiche ntfy per build,
+test, deploy, harness, retry o verifiche automatiche**.
 
-1. all'avvio pubblicare lo stato logico **RUNNING**;
-2. a conclusione pubblicare **SUCCESS** oppure **FAILED**;
-3. negli stati terminali inviare **una notifica push al telefono**;
-4. non usare polling periodico: è la Action stessa a produrre stato e notifica;
-5. lo step finale deve usare `always()`, così viene eseguito anche dopo un
-   fallimento del lavoro precedente.
+L'unica notifica telefonica Termodel autorizzata è la chiusura della
+**GitHub Issue #1**, che rappresenta la fine reale dell'incarico.
+
+Quindi:
+
+1. gli workflow tecnici possono pubblicare `RUNNING`, `SUCCESS` o `FAILED`
+   come Commit Status;
+2. nessuno workflow tecnico/build deve usare `TERMODEL_NTFY_TOPIC`;
+3. nessuno workflow tecnico/build deve chiamare `https://ntfy.sh/`;
+4. la Issue #1 viene aggiornata durante il lavoro e chiusa a fine incarico;
+5. la chiusura della Issue #1 genera l'unica notifica telefonica;
+6. `completed` significa incarico concluso con successo;
+7. `not_planned` significa incarico terminato senza successo.
 
 ## Stato GitHub canonico
 
-Usare un **Commit Status nativo GitHub**:
+È consentito e raccomandato continuare a usare il Commit Status nativo GitHub:
 
 ```text
 context: Termodel/job
@@ -31,105 +40,73 @@ SUCCESS -> state: success
 FAILED  -> state: failure
 ```
 
-Il `target_url` deve puntare alla GitHub Action che esegue l'incarico.
-RUNNING non deve generare push sul telefono: il push è riservato a
-SUCCESS/FAILED.
+Il Commit Status è solo stato tecnico su GitHub e **non deve produrre push sul
+telefono**.
 
-## Notifica push e sicurezza
+## Unica notifica telefonica
 
-Il canale attuale usa **ntfy**. Il topic è conservato esclusivamente nel
-repository secret:
-
-```text
-TERMODEL_NTFY_TOPIC
-```
-
-Regole obbligatorie:
-
-- non scrivere mai il valore del topic nei documenti del repository;
-- non stampare mai il valore del secret nei log;
-- non trasformarlo in una repository variable in chiaro;
-- non includerlo in commit, artifact o snapshot diagnostici;
-- se i secrets non sono disponibili (per esempio alcuni contesti PR), saltare
-  la notifica senza esporre o simulare il secret.
-
-La notifica terminale deve contenere almeno workflow/incarico, numero run,
-SUCCESS/FAILED, commit e collegamento alla Action.
-
-Gerarchia sonora obbligatoria dal 26/09/2026:
-
-- tutte le notifiche operative GitHub Actions/build usano priorità ntfy `low`,
-  sia in caso di SUCCESS sia in caso di FAILED;
-- la massima intensità è riservata esclusivamente alla notifica di chiusura
-  della Issue #1 che rappresenta la fine reale dell'incarico;
-- la chiusura Issue #1 usa priorità ntfy `urgent` sia per `completed` sia
-  per `not_planned`;
-- tag e testo continuano a distinguere successo e insuccesso.
-
-## Distinzione fra build e fine incarico
-
-La notifica della build è informativa e non equivale alla conclusione del
-lavoro assegnato. Durante un incarico possono verificarsi più build e retry;
-tutte queste notifiche restano a bassa intensità.
-
-La notifica ad alta evidenza viene generata soltanto dal workflow:
+Il solo workflow autorizzato a usare ntfy è:
 
 ```text
 .github/workflows/issue-work-notify.yml
 ```
 
-quando la Issue #1 viene chiusa. In questo modo il suono più forte significa
-sempre **fine incarico**, indipendentemente dal fatto che l'esito sia successo
-o insuccesso.
+Il workflow deve eseguire la notifica **solo quando viene chiusa la Issue #1**.
+La condizione esplicita è:
 
-## Errori e retry
-
-La notifica non deve falsificare il risultato tecnico: un errore ntfy va
-registrato chiaramente, ma non deve trasformare un lavoro riuscito in FAILED.
-
-Ogni retry è un nuovo tentativo operativo:
-
-```text
-RUNNING -> SUCCESS/FAILED -> una notifica terminale
+```yaml
+if: ${{ github.event.issue.number == 1 }}
 ```
 
-Non inviare notifiche duplicate per lo stesso tentativo.
-
-## Implementazione di riferimento
+Il topic resta nel repository secret:
 
 ```text
-.github/workflows/termodel-service-build.yml
+TERMODEL_NTFY_TOPIC
 ```
 
-Il workflow usa `statuses: write`, Commit Status `Termodel/job`, step
-iniziale RUNNING, step finale `always()`, secret `TERMODEL_NTFY_TOPIC` e
-push ntfy solo allo stato terminale.
+Regole di sicurezza:
+- non scrivere mai il valore del topic nei documenti del repository;
+- non stamparlo nei log;
+- non trasformarlo in repository variable in chiaro;
+- non includerlo in commit, artifact o snapshot diagnostici.
 
-Ogni nuovo workflow che svolge un incarico per l'utente deve riutilizzare
-questa procedura o richiamarla esplicitamente. Non creare protocolli paralleli
-senza aggiornare prima questa specifica.
+La notifica Issue #1 mantiene priorità ntfy `urgent`:
+- `completed` -> “Incarico completato con successo”;
+- qualsiasi altra chiusura prevista dal protocollo, in particolare
+  `not_planned` -> “Incarico completato con insuccesso”.
 
-## Verifica reale
+## Workflow tecnici
 
-Verifica end-to-end del **24 settembre 2026** su
-`TermodelService Build`, run **35958607012**, job **107509968862**:
+Dal 29/09/2026 le notifiche ntfy sono sospese nei workflow:
+- `termodel-service-build.yml`;
+- `termodel-radiant-harness.yml`;
+- `termodel-render-verify.yml`;
+- `termodel-diego-vittorio-public-square.yml`;
+- `termodel-diego-vittorio-fast.yml`;
+- `termodel-diego-vittorio-room-extraction.yml`.
 
-```text
-TERMODEL_JOB_STATUS=RUNNING
-...
-TERMODEL_JOB_STATUS=SUCCESS
-PHONE_NOTIFICATION_SENT status=SUCCESS
-```
+Questi workflow possono continuare ad aggiornare `Termodel/job` e a produrre
+artifact/log, ma non devono notificare il telefono.
 
-La notifica è stata ricevuta sul telefono Android configurato dall'utente.
-Il sistema è quindi **operativo**, non sperimentale.
+Ogni nuovo workflow deve rispettare la stessa regola: **nessuna notifica ntfy
+di build** salvo nuova decisione esplicita dell'utente e aggiornamento di
+questo documento.
 
+## Fine incarico
+
+A fine job l'assistente deve:
+1. aggiornare Issue #1 con l'esito;
+2. chiuderla `completed` se il lavoro è riuscito;
+3. chiuderla `not_planned` se il lavoro è fallito.
+
+La chiusura di Issue #1 è quindi l'unico evento che deve produrre la notifica
+ntfy sul telefono.
 
 ## Resilienza della chat
 
-Per gli incarichi lunghi questa specifica va usata insieme a
+Per incarichi lunghi questa specifica va usata insieme a
 `.github/TERMODEL-CHAT-ANTI-TIMEOUT.md`.
 
-La notifica terminale e il Commit Status sono parte del checkpoint persistente:
-un timeout o una sospensione della pagina ChatGPT non cambia l'esito tecnico
-dell'Action e non deve obbligare a rifare il lavoro già registrato su GitHub.
+I Commit Status e i checkpoint su GitHub restano persistenti anche se la chat
+si sospende; la notifica telefonica resta riservata esclusivamente alla
+chiusura della Issue #1.
