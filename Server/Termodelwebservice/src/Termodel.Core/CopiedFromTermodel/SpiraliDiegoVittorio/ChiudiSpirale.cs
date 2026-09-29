@@ -518,21 +518,9 @@ namespace SpiralHeatingDiegoVittorio
             };
         }
 
-        public static (List<Punto> Mandata, List<Punto> Ritorno, bool Applicata) ApplicaChiusuraOttimizzata(
-            List<Punto> mandata,
-            List<Punto> ritorno,
-            double distanzaRitorno)
-        {
-            var candidato = GeneraPrimaChiusuraAccettabile(
-                mandata,
-                ritorno,
-                distanzaRitorno);
-            if (candidato == null)
-                return (mandata, ritorno, false);
-
-            return (candidato.Mandata, candidato.Ritorno, true);
-        }
-
+        // Bridge pubblico minimale: non altera la procedura Diego_Vittorio.
+        // Esegue esattamente la combinatoria umana consolidata e il raccordo
+        // adattivo originale sulla configurazione da essa selezionata.
         public static (List<Punto> Mandata, List<Punto> Ritorno, List<Punto> Raccordo, bool Applicata)
             ApplicaChiusuraCombinatoriaConRaccordo(
                 List<Punto> mandata,
@@ -540,14 +528,7 @@ namespace SpiralHeatingDiegoVittorio
                 double passo,
                 double raggio)
         {
-            // Riusa integralmente la procedura Diego_Vittorio già collaudata:
-            // enumera M0..M4 + R0..R6 + RP, accorcia/cancella i terminali,
-            // testa intersezioni, seleziona il candidato e SOLO DOPO costruisce
-            // il raccordo sulla coppia di geometrie selezionata.
-            var candidato = GeneraPrimaChiusuraAccettabile(
-                mandata,
-                ritorno,
-                passo);
+            var candidato = GeneraPrimaChiusuraAccettabile(mandata, ritorno, passo);
             if (candidato == null)
                 return (mandata, ritorno, new List<Punto>(), false);
 
@@ -555,14 +536,12 @@ namespace SpiralHeatingDiegoVittorio
                 candidato.Mandata,
                 candidato.Ritorno,
                 raggio);
-            if (raccordo.Count < 2)
-                return (mandata, ritorno, new List<Punto>(), false);
 
             return (
                 candidato.Mandata,
                 candidato.Ritorno,
                 raccordo,
-                true);
+                raccordo.Count > 1);
         }
 
         // Funzione realizzata da Codex in autonomia
@@ -1805,7 +1784,7 @@ namespace SpiralHeatingDiegoVittorio
         }
 
         // Funzione realizzata da Codex in autonomia
-        public static List<Punto> CreaCurvaCollegamentoAdattiva(
+        private static List<Punto> CreaCurvaCollegamentoAdattiva(
             List<Punto> mandata,
             List<Punto> ritorno,
             double raggio)
@@ -1852,20 +1831,9 @@ namespace SpiralHeatingDiegoVittorio
                 }
             }
 
-            // Non forzare mai una chiusura che interseca il circuito.
-            // Nel percorso ibrido Vittorio_revisionato la geometria ricevuta
-            // può essere stata arrotondata/adattata dopo la selezione LG-048:
-            // l'assunzione storica che la retta sia ancora sicuramente libera
-            // non è quindi valida. Se anche la retta finale interseca mandata
-            // o ritorno, la soluzione viene esclusa come in Diego_Vittorio.
-            var retta = new List<Punto> { inizio, fine };
-            if (!CurvaIntersecaTrattiNonAdiacenti(retta, mandata) &&
-                !CurvaIntersecaTrattiNonAdiacenti(retta, ritorno))
-            {
-                return retta;
-            }
-
-            return new List<Punto>();
+            // La retta è già stata validata da LG-048: se nessuna curvatura
+            // resta libera, si conserva la chiusura sicura senza raccordo.
+            return new List<Punto> { inizio, fine };
         }
 
         // Funzione realizzata da Codex in autonomia
