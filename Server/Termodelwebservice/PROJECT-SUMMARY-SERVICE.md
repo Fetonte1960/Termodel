@@ -7563,3 +7563,35 @@ Verifica Service, run `36543729007`:
 
 Questa sezione **supera** le precedenti formulazioni che imponevano `lunghezza corda >= 2P` al bridge Vittorio_revisionato.
 
+### 2026-09-29 — quadrato: vincolo `lunghezza raccordo >= 2P`
+
+Dopo la prima chiusura M2P/R0P l'utente ha rilevato visivamente che il raccordo prodotto era troppo corto. Chiarimento vincolante: il requisito `>= 2P` non va applicato alla corda rettilinea fra gli estremi, ma alla **lunghezza reale della curva di raccordo finale**.
+
+Correzione implementata:
+- la configurazione resta `M2P/R0P` sul quadrato;
+- per il bridge `Vittorio_revisionato` il raccordo adattivo riceve `lunghezzaMinima = 2P`;
+- la maniglia della Bezier viene estesa progressivamente, entro la lunghezza disponibile dei terminali, finche' la polilinea campionata del raccordo raggiunge `2P`;
+- un candidato e' valido solo se la lunghezza reale del raccordo e' `>= 2P` **e** non interseca Mandata/Return;
+- se nessuna curva soddisfa entrambi i vincoli, quella combinazione viene scartata e la ricerca continua;
+- il comportamento storico senza vincolo esplicito resta invariato.
+
+Commit funzionale principale: `d0fd8c372792998a16bb3c78c998d86498a7872c`; commit diagnostico finale: `633acf94f27c797580402c24de762592bb9c7af7`.
+
+Verifica Harness mirata, run `36553567099`:
+- Build Harness/Core: SUCCESS;
+- gate `Harness quadrato Vittorio_revisionato public closure`: SUCCESS;
+- configurazione: `M2P/R0P`;
+- `P = 0,15 m`;
+- lunghezza raccordo misurata: `0,300501402127749 m`;
+- minimo richiesto: `2P = 0,30 m`;
+- esito: `REVISIONATO_PUBLIC_SQUARE_CURVE_2P_OK`.
+
+Verifica Service, run `36553567271`:
+- Build Release: SUCCESS;
+- smoke pubblico `Vittorio_revisionato`: SUCCESS;
+- deploy Render: SUCCESS;
+- `/health` ha esposto `serviceCommit=633acf94f27c797580402c24de762592bb9c7af7`;
+- il workflow complessivo resta rosso sullo smoke storage/lock locale gia' noto, separato dalla chiusura e dal deploy.
+
+Il Fast Harness automatico e' stato nuovamente fermato dopo la verifica.
+
