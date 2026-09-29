@@ -126,6 +126,19 @@ Ramo sperimentale creato il 28 settembre 2026:
   collaborativo; il file progetto non viene modificato;
 - smoke locale override e verifica deploy pubblico: SUCCESS nel Service Build
   `36504429395`;
+- dal 29/09/2026 il percorso pubblico `Vittorio_revisionato` è
+  temporaneamente in modalità **solo mandata** per esame visivo:
+  `Program.SoloMandataPerEsameVisivo = true`;
+- in questa modalità `AggiornaSpirali()` genera la mandata ma non richiama
+  `ChiudiSpiraleFiles()`; chiusura e Return restano presenti nel sorgente e
+  sono soltanto sospesi;
+- lo SVG pre-chiusura viene riclassificato graficamente come mandata rossa per
+  essere pubblicato nel layer `*_PannelliMandata_Output`;
+- il benchmark di equivalenza usa `AggiornaSpirali(false)`, quindi continua
+  a testare il flusso completo storico contro Vittorio;
+- Service Build #1076: build SUCCESS, smoke override
+  `Vittorio_revisionato` SUCCESS con
+  `VITTORIO_REVISIONATO_SUPPLY_ONLY_OK`, verifica deploy pubblico SUCCESS;
 - questa pubblicazione NON promuove la copia a motore default e NON genera
   ancora un Return autonomo utilizzabile; serve a raccogliere casi reali prima
   della prossima decisione algoritmica;
