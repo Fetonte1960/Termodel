@@ -580,12 +580,19 @@ namespace SpiralHeatingDiegoVittorio
                     Console.WriteLine($"  DV_SETUP_RETURN[{i}]=({ritornoVersoCentro[i].X:R},{ritornoVersoCentro[i].Y:R})");
             }
 
+            // Nel bridge Vittorio_revisionato P e' la distanza
+            // Mandata-Ripresa. 2P descrive la distanza Mandata-Mandata e non
+            // e' un minimo sulla corda rettilinea fra i due terminali.
+            // Il raccordo reale e' curvo: la validita' viene quindi decisa
+            // sulla geometria raccordata e sulle intersezioni finali.
             var candidato = GeneraPrimaChiusuraAccettabile(
                 mandataRettilinea,
                 ritornoVersoCentro,
                 passo,
                 raggio,
-                lunghezzaMinimaChiusura: 2.0 * passo);
+                lunghezzaMinimaChiusura: null,
+                preferisciTerminaleP: true,
+                applicaFiltriCordaRettilinea: false);
             if (candidato == null)
                 return (mandataRettilinea, ritornoVersoCentro, new List<Punto>(), false);
 
@@ -612,7 +619,9 @@ namespace SpiralHeatingDiegoVittorio
             List<Punto> ritornoOriginale,
             double passo,
             double raggio,
-            double? lunghezzaMinimaChiusura = null)
+            double? lunghezzaMinimaChiusura = null,
+            bool preferisciTerminaleP = false,
+            bool applicaFiltriCordaRettilinea = true)
         {
             if (mandataOriginale == null || mandataOriginale.Count < 2 ||
                 ritornoOriginale == null || ritornoOriginale.Count < 2 ||
@@ -625,18 +634,32 @@ namespace SpiralHeatingDiegoVittorio
             // si provano 0..2 tratti rimossi e, sul nuovo terminale, soltanto
             // invarianza oppure lunghezza esattamente P. Se il terminale e'
             // maggiore di P viene accorciato; se e' minore viene allungato.
-            // In questo modo si coinvolgono al massimo 3 tratti originali
-            // per lato. La distanza tra gli estremi resta filtrata
-            // separatamente dal vincolo >= 2P.
-            var azioniTerminali = new (int rimossi, double? lunghezzaFinale)[]
-            {
-                (0, passo),
-                (0, null),
-                (1, passo),
-                (1, null),
-                (2, passo),
-                (2, null)
-            };
+            // In questo modo si coinvolgono al massimo 3 tratti originali.
+            //
+            // Il percorso Diego_Vittorio storico conserva l'ordine I/P.
+            // L'adattatore Vittorio_revisionato prova invece P/I: nel quadrato
+            // la soluzione geometrica corretta e' M2P/R0P e deve essere
+            // valutata prima della variante M2I/R0I.
+            (int rimossi, double? lunghezzaFinale)[] azioniTerminali =
+                preferisciTerminaleP
+                    ? new (int, double?)[]
+                    {
+                        (0, passo),
+                        (0, null),
+                        (1, passo),
+                        (1, null),
+                        (2, passo),
+                        (2, null)
+                    }
+                    : new (int, double?)[]
+                    {
+                        (0, null),
+                        (0, passo),
+                        (1, null),
+                        (1, passo),
+                        (2, null),
+                        (2, passo)
+                    };
 
             int numeroTentativo = 0;
 
@@ -689,7 +712,8 @@ namespace SpiralHeatingDiegoVittorio
                         ritorno,
                         passo,
                         numeroTentativo,
-                        lunghezzaMinimaChiusura);
+                        lunghezzaMinimaChiusura,
+                        applicaFiltriCordaRettilinea);
                     if (candidato == null)
                         continue;
 
@@ -843,19 +867,35 @@ namespace SpiralHeatingDiegoVittorio
             ConfigurazioneTerminale ritorno,
             double passo,
             int numeroTentativo,
-            double? lunghezzaMinimaChiusura = null)
+            double? lunghezzaMinimaChiusura = null,
+            bool applicaFiltriCordaRettilinea = true)
         {
             const double tolleranza = 0.000001;
             Punto inizio = mandata.Punti[^1];
             Punto fine = ritorno.Punti[^1];
             double lunghezza = inizio.DistanceTo(fine);
             double minimoRichiesto = lunghezzaMinimaChiusura ?? (2.0 * passo);
-            if (TraceClosureEnabled && lunghezza < minimoRichiesto - tolleranza)
+            if (applicaFiltriCordaRettilinea &&
+                lunghezza < minimoRichiesto - tolleranza)
+            {
+                if (TraceClosureEnabled)
+                {
+                    Console.WriteLine(
+                        $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
+                        $"seq={mandata.Codice}/{ritorno.Codice} reason=length " +
+                        $"length={lunghezza:R} required={minimoRichiesto:R} " +
+                        $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}).");
+                }
+                return null;
+            }
+            if (!applicaFiltriCordaRettilinea &&
+                TraceClosureEnabled &&
+                lunghezza < minimoRichiesto - tolleranza)
             {
                 Console.WriteLine(
                     $"  DV_CLOSURE_DEFER attempt={numeroTentativo} " +
-                    $"seq={mandata.Codice}/{ritorno.Codice} check=length-chord " +
-                    $"length={lunghezza:R} required={minimoRichiesto:R}.");
+                    $"seq={mandata.Codice}/{ritorno.Codice} check=chord-length " +
+                    $"chord={lunghezza:R} reference2P={minimoRichiesto:R}.");
             }
 
             Punto ingressoMandata = new Punto(
@@ -873,7 +913,22 @@ namespace SpiralHeatingDiegoVittorio
             double qualitaRitorno = CosenoDirezioni(
                 direzioneChiusura,
                 uscitaRitorno);
-            if (TraceClosureEnabled &&
+            if (applicaFiltriCordaRettilinea &&
+                (qualitaMandata < -tolleranza ||
+                 qualitaRitorno < -tolleranza))
+            {
+                if (TraceClosureEnabled)
+                {
+                    Console.WriteLine(
+                        $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
+                        $"seq={mandata.Codice}/{ritorno.Codice} reason=acute " +
+                        $"cosSupply={qualitaMandata:R} cosReturn={qualitaRitorno:R} " +
+                        $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}).");
+                }
+                return null;
+            }
+            if (!applicaFiltriCordaRettilinea &&
+                TraceClosureEnabled &&
                 (qualitaMandata < -tolleranza ||
                  qualitaRitorno < -tolleranza))
             {
