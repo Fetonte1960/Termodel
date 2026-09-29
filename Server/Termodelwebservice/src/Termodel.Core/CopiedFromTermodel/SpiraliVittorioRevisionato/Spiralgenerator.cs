@@ -286,7 +286,93 @@ namespace SpiralHeatingVittorioRevisionato
 				spiral.Add(puntoFinale);
 			}
 
+			// Estensione terminale sperimentale e ripristinabile: quando Vittorio
+			// termina su un ultimo anello rettangolare lasciando ancora una fascia
+			// centrale sfruttabile, prolunga la sola mandata con una piega a p e
+			// un asse centrale. Non altera la generazione degli offset storici.
+			if (TerminalCenterlineEnabled())
+				TryAppendTerminalCenterline(spiral, offsets, distanza);
+
 			return (spiral, offsets);
+		}
+
+		private static bool TerminalCenterlineEnabled()
+		{
+			string value = Environment.GetEnvironmentVariable(
+				"TERMODEL_VITTORIO_REVISIONATO_TERMINAL_CENTERLINE");
+			return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase) &&
+				!string.Equals(value, "0", StringComparison.OrdinalIgnoreCase);
+		}
+
+		private static void TryAppendTerminalCenterline(
+			List<Punto> spiral,
+			List<List<Punto>> offsets,
+			double distanza)
+		{
+			if (spiral == null || spiral.Count < 2 || offsets == null || offsets.Count < 2)
+				return;
+
+			var ring = offsets[offsets.Count - 1];
+			if (ring == null || ring.Count != 4)
+				return;
+
+			// Prima versione volutamente stretta: solo rettangoli ortogonali.
+			const double tol = 0.001;
+			for (int i = 0; i < 4; i++)
+			{
+				var a = ring[i];
+				var b = ring[(i + 1) % 4];
+				if (Math.Abs(a.X - b.X) > tol && Math.Abs(a.Y - b.Y) > tol)
+					return;
+			}
+
+			double minX = ring.Min(p => p.X), maxX = ring.Max(p => p.X);
+			double minY = ring.Min(p => p.Y), maxY = ring.Max(p => p.Y);
+			double width = maxX - minX, height = maxY - minY;
+			double shortSide = Math.Min(width, height);
+
+			// Serve spazio per un asse centrale distante almeno p dai due rami
+			// opposti; oltre 4p dovrebbe esistere un ulteriore anello completo e
+			// non interveniamo per non mascherare altri problemi.
+			if (shortSide < 2.0 * distanza - tol || shortSide >= 4.0 * distanza + tol)
+				return;
+
+			var last = spiral[spiral.Count - 1];
+			var prev = spiral[spiral.Count - 2];
+			bool lastVertical = Math.Abs(last.X - prev.X) < tol;
+			bool lastHorizontal = Math.Abs(last.Y - prev.Y) < tol;
+			if (!lastVertical && !lastHorizontal)
+				return;
+
+			double cx = (minX + maxX) / 2.0;
+			double cy = (minY + maxY) / 2.0;
+			Punto elbow;
+			Punto terminal;
+
+			if (lastVertical && width >= 2.0 * distanza - tol)
+			{
+				elbow = new Punto(cx, last.Y);
+				double targetY = Math.Abs(last.Y - minY) < Math.Abs(last.Y - maxY)
+					? maxY - distanza
+					: minY + distanza;
+				terminal = new Punto(cx, targetY);
+			}
+			else if (lastHorizontal && height >= 2.0 * distanza - tol)
+			{
+				elbow = new Punto(last.X, cy);
+				double targetX = Math.Abs(last.X - minX) < Math.Abs(last.X - maxX)
+					? maxX - distanza
+					: minX + distanza;
+				terminal = new Punto(targetX, cy);
+			}
+			else
+				return;
+
+			if (last.DistanceTo(elbow) < tol || elbow.DistanceTo(terminal) < tol)
+				return;
+
+			spiral.Add(elbow);
+			spiral.Add(terminal);
 		}
 
 		private static (Punto intersection, int nextVertexIndex) FindIntersectionWithOffset(Punto start, List<Punto> offset)
