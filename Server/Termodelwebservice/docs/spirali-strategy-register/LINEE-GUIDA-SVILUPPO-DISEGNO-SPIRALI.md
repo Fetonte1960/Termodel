@@ -7344,26 +7344,3 @@ Il test di inversione globale del verso (Fast Harness #52) ha inoltre
 mostrato che il verso opposto rende immediatamente impraticabile il Return sia
 nel `locale_1` sia nel quadrato: la causa non è un semplice errore
 orario/antiorario.
-
----
-
-## Addendum 2026-09-29 — angolo minimo della chiusura curva Vittorio_revisionato
-
-Per il bridge `Vittorio_revisionato`, la regola LG-048 "nessun angolo acuto"
-deve essere valutata sulla **geometria finale del raccordo**, non sulla sola
-corda rettilinea tra i due terminali.
-
-Criterio operativo:
-- angolo interno minimo ammesso: **90°**;
-- un angolo < 90° rende il candidato non valido;
-- il controllo comprende i due gomiti terminali conservati, i due innesti e
-  tutti i vertici/campioni della curva di raccordo;
-- il candidato deve continuare a rispettare anche lunghezza reale del raccordo
-  `>= 2P` e assenza di intersezioni;
-- il controllo della corda rettilinea può essere rinviato quando la chiusura
-  reale è curva, purché la geometria finale venga verificata con questi vincoli.
-
-Regression corrente: quadrato pubblico `Vittorio_revisionato`, Service Build
-`36557778519`, marker `VITTORIO_REVISIONATO_NO_ACUTE_ANGLE_OK`,
-angolo minimo misurato **90°**.
-

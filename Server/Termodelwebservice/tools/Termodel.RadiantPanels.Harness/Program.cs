@@ -41,11 +41,6 @@ static int RunVittorioRevisionatoCheck()
     StrategiaVittorioRevisionatoAbstractionCheck result =
         StrategiaVittorioRevisionatoBenchmark.CheckAbstraction();
 
-    Console.WriteLine("VITTORIO_REVISIONATO_P_CONVENTION_OK");
-    Console.WriteLine($"P={result.PMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
-    Console.WriteLine($"wallP2={result.WallDistanceMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
-    Console.WriteLine($"supply2P={result.SupplyToSupplyMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
-    Console.WriteLine($"returnP={result.ReturnDistanceMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
     Console.WriteLine("VITTORIO_REVISIONATO_ABSTRACTION_OK");
     Console.WriteLine($"neutralEquivalent={result.NeutralEquivalent.ToString().ToLowerInvariant()}");
     Console.WriteLine($"supplyPoints={result.SupplyPoints}");

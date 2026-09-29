@@ -198,14 +198,3 @@ Correzione verificata e pubblicata nel commit `e60d9ed9c5536852dbb60c146cdb6abb7
 ### 2026-09-29 — vincolo finale 2P sulla curva di raccordo
 Ulteriore chiarimento alla chiusura M2P/R0P: `2P` non e' il minimo della corda rettilinea fra gli estremi, ma il minimo della **lunghezza reale del raccordo curvo finale**. Il bridge Vittorio_revisionato passa ora `2P` a `CreaCurvaCollegamentoAdattiva`; la Bezier viene estesa progressivamente entro la lunghezza dei terminali e accettata solo se la sua polilinea misura almeno `2P` e resta priva di intersezioni. Sul quadrato P=0,15 il gate ha misurato `0,300501402127749 m >= 0,30 m`, mantenendo la selezione `M2P/R0P`. Commit funzionale `d0fd8c372792998a16bb3c78c998d86498a7872c`, diagnostica finale `633acf94f27c797580402c24de762592bb9c7af7`, Harness run `36553567099` SUCCESS sul gate mirato.
 
-### 2026-09-29 — Vittorio_revisionato: normalizzazione definitiva P=0,30 m
-Stato corrente vincolante per la copia Service:
-- `P=0,30 m` Mandata-Ripresa;
-- `P/2=0,15 m` Mandata-Parete;
-- `2P=0,60 m` Mandata-Mandata.
-`Program.PassoTubi` resta alias di `P`. `SpiralGenerator` separa il primo offset parete (`DistanzaParete`) dagli offset Supply successivi (`DistanzaMandataMandata`); il vecchio campo `Distanza` resta fallback legacy e non e' usato dal percorso pubblico revisionato. Il Return Vittorio e la chiusura ricevono `DistanzaRitorno=P`. Nessuna modifica a Diego_Vittorio.
-Commit funzionale `699359e16202cb4e2a0bf0e88a2120fd4f6ee4a8`, fix Harness `17403b42ee52e04603cb6357027fbcab007a23e0`. Service Build `36556399936`: build, controllo P, smoke progetto pubblico, smoke override Vittorio_revisionato e deploy Render tutti SUCCESS; rosso globale solo per lo smoke storage/lock locale gia' noto.
-
-### 2026-09-29 — Vittorio_revisionato: gate finale angolo minimo 90°
-Il bridge Vittorio_revisionato rifiuta ora ogni chiusura finale che presenti una cuspide/angolo interno < 90° nella geometria realmente visibile. Il controllo non usa la corda tra gli estremi: verifica l'ultimo gomito Mandata, gli innesti, tutti i campioni della Bézier e il primo gomito Ripresa. La ricerca continua su altri valori di maniglia/configurazioni finché trova una soluzione con `curva>=2P`, senza intersezioni e con `angoloMinimo>=90°`. Il percorso Diego_Vittorio normale non attiva questo gate. Commit `00802024038225314a5b682787395b1f6b0f82f5`; Service Build `36557778519`: gate quadrato SUCCESS con `minAngle=90`, smoke e deploy Render SUCCESS.
-
