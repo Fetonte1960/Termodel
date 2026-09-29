@@ -559,7 +559,7 @@ namespace SpiralHeatingDiegoVittorio
                 CreaRientroRettilineo(
                     mandataRettilinea,
                     ritornoVittorioRaccordato,
-                    passo);
+                    -passo);
             var ritornoVersoCentro = ritornoDalCentro
                 .AsEnumerable()
                 .Reverse()
