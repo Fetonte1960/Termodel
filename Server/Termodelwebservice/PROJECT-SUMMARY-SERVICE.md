@@ -7278,3 +7278,29 @@ Stato:
 - normale esecutivo `Vittorio_revisionato` continua intenzionalmente a
   riprodurre Vittorio;
 - duplicazione tracciata in `TERMODEL-SYNC.md` come PENDING.
+
+
+### INCARICO 2026-09-29 — Vittorio_revisionato: collaudo multi-progetto e pubblicazione
+Stato: **COMMISSIONATO**
+
+Correzione procedurale richiesta dall'utente:
+- il collaudo sul solo quadrato non è sufficiente per promuovere
+  `Vittorio_revisionato`;
+- prima della pubblicazione deve essere confrontato con Vittorio su più
+  geometrie/progetti già presenti nel banco prova;
+- il confronto deve verificare almeno SVG ed XML risultante, non soltanto
+  compilazione o numero di punti;
+- se il banco multi-progetto è verde, esporre `Vittorio_revisionato` nel
+  Service pubblico come motore selezionabile **per singola elaborazione**,
+  senza cambiare il default operativo `Diego_Vittorio`;
+- il frontend pubblico deve offrire una selezione esplicita per consentire
+  all'utente di collaborare al test su propri progetti;
+- la provenienza dell'esecutivo runtime deve mostrare il motore realmente
+  usato nella singola elaborazione, non soltanto il default restituito da
+  `/health`;
+- dopo build/regression/deploy pubblico verificati, aggiornare Summary,
+  Recovery e Issue #1.
+
+Criterio di arresto:
+- se una fixture diverge da Vittorio, non pubblicare come equivalente:
+  registrare il primo caso divergente e fermarsi per analisi.
