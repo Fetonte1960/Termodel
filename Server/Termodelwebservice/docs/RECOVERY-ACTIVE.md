@@ -1965,3 +1965,28 @@ Nota:
 
 **RECOVERY POINT:** continuare il collaudo visivo della sola mandata su
 progetti reali. Non modificare Return/chiusura finché l'utente non lo richiede.
+
+
+### 2026-09-29 — Vittorio_revisionato: completamento asse centrale della sola mandata
+Stato: **IMPLEMENTATO, REGRESSION VERDE, PUBBLICATO**
+
+Osservazione utente:
+- nei locali rettangolari la mandata lasciava al centro una fascia eccessivamente ampia pur essendoci spazio utile residuo;
+- Return e chiusura restano esclusi dall'indagine.
+
+Causa/soluzione circoscritta:
+- Vittorio termina correttamente quando non può costruire un ulteriore anello chiuso completo; questo criterio può però lasciare una fascia centrale sfruttabile;
+- aggiunta solo a `Vittorio_revisionato` una estensione terminale per rettangoli ortogonali: dopo l'ultimo anello valido, se la fascia corta residua è compresa fra 2p e 4p, la mandata aggiunge una piega verso la mezzeria e un asse terminale centrale;
+- nessuna modifica a ComputeOffset, percorrenza Vittorio, Return o chiusura;
+- rollback immediato: `TerminalCenterline = false` nel percorso pubblico; il benchmark storico usa già false.
+
+Commit funzionali: `398db746`, `455f9110`, `29b0240b`, fix isolamento benchmark `514bb71a`.
+
+Verifica:
+- Fast Harness #74 / run `36510946051`: **SUCCESS** completo;
+- equivalenza iniziale e multi-progetto Vittorio/Vittorio_revisionato: SUCCESS sul percorso storico con feature disattivata;
+- tutte le regression Diego_Vittorio: SUCCESS;
+- Service Build #1084: build, smoke pannelli, override Vittorio_revisionato e verifica deploy pubblico: SUCCESS;
+- failure globale successiva nello smoke storage/lock, indipendente dalla geometria spirali.
+
+**RECOVERY POINT:** chiedere conferma visiva dell'utente sul nuovo centro dei rettangoli. Se il risultato non è soddisfacente, disattivare `TerminalCenterline` senza toccare Vittorio/Diego_Vittorio.
