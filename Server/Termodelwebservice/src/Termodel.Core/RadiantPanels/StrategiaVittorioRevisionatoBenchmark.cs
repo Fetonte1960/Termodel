@@ -107,6 +107,16 @@ public static class StrategiaVittorioRevisionatoBenchmark
 
     public static StrategiaVittorioRevisionatoAbstractionCheck CheckAbstraction()
     {
+        const double tolerance = 1e-12;
+        if (Math.Abs(SpiralHeatingVittorioRevisionato.Program.P - 0.30) > tolerance ||
+            Math.Abs(SpiralHeatingVittorioRevisionato.Program.DistanzaRitorno - 0.30) > tolerance ||
+            Math.Abs(SpiralHeatingVittorioRevisionato.Program.DistanzaMandataMandata - 0.60) > tolerance ||
+            Math.Abs(SpiralHeatingVittorioRevisionato.Program.DistanzaPareti - 0.15) > tolerance)
+        {
+            throw new InvalidDataException(
+                "Vittorio_revisionato: convenzione P incoerente; attesi P=0,30, 2P=0,60, P/2=0,15.");
+        }
+
         var perimeter = new List<SpiralHeatingVittorioRevisionato.Punto>
         {
             new(0.0, 0.0),

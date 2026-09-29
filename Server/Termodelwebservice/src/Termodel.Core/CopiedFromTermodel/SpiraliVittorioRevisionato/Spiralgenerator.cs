@@ -15,7 +15,11 @@ namespace SpiralHeatingVittorioRevisionato
 	{
 		public List<Punto> Perimetro { get; set; } = new List<Punto>();
 		public Punto StartPoint { get; set; }
+		// Distanza e' mantenuta per compatibilita' con i benchmark storici:
+		// se le due distanze esplicite non sono impostate, vale per entrambe.
 		public double Distanza { get; set; }
+		public double DistanzaParete { get; set; }
+		public double DistanzaMandataMandata { get; set; }
 		public bool DrawSpiral { get; set; } = true;
 		public List<Punto> LineeCondizionamento { get; set; } = new List<Punto>();
 		public double DistanzaCondizionamento { get; set; }
@@ -40,15 +44,24 @@ namespace SpiralHeatingVittorioRevisionato
 				throw new ArgumentException("Perimetro mancante.", nameof(input));
 			if (input.StartPoint == null)
 				throw new ArgumentException("StartPoint mancante.", nameof(input));
-			if (input.Distanza <= 0)
-				throw new ArgumentOutOfRangeException(nameof(input.Distanza));
+			double distanzaParete =
+				input.DistanzaParete > 0 ? input.DistanzaParete : input.Distanza;
+			double distanzaMandataMandata =
+				input.DistanzaMandataMandata > 0
+					? input.DistanzaMandataMandata
+					: input.Distanza;
+			if (distanzaParete <= 0)
+				throw new ArgumentOutOfRangeException(nameof(input.DistanzaParete));
+			if (distanzaMandataMandata <= 0)
+				throw new ArgumentOutOfRangeException(nameof(input.DistanzaMandataMandata));
 			if (input.DistanzaCondizionamento < 0)
 				throw new ArgumentOutOfRangeException(nameof(input.DistanzaCondizionamento));
 
 			return GenerateCore(
 				new List<Punto>(input.Perimetro),
 				input.StartPoint,
-				input.Distanza,
+				distanzaParete,
+				distanzaMandataMandata,
 				input.DrawSpiral,
 				input.LineeCondizionamento,
 				input.DistanzaCondizionamento,
@@ -64,6 +77,7 @@ namespace SpiralHeatingVittorioRevisionato
 				perimetro,
 				startPoint,
 				distanza,
+				distanza,
 				drawSpiral,
 				null,
 				0.0,
@@ -72,7 +86,8 @@ namespace SpiralHeatingVittorioRevisionato
 		private static (List<Punto> spiral, List<List<Punto>> offsets) GenerateCore(
 			List<Punto> perimetro,
 			Punto startPoint,
-			double distanza,
+			double distanzaParete,
+			double distanzaMandataMandata,
 			bool drawSpiral,
 			List<Punto> lineeCondizionamento,
 			double distanzaCondizionamento,
@@ -90,19 +105,21 @@ namespace SpiralHeatingVittorioRevisionato
 			List<List<Punto>> offsets = new List<List<Punto>>();
 			offsets.Add(GeometryUtils.NormalizePolygon(new List<Punto>(perimetro)));
 
-			double minArea = distanza * distanza;
-
-			// Genera offset successivi
+			// Genera offset successivi: il primo distacca la mandata dalla parete
+			// di P/2; i successivi distanziano due mandate di 2P.
 			for (int i = 0; i < 100; i++)
 			{
+				double distanzaOffset = i == 0
+					? distanzaParete
+					: distanzaMandataMandata;
 				var previousOffset = i > 0 ? offsets[offsets.Count - 2] : perimetro;
-				var nextOffset = ComputeOffset(offsets.Last(), previousOffset, distanza);
+				var nextOffset = ComputeOffset(offsets.Last(), previousOffset, distanzaOffset);
 
 				if (nextOffset == null || nextOffset.Count < 3)
 					break;
 				
 				// Correggi vertici che intersecano il perimetro precedente
-				nextOffset = FixIntersections(nextOffset, offsets.Last(), distanza);
+				nextOffset = FixIntersections(nextOffset, offsets.Last(), distanzaOffset);
 				
 				double minEdgeLength = double.MaxValue;
 				for (int j = 0; j < nextOffset.Count - 1; j++)
@@ -111,9 +128,9 @@ namespace SpiralHeatingVittorioRevisionato
 					if (edgeLen < minEdgeLength)
 						minEdgeLength = edgeLen;
 				}
-				if (minEdgeLength < distanza && minEdgeLength > 0.2)
+				if (minEdgeLength < distanzaMandataMandata && minEdgeLength > 0.2)
 					break;
-				if (minEdgeLength < distanza * 1.2 && nextOffset.Count < 5)
+				if (minEdgeLength < distanzaMandataMandata * 1.2 && nextOffset.Count < 5)
 					break;
 					
 				offsets.Add(GeometryUtils.NormalizePolygon(nextOffset));
@@ -152,7 +169,7 @@ namespace SpiralHeatingVittorioRevisionato
 				
 				double distPuntoIntersezione = ultimoPuntoSpiral.DistanceTo(puntoIntersezione);
 				
-				if (distPuntoIntersezione > distanza)
+				if (distPuntoIntersezione > distanzaMandataMandata)
 				{
 					double dx = Math.Abs(puntoIntersezione.X - ultimoPuntoSpiral.X);
 					double dy = Math.Abs(puntoIntersezione.Y - ultimoPuntoSpiral.Y);
@@ -184,7 +201,7 @@ namespace SpiralHeatingVittorioRevisionato
 						for (int j = 0; j < spiral.Count - 1; j++)
 						{
 							double dist = GeometryUtils.DistancePointToSegment(puntoIntermedio, spiral[j], spiral[j + 1]);
-							if (dist < distanza * 0.8 && dist > 0.01)
+							if (dist < distanzaMandataMandata * 0.8 && dist > 0.01)
 							{
 								isTooCloseToSpiral = true;
 								break;
@@ -250,7 +267,7 @@ namespace SpiralHeatingVittorioRevisionato
 				Punto penultimoPunto;
 
 				double distanzaSegmento = puntoIntersezione.DistanceTo(spiral[spiral.Count - 1]);
-				if (distanzaSegmento > 2 * distanza) {
+				if (distanzaSegmento > 2 * distanzaMandataMandata) {
 					ultimoPunto = puntoIntersezione;
 					penultimoPunto = spiral[spiral.Count - 1];
 				}
@@ -266,8 +283,8 @@ namespace SpiralHeatingVittorioRevisionato
 					penultimoPunto.Y - ultimoPunto.Y
 				));
 				var puntoFinale = new Punto(
-					ultimoPunto.X + direzione.X * distanza,
-					ultimoPunto.Y + direzione.Y * distanza
+					ultimoPunto.X + direzione.X * distanzaMandataMandata,
+					ultimoPunto.Y + direzione.Y * distanzaMandataMandata
 				);
 				if (usaCondizionamento &&
 					!SegmentoRispettaCondizionamento(
@@ -295,7 +312,7 @@ namespace SpiralHeatingVittorioRevisionato
 			// centrale sfruttabile, prolunga la sola mandata con una piega a p e
 			// un asse centrale. Non altera la generazione degli offset storici.
 			if (terminalCenterline)
-				TryAppendTerminalCenterline(spiral, offsets, distanza);
+				TryAppendTerminalCenterline(spiral, offsets, distanzaMandataMandata);
 
 			return (spiral, offsets);
 		}

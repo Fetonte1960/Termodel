@@ -19,15 +19,17 @@ namespace SpiralHeatingVittorioRevisionato
     
     class Program
     {
-        // Parametri di posa
-        // Modificato da Codex per realizzare: passo della spirale rossa pari
-        // a 0,30 m e ritorno collocato a metà passo.
-        public const double PassoTubi = 0.30;
-        private const double DistanzaPareti = PassoTubi;
+        // Parametro geometrico autorevole di Vittorio_revisionato:
+        // P = Mandata-Ripresa; 2P = Mandata-Mandata; P/2 = Mandata-Parete.
+        // PassoTubi resta come alias pubblico compatibile, ma significa P.
+        public const double P = 0.30;
+        public const double PassoTubi = P;
+        public const double DistanzaPareti = P / 2.0;
+        public const double DistanzaMandataMandata = P * 2.0;
         
         // Parametri chiusura spirale
         private const double RaggioCurvatura = 0.10;
-        private const double DistanzaRitorno = PassoTubi / 2.0;
+        public const double DistanzaRitorno = P;
         private const double DistanzaRotazioneUltimoPunto = 0.20;
         
         // Modalità debug
@@ -241,7 +243,8 @@ namespace SpiralHeatingVittorioRevisionato
                     {
                         Perimetro = perimetro,
                         StartPoint = lineaIngresso.PuntoInterno,
-                        Distanza = DistanzaPareti,
+                        DistanzaParete = DistanzaPareti,
+                        DistanzaMandataMandata = Program.DistanzaMandataMandata,
                         DrawSpiral = true,
                         // Solo nel percorso pubblico Vittorio_revisionato:
                         // completa l'ultima fascia rettangolare con asse centrale.

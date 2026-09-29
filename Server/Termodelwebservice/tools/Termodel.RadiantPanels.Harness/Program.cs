@@ -41,6 +41,11 @@ static int RunVittorioRevisionatoCheck()
     StrategiaVittorioRevisionatoAbstractionCheck result =
         StrategiaVittorioRevisionatoBenchmark.CheckAbstraction();
 
+    Console.WriteLine("VITTORIO_REVISIONATO_P_CONVENTION_OK");
+    Console.WriteLine($"P={SpiralHeatingVittorioRevisionato.Program.P.ToString("0.###", CultureInfo.InvariantCulture)}");
+    Console.WriteLine($"wallP2={SpiralHeatingVittorioRevisionato.Program.DistanzaPareti.ToString("0.###", CultureInfo.InvariantCulture)}");
+    Console.WriteLine($"supply2P={SpiralHeatingVittorioRevisionato.Program.DistanzaMandataMandata.ToString("0.###", CultureInfo.InvariantCulture)}");
+    Console.WriteLine($"returnP={SpiralHeatingVittorioRevisionato.Program.DistanzaRitorno.ToString("0.###", CultureInfo.InvariantCulture)}");
     Console.WriteLine("VITTORIO_REVISIONATO_ABSTRACTION_OK");
     Console.WriteLine($"neutralEquivalent={result.NeutralEquivalent.ToString().ToLowerInvariant()}");
     Console.WriteLine($"supplyPoints={result.SupplyPoints}");

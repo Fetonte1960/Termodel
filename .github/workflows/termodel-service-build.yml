@@ -590,6 +590,14 @@ jobs:
       - name: Build
         run: dotnet build Termodel.WebService.sln --configuration Release --no-restore
 
+      - name: Verify Vittorio_revisionato P convention
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release -- revisionato-check
+          if ($LASTEXITCODE -ne 0) { throw "Convenzione P Vittorio_revisionato fallita." }
+          Write-Host "VITTORIO_REVISIONATO_P030_CONVENTION_OK"
+
       - name: Smoke public Pannelli radianti model3d
         shell: pwsh
         run: ./tools/smoke-radiant-reference.ps1 -ProjectPath "../../docs/termodel-ui-demo/examples/pannelli-radianti.tmdl.txt"
