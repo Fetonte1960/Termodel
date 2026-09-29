@@ -662,6 +662,21 @@ namespace SpiralHeatingDiegoVittorio
                         continue;
 
                     numeroTentativo++;
+                    if (TraceClosureEnabled)
+                    {
+                        Punto ms = mandata.Punti[^2];
+                        Punto me = mandata.Punti[^1];
+                        Punto rs = ritorno.Punti[^2];
+                        Punto re = ritorno.Punti[^1];
+                        Console.WriteLine(
+                            $"  DV_SQUARE_TRY attempt={numeroTentativo} seq={codiceMandata}/{codiceRitorno} " +
+                            $"supplyRemoved={azioneMandata.rimossi} supplyMode={(azioneMandata.lunghezzaFinale.HasValue ? "P" : "I")} " +
+                            $"supplyLast=({ms.X:R},{ms.Y:R})->({me.X:R},{me.Y:R}) supplyLastLen={ms.DistanceTo(me):R} " +
+                            $"returnRemoved={azioneRitorno.rimossi} returnMode={(azioneRitorno.lunghezzaFinale.HasValue ? "P" : "I")} " +
+                            $"returnLast=({rs.X:R},{rs.Y:R})->({re.X:R},{re.Y:R}) returnLastLen={rs.DistanceTo(re):R} " +
+                            $"endpointDistance={me.DistanceTo(re):R} required={lunghezzaMinimaChiusura.GetValueOrDefault(2.0 * passo):R}.");
+                    }
+
                     CandidatoChiusura candidato = ValutaChiusura(
                         mandata,
                         ritorno,
