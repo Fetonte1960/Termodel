@@ -128,3 +128,22 @@ mandata + chiusura + ritorno ed è usato dal benchmark di equivalenza, in modo
 che le regression Vittorio/Vittorio_revisionato restino confrontabili.
 
 Questa è una modalità **temporanea di collaudo**, non una nuova strategia.
+
+## Parametrizzazione corrente — P = 0,30 m (29/09/2026)
+
+Questa sezione prevale sulle descrizioni sperimentali precedenti della cartella.
+
+Per `Vittorio_revisionato`:
+- `P = 0,30 m`: Mandata ↔ Ripresa;
+- `P/2 = 0,15 m`: Mandata ↔ parete;
+- `2P = 0,60 m`: Mandata ↔ Mandata.
+
+`Program.P` e' la costante autorevole; `PassoTubi` e' mantenuto come alias compatibile di P.
+Il generatore pubblico riceve separatamente `DistanzaParete=P/2` e
+`DistanzaMandataMandata=2P`; la proprieta' legacy `Distanza` continua a
+riprodurre il comportamento storico quando le due distanze esplicite non sono
+fornite. Il Return Vittorio usa `DistanzaRitorno=P`.
+
+Verifica CI: Service Build `36556399936`, marker
+`VITTORIO_REVISIONATO_P_CONVENTION_OK`, smoke pubblico e deploy Render SUCCESS.
+

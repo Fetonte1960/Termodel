@@ -7595,3 +7595,32 @@ Verifica Service, run `36553567271`:
 
 Il Fast Harness automatico e' stato nuovamente fermato dopo la verifica.
 
+### 2026-09-29 — Vittorio_revisionato: P default = 0,30 m e distanze derivate
+
+Questa sezione **prevale per lo stato corrente** sulle precedenti note storiche in cui il quadrato Vittorio_revisionato veniva descritto con `P=0,15 m`.
+
+Direttiva corrente implementata:
+- `P = 0,30 m` = distanza **Mandata-Ripresa**;
+- `P/2 = 0,15 m` = distanza **Mandata-Parete**;
+- `2P = 0,60 m` = distanza **Mandata-Mandata**;
+- `PassoTubi` resta come alias compatibile ma in `Vittorio_revisionato` significa ora esplicitamente **P**, non 2P;
+- la generazione Supply usa due distanze distinte: primo offset dalla parete a `P/2`, offset successivi tra mandate a `2P`;
+- il Return Vittorio resta derivato a distanza `P`;
+- la vecchia proprieta' `SpiralGenerationInput.Distanza` resta disponibile solo come fallback compatibile per benchmark/chiamate storiche, mentre il percorso pubblico usa `DistanzaParete` e `DistanzaMandataMandata` esplicite;
+- nessuna modifica a `Diego_Vittorio`.
+
+Commit funzionale: `699359e16202cb4e2a0bf0e88a2120fd4f6ee4a8`.
+Fix diagnostico Harness: `17403b42ee52e04603cb6357027fbcab007a23e0`.
+
+Verifica Service Build run `36556399936`:
+- build Release: **SUCCESS**;
+- gate `VITTORIO_REVISIONATO_P_CONVENTION_OK`: **SUCCESS**;
+- valori verificati dal runner: `P=0.3`, `wallP2=0.15`, `supply2P=0.6`, `returnP=0.3`;
+- smoke progetto pubblico: **SUCCESS**;
+- smoke per-request `spiralEngine=Vittorio_revisionato`: **SUCCESS**;
+- deploy pubblico Render: **SUCCESS**;
+- `/health` ha esposto `serviceCommit=17403b42ee52e04603cb6357027fbcab007a23e0`;
+- il workflow complessivo resta rosso esclusivamente sullo smoke locale storage/lock `Termodel.WebService non ha risposto a /health`, problema gia' noto e separato dalla parametrizzazione delle spirali.
+
+Il Fast Harness automatico resta fermo; le vecchie regression di equivalenza byte-identica Vittorio/Vittorio_revisionato sono storiche e non rappresentano piu' il criterio corrente dopo la separazione P/2 - P - 2P.
+
