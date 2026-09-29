@@ -2018,3 +2018,7 @@ Il collaudo visivo sul commit cb93b674 ha mostrato diagonali rosse ancora presen
 
 ### 2026-09-29 — ripristino esclusione raccordi con intersezione
 Il controllo visivo ha evidenziato raccordi centrali che attraversavano tratti della serpentina. È stata ripristinata in modo esplicito la regola Diego_Vittorio: `CreaCurvaCollegamentoAdattiva` prova le Bézier candidate e, se nessuna è libera, valida anche la retta finale contro mandata e ritorno; se interseca, restituisce nessun raccordo invece di forzare il segmento. `Vittorio_revisionato` rispetta l'esclusione senza introdurre fallback propri. Return Vittorio e mandata approvata restano invariati. Commit finale `e588acabf00274b2550efcda668415102a33dd9c`; CI #87 / Service #1110 avviate.
+
+
+### 2026-09-29 — chiusura U per Return Vittorio parallelo
+Caso quadrato reale: terminali centrali mandata/Return paralleli e in verso opposto restavano aperti. Il raccordo generico Diego limitava la maniglia Bézier a distanza/3, insufficiente per una inversione a U di 180°. Aggiunta in `CreaCurvaCollegamentoAdattiva` una famiglia candidata U-turn quando il prodotto scalare delle tangenti <= -0.90, con maniglia base 2/3 della distanza tra terminali e tentativi decrescenti. Ogni candidata resta obbligatoriamente soggetta ai filtri anti-intersezione contro mandata e Return; nessun fallback intersecante. Mandata e Return Vittorio invariati. Commit `252022fff9b1f15205fddfcbb7481422e0826ad4`; Fast Harness #88 / Service #1114 avviati.
