@@ -83,7 +83,7 @@ jobs:
           }
           $selected = [regex]::Match(
             $logText,
-            'DV_CLOSURE_SELECTED[^\r\n]*seq=M2P/R0P[^\r\n]*curveLength=([0-9Ee+.-]+)[^\r\n]*requiredCurveLength=([0-9Ee+.-]+)')
+            'DV_CLOSURE_SELECTED[^\r\n]*seq=M2P/R0P[^\r\n]*curveLength=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)[^\r\n]*requiredCurveLength=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)')
           if (-not $selected.Success) {
             Get-Content $log | Write-Host
             throw "Quadrato pubblico: attesa chiusura M2P/R0P con diagnostica lunghezza raccordo."
