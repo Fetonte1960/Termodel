@@ -142,9 +142,37 @@ namespace SpiralHeatingVittorioRevisionato
                                     .Select(p => new Punto(p.X, p.Y))
                                     .ToList(),
                                 raggioCurvatura);
-                            curvaCollegamento = esitoDiego.Raccordo
-                                .Select(p => new Punto(p.X, p.Y))
-                                .ToList();
+                            // Il candidato combinatorio viene scelto sulle
+                            // polilinee rettilinee, ma la chiusura visibile
+                            // deve essere verificata DOPO l'arrotondamento
+                            // finale di Mandata e Ripresa. Non riutilizzare
+                            // quindi il raccordo pre-arrotondamento: rigenerare
+                            // soltanto il tratto di chiusura centrale.
+                            double lunghezzaMinimaChiusura =
+                                2.0 * distanzaRitorno;
+                            curvaCollegamento =
+                                CreaCurvaCollegamentoVincolata(
+                                    spiraleArrotondata,
+                                    rientro,
+                                    raggioCurvatura,
+                                    lunghezzaMinimaChiusura);
+
+                            double lunghezzaChiusuraFinale =
+                                LunghezzaPolilinea(curvaCollegamento);
+                            if (curvaCollegamento.Count > 1)
+                            {
+                                Console.WriteLine(
+                                    $"  VREV_FINAL_CLOSURE_2P_OK " +
+                                    $"length={lunghezzaChiusuraFinale:R} " +
+                                    $"required={lunghezzaMinimaChiusura:R}.");
+                            }
+                            else
+                            {
+                                Console.WriteLine(
+                                    $"  VREV_FINAL_CLOSURE_2P_REJECT " +
+                                    $"required={lunghezzaMinimaChiusura:R}; " +
+                                    "nessun raccordo finale valido.");
+                            }
                         }
                         else
                         {
@@ -816,6 +844,170 @@ namespace SpiralHeatingVittorioRevisionato
             return rientro;
         }
         
+        // Chiusura pubblica Vittorio_revisionato: genera SOLO il raccordo
+        // centrale sui percorsi gia' arrotondati. Mandata e Ripresa non
+        // vengono modificate. Il raccordo e' valido soltanto se la sua
+        // lunghezza reale campionata e' >= lunghezzaMinima (= 2P) e non
+        // interseca tratti non adiacenti dei due percorsi.
+        private static List<Punto> CreaCurvaCollegamentoVincolata(
+            List<Punto> andata,
+            List<Punto> rientro,
+            double raggioCurvatura,
+            double lunghezzaMinima)
+        {
+            const double epsilon = 0.000001;
+            if (andata == null || andata.Count < 2 ||
+                rientro == null || rientro.Count < 2 ||
+                lunghezzaMinima <= 0)
+            {
+                return new List<Punto>();
+            }
+
+            Punto p0 = andata[^1];
+            Punto p0Prev = andata[^2];
+            Punto p3 = rientro[0];
+            Punto p3Next = rientro[1];
+
+            double dx0 = p0.X - p0Prev.X;
+            double dy0 = p0.Y - p0Prev.Y;
+            double len0 = Math.Sqrt(dx0 * dx0 + dy0 * dy0);
+            double dx3 = p3Next.X - p3.X;
+            double dy3 = p3Next.Y - p3.Y;
+            double len3 = Math.Sqrt(dx3 * dx3 + dy3 * dy3);
+            double corda = p0.DistanceTo(p3);
+
+            if (len0 <= epsilon || len3 <= epsilon || corda <= epsilon)
+                return new List<Punto>();
+
+            dx0 /= len0;
+            dy0 /= len0;
+            dx3 /= len3;
+            dy3 /= len3;
+
+            double manigliaBase = Math.Max(
+                Math.Max(raggioCurvatura, corda / 3.0),
+                epsilon);
+            double manigliaMassima = Math.Max(
+                manigliaBase,
+                Math.Max(lunghezzaMinima, corda) * 1.5);
+
+            const int tentativi = 32;
+            for (int i = 0; i <= tentativi; i++)
+            {
+                double frazione = (double)i / tentativi;
+                double maniglia =
+                    manigliaBase +
+                    (manigliaMassima - manigliaBase) * frazione;
+
+                var c1 = new Punto(
+                    p0.X + dx0 * maniglia,
+                    p0.Y + dy0 * maniglia);
+                var c2 = new Punto(
+                    p3.X - dx3 * maniglia,
+                    p3.Y - dy3 * maniglia);
+
+                List<Punto> curva =
+                    CreaBezierCubicaCampionata(
+                        p0,
+                        c1,
+                        c2,
+                        p3);
+
+                if (LunghezzaPolilinea(curva) + epsilon <
+                    lunghezzaMinima)
+                {
+                    continue;
+                }
+
+                if (CurvaIntersecaPercorsiNonAdiacenti(
+                    curva,
+                    andata,
+                    rientro))
+                {
+                    continue;
+                }
+
+                return curva;
+            }
+
+            return new List<Punto>();
+        }
+
+        private static List<Punto> CreaBezierCubicaCampionata(
+            Punto p0,
+            Punto c1,
+            Punto c2,
+            Punto p3)
+        {
+            const int campioni = 48;
+            var curva = new List<Punto>(campioni + 1);
+            for (int i = 0; i <= campioni; i++)
+            {
+                double t = (double)i / campioni;
+                double u = 1.0 - t;
+                double x =
+                    u * u * u * p0.X +
+                    3.0 * u * u * t * c1.X +
+                    3.0 * u * t * t * c2.X +
+                    t * t * t * p3.X;
+                double y =
+                    u * u * u * p0.Y +
+                    3.0 * u * u * t * c1.Y +
+                    3.0 * u * t * t * c2.Y +
+                    t * t * t * p3.Y;
+                curva.Add(new Punto(x, y));
+            }
+            return curva;
+        }
+
+        private static double LunghezzaPolilinea(List<Punto> punti)
+        {
+            if (punti == null || punti.Count < 2)
+                return 0.0;
+
+            double lunghezza = 0.0;
+            for (int i = 1; i < punti.Count; i++)
+                lunghezza += punti[i - 1].DistanceTo(punti[i]);
+            return lunghezza;
+        }
+
+        private static bool CurvaIntersecaPercorsiNonAdiacenti(
+            List<Punto> curva,
+            List<Punto> andata,
+            List<Punto> rientro)
+        {
+            if (curva == null || curva.Count < 2)
+                return false;
+
+            for (int i = 0; i < curva.Count - 1; i++)
+            {
+                Punto a = curva[i];
+                Punto b = curva[i + 1];
+
+                // L'ultimo tratto della Mandata e' adiacente al raccordo.
+                for (int j = 0; j < andata.Count - 2; j++)
+                {
+                    if (SegmentiIntersecano(
+                        a, b, andata[j], andata[j + 1]))
+                    {
+                        return true;
+                    }
+                }
+
+                // Il primo tratto della Ripresa e' adiacente al raccordo.
+                for (int j = 1; j < rientro.Count - 1; j++)
+                {
+                    if (SegmentiIntersecano(
+                        a, b, rientro[j], rientro[j + 1]))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         private static List<Punto> CreaCurvaCollegamento(List<Punto> andata, List<Punto> rientro)
         {
             List<Punto> curva = new List<Punto>();
