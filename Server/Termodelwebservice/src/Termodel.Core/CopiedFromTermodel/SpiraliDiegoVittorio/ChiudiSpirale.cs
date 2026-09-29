@@ -529,7 +529,7 @@ namespace SpiralHeatingDiegoVittorio
                 double passo,
                 double raggio)
         {
-            var candidato = GeneraPrimaChiusuraAccettabile(mandata, ritorno, passo);
+            var candidato = GeneraPrimaChiusuraAccettabile(mandata, ritorno, passo, raggio);
             if (candidato == null)
                 return (mandata, ritorno, new List<Punto>(), false);
 
