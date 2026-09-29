@@ -1,5 +1,6 @@
 param(
-  [string]$ProjectPath = ""
+  [string]$ProjectPath = "",
+  [string]$SpiralEngine = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -7,7 +8,9 @@ $ErrorActionPreference = "Stop"
 $base = "http://127.0.0.1:5082"
 $env:ASPNETCORE_URLS = $base
 $env:TERMODEL_SAVED_PROJECTS_DIR = Join-Path $env:RUNNER_TEMP ("TermodelRadiantReference-" + [guid]::NewGuid().ToString("N"))
-$artifactDirName = if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
+$artifactDirName = if (-not [string]::IsNullOrWhiteSpace($SpiralEngine)) {
+  "RadiantPanelsEngineOverride-" + ($SpiralEngine -replace '[^A-Za-z0-9_-]+','_')
+} elseif ([string]::IsNullOrWhiteSpace($ProjectPath)) {
   "RadiantPanelsReferenceArtifacts"
 } else {
   "RadiantPanelsPublicExampleArtifacts"
@@ -296,7 +299,21 @@ try {
     [System.Text.UTF8Encoding]::new($false))
 
   $headers = @{ "X-Termodel-Project-Lock" = [string]$allocation.projectLockToken }
-  $calc = Invoke-RestMethod -Uri "$base/api/calculations" -Method Post -Headers $headers -ContentType "text/plain; charset=utf-8" -Body $serverProject
+  $calcUri = "$base/api/calculations"
+  if (-not [string]::IsNullOrWhiteSpace($SpiralEngine)) {
+    $calcUri += "?spiralEngine=" + [uri]::EscapeDataString($SpiralEngine)
+  }
+  $calc = Invoke-RestMethod -Uri $calcUri -Method Post -Headers $headers -ContentType "text/plain; charset=utf-8" -Body $serverProject
+
+  $expectedEngine = if ([string]::IsNullOrWhiteSpace($SpiralEngine)) {
+    [string](Invoke-RestMethod -Uri "$base/health" -Method Get).spiralEngine
+  } else {
+    $SpiralEngine
+  }
+  if ([string]$calc.spiralEngine -ne $expectedEngine) {
+    throw "Motore spirali response inatteso: atteso '$expectedEngine', ricevuto '$($calc.spiralEngine)'."
+  }
+  Write-Host "RADIANT_SPIRAL_ENGINE_REQUEST_OK engine=$($calc.spiralEngine)"
 
   # Regression 3D: l'artifact deve contenere vere superfici edilizie, non
   # soltanto ponti/ponteggi verdi. Questo controllo usa lo stesso model3d
@@ -468,7 +485,11 @@ try {
   # restituisce direttamente l'SVG e il body deve coincidere byte-per-byte
   # con l'artifact persistito da quella medesima elaborazione.
   $directSvgPath = Join-Path $artifactDir "response-pannelli-esecutivo.svg"
-  $directResponse = Invoke-WebRequest -Uri "$base/api/calculations?responseArtifact=pannelli-esecutivo-svg" -Method Post -ContentType "text/plain; charset=utf-8" -Body $serverProject -OutFile $directSvgPath -PassThru
+  $directQuery = "responseArtifact=pannelli-esecutivo-svg"
+  if (-not [string]::IsNullOrWhiteSpace($SpiralEngine)) {
+    $directQuery += "&spiralEngine=" + [uri]::EscapeDataString($SpiralEngine)
+  }
+  $directResponse = Invoke-WebRequest -Uri "$base/api/calculations?$directQuery" -Method Post -ContentType "text/plain; charset=utf-8" -Body $serverProject -OutFile $directSvgPath -PassThru
 
   if ($directResponse.StatusCode -ne 200) {
     throw "responseArtifact SVG: HTTP inatteso $($directResponse.StatusCode)."
@@ -476,7 +497,8 @@ try {
   if ($directResponse.Headers["Content-Type"] -notmatch "^image/svg\+xml" -or
       $directResponse.Headers["X-Termodel-Response-Artifact"] -ne "pannelli-esecutivo-svg" -or
       $directResponse.Headers["X-Termodel-Project-Id"] -ne [string]$allocation.projectId -or
-      $directResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false") {
+      $directResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false" -or
+      $directResponse.Headers["X-Termodel-Spiral-Engine"] -ne $expectedEngine) {
     throw "responseArtifact SVG: header risposta non coerenti."
   }
 
@@ -533,6 +555,9 @@ try {
 
   Write-Host "CLEAN_FLOOR_ARTIFACT_OK"
   Write-Host "RADIANT_REFERENCE_PROJECT_OK"
+  if (-not [string]::IsNullOrWhiteSpace($SpiralEngine)) {
+    Write-Host "RADIANT_REFERENCE_ENGINE_OVERRIDE_OK engine=$SpiralEngine"
+  }
   Write-Host "networkCount=$($panels.networkCount)"
   Write-Host "circuitCount=$($panels.circuitCount)"
   Write-Host ("totalLengthM=" + $total.ToString("0.############",[Globalization.CultureInfo]::InvariantCulture))
