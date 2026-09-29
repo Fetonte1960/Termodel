@@ -533,6 +533,38 @@ namespace SpiralHeatingDiegoVittorio
             return (candidato.Mandata, candidato.Ritorno, true);
         }
 
+        public static (List<Punto> Mandata, List<Punto> Ritorno, List<Punto> Raccordo, bool Applicata)
+            ApplicaChiusuraCombinatoriaConRaccordo(
+                List<Punto> mandata,
+                List<Punto> ritorno,
+                double passo,
+                double raggio)
+        {
+            // Riusa integralmente la procedura Diego_Vittorio già collaudata:
+            // enumera M0..M4 + R0..R6 + RP, accorcia/cancella i terminali,
+            // testa intersezioni, seleziona il candidato e SOLO DOPO costruisce
+            // il raccordo sulla coppia di geometrie selezionata.
+            var candidato = GeneraPrimaChiusuraAccettabile(
+                mandata,
+                ritorno,
+                passo);
+            if (candidato == null)
+                return (mandata, ritorno, new List<Punto>(), false);
+
+            var raccordo = CreaCurvaCollegamentoAdattiva(
+                candidato.Mandata,
+                candidato.Ritorno,
+                raggio);
+            if (raccordo.Count < 2)
+                return (mandata, ritorno, new List<Punto>(), false);
+
+            return (
+                candidato.Mandata,
+                candidato.Ritorno,
+                raccordo,
+                true);
+        }
+
         // Funzione realizzata da Codex in autonomia
         private static CandidatoChiusura GeneraPrimaChiusuraAccettabile(
             List<Punto> mandataOriginale,
@@ -1817,36 +1849,6 @@ namespace SpiralHeatingDiegoVittorio
                     !CurvaIntersecaTrattiNonAdiacenti(curva, ritorno))
                 {
                     return curva;
-                }
-            }
-
-            // Caso tipico del Return Vittorio: i due terminali centrali
-            // sono paralleli e percorsi in verso opposto. Per una vera U a
-            // 180 gradi la Bézier cubica richiede una maniglia maggiore del
-            // limite generico distanza/3 (circa 2/3 della distanza fra gli
-            // estremi per una semicirconferenza). Proviamo questa famiglia
-            // dedicata mantenendo integralmente il filtro anti-intersezione.
-            double prodottoTangenti =
-                tangenteMandata.X * tangenteRitorno.X +
-                tangenteMandata.Y * tangenteRitorno.Y;
-            if (prodottoTangenti <= -0.90)
-            {
-                double manigliaUBase = Math.Min(
-                    (2.0 / 3.0) * lunghezzaChiusura,
-                    0.90 * Math.Min(lunghezzaMandata, lunghezzaRitorno));
-                foreach (double fattoreU in new[] { 1.0, 0.85, 0.70, 0.55, 0.40 })
-                {
-                    List<Punto> curvaU = CreaBezierCubicaAdattiva(
-                        inizio,
-                        fine,
-                        tangenteMandata,
-                        tangenteRitorno,
-                        manigliaUBase * fattoreU);
-                    if (!CurvaIntersecaTrattiNonAdiacenti(curvaU, mandata) &&
-                        !CurvaIntersecaTrattiNonAdiacenti(curvaU, ritorno))
-                    {
-                        return curvaU;
-                    }
                 }
             }
 
