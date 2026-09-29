@@ -89,7 +89,8 @@ app.MapGet("/health", () =>
         status = "ok",
         serviceCommit,
         serviceCommitShort = ServiceRuntimeInfo.ShortCommit(serviceCommit),
-        spiralEngine = RadiantExecutiveGenerator.GetSelectedSpiralEngineName()
+        spiralEngine = RadiantExecutiveGenerator.GetSelectedSpiralEngineName(),
+        spiralEngines = RadiantExecutiveGenerator.GetAvailableSpiralEngineNames()
     });
 });
 
@@ -653,6 +654,25 @@ app.MapPost("/api/calculations", async (
         });
     }
 
+    string? requestedSpiralEngine = null;
+    if (request.Query.TryGetValue(
+            "spiralEngine",
+            out Microsoft.Extensions.Primitives.StringValues spiralEngineValues))
+    {
+        requestedSpiralEngine = spiralEngineValues.ToString().Trim();
+    }
+
+    if (!RadiantExecutiveGenerator.TryNormalizeSpiralEngineName(
+            requestedSpiralEngine,
+            out string selectedSpiralEngine))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["spiralEngine"] =
+                ["Valore non valido. Usare Vittorio, Vittorio_revisionato, GPT, Diego oppure Diego_Vittorio."]
+        });
+    }
+
     bool numberSpiralNodes = true;
     if (request.Query.TryGetValue(
             "numerazioneSpirali",
@@ -703,7 +723,8 @@ app.MapPost("/api/calculations", async (
                         projectText,
                         result.RadiantPanelInputXml,
                         result.CleanFloorPlans,
-                        numberSpiralNodes);
+                        numberSpiralNodes,
+                        selectedSpiralEngine);
 
                 IReadOnlyList<string> executiveDiagnostics =
                     TermodelLog.Messages.ToArray();
@@ -744,6 +765,7 @@ app.MapPost("/api/calculations", async (
 
         if (responseArtifact is not null)
         {
+            response.Headers["X-Termodel-Spiral-Engine"] = selectedSpiralEngine;
             return BuildCalculationArtifactResponse(
                 data,
                 projectId,
@@ -816,6 +838,7 @@ app.MapPost("/api/calculations", async (
             contractVersion = "TERMODEL-FRONT-SERVICE-V1",
             projectId,
             status = "completed",
+            spiralEngine = selectedSpiralEngine,
             savedProject = new
             {
                 fileName = "project.tmdl"
