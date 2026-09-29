@@ -513,6 +513,20 @@ try {
     throw "responseArtifact SVG diverso dall'artifact persistito della stessa elaborazione."
   }
 
+  if ($SpiralEngine -eq "Vittorio_revisionato") {
+    $directSvg = Get-Content -LiteralPath $directSvgPath -Raw
+    if ($directSvg -notmatch [regex]::Escape("_PannelliMandata_Output")) {
+      throw "Vittorio_revisionato solo-mandata: layer mandata non trovato."
+    }
+    if ($directSvg -match [regex]::Escape("_PannelliRitorno_Output")) {
+      throw "Vittorio_revisionato solo-mandata: trovato un layer ritorno inatteso."
+    }
+    if ($directSvg -match [regex]::Escape("_NumeriCircuiti_Output")) {
+      throw "Vittorio_revisionato solo-mandata: trovata annotazione di chiusura inattesa."
+    }
+    Write-Host "VITTORIO_REVISIONATO_SUPPLY_ONLY_OK"
+  }
+
   $badArtifactResponse = Invoke-WebRequest -Uri "$base/api/calculations?responseArtifact=artifact-inesistente" -Method Post -ContentType "text/plain; charset=utf-8" -Body $serverProject -SkipHttpErrorCheck
   if ($badArtifactResponse.StatusCode -ne 400) {
     throw "responseArtifact sconosciuto: atteso HTTP 400, ricevuto $($badArtifactResponse.StatusCode)."
