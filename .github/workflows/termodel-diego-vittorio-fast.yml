@@ -9,11 +9,8 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  # Harness nuovamente fermato dopo la verifica del vincolo raccordo >= 2P.
   workflow_dispatch:
-  # Riattivazione temporanea: solo modifiche alla chiusura Diego/Vittorio.
-  push:
-    paths:
-      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/ChiudiSpirale.cs'
 
 jobs:
   fast:
