@@ -755,7 +755,7 @@ namespace SpiralHeatingDiegoVittorio
                                 $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
                                 $"seq={codiceMandata}/{codiceRitorno} " +
                                 $"reason={motivo} curveLength={lunghezzaRaccordo:R} " +
-                                $"requiredCurveLength={lunghezzaMinimaRaccordo.GetValueOrDefault():R}.");
+                                $"requiredCurveLength={lunghezzaMinimaRaccordo.GetValueOrDefault():R}");
                         }
                         continue;
                     }
@@ -768,7 +768,7 @@ namespace SpiralHeatingDiegoVittorio
                             $"type=first-complete-success " +
                             $"length={candidato.LunghezzaChiusura:R} " +
                             $"curveLength={lunghezzaRaccordo:R} " +
-                            $"requiredCurveLength={lunghezzaMinimaRaccordo.GetValueOrDefault():R}.");
+                            $"requiredCurveLength={lunghezzaMinimaRaccordo.GetValueOrDefault():R}");
                     }
 
                     return candidato;
