@@ -7632,3 +7632,41 @@ La scomparsa visiva del blu esterno richiede conferma nel browser dell'utente;
 build/deploy server verificano soltanto che il baseline sia stato pubblicato
 correttamente.
 
+### 2026-09-29 — ripresa dopo rollback: vincolo 2P sulla chiusura finale visibile
+
+Il punto di ripristino `0df1d3bad2b9992a3cfd9af2e95f186301024f87` e' stato accettato
+visivamente dall'utente come baseline: in particolare la geometria Mandata/Ripresa e il Return
+blu non devono essere modificati.
+
+Autorizzazione corrente limitata alle **sole funzioni di chiusura**.
+Convenzione usata dal baseline:
+- `P = distanza Mandata-Ripresa = distanzaRitorno`;
+- nel quadrato corrente `P=0,15 m`;
+- lunghezza reale del raccordo finale visibile richiesta: `>= 2P = 0,30 m`.
+
+Problema individuato: il bridge Diego selezionava e validava il raccordo sulle polilinee
+rettilinee, poi `Vittorio_revisionato` arrotondava Mandata e Ripresa ma continuava a
+disegnare il raccordo calcolato prima dell'arrotondamento. Di conseguenza la geometria
+visibile finale non era necessariamente la stessa che aveva superato il gate `>=2P`.
+
+Correzione sperimentale commit `4aea9aac156912abde40397d5281a97fcccb0b91`:
+- modificato **solo** `SpiraliVittorioRevisionato/ChiudiSpirale.cs`;
+- nessuna modifica a `Program.cs`, `Spiralgenerator.cs`, offset, Supply, Return, API o frontend;
+- dopo l'arrotondamento definitivo di Mandata e Ripresa viene rigenerato soltanto il raccordo
+  centrale;
+- la curva finale viene accettata solo se la sua lunghezza polilinea reale e' `>=2P` e non
+  interseca tratti non adiacenti dei percorsi;
+- se non esiste un raccordo valido, il bridge non forza una chiusura invalida;
+- marker diagnostici: `VREV_FINAL_CLOSURE_2P_OK` / `VREV_FINAL_CLOSURE_2P_REJECT`.
+
+Service Build run `36562384689`:
+- build Release: SUCCESS;
+- smoke progetto pubblico: SUCCESS;
+- smoke override `spiralEngine=Vittorio_revisionato`: SUCCESS;
+- deploy Render: SUCCESS;
+- `/health` ha esposto `serviceCommit=4aea9aac156912abde40397d5281a97fcccb0b91`;
+- rosso globale soltanto sul noto smoke locale storage/lock.
+
+**Stato: implementato e pubblicato, NON ancora consolidato.**
+Serve conferma visiva sul quadrato prima di introdurre qualunque ulteriore vincolo di chiusura.
+
