@@ -14,7 +14,7 @@ public static class StrategiaVittorioRevisionatoBenchmark
     private static readonly object EngineGate = new();
 
     // Funzione realizzata da Codex in autonomia
-    public static StrategiaVittorioBenchmarkSample Run(string localeXml)
+    public static StrategiaVittorioBenchmarkSample Run(string localeXml, bool publicPath = false)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Vittorio vuota.", nameof(localeXml));
@@ -46,7 +46,10 @@ public static class StrategiaVittorioRevisionatoBenchmark
                 {
                     Directory.SetCurrentDirectory(tempRoot);
                     Console.SetOut(capturedOut);
-                    SpiralHeatingVittorioRevisionato.Program.AggiornaSpirali(soloMandataPerEsameVisivo: false);
+                    if (publicPath)
+                        SpiralHeatingVittorioRevisionato.Program.AggiornaSpirali();
+                    else
+                        SpiralHeatingVittorioRevisionato.Program.AggiornaSpirali(soloMandataPerEsameVisivo: false);
                 }
                 finally
                 {
