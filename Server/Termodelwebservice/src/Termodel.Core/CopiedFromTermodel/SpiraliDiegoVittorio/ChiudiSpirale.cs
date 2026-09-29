@@ -1758,7 +1758,7 @@ namespace SpiralHeatingDiegoVittorio
         }
 
         // Funzione realizzata da Codex in autonomia
-        private static List<Punto> CreaCurvaCollegamentoAdattiva(
+        public static List<Punto> CreaCurvaCollegamentoAdattiva(
             List<Punto> mandata,
             List<Punto> ritorno,
             double raggio)
