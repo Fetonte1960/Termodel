@@ -110,13 +110,11 @@ namespace SpiralHeatingVittorioRevisionato
                     {
                         var esitoDiego =
                             SpiralHeatingDiegoVittorio.ChiudiSpirale
-                                .ApplicaChiusuraCombinatoriaConRaccordo(
-                                    spiraleArrotondata
+                                .ApplicaChiusuraCombinatoriaSuRitornoVittorio(
+                                    spirale
                                         .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
                                         .ToList(),
                                     rientro
-                                        .AsEnumerable()
-                                        .Reverse()
                                         .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
                                         .ToList(),
                                     distanzaRitorno,
@@ -127,14 +125,21 @@ namespace SpiralHeatingVittorioRevisionato
                             $"mandata={esitoDiego.Mandata.Count}; ritorno={esitoDiego.Ritorno.Count}; raccordo={esitoDiego.Raccordo.Count}.");
                         if (esitoDiego.Applicata)
                         {
-                            spiraleArrotondata = esitoDiego.Mandata
-                                .Select(p => new Punto(p.X, p.Y))
-                                .ToList();
-                            rientro = esitoDiego.Ritorno
-                                .AsEnumerable()
-                                .Reverse()
-                                .Select(p => new Punto(p.X, p.Y))
-                                .ToList();
+                            // Come nel Diego_Vittorio di riferimento, la
+                            // combinatoria lavora sulle polilinee rettilinee e i
+                            // raccordi dei percorsi vengono applicati soltanto dopo.
+                            spiraleArrotondata = GeometryUtils.ArrotondaSpirale(
+                                esitoDiego.Mandata
+                                    .Select(p => new Punto(p.X, p.Y))
+                                    .ToList(),
+                                raggioCurvatura);
+                            rientro = GeometryUtils.ArrotondaSpirale(
+                                esitoDiego.Ritorno
+                                    .AsEnumerable()
+                                    .Reverse()
+                                    .Select(p => new Punto(p.X, p.Y))
+                                    .ToList(),
+                                raggioCurvatura);
                             curvaCollegamento = esitoDiego.Raccordo
                                 .Select(p => new Punto(p.X, p.Y))
                                 .ToList();
