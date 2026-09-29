@@ -76,7 +76,12 @@ namespace SpiralHeatingVittorioRevisionato
 
         public static void AggiornaSpirali()
         {
-            AggiornaSpirali(SoloMandataPerEsameVisivo);
+            // Percorso pubblico ibrido approvato:
+            // 1) mandata Vittorio_revisionato con completamento centrale;
+            // 2) ritorno, raccordi e chiusura dal post-processore Diego_Vittorio.
+            // Il benchmark storico resta isolato nell'overload bool sottostante.
+            GeneraSpirale(terminalCenterline: true);
+            ChiudiSpiraleFilesDiegoVittorio();
         }
 
         public static void AggiornaSpirali(bool soloMandataPerEsameVisivo)
@@ -517,6 +522,26 @@ namespace SpiralHeatingVittorioRevisionato
             }
         }
         
+        static void ChiudiSpiraleFilesDiegoVittorio()
+        {
+            string xmlFile = "locale.xml";
+
+            if (!File.Exists(xmlFile))
+            {
+                Console.WriteLine($"File {xmlFile} non trovato!");
+                return;
+            }
+
+            // Riutilizzo diretto: nessuna copia delle euristiche Diego_Vittorio.
+            SpiralHeatingDiegoVittorio.ChiudiSpirale.Chiudi(
+                xmlFile,
+                RaggioCurvatura,
+                DistanzaPareti,
+                DistanzaRitorno,
+                DistanzaRotazioneUltimoPunto,
+                Debug);
+        }
+
         static void ChiudiSpiraleFiles()
         {
             string xmlFile = "locale.xml";
