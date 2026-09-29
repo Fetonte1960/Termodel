@@ -565,18 +565,27 @@ namespace SpiralHeatingDiegoVittorio
                 .Reverse()
                 .ToList();
 
-            return ApplicaChiusuraCombinatoriaConRaccordo(
+            var candidato = GeneraPrimaChiusuraAccettabile(
                 mandataRettilinea,
                 ritornoVersoCentro,
                 passo / 2.0,
+                lunghezzaMinimaChiusura: 2.0 * passo);
+            if (candidato == null)
+                return (mandataRettilinea, ritornoVersoCentro, new List<Punto>(), false);
+
+            var raccordo = CreaCurvaCollegamentoAdattiva(
+                candidato.Mandata,
+                candidato.Ritorno,
                 raggio);
+            return (candidato.Mandata, candidato.Ritorno, raccordo, raccordo.Count > 1);
         }
 
         // Funzione realizzata da Codex in autonomia
         private static CandidatoChiusura GeneraPrimaChiusuraAccettabile(
             List<Punto> mandataOriginale,
             List<Punto> ritornoOriginale,
-            double passo)
+            double passo,
+            double? lunghezzaMinimaChiusura = null)
         {
             if (mandataOriginale == null || mandataOriginale.Count < 2 ||
                 ritornoOriginale == null || ritornoOriginale.Count < 2 ||
@@ -852,20 +861,22 @@ namespace SpiralHeatingDiegoVittorio
             ConfigurazioneTerminale mandata,
             ConfigurazioneTerminale ritorno,
             double passo,
-            int numeroTentativo)
+            int numeroTentativo,
+            double? lunghezzaMinimaChiusura = null)
         {
             const double tolleranza = 0.000001;
             Punto inizio = mandata.Punti[^1];
             Punto fine = ritorno.Punti[^1];
             double lunghezza = inizio.DistanceTo(fine);
-            if (lunghezza < 2.0 * passo - tolleranza)
+            double minimoRichiesto = lunghezzaMinimaChiusura ?? (2.0 * passo);
+            if (lunghezza < minimoRichiesto - tolleranza)
             {
                 if (TraceClosureEnabled)
                 {
                     Console.WriteLine(
                         $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
                         $"seq={mandata.Codice}/{ritorno.Codice} reason=length " +
-                        $"length={lunghezza:R} required={(2.0 * passo):R} " +
+                        $"length={lunghezza:R} required={minimoRichiesto:R} " +
                         $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}).");
                 }
                 return null;
