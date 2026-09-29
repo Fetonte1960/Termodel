@@ -101,12 +101,20 @@ namespace SpiralHeatingVittorioRevisionato
                     // Ritorno invariato: resta la duplicazione/offset Vittorio.
                     // Solo il raccordo finale usa la procedura adattiva migliorata
                     // e collaudata in Diego_Vittorio.
+                    var mandataDiego = spiraleArrotondata
+                        .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                        .ToList();
+                    var ritornoDiego = rientro
+                        .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                        .ToList();
                     var curvaCollegamento =
                         SpiralHeatingDiegoVittorio.ChiudiSpirale
                             .CreaCurvaCollegamentoAdattiva(
-                                spiraleArrotondata,
-                                rientro,
-                                raggioCurvatura);
+                                mandataDiego,
+                                ritornoDiego,
+                                raggioCurvatura)
+                            .Select(p => new Punto(p.X, p.Y))
+                            .ToList();
                     
                     // Punto finale del rientro (per collegare la linea di ritorno del tubo)
                     Punto fineRientro = rientro.Count > 0 ? rientro[rientro.Count - 1] : null;
