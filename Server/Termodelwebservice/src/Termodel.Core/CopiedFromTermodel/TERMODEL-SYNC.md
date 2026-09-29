@@ -153,3 +153,10 @@ Ramo sperimentale creato il 28 settembre 2026:
 - Rollback: impostare `TerminalCenterline=false`; nessuna modifica necessaria ai sorgenti Vittorio originali.
 - Fast Harness `36510946051`: SUCCESS, equivalenza multi-progetto storica preservata.
 - Commit finale: `514bb71add522115dfb8358514ce712aa1d8bdf2`.
+
+
+### 2026-09-29 — riuso diretto chiusura Diego_Vittorio in Vittorio_revisionato
+- Il percorso pubblico di `SpiraliVittorioRevisionato/Program.cs` non duplica la chiusura Diego: dopo la propria Supply richiama direttamente `SpiralHeatingDiegoVittorio.ChiudiSpirale.Chiudi` con gli stessi parametri di posa.
+- `AggiornaSpirali(false)` conserva il percorso storico per i benchmark di equivalenza.
+- Fast Harness #75 SUCCESS; smoke pubblico revisionato completo SUCCESS nel Service Build #1089.
+- Commit funzionale: `d86a96cc1dcc3cd4293a99da4712184088175b57`.
