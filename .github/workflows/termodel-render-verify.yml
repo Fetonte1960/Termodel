@@ -88,12 +88,11 @@ jobs:
           $lastJson = if ($null -eq $last) { "<nessuna risposta>" } else { $last | ConvertTo-Json -Depth 10 -Compress }
           throw "Render non espone l'ultimo commit Service $expectedShort con Diego_Vittorio. Ultimo health: $lastJson"
 
-      - name: Publish final status and notify
+      - name: Publish final status
         if: always()
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          NTFY_TOPIC: ${{ secrets.TERMODEL_NTFY_TOPIC }}
         run: |
           $ok = "${{ job.status }}" -eq "success"
           $state = if ($ok) { "success" } else { "failure" }
@@ -112,14 +111,3 @@ jobs:
           } | ConvertTo-Json
           Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
 
-          if (-not [string]::IsNullOrWhiteSpace($env:NTFY_TOPIC)) {
-            try {
-              Invoke-RestMethod -Uri "https://ntfy.sh/$env:NTFY_TOPIC" -Method Post -Headers @{
-                "Title" = "Termodel Render Verify"
-                "Priority" = "low"
-                "Tags" = if ($ok) { "white_check_mark" } else { "x" }
-              } -Body "Render Verify #${{ github.run_number }} $label - $runUrl" | Out-Null
-            } catch {
-              Write-Warning "Notifica ntfy non riuscita: $($_.Exception.Message)"
-            }
-          }
