@@ -1,8 +1,6 @@
 name: Termodel Chat Blocked Notify
 
 on:
-  issues:
-    types: [opened, reopened]
   issue_comment:
     types: [created]
 
@@ -11,7 +9,7 @@ permissions:
 
 jobs:
   notify:
-    if: ${{ (github.event_name == 'issues' && github.event.issue.number == 11) || (github.event_name == 'issue_comment' && github.event.issue.number == 11) }}
+    if: ${{ github.event.issue.number == 11 && github.event.comment.body == 'Rilevata chat bloccata' }}
     runs-on: ubuntu-latest
     steps:
       - name: Notify blocked chat
