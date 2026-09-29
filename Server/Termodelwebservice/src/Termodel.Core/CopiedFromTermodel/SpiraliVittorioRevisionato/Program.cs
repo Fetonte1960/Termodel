@@ -68,10 +68,44 @@ namespace SpiralHeatingVittorioRevisionato
             }
         }
         */
+        // Modalita' temporanea richiesta per il collaudo visivo pubblico:
+        // Vittorio_revisionato espone soltanto la mandata. La chiusura e il
+        // ritorno restano nel sorgente ma non vengono eseguiti dal percorso
+        // pubblico finche' questa costante resta true.
+        public const bool SoloMandataPerEsameVisivo = true;
+
         public static void AggiornaSpirali()
         {
+            AggiornaSpirali(SoloMandataPerEsameVisivo);
+        }
+
+        public static void AggiornaSpirali(bool soloMandataPerEsameVisivo)
+        {
             GeneraSpirale();
+
+            if (soloMandataPerEsameVisivo)
+            {
+                ColoraMandataPreChiusuraInRosso("locale.svg");
+                Console.WriteLine(
+                    "Vittorio_revisionato: modalita' temporanea SOLO MANDATA; " +
+                    "chiusura e ritorno sospesi.");
+                return;
+            }
+
             ChiudiSpiraleFiles();
+        }
+
+        private static void ColoraMandataPreChiusuraInRosso(string svgFile)
+        {
+            if (!File.Exists(svgFile))
+                return;
+
+            string svg = File.ReadAllText(svgFile);
+            svg = svg.Replace(
+                "stroke=\"blue\"",
+                "stroke=\"red\"",
+                StringComparison.OrdinalIgnoreCase);
+            File.WriteAllText(svgFile, svg);
         }
         static void GeneraSpirale()
         {
