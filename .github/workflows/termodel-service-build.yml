@@ -91,16 +91,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.35';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.36';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.35")) {
+          if (-not $index.Contains("./app.js?v=1.36")) {
             throw "Cache-busting app.js v1.35 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.35") {
+          if ($frontendVersion -ne "1.36") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -118,6 +118,7 @@ jobs:
             "termodelServiceRuntimeCommit",
             "termodelServiceRuntimeEngine",
             "sourceType: 'service-runtime'",
+            "currentCalculationSpiralEngine || termodelServiceRuntimeEngine",
             "provenance: example.executiveProvenance || null",
             "CALCOLO CORRENTE · NON CONSOLIDATO",
             "CONSOLIDATO NELL’ESEMPIO"
@@ -156,6 +157,8 @@ jobs:
             "cadSetStatus(TERMODEL_SERVICE_WAIT_STATUS);",
             "health?.serviceCommit || health?.serviceCommitShort",
             "health?.spiralEngine",
+            "helpSpiralEngine",
+            "query.set('spiralEngine', spiralEngine)",
             "'Server '",
             "'SpiraliDiego'",
             "helpCopyLogClipboard",
@@ -478,7 +481,7 @@ jobs:
           if (-not $myHomeHtml.Contains("MYHOME3D MOBILE")) {
             throw "Pagina pubblica MyHome3D.html non contiene l'istruzione Mobile."
           }
-          if (-not $index.Contains("./app.js?v=1.35")) {
+          if (-not $index.Contains("./app.js?v=1.36")) {
             throw "Cache-busting MyHome3D v1.35 non aggiornato."
           }
 
@@ -591,12 +594,18 @@ jobs:
         shell: pwsh
         run: ./tools/smoke-radiant-reference.ps1 -ProjectPath "../../docs/termodel-ui-demo/examples/pannelli-radianti.tmdl.txt"
 
+      - name: Smoke public Vittorio_revisionato request override
+        shell: pwsh
+        run: ./tools/smoke-radiant-reference.ps1 -ProjectPath "../../docs/termodel-ui-demo/examples/pannelli-radianti.tmdl.txt" -SpiralEngine "Vittorio_revisionato"
+
       - name: Upload public Pannelli radianti model3d diagnostics
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: pannelli-radianti-public-model3d
-          path: ${{ runner.temp }}/RadiantPanelsPublicExampleArtifacts
+          path: |
+            ${{ runner.temp }}/RadiantPanelsPublicExampleArtifacts
+            ${{ runner.temp }}/RadiantPanelsEngineOverride-Vittorio_revisionato
           if-no-files-found: warn
           retention-days: 30
 
