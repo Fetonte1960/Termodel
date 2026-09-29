@@ -117,9 +117,18 @@ Ramo sperimentale creato il 28 settembre 2026:
 - run `36466606034` SUCCESS: parità Vittorio ancora conservata;
   probe neutro equivalente, Supply 37 punti, secondo percorso non condizionato
   38 punti, percorso condizionato dalla Supply a 0,15 m fermo a 1 punto;
-- questa copia NON è ancora un motore di produzione e NON genera ancora un
-  Return autonomo utilizzabile; il risultato serve a decidere insieme la minima
-  differenza strutturale necessaria prima di qualsiasi nuova strategia;
+- collaudo multi-progetto run `36503404032`: SVG + XML byte-identici a
+  Vittorio su 6 casi (quadrato, concavo, trapezio, connection-terminal,
+  appartamento corrente, progetto pubblico pannelli);
+- dal 29/09/2026 è selezionabile nel Service **solo per-request** tramite
+  `spiralEngine=Vittorio_revisionato`; il default resta `Diego_Vittorio`;
+- frontend pubblico v1.36 espone la scelta in Help per il collaudo
+  collaborativo; il file progetto non viene modificato;
+- smoke locale override e verifica deploy pubblico: SUCCESS nel Service Build
+  `36504429395`;
+- questa pubblicazione NON promuove la copia a motore default e NON genera
+  ancora un Return autonomo utilizzabile; serve a raccogliere casi reali prima
+  della prossima decisione algoritmica;
 - vietato importare euristiche da `SpiraliDiegoVittorio` senza test e
   decisione esplicita;
 - stato duplicazione: PENDING.

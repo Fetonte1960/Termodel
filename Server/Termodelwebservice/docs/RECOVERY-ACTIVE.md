@@ -1827,3 +1827,43 @@ Conclusione procedurale:
 **PROSSIMO PASSO:** implementare selezione per-request nel Service, selettore
 pubblico Web e provenienza esecutivo col motore realmente usato; poi build,
 regression e verifica deploy Render + Pages.
+
+
+#### STEP 4J.2 — FASE 2 pubblicata e verificata
+Stato: **COMPLETATO — PRONTO PER COLLAUDO COLLABORATIVO**
+
+Implementato:
+- Service: selezione per-request
+  `spiralEngine=Vittorio_revisionato`;
+- nessuna mutazione globale dell'environment e nessuna modifica al file
+  progetto;
+- default mantenuto `Diego_Vittorio`;
+- `/health` espone anche l'elenco `spiralEngines`;
+- risposta calcolo e responseArtifact espongono il motore effettivamente usato;
+- frontend pubblico v1.36: selettore Help → Motore spirali — test pubblico;
+- provenienza esecutivo runtime usa il motore della singola elaborazione;
+- contratto Front/Service aggiornato.
+
+Test:
+- Fast multi-progetto #64 `36503404032`: SUCCESS su 6 casi;
+- Fast post-esposizione Core #65 `36503807860`: SUCCESS;
+- Service Build #1067 `36504429395`:
+  - build: SUCCESS;
+  - frontend syntax/wiring: SUCCESS;
+  - smoke progetto pubblico default: SUCCESS;
+  - smoke override `Vittorio_revisionato`: SUCCESS;
+  - verifica deploy pubblico: SUCCESS;
+  - rosso finale esclusivamente per Golden Darcy sintetico già noto.
+- verifica pubblica:
+  - Render raggiungibile e `Vittorio_revisionato` presente in
+    `spiralEngines`;
+  - default pubblico `Diego_Vittorio`;
+  - frontend pubblico `1.36`;
+  - Pages #1654 `36504429539`: SUCCESS.
+
+**RECOVERY POINT / PROSSIMO PASSO:** l'utente può aprire il frontend pubblico,
+selezionare Help → Motore spirali — test pubblico →
+`Vittorio_revisionato`, aprire o creare progetti diversi e usare
+`Aggiorna Modello`. Per ogni anomalia annotare progetto/locale/ingresso e
+confrontare prima con `Vittorio`. Non modificare ancora l'algoritmo Return
+senza un caso reale riproducibile e una decisione esplicita.

@@ -7319,3 +7319,53 @@ considerato sufficiente né rappresentativo della procedura di promozione.
 La FASE 2 può quindi esporre `Vittorio_revisionato` per test pubblico come
 selezione per-request, mantenendo `Diego_Vittorio` default e senza alterare
 il file progetto.
+
+
+#### FASE 2 completata — pubblicazione per collaudo collaborativo
+
+Implementazione:
+- `RadiantExecutiveGenerator` accetta ora una scelta opzionale per-request
+  senza modificare `TERMODEL_SPIRAL_ENGINE`;
+- motori disponibili pubblicati da `/health.spiralEngines`;
+- `POST /api/calculations?spiralEngine=Vittorio_revisionato` usa il motore
+  richiesto soltanto per quella elaborazione;
+- risposta JSON: campo `spiralEngine`; risposta diretta artifact:
+  header `X-Termodel-Spiral-Engine`;
+- default invariato: `Diego_Vittorio`;
+- frontend pubblico v1.36: Help → “Motore spirali — test pubblico” con
+  `Predefinito Service`, `Vittorio_revisionato`, `Vittorio`,
+  `Diego_Vittorio`;
+- la provenienza dell'esecutivo runtime usa il motore restituito dal calcolo,
+  non il solo default di `/health`;
+- contratto aggiornato in `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md`.
+
+Verifiche:
+- Fast Harness `36503404032` (#64): SUCCESS, equivalenza Vittorio /
+  Vittorio_revisionato su 6 casi, SVG + XML byte-identici;
+- Fast Harness `36503807860` (#65): SUCCESS dopo l'esposizione Core;
+- Service Build `36504429395` (#1067):
+  - syntax frontend SUCCESS;
+  - wiring frontend SUCCESS;
+  - build soluzione SUCCESS;
+  - smoke pubblico pannelli default SUCCESS;
+  - smoke pubblico locale con
+    `spiralEngine=Vittorio_revisionato` SUCCESS;
+  - verifica deploy pubblico SUCCESS;
+  - workflow globale FAILED più avanti per il golden Darcy sintetico già noto
+    (flow 3,18267931870604 L/h, Re 123,401738358689,
+    dP 1,31367490344266 Pa), indipendente da questa modifica.
+- verifica pubblica del runner:
+  - Service commit osservato: `c1a7637ba66728413045d44b75d973550d941082`;
+  - default pubblico: `Diego_Vittorio`;
+  - motori pubblici:
+    `Vittorio,Vittorio_revisionato,GPT,Diego,Diego_Vittorio`;
+  - frontend pubblico: `1.36`;
+- GitHub Pages run `36504429539` (#1654): SUCCESS.
+
+Stato:
+- **pubblicato per test collaborativo**;
+- non è motore default;
+- non è ancora autorizzata alcuna nuova strategia Return;
+- prossimo lavoro: raccogliere progetti reali dall'utente usando
+  `Vittorio_revisionato`, documentare eventuali divergenze visive/funzionali
+  e solo dopo decidere la minima differenza strutturale del Return.

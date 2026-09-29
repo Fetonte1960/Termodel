@@ -59,6 +59,46 @@ non un bug corretto né una nuova strategia. Prima di introdurre qualunque
 rerouting va deciso esplicitamente quale minima differenza strutturale debba
 avere il Return (radice, lato/verso, offset/distanze o altra regola).
 
-`Vittorio_revisionato` non è ancora un motore di produzione e il normale
-flusso completo continua intenzionalmente a usare il comportamento Vittorio
-stabile.
+`Vittorio_revisionato` resta sperimentale: non è il default di produzione.
+Il comportamento completo continua intenzionalmente a riprodurre Vittorio
+quando non viene usato l'ingresso condizionato.
+
+
+## Milestone 3 — collaudo multi-progetto e pubblicazione
+
+Correzione procedurale del 29/09/2026: il solo quadrato non è più considerato
+un collaudo sufficiente.
+
+Fast Harness run `36503404032` (#64): **SUCCESS**.
+`Vittorio_revisionato` è risultato byte-identico a `Vittorio`, sia nello
+SVG sia nell'XML risultante, su sei casi:
+- quadrato 4x4;
+- concavo L;
+- trapezio obliquo;
+- connection-terminal;
+- appartamento corrente preparato;
+- progetto pubblico Pannelli radianti completo.
+
+Dopo il banco multi-progetto, il motore è stato esposto nel Service come scelta
+**per singola elaborazione**:
+`POST /api/calculations?spiralEngine=Vittorio_revisionato`.
+Il default del Service resta `Diego_Vittorio` e la selezione non viene salvata
+nel file progetto.
+
+Service Build run `36504429395` (#1067):
+- JavaScript frontend: SUCCESS;
+- build soluzione: SUCCESS;
+- smoke progetto pubblico: SUCCESS;
+- smoke override per-request `Vittorio_revisionato`: SUCCESS;
+- verifica deploy pubblico Render + Pages: SUCCESS;
+- workflow complessivo ancora rosso esclusivamente per il golden Darcy
+  sintetico già noto e indipendente dalle spirali.
+
+Verifica pubblica registrata dal runner:
+- Render espone `Vittorio_revisionato` fra i motori disponibili;
+- default pubblico: `Diego_Vittorio`;
+- frontend pubblico: v1.36.
+
+La pubblicazione serve al collaudo collaborativo. Non autorizza ancora
+l'integrazione del Return autonomo né l'importazione di euristiche da
+`SpiraliDiegoVittorio`.
