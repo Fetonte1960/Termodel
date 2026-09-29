@@ -1540,15 +1540,3 @@ jobs:
           }
 
 
-          try {
-            $notifyHeaders = @{
-              "Title" = "Termodel"
-              "Priority" = $priority
-              "Tags" = $tags
-              "Actions" = "view, Apri GitHub Action, $runUrl"
-            }
-            Invoke-RestMethod -Uri "https://ntfy.sh/$topic" -Method Post -Headers $notifyHeaders -ContentType "text/plain; charset=utf-8" -Body $message | Out-Null
-            Write-Host "PHONE_NOTIFICATION_SENT status=$finalStatus"
-          } catch {
-            Write-Warning "Notifica telefono non inviata: $($_.Exception.Message)"
-          }
