@@ -518,6 +518,21 @@ namespace SpiralHeatingDiegoVittorio
             };
         }
 
+        public static (List<Punto> Mandata, List<Punto> Ritorno, bool Applicata) ApplicaChiusuraOttimizzata(
+            List<Punto> mandata,
+            List<Punto> ritorno,
+            double distanzaRitorno)
+        {
+            var candidato = GeneraPrimaChiusuraAccettabile(
+                mandata,
+                ritorno,
+                distanzaRitorno);
+            if (candidato == null)
+                return (mandata, ritorno, false);
+
+            return (candidato.Mandata, candidato.Ritorno, true);
+        }
+
         // Funzione realizzata da Codex in autonomia
         private static CandidatoChiusura GeneraPrimaChiusuraAccettabile(
             List<Punto> mandataOriginale,
