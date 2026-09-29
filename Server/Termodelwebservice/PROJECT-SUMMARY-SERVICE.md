@@ -7518,3 +7518,48 @@ Implementate le ultime direttive geometriche concordate senza eseguire Fast Harn
 
 Per disposizione utente il Fast Harness resta fermo. La verifica richiesta per questo job e' la compilazione/deploy del Service e la conferma del commit effettivamente servito da Render tramite `/health`.
 
+### 2026-09-29 — quadrato Vittorio_revisionato: causa reale e chiusura M2P/R0P
+
+Risolta e verificata la mancata chiusura del quadrato indicata visivamente dall'utente.
+
+La soluzione geometrica richiesta e' precisamente:
+- Return/Ripresa: nessun tratto eliminato, ultimo tratto portato a `P` -> `R0P`;
+- Mandata: eliminare 2 tratti, nuovo terminale portato a `P` -> `M2P`;
+- con il caso quadrato corrente `P = 0,15 m`.
+
+Il trace reale precedente alla correzione mostrava che `M2P/R0P` veniva effettivamente generata ma scartata **prima** della costruzione/verifica del raccordo:
+- Mandata terminale: `(2.2,1.8) -> (2.2,1.95)`, lunghezza `0,15 m = P`;
+- Return terminale: `(2.35,1.65) -> (2.35,1.8)`, lunghezza `0,15 m = P`;
+- distanza rettilinea fra estremi: `0,212132... m`;
+- vecchio filtro: `0,212132 < 0,30` -> `reason=length`;
+- se il filtro lunghezza viene rinviato, anche il filtro sulla **corda rettilinea** produce `cosSupply=-0,7071`, pur essendo possibile un raccordo curvo valido.
+
+La causa era quindi concettuale: `2P` e' la distanza Mandata-Mandata e non puo' essere usata come lunghezza minima della corda rettilinea tra gli estremi di un raccordo curvo; inoltre l'angolo della corda non rappresenta la tangente del raccordo reale.
+
+Correzione pubblicata nel commit `e60d9ed9c5536852dbb60c146cdb6abb72957e87`:
+- modifica isolata nel bridge `ApplicaChiusuraCombinatoriaSuRitornoVittorio`;
+- per `Vittorio_revisionato` le configurazioni con terminale normalizzato a `P` vengono provate prima della variante invariata;
+- i filtri preliminari basati su lunghezza/angolo della corda rettilinea vengono rinviati: la decisione finale e' presa sul raccordo curvo realmente costruito e sul controllo delle intersezioni;
+- il percorso Diego_Vittorio storico conserva i propri default di ordinamento e filtri;
+- il gate del quadrato ora richiede esplicitamente `DV_CLOSURE_SELECTED ... seq=M2P/R0P` e verifica entrambi i terminali a `P=0,15`, eliminando il precedente controllo Harness errato che leggeva la proprieta' inesistente `case.Passo`.
+
+Verifica reale GitHub Harness su main, run `36543729092`:
+- build Harness/Core: SUCCESS;
+- `Harness quadrato Vittorio_revisionato public closure`: SUCCESS;
+- selezione verificata: `M2P/R0P`;
+- terminali verificati: `P=0,15 m`;
+- equivalenza iniziale Vittorio_revisionato: SUCCESS;
+- equivalenza multi-progetto Vittorio_revisionato: SUCCESS;
+- check astrazione Vittorio_revisionato: SUCCESS;
+- Diego_Vittorio square: SUCCESS;
+- il workflow completo resta rosso successivamente sul gate separato `Run public square left inlet regression` del motore Diego_Vittorio: questa regressione non fa parte della chiusura quadrato Vittorio_revisionato appena corretta e resta da trattare separatamente.
+
+Verifica Service, run `36543729007`:
+- compilazione Release: SUCCESS;
+- smoke richiesta `Vittorio_revisionato`: SUCCESS;
+- deploy pubblico Render: SUCCESS;
+- `/health` ha esposto `serviceCommit=e60d9ed9c5536852dbb60c146cdb6abb72957e87`;
+- il workflow Service complessivo resta rosso per lo smoke storage/lock locale `Termodel.WebService non ha risposto a /health`, problema separato dalla generazione della spirale e dal deploy pubblico.
+
+Questa sezione **supera** le precedenti formulazioni che imponevano `lunghezza corda >= 2P` al bridge Vittorio_revisionato.
+
