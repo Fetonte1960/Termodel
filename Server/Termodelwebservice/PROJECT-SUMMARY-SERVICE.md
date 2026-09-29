@@ -7624,3 +7624,28 @@ Verifica Service Build run `36556399936`:
 
 Il Fast Harness automatico resta fermo; le vecchie regression di equivalenza byte-identica Vittorio/Vittorio_revisionato sono storiche e non rappresentano piu' il criterio corrente dopo la separazione P/2 - P - 2P.
 
+### 2026-09-29 — Vittorio_revisionato: vietati angoli acuti nella chiusura finale
+
+Il collaudo visivo del quadrato, dopo la normalizzazione `P=0,30 m`, ha mostrato una cuspide evidente nel raccordo centrale rosso. La regola geometrica e' ora esplicita: **nella geometria finale visibile della chiusura non sono ammessi angoli interni < 90°**; 90° e' ammesso.
+
+Correzione:
+- il vecchio filtro sulla **corda rettilinea** resta disattivato nel bridge Vittorio_revisionato, perché non rappresenta la tangente della curva reale;
+- il controllo viene eseguito sulla geometria finale realmente disegnata: ultimo gomito Mandata, innesto Mandata-raccordo, tutti i campioni del raccordo, innesto raccordo-Ripresa e primo gomito Ripresa;
+- per ogni terna di punti si misura l'angolo interno; un candidato con angolo < 90° viene scartato e la combinatoria continua;
+- la ricerca delle maniglie Bézier continua finché trova una curva che rispetta contemporaneamente lunghezza `>=2P`, assenza di intersezioni e angolo minimo `>=90°`;
+- il fallback rettilineo non viene usato dal bridge se genererebbe un angolo acuto;
+- il comportamento operativo standard di `Diego_Vittorio` non cambia: il nuovo gate e' attivato solo dal bridge `ApplicaChiusuraCombinatoriaSuRitornoVittorio`.
+
+Commit funzionale: `00802024038225314a5b682787395b1f6b0f82f5`.
+
+Verifica Service Build run `36557778519`:
+- build Release: **SUCCESS**;
+- convenzione P: **SUCCESS**;
+- gate dedicato quadrato `VITTORIO_REVISIONATO_NO_ACUTE_ANGLE_OK`: **SUCCESS**;
+- angolo minimo misurato: **90°**;
+- smoke progetto pubblico: **SUCCESS**;
+- smoke per-request `spiralEngine=Vittorio_revisionato`: **SUCCESS**;
+- deploy pubblico Render: **SUCCESS**;
+- `/health` ha esposto `serviceCommit=00802024038225314a5b682787395b1f6b0f82f5`;
+- il workflow complessivo resta rosso solo sul noto smoke locale storage/lock, separato dalle spirali.
+
