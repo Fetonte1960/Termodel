@@ -1752,3 +1752,37 @@ debba essere la minima differenza strutturale del secondo percorso rispetto alla
 Supply (punto/radice di partenza, lato e verso di percorrenza, ordine degli
 offset, distanza di generazione/condizionamento). Nessuna implementazione prima
 di questa decisione.
+
+
+### STEP 4J — correzione procedura: collaudo multi-progetto e pubblicazione
+Stato: **COMMISSIONATO / IN CORSO**
+
+Nuova decisione utente:
+1. il quadrato da solo non è una base sufficiente;
+2. confrontare `Vittorio_revisionato` con Vittorio su più casi reali e
+   sintetici già disponibili;
+3. se l'equivalenza multi-progetto è confermata, pubblicare il motore come
+   scelta di test nel Service/Frontend pubblico;
+4. mantenere `Diego_Vittorio` come default;
+5. fermarsi se emerge una divergenza;
+6. segnalare la conclusione su Issue #1.
+
+Set minimo previsto per FASE 1:
+- quadrato 4x4;
+- concavo L;
+- trapezio obliquo;
+- connection-terminal;
+- appartamento corrente preparato;
+- progetto pubblico Pannelli radianti completo.
+
+Confronto richiesto per ogni caso:
+- esecuzione Vittorio;
+- esecuzione Vittorio_revisionato;
+- SHA-256 SVG;
+- SHA-256 XML risultante.
+
+FASE 2 prevista solo dopo FASE 1 verde:
+- query per-request `spiralEngine=Vittorio_revisionato`;
+- selezione frontend pubblica esplicita;
+- provenienza runtime coerente con il motore richiesto;
+- build/regression/deploy pubblico.
