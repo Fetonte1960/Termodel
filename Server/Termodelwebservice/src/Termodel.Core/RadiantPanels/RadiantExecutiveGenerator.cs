@@ -9,8 +9,9 @@ namespace Termodel.Core.RadiantPanels;
 
 /// <summary>
 /// Genera l'esecutivo pannelli con un motore selezionabile
-/// Vittorio | GPT | Diego | Diego_Vittorio. Il default operativo e'
-/// Diego_Vittorio; gli altri motori restano selezionabili per confronto e rollback.
+/// Vittorio | Vittorio_revisionato | GPT | Diego | Diego_Vittorio. Il default
+/// operativo e' Diego_Vittorio; gli altri motori restano selezionabili per
+/// confronto, rollback e collaudo pubblico per-request.
 /// DXF e SVG vengono serializzati dallo stesso modello grafico neutro.
 /// La pianta pulita generata nella stessa elaborazione viene incorporata
 /// come base architettonica prima delle primitive delle spirali.
@@ -25,7 +26,8 @@ public static class RadiantExecutiveGenerator
         string projectText,
         string? panelInputXml,
         IReadOnlyDictionary<string, string>? cleanFloorPlans = null,
-        bool numberSpiralNodes = true)
+        bool numberSpiralNodes = true,
+        string? spiralEngineName = null)
     {
         if (string.IsNullOrWhiteSpace(panelInputXml))
             return null;
@@ -62,7 +64,7 @@ public static class RadiantExecutiveGenerator
 
         var drawing = new RadiantExecutiveDrawing();
         var diagnostics = new List<string>();
-        RadiantSpiralEngine selectedEngine = ResolveSpiralEngine();
+        RadiantSpiralEngine selectedEngine = ResolveSpiralEngine(spiralEngineName);
         // Modificato da Codex per realizzare: allineare anche il valore iniziale
         // del passo al nuovo motore predefinito Diego_Vittorio.
         double selectedStepMeters =
@@ -195,13 +197,36 @@ public static class RadiantExecutiveGenerator
             root);
     }
 
-    public static string GetSelectedSpiralEngineName() =>
-        ResolveSpiralEngine().ToString();
+    public static string GetSelectedSpiralEngineName(
+        string? requestedEngine = null) =>
+        ResolveSpiralEngine(requestedEngine).ToString();
 
-    private static RadiantSpiralEngine ResolveSpiralEngine()
+    public static bool TryNormalizeSpiralEngineName(
+        string? requestedEngine,
+        out string engineName)
+    {
+        try
+        {
+            engineName = ResolveSpiralEngine(requestedEngine).ToString();
+            return true;
+        }
+        catch (InvalidDataException)
+        {
+            engineName = string.Empty;
+            return false;
+        }
+    }
+
+    public static IReadOnlyList<string> GetAvailableSpiralEngineNames() =>
+        Enum.GetNames<RadiantSpiralEngine>();
+
+    private static RadiantSpiralEngine ResolveSpiralEngine(
+        string? requestedEngine = null)
     {
         string? configured =
-            Environment.GetEnvironmentVariable("TERMODEL_SPIRAL_ENGINE");
+            string.IsNullOrWhiteSpace(requestedEngine)
+                ? Environment.GetEnvironmentVariable("TERMODEL_SPIRAL_ENGINE")
+                : requestedEngine;
 
         // Modificato da Codex per realizzare: rendere Diego_Vittorio il motore
         // Service corrente, lasciando invariati gli override espliciti.
@@ -218,7 +243,7 @@ public static class RadiantExecutiveGenerator
 
         throw new InvalidDataException(
             $"TERMODEL_SPIRAL_ENGINE non riconosciuto: '{configured}'. " +
-            "Valori ammessi: Vittorio, GPT, Diego, Diego_Vittorio.");
+            "Valori ammessi: Vittorio, Vittorio_revisionato, GPT, Diego, Diego_Vittorio.");
     }
 
     private static SpiralEngineOutput RunSpiralEngine(
@@ -264,6 +289,8 @@ public static class RadiantExecutiveGenerator
                     // Modificato da Codex per realizzare: selezionare la copia indipendente Diego_Vittorio senza alterare Vittorio.
                     if (engine == RadiantSpiralEngine.Vittorio)
                         SpiralHeating.Program.AggiornaSpirali();
+                    else if (engine == RadiantSpiralEngine.Vittorio_revisionato)
+                        SpiralHeatingVittorioRevisionato.Program.AggiornaSpirali();
                     else if (engine == RadiantSpiralEngine.Diego_Vittorio)
                         SpiralHeatingDiegoVittorio.Program.AggiornaSpirali();
                     else
@@ -285,6 +312,8 @@ public static class RadiantExecutiveGenerator
             double step = engine switch
             {
                 RadiantSpiralEngine.Vittorio => SpiralHeating.Program.PassoTubi,
+                RadiantSpiralEngine.Vittorio_revisionato =>
+                    SpiralHeatingVittorioRevisionato.Program.PassoTubi,
                 RadiantSpiralEngine.Diego_Vittorio =>
                     SpiralHeatingDiegoVittorio.Program.PassoTubi,
                 _ => SpiralHeatingGPT.Program.PassoTubi
@@ -757,6 +786,7 @@ public static class RadiantExecutiveGenerator
 internal enum RadiantSpiralEngine
 {
     Vittorio,
+    Vittorio_revisionato,
     GPT,
     Diego,
     // Modificato da Codex per realizzare: esporre la copia sperimentale separata dal riferimento Vittorio.
