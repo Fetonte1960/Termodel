@@ -630,12 +630,12 @@ namespace SpiralHeatingDiegoVittorio
             // separatamente dal vincolo >= 2P.
             var azioniTerminali = new (int rimossi, double? lunghezzaFinale)[]
             {
-                (0, null),
                 (0, passo),
-                (1, null),
+                (0, null),
                 (1, passo),
-                (2, null),
-                (2, passo)
+                (1, null),
+                (2, passo),
+                (2, null)
             };
 
             int numeroTentativo = 0;
