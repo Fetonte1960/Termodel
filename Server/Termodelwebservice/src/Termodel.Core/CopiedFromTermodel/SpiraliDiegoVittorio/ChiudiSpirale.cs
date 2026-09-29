@@ -593,7 +593,8 @@ namespace SpiralHeatingDiegoVittorio
                 lunghezzaMinimaChiusura: null,
                 preferisciTerminaleP: true,
                 applicaFiltriCordaRettilinea: false,
-                lunghezzaMinimaRaccordo: 2.0 * passo);
+                lunghezzaMinimaRaccordo: 2.0 * passo,
+                richiediAngoliNonAcutiRaccordo: true);
             if (candidato == null)
                 return (mandataRettilinea, ritornoVersoCentro, new List<Punto>(), false);
 
@@ -601,18 +602,37 @@ namespace SpiralHeatingDiegoVittorio
                 candidato.Mandata,
                 candidato.Ritorno,
                 raggio,
-                lunghezzaMinima: 2.0 * passo);
+                lunghezzaMinima: 2.0 * passo,
+                richiediAngoliNonAcuti: true);
             double lunghezzaRaccordo = LunghezzaPolilinea(raccordo);
+            bool angoliNonAcuti = ChiusuraHaSoloAngoliNonAcuti(
+                candidato.Mandata,
+                candidato.Ritorno,
+                raccordo,
+                out double angoloMinimoGradi);
             bool raccordoLibero =
                 raccordo.Count > 1 &&
                 lunghezzaRaccordo + 0.000001 >= 2.0 * passo &&
+                angoliNonAcuti &&
                 !CurvaIntersecaTrattiNonAdiacenti(raccordo, candidato.Mandata) &&
                 !CurvaIntersecaTrattiNonAdiacenti(raccordo, candidato.Ritorno);
             if (!raccordoLibero)
             {
                 if (TraceClosureEnabled)
-                    Console.WriteLine("  DV_CLOSURE_FINAL_REJECT reason=intersection-after-trim.");
+                {
+                    string motivo = !angoliNonAcuti
+                        ? "acute-final-path"
+                        : "intersection-or-length-after-trim";
+                    Console.WriteLine(
+                        $"  DV_CLOSURE_FINAL_REJECT reason={motivo} " +
+                        $"minAngle={angoloMinimoGradi:R}.");
+                }
                 return (candidato.Mandata, candidato.Ritorno, new List<Punto>(), false);
+            }
+            if (TraceClosureEnabled)
+            {
+                Console.WriteLine(
+                    $"  DV_CLOSURE_FINAL_ANGLE_OK minAngle={angoloMinimoGradi:R}.");
             }
             return (candidato.Mandata, candidato.Ritorno, raccordo, true);
         }
@@ -626,7 +646,8 @@ namespace SpiralHeatingDiegoVittorio
             double? lunghezzaMinimaChiusura = null,
             bool preferisciTerminaleP = false,
             bool applicaFiltriCordaRettilinea = true,
-            double? lunghezzaMinimaRaccordo = null)
+            double? lunghezzaMinimaRaccordo = null,
+            bool richiediAngoliNonAcutiRaccordo = false)
         {
             if (mandataOriginale == null || mandataOriginale.Count < 2 ||
                 ritornoOriginale == null || ritornoOriginale.Count < 2 ||
@@ -728,13 +749,22 @@ namespace SpiralHeatingDiegoVittorio
                         candidato.Mandata,
                         candidato.Ritorno,
                         raggio,
-                        lunghezzaMinimaRaccordo);
+                        lunghezzaMinimaRaccordo,
+                        richiediAngoliNonAcutiRaccordo);
                     double lunghezzaRaccordo = LunghezzaPolilinea(raccordo);
+                    bool angoliNonAcuti =
+                        !richiediAngoliNonAcutiRaccordo ||
+                        ChiusuraHaSoloAngoliNonAcuti(
+                            candidato.Mandata,
+                            candidato.Ritorno,
+                            raccordo,
+                            out _);
                     bool raccordoLibero =
                         raccordo.Count > 1 &&
                         (!lunghezzaMinimaRaccordo.HasValue ||
                          lunghezzaRaccordo + 0.000001 >=
                             lunghezzaMinimaRaccordo.Value) &&
+                        angoliNonAcuti &&
                         !CurvaIntersecaTrattiNonAdiacenti(
                             raccordo,
                             candidato.Mandata) &&
@@ -746,11 +776,13 @@ namespace SpiralHeatingDiegoVittorio
                         if (TraceClosureEnabled)
                         {
                             string motivo =
-                                lunghezzaMinimaRaccordo.HasValue &&
-                                lunghezzaRaccordo + 0.000001 <
-                                    lunghezzaMinimaRaccordo.Value
-                                    ? "curve-length"
-                                    : "intersection-after-trim";
+                                !angoliNonAcuti
+                                    ? "acute-final-path"
+                                    : lunghezzaMinimaRaccordo.HasValue &&
+                                      lunghezzaRaccordo + 0.000001 <
+                                        lunghezzaMinimaRaccordo.Value
+                                        ? "curve-length"
+                                        : "intersection-after-trim";
                             Console.WriteLine(
                                 $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
                                 $"seq={codiceMandata}/{codiceRitorno} " +
@@ -762,13 +794,19 @@ namespace SpiralHeatingDiegoVittorio
 
                     if (TraceClosureEnabled)
                     {
+                        ChiusuraHaSoloAngoliNonAcuti(
+                            candidato.Mandata,
+                            candidato.Ritorno,
+                            raccordo,
+                            out double angoloMinimoGradi);
                         Console.WriteLine(
                             $"  DV_CLOSURE_SELECTED attempt={numeroTentativo} " +
                             $"seq={codiceMandata}/{codiceRitorno} " +
                             $"type=first-complete-success " +
                             $"length={candidato.LunghezzaChiusura:R} " +
                             $"curveLength={lunghezzaRaccordo:R} " +
-                            $"requiredCurveLength={lunghezzaMinimaRaccordo.GetValueOrDefault():R}");
+                            $"requiredCurveLength={lunghezzaMinimaRaccordo.GetValueOrDefault():R} " +
+                            $"minAngle={angoloMinimoGradi:R}");
                     }
 
                     return candidato;
@@ -1865,7 +1903,8 @@ namespace SpiralHeatingDiegoVittorio
             List<Punto> mandata,
             List<Punto> ritorno,
             double raggio,
-            double? lunghezzaMinima = null)
+            double? lunghezzaMinima = null,
+            bool richiediAngoliNonAcuti = false)
         {
             if (mandata.Count < 2 || ritorno.Count < 2)
                 return new List<Punto>();
@@ -1882,9 +1921,18 @@ namespace SpiralHeatingDiegoVittorio
                 lunghezzaChiusura <= 0.000001)
             {
                 var rettaDegenera = new List<Punto> { inizio, fine };
-                return !lunghezzaMinima.HasValue ||
-                       LunghezzaPolilinea(rettaDegenera) + 0.000001 >=
-                            lunghezzaMinima.Value
+                bool lunghezzaValida =
+                    !lunghezzaMinima.HasValue ||
+                    LunghezzaPolilinea(rettaDegenera) + 0.000001 >=
+                        lunghezzaMinima.Value;
+                bool angoloValido =
+                    !richiediAngoliNonAcuti ||
+                    ChiusuraHaSoloAngoliNonAcuti(
+                        mandata,
+                        ritorno,
+                        rettaDegenera,
+                        out _);
+                return lunghezzaValida && angoloValido
                     ? rettaDegenera
                     : new List<Punto>();
             }
@@ -1930,6 +1978,15 @@ namespace SpiralHeatingDiegoVittorio
                     {
                         continue;
                     }
+                    if (richiediAngoliNonAcuti &&
+                        !ChiusuraHaSoloAngoliNonAcuti(
+                            mandata,
+                            ritorno,
+                            curva,
+                            out _))
+                    {
+                        continue;
+                    }
 
                     return curva;
                 }
@@ -1946,15 +2003,101 @@ namespace SpiralHeatingDiegoVittorio
                     tangenteRitorno,
                     manigliaBase * fattore);
                 if (!CurvaIntersecaTrattiNonAdiacenti(curva, mandata) &&
-                    !CurvaIntersecaTrattiNonAdiacenti(curva, ritorno))
+                    !CurvaIntersecaTrattiNonAdiacenti(curva, ritorno) &&
+                    (!richiediAngoliNonAcuti ||
+                     ChiusuraHaSoloAngoliNonAcuti(
+                        mandata,
+                        ritorno,
+                        curva,
+                        out _)))
                 {
                     return curva;
                 }
             }
 
             // Percorso storico: se nessuna curvatura resta libera, conserva
-            // la chiusura retta già validata dai filtri storici.
-            return new List<Punto> { inizio, fine };
+            // la chiusura retta già validata dai filtri storici. Il bridge
+            // Vittorio_revisionato non può però usare questo fallback se
+            // produrrebbe un angolo acuto.
+            var retta = new List<Punto> { inizio, fine };
+            if (richiediAngoliNonAcuti &&
+                !ChiusuraHaSoloAngoliNonAcuti(
+                    mandata,
+                    ritorno,
+                    retta,
+                    out _))
+            {
+                return new List<Punto>();
+            }
+            return retta;
+        }
+
+        // Vincolo del bridge Vittorio_revisionato: sulla geometria finale
+        // visibile non sono ammessi angoli interni minori di 90 gradi.
+        // Si controllano l'ultimo gomito della mandata, l'innesto e tutti i
+        // campioni del raccordo, l'innesto sul ritorno e il primo gomito del
+        // ritorno. La regola non modifica il percorso Diego_Vittorio normale.
+        private static bool ChiusuraHaSoloAngoliNonAcuti(
+            List<Punto> mandata,
+            List<Punto> ritorno,
+            List<Punto> raccordo,
+            out double angoloMinimoGradi)
+        {
+            const double epsilon = 0.000001;
+            const double minimoGradi = 90.0;
+            var percorso = new List<Punto>();
+
+            void AggiungiSenzaDuplicato(Punto punto)
+            {
+                if (punto == null)
+                    return;
+                if (percorso.Count == 0 ||
+                    percorso[^1].DistanceTo(punto) > epsilon)
+                {
+                    percorso.Add(punto);
+                }
+            }
+
+            int inizioMandata = Math.Max(0, mandata.Count - 3);
+            for (int i = inizioMandata; i < mandata.Count; i++)
+                AggiungiSenzaDuplicato(mandata[i]);
+
+            foreach (Punto punto in raccordo)
+                AggiungiSenzaDuplicato(punto);
+
+            int ultimoRitornoDaAggiungere = Math.Max(0, ritorno.Count - 3);
+            for (int i = ritorno.Count - 2; i >= ultimoRitornoDaAggiungere; i--)
+                AggiungiSenzaDuplicato(ritorno[i]);
+
+            angoloMinimoGradi = 180.0;
+            for (int i = 1; i < percorso.Count - 1; i++)
+            {
+                Punto precedente = percorso[i - 1];
+                Punto vertice = percorso[i];
+                Punto successivo = percorso[i + 1];
+
+                double ax = precedente.X - vertice.X;
+                double ay = precedente.Y - vertice.Y;
+                double bx = successivo.X - vertice.X;
+                double by = successivo.Y - vertice.Y;
+                double la = Math.Sqrt(ax * ax + ay * ay);
+                double lb = Math.Sqrt(bx * bx + by * by);
+                if (la <= epsilon || lb <= epsilon)
+                    continue;
+
+                double coseno = (ax * bx + ay * by) / (la * lb);
+                coseno = Math.Max(-1.0, Math.Min(1.0, coseno));
+                double angolo =
+                    Math.Acos(coseno) * 180.0 / Math.PI;
+                angoloMinimoGradi = Math.Min(
+                    angoloMinimoGradi,
+                    angolo);
+
+                if (angolo < minimoGradi - 0.0001)
+                    return false;
+            }
+
+            return true;
         }
 
         // Funzione realizzata da Codex in autonomia
