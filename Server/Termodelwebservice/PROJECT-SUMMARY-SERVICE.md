@@ -7369,3 +7369,18 @@ Stato:
 - prossimo lavoro: raccogliere progetti reali dall'utente usando
   `Vittorio_revisionato`, documentare eventuali divergenze visive/funzionali
   e solo dopo decidere la minima differenza strutturale del Return.
+
+
+### 2026-09-29 — politica notifiche GitHub Actions
+
+Su richiesta utente sono state sospese tutte le notifiche ntfy generate dai
+workflow tecnici/build. Build, test, deploy, harness e verifiche automatiche
+continuano a poter pubblicare il Commit Status `Termodel/job`, ma non inviano
+più push al telefono.
+
+L'unica notifica telefonica Termodel resta la chiusura della **Issue #1**,
+gestita da `.github/workflows/issue-work-notify.yml`, ora filtrato
+esplicitamente su `github.event.issue.number == 1`.
+
+Specifica canonica aggiornata:
+`.github/TERMODEL-ACTION-NOTIFICATIONS.md`.
