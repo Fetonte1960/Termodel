@@ -1,0 +1,33 @@
+name: Termodel Chat Blocked Notify
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    if: ${{ github.event.issue.title == 'Rilevata chat bloccata' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify blocked chat
+        env:
+          TERMODEL_NTFY_TOPIC: ${{ secrets.TERMODEL_NTFY_TOPIC }}
+        run: |
+          if [ -z "$TERMODEL_NTFY_TOPIC" ]; then
+            echo "TERMODEL_NTFY_TOPIC non configurato: notifica non inviata."
+            exit 0
+          fi
+
+          MESSAGE="Rilevata chat bloccata"
+
+          curl --fail-with-body --silent --show-error \
+            -H "Title: Termodel" \
+            -H "Priority: urgent" \
+            -H "Tags: warning" \
+            -d "$MESSAGE" \
+            "https://ntfy.sh/$TERMODEL_NTFY_TOPIC"
+
+          echo "PHONE_NOTIFICATION_SENT: $MESSAGE"
