@@ -578,6 +578,7 @@ namespace SpiralHeatingDiegoVittorio
                 mandataRettilinea,
                 ritornoVersoCentro,
                 passo / 2.0,
+                raggio,
                 lunghezzaMinimaChiusura: 2.0 * passo);
             if (candidato == null)
                 return (mandataRettilinea, ritornoVersoCentro, new List<Punto>(), false);
@@ -604,6 +605,7 @@ namespace SpiralHeatingDiegoVittorio
             List<Punto> mandataOriginale,
             List<Punto> ritornoOriginale,
             double passo,
+            double raggio,
             double? lunghezzaMinimaChiusura = null)
         {
             if (mandataOriginale == null || mandataOriginale.Count < 2 ||
@@ -613,64 +615,50 @@ namespace SpiralHeatingDiegoVittorio
                 return null;
             }
 
-            var livelliMandata = new (string codice, int rimossi, double? lunghezzaFinale)[]
+            // Matrice combinatoria simmetrica concordata: per entrambi i lati
+            // si provano 0..3 tratti rimossi e, sul nuovo terminale, soltanto
+            // invarianza oppure accorciamento a P. La distanza tra gli estremi
+            // resta filtrata separatamente dal vincolo >= 2P.
+            var azioniTerminali = new (int rimossi, double? lunghezzaFinale)[]
             {
-                ("M0", 3, null),
-                ("M0P", 3, passo),
-                ("M0_2P", 3, 2.0 * passo),
-                ("M1", 2, 2.0 * passo),
-                ("M1P", 2, passo),
-                ("M1I", 2, null),
-                ("M2", 1, 2.0 * passo),
-                ("M2P", 1, passo),
-                ("M2I", 1, null),
-                ("M3", 0, 2.0 * passo),
-                ("M3P", 0, passo),
-                ("M4", 0, null)
-            };
-            var tentativiRitorno = new (string codice, int rimossi, double? lunghezzaFinale)[]
-            {
-                ("R0", 0, null),
-                ("R1", 0, passo),
-                ("R2", 1, null),
-                ("R3", 1, passo),
-                ("R4", 2, null),
-                ("R5", 2, passo),
-                ("R6", 3, null)
+                (0, null),
+                (0, passo),
+                (1, null),
+                (1, passo),
+                (2, null),
+                (2, passo),
+                (3, null),
+                (3, passo)
             };
 
             int numeroTentativo = 0;
-            CandidatoChiusura primoAccettabile = null;
-            var candidatiAccettabili = new List<CandidatoChiusura>();
-            var configurazioniGiaProvate = new HashSet<string>(
-                StringComparer.Ordinal);
 
-            foreach (var livelloMandata in livelliMandata)
+            foreach (var azioneMandata in azioniTerminali)
             {
+                string codiceMandata =
+                    $"M{azioneMandata.rimossi}" +
+                    (azioneMandata.lunghezzaFinale.HasValue ? "P" : "I");
                 ConfigurazioneTerminale mandata =
                     CreaConfigurazioneTerminale(
                         mandataOriginale,
-                        livelloMandata.codice,
-                        livelloMandata.rimossi,
-                        livelloMandata.lunghezzaFinale);
+                        codiceMandata,
+                        azioneMandata.rimossi,
+                        azioneMandata.lunghezzaFinale);
                 if (mandata == null)
                     continue;
 
-                foreach (var tentativoRitorno in tentativiRitorno)
+                foreach (var azioneRitorno in azioniTerminali)
                 {
+                    string codiceRitorno =
+                        $"R{azioneRitorno.rimossi}" +
+                        (azioneRitorno.lunghezzaFinale.HasValue ? "P" : "I");
                     ConfigurazioneTerminale ritorno =
                         CreaConfigurazioneTerminale(
                             ritornoOriginale,
-                            tentativoRitorno.codice,
-                            tentativoRitorno.rimossi,
-                            tentativoRitorno.lunghezzaFinale);
+                            codiceRitorno,
+                            azioneRitorno.rimossi,
+                            azioneRitorno.lunghezzaFinale);
                     if (ritorno == null)
-                        continue;
-
-                    string chiave = CreaChiaveConfigurazione(
-                        mandata.Punti,
-                        ritorno.Punti);
-                    if (!configurazioniGiaProvate.Add(chiave))
                         continue;
 
                     numeroTentativo++;
@@ -683,106 +671,46 @@ namespace SpiralHeatingDiegoVittorio
                     if (candidato == null)
                         continue;
 
-                    primoAccettabile ??= candidato;
-                    candidatiAccettabili.Add(candidato);
-                }
-            }
-
-            // DV-TEST-002 — le proiezioni ortogonali non sono più soltanto
-            // un fallback successivo al fallimento delle configurazioni dirette:
-            // vengono enumerate insieme agli altri candidati già validi, senza
-            // rilassare alcun criterio geometrico.
-            foreach (var livelloMandata in livelliMandata.Reverse())
-            {
-                ConfigurazioneTerminale mandata =
-                    CreaConfigurazioneTerminale(
-                        mandataOriginale,
-                        livelloMandata.codice,
-                        livelloMandata.rimossi,
-                        livelloMandata.lunghezzaFinale);
-                if (mandata == null)
-                    continue;
-
-                for (int rimossiRitorno = 0;
-                    rimossiRitorno <= MaxTrattiTerminaliChiusura;
-                    rimossiRitorno++)
-                {
-                    ConfigurazioneTerminale ritorno =
-                        CreaConfigurazioneTerminaleProiettata(
-                            ritornoOriginale,
-                            $"RP{rimossiRitorno}",
-                            rimossiRitorno,
-                            mandata.Punti[^1]);
-                    if (ritorno == null)
+                    // Il successo è completo solo dopo il raccordo e il controllo
+                    // delle intersezioni sulla geometria già tagliata/accorciata.
+                    List<Punto> raccordo = CreaCurvaCollegamentoAdattiva(
+                        candidato.Mandata,
+                        candidato.Ritorno,
+                        raggio);
+                    bool raccordoLibero =
+                        raccordo.Count > 1 &&
+                        !CurvaIntersecaTrattiNonAdiacenti(
+                            raccordo,
+                            candidato.Mandata) &&
+                        !CurvaIntersecaTrattiNonAdiacenti(
+                            raccordo,
+                            candidato.Ritorno);
+                    if (!raccordoLibero)
+                    {
+                        if (TraceClosureEnabled)
+                        {
+                            Console.WriteLine(
+                                $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
+                                $"seq={codiceMandata}/{codiceRitorno} " +
+                                "reason=intersection-after-trim.");
+                        }
                         continue;
-
-                    string chiave = CreaChiaveConfigurazione(
-                        mandata.Punti,
-                        ritorno.Punti);
-                    if (!configurazioniGiaProvate.Add(chiave))
-                        continue;
-
-                    numeroTentativo++;
-                    CandidatoChiusura candidato = ValutaChiusura(
-                        mandata,
-                        ritorno,
-                        passo,
-                        numeroTentativo,
-                        lunghezzaMinimaChiusura);
-                    if (candidato == null)
-                        continue;
+                    }
 
                     if (TraceClosureEnabled)
                     {
                         Console.WriteLine(
-                            $"  DV_CLOSURE_PROJECTION_ACCEPT attempt={numeroTentativo} " +
-                            $"seq={mandata.Codice}/{ritorno.Codice}.");
+                            $"  DV_CLOSURE_SELECTED attempt={numeroTentativo} " +
+                            $"seq={codiceMandata}/{codiceRitorno} " +
+                            $"type=first-complete-success " +
+                            $"length={candidato.LunghezzaChiusura:R}.");
                     }
 
-                    primoAccettabile ??= candidato;
-                    candidatiAccettabili.Add(candidato);
+                    return candidato;
                 }
             }
 
-            if (candidatiAccettabili.Count == 0)
-                return null;
-
-            // Criterio autorizzato e raffinato dopo regression DV-TEST-002:
-            // conservare il primo candidato storico salvo che sia obliquo e
-            // una chiusura ortogonale valida lo accorci di almeno un passo p.
-            // Questo evita variazioni marginali dei casi già approvati e
-            // consente la correzione circoscritta di locale_5.
-            CandidatoChiusura miglioreOrtogonale = candidatiAccettabili
-                .Where(c => c.Ortogonale)
-                .OrderBy(c => c.LunghezzaChiusura)
-                .ThenBy(c => c.LunghezzaRimossa)
-                .ThenBy(c => c.NumeroTentativo)
-                .FirstOrDefault();
-
-            const double tolleranzaSelezione = 0.000001;
-            bool usaOrtogonaleMigliorativa =
-                primoAccettabile != null &&
-                !primoAccettabile.Ortogonale &&
-                miglioreOrtogonale != null &&
-                primoAccettabile.LunghezzaChiusura -
-                    miglioreOrtogonale.LunghezzaChiusura >=
-                    passo - tolleranzaSelezione;
-
-            CandidatoChiusura selezionato = usaOrtogonaleMigliorativa
-                ? miglioreOrtogonale
-                : primoAccettabile;
-
-            if (TraceClosureEnabled)
-            {
-                Console.WriteLine(
-                    $"  DV_CLOSURE_SELECTED attempt={selezionato.NumeroTentativo} " +
-                    $"seq={selezionato.LivelloMandata}/{selezionato.TentativoRitorno} " +
-                    $"type={(usaOrtogonaleMigliorativa ? "orthogonal-improvement" : "historical-first")} " +
-                    $"length={selezionato.LunghezzaChiusura:R} " +
-                    $"removed={selezionato.LunghezzaRimossa:R}.");
-            }
-
-            return selezionato;
+            return null;
         }
 
         private static ConfigurazioneTerminale CreaConfigurazioneTerminaleProiettata(
