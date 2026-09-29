@@ -99,69 +99,46 @@ namespace SpiralHeatingVittorioRevisionato
                     var spiraleArrotondata = GeometryUtils.ArrotondaSpirale(spirale, raggioCurvatura);
                     var rientro = CreaRientro(spiraleArrotondata, distanzaRitorno);
 
-                    // Il Return è già stato costruito dalla duplicazione/offset Vittorio.
-                    // Diego interviene SOLO sui terminali per scegliere una chiusura
-                    // valida, senza rigenerare il percorso di ritorno.
-                    if (usaRaccordoAdattivoDiego)
-                    {
-                        var chiusuraDiego =
-                            SpiralHeatingDiegoVittorio.ChiudiSpirale.ApplicaChiusuraOttimizzata(
-                                spiraleArrotondata
-                                    .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
-                                    .ToList(),
-                                rientro
-                                    .AsEnumerable()
-                                    .Reverse()
-                                    .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
-                                    .ToList(),
-                                distanzaRitorno);
-                        if (chiusuraDiego.Applicata)
-                        {
-                            spiraleArrotondata = chiusuraDiego.Mandata
-                                .Select(p => new Punto(p.X, p.Y)).ToList();
-                            rientro = chiusuraDiego.Ritorno
-                                .AsEnumerable()
-                                .Reverse()
-                                .Select(p => new Punto(p.X, p.Y)).ToList();
-                        }
-                    }
-
-                    // Modificato da Codex per realizzare: ripristino integrale
-                    // della chiusura geometrica originale di Vittorio,
-                    // mantenendo anche il box numerato ChiusuraGPT.
-                    // Ritorno invariato: resta la duplicazione/offset Vittorio.
-                    // Solo il raccordo finale usa la procedura adattiva migliorata
-                    // e collaudata in Diego_Vittorio.
+                    // Return invariato: resta la duplicazione/offset Vittorio.
+                    // Per la chiusura pubblica NON inventiamo strategie ulteriori:
+                    // passiamo mandata + Return Vittorio (solo orientato nel verso
+                    // atteso da Diego) alla procedura combinatoria Diego_Vittorio,
+                    // che esegue M0..M4, R0..R6, RP, cancella/accorcia/testa e
+                    // produce infine il raccordo sulla configurazione selezionata.
                     List<Punto> curvaCollegamento;
                     if (usaRaccordoAdattivoDiego)
                     {
-                        var mandataDiego = spiraleArrotondata
-                            .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
-                            .ToList();
-                        // Diego orienta il Return dall'esterno verso la chiusura
-                        // e usa ritorno[^1] come terminale centrale. Il Return
-                        // Vittorio è memorizzato nel verso opposto: lo invertiamo
-                        // soltanto nell'adattatore, senza alterarne la geometria.
-                        var ritornoDiego = rientro
-                            .AsEnumerable()
-                            .Reverse()
-                            .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
-                            .ToList();
-                        curvaCollegamento =
+                        var esitoDiego =
                             SpiralHeatingDiegoVittorio.ChiudiSpirale
-                                .CreaCurvaCollegamentoAdattiva(
-                                    mandataDiego,
-                                    ritornoDiego,
-                                    raggioCurvatura)
+                                .ApplicaChiusuraCombinatoriaConRaccordo(
+                                    spiraleArrotondata
+                                        .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                                        .ToList(),
+                                    rientro
+                                        .AsEnumerable()
+                                        .Reverse()
+                                        .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                                        .ToList(),
+                                    distanzaRitorno,
+                                    raggioCurvatura);
+
+                        if (esitoDiego.Applicata)
+                        {
+                            spiraleArrotondata = esitoDiego.Mandata
                                 .Select(p => new Punto(p.X, p.Y))
                                 .ToList();
-
-                        // Se Diego esclude il raccordo per intersezione, non
-                        // introdurre alcun segmento sostitutivo: il circuito
-                        // resta aperto e soprattutto non attraversa le serpentine.
-                        if (curvaCollegamento.Count < 2)
+                            rientro = esitoDiego.Ritorno
+                                .AsEnumerable()
+                                .Reverse()
+                                .Select(p => new Punto(p.X, p.Y))
+                                .ToList();
+                            curvaCollegamento = esitoDiego.Raccordo
+                                .Select(p => new Punto(p.X, p.Y))
+                                .ToList();
+                        }
+                        else
                         {
-                            curvaCollegamento.Clear();
+                            curvaCollegamento = new List<Punto>();
                         }
                     }
                     else
@@ -170,7 +147,7 @@ namespace SpiralHeatingVittorioRevisionato
                             spiraleArrotondata,
                             rientro);
                     }
-                    
+
                     // Punto finale del rientro (per collegare la linea di ritorno del tubo)
                     Punto fineRientro = rientro.Count > 0 ? rientro[rientro.Count - 1] : null;
 
