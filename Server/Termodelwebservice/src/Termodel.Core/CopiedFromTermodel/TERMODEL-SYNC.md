@@ -145,3 +145,11 @@ Ramo sperimentale creato il 28 settembre 2026:
 - vietato importare euristiche da `SpiraliDiegoVittorio` senza test e
   decisione esplicita;
 - stato duplicazione: PENDING.
+
+
+### 2026-09-29 — deviazione sperimentale ripristinabile Vittorio_revisionato
+- `SpiraliVittorioRevisionato/Spiralgenerator.cs`: aggiunto supporto opzionale `TerminalCenterline` per completare la fascia centrale dei rettangoli dopo l'ultimo anello chiuso valido.
+- `SpiraliVittorioRevisionato/Program.cs`: la modalità pubblica SOLO MANDATA abilita l'opzione; `AggiornaSpirali(false)`/benchmark storico la mantiene disabilitata.
+- Rollback: impostare `TerminalCenterline=false`; nessuna modifica necessaria ai sorgenti Vittorio originali.
+- Fast Harness `36510946051`: SUCCESS, equivalenza multi-progetto storica preservata.
+- Commit finale: `514bb71add522115dfb8358514ce712aa1d8bdf2`.
