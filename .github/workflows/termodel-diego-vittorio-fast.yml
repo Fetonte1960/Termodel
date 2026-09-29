@@ -93,6 +93,19 @@ jobs:
             Get-Content $log | Write-Host
             throw "Quadrato pubblico: procedura combinatoria Diego non ha chiuso il circuito."
           }
+          $accept = [regex]::Matches($logText, 'DV_CLOSURE_ACCEPT[^\r\n]*length=([0-9Ee+.-]+)')
+          if ($accept.Count -eq 0) {
+            Get-Content $log | Write-Host
+            throw "Quadrato pubblico: manca la misura della chiusura accettata."
+          }
+          $acceptedLength = [double]::Parse($accept[$accept.Count - 1].Groups[1].Value, [Globalization.CultureInfo]::InvariantCulture)
+          $case = Get-Content "tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO.json" -Raw | ConvertFrom-Json
+          $required = 2.0 * [double]$case.Passo
+          if ($acceptedLength + 1e-6 -lt $required) {
+            Get-Content $log | Write-Host
+            throw "Quadrato pubblico: chiusura $acceptedLength < 2P=$required."
+          }
+          Write-Host "REVISIONATO_PUBLIC_SQUARE_2P_OK length=$acceptedLength required=$required"
           Write-Host "REVISIONATO_PUBLIC_SQUARE_DIEGO_CLOSURE_OK"
           Write-Host "SVG=$svg"
 
