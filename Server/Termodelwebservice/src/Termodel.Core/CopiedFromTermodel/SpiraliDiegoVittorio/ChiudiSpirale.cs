@@ -850,17 +850,12 @@ namespace SpiralHeatingDiegoVittorio
             Punto fine = ritorno.Punti[^1];
             double lunghezza = inizio.DistanceTo(fine);
             double minimoRichiesto = lunghezzaMinimaChiusura ?? (2.0 * passo);
-            if (lunghezza < minimoRichiesto - tolleranza)
+            if (TraceClosureEnabled && lunghezza < minimoRichiesto - tolleranza)
             {
-                if (TraceClosureEnabled)
-                {
-                    Console.WriteLine(
-                        $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
-                        $"seq={mandata.Codice}/{ritorno.Codice} reason=length " +
-                        $"length={lunghezza:R} required={minimoRichiesto:R} " +
-                        $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}).");
-                }
-                return null;
+                Console.WriteLine(
+                    $"  DV_CLOSURE_DEFER attempt={numeroTentativo} " +
+                    $"seq={mandata.Codice}/{ritorno.Codice} check=length-chord " +
+                    $"length={lunghezza:R} required={minimoRichiesto:R}.");
             }
 
             Punto ingressoMandata = new Punto(
@@ -878,18 +873,14 @@ namespace SpiralHeatingDiegoVittorio
             double qualitaRitorno = CosenoDirezioni(
                 direzioneChiusura,
                 uscitaRitorno);
-            if (qualitaMandata < -tolleranza ||
-                qualitaRitorno < -tolleranza)
+            if (TraceClosureEnabled &&
+                (qualitaMandata < -tolleranza ||
+                 qualitaRitorno < -tolleranza))
             {
-                if (TraceClosureEnabled)
-                {
-                    Console.WriteLine(
-                        $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
-                        $"seq={mandata.Codice}/{ritorno.Codice} reason=acute " +
-                        $"cosSupply={qualitaMandata:R} cosReturn={qualitaRitorno:R} " +
-                        $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}).");
-                }
-                return null;
+                Console.WriteLine(
+                    $"  DV_CLOSURE_DEFER attempt={numeroTentativo} " +
+                    $"seq={mandata.Codice}/{ritorno.Codice} check=straight-chord-angle " +
+                    $"cosSupply={qualitaMandata:R} cosReturn={qualitaRitorno:R}.");
             }
 
             // L'intersezione non si valuta qui: questa fase sta ancora
