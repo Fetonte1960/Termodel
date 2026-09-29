@@ -82,19 +82,36 @@ jobs:
             Get-Content $log | Write-Host
             throw "Quadrato pubblico: procedura combinatoria Diego non ha chiuso il circuito."
           }
-          $accept = [regex]::Matches($logText, 'DV_CLOSURE_ACCEPT[^\r\n]*length=([0-9Ee+.-]+)')
-          if ($accept.Count -eq 0) {
+          $selected = [regex]::Match(
+            $logText,
+            'DV_CLOSURE_SELECTED[^\r\n]*seq=M2P/R0P[^\r\n]*')
+          if (-not $selected.Success) {
             Get-Content $log | Write-Host
-            throw "Quadrato pubblico: manca la misura della chiusura accettata."
+            throw "Quadrato pubblico: attesa chiusura M2P/R0P non selezionata."
           }
-          $acceptedLength = [double]::Parse($accept[$accept.Count - 1].Groups[1].Value, [Globalization.CultureInfo]::InvariantCulture)
+
+          $try = [regex]::Match(
+            $logText,
+            'DV_SQUARE_TRY[^\r\n]*seq=M2P/R0P[^\r\n]*supplyLastLen=([0-9Ee+.-]+)[^\r\n]*returnLastLen=([0-9Ee+.-]+)')
+          if (-not $try.Success) {
+            Get-Content $log | Write-Host
+            throw "Quadrato pubblico: diagnostica M2P/R0P incompleta."
+          }
+
+          $supplyLast = [double]::Parse($try.Groups[1].Value, [Globalization.CultureInfo]::InvariantCulture)
+          $returnLast = [double]::Parse($try.Groups[2].Value, [Globalization.CultureInfo]::InvariantCulture)
           $case = Get-Content "tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO.json" -Raw | ConvertFrom-Json
-          $required = 2.0 * [double]$case.Passo
-          if ($acceptedLength + 1e-6 -lt $required) {
+
+          # Nel caso storico Vittorio stepMeters=0,30 rappresenta 2P
+          # (Mandata-Mandata). Per la convenzione rigida corrente P=0,15.
+          $expectedP = [double]$case.stepMeters / 2.0
+          if ([Math]::Abs($supplyLast - $expectedP) -gt 1e-6 -or
+              [Math]::Abs($returnLast - $expectedP) -gt 1e-6) {
             Get-Content $log | Write-Host
-            throw "Quadrato pubblico: chiusura $acceptedLength < 2P=$required."
+            throw "Quadrato pubblico: terminali M2P/R0P non normalizzati a P=$expectedP."
           }
-          Write-Host "REVISIONATO_PUBLIC_SQUARE_2P_OK length=$acceptedLength required=$required"
+
+          Write-Host "REVISIONATO_PUBLIC_SQUARE_M2P_R0P_OK P=$expectedP"
           Write-Host "REVISIONATO_PUBLIC_SQUARE_DIEGO_CLOSURE_OK"
           Write-Host "SVG=$svg"
 
@@ -560,6 +577,7 @@ jobs:
         with:
           name: diego-vittorio-fast
           path: |
+            ${{ runner.temp }}/RevisionatoPublicSquareClosure
             ${{ runner.temp }}/VittorioRevisionatoEquivalence
             ${{ runner.temp }}/VittorioRevisionatoMultiProject
             ${{ runner.temp }}/DiegoVittorioFast
