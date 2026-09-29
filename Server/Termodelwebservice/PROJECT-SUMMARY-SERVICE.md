@@ -7448,3 +7448,7 @@ Stato:
 - Service Build #1089: build, smoke pannelli, smoke pubblico `Vittorio_revisionato` completo e verifica deploy: SUCCESS; failure globale successiva nello smoke storage/lock indipendente.
 - Commit funzionale `d86a96cc1dcc3cd4293a99da4712184088175b57`; smoke adeguato al nuovo contratto `1c6966e289ec6173938452b12765059271d101ba`.
 - Stato: **pubblicato**, in attesa del controllo visivo dell'utente.
+
+
+### 2026-09-29 — correzione: Return Vittorio, solo raccordo Diego
+Correzione esplicita della precedente interpretazione: il percorso pubblico `Vittorio_revisionato` mantiene mandata approvata + `TerminalCenterline`, genera il **Return con la duplicazione/offset storica Vittorio** e NON usa il Return autonomo Diego. Da `Diego_Vittorio` viene riusata direttamente soltanto `CreaCurvaCollegamentoAdattiva` per il raccordo finale migliorato; la chiusura/etichetta resta nel post-processore revisionato. Il benchmark storico resta isolato col raccordo Vittorio originale. Commit finale `8117c6e6629c61eaec0baade6f904ce90cb3f9b5`. Fast Harness #82: build, equivalenze Vittorio, regression pubbliche e fitting: SUCCESS. Service Build #1099: build + smoke pannelli + smoke pubblico Vittorio_revisionato + verifica deploy: SUCCESS; rosso globale solo nello smoke storage/lock indipendente.
