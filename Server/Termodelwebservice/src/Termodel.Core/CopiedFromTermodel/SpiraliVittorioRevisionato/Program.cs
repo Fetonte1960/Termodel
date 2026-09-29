@@ -76,12 +76,13 @@ namespace SpiralHeatingVittorioRevisionato
 
         public static void AggiornaSpirali()
         {
-            // Percorso pubblico ibrido approvato:
+            // Percorso pubblico corretto:
             // 1) mandata Vittorio_revisionato con completamento centrale;
-            // 2) ritorno, raccordi e chiusura dal post-processore Diego_Vittorio.
-            // Il benchmark storico resta isolato nell'overload bool sottostante.
+            // 2) ritorno derivato/duplicato come Vittorio;
+            // 3) solo raccordo finale riusa la procedura adattiva Diego_Vittorio.
+            // La chiusura/etichetta resta nel post-processore revisionato.
             GeneraSpirale(terminalCenterline: true);
-            ChiudiSpiraleFilesDiegoVittorio();
+            ChiudiSpiraleFiles();
         }
 
         public static void AggiornaSpirali(bool soloMandataPerEsameVisivo)
