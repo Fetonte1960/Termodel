@@ -577,7 +577,17 @@ namespace SpiralHeatingDiegoVittorio
                 candidato.Mandata,
                 candidato.Ritorno,
                 raggio);
-            return (candidato.Mandata, candidato.Ritorno, raccordo, raccordo.Count > 1);
+            bool raccordoLibero =
+                raccordo.Count > 1 &&
+                !CurvaIntersecaTrattiNonAdiacenti(raccordo, candidato.Mandata) &&
+                !CurvaIntersecaTrattiNonAdiacenti(raccordo, candidato.Ritorno);
+            if (!raccordoLibero)
+            {
+                if (TraceClosureEnabled)
+                    Console.WriteLine("  DV_CLOSURE_FINAL_REJECT reason=intersection-after-trim.");
+                return (candidato.Mandata, candidato.Ritorno, new List<Punto>(), false);
+            }
+            return (candidato.Mandata, candidato.Ritorno, raccordo, true);
         }
 
         // Funzione realizzata da Codex in autonomia
@@ -913,30 +923,10 @@ namespace SpiralHeatingDiegoVittorio
                 return null;
             }
 
-            // Modificato da Codex per realizzare: scartare una chiusura che
-            // attraversa tubi già conservati. I soli segmenti esclusi sono i
-            // due terminali adiacenti ai rispettivi innesti.
-            bool intersecaMandata = IntersecaTrattiNonAdiacenti(
-                inizio,
-                fine,
-                mandata.Punti);
-            bool intersecaRitorno = IntersecaTrattiNonAdiacenti(
-                inizio,
-                fine,
-                ritorno.Punti);
-            if (intersecaMandata || intersecaRitorno)
-            {
-                if (TraceClosureEnabled)
-                {
-                    Console.WriteLine(
-                        $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
-                        $"seq={mandata.Codice}/{ritorno.Codice} reason=intersection " +
-                        $"supply={intersecaMandata} return={intersecaRitorno} " +
-                        $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}) " +
-                        $"length={lunghezza:R}.");
-                }
-                return null;
-            }
+            // L'intersezione non si valuta qui: questa fase sta ancora
+            // enumerando tagli/accorciamenti. La verifica appartiene alla
+            // geometria finale, dopo che il candidato selezionato è stato
+            // raccordato sui tratti effettivamente conservati.
 
             if (TraceClosureEnabled)
             {
