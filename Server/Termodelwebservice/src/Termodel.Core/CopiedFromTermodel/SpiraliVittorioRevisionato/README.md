@@ -102,3 +102,29 @@ Verifica pubblica registrata dal runner:
 La pubblicazione serve al collaudo collaborativo. Non autorizza ancora
 l'integrazione del Return autonomo né l'importazione di euristiche da
 `SpiraliDiegoVittorio`.
+
+
+## Modalità pubblica temporanea — solo mandata (29/09/2026)
+
+Per agevolare il collaudo visivo richiesto dall'utente, il percorso pubblico
+`Vittorio_revisionato` è temporaneamente configurato con:
+
+- generazione della mandata invariata;
+- **chiusura non eseguita**;
+- **ritorno non generato/visualizzato**;
+- SVG pre-chiusura riclassificato graficamente come mandata rossa, così il
+  Service lo espone nel layer `*_PannelliMandata_Output`;
+- nessuna modifica a `SpiralGenerator` o alla geometria della mandata.
+
+La modalità è controllata da:
+
+```text
+Program.SoloMandataPerEsameVisivo = true
+```
+
+`AggiornaSpirali()` usa questo valore nel percorso pubblico. L'overload
+`AggiornaSpirali(false)` conserva invece il flusso completo storico
+mandata + chiusura + ritorno ed è usato dal benchmark di equivalenza, in modo
+che le regression Vittorio/Vittorio_revisionato restino confrontabili.
+
+Questa è una modalità **temporanea di collaudo**, non una nuova strategia.
