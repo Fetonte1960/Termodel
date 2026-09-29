@@ -7505,3 +7505,16 @@ Questa convenzione è vincolante per lo sviluppo delle spirali e prevale su form
 - prima di modificare algoritmi di generazione, Return o chiusura, verificare ogni uso di `P`, `P/2` e `2*P` contro questa convenzione.
 
 La precedente descrizione di `P` come distanza tra due mandate / passo mandata-mandata è da considerarsi superata: quella distanza è `2*P`.
+
+### 2026-09-29 — allineamento operativo Vittorio_revisionato alla convenzione P
+
+Implementate le ultime direttive geometriche concordate senza eseguire Fast Harness:
+- nell'adattatore `ApplicaChiusuraCombinatoriaSuRitornoVittorio`, il parametro `passo` e' trattato rigidamente come `P` = distanza Mandata-Ripresa; non viene piu' dimezzato prima della combinatoria;
+- il vincolo minimo della chiusura resta `>= 2P`, dove `2P` e' la distanza Mandata-Mandata;
+- la matrice simmetrica Mandata/Ripresa e' ridotta a `(0,I),(0,P),(1,I),(1,P),(2,I),(2,P)`: massimo 36 coppie e massimo 3 tratti originali coinvolti per lato;
+- la modalita' `P` porta il terminale a lunghezza esattamente `P`: se e' piu' lungo lo accorcia, se e' piu' corto lo allunga;
+- corretto anche il richiamo interno della chiusura Diego_Vittorio autonoma passando il `raggioCurvatura` richiesto dalla firma corrente;
+- `P/2` resta riservato semanticamente alla distanza Mandata-Parete e non viene usato come scala della chiusura Vittorio.
+
+Per disposizione utente il Fast Harness resta fermo. La verifica richiesta per questo job e' la compilazione/deploy del Service e la conferma del commit effettivamente servito da Render tramite `/health`.
+
