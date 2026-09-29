@@ -2014,3 +2014,7 @@ Correzione esplicita della precedente interpretazione: il percorso pubblico `Vit
 
 ### 2026-09-29 — adattamento verso Return Vittorio per chiusura Diego
 Il collaudo visivo sul commit cb93b674 ha mostrato diagonali rosse ancora presenti. Causa individuata: incompatibilità di **verso della lista Return**. `CreaCurvaCollegamentoAdattiva` Diego usa `ritorno[^1]` come terminale centrale, mentre `CreaRientro` Vittorio memorizza il terminale centrale in `rientro[0]`. L'adattatore ora inverte temporaneamente il Return solo all'ingresso delle routine Diego (chiusura + raccordo) e lo reinverte in uscita; la geometria del Return Vittorio non viene rigenerata né modificata come algoritmo. Commit `2205e2427a27b925c209bd38019d3af030b7d5d6`. Pubblicato su main; CI #85 / Service #1105 avviate. Necessaria conferma visiva sul progetto reale per dichiarare risolta la diagonale.
+
+
+### 2026-09-29 — ripristino esclusione raccordi con intersezione
+Il controllo visivo ha evidenziato raccordi centrali che attraversavano tratti della serpentina. È stata ripristinata in modo esplicito la regola Diego_Vittorio: `CreaCurvaCollegamentoAdattiva` prova le Bézier candidate e, se nessuna è libera, valida anche la retta finale contro mandata e ritorno; se interseca, restituisce nessun raccordo invece di forzare il segmento. `Vittorio_revisionato` rispetta l'esclusione senza introdurre fallback propri. Return Vittorio e mandata approvata restano invariati. Commit finale `e588acabf00274b2550efcda668415102a33dd9c`; CI #87 / Service #1110 avviate.
