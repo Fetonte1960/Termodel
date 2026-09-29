@@ -81,7 +81,7 @@ namespace SpiralHeatingVittorioRevisionato
 
         public static void AggiornaSpirali(bool soloMandataPerEsameVisivo)
         {
-            GeneraSpirale();
+            GeneraSpirale(soloMandataPerEsameVisivo);
 
             if (soloMandataPerEsameVisivo)
             {
@@ -107,7 +107,7 @@ namespace SpiralHeatingVittorioRevisionato
                 StringComparison.OrdinalIgnoreCase);
             File.WriteAllText(svgFile, svg);
         }
-        static void GeneraSpirale()
+        static void GeneraSpirale(bool terminalCenterline = false)
         {
             string xmlFile = "locale.xml";
             
@@ -240,7 +240,7 @@ namespace SpiralHeatingVittorioRevisionato
                         // Solo nel percorso pubblico Vittorio_revisionato:
                         // completa l'ultima fascia rettangolare con asse centrale.
                         // Rollback immediato: impostare false.
-                        TerminalCenterline = true
+                        TerminalCenterline = terminalCenterline
                     }
                 );
                 
