@@ -7304,3 +7304,18 @@ Correzione procedurale richiesta dall'utente:
 Criterio di arresto:
 - se una fixture diverge da Vittorio, non pubblicare come equivalente:
   registrare il primo caso divergente e fermarsi per analisi.
+
+
+#### FASE 1 completata — equivalenza multi-progetto
+Run Fast Harness `36503404032` (#64): **SUCCESS**.
+
+`Vittorio_revisionato` è stato confrontato byte-per-byte con `Vittorio`
+su sei casi: quadrato 4x4, concavo L, trapezio obliquo,
+connection-terminal, appartamento corrente preparato e progetto pubblico
+Pannelli radianti completo. Per tutti i casi sia lo SVG sia l'XML risultante
+hanno SHA-256 identico tra i due motori. Il test sul solo quadrato non è più
+considerato sufficiente né rappresentativo della procedura di promozione.
+
+La FASE 2 può quindi esporre `Vittorio_revisionato` per test pubblico come
+selezione per-request, mantenendo `Diego_Vittorio` default e senza alterare
+il file progetto.
