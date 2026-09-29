@@ -1867,3 +1867,36 @@ selezionare Help → Motore spirali — test pubblico →
 `Aggiorna Modello`. Per ogni anomalia annotare progetto/locale/ingresso e
 confrontare prima con `Vittorio`. Non modificare ancora l'algoritmo Return
 senza un caso reale riproducibile e una decisione esplicita.
+
+
+### 2026-09-29 — notifiche build sospese
+Stato: **COMPLETATO**
+
+Decisione utente:
+- sospendere completamente le notifiche telefoniche generate da build, test,
+  deploy, harness e verifiche automatiche;
+- mantenere esclusivamente la notifica associata alla chiusura della GitHub
+  Issue #1.
+
+Applicato:
+- rimossi secret/uso ntfy da:
+  - `.github/workflows/termodel-service-build.yml`;
+  - `.github/workflows/termodel-radiant-harness.yml`;
+  - `.github/workflows/termodel-render-verify.yml`;
+  - `.github/workflows/termodel-diego-vittorio-public-square.yml`;
+  - `.github/workflows/termodel-diego-vittorio-fast.yml`;
+  - `.github/workflows/termodel-diego-vittorio-room-extraction.yml`;
+- i workflow mantengono il Commit Status `Termodel/job`, ma senza push ntfy;
+- `.github/workflows/issue-work-notify.yml` resta l'unico workflow autorizzato
+  a usare ntfy ed è ora filtrato esplicitamente con
+  `github.event.issue.number == 1`;
+- aggiornata la specifica canonica
+  `.github/TERMODEL-ACTION-NOTIFICATIONS.md`.
+
+Verifica:
+- nei sei workflow tecnici sopra risultano zero riferimenti a ntfy /
+  `TERMODEL_NTFY_TOPIC` / `PHONE_NOTIFICATION_SENT`;
+- tali riferimenti restano soltanto in `issue-work-notify.yml`.
+
+Regola corrente:
+> **nessuna notifica di build; unica notifica telefonica = chiusura Issue #1.**
