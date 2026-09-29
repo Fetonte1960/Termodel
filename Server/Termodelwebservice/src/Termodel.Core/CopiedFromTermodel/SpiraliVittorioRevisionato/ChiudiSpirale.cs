@@ -110,6 +110,8 @@ namespace SpiralHeatingVittorioRevisionato
                                     .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
                                     .ToList(),
                                 rientro
+                                    .AsEnumerable()
+                                    .Reverse()
                                     .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
                                     .ToList(),
                                 distanzaRitorno);
@@ -118,6 +120,8 @@ namespace SpiralHeatingVittorioRevisionato
                             spiraleArrotondata = chiusuraDiego.Mandata
                                 .Select(p => new Punto(p.X, p.Y)).ToList();
                             rientro = chiusuraDiego.Ritorno
+                                .AsEnumerable()
+                                .Reverse()
                                 .Select(p => new Punto(p.X, p.Y)).ToList();
                         }
                     }
@@ -134,7 +138,13 @@ namespace SpiralHeatingVittorioRevisionato
                         var mandataDiego = spiraleArrotondata
                             .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
                             .ToList();
+                        // Diego orienta il Return dall'esterno verso la chiusura
+                        // e usa ritorno[^1] come terminale centrale. Il Return
+                        // Vittorio è memorizzato nel verso opposto: lo invertiamo
+                        // soltanto nell'adattatore, senza alterarne la geometria.
                         var ritornoDiego = rientro
+                            .AsEnumerable()
+                            .Reverse()
                             .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
                             .ToList();
                         curvaCollegamento =
