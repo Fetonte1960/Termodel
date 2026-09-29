@@ -98,9 +98,15 @@ namespace SpiralHeatingVittorioRevisionato
                     // Modificato da Codex per realizzare: ripristino integrale
                     // della chiusura geometrica originale di Vittorio,
                     // mantenendo anche il box numerato ChiusuraGPT.
-                    var curvaCollegamento = CreaCurvaCollegamento(
-                        spiraleArrotondata,
-                        rientro);
+                    // Ritorno invariato: resta la duplicazione/offset Vittorio.
+                    // Solo il raccordo finale usa la procedura adattiva migliorata
+                    // e collaudata in Diego_Vittorio.
+                    var curvaCollegamento =
+                        SpiralHeatingDiegoVittorio.ChiudiSpirale
+                            .CreaCurvaCollegamentoAdattiva(
+                                spiraleArrotondata,
+                                rientro,
+                                raggioCurvatura);
                     
                     // Punto finale del rientro (per collegare la linea di ritorno del tubo)
                     Punto fineRientro = rientro.Count > 0 ? rientro[rientro.Count - 1] : null;
