@@ -160,3 +160,7 @@ Ramo sperimentale creato il 28 settembre 2026:
 - `AggiornaSpirali(false)` conserva il percorso storico per i benchmark di equivalenza.
 - Fast Harness #75 SUCCESS; smoke pubblico revisionato completo SUCCESS nel Service Build #1089.
 - Commit funzionale: `d86a96cc1dcc3cd4293a99da4712184088175b57`.
+
+
+### 2026-09-29 — correzione: Return Vittorio, solo raccordo Diego
+Correzione esplicita della precedente interpretazione: il percorso pubblico `Vittorio_revisionato` mantiene mandata approvata + `TerminalCenterline`, genera il **Return con la duplicazione/offset storica Vittorio** e NON usa il Return autonomo Diego. Da `Diego_Vittorio` viene riusata direttamente soltanto `CreaCurvaCollegamentoAdattiva` per il raccordo finale migliorato; la chiusura/etichetta resta nel post-processore revisionato. Il benchmark storico resta isolato col raccordo Vittorio originale. Commit finale `8117c6e6629c61eaec0baade6f904ce90cb3f9b5`. Fast Harness #82: build, equivalenze Vittorio, regression pubbliche e fitting: SUCCESS. Service Build #1099: build + smoke pannelli + smoke pubblico Vittorio_revisionato + verifica deploy: SUCCESS; rosso globale solo nello smoke storage/lock indipendente.
