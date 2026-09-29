@@ -1294,6 +1294,40 @@ jobs:
           }
 
 
+      - name: Verify public Vittorio_revisionato deployment
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $expectedFrontend = "1.36"
+          $ready = $false
+          for ($attempt = 1; $attempt -le 20; $attempt++) {
+            try {
+              $health = Invoke-RestMethod -Uri "https://termodel.onrender.com/health" -Method Get -TimeoutSec 25
+              $version = ([string](Invoke-WebRequest -Uri "https://www.termodel.it/termodel-ui-demo/frontend-version.txt" -Method Get -TimeoutSec 20).Content).Trim()
+              $engines = @($health.spiralEngines | ForEach-Object { [string]$_ })
+              if ([string]$health.status -eq "ok" -and
+                  $engines -contains "Vittorio_revisionato" -and
+                  $version -eq $expectedFrontend) {
+                Write-Host "PUBLIC_VITTORIO_REVISIONATO_DEPLOY_OK"
+                Write-Host "publicServiceCommit=$($health.serviceCommit)"
+                Write-Host "publicDefaultEngine=$($health.spiralEngine)"
+                Write-Host "publicEngines=$($engines -join ',')"
+                Write-Host "publicFrontendVersion=$version"
+                $ready = $true
+                break
+              }
+              Write-Host "Deploy non ancora aggiornato: attempt=$attempt engine=$($health.spiralEngine) frontend=$version"
+            }
+            catch {
+              Write-Host "Deploy non ancora raggiungibile: attempt=$attempt error=$($_.Exception.Message)"
+            }
+            if ($attempt -lt 20) { Start-Sleep -Seconds 15 }
+          }
+          if (-not $ready) {
+            throw "Deploy pubblico Vittorio_revisionato non verificato entro la finestra prevista."
+          }
+
       - name: Upload DXF regression artifact
         if: ${{ success() }}
         uses: actions/upload-artifact@v4
