@@ -568,7 +568,7 @@ namespace SpiralHeatingDiegoVittorio
             return ApplicaChiusuraCombinatoriaConRaccordo(
                 mandataRettilinea,
                 ritornoVersoCentro,
-                passo,
+                passo / 2.0,
                 raggio);
         }
 
