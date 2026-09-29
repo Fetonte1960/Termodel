@@ -7384,3 +7384,47 @@ esplicitamente su `github.event.issue.number == 1`.
 
 Specifica canonica aggiornata:
 `.github/TERMODEL-ACTION-NOTIFICATIONS.md`.
+
+
+### 2026-09-29 — Vittorio_revisionato: modalità pubblica temporanea solo mandata
+
+Per agevolare l'esame visivo dell'utente, il motore pubblico
+`Vittorio_revisionato` è stato temporaneamente configurato per mostrare
+**soltanto la mandata**.
+
+Implementazione:
+- `Program.SoloMandataPerEsameVisivo = true`;
+- `AggiornaSpirali()` genera la mandata e non esegue
+  `ChiudiSpiraleFiles()`;
+- chiusura e ritorno non sono stati rimossi: restano nel sorgente e sono
+  semplicemente sospesi;
+- lo SVG pre-chiusura viene riclassificato da blu a rosso affinché il Service
+  lo tratti come `*_PannelliMandata_Output`;
+- nessuna modifica a `SpiralGenerator` o alla geometria della mandata;
+- il benchmark di equivalenza chiama esplicitamente
+  `AggiornaSpirali(false)`, conservando il confronto completo storico
+  Vittorio/Vittorio_revisionato.
+
+Verifiche reali:
+- Service Build #1076, run `36509662811`:
+  - build soluzione: SUCCESS;
+  - smoke pubblico pannelli default: SUCCESS;
+  - smoke override `spiralEngine=Vittorio_revisionato`: SUCCESS;
+  - marker `VITTORIO_REVISIONATO_SUPPLY_ONLY_OK`: presente;
+  - il test verifica presenza layer Mandata e assenza layer Ritorno e
+    NumeriCircuiti/chiusura;
+- verifica deploy pubblico: SUCCESS;
+- commit Service pubblico osservato:
+  `bdb1861be127fa977543b3c86cb0384cc0d6ebb2`;
+- default pubblico resta `Diego_Vittorio`;
+- frontend pubblico resta v1.36 con selettore
+  `Vittorio_revisionato`;
+- il workflow globale #1076 è rosso soltanto per il Golden Darcy sintetico già
+  noto, successivo e indipendente da questa modifica.
+
+Stato:
+- **pubblicato e disponibile per il collaudo visivo dell'utente**;
+- modifica temporanea e reversibile;
+- per ripristinare il flusso completo basta disattivare
+  `SoloMandataPerEsameVisivo` oppure usare
+  `AggiornaSpirali(false)`.
