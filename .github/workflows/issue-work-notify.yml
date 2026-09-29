@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   notify:
+    if: ${{ github.event.issue.number == 1 }}
     runs-on: ubuntu-latest
     steps:
       - name: Notify phone
