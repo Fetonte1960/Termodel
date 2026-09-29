@@ -2034,3 +2034,7 @@ Su richiesta utente è stato introdotto un gate Harness che esegue il **percorso
 
 ### 2026-09-29 — quadrato pubblico chiuso in Harness
 Correzione verificata dal gate dedicato Harness #100. Causa finale: l'adattamento del Return Vittorio alla combinatoria Diego richiedeva (1) lavorare sulle polilinee rettilinee prima dei fillet, (2) conservare il lato/segno dell'offset Vittorio e (3) usare la scala coerente col Return a metà passo. La procedura di chiusura interna Diego_Vittorio è stata ripristinata al riferimento umano consolidato `fb26ed0`; sono presenti soltanto bridge/adattatori esterni. Gate `Harness quadrato Vittorio_revisionato public closure`: SUCCESS; equivalenze, square Diego, public square, locale_1/5/8/9 e fitting regression: tutti SUCCESS. Commit funzionale corrente `8dc095b323b811ad97c30bcfd7794d51ce3acc50`. Nessuna nuova euristica di chiusura sostituisce Diego_Vittorio.
+
+
+### 2026-09-29 — vincolo chiusura minimo 2P ripristinato
+Corretto l'adattatore Vittorio/Diego: la scala geometrica del Return resta P/2, ma il criterio di accettazione della chiusura resta quello originale umano `lunghezza >= 2P` riferito al passo nominale. Prima il passaggio di P/2 alla combinatoria riduceva involontariamente la soglia a P. Commit `9f178819b9412d212fa06091c25c66b62216583d`. Harness #101: build SUCCESS e gate quadrato pubblico con vincolo corretto SUCCESS; suite restante in esecuzione al momento della pubblicazione.
