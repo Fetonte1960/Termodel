@@ -73,6 +73,30 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-30 — Attivazione pipeline Diego pulita su Vittorio_revisionato
+Stato: COMMISSIONATO
+
+Autorizzazione utente: applicare, provare e pubblicare la nuova pipeline geometrica su `Vittorio_revisionato`, mantenendo checkpoint di recovery persistenti. Per questo incarico l'utente ha chiesto esplicitamente **nessuna notifica**: non usare Issue #1 e non avviare workflow che inviano ntfy.
+
+Scopo:
+- mantenere `SpiraliVittorio` intoccabile;
+- usare la Mandata rettilinea di `Vittorio_revisionato`;
+- generare il Return direttamente con `funzioni_diego.ritorno_Parallelo_diego(...)`, senza `ArrotondaSpirale -> CreaRientro -> PreparaRitornoRettilineoVittorio`;
+- orientare il Return nel verso richiesto dalla chiusura senza modificarne la geometria;
+- applicare `funzioni_diego.chiusura_diego(...)`;
+- completare una raccordatura finale unica sulla polilinea definitiva Mandata -> Chiusura -> Ritorno, riutilizzando la geometria circolare LG-051 già presente quando possibile;
+- introdurre/aggiornare test mirati e verificare build senza aggiornare Golden alla cieca;
+- aggiornare `RECOVERY-ACTIVE.md` ad ogni checkpoint significativo.
+
+Criteri di completamento:
+- percorso pubblico `Vittorio_revisionato` non usa più il Return ricostruito dal vecchio bridge Diego;
+- nessuna doppia raccordatura preliminare nella nuova pipeline;
+- Core/Harness compilano;
+- test sintetici del Return parallelo e caso quadrato `Vittorio_revisionato` eseguiti;
+- nessuna modifica a frontend, `definizionedati.json` o `SpiraliVittorio`;
+- recovery e Summary aggiornati con stato reale e commit.
+
+
 ### INCARICO 2026-09-30 — Centralizzazione modifiche Diego in FunzioniDiego
 Stato: ESEGUITO
 
