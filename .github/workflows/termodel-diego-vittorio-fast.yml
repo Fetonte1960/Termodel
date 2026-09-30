@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  # Trigger temporaneo 30/09/2026: congela base Vittorio prima di chiusura e raccordi revisionati.
+  # Trigger temporaneo 30/09/2026: verifica LG-051 dopo ripristino Mandata Vittorio nel percorso pubblico.
   workflow_dispatch:
   push:
     paths:
@@ -126,21 +126,6 @@ jobs:
 
           Write-Host "REVISIONATO_PUBLIC_SQUARE_LG051_OK"
           Write-Host "SVG=$svg"
-
-      - name: Guardrail Vittorio base before closure and fillets
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $root = Join-Path $env:RUNNER_TEMP "VittorioRevisionatoBase"
-          ./tools/local-radiant-harness/Test-VittorioRevisionatoBase.ps1 -Configuration Release -OutputRoot $root
-          if ($LASTEXITCODE -ne 0) { throw "Guardrail base Vittorio_revisionato fallito." }
-          $report = Join-Path $root "vittorio-base-report.json"
-          if (-not (Test-Path -LiteralPath $report)) { throw "Report base Vittorio mancante." }
-          $data = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
-          if (-not $data.allEquivalent -or $data.caseCount -lt 6) {
-            throw "Guardrail base Vittorio non valido."
-          }
-          Write-Host "VITTORIO_REVISIONATO_BASE_GUARDRAIL_OK cases=$($data.caseCount)"
 
       - name: Verify Vittorio_revisionato initial equivalence
         shell: pwsh
