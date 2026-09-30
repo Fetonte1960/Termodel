@@ -271,26 +271,26 @@ static int RunFilletCheck()
         });
     }
 
-    // LG-051: regression separata per Vittorio_revisionato.
+    // LG-051: regression della raccordatura centralizzata in funzioni_diego.
     var vrevIngresso =
-        new SpiralHeatingVittorioRevisionato.Punto(0.0, 0.0);
+        new SpiralHeatingDiegoVittorio.Punto(0.0, 0.0);
     var vrevVertice =
-        new SpiralHeatingVittorioRevisionato.Punto(1.0, 0.0);
+        new SpiralHeatingDiegoVittorio.Punto(1.0, 0.0);
     var vrevUscita =
-        new SpiralHeatingVittorioRevisionato.Punto(1.0, 1.0);
-    var vrevBase = new List<SpiralHeatingVittorioRevisionato.Punto>
+        new SpiralHeatingDiegoVittorio.Punto(1.0, 1.0);
+    var vrevBase = new List<SpiralHeatingDiegoVittorio.Punto>
     {
         vrevIngresso,
         vrevVertice,
         vrevUscita
     };
 
-    List<SpiralHeatingVittorioRevisionato.Punto> vrevDefault =
-        SpiralHeatingVittorioRevisionato.GeometryUtils
-            .ArrotondaSpiraleCircolareLg051(vrevBase, 0.10, 0.005);
-    List<SpiralHeatingVittorioRevisionato.Punto> vrevStrict =
-        SpiralHeatingVittorioRevisionato.GeometryUtils
-            .ArrotondaSpiraleCircolareLg051(vrevBase, 0.10, 0.001);
+    List<SpiralHeatingDiegoVittorio.Punto> vrevDefault =
+        SpiralHeatingDiegoVittorio.funzioni_diego
+            .raccorda_diego(vrevBase, 0.10, 0.005);
+    List<SpiralHeatingDiegoVittorio.Punto> vrevStrict =
+        SpiralHeatingDiegoVittorio.funzioni_diego
+            .raccorda_diego(vrevBase, 0.10, 0.001);
 
     bool vrevFinito = vrevDefault.All(p =>
         double.IsFinite(p.X) && double.IsFinite(p.Y));
@@ -300,9 +300,9 @@ static int RunFilletCheck()
     bool vrevRaggioEsatto =
         vrevDefault.Count >= 5 &&
         vrevDefault[1].DistanceTo(
-            new SpiralHeatingVittorioRevisionato.Punto(0.90, 0.0)) <= 0.000001 &&
+            new SpiralHeatingDiegoVittorio.Punto(0.90, 0.0)) <= 0.000001 &&
         vrevDefault[^2].DistanceTo(
-            new SpiralHeatingVittorioRevisionato.Punto(1.0, 0.10)) <= 0.000001;
+            new SpiralHeatingDiegoVittorio.Punto(1.0, 0.10)) <= 0.000001;
 
     double vrevSagittaMassima = 0.0;
     for (int i = 1; i < vrevDefault.Count - 2; i++)
@@ -319,15 +319,15 @@ static int RunFilletCheck()
     bool vrevAdattivo =
         vrevStrict.Count > vrevDefault.Count;
 
-    var vrevCorto = new List<SpiralHeatingVittorioRevisionato.Punto>
+    var vrevCorto = new List<SpiralHeatingDiegoVittorio.Punto>
     {
-        new SpiralHeatingVittorioRevisionato.Punto(0.0, 0.0),
-        new SpiralHeatingVittorioRevisionato.Punto(0.05, 0.0),
-        new SpiralHeatingVittorioRevisionato.Punto(0.05, 0.05)
+        new SpiralHeatingDiegoVittorio.Punto(0.0, 0.0),
+        new SpiralHeatingDiegoVittorio.Punto(0.05, 0.0),
+        new SpiralHeatingDiegoVittorio.Punto(0.05, 0.05)
     };
-    List<SpiralHeatingVittorioRevisionato.Punto> vrevCortoRaccordato =
-        SpiralHeatingVittorioRevisionato.GeometryUtils
-            .ArrotondaSpiraleCircolareLg051(vrevCorto, 0.10, 0.005);
+    List<SpiralHeatingDiegoVittorio.Punto> vrevCortoRaccordato =
+        SpiralHeatingDiegoVittorio.funzioni_diego
+            .raccorda_diego(vrevCorto, 0.10, 0.005);
     bool vrevSpigoloVivo =
         vrevCortoRaccordato.Count == 3 &&
         vrevCortoRaccordato[1].DistanceTo(vrevCorto[1]) <= 0.000001;
@@ -340,7 +340,7 @@ static int RunFilletCheck()
         !vrevSpigoloVivo)
     {
         throw new InvalidDataException(
-            "LG-051 raccordatura Vittorio_revisionato non valida: " +
+            "LG-051 raccordatura funzioni_diego non valida: " +
             $"finito={vrevFinito}, estremi={vrevEstremi}, " +
             $"raggio={vrevRaggioEsatto}, tolleranza={vrevTolleranza}, " +
             $"sagitta={vrevSagittaMassima:0.######}, " +
@@ -350,7 +350,7 @@ static int RunFilletCheck()
 
     risultati.Add(new
     {
-        engine = "Vittorio_revisionato",
+        engine = "funzioni_diego",
         rule = "LG-051",
         radiusMeters = 0.10,
         defaultToleranceMeters = 0.005,
@@ -362,7 +362,7 @@ static int RunFilletCheck()
     });
 
     Console.WriteLine(
-        $"VITTORIO_REVISIONATO_LG051_FILLET_OK " +
+        $"FUNZIONI_DIEGO_LG051_FILLET_OK " +
         $"sagitta={vrevSagittaMassima:R} " +
         $"defaultPoints={vrevDefault.Count} strictPoints={vrevStrict.Count}");
 
