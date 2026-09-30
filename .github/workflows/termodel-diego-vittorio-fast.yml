@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  # Trigger temporaneo 30/09/2026: verifica LG-051 senza notifica telefono — retry compilazione.
+  # Trigger temporaneo 30/09/2026: verifica LG-051 dopo ripristino Mandata Vittorio nel percorso pubblico.
   workflow_dispatch:
   push:
     paths:
