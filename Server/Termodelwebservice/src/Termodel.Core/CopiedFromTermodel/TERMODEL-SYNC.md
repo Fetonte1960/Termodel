@@ -93,7 +93,7 @@ Copie temporanee integrate il 25 settembre 2026 per rendere selezionabile il mot
 
 Ramo sperimentale creato il 27 settembre 2026:
 - `SpiraliDiegoVittorio/*.cs`: copia iniziale di `SpiraliVittorio` con il solo namespace indipendente; selettore `Diego_Vittorio`. Non sostituisce né modifica la copia Vittorio e non deve essere ricopiato nella Library Desktop senza una successiva decisione esplicita.
-- 30/09/2026: aggiunto `SpiraliDiegoVittorio/RitornoParalleloDiego.cs`, sorgente sperimentale **Service-only**, senza corrispondente Desktop e quindi senza target di sincronizzazione. Espone `ritorno_Parallelo_diego(...)`, offset di una spezzata rettilinea indipendente dai raccordi; in questa fase non è collegato al motore produttivo.
+- 30/09/2026: le personalizzazioni Diego sono centralizzate nella facciata `SpiraliDiegoVittorio/funzioni_diego.cs`, sorgente sperimentale **Service-only**, senza corrispondente Desktop e quindi senza target di sincronizzazione. Espone `ritorno_Parallelo_diego(...)`, `chiusura_diego(...)` e `raccorda_diego(...)`. Il ritorno parallelo è implementato direttamente nella facciata; chiusura e raccordo delegano temporaneamente alle implementazioni consolidate in `ChiudiSpirale` per evitare cambiamenti geometrici durante il riordino.
 
 Copie temporanee integrate il 23 settembre 2026 per attivare l'esecutivo pannelli con il motore GPT Desktop corrente:
 - `SpiraliGPT/*.cs`: copie byte-identical dei cinque sorgenti elencati nella tabella; nessuna modifica al motore in questa milestone. Il Service li usa con il default Desktop corrente `PassoTubi=0,30 m`. La duplicazione resta `PENDING` e dovrà essere eliminata quando il motore condiviso avrà un ingresso headless stabile.
