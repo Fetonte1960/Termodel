@@ -147,8 +147,8 @@ namespace SpiralHeatingVittorioRevisionato
                         if (chiudiCircuito)
                         {
                             esitoDiego =
-                                SpiralHeatingDiegoVittorio.ChiudiSpirale
-                                    .ApplicaChiusuraCombinatoriaRettilineaVittorio(
+                                SpiralHeatingDiegoVittorio.funzioni_diego
+                                    .chiusura_diego(
                                         mandataRettilineaBase,
                                         ritornoVersoCentroBase,
                                         distanzaRitorno);
