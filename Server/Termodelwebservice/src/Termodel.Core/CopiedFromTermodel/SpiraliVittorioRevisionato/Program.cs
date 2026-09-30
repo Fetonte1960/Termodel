@@ -82,11 +82,16 @@ namespace SpiralHeatingVittorioRevisionato
         public static void AggiornaSpiraliConChiusura(bool chiudiCircuito)
         {
             // Percorso pubblico LG-051:
-            // 1) mandata revisionata; 2) Return Vittorio rettilineo;
+            // 1) Mandata Vittorio invariata; 2) Return Vittorio rettilineo;
             // 3) chiusura combinatoria rettilinea opzionale; 4) raccordi circolari.
             // Con chiudiCircuito=false Mandata e Return restano entrambi
             // presenti ma non vengono collegati fra loro.
-            GeneraSpirale(terminalCenterline: true);
+            //
+            // TerminalCenterline resta disponibile solo come capacità
+            // sperimentale interna, ma NON partecipa al percorso pubblico:
+            // Vittorio_revisionato deve differire da Vittorio soltanto nella
+            // fase di chiusura/raccordatura LG-051.
+            GeneraSpirale(terminalCenterline: false);
             ChiudiSpiraleFiles(
                 usaRaccordoAdattivoDiego: true,
                 chiudiCircuito: chiudiCircuito);
