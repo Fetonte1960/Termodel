@@ -2257,3 +2257,41 @@ il Fast Harness aggiornato resta quindi **non eseguito** in questa fase.
 RECOVERY POINT: verificare il commit su main e l'eventuale deploy Render.
 Distinguere rigorosamente implementato / compilato / pubblicato / testato.
 Non dichiarare il Fast Harness eseguito finché non viene lanciato.
+
+### 2026-09-30 — LG-051 PUBBLICATA SU MAIN
+Stato: **IMPLEMENTATA; CORE/HARNESS COMPILATI; GATE SPECIFICO ESEGUITO; DEPLOY SERVICE NON CERTIFICATO**
+
+HEAD funzionale corrente: `7634d4e939556d9b23933f4b7cb5a4d9c488f9e3`.
+
+Verifica Fast Harness #121 / run `36666975115`:
+- Build Harness + Core: SUCCESS;
+- gate quadrato pubblico `Vittorio_revisionato`: SUCCESS;
+- equivalenza iniziale: SUCCESS;
+- equivalenza multi-progetto (6 casi): SUCCESS;
+- astrazione strutturale: SUCCESS;
+- quadrato sintetico Diego_Vittorio: SUCCESS;
+- il quadrato `Vittorio_revisionato` corrente resta aperto perché nessun
+  candidato soddisfa tutti i filtri rettilinei LG-051; è il feedback visivo
+  concordato per un fallimento di chiusura e non viene forzata alcuna curva.
+
+Il Fast Harness completo termina FAILURE sul Golden storico del quadrato
+pubblico `Diego_Vittorio`: SVG attuale `5ddd0ffd...`, Golden
+`fa8e6106...`. L'artifact SUCCESS storico del run `36383265029` conferma
+che il Golden rappresenta la geometria precedente; il codice Diego_Vittorio era
+già cambiato fra `932fce5` e lo stato pre-LG-051 `cad2c29c`. Non aggiornare
+automaticamente il Golden e non attribuire questa divergenza a LG-051 senza
+un'indagine separata.
+
+Service Build #1183 / run `36666543124` non certifica la build completa né il
+deploy: il gate frontend si arresta su un controllo cache-busting v1.35 mentre
+il frontend reale è v1.37; il controllo deploy attende inoltre frontend v1.36.
+Non modificare il frontend nell'ambito LG-051.
+
+**RECOVERY POINT ESATTO:** la geometria LG-051 è già su main. Il prossimo
+passo funzionale è il collaudo visivo del percorso pubblico
+`Vittorio_revisionato`. Se serve certificare il deploy, correggere
+separatamente il gate infrastrutturale obsoleto oppure compilare/eseguire dal
+Visual Studio locale; non cambiare la geometria per far diventare verde un test
+infrastrutturale. La divergenza Golden Diego_Vittorio resta una questione
+separata da investigare senza aggiornare il Golden.
+

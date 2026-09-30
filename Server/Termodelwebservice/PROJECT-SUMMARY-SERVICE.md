@@ -73,40 +73,67 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-30 — Implementazione LG-051 e pubblicazione Vittorio_revisionato
-Stato: IMPLEMENTATO SU MAIN — BUILD/DEPLOY IN VERIFICA
+Stato: ESEGUITO — PUBBLICATO SU MAIN; DEPLOY SERVICE NON CERTIFICATO
 
 Autorizzazione utente:
 - implementare le decisioni consolidate in LG-051 per `Vittorio_revisionato`;
 - pubblicare su `main`;
-- non inviare notifiche ntfy e non usare Issue #1 per questo job.
+- evitare notifiche operative aggiuntive durante questa pubblicazione.
 
-Criteri di completamento:
-- chiusura scelta e validata esclusivamente su geometria rettilinea;
-- tratto di chiusura `>=2P`, niente angoli acuti, niente intersezioni con la geometria risultante;
-- primo candidato valido, circuito aperto se nessuno valido;
-- raccordatura separata e successiva su percorso completo;
-- archi circolari tangenti, raggio locale configurabile (default attuale 0,10 m);
-- se il raggio non entra nei tratti disponibili, lasciare spigolo vivo senza ridurre il raggio;
-- discretizzazione adattiva con tolleranza locale configurabile, default 5 mm;
-- riallineare Fast Harness/regression al nuovo contratto;
-- lasciare `SpiraliVittorio` invariata;
-- aggiornare Recovery, Summary e tracciatura sync se pertinente;
-- distinguere implementato/compilato/testato/pubblicato.
-
-
-Avanzamento implementazione:
-- separata la chiusura rettilinea dalla raccordatura finale secondo LG-051;
-- chiusura: >=2P, no angoli acuti, no intersezioni sulla geometria risultante,
-  primo candidato valido;
-- raccordatura: archi circolari a raggio locale default 0,10 m, nessuna
-  riduzione automatica del raggio, discretizzazione adattiva default 5 mm;
-- fallimento chiusura -> Mandata/Return separati senza etichetta di circuito
-  chiuso;
-- Fast Harness e workflow aggiornati ma non eseguiti in questo job;
+Risultato implementato:
+- chiusura scelta e validata esclusivamente sulla geometria rettilinea;
+- segmento di chiusura `>=2P`, esclusione angoli acuti e intersezioni con la
+  geometria risultante dal candidato;
+- sequenza deterministica e arresto al primo candidato valido;
+- se nessun candidato è valido, Mandata e Return restano separati;
+- eliminata dal percorso pubblico la seconda Bézier finale;
+- raccordatura separata sull'intero percorso continuo mediante archi circolari
+  tangenti;
+- raggio locale configurabile, default `0,10 m`, non ridotto per adattarsi ai
+  tratti corti;
+- raccordo omesso e spigolo vivo conservato quando il raggio non è contenibile;
+- discretizzazione adattiva per sagitta con tolleranza locale configurabile,
+  default `0,005 m`;
+- identità grafica Mandata/Chiusura/Return conservata nell'output;
 - `SpiraliVittorio` invariata;
-- pubblicazione predisposta come commit `[skip ci]` per rispettare la richiesta
-  esplicita di non notificare;
-- compilazione/deploy pubblico: verifica avviata tramite Service Build tecnico; nessuna Issue/ntfy usata.
+- `TERMODEL-SYNC.md` e README revisionato aggiornati.
+
+Pubblicazione:
+- commit funzionale principale: `9efb363822f953892e915b2c9864b129c7d6f381`;
+- fix helper raccordi: `dc8af4d95542e9d7770ab4afc4f63893b6343457`;
+- HEAD funzionale/test workflow: `7634d4e939556d9b23933f4b7cb5a4d9c488f9e3`.
+
+Verifica reale:
+- Fast Harness #121 / run `36666975115`: restore e **Build Harness + Core SUCCESS**;
+- gate `Harness quadrato Vittorio_revisionato public closure`: **SUCCESS**;
+- nel caso quadrato corrente LG-051 non trova un candidato rettilineo valido e
+  lascia intenzionalmente il circuito aperto, comportamento previsto dalla
+  specifica;
+- equivalenza iniziale Vittorio/Vittorio_revisionato: **SUCCESS**;
+- equivalenza multi-progetto (6 casi): **SUCCESS**;
+- check astrazione strutturale: **SUCCESS**;
+- quadrato sintetico Diego_Vittorio: **SUCCESS**;
+- il workflow complessivo resta rosso sul Golden del quadrato pubblico
+  Diego_Vittorio: hash attuale `5ddd0ffd...` contro Golden
+  `fa8e6106...`. Il confronto con l'artifact SUCCESS del run
+  `36383265029` mostra che tale geometria Diego_Vittorio era già cambiata
+  fra il riferimento `932fce5` e lo stato precedente a LG-051
+  `cad2c29c`; il Golden **non è stato aggiornato** e il controllo non è stato
+  indebolito.
+- Service Build #1183 / run `36666543124`: restore e sintassi JavaScript
+  SUCCESS, ma il workflow si arresta prima di `dotnet build` per il controllo
+  frontend preesistente `Cache-busting MyHome3D v1.35 non aggiornato`; il
+  frontend pubblico è già v1.37. Il controllo deploy dello stesso run attende
+  inoltre frontend 1.36 e pertanto non certifica il deploy.
+- conseguenza: **Termodel.Core/Harness compilati e gate LG-051 eseguito**;
+  **build completa Termodel.WebService e deploy Render non certificati in
+  questa fase**.
+
+Vincoli mantenuti:
+- nessuna modifica al Golden Diego_Vittorio;
+- nessuna modifica al frontend per aggirare il controllo;
+- il controllo distanza minima fra chiusura e tubi resta solo un possibile
+  perfezionamento futuro, come deciso in LG-051.
 
 ### INCARICO 2026-09-30 — Registrazione audit chiusura/raccordatura Vittorio_revisionato
 Stato: ESEGUITO
