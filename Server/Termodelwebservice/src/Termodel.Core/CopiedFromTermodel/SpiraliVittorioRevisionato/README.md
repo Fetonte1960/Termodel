@@ -148,3 +148,26 @@ raccordo Bézier, senza modificare il benchmark storico Vittorio.
 Il Fast Harness è stato riallineato, ma il commit di pubblicazione non lo
 esegue automaticamente per rispettare la richiesta esplicita di non inviare
 notifiche.
+
+## Chiusura configurabile dal Service — 30/09/2026
+
+Il percorso pubblico conserva `AggiornaSpirali()` con comportamento chiuso
+per compatibilità. È disponibile anche:
+
+```csharp
+Program.AggiornaSpiraliConChiusura(bool chiudiCircuito)
+```
+
+Con `chiudiCircuito=false` vengono mantenuti sia Mandata sia Return, ma viene
+saltato il collegamento finale tra le due estremità e non viene prodotta
+l'etichetta grafica di chiusura. Non viene creato alcun nuovo motore e
+`SpiraliVittorio` resta invariata.
+
+Dal Service il controllo è per-request:
+
+```http
+POST /api/calculations?spiralEngine=Vittorio_revisionato&spiralClosure=false
+```
+
+Il default di `spiralClosure` è `true`.
+
