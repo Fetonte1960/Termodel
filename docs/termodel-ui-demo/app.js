@@ -32,8 +32,10 @@ import {
 
 const MODEL_URL = './TermodelWebModel.json';
 const PROJECT_BROWSER_EXAMPLES_URL = './examples/catalog.json';
+const TERMODEL_SERVICE_CLOUD_BASE_URL = 'https://termodel.onrender.com';
+const TERMODEL_SERVICE_LOCAL_BASE_URL = 'http://localhost:5080';
 const TERMODEL_SERVICE_BASE_URL = String(
-  globalThis.TERMODEL_SERVICE_BASE_URL || 'https://termodel.onrender.com'
+  globalThis.TERMODEL_SERVICE_BASE_URL || TERMODEL_SERVICE_CLOUD_BASE_URL
 ).replace(/\/+$/, '');
 const TERMODEL_SERVICE_READY_TTL_MS = 60 * 1000;
 const TERMODEL_SERVICE_WAKE_TIMEOUT_MS = 90 * 1000;
@@ -54,6 +56,7 @@ const saveProjectButton = document.getElementById('saveProjectButton');
 const saveProjectAsButton = document.getElementById('saveProjectAsButton');
 const helpOpenWebHelp = document.getElementById('helpOpenWebHelp');
 const helpExplorationMode = document.getElementById('helpExplorationMode');
+const helpLocalService = document.getElementById('helpLocalService');
 const helpCopyProjectClipboard = document.getElementById('helpCopyProjectClipboard');
 const helpCopyLogClipboard = document.getElementById('helpCopyLogClipboard');
 const helpSpiralEngine = document.getElementById('helpSpiralEngine');
@@ -69,7 +72,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.36';
+const APP_VERSION = '1.37';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -622,6 +625,7 @@ COMMAND_HELP['Aggiorna Modello'] = {
   body: `
     <p>Invia lo stato tecnico corrente del progetto al Termodel Service, esegue il calcolo completo e visualizza l'artifact <strong>model3d</strong> restituito dal server.</p>
     <p>Le categorie selezionate nel menu <strong>Help → Log Aggiorna Modello</strong> controllano il log della singola elaborazione.</p>
+    <p>Su PC, <strong>Help → Termodel Service → Usa localhost:5080</strong> permette di inviare le stesse richieste al WebService avviato da Visual Studio; a ogni apertura il default resta il Service Cloud.</p>
   `
 };
 
@@ -3587,10 +3591,43 @@ async function loadModel() {
   }
 }
 
+function termodelServiceUsesLocalhost() {
+  return helpLocalService?.checked === true;
+}
+
+function currentTermodelServiceBaseUrl() {
+  return termodelServiceUsesLocalhost()
+    ? TERMODEL_SERVICE_LOCAL_BASE_URL
+    : TERMODEL_SERVICE_BASE_URL;
+}
+
+function currentTermodelServiceTargetLabel() {
+  return termodelServiceUsesLocalhost()
+    ? 'Locale · ' + TERMODEL_SERVICE_LOCAL_BASE_URL + ' · debug Visual Studio'
+    : 'Cloud · ' + TERMODEL_SERVICE_BASE_URL;
+}
+
+function resetTermodelServiceConnectionCache() {
+  termodelServiceReadyAt = 0;
+  termodelServiceCapabilities = null;
+  termodelServiceRuntimeLabel = '';
+  termodelServiceRuntimeCommit = '';
+  termodelServiceRuntimeEngine = '';
+}
+
+function resetDesktopTermodelServiceDefault() {
+  if (helpLocalService) {
+    helpLocalService.defaultChecked = false;
+    helpLocalService.checked = false;
+  }
+  resetTermodelServiceConnectionCache();
+}
+
 function termodelServiceUrl(path) {
   const value = String(path || '');
   if (/^https?:\/\//i.test(value)) return value;
-  return TERMODEL_SERVICE_BASE_URL + (value.startsWith('/') ? value : '/' + value);
+  const baseUrl = currentTermodelServiceBaseUrl();
+  return baseUrl + (value.startsWith('/') ? value : '/' + value);
 }
 
 const TERMODEL_SERVICE_WAIT_STATUS = 'In Attesa di una risposta del server';
@@ -3816,14 +3853,24 @@ async function ensureTermodelServiceReady(force = false) {
     return termodelServiceCapabilities;
   }
 
-  setTermodelServiceProgress('Contatto Termodel Service…', 8);
-  status.textContent = 'Connessione al Termodel Service remoto…';
+  const localService = termodelServiceUsesLocalhost();
+  setTermodelServiceProgress(
+    localService
+      ? 'Contatto Termodel Service locale…'
+      : 'Contatto Termodel Service Cloud…',
+    8
+  );
+  status.textContent =
+    'Connessione al Termodel Service ' +
+    (localService ? 'locale…' : 'Cloud…');
 
   let progress = 12;
   const wakeTimer = setInterval(() => {
     progress = Math.min(58, progress + 3);
     setTermodelServiceProgress(
-      'Sto avviando Termodel Service… il piano Render Free può richiedere circa 50 secondi',
+      localService
+        ? 'Attendo localhost:5080… avvia Termodel.WebService da Visual Studio'
+        : 'Sto avviando Termodel Service… il piano Render Free può richiedere circa 50 secondi',
       progress
     );
   }, 3000);
@@ -3963,7 +4010,7 @@ function buildTermodelServerExchangeReport(exchange = {}) {
   const lines = [
     '[TERMODEL-SERVICE-EXCHANGE-V1]',
     'generatedAtUtc=' + new Date().toISOString(),
-    'serviceBaseUrl=' + TERMODEL_SERVICE_BASE_URL
+    'serviceBaseUrl=' + currentTermodelServiceBaseUrl()
   ];
 
   if (exchange.postStatus !== undefined && exchange.postStatus !== null) {
@@ -4080,7 +4127,9 @@ async function loadCalculatedModelFromService() {
 
   loading = true;
   clearCurrentTermodelLogCache();
-  status.textContent = 'Connessione al Termodel Service remoto…';
+  status.textContent =
+    'Connessione al Termodel Service ' +
+    (termodelServiceUsesLocalhost() ? 'locale…' : 'Cloud…');
 
   const exchange = {
     postUrl: '',
@@ -4356,7 +4405,9 @@ helpExplorationMode?.addEventListener('change', () => {
 // Default garantito OFF anche se il browser tenta di ripristinare lo stato
 // precedente del checkbox dopo refresh/back-forward cache.
 resetDesktopExplorationModeDefault();
+resetDesktopTermodelServiceDefault();
 window.addEventListener('pageshow', resetDesktopExplorationModeDefault);
+window.addEventListener('pageshow', resetDesktopTermodelServiceDefault);
 
 // In modalità esplorazione ogni controllo desktop cliccabile passa dal
 // pannello informativo, ma l'evento continua verso la funzione originale.
@@ -10889,6 +10940,13 @@ helpCopyProjectClipboard?.addEventListener('click', async event => {
     console.error('Copia progetto negli appunti non riuscita:', error);
     window.alert('Impossibile copiare il progetto negli appunti.\n\n' + error.message);
   }
+});
+
+helpLocalService?.addEventListener('change', () => {
+  resetTermodelServiceConnectionCache();
+  status.textContent =
+    'Termodel Service prossimo comando: ' +
+    currentTermodelServiceTargetLabel();
 });
 
 helpSpiralEngine?.addEventListener('change', () => {

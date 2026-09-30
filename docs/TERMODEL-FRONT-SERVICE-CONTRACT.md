@@ -1,7 +1,7 @@
 # TERMODEL — CONTRATTO FRONTEND ↔ SERVICE
 
-Versione documento: **1.27**  
-Aggiornamento: **26 settembre 2026**  
+Versione documento: **1.28**  
+Aggiornamento: **30 settembre 2026**  
 Stato: **progetti autorevoli locali nel frontend; Service Render dedicato a calcolo e artifact con workspace ricreabile per projectId; endpoint legacy open/save/lock mantenuti compatibili; conversione DXF→SVG nel Core/Service; Pianta pulita SVG persistente e projectId-scoped; feedback utenti verso GitHub Issues, archivi Reti/TipologiePannelli, CAD Tubo, calcolo idraulico per circuito, esecutivo pannelli SVG/DXF, canale universale dei file generati, snapshot diagnostico Render→GitHub e notifica GitHub Actions/telefono implementati**
 
 Questo documento è il riferimento condiviso tra **Termodel Web** e
@@ -2022,6 +2022,20 @@ Access.
 
 Il contratto funzionale non deve dipendere dalla porta locale `5080`: la base
 URL è configurazione dell'ambiente.
+
+Dal frontend PC v1.37 la selezione dell'ambiente è disponibile anche
+direttamente in **Help → Termodel Service**:
+- default a ogni apertura: **Cloud**, base URL `https://termodel.onrender.com`;
+- flag **Usa localhost:5080 (debug Visual Studio)**: base URL
+  `http://localhost:5080`;
+- la scelta è solo runtime del browser, non viene scritta nel
+  `TERMODEL-PROJECT-TEXT-V1`;
+- cambiando ambiente il frontend azzera la cache di `/health` e
+  `/api/model/capabilities`, così il comando successivo interroga realmente
+  il Service selezionato;
+- l'override tecnico preesistente `globalThis.TERMODEL_SERVICE_BASE_URL`
+  resta compatibile per ambienti di sviluppo speciali; il flag localhost ha
+  precedenza quando è spuntato.
 
 Autenticazione e autorizzazione non sono ancora implementate e saranno aggiunte
 prima dell'uso multiutente su server pubblico.

@@ -14,7 +14,7 @@
 >
 > Questo documento serve a evitare la perdita di contesto quando una chat diventa troppo lunga. Deve essere mantenuto breve, operativo e aggiornato dopo ogni intervento che cambia architettura, stato, file importanti, contratti o prossimi passi.
 
-Ultimo aggiornamento: **2026-09-28**  
+Ultimo aggiornamento: **2026-09-30**  
 Branch di riferimento: **main**  
 Ultimo commit di codice verificato:  
 `ed87c6ad59cd60d008e7ffe2ed13885bea3dcaf3` — `feat(web): consolida esempi Diego_Vittorio offline`  
@@ -327,6 +327,52 @@ Verifica:
 - TermodelService Build `36414512616`: JavaScript, provenance, static executives, build e smoke Pannelli radianti SUCCESS; stop successivo sul Golden Darcy indipendente già noto;
 - GitHub Pages `36414512118`: build + deploy SUCCESS.
 
+
+## 0.10 Modifica 2026-09-30 — selettore Termodel Service Cloud / localhost nel menu Help
+
+Stato: **IMPLEMENTATO — frontend PC v1.37**.
+
+Obiettivo:
+- permettere di usare lo stesso frontend pubblico con il WebService locale
+  avviato da Visual Studio, senza modificare a mano il JavaScript;
+- mantenere il Service Cloud come default.
+
+Risultato:
+- in **Help → Termodel Service** è presente il flag
+  **Usa localhost:5080 (debug Visual Studio)**;
+- flag non selezionato: usa il Cloud
+  `https://termodel.onrender.com`;
+- flag selezionato: usa `http://localhost:5080`;
+- il default viene forzato a Cloud a ogni caricamento/pageshow, evitando il
+  ripristino automatico del checkbox da parte del browser;
+- il cambio ambiente azzera la cache runtime di health/capabilities e i dati
+  di provenienza Service, quindi il comando successivo ricontatta il server
+  scelto;
+- tutte le URL relative del Service, compresi `/health`,
+  `/api/model/capabilities`, `POST /api/calculations` e gli artifact
+  project-scoped, passano dalla base URL selezionata;
+- il report copiabile `TERMODEL-SERVICE-EXCHANGE-V1` registra la base URL
+  effettivamente usata;
+- nessuna modifica a Termodel.Core, Termodel.WebService, formato progetto o
+  dati tecnici;
+- contratto Frontend↔Service aggiornato a **v1.28**;
+- l'override tecnico `globalThis.TERMODEL_SERVICE_BASE_URL` resta
+  compatibile.
+
+File modificati:
+- `docs/termodel-ui-demo/app.js`;
+- `docs/termodel-ui-demo/index.html`;
+- `docs/termodel-ui-demo/frontend-version.txt`;
+- `docs/TERMODEL-FRONT-SERVICE-CONTRACT.md`.
+
+Verifica manuale attesa:
+1. default Cloud dopo refresh;
+2. spunta localhost;
+3. avvio `Termodel.WebService` da Visual Studio su
+   `http://localhost:5080`;
+4. `Aggiorna Modello`;
+5. verifica nel debugger Visual Studio che la richiesta arrivi al Service
+   locale.
 
 ## 1. Regola obbligatoria per nuove chat
 
