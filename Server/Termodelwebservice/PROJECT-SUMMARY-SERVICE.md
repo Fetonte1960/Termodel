@@ -81,7 +81,7 @@ Motivo:
 - nessun sorgente `Vittorio_modificata` è stato creato e nessun codice geometrico è stato modificato sotto quel nome.
 
 ### INCARICO 2026-09-30 — Chiusura configurabile su Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: ESEGUITO — IMPLEMENTATO, COMPILATO, TESTATO E PUBBLICATO
 
 Autorizzazione utente:
 - mantenere `Vittorio` intoccabile;
@@ -91,17 +91,43 @@ Autorizzazione utente:
 - pubblicare Service/Core e frontend necessari, aggiornando il contratto condiviso;
 - non modificare `definizionedati.json`.
 
-Decisione implementativa:
-- il motore selezionato resta `Vittorio_revisionato`;
-- nuovo parametro per-request `spiralClosure=true|false`, significativo per `Vittorio_revisionato`; default `true` per preservare il comportamento corrente quando il parametro è omesso;
-- Help espone un controllo `Chiudi circuito`; il settaggio resta runtime e non viene salvato nel progetto.
+Risultato implementato:
+- nessun motore `Vittorio_modificata` creato; l'incarico precedente con quel nome resta annullato/superato;
+- `SpiraliVittorio` invariata;
+- `SpiraliVittorioRevisionato/Program.cs`: aggiunto `AggiornaSpiraliConChiusura(bool chiudiCircuito)`; `AggiornaSpirali()` conserva default `true`;
+- `SpiraliVittorioRevisionato/ChiudiSpirale.cs`: con `chiudiCircuito=false` la Mandata e il Return restano presenti ma la combinatoria di chiusura non viene eseguita, `curvaCollegamento` resta vuota e `ChiusuraGPT` non viene emessa;
+- `RadiantExecutiveGenerator.Generate(...)`: nuovo parametro opzionale `spiralClosure=true`, inoltrato al solo percorso `Vittorio_revisionato`;
+- `POST /api/calculations`: nuovo parametro query `spiralClosure=true|false`, default `true`; risposta manifest con `spiralClosure` e header diretto `X-Termodel-Spiral-Closure`;
+- frontend v1.38: Help → Motore spirali — test pubblico → checkbox `Chiudi circuito`; quando è selezionato `Vittorio_revisionato`, `Aggiorna Modello` invia `spiralClosure=true|false`; il valore non viene salvato nel progetto;
+- contratto Front/Service, README revisionato e `TERMODEL-SYNC.md` aggiornati;
+- pagina pubblica consulente `docs/modulo-spirali/sorgenti-cruciali.md` aggiornata.
 
-Criteri di completamento:
-- `spiralClosure=false` produce Mandata + Return senza collegamento finale;
-- `spiralClosure=true` conserva il comportamento di chiusura corrente di `Vittorio_revisionato`;
-- frontend Help invia il parametro per-request;
-- contratto, `TERMODEL-SYNC` e Summary aggiornati;
-- build/test eseguiti e stato distinto fra implementato/compilato/eseguito/verificato.
+Commit principali:
+- `acc4513c55b45a56a546a05691ba7ec1f8d9f367` — ingresso pubblico con chiusura configurabile;
+- `c54737cfa4a71b61a1ddd5bca5e90d95dfc8e0a2` — modalità Mandata/Return aperti;
+- `95ed94a51db27aa87a1b9543432a293ba2a8c2fc` — propagazione Core;
+- `1a572be34d966f7522896ec3c4e532c5f4b7d9dc` — contratto HTTP runtime;
+- `68124362573d36c5ae96121637f950692b4db7d6`, `c47e422e4fae1f849405e1e137d747a584ef995e`, `a081f0f392ebafc85b02dd7bb0ce23de0e039c67` — frontend v1.38;
+- `9c045895ef2f447bcde0f16729618794d7c56b3b` — smoke dedicato supporto `SpiralClosure`;
+- `03e323b11c4c7d29f5e6ff55fd1c93b5ae29b260` — CI con smoke circuiti aperti.
+
+Verifica reale:
+- TermodelService Build #1196 / run `36705902144`: restore SUCCESS;
+- `Check frontend JavaScript syntax`: SUCCESS;
+- `Build`: SUCCESS;
+- smoke `Vittorio_revisionato` default/chiuso: SUCCESS con `RADIANT_SPIRAL_ENGINE_REQUEST_OK engine=Vittorio_revisionato closure=True`;
+- smoke `Vittorio_revisionato` aperto: SUCCESS con `RADIANT_SPIRAL_ENGINE_REQUEST_OK engine=Vittorio_revisionato closure=False` e `VITTORIO_REVISIONATO_OPEN_CIRCUITS_OK`;
+- modalità aperta: layer Mandata e Return presenti; layer `_NumeriCircuiti_Output` assente;
+- verifica pubblica: SUCCESS; Render osservato al commit `9c045895ef2f447bcde0f16729618794d7c56b3b`, default `Diego_Vittorio`, motore `Vittorio_revisionato` disponibile, frontend pubblico v1.38;
+- il workflow complessivo #1196 conclude FAILURE esclusivamente nello smoke separato `HTTP project storage and exclusive locks`, che non è riuscito ad avviare il Service sulla propria porta di test (`Termodel.WebService non ha risposto a /health`); i gate spirali richiesti erano già tutti SUCCESS.
+
+Limite diagnostico noto:
+- nel progetto pubblico usato dallo smoke, output chiuso e aperto hanno lo stesso SHA-256 `7A697A282D1F4AE7102A579D3DB7C6772D6A4CE93828BF2B071C2A44CD2043D7`, perché in quel caso la geometria corrente non applicava comunque una chiusura;
+- la CI dimostra quindi compilazione, propagazione del flag e modalità aperta priva di etichetta/collegamento finale; non dimostra su quella specifica fixture una differenza geometrica chiuso-vs-aperto.
+
+Contratto:
+- `POST /api/calculations?spiralEngine=Vittorio_revisionato&spiralClosure=false` lascia intenzionalmente aperti i due terminali;
+- omissione di `spiralClosure` = `true`, quindi compatibilità retroattiva preservata.
 
 ### INCARICO 2026-09-30 — Verifica architetturale pubblica Vittorio_revisionato
 Stato: ESEGUITO
