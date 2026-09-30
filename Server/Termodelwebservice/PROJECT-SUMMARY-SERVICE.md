@@ -93,6 +93,15 @@ Criteri di completamento della fase:
 - nessuna modifica a `definizionedati.json`, frontend o motore `Vittorio`;
 - Summary aggiornato con esito e commit finali.
 
+
+Checkpoint diagnostico 30/09/2026:
+- rimossa dal percorso pubblico la contaminazione `TerminalCenterline=true`; commit `281ef61730437963d4f6c21a470660c5591ac7c6`;
+- Fast Harness run `36722913206`: build Core/Harness SUCCESS; equivalenza iniziale e multi-progetto Vittorio_revisionato/Vittorio SUCCESS; il quadrato pubblico LG-051 resta aperto intenzionalmente con la Mandata Vittorio ripristinata; il workflow globale fallisce più avanti sul Golden separato Diego_Vittorio già divergente;
+- individuato il punto chiave residuo: il Return prodotto da `CreaRientro(...)` di Vittorio viene passato a `SpiralHeatingDiegoVittorio.ChiudiSpirale.PreparaRitornoRettilineoVittorio(...)`, che lo usa soltanto come riferimento iniziale e rigenera la geometria tramite `CreaRientroRettilineo -> CreaOffsetRettilineo`;
+- quindi il Return effettivamente usato dal percorso pubblico e anche da `spiralClosure=false` NON è il Return Vittorio originale: è un nuovo offset rettilineo costruito dal codice Diego_Vittorio;
+- il baseline visivamente accettato `0df1d3bad2b9992a3cfd9af2e95f186301024f87` conteneva già questo bridge; era quindi un buon riferimento visivo, ma non una derivazione architetturalmente pulita;
+- prossima correzione da discutere/implementare: eliminare la rigenerazione Diego del Return e fare in modo che LG-051 lavori sul Return Vittorio preservato, lasciando alla logica di chiusura soltanto tagli/accorciamenti dei terminali e filtri geometrici.
+
 ### INCARICO 2026-09-30 — Richiesta direttive consulente spirali
 Stato: ESEGUITO
 
