@@ -82,8 +82,9 @@ namespace SpiralHeatingVittorioRevisionato
         public static void AggiornaSpiraliConChiusura(bool chiudiCircuito)
         {
             // Percorso pubblico LG-051:
-            // 1) Mandata Vittorio invariata; 2) Return Vittorio rettilineo;
-            // 3) chiusura combinatoria rettilinea opzionale; 4) raccordi circolari.
+            // 1) Mandata Vittorio rettilinea; 2) Return parallelo Diego
+            // ricavato direttamente dalla spezzata; 3) chiusura combinatoria
+            // rettilinea opzionale; 4) unica raccordatura circolare finale.
             // Con chiudiCircuito=false Mandata e Return restano entrambi
             // presenti ma non vengono collegati fra loro.
             //
