@@ -74,7 +74,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-30 — Ritorno parallelo Diego indipendente dai raccordi
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente: sviluppare una funzione isolata `ritorno_Parallelo_diego` che costruisca il ritorno parallelo direttamente da una spezzata rettilinea, senza dipendere da `ArrotondaSpirale` o dai raccordi Vittorio.
 
@@ -93,6 +93,21 @@ Criteri di completamento:
 - Core/Harness compilano;
 - test isolati concavo/convesso/misto superati;
 - Summary aggiornato con commit ed esito reale.
+
+
+Esito reale:
+- implementato il nuovo file isolato `SpiraliDiegoVittorio/RitornoParalleloDiego.cs`;
+- funzione pubblica `ritorno_Parallelo_diego(IReadOnlyList<Punto>, double)`;
+- algoritmo: offset di ogni segmento tramite normale unitaria; agli spigoli concavi e convessi il vertice dell'offset è l'intersezione delle due rette parallele adiacenti; distanza positiva = lato sinistro della spezzata, negativa = lato destro;
+- nessuna dipendenza da `ArrotondaSpirale`, `CreaRientro`, `PreparaRitornoRettilineoVittorio` o raccordi;
+- nessun collegamento al percorso produttivo: la funzione resta disponibile per esperimenti successivi;
+- Harness: nuovo comando `parallel-return-check` con 4 casi: convesso 90°, concavo 90°, sequenza mista concavo/convesso e distanza negativa;
+- commit funzione: `2564663a2d52b5bcec2008a9352e508563cad866`;
+- commit test Harness: `54dc80c725ac71c3b076774d2c9dd9a0e984413f`;
+- commit CI: `d2e32e6f1cf98e56220008d4b2425e8cb9bc2657`;
+- tracciatura `TERMODEL-SYNC`: `cdc1b1e773e299fdb83254f7d4d2bff6655a2151`;
+- Fast Harness run `36756127498`: build Harness+Core SUCCESS, 0 errori; `RITORNO_PARALLELO_DIEGO_OK cases=4`;
+- lo stesso run fallisce successivamente sul Golden separato `Diego_Vittorio` già divergente: SVG corrente `5ddd0ffd...` contro baseline `fa8e6106...`; il nuovo helper non è richiamato dal motore e non può essere la causa di tale divergenza.
 
 ### INCARICO 2026-09-30 — Implementazione LG-051 pulita su Vittorio_revisionato
 Stato: COMMISSIONATO
