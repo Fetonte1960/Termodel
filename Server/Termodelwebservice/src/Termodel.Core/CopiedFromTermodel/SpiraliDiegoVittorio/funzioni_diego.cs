@@ -28,17 +28,242 @@ namespace SpiralHeatingDiegoVittorio
                 ritornoVersoCentro,
                 passo);
 
-        // Facciata unica per il raccordo Diego.
+        /// <summary>
+        /// Raccorda una polilinea definitiva con archi circolari tangenti.
+        /// La funzione lavora dopo Return e chiusura: non partecipa alla
+        /// scelta della geometria. Se il raggio non entra nei due tratti
+        /// adiacenti lo spigolo resta vivo; il raggio non viene ridotto.
+        /// La discretizzazione e' adattiva sulla sagitta massima.
+        /// </summary>
         public static List<Punto> raccorda_diego(
-            List<Punto> mandata,
-            List<Punto> ritorno,
+            IReadOnlyList<Punto> spezzata,
             double raggio,
-            double? lunghezzaMinima = null) =>
-            ChiudiSpirale.RaccordaDiego(
-                mandata,
-                ritorno,
+            double tolleranzaDiscretizzazione,
+            out Dictionary<int, int> indiceTransizionePerVertice)
+        {
+            const double epsilon = 0.000001;
+            const double tolleranzaDuplicatiRaccordo = 0.0001;
+
+            indiceTransizionePerVertice = new Dictionary<int, int>();
+
+            if (spezzata == null || spezzata.Count == 0)
+                return new List<Punto>();
+
+            if (spezzata.Count < 3 ||
+                raggio <= epsilon ||
+                !double.IsFinite(raggio) ||
+                tolleranzaDiscretizzazione <= epsilon ||
+                !double.IsFinite(tolleranzaDiscretizzazione))
+            {
+                List<Punto> copia = Copia(spezzata);
+                for (int i = 1; i < copia.Count - 1; i++)
+                    indiceTransizionePerVertice[i] = i;
+                return copia;
+            }
+
+            int count = spezzata.Count;
+            var lunghezze = new double[count - 1];
+            for (int i = 0; i < count - 1; i++)
+                lunghezze[i] = spezzata[i].DistanceTo(spezzata[i + 1]);
+
+            var raccordabile = new bool[count];
+            var distanzeTangenti = new double[count];
+
+            for (int i = 1; i < count - 1; i++)
+            {
+                double len1 = lunghezze[i - 1];
+                double len2 = lunghezze[i];
+                if (len1 <= epsilon || len2 <= epsilon)
+                    continue;
+
+                var u1 = new Punto(
+                    (spezzata[i].X - spezzata[i - 1].X) / len1,
+                    (spezzata[i].Y - spezzata[i - 1].Y) / len1);
+                var u2 = new Punto(
+                    (spezzata[i + 1].X - spezzata[i].X) / len2,
+                    (spezzata[i + 1].Y - spezzata[i].Y) / len2);
+
+                double prodotto = Math.Max(
+                    -1.0,
+                    Math.Min(1.0, u1.X * u2.X + u1.Y * u2.Y));
+                double deviazione = Math.Acos(prodotto);
+                double verso = Cross(u1, u2);
+
+                if (deviazione <= epsilon ||
+                    deviazione >= Math.PI - epsilon ||
+                    Math.Abs(verso) <= epsilon)
+                {
+                    continue;
+                }
+
+                double distanzaTangente =
+                    raggio * Math.Tan(deviazione / 2.0);
+                if (!double.IsFinite(distanzaTangente) ||
+                    distanzaTangente <= epsilon ||
+                    distanzaTangente > len1 + epsilon ||
+                    distanzaTangente > len2 + epsilon)
+                {
+                    continue;
+                }
+
+                raccordabile[i] = true;
+                distanzeTangenti[i] = distanzaTangente;
+            }
+
+            // Due raccordi adiacenti non possono consumare piu' del segmento
+            // comune. In caso di conflitto entrambi gli spigoli restano vivi:
+            // non si riduce arbitrariamente il raggio.
+            for (int segmento = 0; segmento < count - 1; segmento++)
+            {
+                int a = segmento;
+                int b = segmento + 1;
+                double usoA =
+                    a > 0 && a < count - 1 && raccordabile[a]
+                        ? distanzeTangenti[a]
+                        : 0.0;
+                double usoB =
+                    b > 0 && b < count - 1 && raccordabile[b]
+                        ? distanzeTangenti[b]
+                        : 0.0;
+
+                if (usoA + usoB > lunghezze[segmento] + epsilon)
+                {
+                    if (a > 0 && a < count - 1)
+                        raccordabile[a] = false;
+                    if (b > 0 && b < count - 1)
+                        raccordabile[b] = false;
+                }
+            }
+
+            var risultato = new List<Punto>();
+            AggiungiSeDistintoRaccordo(
+                risultato,
+                spezzata[0],
+                tolleranzaDuplicatiRaccordo);
+
+            for (int i = 1; i < count - 1; i++)
+            {
+                Punto p0 = spezzata[i - 1];
+                Punto p1 = spezzata[i];
+                Punto p2 = spezzata[i + 1];
+
+                if (!raccordabile[i])
+                {
+                    AggiungiSeDistintoRaccordo(
+                        risultato,
+                        p1,
+                        tolleranzaDuplicatiRaccordo);
+                    indiceTransizionePerVertice[i] = risultato.Count - 1;
+                    continue;
+                }
+
+                double len1 = lunghezze[i - 1];
+                double len2 = lunghezze[i];
+                var u1 = new Punto(
+                    (p1.X - p0.X) / len1,
+                    (p1.Y - p0.Y) / len1);
+                var u2 = new Punto(
+                    (p2.X - p1.X) / len2,
+                    (p2.Y - p1.Y) / len2);
+                double distanzaTangente = distanzeTangenti[i];
+
+                var pStart = new Punto(
+                    p1.X - u1.X * distanzaTangente,
+                    p1.Y - u1.Y * distanzaTangente);
+                var pEnd = new Punto(
+                    p1.X + u2.X * distanzaTangente,
+                    p1.Y + u2.Y * distanzaTangente);
+
+                double verso = Cross(u1, u2);
+                Punto normale = verso > 0
+                    ? new Punto(-u1.Y, u1.X)
+                    : new Punto(u1.Y, -u1.X);
+                var centro = new Punto(
+                    pStart.X + normale.X * raggio,
+                    pStart.Y + normale.Y * raggio);
+
+                double angoloInizio = Math.Atan2(
+                    pStart.Y - centro.Y,
+                    pStart.X - centro.X);
+                double angoloFine = Math.Atan2(
+                    pEnd.Y - centro.Y,
+                    pEnd.X - centro.X);
+                double sviluppo = angoloFine - angoloInizio;
+
+                if (verso > 0)
+                {
+                    while (sviluppo < 0)
+                        sviluppo += 2.0 * Math.PI;
+                }
+                else
+                {
+                    while (sviluppo > 0)
+                        sviluppo -= 2.0 * Math.PI;
+                }
+
+                double rapportoErrore =
+                    Math.Min(1.0, tolleranzaDiscretizzazione / raggio);
+                double angoloMassimo =
+                    rapportoErrore >= 1.0
+                        ? Math.PI
+                        : 2.0 * Math.Acos(1.0 - rapportoErrore);
+                if (!double.IsFinite(angoloMassimo) ||
+                    angoloMassimo <= epsilon)
+                {
+                    angoloMassimo = Math.PI / 180.0;
+                }
+
+                int segmenti = Math.Max(
+                    1,
+                    (int)Math.Ceiling(
+                        Math.Abs(sviluppo) / angoloMassimo));
+                int segmentoTransizione =
+                    (int)Math.Ceiling(segmenti / 2.0);
+
+                AggiungiSeDistintoRaccordo(
+                    risultato,
+                    pStart,
+                    tolleranzaDuplicatiRaccordo);
+
+                for (int j = 1; j <= segmenti; j++)
+                {
+                    double angolo =
+                        angoloInizio + sviluppo * j / segmenti;
+                    AggiungiSeDistintoRaccordo(
+                        risultato,
+                        new Punto(
+                            centro.X + raggio * Math.Cos(angolo),
+                            centro.Y + raggio * Math.Sin(angolo)),
+                        tolleranzaDuplicatiRaccordo);
+
+                    if (j == segmentoTransizione)
+                        indiceTransizionePerVertice[i] =
+                            risultato.Count - 1;
+                }
+
+                if (!indiceTransizionePerVertice.ContainsKey(i))
+                    indiceTransizionePerVertice[i] = risultato.Count - 1;
+            }
+
+            AggiungiSeDistintoRaccordo(
+                risultato,
+                spezzata[^1],
+                tolleranzaDuplicatiRaccordo);
+
+            return risultato;
+        }
+
+        public static List<Punto> raccorda_diego(
+            IReadOnlyList<Punto> spezzata,
+            double raggio,
+            double tolleranzaDiscretizzazione)
+        {
+            return raccorda_diego(
+                spezzata,
                 raggio,
-                lunghezzaMinima);
+                tolleranzaDiscretizzazione,
+                out _);
+        }
 
         /// <summary>
         /// Costruisce l'offset parallelo di una spezzata rettilinea senza usare
@@ -236,6 +461,18 @@ namespace SpiralHeatingDiegoVittorio
             double dx = a.X - b.X;
             double dy = a.Y - b.Y;
             return dx * dx + dy * dy;
+        }
+
+        private static void AggiungiSeDistintoRaccordo(
+            List<Punto> punti,
+            Punto candidato,
+            double tolleranza)
+        {
+            if (punti.Count == 0 ||
+                punti[^1].DistanceTo(candidato) > tolleranza)
+            {
+                punti.Add(new Punto(candidato.X, candidato.Y));
+            }
         }
 
         private sealed record SegmentoOffset(
