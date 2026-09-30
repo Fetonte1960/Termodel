@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-30 — Fix UI Chiudi circuito / Vittorio_revisionato
-Stato: IMPLEMENTATO — VERIFICA PUBBLICA IN CORSO
+Stato: ESEGUITO — PUBBLICATO E VERIFICATO
 
 Problema reale:
 - screenshot utente: `Chiudi circuito` disattivato ma selettore ancora `Predefinito Service`;
@@ -86,6 +86,14 @@ Correzione:
 - `buildTermodelCalculationPath()` invia così `spiralEngine=Vittorio_revisionato&spiralClosure=true|false`;
 - tooltip Help aggiornato;
 - nessuna modifica ai motori geometrici o a `Vittorio`.
+
+Verifica reale:
+- GitHub Pages run `36710823681`: SUCCESS;
+- TermodelService Build #1200: frontend JavaScript SUCCESS e build .NET SUCCESS;
+- smoke `Vittorio_revisionato` chiuso: SUCCESS;
+- smoke `Vittorio_revisionato` con `spiralClosure=false`: SUCCESS con `VITTORIO_REVISIONATO_OPEN_CIRCUITS_OK`;
+- verifica pubblica del workflow: `publicFrontendVersion=1.39`, `PUBLIC_VITTORIO_REVISIONATO_DEPLOY_OK`, Service commit osservato `03046144240dbdedd9f909d1fcb553a26ed9ab3c`;
+- il workflow complessivo conserva il fallimento separato dello smoke storage/lock già noto; i gate della correzione sono verdi.
 
 Commit:
 - `95a8bff8ba571a5ba07e00b24a58d0a0c81e227b` — fix evento checkbox;
