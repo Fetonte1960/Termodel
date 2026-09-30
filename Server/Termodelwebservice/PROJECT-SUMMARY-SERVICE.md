@@ -73,6 +73,31 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-09-30 — Centralizzazione modifiche Diego in FunzioniDiego
+Stato: COMMISSIONATO
+
+Autorizzazione utente: raccogliere in una classe riutilizzabile le funzioni sviluppate rispetto a Vittorio, per ridurre dispersione e facilitarne il successivo spostamento/condivisione.
+
+Scopo:
+- creare `SpiraliDiegoVittorio/FunzioniDiego.cs`;
+- classe pubblica `FunzioniDiego`;
+- centralizzare almeno:
+  - `ritorno_Parallelo_diego(...)`;
+  - `chiusura_diego(...)`;
+  - `raccorda_diego(...)`;
+- mantenere invariato il comportamento corrente;
+- evitare modifiche a `SpiraliVittorio`;
+- aggiornare i richiami esistenti in modo minimo e reversibile;
+- mantenere test Harness per ritorno parallelo e verificare build.
+
+Criteri di completamento:
+- nessuna modifica al motore `SpiraliVittorio`;
+- build Core/Harness senza errori;
+- test `parallel-return-check` verde;
+- nessuna variazione intenzionale dei risultati geometrici esistenti;
+- Summary e tracciatura aggiornati.
+
+
 ### INCARICO 2026-09-30 — Ritorno parallelo Diego indipendente dai raccordi
 Stato: ESEGUITO
 
