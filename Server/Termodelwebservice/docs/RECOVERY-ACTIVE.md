@@ -2390,3 +2390,35 @@ Visual Studio locale; non cambiare la geometria per far diventare verde un test
 infrastrutturale. La divergenza Golden Diego_Vittorio resta una questione
 separata da investigare senza aggiornare il Golden.
 
+
+
+### 2026-09-30 — CHECKPOINT ATTIVO: pipeline Diego pulita
+Stato: **COMMISSIONATO — PRIMA DELLA MODIFICA FUNZIONALE**
+
+Decisione corrente:
+- `SpiraliVittorio` resta intoccabile;
+- `Vittorio_revisionato` deve usare la Mandata rettilinea già generata;
+- il Return deve nascere direttamente da
+  `SpiralHeatingDiegoVittorio.funzioni_diego.ritorno_Parallelo_diego(...)`;
+- il lato iniziale da preservare è quello del bridge corrente:
+  `CreaOffsetRettilineo(..., -distanzaRitorno)`; quindi la prima sostituzione
+  usa distanza `-distanzaRitorno` e mantiene lo stesso ordine della Mandata
+  (esterno -> centro), senza `Reverse()`;
+- eliminare dal percorso pubblico revisionato la catena
+  `ArrotondaSpirale -> CreaRientro -> PreparaRitornoRettilineoVittorio`;
+- la chiusura resta `funzioni_diego.chiusura_diego(...)`;
+- la raccordatura finale resta inizialmente invariata per isolare il test del
+  nuovo Return; solo dopo il gate verde verrà centralizzata in
+  `funzioni_diego.raccorda_diego(...)`.
+
+Rollback certo:
+- commit di commissione precedente alla modifica funzionale:
+  `9809518f260c671b18b02ef6083c11f580ded862`;
+- in caso di chat interrotta ripartire da questo checkpoint, controllare HEAD
+  e non modificare Golden automaticamente.
+
+Vincolo operativo di questa sessione:
+- richiesta utente **NON NOTIFICARE**;
+- non usare Issue #1;
+- evitare workflow con ntfy; i test automatici della fase devono usare un gate
+  temporaneo privo di notifiche oppure restare locali.
