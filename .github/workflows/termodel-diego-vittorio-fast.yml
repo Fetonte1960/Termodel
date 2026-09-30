@@ -9,8 +9,11 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  # Harness nuovamente fermato dopo la verifica del vincolo raccordo >= 2P.
+  # Trigger temporaneo 30/09/2026: verifica LG-051 senza notifica telefono.
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/termodel-diego-vittorio-fast.yml'
 
 jobs:
   fast:
