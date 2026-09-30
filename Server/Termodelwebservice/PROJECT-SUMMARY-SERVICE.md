@@ -72,6 +72,28 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-30 — Fix UI Chiudi circuito / Vittorio_revisionato
+Stato: IMPLEMENTATO — VERIFICA PUBBLICA IN CORSO
+
+Problema reale:
+- screenshot utente: `Chiudi circuito` disattivato ma selettore ancora `Predefinito Service`;
+- lo stato runtime mostrava `motore Diego_Vittorio`; quindi il controllo non agiva su `Vittorio_revisionato`;
+- causa frontend: `spiralClosure` veniva inviato solo quando il select valeva già `Vittorio_revisionato`, ma il checkbox non cambiava il motore.
+
+Correzione:
+- frontend v1.39;
+- evento `change` di `helpSpiralClosure` imposta automaticamente `helpSpiralEngine.value = 'Vittorio_revisionato'` prima del prossimo `Aggiorna Modello`;
+- `buildTermodelCalculationPath()` invia così `spiralEngine=Vittorio_revisionato&spiralClosure=true|false`;
+- tooltip Help aggiornato;
+- nessuna modifica ai motori geometrici o a `Vittorio`.
+
+Commit:
+- `95a8bff8ba571a5ba07e00b24a58d0a0c81e227b` — fix evento checkbox;
+- `ac4759a9c4c85e79d5441327dad1f1ebdd8f69a8` — tooltip/cache busting;
+- `7ff6ae9eec7562c53eef4b573c7b2065eb85b4f0` — frontend v1.39;
+- `d67759c26810fadadcbf7dec23f35bcc6fd99b1c` — CI marker v1.39/auto-selezione.
+
+
 ### INCARICO 2026-09-30 — Pubblicazione motore Vittorio_modificata con chiusura configurabile
 Stato: ANNULLATO / SUPERATO
 
