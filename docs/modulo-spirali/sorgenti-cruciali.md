@@ -170,6 +170,111 @@ Stato: **pubblicato e verificato**.
 - verifica pubblica: `publicFrontendVersion=1.39` e `PUBLIC_VITTORIO_REVISIONATO_DEPLOY_OK`;
 - il workflow globale conserva il noto fallimento separato dello smoke storage/lock; i gate relativi a questa correzione sono SUCCESS.
 
+## Risposta tecnica alla proposta «CHIRURGIA - Ritorno Parallelo» — 30/09/2026
+
+La direzione generale proposta è condivisibile:
+
+```text
+Mandata definitiva
+    ↓
+Return parallelo
+    ↓
+scelta della chiusura su geometria rettilinea
+    ↓
+raccordatura finale
+```
+
+e resta valido anche il principio: **se nessun candidato di chiusura è realmente valido, lasciare il circuito aperto è preferibile a forzare una chiusura corta o geometricamente scorretta.**
+
+Ci sono però quattro obiezioni operative rispetto allo pseudocodice proposto.
+
+### 1. Evitare un nuovo `OffsetEngine.Parallel(...)` se il Return Vittorio è già quello desiderato
+
+Nel codice reale di `Vittorio_revisionato` il Return pubblico nasce ancora dalla logica storica Vittorio tramite `CreaRientro(...)`. Prima di introdurre un nuovo motore di offset conviene verificare visivamente la modalità già pubblicata con `spiralClosure=false`, che mostra Mandata e Return aperti.
+
+Se quel Return è già il parallelo corretto, introdurre `OffsetEngine.Parallel(...)` significherebbe duplicare una funzione esistente e potrebbe cambiare involontariamente angoli, verso o geometria. In quel caso la chirurgia dovrebbe limitarsi alla sola chiusura.
+
+### 2. Nessun raccordo prima della scelta LG-051
+
+Il passaggio proposto:
+
+```text
+ritornoPoly = RaccordaConRaggio(...)
+```
+
+non dovrebbe precedere la ricerca della chiusura. LG-051 è stata introdotta proprio per separare:
+
+```text
+Mandata rettilinea + Return rettilineo
+        ↓
+scelta chiusura
+        ↓
+solo dopo: raccordatura
+```
+
+Quindi il Return deve restare rettilineo durante la valutazione dei candidati.
+
+### 3. `OrderByDescending(Lunghezza)` non coincide con la regola consolidata
+
+La regola attuale è **primo candidato valido e stop**, non «scegli il candidato valido più lungo». Ordinare per lunghezza introduce una nuova strategia geometrica e potrebbe cambiare il risultato anche quando un candidato precedente è già valido.
+
+Per restare coerenti con LG-051, il flusso dovrebbe essere:
+
+```text
+enumera candidati nell'ordine previsto
+    ↓
+primo candidato che supera tutti i filtri
+    ↓
+stop
+```
+
+### 4. I filtri devono restare parametrici e completi
+
+La soglia non dovrebbe essere fissata a `0.30`, ma espressa come `2*P`.
+
+Inoltre il filtro del candidato deve comprendere esplicitamente tutti i vincoli già stabiliti:
+
+```text
+lunghezza >= 2*P
+nessun angolo acuto all'innesto Mandata
+nessun angolo acuto all'innesto Return
+nessuna intersezione con Mandata o Return
+```
+
+### Proposta di convergenza
+
+Prima di rifare il Return, suggerisco questo controllo minimo:
+
+1. eseguire `Vittorio_revisionato` con `spiralClosure=false` sul quadrato;
+2. osservare Mandata e Return aperti senza alcuna chiusura;
+3. se il Return è già il parallelo desiderato, **non modificare la generazione del Return**;
+4. intervenire soltanto sulla chiusura LG-051;
+5. se invece il Return aperto è geometricamente errato, allora ha senso discutere una sostituzione della logica di offset.
+
+La versione operativa che propongo, preservando quanto già esiste in Vittorio, è quindi:
+
+```text
+Mandata rettilinea Vittorio
+        ↓
+Return parallelo Vittorio
+        ↓
+NESSUN raccordo
+        ↓
+candidati LG-051 nell'ordine previsto
+        ↓
+per ogni candidato:
+    lunghezza >= 2*P
+    angoli di innesto non acuti
+    nessuna intersezione
+        ↓
+primo valido → stop
+nessun valido → circuito aperto
+        ↓
+solo alla fine raccordatura R=0,10
+```
+
+Queste osservazioni non respingono l'impostazione del consulente: cercano di ridurre il cambiamento al minimo necessario e di evitare che `Vittorio_revisionato` introduca un secondo algoritmo di Return quando il riferimento storico potrebbe già fornire quello corretto.
+
 ## Linee guida
 
 Documento autorevole:
