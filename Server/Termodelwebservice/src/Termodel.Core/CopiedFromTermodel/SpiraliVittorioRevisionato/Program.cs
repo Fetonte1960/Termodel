@@ -76,11 +76,20 @@ namespace SpiralHeatingVittorioRevisionato
 
         public static void AggiornaSpirali()
         {
+            AggiornaSpiraliConChiusura(chiudiCircuito: true);
+        }
+
+        public static void AggiornaSpiraliConChiusura(bool chiudiCircuito)
+        {
             // Percorso pubblico LG-051:
             // 1) mandata revisionata; 2) Return Vittorio rettilineo;
-            // 3) chiusura combinatoria rettilinea; 4) raccordi circolari.
+            // 3) chiusura combinatoria rettilinea opzionale; 4) raccordi circolari.
+            // Con chiudiCircuito=false Mandata e Return restano entrambi
+            // presenti ma non vengono collegati fra loro.
             GeneraSpirale(terminalCenterline: true);
-            ChiudiSpiraleFiles(usaRaccordoAdattivoDiego: true);
+            ChiudiSpiraleFiles(
+                usaRaccordoAdattivoDiego: true,
+                chiudiCircuito: chiudiCircuito);
         }
 
         public static void AggiornaSpirali(bool soloMandataPerEsameVisivo)
@@ -541,7 +550,9 @@ namespace SpiralHeatingVittorioRevisionato
                 Debug);
         }
 
-        static void ChiudiSpiraleFiles(bool usaRaccordoAdattivoDiego = false)
+        static void ChiudiSpiraleFiles(
+            bool usaRaccordoAdattivoDiego = false,
+            bool chiudiCircuito = true)
         {
             string xmlFile = "locale.xml";
             
@@ -558,7 +569,8 @@ namespace SpiralHeatingVittorioRevisionato
                 DistanzaRotazioneUltimoPunto,
                 Debug,
                 usaRaccordoAdattivoDiego,
-                TolleranzaDiscretizzazioneArchi);
+                TolleranzaDiscretizzazioneArchi,
+                chiudiCircuito);
         }
     }
 }
