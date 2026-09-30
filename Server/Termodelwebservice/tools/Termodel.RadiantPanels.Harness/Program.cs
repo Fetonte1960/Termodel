@@ -20,6 +20,7 @@ return args.Length == 0
     {
         "run" => Run(args.Skip(1).ToArray()),
         "revisionato-check" => RunVittorioRevisionatoCheck(),
+        "parallel-return-check" => RunParallelReturnCheck(),
         "fillet-check" => RunFilletCheck(),
         "prepare" => await PrepareAsync(args.Skip(1).ToArray()),
         _ => Usage()
@@ -31,6 +32,7 @@ static int Usage()
     Console.Error.WriteLine("  run --case <case.json> [--engine Vittorio|Vittorio_revisionato|Diego_Vittorio|Diego] [--supply-only] [--skip-close] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  run --input <locale.xml> [--locale <locale-id>] [--engine Vittorio|Vittorio_revisionato|Diego_Vittorio|Diego] [--id <case-id>] [--p <metri>] [--supply-only] [--skip-close] [--log-enabled true|false] [--log-categories <csv|all|none>] [--out <dir>] [opzioni diagnostiche Diego]");
     Console.Error.WriteLine("  revisionato-check");
+    Console.Error.WriteLine("  parallel-return-check");
     Console.Error.WriteLine("  fillet-check");
     Console.Error.WriteLine("  prepare --project <project.tmdl> --output <locale.xml>");
     return 64;
@@ -49,6 +51,135 @@ static int RunVittorioRevisionatoCheck()
     Console.WriteLine(
         $"conditioningDistance={result.ConditioningDistanceMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
     return 0;
+}
+
+static int RunParallelReturnCheck()
+{
+    const double d = 0.20;
+
+    var casi = new[]
+    {
+        new
+        {
+            Nome = "convesso-90",
+            Input = new List<SpiralHeatingDiegoVittorio.Punto>
+            {
+                new(0.0, 0.0),
+                new(2.0, 0.0),
+                new(2.0, 2.0)
+            },
+            Distanza = d,
+            Atteso = new List<SpiralHeatingDiegoVittorio.Punto>
+            {
+                new(0.0, 0.2),
+                new(1.8, 0.2),
+                new(1.8, 2.0)
+            }
+        },
+        new
+        {
+            Nome = "concavo-90",
+            Input = new List<SpiralHeatingDiegoVittorio.Punto>
+            {
+                new(0.0, 0.0),
+                new(2.0, 0.0),
+                new(2.0, -2.0)
+            },
+            Distanza = d,
+            Atteso = new List<SpiralHeatingDiegoVittorio.Punto>
+            {
+                new(0.0, 0.2),
+                new(2.2, 0.2),
+                new(2.2, -2.0)
+            }
+        },
+        new
+        {
+            Nome = "misto-concavo-convesso",
+            Input = new List<SpiralHeatingDiegoVittorio.Punto>
+            {
+                new(0.0, 0.0),
+                new(2.0, 0.0),
+                new(2.0, 2.0),
+                new(4.0, 2.0),
+                new(4.0, 0.0)
+            },
+            Distanza = d,
+            Atteso = new List<SpiralHeatingDiegoVittorio.Punto>
+            {
+                new(0.0, 0.2),
+                new(1.8, 0.2),
+                new(1.8, 2.2),
+                new(4.2, 2.2),
+                new(4.2, 0.0)
+            }
+        },
+        new
+        {
+            Nome = "lato-opposto",
+            Input = new List<SpiralHeatingDiegoVittorio.Punto>
+            {
+                new(0.0, 0.0),
+                new(2.0, 0.0),
+                new(2.0, 2.0)
+            },
+            Distanza = -d,
+            Atteso = new List<SpiralHeatingDiegoVittorio.Punto>
+            {
+                new(0.0, -0.2),
+                new(2.2, -0.2),
+                new(2.2, 2.0)
+            }
+        }
+    };
+
+    foreach (var caso in casi)
+    {
+        List<SpiralHeatingDiegoVittorio.Punto> risultato =
+            SpiralHeatingDiegoVittorio.RitornoParalleloDiego
+                .ritorno_Parallelo_diego(
+                    caso.Input,
+                    caso.Distanza);
+
+        AssertParallelReturnPoints(
+            caso.Nome,
+            risultato,
+            caso.Atteso);
+
+        Console.WriteLine(
+            $"RITORNO_PARALLELO_DIEGO_CASE_OK case={caso.Nome} " +
+            $"points={risultato.Count} distance={caso.Distanza:R}");
+    }
+
+    Console.WriteLine(
+        $"RITORNO_PARALLELO_DIEGO_OK cases={casi.Length}");
+    return 0;
+}
+
+static void AssertParallelReturnPoints(
+    string nome,
+    IReadOnlyList<SpiralHeatingDiegoVittorio.Punto> actual,
+    IReadOnlyList<SpiralHeatingDiegoVittorio.Punto> expected)
+{
+    const double tolerance = 0.000000001;
+
+    if (actual.Count != expected.Count)
+    {
+        throw new InvalidDataException(
+            $"Ritorno parallelo {nome}: punti {actual.Count}, attesi {expected.Count}.");
+    }
+
+    for (int i = 0; i < actual.Count; i++)
+    {
+        if (Math.Abs(actual[i].X - expected[i].X) > tolerance ||
+            Math.Abs(actual[i].Y - expected[i].Y) > tolerance)
+        {
+            throw new InvalidDataException(
+                $"Ritorno parallelo {nome}: punto {i} " +
+                $"({actual[i].X:R},{actual[i].Y:R}) != " +
+                $"({expected[i].X:R},{expected[i].Y:R}).");
+        }
+    }
 }
 
 // Funzione realizzata da Codex in autonomia
