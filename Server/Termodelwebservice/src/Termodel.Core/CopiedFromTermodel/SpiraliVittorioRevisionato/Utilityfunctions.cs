@@ -542,6 +542,17 @@ namespace SpiralHeatingVittorioRevisionato
                 tolleranzaDiscretizzazione,
                 out _);
         }
+
+        private static void AggiungiSeDistinto(
+            List<Punto> punti,
+            Punto candidato)
+        {
+            if (punti.Count == 0 ||
+                punti[^1].DistanceTo(candidato) > TolleranzaDuplicati)
+            {
+                punti.Add(candidato);
+            }
+        }
     }
 
     public static class UtilityFunctions
