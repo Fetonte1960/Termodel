@@ -73,7 +73,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.38';
+const APP_VERSION = '1.39';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -10964,8 +10964,13 @@ helpSpiralEngine?.addEventListener('change', () => {
 });
 
 helpSpiralClosure?.addEventListener('change', () => {
+  if (helpSpiralEngine &&
+      selectedTermodelSpiralEngine() !== 'Vittorio_revisionato') {
+    helpSpiralEngine.value = 'Vittorio_revisionato';
+  }
+
   status.textContent =
-    'Chiusura Vittorio_revisionato prossimo Aggiorna Modello: ' +
+    'Motore spirali prossimo Aggiorna Modello: Vittorio_revisionato · chiusura ' +
     (selectedTermodelSpiralClosure() ? 'attiva' : 'aperta');
 });
 
