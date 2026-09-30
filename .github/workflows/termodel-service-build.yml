@@ -91,16 +91,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.38';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.39';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.38")) {
-            throw "Cache-busting app.js v1.38 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.39")) {
+            throw "Cache-busting app.js v1.39 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.38") {
+          if ($frontendVersion -ne "1.39") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -173,6 +173,7 @@ jobs:
             "helpSpiralEngine",
             "query.set('spiralEngine', spiralEngine)",
             "helpSpiralClosure",
+            "helpSpiralEngine.value = 'Vittorio_revisionato'",
             "query.set('spiralClosure', selectedTermodelSpiralClosure() ? 'true' : 'false')",
             "'Server '",
             "'SpiraliDiego'",
@@ -496,8 +497,8 @@ jobs:
           if (-not $myHomeHtml.Contains("MYHOME3D MOBILE")) {
             throw "Pagina pubblica MyHome3D.html non contiene l'istruzione Mobile."
           }
-          if (-not $index.Contains("./app.js?v=1.38")) {
-            throw "Cache-busting MyHome3D v1.38 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.39")) {
+            throw "Cache-busting MyHome3D v1.39 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -1316,7 +1317,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $expectedFrontend = "1.38"
+          $expectedFrontend = "1.39"
           $ready = $false
           for ($attempt = 1; $attempt -le 20; $attempt++) {
             try {
