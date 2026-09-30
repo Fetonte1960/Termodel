@@ -222,3 +222,13 @@ successiva al deploy.
   con tolleranza default 5 mm.
 - Il benchmark `AggiornaSpirali(false)` conserva il percorso storico.
 - Duplicazione ancora `PENDING`; nessuna modifica alla Library Desktop.
+
+### 2026-09-30 — chiusura configurabile Vittorio_revisionato
+- Nessun nuovo motore `Vittorio_modificata` è stato creato: la richiesta è stata corretta dall'utente prima di qualunque sorgente con quel nome.
+- `SpiraliVittorio` resta intoccabile.
+- `SpiraliVittorioRevisionato/Program.cs` espone `AggiornaSpiraliConChiusura(bool)`; `AggiornaSpirali()` conserva il default chiuso.
+- `SpiraliVittorioRevisionato/ChiudiSpirale.cs` accetta `chiudiCircuito`: quando è `false`, mantiene Mandata e Return ma salta la combinatoria di chiusura, la curva finale e l'etichetta `ChiusuraGPT`.
+- Il Service espone il parametro per-request `spiralClosure=true|false`, inoltrato soltanto al comportamento pubblico di `Vittorio_revisionato`.
+- Il frontend v1.38 espone **Help → Motore spirali — test pubblico → Chiudi circuito**; la scelta non viene salvata nel progetto.
+- Stato duplicazione: invariato `PENDING`; nessuna modifica alla Library Desktop.
+
