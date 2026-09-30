@@ -79,18 +79,6 @@ namespace SpiralHeatingVittorioRevisionato
             AggiornaSpiraliConChiusura(chiudiCircuito: true);
         }
 
-        public static void AggiornaSpiraliBaseVittorioAperta()
-        {
-            // Modalita' diagnostica protetta:
-            // riproduce il percorso Vittorio fino a Mandata + Return completi,
-            // senza chiusura. Non e' il percorso pubblico produttivo.
-            GeneraSpirale(terminalCenterline: false);
-            ChiudiSpiraleFiles(
-                usaRaccordoAdattivoDiego: false,
-                chiudiCircuito: false,
-                forzaBaseVittorio: true);
-        }
-
         public static void AggiornaSpiraliConChiusura(bool chiudiCircuito)
         {
             // Percorso pubblico LG-051:
@@ -569,8 +557,7 @@ namespace SpiralHeatingVittorioRevisionato
 
         static void ChiudiSpiraleFiles(
             bool usaRaccordoAdattivoDiego = false,
-            bool chiudiCircuito = true,
-            bool forzaBaseVittorio = false)
+            bool chiudiCircuito = true)
         {
             string xmlFile = "locale.xml";
             
@@ -588,8 +575,7 @@ namespace SpiralHeatingVittorioRevisionato
                 Debug,
                 usaRaccordoAdattivoDiego,
                 TolleranzaDiscretizzazioneArchi,
-                chiudiCircuito,
-                forzaBaseVittorio);
+                chiudiCircuito);
         }
     }
 }
