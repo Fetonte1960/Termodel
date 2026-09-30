@@ -258,7 +258,6 @@ static int Run(string[] args)
         bool supplyOnly = HasFlag(args, "--supply-only");
         bool skipClose = HasFlag(args, "--skip-close");
         bool revisionatoPublic = HasFlag(args, "--revisionato-public");
-        bool revisionatoVittorioBase = HasFlag(args, "--revisionato-vittorio-base");
         string? logEnabledArg = Arg(args, "--log-enabled");
         string? logCategoriesArg = Arg(args, "--log-categories");
         TermodelLog.LogConfiguration? logConfiguration =
@@ -396,7 +395,6 @@ static int Run(string[] args)
                 supplyOnly,
                 skipClose,
                 revisionatoPublic,
-                revisionatoVittorioBase,
                 logConfiguration);
         }
         if (!selectedEngine.Equals("Diego", StringComparison.OrdinalIgnoreCase))
@@ -658,7 +656,6 @@ static int RunCopiedSpiralStrategy(
     bool supplyOnly,
     bool skipClose,
     bool revisionatoPublic,
-    bool revisionatoVittorioBase,
     TermodelLog.LogConfiguration? logConfiguration)
 {
     // Modificato da Codex per realizzare: mantenere un solo percorso di output per Vittorio e Diego_Vittorio.
@@ -682,10 +679,7 @@ static int RunCopiedSpiralStrategy(
                     ? StrategiaDiegoVittorioBenchmark.RunSupplyOnly(localeXml, stepMeters, logConfiguration)
                     : StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters, logConfiguration)
                 : selectedEngine.Equals("Vittorio_revisionato", StringComparison.OrdinalIgnoreCase)
-                    ? StrategiaVittorioRevisionatoBenchmark.Run(
-                        localeXml,
-                        publicPath: revisionatoPublic,
-                        vittorioBaseOpen: revisionatoVittorioBase)
+                    ? StrategiaVittorioRevisionatoBenchmark.Run(localeXml, publicPath: revisionatoPublic)
                     : StrategiaVittorioBenchmark.Run(localeXml);
     }
     finally
@@ -717,9 +711,7 @@ static int RunCopiedSpiralStrategy(
         caseId,
         description,
         engine = selectedEngine,
-        mode = revisionatoVittorioBase
-            ? "vittorio-base-open"
-            : supplyOnly ? "supply-only" : skipClose ? "pre-close" : "full",
+        mode = supplyOnly ? "supply-only" : skipClose ? "pre-close" : "full",
         skipClose,
         input = fullInputPath,
         stepMeters = sample.StepMeters,
@@ -745,7 +737,7 @@ static int RunCopiedSpiralStrategy(
     Console.WriteLine("RADIANT_HARNESS_OK");
     Console.WriteLine($"case={caseId}");
     Console.WriteLine($"engine={selectedEngine}");
-    Console.WriteLine($"mode={(revisionatoVittorioBase ? "vittorio-base-open" : supplyOnly ? "supply-only" : skipClose ? "pre-close" : "full")}");
+    Console.WriteLine($"mode={(supplyOnly ? "supply-only" : skipClose ? "pre-close" : "full")}");
     Console.WriteLine($"input={fullInputPath}");
     Console.WriteLine($"p={sample.StepMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
     Console.WriteLine($"locales={sample.LocaleCount}");
