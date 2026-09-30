@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  # Trigger temporaneo 30/09/2026: verifica helper isolato ritorno_Parallelo_diego.
+  # Trigger temporaneo 30/09/2026: verifica centralizzazione funzioni_diego.
   workflow_dispatch:
   push:
     paths:
