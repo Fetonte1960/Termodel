@@ -1,0 +1,102 @@
+name: Termodel Revisionato No Notify Check
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - '.github/workflows/termodel-revisionato-no-notify-check.yml'
+
+jobs:
+  check:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Server/Termodelwebservice
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Harness + Core
+        run: dotnet restore tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj --nologo --verbosity:quiet
+
+      - name: Build Harness + Core
+        run: dotnet build tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-restore --nologo --verbosity:minimal -p:BuildInParallel=true
+
+      - name: Static pipeline guard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $path = "src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/ChiudiSpirale.cs"
+          $text = Get-Content -LiteralPath $path -Raw
+          if ($text -notmatch 'funzioni_diego\s*\.ritorno_Parallelo_diego') {
+            throw "Vittorio_revisionato non usa ritorno_Parallelo_diego."
+          }
+          if ($text -notmatch 'funzioni_diego\s*\.raccorda_diego') {
+            throw "Vittorio_revisionato non usa raccorda_diego."
+          }
+          if ($text -match 'PreparaRitornoRettilineoVittorio\(') {
+            throw "Il vecchio bridge PreparaRitornoRettilineoVittorio e' ancora richiamato da Vittorio_revisionato."
+          }
+          Write-Host "VREV_DIEGO_PIPELINE_STATIC_OK"
+
+      - name: Check ritorno parallelo
+        run: dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- parallel-return-check
+
+      - name: Check raccordatura finale
+        run: dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- fillet-check
+
+      - name: Run square public pipeline
+        shell: pwsh
+        env:
+          TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE: "true"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "VrevSquareNewPipeline"
+          $id = "VREV-SQUARE-NEW-PIPELINE"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO.json `
+            --engine Vittorio_revisionato `
+            --revisionato-public `
+            --id $id `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Quadrato Vittorio_revisionato fallito." }
+          $log = Get-Content -LiteralPath (Join-Path $out "$id.log.txt") -Raw
+          if ($log -notmatch 'VREV_RETURN_PARALLEL_DIEGO') {
+            throw "Marker nuovo Return parallelo assente sul quadrato."
+          }
+          if ($log -match 'ERRORE:') {
+            throw "Errore runtime sul quadrato."
+          }
+          Write-Host "VREV_SQUARE_NEW_PIPELINE_OK"
+
+      - name: Run concave public pipeline
+        shell: pwsh
+        env:
+          TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE: "true"
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = Join-Path $env:RUNNER_TEMP "VrevConcaveNewPipeline"
+          $id = "VREV-CONCAVE-NEW-PIPELINE"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --input tests/fixtures/StrategiaDiegoConcaveL.locale.xml `
+            --engine Vittorio_revisionato `
+            --revisionato-public `
+            --id $id `
+            --out $out
+          if ($LASTEXITCODE -ne 0) { throw "Concavo Vittorio_revisionato fallito." }
+          $log = Get-Content -LiteralPath (Join-Path $out "$id.log.txt") -Raw
+          if ($log -notmatch 'VREV_RETURN_PARALLEL_DIEGO') {
+            throw "Marker nuovo Return parallelo assente sul concavo."
+          }
+          if ($log -match 'ERRORE:') {
+            throw "Errore runtime sul concavo."
+          }
+          Write-Host "VREV_CONCAVE_NEW_PIPELINE_OK"
