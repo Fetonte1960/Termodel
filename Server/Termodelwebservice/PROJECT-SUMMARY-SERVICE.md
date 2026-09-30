@@ -72,6 +72,27 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-30 — Implementazione LG-051 pulita su Vittorio_revisionato
+Stato: COMMISSIONATO
+
+Autorizzazione utente: riprendere lo sviluppo del modulo spirali sulla strategia `Vittorio_revisionato`.
+
+Scopo della fase:
+- mantenere `SpiraliVittorio` intoccabile;
+- ricondurre il percorso pubblico revisionato a Mandata Vittorio + Return parallelo Vittorio;
+- eliminare dalla scelta della chiusura la doppia geometria/raccordatura preliminare;
+- applicare LG-051 sulla geometria rettilinea: chiusura `>=2*P`, nessun angolo acuto ai due innesti, nessuna intersezione, first-success con backtracking; nessun candidato valido = circuito aperto;
+- raccordare soltanto dopo la scelta definitiva, con archi circolari tangenti, raggio locale `R=0,10` e discretizzazione adattiva `5 mm`;
+- aggiornare Harness/regression necessari senza aggiornare Golden alla cieca;
+- distinguere implementazione, compilazione ed esecuzione reale.
+
+Criteri di completamento della fase:
+- codice pubblicato su `main` con modifica minima e tracciabile;
+- Core/Harness compilati;
+- caso quadrato `Vittorio_revisionato` eseguito con diagnostica LG-051 coerente;
+- nessuna modifica a `definizionedati.json`, frontend o motore `Vittorio`;
+- Summary aggiornato con esito e commit finali.
+
 ### INCARICO 2026-09-30 — Richiesta direttive consulente spirali
 Stato: ESEGUITO
 
