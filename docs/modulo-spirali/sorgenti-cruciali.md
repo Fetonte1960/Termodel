@@ -163,7 +163,12 @@ Correzione frontend v1.39:
 - nessuna modifica geometrica a `Vittorio` o agli altri motori;
 - il tooltip del controllo chiarisce l'auto-selezione.
 
-Stato: implementato su `main`; verifica pubblicazione frontend/CI in corso.
+Stato: **pubblicato e verificato**.
+
+- GitHub Pages run `36710823681`: SUCCESS;
+- TermodelService Build #1200: JavaScript SUCCESS, build .NET SUCCESS, smoke `Vittorio_revisionato` chiuso SUCCESS, smoke `spiralClosure=false` SUCCESS;
+- verifica pubblica: `publicFrontendVersion=1.39` e `PUBLIC_VITTORIO_REVISIONATO_DEPLOY_OK`;
+- il workflow globale conserva il noto fallimento separato dello smoke storage/lock; i gate relativi a questa correzione sono SUCCESS.
 
 ## Linee guida
 
