@@ -127,6 +127,27 @@ Quindi:
 
 **Stato di questa verifica:** sola analisi. Nessun motore, Golden, Harness o frontend è stato modificato.
 
+## Aggiornamento operativo — chiusura configurabile Vittorio_revisionato
+
+Su indicazione dell'utente **non è stato creato alcun motore `Vittorio_modificata`**. La richiesta corretta è stata applicata direttamente a `Vittorio_revisionato`.
+
+Implementazione pubblicata su `main`:
+
+- `Vittorio` resta intoccabile;
+- `Vittorio_revisionato` espone ora una modalità di chiusura per-request;
+- `spiralClosure=true` conserva il comportamento di chiusura corrente;
+- `spiralClosure=false` mantiene Mandata e Return ma lascia aperte le due estremità, senza applicare il collegamento finale e senza etichetta di chiusura;
+- il frontend v1.38 espone in **Help → Motore spirali — test pubblico** il checkbox **Chiudi circuito**;
+- la scelta è runtime e non viene salvata nel progetto.
+
+Richiesta Service:
+
+```http
+POST /api/calculations?spiralEngine=Vittorio_revisionato&spiralClosure=false
+```
+
+È stata aggiunta una regression CI dedicata che richiede esplicitamente la modalità aperta e verifica la presenza dei layer Mandata/Return e l'assenza del layer di chiusura/numerazione. **Stato al momento di questa pubblicazione: implementato; run CI finale in corso.**
+
 ## Linee guida
 
 Documento autorevole:
