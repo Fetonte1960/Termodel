@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  # Trigger temporaneo 30/09/2026: verifica LG-051 senza notifica telefono.
+  # Trigger temporaneo 30/09/2026: verifica LG-051 senza notifica telefono — retry compilazione.
   workflow_dispatch:
   push:
     paths:
