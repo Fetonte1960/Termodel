@@ -136,7 +136,7 @@ static int RunParallelReturnCheck()
     foreach (var caso in casi)
     {
         List<SpiralHeatingDiegoVittorio.Punto> risultato =
-            SpiralHeatingDiegoVittorio.RitornoParalleloDiego
+            SpiralHeatingDiegoVittorio.funzioni_diego
                 .ritorno_Parallelo_diego(
                     caso.Input,
                     caso.Distanza);
