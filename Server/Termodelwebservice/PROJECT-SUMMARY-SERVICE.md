@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-30 — Implementazione LG-051 e pubblicazione Vittorio_revisionato
-Stato: IMPLEMENTATO NEL CODICE — VERIFICA PUBBLICAZIONE PENDENTE
+Stato: IMPLEMENTATO SU MAIN — BUILD/DEPLOY IN VERIFICA
 
 Autorizzazione utente:
 - implementare le decisioni consolidate in LG-051 per `Vittorio_revisionato`;
@@ -106,7 +106,7 @@ Avanzamento implementazione:
 - `SpiraliVittorio` invariata;
 - pubblicazione predisposta come commit `[skip ci]` per rispettare la richiesta
   esplicita di non notificare;
-- compilazione/deploy pubblico ancora da verificare prima di marcare ESEGUITO.
+- compilazione/deploy pubblico: verifica avviata tramite Service Build tecnico; nessuna Issue/ntfy usata.
 
 ### INCARICO 2026-09-30 — Registrazione audit chiusura/raccordatura Vittorio_revisionato
 Stato: ESEGUITO
