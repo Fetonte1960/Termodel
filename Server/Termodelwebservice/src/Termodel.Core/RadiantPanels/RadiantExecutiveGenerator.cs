@@ -27,7 +27,8 @@ public static class RadiantExecutiveGenerator
         string? panelInputXml,
         IReadOnlyDictionary<string, string>? cleanFloorPlans = null,
         bool numberSpiralNodes = true,
-        string? spiralEngineName = null)
+        string? spiralEngineName = null,
+        bool spiralClosure = true)
     {
         if (string.IsNullOrWhiteSpace(panelInputXml))
             return null;
@@ -99,7 +100,8 @@ public static class RadiantExecutiveGenerator
                 floorInput,
                 floorName,
                 selectedEngine,
-                numberSpiralNodes);
+                numberSpiralNodes,
+                spiralClosure);
             string generatedSvg = engineOutput.Svg;
             selectedStepMeters = engineOutput.StepMeters;
 
@@ -250,7 +252,8 @@ public static class RadiantExecutiveGenerator
         XDocument floorInput,
         string floorName,
         RadiantSpiralEngine engine,
-        bool numberSpiralNodes)
+        bool numberSpiralNodes,
+        bool spiralClosure)
     {
         if (engine == RadiantSpiralEngine.Diego)
         {
@@ -290,7 +293,8 @@ public static class RadiantExecutiveGenerator
                     if (engine == RadiantSpiralEngine.Vittorio)
                         SpiralHeating.Program.AggiornaSpirali();
                     else if (engine == RadiantSpiralEngine.Vittorio_revisionato)
-                        SpiralHeatingVittorioRevisionato.Program.AggiornaSpirali();
+                        SpiralHeatingVittorioRevisionato.Program.AggiornaSpiraliConChiusura(
+                            spiralClosure);
                     else if (engine == RadiantSpiralEngine.Diego_Vittorio)
                         SpiralHeatingDiegoVittorio.Program.AggiornaSpirali();
                     else
