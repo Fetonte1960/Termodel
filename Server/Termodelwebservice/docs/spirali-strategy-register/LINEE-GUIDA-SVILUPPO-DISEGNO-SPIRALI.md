@@ -7349,7 +7349,7 @@ orario/antiorario.
 
 ## LG-051 — `Vittorio_revisionato`: chiusura rettilinea completa prima della raccordatura
 
-**Stato:** DECISIONE UMANA CONSOLIDATA — 30/09/2026 — **NON ANCORA IMPLEMENTATA**
+**Stato:** DECISIONE UMANA CONSOLIDATA — 30/09/2026 — **IMPLEMENTATA NEL CODICE; BUILD/PUBBLICAZIONE DA VERIFICARE**
 
 Questa regola nasce dall'audit finale della chiusura pubblica di
 `Vittorio_revisionato`. È specifica della derivazione revisionata e non

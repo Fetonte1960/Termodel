@@ -10,7 +10,14 @@ namespace SpiralHeatingVittorioRevisionato
 {
     public static class ChiudiSpirale
     {
-        public static void Chiudi(string xmlFile, double raggioCurvatura, double distanzaRitorno, double distanzaRotazioneUltimoPunto, bool debug, bool usaRaccordoAdattivoDiego = false)
+        public static void Chiudi(
+            string xmlFile,
+            double raggioCurvatura,
+            double distanzaRitorno,
+            double distanzaRotazioneUltimoPunto,
+            bool debug,
+            bool usaRaccordoAdattivoDiego = false,
+            double tolleranzaDiscretizzazioneArchi = 0.005)
         {
             try
             {
@@ -96,91 +103,108 @@ namespace SpiralHeatingVittorioRevisionato
                         ))
                         .ToList();
                     
-                    var spiraleArrotondata = GeometryUtils.ArrotondaSpirale(spirale, raggioCurvatura);
-                    var rientro = CreaRientro(spiraleArrotondata, distanzaRitorno);
-
-                    // Return invariato: resta la duplicazione/offset Vittorio.
-                    // distanzaRitorno e' P: distanza Mandata <-> Ripresa.
-                    // Di conseguenza 2P e' Mandata <-> Mandata e P/2 e'
-                    // Mandata <-> Parete. Per la chiusura pubblica NON
-                    // introduciamo strategie ulteriori: la combinatoria
-                    // Diego_Vittorio prova simmetricamente 0..2 tratti rimossi
-                    // e terminale invariato oppure portato esattamente a P,
-                    // fermandosi al primo raccordo completo valido.
+                    List<Punto> spiraleArrotondata;
+                    List<Punto> rientro;
                     List<Punto> curvaCollegamento;
+
                     if (usaRaccordoAdattivoDiego)
                     {
+                        // Il riferimento Vittorio raccordato serve solo a
+                        // ricostruire la sua estensione rettilinea storica.
+                        // La combinatoria riceve poi soltanto polilinee rette.
+                        var spiraleRiferimentoVittorio =
+                            GeometryUtils.ArrotondaSpirale(
+                                spirale,
+                                raggioCurvatura);
+                        var rientroRiferimentoVittorio =
+                            CreaRientro(
+                                spiraleRiferimentoVittorio,
+                                distanzaRitorno);
+
+                        List<SpiralHeatingDiegoVittorio.Punto>
+                            ritornoVersoCentroBase =
+                                SpiralHeatingDiegoVittorio.ChiudiSpirale
+                                    .PreparaRitornoRettilineoVittorio(
+                                        spirale
+                                            .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                                            .ToList(),
+                                        rientroRiferimentoVittorio
+                                            .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                                            .ToList(),
+                                        distanzaRitorno);
+
                         var esitoDiego =
                             SpiralHeatingDiegoVittorio.ChiudiSpirale
-                                .ApplicaChiusuraCombinatoriaSuRitornoVittorio(
+                                .ApplicaChiusuraCombinatoriaRettilineaVittorio(
                                     spirale
                                         .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
                                         .ToList(),
-                                    rientro
-                                        .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
-                                        .ToList(),
-                                    distanzaRitorno,
-                                    raggioCurvatura);
+                                    ritornoVersoCentroBase,
+                                    distanzaRitorno);
 
                         Console.WriteLine(
                             $"  Chiusura Diego combinatoria: {(esitoDiego.Applicata ? "APPLICATA" : "NON APPLICATA")}; " +
-                            $"mandata={esitoDiego.Mandata.Count}; ritorno={esitoDiego.Ritorno.Count}; raccordo={esitoDiego.Raccordo.Count}.");
+                            $"mandata={esitoDiego.Mandata.Count}; ritorno={esitoDiego.Ritorno.Count}; chiusura={esitoDiego.Chiusura.Count}.");
+
+                        var mandataRettilinea = esitoDiego.Mandata
+                            .Select(p => new Punto(p.X, p.Y))
+                            .ToList();
+                        var ritornoVersoCentro = esitoDiego.Ritorno
+                            .Select(p => new Punto(p.X, p.Y))
+                            .ToList();
+
                         if (esitoDiego.Applicata)
                         {
-                            // Come nel Diego_Vittorio di riferimento, la
-                            // combinatoria lavora sulle polilinee rettilinee e i
-                            // raccordi dei percorsi vengono applicati soltanto dopo.
-                            spiraleArrotondata = GeometryUtils.ArrotondaSpirale(
-                                esitoDiego.Mandata
-                                    .Select(p => new Punto(p.X, p.Y))
-                                    .ToList(),
-                                raggioCurvatura);
-                            rientro = GeometryUtils.ArrotondaSpirale(
-                                esitoDiego.Ritorno
-                                    .AsEnumerable()
-                                    .Reverse()
-                                    .Select(p => new Punto(p.X, p.Y))
-                                    .ToList(),
-                                raggioCurvatura);
-                            // Il candidato combinatorio viene scelto sulle
-                            // polilinee rettilinee, ma la chiusura visibile
-                            // deve essere verificata DOPO l'arrotondamento
-                            // finale di Mandata e Ripresa. Non riutilizzare
-                            // quindi il raccordo pre-arrotondamento: rigenerare
-                            // soltanto il tratto di chiusura centrale.
-                            double lunghezzaMinimaChiusura =
-                                2.0 * distanzaRitorno;
-                            curvaCollegamento =
-                                CreaCurvaCollegamentoVincolata(
-                                    spiraleArrotondata,
-                                    rientro,
+                            PercorsoRaccordatoLg051 percorsoRaccordato =
+                                RaccordaPercorsoCompletoLg051(
+                                    mandataRettilinea,
+                                    ritornoVersoCentro,
                                     raggioCurvatura,
-                                    lunghezzaMinimaChiusura);
+                                    tolleranzaDiscretizzazioneArchi);
 
-                            double lunghezzaChiusuraFinale =
-                                LunghezzaPolilinea(curvaCollegamento);
-                            if (curvaCollegamento.Count > 1)
-                            {
-                                Console.WriteLine(
-                                    $"  VREV_FINAL_CLOSURE_2P_OK " +
-                                    $"length={lunghezzaChiusuraFinale:R} " +
-                                    $"required={lunghezzaMinimaChiusura:R}.");
-                            }
-                            else
-                            {
-                                Console.WriteLine(
-                                    $"  VREV_FINAL_CLOSURE_2P_REJECT " +
-                                    $"required={lunghezzaMinimaChiusura:R}; " +
-                                    "nessun raccordo finale valido.");
-                            }
+                            spiraleArrotondata = percorsoRaccordato.Mandata;
+                            curvaCollegamento = percorsoRaccordato.Chiusura;
+                            rientro = percorsoRaccordato.Ritorno;
+
+                            double lunghezzaRettilinea =
+                                esitoDiego.Chiusura.Count > 1
+                                    ? esitoDiego.Chiusura[0].DistanceTo(
+                                        esitoDiego.Chiusura[^1])
+                                    : 0.0;
+                            Console.WriteLine(
+                                $"  VREV_LG051_CLOSURE_OK " +
+                                $"length={lunghezzaRettilinea:R} " +
+                                $"required={(2.0 * distanzaRitorno):R} " +
+                                $"radius={raggioCurvatura:R} " +
+                                $"arcTolerance={tolleranzaDiscretizzazioneArchi:R}.");
                         }
                         else
                         {
+                            spiraleArrotondata =
+                                GeometryUtils.ArrotondaSpiraleCircolareLg051(
+                                    mandataRettilinea,
+                                    raggioCurvatura,
+                                    tolleranzaDiscretizzazioneArchi);
+                            rientro =
+                                GeometryUtils.ArrotondaSpiraleCircolareLg051(
+                                    ritornoVersoCentro
+                                        .AsEnumerable()
+                                        .Reverse()
+                                        .ToList(),
+                                    raggioCurvatura,
+                                    tolleranzaDiscretizzazioneArchi);
                             curvaCollegamento = new List<Punto>();
                         }
                     }
                     else
                     {
+                        spiraleArrotondata =
+                            GeometryUtils.ArrotondaSpirale(
+                                spirale,
+                                raggioCurvatura);
+                        rientro = CreaRientro(
+                            spiraleArrotondata,
+                            distanzaRitorno);
                         curvaCollegamento = CreaCurvaCollegamento(
                             spiraleArrotondata,
                             rientro);
@@ -333,6 +357,8 @@ namespace SpiralHeatingVittorioRevisionato
                 spiraleArrotondata.Count == 0 ||
                 rientro == null ||
                 rientro.Count == 0 ||
+                curvaCollegamento == null ||
+                curvaCollegamento.Count < 2 ||
                 numeroCircuito <= 0)
             {
                 return string.Empty;
@@ -844,168 +870,87 @@ namespace SpiralHeatingVittorioRevisionato
             return rientro;
         }
         
-        // Chiusura pubblica Vittorio_revisionato: genera SOLO il raccordo
-        // centrale sui percorsi gia' arrotondati. Mandata e Ripresa non
-        // vengono modificate. Il raccordo e' valido soltanto se la sua
-        // lunghezza reale campionata e' >= lunghezzaMinima (= 2P) e non
-        // interseca tratti non adiacenti dei due percorsi.
-        private static List<Punto> CreaCurvaCollegamentoVincolata(
-            List<Punto> andata,
-            List<Punto> rientro,
+        private sealed class PercorsoRaccordatoLg051
+        {
+            public List<Punto> Mandata { get; init; } = new List<Punto>();
+            public List<Punto> Chiusura { get; init; } = new List<Punto>();
+            public List<Punto> Ritorno { get; init; } = new List<Punto>();
+        }
+
+        private static PercorsoRaccordatoLg051 RaccordaPercorsoCompletoLg051(
+            List<Punto> mandataRettilinea,
+            List<Punto> ritornoVersoCentro,
             double raggioCurvatura,
-            double lunghezzaMinima)
+            double tolleranzaDiscretizzazioneArchi)
         {
-            const double epsilon = 0.000001;
-            if (andata == null || andata.Count < 2 ||
-                rientro == null || rientro.Count < 2 ||
-                lunghezzaMinima <= 0)
+            if (mandataRettilinea == null ||
+                mandataRettilinea.Count < 2 ||
+                ritornoVersoCentro == null ||
+                ritornoVersoCentro.Count < 2)
             {
-                return new List<Punto>();
+                return new PercorsoRaccordatoLg051
+                {
+                    Mandata = mandataRettilinea?.ToList() ?? new List<Punto>(),
+                    Ritorno =
+                        ritornoVersoCentro == null
+                            ? new List<Punto>()
+                            : ritornoVersoCentro.AsEnumerable().Reverse().ToList()
+                };
             }
 
-            Punto p0 = andata[^1];
-            Punto p0Prev = andata[^2];
-            Punto p3 = rientro[0];
-            Punto p3Next = rientro[1];
+            var percorso = mandataRettilinea.ToList();
+            int verticeMandataChiusura = percorso.Count - 1;
+            percorso.Add(ritornoVersoCentro[^1]);
+            int verticeChiusuraRitorno = percorso.Count - 1;
+            for (int i = ritornoVersoCentro.Count - 2; i >= 0; i--)
+                percorso.Add(ritornoVersoCentro[i]);
 
-            double dx0 = p0.X - p0Prev.X;
-            double dy0 = p0.Y - p0Prev.Y;
-            double len0 = Math.Sqrt(dx0 * dx0 + dy0 * dy0);
-            double dx3 = p3Next.X - p3.X;
-            double dy3 = p3Next.Y - p3.Y;
-            double len3 = Math.Sqrt(dx3 * dx3 + dy3 * dy3);
-            double corda = p0.DistanceTo(p3);
+            List<Punto> raccordato =
+                GeometryUtils.ArrotondaSpiraleCircolareLg051(
+                    percorso,
+                    raggioCurvatura,
+                    tolleranzaDiscretizzazioneArchi,
+                    out Dictionary<int, int> transizioni);
 
-            if (len0 <= epsilon || len3 <= epsilon || corda <= epsilon)
-                return new List<Punto>();
-
-            dx0 /= len0;
-            dy0 /= len0;
-            dx3 /= len3;
-            dy3 /= len3;
-
-            double manigliaBase = Math.Max(
-                Math.Max(raggioCurvatura, corda / 3.0),
-                epsilon);
-            double manigliaMassima = Math.Max(
-                manigliaBase,
-                Math.Max(lunghezzaMinima, corda) * 1.5);
-
-            const int tentativi = 32;
-            for (int i = 0; i <= tentativi; i++)
+            if (!transizioni.TryGetValue(
+                    verticeMandataChiusura,
+                    out int splitMandata) ||
+                !transizioni.TryGetValue(
+                    verticeChiusuraRitorno,
+                    out int splitRitorno) ||
+                splitMandata < 0 ||
+                splitRitorno < splitMandata ||
+                splitRitorno >= raccordato.Count)
             {
-                double frazione = (double)i / tentativi;
-                double maniglia =
-                    manigliaBase +
-                    (manigliaMassima - manigliaBase) * frazione;
-
-                var c1 = new Punto(
-                    p0.X + dx0 * maniglia,
-                    p0.Y + dy0 * maniglia);
-                var c2 = new Punto(
-                    p3.X - dx3 * maniglia,
-                    p3.Y - dy3 * maniglia);
-
-                List<Punto> curva =
-                    CreaBezierCubicaCampionata(
-                        p0,
-                        c1,
-                        c2,
-                        p3);
-
-                if (LunghezzaPolilinea(curva) + epsilon <
-                    lunghezzaMinima)
+                return new PercorsoRaccordatoLg051
                 {
-                    continue;
-                }
-
-                if (CurvaIntersecaPercorsiNonAdiacenti(
-                    curva,
-                    andata,
-                    rientro))
-                {
-                    continue;
-                }
-
-                return curva;
-            }
-
-            return new List<Punto>();
-        }
-
-        private static List<Punto> CreaBezierCubicaCampionata(
-            Punto p0,
-            Punto c1,
-            Punto c2,
-            Punto p3)
-        {
-            const int campioni = 48;
-            var curva = new List<Punto>(campioni + 1);
-            for (int i = 0; i <= campioni; i++)
-            {
-                double t = (double)i / campioni;
-                double u = 1.0 - t;
-                double x =
-                    u * u * u * p0.X +
-                    3.0 * u * u * t * c1.X +
-                    3.0 * u * t * t * c2.X +
-                    t * t * t * p3.X;
-                double y =
-                    u * u * u * p0.Y +
-                    3.0 * u * u * t * c1.Y +
-                    3.0 * u * t * t * c2.Y +
-                    t * t * t * p3.Y;
-                curva.Add(new Punto(x, y));
-            }
-            return curva;
-        }
-
-        private static double LunghezzaPolilinea(List<Punto> punti)
-        {
-            if (punti == null || punti.Count < 2)
-                return 0.0;
-
-            double lunghezza = 0.0;
-            for (int i = 1; i < punti.Count; i++)
-                lunghezza += punti[i - 1].DistanceTo(punti[i]);
-            return lunghezza;
-        }
-
-        private static bool CurvaIntersecaPercorsiNonAdiacenti(
-            List<Punto> curva,
-            List<Punto> andata,
-            List<Punto> rientro)
-        {
-            if (curva == null || curva.Count < 2)
-                return false;
-
-            for (int i = 0; i < curva.Count - 1; i++)
-            {
-                Punto a = curva[i];
-                Punto b = curva[i + 1];
-
-                // L'ultimo tratto della Mandata e' adiacente al raccordo.
-                for (int j = 0; j < andata.Count - 2; j++)
-                {
-                    if (SegmentiIntersecano(
-                        a, b, andata[j], andata[j + 1]))
+                    Mandata =
+                        GeometryUtils.ArrotondaSpiraleCircolareLg051(
+                            mandataRettilinea,
+                            raggioCurvatura,
+                            tolleranzaDiscretizzazioneArchi),
+                    Chiusura = new List<Punto>
                     {
-                        return true;
-                    }
-                }
-
-                // Il primo tratto della Ripresa e' adiacente al raccordo.
-                for (int j = 1; j < rientro.Count - 1; j++)
-                {
-                    if (SegmentiIntersecano(
-                        a, b, rientro[j], rientro[j + 1]))
-                    {
-                        return true;
-                    }
-                }
+                        mandataRettilinea[^1],
+                        ritornoVersoCentro[^1]
+                    },
+                    Ritorno =
+                        GeometryUtils.ArrotondaSpiraleCircolareLg051(
+                            ritornoVersoCentro.AsEnumerable().Reverse().ToList(),
+                            raggioCurvatura,
+                            tolleranzaDiscretizzazioneArchi)
+                };
             }
 
-            return false;
+            return new PercorsoRaccordatoLg051
+            {
+                Mandata = raccordato.Take(splitMandata + 1).ToList(),
+                Chiusura = raccordato
+                    .Skip(splitMandata)
+                    .Take(splitRitorno - splitMandata + 1)
+                    .ToList(),
+                Ritorno = raccordato.Skip(splitRitorno).ToList()
+            };
         }
 
         private static List<Punto> CreaCurvaCollegamento(List<Punto> andata, List<Punto> rientro)

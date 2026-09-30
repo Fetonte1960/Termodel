@@ -211,3 +211,14 @@ distanza parete Supply `0,30` e distanza Return/chiusura `0,15`.
 La conferma che il blu esterno sia scomparso resta una prova visiva manuale
 successiva al deploy.
 
+### 2026-09-30 — LG-051 Vittorio_revisionato
+- `SpiraliVittorio` resta invariata.
+- `SpiraliVittorioRevisionato` separa scelta della chiusura rettilinea e
+  raccordatura successiva.
+- Il bridge riusa la combinatoria Diego con filtri rettilinei >=2P, angoli e
+  intersezioni, senza Bézier nella decisione.
+- La raccordatura finale è locale a Vittorio_revisionato: archi circolari
+  tangenti, raggio default 0,10 m non riducibile e discretizzazione adattiva
+  con tolleranza default 5 mm.
+- Il benchmark `AggiornaSpirali(false)` conserva il percorso storico.
+- Duplicazione ancora `PENDING`; nessuna modifica alla Library Desktop.

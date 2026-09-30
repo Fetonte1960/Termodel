@@ -80,43 +80,30 @@ jobs:
           }
           $selected = [regex]::Match(
             $logText,
-            'DV_CLOSURE_SELECTED[^\r\n]*seq=M2P/R0P[^\r\n]*curveLength=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)[^\r\n]*requiredCurveLength=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)')
+            'DV_CLOSURE_SELECTED[^\r\n]*type=first-straight-success[^\r\n]*length=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)[^\r\n]*requiredLength=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)')
           if (-not $selected.Success) {
             Get-Content $log | Write-Host
-            throw "Quadrato pubblico: attesa chiusura M2P/R0P con diagnostica lunghezza raccordo."
+            throw "Quadrato pubblico: nessuna chiusura rettilinea LG-051 selezionata."
           }
 
-          $curveLength = [double]::Parse($selected.Groups[1].Value, [Globalization.CultureInfo]::InvariantCulture)
-          $requiredCurveLength = [double]::Parse($selected.Groups[2].Value, [Globalization.CultureInfo]::InvariantCulture)
-          if ($curveLength + 1e-6 -lt $requiredCurveLength) {
+          $straightLength = [double]::Parse(
+            $selected.Groups[1].Value,
+            [Globalization.CultureInfo]::InvariantCulture)
+          $requiredLength = [double]::Parse(
+            $selected.Groups[2].Value,
+            [Globalization.CultureInfo]::InvariantCulture)
+          if ($straightLength + 1e-6 -lt $requiredLength) {
             Get-Content $log | Write-Host
-            throw "Quadrato pubblico: raccordo M2P/R0P troppo corto: $curveLength < $requiredCurveLength."
+            throw "Quadrato pubblico: chiusura rettilinea troppo corta: $straightLength < $requiredLength."
           }
 
-          $try = [regex]::Match(
-            $logText,
-            'DV_SQUARE_TRY[^\r\n]*seq=M2P/R0P[^\r\n]*supplyLastLen=([0-9Ee+.-]+)[^\r\n]*returnLastLen=([0-9Ee+.-]+)')
-          if (-not $try.Success) {
+          if ($logText -notmatch 'VREV_LG051_CLOSURE_OK') {
             Get-Content $log | Write-Host
-            throw "Quadrato pubblico: diagnostica M2P/R0P incompleta."
+            throw "Quadrato pubblico: post-processo LG-051 non confermato."
           }
 
-          $supplyLast = [double]::Parse($try.Groups[1].Value, [Globalization.CultureInfo]::InvariantCulture)
-          $returnLast = [double]::Parse($try.Groups[2].Value, [Globalization.CultureInfo]::InvariantCulture)
-          $case = Get-Content "tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO.json" -Raw | ConvertFrom-Json
-
-          # Nel caso storico Vittorio stepMeters=0,30 rappresenta 2P
-          # (Mandata-Mandata). Per la convenzione rigida corrente P=0,15.
-          $expectedP = [double]$case.stepMeters / 2.0
-          if ([Math]::Abs($supplyLast - $expectedP) -gt 1e-6 -or
-              [Math]::Abs($returnLast - $expectedP) -gt 1e-6) {
-            Get-Content $log | Write-Host
-            throw "Quadrato pubblico: terminali M2P/R0P non normalizzati a P=$expectedP."
-          }
-
-          Write-Host "REVISIONATO_PUBLIC_SQUARE_M2P_R0P_OK P=$expectedP"
-          Write-Host "REVISIONATO_PUBLIC_SQUARE_CURVE_2P_OK length=$curveLength required=$requiredCurveLength"
-          Write-Host "REVISIONATO_PUBLIC_SQUARE_DIEGO_CLOSURE_OK"
+          Write-Host "REVISIONATO_PUBLIC_SQUARE_STRAIGHT_2P_OK length=$straightLength required=$requiredLength"
+          Write-Host "REVISIONATO_PUBLIC_SQUARE_LG051_OK"
           Write-Host "SVG=$svg"
 
       - name: Verify Vittorio_revisionato initial equivalence

@@ -344,6 +344,204 @@ namespace SpiralHeatingVittorioRevisionato
             risultato.Add(spirale[spirale.Count - 1]);
             return risultato;
         }
+
+        // LG-051: archi circolari tangenti a raggio fisso. Se il raggio non
+        // entra nei tratti disponibili lo spigolo resta vivo.
+        public static List<Punto> ArrotondaSpiraleCircolareLg051(
+            List<Punto> spirale,
+            double raggio,
+            double tolleranzaDiscretizzazione,
+            out Dictionary<int, int> indiceTransizionePerVertice)
+        {
+            const double epsilon = 0.000001;
+            indiceTransizionePerVertice = new Dictionary<int, int>();
+            if (spirale == null || spirale.Count == 0)
+                return new List<Punto>();
+
+            if (spirale.Count < 3 ||
+                raggio <= epsilon ||
+                !double.IsFinite(raggio) ||
+                tolleranzaDiscretizzazione <= epsilon ||
+                !double.IsFinite(tolleranzaDiscretizzazione))
+            {
+                var copia = spirale.ToList();
+                for (int i = 1; i < copia.Count - 1; i++)
+                    indiceTransizionePerVertice[i] = i;
+                return copia;
+            }
+
+            int count = spirale.Count;
+            var lunghezze = new double[count - 1];
+            for (int i = 0; i < count - 1; i++)
+                lunghezze[i] = spirale[i].DistanceTo(spirale[i + 1]);
+
+            var raccordabile = new bool[count];
+            var distanzeTangenti = new double[count];
+
+            for (int i = 1; i < count - 1; i++)
+            {
+                double len1 = lunghezze[i - 1];
+                double len2 = lunghezze[i];
+                if (len1 <= epsilon || len2 <= epsilon)
+                    continue;
+
+                var u1 = new Punto(
+                    (spirale[i].X - spirale[i - 1].X) / len1,
+                    (spirale[i].Y - spirale[i - 1].Y) / len1);
+                var u2 = new Punto(
+                    (spirale[i + 1].X - spirale[i].X) / len2,
+                    (spirale[i + 1].Y - spirale[i].Y) / len2);
+
+                double prodotto = Math.Max(
+                    -1.0,
+                    Math.Min(1.0, u1.X * u2.X + u1.Y * u2.Y));
+                double deviazione = Math.Acos(prodotto);
+                double verso = u1.X * u2.Y - u1.Y * u2.X;
+                if (deviazione <= epsilon ||
+                    deviazione >= Math.PI - epsilon ||
+                    Math.Abs(verso) <= epsilon)
+                {
+                    continue;
+                }
+
+                double distanzaTangente =
+                    raggio * Math.Tan(deviazione / 2.0);
+                if (!double.IsFinite(distanzaTangente) ||
+                    distanzaTangente <= epsilon ||
+                    distanzaTangente > len1 + epsilon ||
+                    distanzaTangente > len2 + epsilon)
+                {
+                    continue;
+                }
+                raccordabile[i] = true;
+                distanzeTangenti[i] = distanzaTangente;
+            }
+
+            // Evita sovrapposizioni fra raccordi adiacenti senza scegliere
+            // arbitrariamente quale raggio ridurre: in conflitto restano vivi.
+            for (int segmento = 0; segmento < count - 1; segmento++)
+            {
+                int a = segmento;
+                int b = segmento + 1;
+                double usoA =
+                    a > 0 && a < count - 1 && raccordabile[a]
+                        ? distanzeTangenti[a]
+                        : 0.0;
+                double usoB =
+                    b > 0 && b < count - 1 && raccordabile[b]
+                        ? distanzeTangenti[b]
+                        : 0.0;
+                if (usoA + usoB > lunghezze[segmento] + epsilon)
+                {
+                    if (a > 0 && a < count - 1)
+                        raccordabile[a] = false;
+                    if (b > 0 && b < count - 1)
+                        raccordabile[b] = false;
+                }
+            }
+
+            var risultato = new List<Punto>();
+            AggiungiSeDistinto(risultato, spirale[0]);
+
+            for (int i = 1; i < count - 1; i++)
+            {
+                Punto p0 = spirale[i - 1];
+                Punto p1 = spirale[i];
+                Punto p2 = spirale[i + 1];
+
+                if (!raccordabile[i])
+                {
+                    AggiungiSeDistinto(risultato, p1);
+                    indiceTransizionePerVertice[i] = risultato.Count - 1;
+                    continue;
+                }
+
+                double len1 = lunghezze[i - 1];
+                double len2 = lunghezze[i];
+                var u1 = new Punto((p1.X - p0.X) / len1, (p1.Y - p0.Y) / len1);
+                var u2 = new Punto((p2.X - p1.X) / len2, (p2.Y - p1.Y) / len2);
+                double distanzaTangente = distanzeTangenti[i];
+
+                var pStart = new Punto(
+                    p1.X - u1.X * distanzaTangente,
+                    p1.Y - u1.Y * distanzaTangente);
+                var pEnd = new Punto(
+                    p1.X + u2.X * distanzaTangente,
+                    p1.Y + u2.Y * distanzaTangente);
+
+                double verso = u1.X * u2.Y - u1.Y * u2.X;
+                Punto normale = verso > 0
+                    ? new Punto(-u1.Y, u1.X)
+                    : new Punto(u1.Y, -u1.X);
+                var centro = new Punto(
+                    pStart.X + normale.X * raggio,
+                    pStart.Y + normale.Y * raggio);
+
+                double angoloInizio = Math.Atan2(
+                    pStart.Y - centro.Y,
+                    pStart.X - centro.X);
+                double angoloFine = Math.Atan2(
+                    pEnd.Y - centro.Y,
+                    pEnd.X - centro.X);
+                double sviluppo = angoloFine - angoloInizio;
+                if (verso > 0)
+                {
+                    while (sviluppo < 0)
+                        sviluppo += 2.0 * Math.PI;
+                }
+                else
+                {
+                    while (sviluppo > 0)
+                        sviluppo -= 2.0 * Math.PI;
+                }
+
+                double rapportoErrore =
+                    Math.Min(1.0, tolleranzaDiscretizzazione / raggio);
+                double angoloMassimo =
+                    rapportoErrore >= 1.0
+                        ? Math.PI
+                        : 2.0 * Math.Acos(1.0 - rapportoErrore);
+                if (!double.IsFinite(angoloMassimo) || angoloMassimo <= epsilon)
+                    angoloMassimo = Math.PI / 180.0;
+
+                int segmenti = Math.Max(
+                    1,
+                    (int)Math.Ceiling(Math.Abs(sviluppo) / angoloMassimo));
+                int segmentoTransizione =
+                    (int)Math.Ceiling(segmenti / 2.0);
+
+                AggiungiSeDistinto(risultato, pStart);
+                for (int j = 1; j <= segmenti; j++)
+                {
+                    double angolo =
+                        angoloInizio + sviluppo * j / segmenti;
+                    AggiungiSeDistinto(
+                        risultato,
+                        new Punto(
+                            centro.X + raggio * Math.Cos(angolo),
+                            centro.Y + raggio * Math.Sin(angolo)));
+                    if (j == segmentoTransizione)
+                        indiceTransizionePerVertice[i] = risultato.Count - 1;
+                }
+                if (!indiceTransizionePerVertice.ContainsKey(i))
+                    indiceTransizionePerVertice[i] = risultato.Count - 1;
+            }
+
+            AggiungiSeDistinto(risultato, spirale[^1]);
+            return risultato;
+        }
+
+        public static List<Punto> ArrotondaSpiraleCircolareLg051(
+            List<Punto> spirale,
+            double raggio,
+            double tolleranzaDiscretizzazione)
+        {
+            return ArrotondaSpiraleCircolareLg051(
+                spirale,
+                raggio,
+                tolleranzaDiscretizzazione,
+                out _);
+        }
     }
 
     public static class UtilityFunctions

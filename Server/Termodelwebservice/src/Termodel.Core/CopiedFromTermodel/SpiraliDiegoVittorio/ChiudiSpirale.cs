@@ -554,23 +554,27 @@ namespace SpiralHeatingDiegoVittorio
         // passo = P = distanza Mandata <-> Ripresa;
         // 2*P = distanza Mandata <-> Mandata;
         // P/2 = distanza Mandata <-> Parete.
-        public static (List<Punto> Mandata, List<Punto> Ritorno, List<Punto> Raccordo, bool Applicata)
-            ApplicaChiusuraCombinatoriaSuRitornoVittorio(
-                List<Punto> mandataRettilinea,
-                List<Punto> ritornoVittorioRaccordato,
-                double passo,
-                double raggio)
+        public static List<Punto> PreparaRitornoRettilineoVittorio(
+            List<Punto> mandataRettilinea,
+            List<Punto> ritornoVittorioRaccordato,
+            double passo)
         {
             var ritornoDalCentro =
                 CreaRientroRettilineo(
                     mandataRettilinea,
                     ritornoVittorioRaccordato,
                     -passo);
-            var ritornoVersoCentro = ritornoDalCentro
-                .AsEnumerable()
-                .Reverse()
-                .ToList();
+            return ritornoDalCentro.AsEnumerable().Reverse().ToList();
+        }
 
+        // LG-051: la combinatoria riceve esclusivamente polilinee rettilinee.
+        // Nessun raccordo, Bezier o raggio partecipa alla decisione.
+        public static (List<Punto> Mandata, List<Punto> Ritorno, List<Punto> Chiusura, bool Applicata)
+            ApplicaChiusuraCombinatoriaRettilineaVittorio(
+                List<Punto> mandataRettilinea,
+                List<Punto> ritornoVersoCentro,
+                double passo)
+        {
             if (TraceClosureEnabled)
             {
                 Console.WriteLine($"  DV_SETUP_INPUT P={passo:R} mandataCount={mandataRettilinea.Count} ritornoCount={ritornoVersoCentro.Count}");
@@ -580,41 +584,46 @@ namespace SpiralHeatingDiegoVittorio
                     Console.WriteLine($"  DV_SETUP_RETURN[{i}]=({ritornoVersoCentro[i].X:R},{ritornoVersoCentro[i].Y:R})");
             }
 
-            // Nel bridge Vittorio_revisionato P e' la distanza
-            // Mandata-Ripresa. 2P descrive la distanza Mandata-Mandata e non
-            // e' un minimo sulla corda rettilinea fra i due terminali.
-            // Il raccordo reale e' curvo: la validita' viene quindi decisa
-            // sulla geometria raccordata e sulle intersezioni finali.
             var candidato = GeneraPrimaChiusuraAccettabile(
                 mandataRettilinea,
                 ritornoVersoCentro,
                 passo,
-                raggio,
-                lunghezzaMinimaChiusura: null,
+                raggio: 0.0,
+                lunghezzaMinimaChiusura: 2.0 * passo,
                 preferisciTerminaleP: true,
-                applicaFiltriCordaRettilinea: false,
-                lunghezzaMinimaRaccordo: 2.0 * passo);
+                applicaFiltriCordaRettilinea: true,
+                lunghezzaMinimaRaccordo: null,
+                validaSoloChiusuraRettilinea: true);
             if (candidato == null)
                 return (mandataRettilinea, ritornoVersoCentro, new List<Punto>(), false);
 
-            var raccordo = CreaCurvaCollegamentoAdattiva(
+            return (
                 candidato.Mandata,
                 candidato.Ritorno,
-                raggio,
-                lunghezzaMinima: 2.0 * passo);
-            double lunghezzaRaccordo = LunghezzaPolilinea(raccordo);
-            bool raccordoLibero =
-                raccordo.Count > 1 &&
-                lunghezzaRaccordo + 0.000001 >= 2.0 * passo &&
-                !CurvaIntersecaTrattiNonAdiacenti(raccordo, candidato.Mandata) &&
-                !CurvaIntersecaTrattiNonAdiacenti(raccordo, candidato.Ritorno);
-            if (!raccordoLibero)
-            {
-                if (TraceClosureEnabled)
-                    Console.WriteLine("  DV_CLOSURE_FINAL_REJECT reason=intersection-after-trim.");
-                return (candidato.Mandata, candidato.Ritorno, new List<Punto>(), false);
-            }
-            return (candidato.Mandata, candidato.Ritorno, raccordo, true);
+                new List<Punto> { candidato.Inizio, candidato.Fine },
+                true);
+        }
+
+        // Compatibilita' del bridge preesistente.
+        public static (List<Punto> Mandata, List<Punto> Ritorno, List<Punto> Raccordo, bool Applicata)
+            ApplicaChiusuraCombinatoriaSuRitornoVittorio(
+                List<Punto> mandataRettilinea,
+                List<Punto> ritornoVittorioRaccordato,
+                double passo,
+                double raggio)
+        {
+            _ = raggio;
+            List<Punto> ritornoVersoCentro =
+                PreparaRitornoRettilineoVittorio(
+                    mandataRettilinea,
+                    ritornoVittorioRaccordato,
+                    passo);
+            var esito =
+                ApplicaChiusuraCombinatoriaRettilineaVittorio(
+                    mandataRettilinea,
+                    ritornoVersoCentro,
+                    passo);
+            return (esito.Mandata, esito.Ritorno, esito.Chiusura, esito.Applicata);
         }
 
         // Funzione realizzata da Codex in autonomia
@@ -626,7 +635,8 @@ namespace SpiralHeatingDiegoVittorio
             double? lunghezzaMinimaChiusura = null,
             bool preferisciTerminaleP = false,
             bool applicaFiltriCordaRettilinea = true,
-            double? lunghezzaMinimaRaccordo = null)
+            double? lunghezzaMinimaRaccordo = null,
+            bool validaSoloChiusuraRettilinea = false)
         {
             if (mandataOriginale == null || mandataOriginale.Count < 2 ||
                 ritornoOriginale == null || ritornoOriginale.Count < 2 ||
@@ -642,9 +652,9 @@ namespace SpiralHeatingDiegoVittorio
             // In questo modo si coinvolgono al massimo 3 tratti originali.
             //
             // Il percorso Diego_Vittorio storico conserva l'ordine I/P.
-            // L'adattatore Vittorio_revisionato prova invece P/I: nel quadrato
-            // la soluzione geometrica corretta e' M2P/R0P e deve essere
-            // valutata prima della variante M2I/R0I.
+            // L'adattatore Vittorio_revisionato conserva l'ordine P/I del
+            // bridge precedente soltanto come sequenza deterministica:
+            // LG-051 accetta la prima configurazione realmente valida.
             (int rimossi, double? lunghezzaFinale)[] azioniTerminali =
                 preferisciTerminaleP
                     ? new (int, double?)[]
@@ -722,8 +732,43 @@ namespace SpiralHeatingDiegoVittorio
                     if (candidato == null)
                         continue;
 
-                    // Il successo è completo solo dopo il raccordo e il controllo
-                    // delle intersezioni sulla geometria già tagliata/accorciata.
+                    if (validaSoloChiusuraRettilinea)
+                    {
+                        bool intersecaGeometriaRisultante =
+                            IntersecaTrattiNonAdiacenti(
+                                candidato.Inizio,
+                                candidato.Fine,
+                                candidato.Mandata) ||
+                            IntersecaTrattiNonAdiacenti(
+                                candidato.Inizio,
+                                candidato.Fine,
+                                candidato.Ritorno);
+                        if (intersecaGeometriaRisultante)
+                        {
+                            if (TraceClosureEnabled)
+                            {
+                                Console.WriteLine(
+                                    $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
+                                    $"seq={codiceMandata}/{codiceRitorno} " +
+                                    "reason=straight-intersection-after-trim");
+                            }
+                            continue;
+                        }
+
+                        if (TraceClosureEnabled)
+                        {
+                            Console.WriteLine(
+                                $"  DV_CLOSURE_SELECTED attempt={numeroTentativo} " +
+                                $"seq={codiceMandata}/{codiceRitorno} " +
+                                "type=first-straight-success " +
+                                $"length={candidato.LunghezzaChiusura:R} " +
+                                $"requiredLength={lunghezzaMinimaChiusura.GetValueOrDefault(2.0 * passo):R}");
+                        }
+                        return candidato;
+                    }
+
+                    // Diego_Vittorio storico: il successo resta subordinato
+                    // anche al raccordo curvo.
                     List<Punto> raccordo = CreaCurvaCollegamentoAdattiva(
                         candidato.Mandata,
                         candidato.Ritorno,

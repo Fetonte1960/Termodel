@@ -104,7 +104,7 @@ l'integrazione del Return autonomo né l'importazione di euristiche da
 `SpiraliDiegoVittorio`.
 
 
-## Modalità pubblica temporanea — solo mandata (29/09/2026)
+## Modalità pubblica temporanea — solo mandata (STORICO 29/09/2026)
 
 Per agevolare il collaudo visivo richiesto dall'utente, il percorso pubblico
 `Vittorio_revisionato` è temporaneamente configurato con:
@@ -128,3 +128,23 @@ mandata + chiusura + ritorno ed è usato dal benchmark di equivalenza, in modo
 che le regression Vittorio/Vittorio_revisionato restino confrontabili.
 
 Questa è una modalità **temporanea di collaudo**, non una nuova strategia.
+
+## Milestone 4 — LG-051: chiusura rettilinea e raccordatura separata (30/09/2026)
+
+La direttiva LG-051 sostituisce il percorso pubblico sperimentale basato sul
+raccordo Bézier, senza modificare il benchmark storico Vittorio.
+
+- la combinatoria lavora soltanto su Supply/Return rettilinei;
+- il segmento di chiusura deve essere >=2P, non produrre angoli acuti e non
+  intersecare la geometria risultante;
+- ci si ferma al primo candidato valido;
+- se nessun candidato è valido, Supply e Return restano separati;
+- soltanto dopo la scelta si raccorda l'intero percorso con archi circolari;
+- raggio locale default 0,10 m, non ridotto per adattarsi a tratti corti;
+- tolleranza locale di discretizzazione default 5 mm;
+- uno spigolo non raccordabile resta vivo ed è accettabile;
+- nessuna Bézier partecipa alla decisione di chiusura.
+
+Il Fast Harness è stato riallineato, ma il commit di pubblicazione non lo
+esegue automaticamente per rispettare la richiesta esplicita di non inviare
+notifiche.

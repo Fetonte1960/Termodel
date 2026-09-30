@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-30 — Implementazione LG-051 e pubblicazione Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: IMPLEMENTATO NEL CODICE — VERIFICA PUBBLICAZIONE PENDENTE
 
 Autorizzazione utente:
 - implementare le decisioni consolidate in LG-051 per `Vittorio_revisionato`;
@@ -93,6 +93,20 @@ Criteri di completamento:
 - aggiornare Recovery, Summary e tracciatura sync se pertinente;
 - distinguere implementato/compilato/testato/pubblicato.
 
+
+Avanzamento implementazione:
+- separata la chiusura rettilinea dalla raccordatura finale secondo LG-051;
+- chiusura: >=2P, no angoli acuti, no intersezioni sulla geometria risultante,
+  primo candidato valido;
+- raccordatura: archi circolari a raggio locale default 0,10 m, nessuna
+  riduzione automatica del raggio, discretizzazione adattiva default 5 mm;
+- fallimento chiusura -> Mandata/Return separati senza etichetta di circuito
+  chiuso;
+- Fast Harness e workflow aggiornati ma non eseguiti in questo job;
+- `SpiraliVittorio` invariata;
+- pubblicazione predisposta come commit `[skip ci]` per rispettare la richiesta
+  esplicita di non notificare;
+- compilazione/deploy pubblico ancora da verificare prima di marcare ESEGUITO.
 
 ### INCARICO 2026-09-30 — Registrazione audit chiusura/raccordatura Vittorio_revisionato
 Stato: ESEGUITO

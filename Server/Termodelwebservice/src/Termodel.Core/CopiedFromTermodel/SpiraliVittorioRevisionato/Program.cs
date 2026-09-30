@@ -26,7 +26,9 @@ namespace SpiralHeatingVittorioRevisionato
         private const double DistanzaPareti = PassoTubi;
         
         // Parametri chiusura spirale
-        private const double RaggioCurvatura = 0.10;
+        // Parametri locali Vittorio_revisionato (LG-051).
+        public const double RaggioCurvatura = 0.10;
+        public const double TolleranzaDiscretizzazioneArchi = 0.005;
         private const double DistanzaRitorno = PassoTubi / 2.0;
         private const double DistanzaRotazioneUltimoPunto = 0.20;
         
@@ -68,19 +70,15 @@ namespace SpiralHeatingVittorioRevisionato
             }
         }
         */
-        // Modalita' temporanea richiesta per il collaudo visivo pubblico:
-        // Vittorio_revisionato espone soltanto la mandata. La chiusura e il
-        // ritorno restano nel sorgente ma non vengono eseguiti dal percorso
-        // pubblico finche' questa costante resta true.
-        public const bool SoloMandataPerEsameVisivo = true;
+        // Switch storico conservato per l'overload diagnostico esplicito.
+        // Il percorso pubblico ordinario usa ora la catena completa LG-051.
+        public const bool SoloMandataPerEsameVisivo = false;
 
         public static void AggiornaSpirali()
         {
-            // Percorso pubblico corretto:
-            // 1) mandata Vittorio_revisionato con completamento centrale;
-            // 2) ritorno derivato/duplicato come Vittorio;
-            // 3) solo raccordo finale riusa la procedura adattiva Diego_Vittorio.
-            // La chiusura/etichetta resta nel post-processore revisionato.
+            // Percorso pubblico LG-051:
+            // 1) mandata revisionata; 2) Return Vittorio rettilineo;
+            // 3) chiusura combinatoria rettilinea; 4) raccordi circolari.
             GeneraSpirale(terminalCenterline: true);
             ChiudiSpiraleFiles(usaRaccordoAdattivoDiego: true);
         }
@@ -553,7 +551,14 @@ namespace SpiralHeatingVittorioRevisionato
                 return;
             }
             
-            ChiudiSpirale.Chiudi(xmlFile, RaggioCurvatura, DistanzaRitorno, DistanzaRotazioneUltimoPunto, Debug, usaRaccordoAdattivoDiego);
+            ChiudiSpirale.Chiudi(
+                xmlFile,
+                RaggioCurvatura,
+                DistanzaRitorno,
+                DistanzaRotazioneUltimoPunto,
+                Debug,
+                usaRaccordoAdattivoDiego,
+                TolleranzaDiscretizzazioneArchi);
         }
     }
 }

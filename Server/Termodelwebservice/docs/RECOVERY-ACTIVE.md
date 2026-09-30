@@ -2232,3 +2232,28 @@ riallineare i test separando chiusura rettilinea e raccordatura. Lo stato
 corrente è **progettato/documentato**, non implementato, non compilato e non
 testato rispetto a LG-051.
 
+### 2026-09-30 — IMPLEMENTAZIONE LG-051 Vittorio_revisionato
+Stato: **IMPLEMENTAZIONE PREPARATA PER MAIN — BUILD/DEPLOY DA VERIFICARE**
+
+Applicato il contratto dell'audit:
+- combinatoria dedicata alla chiusura rettilinea, senza Bézier;
+- soglia >=2P, esclusione angoli acuti e controllo intersezioni sulla geometria
+  risultante dal candidato;
+- arresto al primo candidato valido; circuito aperto se nessuno è valido;
+- eliminata dal percorso pubblico la seconda Bézier
+  `CreaCurvaCollegamentoVincolata`;
+- raccordatura successiva dell'intera catena con archi circolari;
+- raggio locale default 0,10 m, mai ridotto per farlo entrare;
+- spigolo vivo se il raccordo non è contenibile;
+- discretizzazione adattiva per sagitta, tolleranza locale default 5 mm;
+- etichetta verde di circuito chiuso emessa solo se esiste una chiusura;
+- Fast Harness e gate quadrato riallineati a LG-051;
+- `SpiraliVittorio` invariata.
+
+Per richiesta esplicita dell'utente questa fase non usa Issue #1 e non deve
+inviare notifiche ntfy. Il commit funzionale è predisposto con `[skip ci]`;
+il Fast Harness aggiornato resta quindi **non eseguito** in questa fase.
+
+RECOVERY POINT: verificare il commit su main e l'eventuale deploy Render.
+Distinguere rigorosamente implementato / compilato / pubblicato / testato.
+Non dichiarare il Fast Harness eseguito finché non viene lanciato.
