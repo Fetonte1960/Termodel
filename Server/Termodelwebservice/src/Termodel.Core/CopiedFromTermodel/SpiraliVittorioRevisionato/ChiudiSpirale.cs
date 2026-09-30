@@ -18,8 +18,7 @@ namespace SpiralHeatingVittorioRevisionato
             bool debug,
             bool usaRaccordoAdattivoDiego = false,
             double tolleranzaDiscretizzazioneArchi = 0.005,
-            bool chiudiCircuito = true,
-            bool forzaBaseVittorio = false)
+            bool chiudiCircuito = true)
         {
             try
             {
@@ -89,7 +88,7 @@ namespace SpiralHeatingVittorioRevisionato
                     // la vecchia preparazione terminale Vittorio: era l'origine
                     // del segmento diagonale rosso osservato nel collaudo.
                     // Il benchmark storico conserva invece il comportamento originale.
-                    if (!usaRaccordoAdattivoDiego || forzaBaseVittorio)
+                    if (!usaRaccordoAdattivoDiego)
                     {
                         spirale = SpostaUltimoPuntoASinistra(
                             spirale,
@@ -223,11 +222,9 @@ namespace SpiralHeatingVittorioRevisionato
                         rientro = CreaRientro(
                             spiraleArrotondata,
                             distanzaRitorno);
-                        curvaCollegamento = chiudiCircuito
-                            ? CreaCurvaCollegamento(
-                                spiraleArrotondata,
-                                rientro)
-                            : new List<Punto>();
+                        curvaCollegamento = CreaCurvaCollegamento(
+                            spiraleArrotondata,
+                            rientro);
                     }
 
                     // Punto finale del rientro (per collegare la linea di ritorno del tubo)
