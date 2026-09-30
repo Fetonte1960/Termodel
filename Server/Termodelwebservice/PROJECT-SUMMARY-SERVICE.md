@@ -72,6 +72,29 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-30 — Pubblicazione motore Vittorio_modificata con chiusura configurabile
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- pubblicare una nuova versione `Vittorio_modificata`, lasciando `Vittorio` intoccabile;
+- rendere la chiusura finale configurabile dal frontend in Help, nello stesso gruppo dei settaggi di collaudo spirali;
+- quando la chiusura è disattivata mantenere Mandata e Return di Vittorio ma lasciare aperte le due estremità, senza curva di collegamento finale;
+- pubblicare Service/Core e frontend necessari, aggiornando il contratto condiviso;
+- evitare modifiche a `definizionedati.json` e alle strategie Diego/Vittorio_revisionato salvo integrazione strettamente necessaria alla selezione.
+
+Decisione implementativa:
+- `Vittorio_modificata` sarà una copia sperimentale tracciata di `Vittorio`, per preservare il riferimento storico intoccabile;
+- nuovo parametro per-request `spiralClosure=true|false`, significativo per `Vittorio_modificata`; default `true` per mantenere il comportamento chiuso quando il parametro è omesso;
+- Help espone `Vittorio_modificata` nel selettore motore e un controllo `Chiudi circuito`; il settaggio resta runtime e non viene salvato nel progetto.
+
+Criteri di completamento:
+- nuovo motore selezionabile dal Service e visibile in `/health`/capabilities;
+- `spiralClosure=false` produce Mandata + Return senza curva di chiusura e senza etichetta di chiusura;
+- `spiralClosure=true` mantiene la geometria Vittorio chiusa nella copia modificata;
+- frontend Help invia entrambi i parametri per-request;
+- contratto, `TERMODEL-SYNC` e Summary aggiornati;
+- build/test GitHub eseguiti se disponibili; distinguere implementato, compilato, eseguito e verificato.
+
 
 ### INCARICO 2026-09-30 — Verifica architetturale pubblica Vittorio_revisionato
 Stato: ESEGUITO
