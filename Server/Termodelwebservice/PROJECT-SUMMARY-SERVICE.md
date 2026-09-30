@@ -72,6 +72,26 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-30 — Riallineamento protocollo consulente spirali
+Stato: ESEGUITO
+
+Decisione consolidata dell'utente:
+- il parere del consulente spirali è importante ma non vincolante;
+- ogni proposta del consulente deve essere verificata sul repository reale e discussa con Diego prima di diventare una modifica;
+- il canale pubblico canonico ChatGPT ↔ consulente è `docs/modulo-spirali/sorgenti-cruciali.md`;
+- dopo ogni pubblicazione destinata al consulente ChatGPT segnala a Diego `aggiornati`, così Diego invita il consulente a rileggere la pagina;
+- il consulente non deve dipendere da stato locale/server non pubblicato.
+
+Riepilogo pubblico aggiunto alla pagina:
+- ruoli Diego / consulente / ChatGPT;
+- stato `Vittorio`, `Diego_Vittorio`, `Vittorio_revisionato`;
+- obiettivo architetturale di `Vittorio_revisionato`;
+- sequenza LG-051 e filtri attuali;
+- uso di `spiralClosure=false` per osservare Mandata e Return aperti;
+- punto di discussione corrente: verificare il Return Vittorio esistente prima di introdurre un nuovo `OffsetEngine.Parallel(...)`.
+
+Nessun sorgente modificato.
+
 ### INCARICO 2026-09-30 — Fix UI Chiudi circuito / Vittorio_revisionato
 Stato: ESEGUITO — PUBBLICATO E VERIFICATO
 
