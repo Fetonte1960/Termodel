@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  # Trigger temporaneo 30/09/2026: verifica LG-051 dopo ripristino Mandata Vittorio nel percorso pubblico.
+  # Trigger temporaneo 30/09/2026: verifica helper isolato ritorno_Parallelo_diego.
   workflow_dispatch:
   push:
     paths:
@@ -57,6 +57,13 @@ jobs:
 
       - name: Build Harness + Core
         run: dotnet build tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-restore --nologo --verbosity:minimal -p:BuildInParallel=true
+
+      - name: Check ritorno parallelo Diego isolato
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- parallel-return-check
+          if ($LASTEXITCODE -ne 0) { throw "Check ritorno parallelo Diego fallito." }
 
       - name: Harness quadrato Vittorio_revisionato public closure
         shell: pwsh
