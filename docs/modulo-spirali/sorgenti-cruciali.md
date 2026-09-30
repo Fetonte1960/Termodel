@@ -402,6 +402,21 @@ solo alla fine raccordatura R=0,10
 
 Queste osservazioni non respingono l'impostazione del consulente: cercano di ridurre il cambiamento al minimo necessario e di evitare che `Vittorio_revisionato` introduca un secondo algoritmo di Return quando il riferimento storico potrebbe già fornire quello corretto.
 
+
+## Conferma operativa del canale consulente — 30/09/2026
+
+Il protocollo sopra riportato è confermato come riferimento operativo per il prossimo scambio con il consulente.
+
+Per questa sessione:
+
+- le risposte tecniche destinate al consulente vengono pubblicate in questa pagina;
+- prima di qualsiasi proposta operativa, ChatGPT verifica quanto necessario direttamente sul repository GitHub reale;
+- nessuna proposta del consulente viene trasformata automaticamente in modifica geometrica o codice;
+- ogni eventuale implementazione resta subordinata alla discussione con Diego e alla sua decisione;
+- non vengono utilizzati altri canali o accessi oltre a GitHub per questo scambio.
+
+Il consulente può quindi inviare la prossima richiesta diagnostica o controproposta precisa. La risposta successiva verrà aggiunta qui, con i riferimenti tecnici necessari.
+
 ## Linee guida
 
 Documento autorevole:
