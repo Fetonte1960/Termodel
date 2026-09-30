@@ -60,6 +60,7 @@ const helpLocalService = document.getElementById('helpLocalService');
 const helpCopyProjectClipboard = document.getElementById('helpCopyProjectClipboard');
 const helpCopyLogClipboard = document.getElementById('helpCopyLogClipboard');
 const helpSpiralEngine = document.getElementById('helpSpiralEngine');
+const helpSpiralClosure = document.getElementById('helpSpiralClosure');
 const TERMODEL_LOG_CATEGORIES = [
   'Sempre',
   'colmi',
@@ -72,7 +73,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.37';
+const APP_VERSION = '1.38';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -894,6 +895,10 @@ function selectedTermodelSpiralEngine() {
   return String(helpSpiralEngine?.value || '').trim();
 }
 
+function selectedTermodelSpiralClosure() {
+  return helpSpiralClosure?.checked !== false;
+}
+
 function buildTermodelCalculationPath() {
   const categories = selectedTermodelLogCategories();
   const query = new URLSearchParams();
@@ -907,6 +912,9 @@ function buildTermodelCalculationPath() {
   const spiralEngine = selectedTermodelSpiralEngine();
   if (spiralEngine)
     query.set('spiralEngine', spiralEngine);
+
+  if (spiralEngine === 'Vittorio_revisionato')
+    query.set('spiralClosure', selectedTermodelSpiralClosure() ? 'true' : 'false');
 
   return '/api/calculations?' + query.toString();
 }
@@ -10953,6 +10961,12 @@ helpSpiralEngine?.addEventListener('change', () => {
   const selected = selectedTermodelSpiralEngine();
   const label = selected || ('Predefinito Service (' + (termodelServiceRuntimeEngine || 'da /health') + ')');
   status.textContent = 'Motore spirali prossimo Aggiorna Modello: ' + label;
+});
+
+helpSpiralClosure?.addEventListener('change', () => {
+  status.textContent =
+    'Chiusura Vittorio_revisionato prossimo Aggiorna Modello: ' +
+    (selectedTermodelSpiralClosure() ? 'attiva' : 'aperta');
 });
 
 helpCopyLogClipboard?.addEventListener('click', async event => {
