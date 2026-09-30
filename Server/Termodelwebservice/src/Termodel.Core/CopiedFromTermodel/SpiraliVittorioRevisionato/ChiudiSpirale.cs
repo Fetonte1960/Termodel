@@ -110,33 +110,24 @@ namespace SpiralHeatingVittorioRevisionato
 
                     if (usaRaccordoAdattivoDiego)
                     {
-                        // Il riferimento Vittorio raccordato serve solo a
-                        // ricostruire la sua estensione rettilinea storica.
-                        // La combinatoria riceve poi soltanto polilinee rette.
-                        var spiraleRiferimentoVittorio =
-                            GeometryUtils.ArrotondaSpirale(
-                                spirale,
-                                raggioCurvatura);
-                        var rientroRiferimentoVittorio =
-                            CreaRientro(
-                                spiraleRiferimentoVittorio,
-                                distanzaRitorno);
-
-                        List<SpiralHeatingDiegoVittorio.Punto>
-                            ritornoVersoCentroBase =
-                                SpiralHeatingDiegoVittorio.ChiudiSpirale
-                                    .PreparaRitornoRettilineoVittorio(
-                                        spirale
-                                            .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
-                                            .ToList(),
-                                        rientroRiferimentoVittorio
-                                            .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
-                                            .ToList(),
-                                        distanzaRitorno);
-
+                        // Pipeline Diego pulita:
+                        // Mandata rettilinea -> Return parallelo rettilineo.
+                        // Nessun raccordo preliminare e nessuna ricostruzione
+                        // del Return a partire dalla geometria arrotondata.
                         var mandataRettilineaBase = spirale
                             .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
                             .ToList();
+
+                        List<SpiralHeatingDiegoVittorio.Punto>
+                            ritornoVersoCentroBase =
+                                SpiralHeatingDiegoVittorio.funzioni_diego
+                                    .ritorno_Parallelo_diego(
+                                        mandataRettilineaBase,
+                                        -distanzaRitorno);
+
+                        Console.WriteLine(
+                            $"  VREV_RETURN_PARALLEL_DIEGO: mandata={mandataRettilineaBase.Count}; " +
+                            $"ritorno={ritornoVersoCentroBase.Count}; offset={(-distanzaRitorno):R}.");
 
                         var esitoDiego = (
                             Mandata: mandataRettilineaBase,
