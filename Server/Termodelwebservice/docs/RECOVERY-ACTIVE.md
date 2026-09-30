@@ -1,6 +1,6 @@
 # RECOVERY ACTIVE — Termodel Service
 
-Checkpoint: 2026-09-28 14:43 Europe/Rome
+Checkpoint: 2026-09-30 Europe/Rome — audit chiusura/raccordatura Vittorio_revisionato registrato
 Stato: ATTIVITÀ IN CORSO / RIPRESA DOPO SOSPENSIONE
 Branch: `main`
 Repository: `Fetonte1960/Termodel`
@@ -2038,3 +2038,197 @@ Correzione verificata dal gate dedicato Harness #100. Causa finale: l'adattament
 
 ### 2026-09-29 — vincolo chiusura minimo 2P ripristinato
 Corretto l'adattatore Vittorio/Diego: la scala geometrica del Return resta P/2, ma il criterio di accettazione della chiusura resta quello originale umano `lunghezza >= 2P` riferito al passo nominale. Prima il passaggio di P/2 alla combinatoria riduceva involontariamente la soglia a P. Commit `9f178819b9412d212fa06091c25c66b62216583d`. Harness #101: build SUCCESS e gate quadrato pubblico con vincolo corretto SUCCESS; suite restante in esecuzione al momento della pubblicazione.
+
+### 2026-09-30 — AUDIT FINALE `Vittorio_revisionato`: separazione chiusura / raccordatura
+Stato: **DECISIONI UMANE CONSOLIDATE E DOCUMENTATE — IMPLEMENTAZIONE NON AVVIATA**
+
+Origine:
+- il collaudo della chiusura finale di `Vittorio_revisionato` ha mostrato un
+  circuito non affidabile/non sempre chiuso;
+- l'audit ha confermato che il flusso corrente mescola due problemi distinti:
+  scelta della chiusura e raccordatura grafico-geometrica successiva;
+- nessun file di codice geometrico è stato modificato durante l'audit.
+
+#### Diagnosi verificata sul codice corrente
+
+Il percorso sperimentale attuale:
+1. sceglie un candidato combinatorio su polilinee rettilinee;
+2. usa `CreaCurvaCollegamentoAdattiva` nella validazione del candidato;
+3. per il bridge `Vittorio_revisionato` disabilita i filtri della corda
+   rettilinea e riferisce il requisito `>=2P` alla curva;
+4. arrotonda Mandata e Return;
+5. scarta il raccordo preliminare già approvato;
+6. genera una seconda curva tramite `CreaCurvaCollegamentoVincolata`;
+7. se la seconda curva fallisce, non prova il candidato combinatorio
+   successivo;
+8. può quindi arrivare allo SVG con Mandata/Return già tagliati ma senza
+   collegamento finale.
+
+Il workflow dedicato controlla il successo della chiusura preliminare/curva
+(`DV_CLOSURE_SELECTED`, `curveLength`) e non rappresenta ancora il contratto
+rettilineo deciso in questo audit.
+
+#### Decisione architetturale vincolante
+
+**La chiusura deve essere completata interamente sulla geometria rettilinea.
+La raccordatura parte soltanto dopo.**
+
+Nessuna Bézier, arco o `ArrotondaSpirale` deve partecipare alla scelta del
+candidato di chiusura.
+
+Flusso deciso:
+
+```text
+Mandata rettilinea + Ritorno rettilineo
+  -> applicazione candidato (tagli/accorciamenti)
+  -> tratto rettilineo di chiusura
+  -> validazione candidato
+  -> primo candidato valido
+  -> unico percorso rettilineo continuo
+  -> raccordatura circolare di tutti gli spigoli raccordabili
+  -> output con identità grafica dei tratti conservata
+```
+
+#### Notazione del bridge revisionato
+
+Per `Vittorio_revisionato`:
+- `P = distanzaRitorno = 0,15 m` nel caso nominale;
+- `2P = 0,30 m`;
+- il requisito minimo riguarda il **tratto rettilineo di chiusura**.
+
+Questa notazione locale non deve essere confusa con il `p = 0,30 m` usato
+nelle sezioni storiche Diego_Vittorio.
+
+#### Candidato valido: criteri definitivi dell'audit
+
+Per ogni candidato:
+1. applicare prima i suoi tagli/accorciamenti;
+2. valutare soltanto la **nuova geometria risultante**;
+3. costruire il tratto rettilineo fra i nuovi terminali;
+4. scartare il candidato se il tratto è `<2P`;
+5. scartarlo se il tratto interseca un tubo della **nuova geometria**
+   risultante, ignorando i segmenti del setup iniziale già rimossi/modificati;
+6. escludere naturalmente dal test i due tratti terminali adiacenti agli
+   innesti;
+7. scartarlo se uno dei due innesti produce un **angolo acuto** (<90°);
+8. 90° o angoli maggiori sono accettabili.
+
+Non è richiesto un ranking fra tutte le soluzioni valide. Per minimizzare il
+carico computazionale la combinatoria usa una sequenza deterministica e si
+ferma alla **prima valida**.
+
+Se nessun candidato è valido:
+- nessuna chiusura forzata;
+- Mandata e Ritorno restano separati;
+- il circuito aperto è intenzionalmente il feedback visivo sufficiente per il
+  debug;
+- non è richiesto, per ora, un nuovo marker di log dedicato.
+
+#### Distanza dagli altri tubi
+
+Per ora il filtro richiesto è la sola **intersezione**.
+
+Non introdurre durante la prima implementazione un nuovo vincolo di distanza
+minima fra tratto di chiusura e tubazioni vicine.
+
+**Possibile perfezionamento futuro:** controllo della distanza minima dagli
+altri tubi della geometria risultante, mantenendo invariata la combinatoria
+base.
+
+#### Percorso unico con identità dei tratti
+
+Una volta accettata la chiusura:
+- Mandata + Chiusura + Ritorno sono geometricamente **un unico percorso
+  continuo**;
+- l'unificazione serve anche a raccordare correttamente i due innesti della
+  chiusura;
+- ogni tratto conserva però identità/metadati di appartenenza e resa:
+  Mandata / Chiusura / Ritorno, colore, tipo linea e altri attributi utili;
+- non fondere semanticamente gli stili solo perché la geometria è continua.
+
+#### Raccordatura: fase separata successiva
+
+Dopo la chiusura definitiva:
+- raccordare **tutti gli spigoli** del percorso continuo, inclusi gli innesti
+  della chiusura;
+- usare **archi circolari tangenti**;
+- raggio configurabile localmente in `Vittorio_revisionato`;
+- default raggio = valore corrente `0,10 m`;
+- verificare che l'arco col raggio richiesto sia contenibile nei due tratti
+  adiacenti;
+- se i tratti sono troppo corti, **non ridurre il raggio**: non eseguire quel
+  raccordo;
+- lo spigolo vivo risultante è accettabile nell'esecutivo e non invalida la
+  chiusura.
+
+#### Discretizzazione degli archi
+
+Decisione:
+- discretizzazione **adattiva**;
+- criterio = errore massimo/scostamento (sagitta) fra arco teorico e polilinea;
+- parametro configurabile solo localmente a `Vittorio_revisionato`;
+- default = **5 mm = 0,005 m**;
+- usare il minor numero di segmenti sufficiente;
+- evitare campionamenti fissi arbitrari (10, 48, ecc.).
+
+#### Criteri approvati da riusare da Diego_Vittorio
+
+Riutilizzabili:
+- combinatoria deterministica;
+- scarto candidati non validi;
+- controllo angolare;
+- controllo intersezioni sulla geometria effettivamente conservata;
+- arresto al primo successo quando non serve ranking;
+- principio degli archi circolari tangenti già presente in
+  `SpiraliDiegoVittorio/Utilityfunctions.cs::ArrotondaSpirale`;
+- principio di frammentazione adattiva.
+
+Da **non** trasferire:
+- Bézier come componente della decisione di chiusura;
+- `>=2P` misurato sulla curva;
+- riduzione del raggio effettivo al 45% dei tratti per far entrare il raccordo;
+- conteggio fisso 2–6 segmenti come criterio definitivo di discretizzazione.
+
+Le vecchie `LG-048`/`LG-049` restano valide per `Diego_Vittorio`; non
+vanno riscritte per adattarle a `Vittorio_revisionato`.
+
+#### Test richiesti nella futura implementazione
+
+Separare i gate:
+
+**Gate chiusura rettilinea**
+- segmento >=2P;
+- angoli non acuti;
+- nessuna intersezione sulla geometria risultante;
+- candidato invalido -> prova successivo;
+- nessun candidato -> circuito aperto.
+
+**Gate raccordatura**
+- archi circolari col raggio configurato;
+- nessuna riduzione del raggio per tratti corti;
+- spigolo vivo ammesso quando il raccordo non entra;
+- tutti gli spigoli del percorso continuo processati;
+- errore discretizzazione <= tolleranza configurata, default 5 mm;
+- nessuna modifica della topologia/candidato di chiusura già deciso.
+
+#### Documentazione persistente
+
+Regola formalizzata come:
+`Server/Termodelwebservice/docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`
+→ **LG-051**.
+
+Commit linee guida:
+`99f796e44b5c66df03cc0d237f390f70c7ed203f`.
+
+Il Summary Service ha registrato l'incarico prima delle modifiche documentali
+nel commit:
+`0349b2f26c942e5cb5342c539cfffabf351fc63a`.
+
+**RECOVERY POINT ESATTO:** alla prossima fase NON riprendere la vecchia
+sperimentazione Bézier. Prima di modificare il motore leggere LG-051 e
+confrontare il codice corrente con il contratto sopra. L'implementazione deve
+essere piccola e reversibile, lasciare `SpiraliVittorio` invariata e
+riallineare i test separando chiusura rettilinea e raccordatura. Lo stato
+corrente è **progettato/documentato**, non implementato, non compilato e non
+testato rispetto a LG-051.
+
