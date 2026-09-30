@@ -344,6 +344,7 @@ namespace SpiralHeatingVittorioRevisionato
             risultato.Add(spirale[spirale.Count - 1]);
             return risultato;
         }
+    }
 
     public static class UtilityFunctions
     {
