@@ -673,6 +673,22 @@ app.MapPost("/api/calculations", async (
         });
     }
 
+    bool spiralClosure = true;
+    if (request.Query.TryGetValue(
+            "spiralClosure",
+            out Microsoft.Extensions.Primitives.StringValues spiralClosureValues))
+    {
+        string rawSpiralClosure = spiralClosureValues.ToString();
+        if (!bool.TryParse(rawSpiralClosure, out spiralClosure))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["spiralClosure"] =
+                    ["Valore non valido. Usare true oppure false."]
+            });
+        }
+    }
+
     bool numberSpiralNodes = true;
     if (request.Query.TryGetValue(
             "numerazioneSpirali",
@@ -724,7 +740,8 @@ app.MapPost("/api/calculations", async (
                         result.RadiantPanelInputXml,
                         result.CleanFloorPlans,
                         numberSpiralNodes,
-                        selectedSpiralEngine);
+                        selectedSpiralEngine,
+                        spiralClosure);
 
                 IReadOnlyList<string> executiveDiagnostics =
                     TermodelLog.Messages.ToArray();
@@ -766,6 +783,8 @@ app.MapPost("/api/calculations", async (
         if (responseArtifact is not null)
         {
             response.Headers["X-Termodel-Spiral-Engine"] = selectedSpiralEngine;
+            response.Headers["X-Termodel-Spiral-Closure"] =
+                spiralClosure ? "true" : "false";
             return BuildCalculationArtifactResponse(
                 data,
                 projectId,
@@ -839,6 +858,7 @@ app.MapPost("/api/calculations", async (
             projectId,
             status = "completed",
             spiralEngine = selectedSpiralEngine,
+            spiralClosure,
             savedProject = new
             {
                 fileName = "project.tmdl"
