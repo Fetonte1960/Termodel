@@ -27,6 +27,33 @@ Quando ChatGPT ha pubblicato qualcosa destinato al consulente, comunica a Diego 
 
 A quel punto Diego avvisa il consulente, che rilegge questa pagina pubblica e risponde con la richiesta successiva. Il consulente non deve entrare nel server TermodelService e non deve basarsi su stato locale non pubblicato: il riferimento comune è questa pagina e i file GitHub collegati da qui.
 
+### Canale bidirezionale e comando «aggiornati»
+
+Dal 30/09/2026 il consulente è autorizzato a **rispondere direttamente sullo stesso canale pubblico**:
+
+`docs/modulo-spirali/sorgenti-cruciali.md`
+
+Il canale è quindi bidirezionale:
+
+```text
+ChatGPT → pagina pubblica → consulente
+consulente → pagina pubblica → ChatGPT
+```
+
+Quando Diego scrive in chat:
+
+**aggiornati**
+
+ChatGPT deve:
+
+1. rileggere la pagina pubblica e individuare gli ultimi aggiornamenti del consulente;
+2. fornire a Diego una **breve sintesi** di cosa è cambiato;
+3. evidenziare eventuali proposte, obiezioni, rischi o richieste diagnostiche;
+4. discuterle con Diego prima di trasformarle in modifiche al codice, salvo autorizzazione già esplicita;
+5. se ChatGPT pubblica una risposta sulla pagina, segnalarlo a Diego con `aggiornati` accompagnato da una breve sintesi di ciò che è stato scritto.
+
+Il parere del consulente resta importante ma non vincolante; la decisione finale resta di Diego.
+
 ### Ruoli
 
 - **Diego** decide la direzione finale del lavoro.
