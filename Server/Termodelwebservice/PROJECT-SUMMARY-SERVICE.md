@@ -102,18 +102,6 @@ Checkpoint diagnostico 30/09/2026:
 - il baseline visivamente accettato `0df1d3bad2b9992a3cfd9af2e95f186301024f87` conteneva già questo bridge; era quindi un buon riferimento visivo, ma non una derivazione architetturalmente pulita;
 - prossima correzione da discutere/implementare: eliminare la rigenerazione Diego del Return e fare in modo che LG-051 lavori sul Return Vittorio preservato, lasciando alla logica di chiusura soltanto tagli/accorciamenti dei terminali e filtri geometrici.
 
-
-Guardrail di stabilità — nuova strategia di lavoro:
-- prima di ulteriori modifiche geometriche è stata introdotta una modalità diagnostica `Vittorio base aperta`, separata dal percorso produttivo;
-- questa modalità ricostruisce la fase storica Vittorio fino a Mandata + Return completi e sopprime soltanto la chiusura;
-- il test `tools/local-radiant-harness/Test-VittorioRevisionatoBase.ps1` confronta 6 geometrie;
-- la Mandata è protetta tramite identità del result XML;
-- il Return è protetto confrontando punto per punto le polilinee blu con il motore `Vittorio`;
-- commit diagnostici: `22e3d6d`, `1c7ab57`, `73d1d8f`, `ee4bc51`, `c1fb7bd`;
-- workflow/gate: commit `246bf0208bd23e83933539d7da0388d6fd759148`;
-- nessuna correzione produttiva di chiusura/raccordi introdotta in questa sottofase;
-- prossimo passo consentito soltanto dopo guardrail verde: eliminare la rigenerazione Diego del Return nel percorso pubblico, mantenendo la base Vittorio congelata.
-
 ### INCARICO 2026-09-30 — Richiesta direttive consulente spirali
 Stato: ESEGUITO
 
