@@ -9,6 +9,7 @@ Ogni path è collegato direttamente al repository GitHub, così è possibile con
 - [Mappa dei sorgenti](#mappa-dei-sorgenti)
 - [Harness e test](#harness-e-test)
 - [Motori spirali](#motori-spirali)
+- [Verifica architetturale Vittorio_revisionato — 30/09/2026](#verifica-architetturale-vittorio_revisionato--30092026)
 - [Linee guida](#linee-guida)
 - [Regression e Golden](#regression-e-golden)
 - [Regola sui Golden](#regola-sui-golden)
@@ -22,7 +23,7 @@ Ogni path è collegato direttamente al repository GitHub, così è possibile con
 | Harness / CI | [`.github/workflows/termodel-diego-vittorio-fast.yml`](https://github.com/Fetonte1960/Termodel/blob/main/.github/workflows/termodel-diego-vittorio-fast.yml) | Workflow GitHub Actions rapido per compilazione Harness/Core e regression delle strategie spirali. È il gate automatico principale per i controlli veloci su Diego_Vittorio e Vittorio_revisionato. |
 | Motore | [`Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorio/`](https://github.com/Fetonte1960/Termodel/tree/main/Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorio) | **Riferimento storico intoccabile.** Rappresenta il comportamento Vittorio originale e viene usato come confronto funzionale. Non va modificato durante gli interventi sulle strategie evolutive. |
 | Motore | [`Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/`](https://github.com/Fetonte1960/Termodel/tree/main/Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio) | Strategia evolutiva con logica Supply, Return autonomo, chiusura combinatoria e raccordatura. È il motore con il banco di regression più esteso e contiene diversi criteri geometrici già consolidati. |
-| Motore | [`Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/`](https://github.com/Fetonte1960/Termodel/tree/main/Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato) | Strategia **Vittorio_revisionato**, attualmente basata su LG-051: chiusura rettilinea completa prima della raccordatura, poi archi circolari tangenti con parametri locali. È la linea in collaudo per la chiusura finale. |
+| Motore | [`Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/`](https://github.com/Fetonte1960/Termodel/tree/main/Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato) | Strategia **Vittorio_revisionato**. Obiettivo architetturale: copia stretta di Vittorio con Return parallelo e sola correzione LG-051 della chiusura/raccordatura. La verifica del 30/09/2026 ha rilevato astrazioni e dipendenze Diego_Vittorio da rimuovere prima di considerarla nuovamente una derivazione stretta. |
 | Linee guida | [`Server/Termodelwebservice/docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`](https://github.com/Fetonte1960/Termodel/blob/main/Server/Termodelwebservice/docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md) | Registro delle decisioni geometriche consolidate. Per chiusura e raccordatura sono particolarmente importanti **LG-048**, **LG-049** e **LG-051**. |
 | Regression | [`Server/Termodelwebservice/tests/radiant-harness/cases/`](https://github.com/Fetonte1960/Termodel/tree/main/Server/Termodelwebservice/tests/radiant-harness/cases) | Casi eseguibili dal banco test. Fra quelli cruciali: `locale_1`, `locale_5`, `locale_8`, `locale_9`, quadrato pubblico Diego_Vittorio e quadrato Vittorio_revisionato. |
 | Regression / Golden | [`Server/Termodelwebservice/tests/radiant-harness/baselines/`](https://github.com/Fetonte1960/Termodel/tree/main/Server/Termodelwebservice/tests/radiant-harness/baselines) | Baseline approvate usate come Golden di confronto. Nel repository corrente la directory effettiva si chiama **`baselines`**: non esiste una directory `goldens/`. Il Golden Diego_Vittorio non va aggiornato automaticamente quando cambia l'output. |
@@ -76,6 +77,55 @@ SVG finale
 ```
 
 La scelta della chiusura e la raccordatura sono due fasi separate.
+
+## Verifica architetturale Vittorio_revisionato — 30/09/2026
+
+**Esito della richiesta pubblica: confermata una contaminazione architetturale da Diego_Vittorio, con una precisazione importante.**
+
+Il percorso pubblico corrente di `Vittorio_revisionato` **non esegue un secondo lancio autonomo del generatore per costruire il Return**. Il Return pubblico nasce ancora dal metodo parallelo di Vittorio:
+
+- in `SpiraliVittorioRevisionato/ChiudiSpirale.cs` viene chiamato `CreaRientro(spiraleRiferimentoVittorio, distanzaRitorno)`;
+- il corpo di `CreaRientro(...)` è uguale a quello presente in `SpiraliVittorio/ChiudiSpirale.cs`;
+- quindi l'origine del Return del percorso pubblico resta **parallela alla Mandata**, non un vero doppio lancio indipendente.
+
+Tuttavia `Vittorio_revisionato` **non è più una copia stretta di Vittorio**, per quattro ragioni verificabili.
+
+1. **Astrazione neutra del generatore.**  
+   [`SpiraliVittorioRevisionato/Spiralgenerator.cs`](https://github.com/Fetonte1960/Termodel/blob/main/Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/Spiralgenerator.cs) introduce `SpiralGenerationInput`, `LineeCondizionamento`, `DistanzaCondizionamento` e `TerminalCenterline`, assenti dal generatore Vittorio.
+
+2. **Il percorso pubblico modifica anche la Mandata prima della chiusura.**  
+   [`SpiraliVittorioRevisionato/Program.cs`](https://github.com/Fetonte1960/Termodel/blob/main/Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/Program.cs) esegue `GeneraSpirale(terminalCenterline: true)`. Quindi la derivazione pubblica non differisce da Vittorio soltanto nella chiusura: abilita anche l'estensione terminale sperimentale `TerminalCenterline`.
+
+3. **L'astrazione supporta davvero un Return generato autonomamente, anche se non è usato dal percorso pubblico.**  
+   [`StrategiaVittorioRevisionatoBenchmark.cs`](https://github.com/Fetonte1960/Termodel/blob/main/Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/StrategiaVittorioRevisionatoBenchmark.cs) contiene `CheckAbstraction()`, che effettua chiamate separate a `SpiralGenerator.Generate(...)` per `unconditionedReturn` e `conditionedReturn`, con la Supply passata come `LineeCondizionamento`. Questa è l'astrazione di doppio lancio che non appartiene all'architettura desiderata di Vittorio_revisionato.
+
+4. **La chiusura pubblica dipende direttamente dal motore Diego_Vittorio.**  
+   In [`SpiraliVittorioRevisionato/ChiudiSpirale.cs`](https://github.com/Fetonte1960/Termodel/blob/main/Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/ChiudiSpirale.cs) il Return parallelo di Vittorio viene trasformato e passato a:
+   - `SpiralHeatingDiegoVittorio.ChiudiSpirale.PreparaRitornoRettilineoVittorio(...)`;
+   - `SpiralHeatingDiegoVittorio.ChiudiSpirale.ApplicaChiusuraCombinatoriaRettilineaVittorio(...)`.
+
+   Inoltre `Program.cs` conserva il metodo `ChiudiSpiraleFilesDiegoVittorio()`, non richiamato dal percorso pubblico corrente ma ulteriore segno della dipendenza architetturale.
+
+### Conclusione architetturale
+
+La descrizione più precisa dello stato attuale è:
+
+```text
+Vittorio_revisionato pubblico
+    Mandata: derivata da Vittorio MA con TerminalCenterline
+    Return:  CreaRientro Vittorio parallelo
+    Chiusura: helper presi direttamente da Diego_Vittorio
+    Generatore: contiene anche astrazione neutra/condizionata per doppio lancio
+```
+
+Quindi:
+
+- **corretto:** `Vittorio_revisionato` ha incorporato astrazioni Diego che non dovrebbero far parte della derivazione stretta;
+- **da precisare:** il Return del percorso pubblico corrente è ancora costruito con `CreaRientro` parallelo; il doppio lancio esiste come astrazione/capacità e nel benchmark, non come sequenza effettiva del percorso pubblico;
+- **obiettivo da ripristinare:** `Vittorio_revisionato = Vittorio invariato per Mandata + Return parallelo Vittorio + sola correzione LG-051 della chiusura/raccordatura`;
+- la futura correzione dovrà quindi eliminare dal percorso revisionato `TerminalCenterline`, l'astrazione Return neutra/condizionata e la dipendenza diretta dal namespace `SpiralHeatingDiegoVittorio`, preservando invece `CreaRientro` Vittorio.
+
+**Stato di questa verifica:** sola analisi. Nessun motore, Golden, Harness o frontend è stato modificato.
 
 ## Linee guida
 
