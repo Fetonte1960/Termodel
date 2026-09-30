@@ -91,18 +91,31 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.36';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.37';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.36")) {
-            throw "Cache-busting app.js v1.35 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.37")) {
+            throw "Cache-busting app.js v1.37 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.36") {
+          if ($frontendVersion -ne "1.37") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
+
+          foreach ($marker in @(
+            'id="helpLocalService" type="checkbox" autocomplete="off"',
+            "const TERMODEL_SERVICE_LOCAL_BASE_URL = 'http://localhost:5080';",
+            "function currentTermodelServiceBaseUrl()",
+            "function resetDesktopTermodelServiceDefault()",
+            "helpLocalService?.addEventListener('change'"
+          )) {
+            if (-not ($app.Contains($marker) -or $index.Contains($marker))) {
+              throw "Selettore Service localhost incompleto: $marker"
+            }
+          }
+          Write-Host "FRONTEND_SERVICE_TARGET_SWITCH_OK"
 
           foreach ($marker in @(
             'id="cadExecutiveProvenance"',
