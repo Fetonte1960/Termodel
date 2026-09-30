@@ -72,6 +72,19 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-30 — Protocollo bidirezionale consulente spirali
+Stato: ESEGUITO
+
+Nuova regola operativa autorizzata dall'utente:
+- il consulente può rispondere direttamente sul canale pubblico `docs/modulo-spirali/sorgenti-cruciali.md`;
+- quando Diego scrive `aggiornati`, ChatGPT deve rileggere la pagina e individuare gli ultimi aggiornamenti del consulente;
+- ad ogni aggiornamento ChatGPT deve fornire a Diego una breve sintesi prima di discutere o implementare;
+- se ChatGPT pubblica una risposta sulla pagina, deve segnalarlo a Diego con `aggiornati` e una breve sintesi del contenuto pubblicato;
+- il parere del consulente resta importante ma non vincolante; la decisione finale resta di Diego;
+- nessuna proposta del consulente diventa automaticamente codice salvo autorizzazione già esplicita.
+
+Nessun sorgente modificato.
+
 ### INCARICO 2026-09-30 — Riallineamento protocollo consulente spirali
 Stato: ESEGUITO
 
