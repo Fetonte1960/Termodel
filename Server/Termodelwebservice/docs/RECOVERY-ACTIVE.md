@@ -1,3 +1,98 @@
+# PUNTO DI RIPRISTINO PRIORITARIO — VITTORIO_REVISIONATO / CONTAMINAZIONE RETURN
+
+Checkpoint: **2026-09-30 — diagnosi architetturale da cui riprendere in caso di blocco chat**
+
+Questo checkpoint **prevale operativamente sui vecchi “prossimo passo” presenti più sotto** quando si riprende lo sviluppo di `Vittorio_revisionato`.
+
+## Obiettivo corretto
+
+```text
+Vittorio_revisionato
+    = Vittorio fino a Mandata + Return completi
+    + sola nuova logica di chiusura LG-051
+    + sola nuova raccordatura finale
+```
+
+`SpiraliVittorio` resta intoccabile.
+
+## Punto chiave individuato
+
+Il percorso pubblico di `Vittorio_revisionato` crea inizialmente il Return storico con:
+
+```text
+CreaRientro(...)
+```
+
+ma quel Return **non viene poi conservato come geometria effettiva**. Viene passato a:
+
+```text
+SpiralHeatingDiegoVittorio.ChiudiSpirale
+    .PreparaRitornoRettilineoVittorio(...)
+```
+
+che internamente esegue:
+
+```text
+CreaRientroRettilineo(...)
+    -> CreaOffsetRettilineo(...)
+```
+
+Quindi il Return realmente usato da `Vittorio_revisionato`, anche con `spiralClosure=false`, è **rigenerato dal codice Diego_Vittorio**. Il Return Vittorio originale viene usato solo come riferimento geometrico iniziale.
+
+Questa è la contaminazione principale da eliminare.
+
+## Contaminazione Mandata già corretta
+
+Il percorso pubblico usava anche:
+
+```text
+GeneraSpirale(terminalCenterline: true)
+```
+
+Questa contaminazione è stata rimossa: il percorso pubblico usa ora `terminalCenterline:false` e quindi la Mandata torna quella di Vittorio.
+
+Commit funzionale:
+`281ef61730437963d4f6c21a470660c5591ac7c6`.
+
+Verifica Fast Harness run `36722913206`:
+- build Core/Harness: SUCCESS;
+- equivalenza iniziale Vittorio/Vittorio_revisionato: SUCCESS;
+- equivalenza multi-progetto su 6 casi: SUCCESS;
+- quadrato LG-051 con Mandata Vittorio ripristinata: circuito aperto, coerente con l'assenza di un candidato valido nel percorso corrente;
+- workflow globale rosso più avanti per il Golden separato `Diego_Vittorio`, già divergente e non causato da questa correzione.
+
+## Baseline visivo: precisazione importante
+
+Il baseline visivamente accettato:
+
+`0df1d3bad2b9992a3cfd9af2e95f186301024f87`
+
+**conteneva già la rigenerazione Diego del Return** tramite il bridge sopra descritto. È quindi utile come riferimento visivo, ma **non è una baseline architetturalmente pulita**.
+
+## Prossimo passo esatto dopo recovery
+
+NON lavorare ancora sulla chiusura.
+
+Prima:
+1. eliminare dal percorso pubblico di `Vittorio_revisionato` la rigenerazione del Return tramite `PreparaRitornoRettilineoVittorio -> CreaRientroRettilineo -> CreaOffsetRettilineo`;
+2. fare in modo che `spiralClosure=false` mostri realmente **Mandata Vittorio + Return Vittorio originale**, senza chiusura;
+3. verificare il quadrato e almeno i casi di equivalenza già esistenti;
+4. solo dopo applicare LG-051 ai **soli terminali** di Mandata e Return preservati: tagli/accorciamenti, `>=2P`, nessun angolo acuto, nessuna intersezione, first-success;
+5. raccordare soltanto dopo la scelta definitiva della chiusura.
+
+La frontiera architetturale corretta è quindi:
+
+```text
+Vittorio: genera Mandata + Return
+---------------- CONFINE ----------------
+Vittorio_revisionato: decide chiusura + raccorda
+```
+
+Checkpoint documentale precedente nel Summary:
+`85074447f842f8da4e066c5d7d0bb91550eae1ba`.
+
+---
+
 # RECOVERY ACTIVE — Termodel Service
 
 Checkpoint: 2026-09-30 Europe/Rome — audit chiusura/raccordatura Vittorio_revisionato registrato
