@@ -72,6 +72,28 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-30 — Documentazione pubblica sorgenti cruciali Harness Spirali
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- creare `docs/modulo-spirali/sorgenti-cruciali.md` per la documentazione pubblica fetonte.it;
+- rendere navigabili i sorgenti cruciali di Harness, motori, linee guida e regression senza necessità di clonare il repository;
+- usare una tabella a tre colonne `Area | Path Repo | Ruolo`;
+- includere i casi `locale_1`, `locale_5`, `locale_8`, `locale_9` e il quadrato baseline;
+- includere la regola di non aggiornare alla cieca il Golden Diego_Vittorio;
+- non modificare codice, motori, Golden o frontend.
+
+Nota di verifica path:
+- nel repository corrente la directory regression effettiva è `Server/Termodelwebservice/tests/radiant-harness/baselines/`; non esiste una directory `goldens/`. La pagina pubblica userà il path reale per evitare link non validi.
+
+Criteri di completamento:
+- Markdown pubblico con indice navigabile;
+- link GitHub diretti ai path reali;
+- descrizioni brevi e operative;
+- nessun riferimento a ruoli/persona esterni;
+- pubblicazione su `main`.
+
+
 ### INCARICO 2026-09-30 — Implementazione LG-051 e pubblicazione Vittorio_revisionato
 Stato: ESEGUITO — PUBBLICATO SU MAIN; DEPLOY SERVICE NON CERTIFICATO
 
