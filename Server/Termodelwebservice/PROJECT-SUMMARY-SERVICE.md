@@ -72,6 +72,28 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+
+### INCARICO 2026-09-30 — Ritorno parallelo Diego indipendente dai raccordi
+Stato: COMMISSIONATO
+
+Autorizzazione utente: sviluppare una funzione isolata `ritorno_Parallelo_diego` che costruisca il ritorno parallelo direttamente da una spezzata rettilinea, senza dipendere da `ArrotondaSpirale` o dai raccordi Vittorio.
+
+Scopo:
+- nuovo file isolato in `Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/RitornoParalleloDiego.cs`;
+- funzione pubblica `ritorno_Parallelo_diego(...)`;
+- offset geometrico segmento-per-segmento con intersezione delle rette offset agli spigoli;
+- gestione dello stesso algoritmo per svolte concave e convesse;
+- distanza con segno per scegliere il lato della spezzata;
+- nessun collegamento al percorso produttivo `Vittorio_revisionato` in questa fase;
+- aggiungere un check Harness geometrico isolato per convex, concave e sequenza mista.
+
+Criteri di completamento:
+- nessuna modifica a `SpiraliVittorio`;
+- nessun cambio del motore produttivo;
+- Core/Harness compilano;
+- test isolati concavo/convesso/misto superati;
+- Summary aggiornato con commit ed esito reale.
+
 ### INCARICO 2026-09-30 — Implementazione LG-051 pulita su Vittorio_revisionato
 Stato: COMMISSIONATO
 
