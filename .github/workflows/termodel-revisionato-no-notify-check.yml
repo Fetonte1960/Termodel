@@ -1,4 +1,5 @@
 name: Termodel Revisionato No Notify Check
+# retry: 1
 
 permissions:
   contents: read
