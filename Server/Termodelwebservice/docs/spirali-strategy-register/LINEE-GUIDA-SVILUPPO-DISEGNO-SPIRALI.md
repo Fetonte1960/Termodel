@@ -2,9 +2,9 @@
 
 Classificazione: **SPECIFICA VIVA — IN DEFINIZIONE**  
 Ambito: Termodel / pannelli radianti / generazione geometrica spirali  
-Destinazione: storico **StrategiaDiego** + sviluppo/collaudo corrente **Diego_Vittorio**
+Destinazione: storico **StrategiaDiego** + sviluppo/collaudo **Diego_Vittorio** + derivazione sperimentale **Vittorio_revisionato**
 
-## Stato operativo corrente — 28/09/2026
+## Stato operativo corrente — 30/09/2026
 
 > **Questa sezione è autorevole sullo stato runtime corrente.**
 > Le frasi "non ancora implementata" presenti nelle sezioni storiche delle
@@ -7344,3 +7344,223 @@ Il test di inversione globale del verso (Fast Harness #52) ha inoltre
 mostrato che il verso opposto rende immediatamente impraticabile il Return sia
 nel `locale_1` sia nel quadrato: la causa non è un semplice errore
 orario/antiorario.
+
+---
+
+## LG-051 — `Vittorio_revisionato`: chiusura rettilinea completa prima della raccordatura
+
+**Stato:** DECISIONE UMANA CONSOLIDATA — 30/09/2026 — **NON ANCORA IMPLEMENTATA**
+
+Questa regola nasce dall'audit finale della chiusura pubblica di
+`Vittorio_revisionato`. È specifica della derivazione revisionata e non
+modifica né retroattivamente reinterpreta `LG-048` e `LG-049`, che restano
+il riferimento approvato per `Diego_Vittorio`.
+
+### Notazione locale
+
+Nel bridge `Vittorio_revisionato`:
+
+- `P = distanzaRitorno = 0,15 m` nel caso nominale corrente;
+- `2P = 0,30 m`;
+- `P` rappresenta la distanza Mandata-Ritorno del modello Vittorio e non va
+  confuso con la notazione storica `p = 0,30 m` usata in altre sezioni delle
+  linee guida.
+
+### Principio architetturale vincolante
+
+**Chiusura e raccordatura sono due fasi separate.**
+
+La chiusura deve operare esclusivamente sulle **polilinee rettilinee**.
+Durante la scelta del candidato non devono intervenire Bézier, archi,
+`ArrotondaSpirale` o altre trasformazioni di raccordatura.
+
+Flusso obbligatorio:
+
+```text
+Mandata rettilinea + Ritorno rettilineo
+        ↓
+combinatoria di chiusura
+        ↓
+Mandata/chiusura/Ritorno rettilinei definitivi
+        ↓
+unico percorso geometrico continuo
+        ↓
+raccordatura circolare di tutti gli spigoli raccordabili
+        ↓
+output grafico con identità/stili dei tratti conservati
+```
+
+La raccordatura non può scegliere una diversa chiusura, cambiare i tagli della
+combinatoria o introdurre una seconda selezione geometrica.
+
+### Validazione di un candidato di chiusura
+
+Per ogni candidato la combinatoria deve prima applicare i propri
+tagli/accorciamenti a Mandata e Ritorno. I controlli successivi si fanno sulla
+**geometria risultante dal candidato**, non sui segmenti del setup iniziale che
+quel candidato ha già eliminato o modificato.
+
+Il candidato è valido soltanto se tutte le condizioni seguenti sono vere:
+
+1. il **tratto rettilineo di chiusura** tra i nuovi terminali ha lunghezza
+   `>= 2P`; nel caso nominale corrente `>= 0,30 m`;
+2. il tratto rettilineo non interseca alcun altro tratto della geometria
+   risultante dal candidato, esclusi i due tratti terminali adiacenti ai quali
+   la chiusura si innesta;
+3. l'innesto non produce un **angolo acuto** né lato Mandata né lato Ritorno:
+   angoli inferiori a 90° sono respinti, 90° o maggiori sono accettabili.
+
+Una soluzione che fallisce uno qualsiasi di questi controlli viene scartata e
+si passa al candidato successivo.
+
+Non viene introdotto un ranking globale delle soluzioni. Per limitare il costo
+computazionale si mantiene una sequenza deterministica di tentativi e ci si
+ferma alla **prima soluzione valida**.
+
+Se nessun candidato è valido, **Mandata e Ritorno restano separati**. Non deve
+essere creata una chiusura forzata o una curva sostitutiva. In questa fase il
+feedback visivo del circuito aperto è considerato sufficiente per il debug:
+non è richiesto un nuovo marker diagnostico dedicato.
+
+### Controllo distanza dagli altri tubi
+
+Per questa prima definizione non viene imposto un controllo di distanza minima
+fra il tratto di chiusura e gli altri tubi: è obbligatorio soltanto il controllo
+di **intersezione**.
+
+**Possibile perfezionamento futuro:** introdurre un controllo della distanza
+minima dagli altri tubi della geometria risultante, senza cambiare la
+combinatoria base e senza rivalutare segmenti già eliminati dal candidato.
+
+### Percorso continuo e identità grafica
+
+Dopo la scelta della chiusura, Mandata + tratto di chiusura + Ritorno devono
+formare **un'unica catena geometrica continua**, necessaria per raccordare
+correttamente anche i due innesti della chiusura.
+
+L'unificazione geometrica non deve cancellare l'identità dei tratti. Ogni
+porzione deve poter conservare i propri metadati di appartenenza e
+presentazione, per esempio:
+
+- Mandata;
+- Chiusura;
+- Ritorno;
+- colore;
+- tipo linea;
+- ulteriori attributi grafici eventualmente necessari.
+
+La geometria è quindi unica e continua, mentre la resa grafica può restare
+semanticamente distinta.
+
+### Raccordatura finale
+
+La raccordatura parte **solo dopo** che la geometria rettilinea completa è
+stata definitivamente scelta.
+
+Regole:
+
+1. applicare la raccordatura a **tutti gli spigoli** del percorso continuo,
+   compresi quelli fra Mandata/Chiusura e Chiusura/Ritorno;
+2. usare **archi circolari tangenti** con raggio di curvatura definito;
+3. il raggio è configurabile **localmente a `Vittorio_revisionato`**;
+4. il valore di default resta quello già usato oggi dalla derivazione:
+   `0,10 m`;
+5. prima di eseguire un raccordo verificare che l'arco con quel raggio sia
+   contenibile nelle lunghezze disponibili dei due tratti adiacenti;
+6. se il raggio richiesto non è contenibile, **non ridurre il raggio per farlo
+   entrare**: non si esegue il raccordo e lo spigolo resta vivo;
+7. uno spigolo non raccordato per insufficiente lunghezza è accettabile
+   nell'esecutivo finale e non invalida la chiusura già approvata.
+
+### Discretizzazione adattiva degli archi
+
+Gli archi non devono essere trasformati in un numero elevato e fisso di
+segmenti.
+
+La discretizzazione deve essere **adattiva** e usare come criterio l'errore
+geometrico massimo fra arco teorico e polilinea discretizzata
+(scostamento/sagitta).
+
+Parametro locale a `Vittorio_revisionato`:
+
+```text
+TolleranzaDiscretizzazioneArco
+default = 0,005 m   # 5 mm
+```
+
+La suddivisione deve usare il minor numero di segmenti necessario a mantenere
+lo scostamento massimo entro la tolleranza configurata. Non devono quindi
+essere introdotti campionamenti fissi del tipo 10, 48 o altro numero arbitrario
+di segmenti per ogni raccordo.
+
+### Riutilizzo dei criteri approvati `Diego_Vittorio`
+
+Da `Diego_Vittorio` sono criteri utili e già approvati da riusare, adattandoli
+al presente contratto:
+
+- struttura combinatoria deterministica dei candidati;
+- scarto dei candidati geometricamente non validi;
+- controllo degli angoli agli innesti;
+- controllo delle intersezioni sulla geometria effettivamente conservata;
+- principio di fermarsi al primo successo completo quando non è richiesto un
+  ranking ulteriore;
+- raccordi **circolari tangenti** già presenti in
+  `SpiraliDiegoVittorio/Utilityfunctions.cs::ArrotondaSpirale`;
+- principio di frammentazione adattiva anziché densificazione indiscriminata.
+
+Non devono invece essere trasferiti a `Vittorio_revisionato`:
+
+- l'uso di Bézier come parte della decisione di chiusura;
+- il vincolo `>=2P` applicato alla lunghezza di una curva anziché al tratto
+  rettilineo di chiusura;
+- la riduzione automatica del raggio effettivo per adattarlo a tratti corti
+  (per `Vittorio_revisionato` lo spigolo resta vivo);
+- il limite fisso 2–6 segmenti o altri conteggi prefissati come criterio finale
+  di discretizzazione: qui è autorevole la tolleranza geometrica configurabile,
+  default 5 mm.
+
+### Debito tecnico rilevato dall'audit
+
+Il codice corrente alla data del 30/09/2026 **non rispetta ancora LG-051**.
+
+In particolare:
+
+- `Vittorio_revisionato` arrotonda i percorsi prima di completare la
+  chiusura;
+- l'adattatore
+  `ApplicaChiusuraCombinatoriaSuRitornoVittorio` disabilita i filtri della
+  corda rettilinea e applica il requisito `>=2P` al raccordo curvo;
+- il raccordo preliminare approvato dalla combinatoria viene poi scartato;
+- `CreaCurvaCollegamentoVincolata` rigenera una seconda Bézier sulla
+  geometria già arrotondata;
+- se questa seconda curva fallisce non avviene backtracking del candidato;
+- il workflow dedicato controlla il successo/metriche della curva preliminare,
+  non il nuovo contratto della chiusura rettilinea definitiva.
+
+Questi punti sono **diagnosi**, non autorizzazione implicita alla modifica del
+motore.
+
+### Regression richiesta quando LG-051 verrà implementata
+
+La futura implementazione dovrà separare i test delle due fasi.
+
+**Chiusura rettilinea:**
+- verificare lunghezza del segmento `>=2P`;
+- verificare assenza di angoli acuti ai due innesti;
+- verificare assenza di intersezioni con la geometria risultante dal candidato;
+- verificare backtracking al candidato successivo quando uno fallisce;
+- verificare circuito aperto se nessun candidato è valido.
+
+**Raccordatura:**
+- verificare archi circolari con raggio configurato;
+- verificare mancato raccordo, senza riduzione del raggio, quando i tratti sono
+  troppo corti;
+- verificare raccordatura su tutti gli spigoli del percorso continuo;
+- verificare errore di discretizzazione entro la tolleranza configurata
+  (default 5 mm);
+- verificare che la raccordatura non cambi il candidato di chiusura né la
+  topologia rettilinea già approvata.
+
+Lo stato deve essere distinto esplicitamente come sempre:
+`progettato / implementato / compilato / eseguito / testato / confrontato`.
+
