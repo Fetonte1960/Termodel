@@ -74,7 +74,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-30 — Centralizzazione modifiche Diego in FunzioniDiego
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente: raccogliere in una classe riutilizzabile le funzioni sviluppate rispetto a Vittorio, per ridurre dispersione e facilitarne il successivo spostamento/condivisione.
 
@@ -97,6 +97,22 @@ Criteri di completamento:
 - nessuna variazione intenzionale dei risultati geometrici esistenti;
 - Summary e tracciatura aggiornati.
 
+
+
+Esito reale:
+- creato `SpiraliDiegoVittorio/funzioni_diego.cs` con classe pubblica `funzioni_diego`;
+- centralizzati i tre ingressi pubblici:
+  - `ritorno_Parallelo_diego(...)` con implementazione effettiva dell'offset rettilineo;
+  - `chiusura_diego(...)` come facciata della chiusura combinatoria Diego già consolidata;
+  - `raccorda_diego(...)` come facciata del raccordo adattivo Diego già consolidato;
+- `RitornoParalleloDiego.cs` rimosso: la relativa logica è ora in `funzioni_diego.cs`;
+- `Vittorio_revisionato` richiama la facciata `funzioni_diego.chiusura_diego(...)` senza cambiare l'algoritmo sottostante;
+- `ChiudiSpirale` espone un bridge minimale `RaccordaDiego(...)` per consentire alla facciata di richiamare l'implementazione esistente senza duplicarla;
+- nessuna modifica a `SpiraliVittorio`;
+- `TERMODEL-SYNC.md` aggiornato per classificare `funzioni_diego.cs` come sorgente sperimentale Service-only riutilizzabile;
+- commit principali: `eb9377a`, `82d8801`, `e6862ce`, `5d06825`, `073f1db`, `5137b19`;
+- Fast Harness run `36757255100`: build Harness/Core SUCCESS con 0 errori; `parallel-return-check` SUCCESS su 4 casi; quadrato pubblico `Vittorio_revisionato` SUCCESS; equivalenza iniziale SUCCESS; equivalenza multi-progetto SUCCESS su 6 casi; structural abstraction SUCCESS;
+- il workflow globale resta rosso più avanti sul Golden separato `Diego_Vittorio` già divergente: SVG corrente `5ddd0ffd...` contro baseline `fa8e6106...`; non è causato dal riordino, che non modifica la geometria Diego.
 
 ### INCARICO 2026-09-30 — Ritorno parallelo Diego indipendente dai raccordi
 Stato: ESEGUITO
