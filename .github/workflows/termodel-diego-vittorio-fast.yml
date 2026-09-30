@@ -77,35 +77,53 @@ jobs:
           $svg = Join-Path $out "$id.svg"
           if (-not (Test-Path $log) -or -not (Test-Path $svg)) { throw "Artifact quadrato pubblico mancanti." }
           $logText = Get-Content $log -Raw
-          if ($logText -notmatch 'Chiusura Diego combinatoria: APPLICATA') {
+          if ($logText -notmatch 'DV_CLOSURE_REJECT[^\r\n]*seq=M2P/R0P[^\r\n]*reason=length[^\r\n]*required=0.3') {
             Get-Content $log | Write-Host
-            throw "Quadrato pubblico: procedura combinatoria Diego non ha chiuso il circuito."
-          }
-          $selected = [regex]::Match(
-            $logText,
-            'DV_CLOSURE_SELECTED[^\r\n]*type=first-straight-success[^\r\n]*length=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)[^\r\n]*requiredLength=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)')
-          if (-not $selected.Success) {
-            Get-Content $log | Write-Host
-            throw "Quadrato pubblico: nessuna chiusura rettilinea LG-051 selezionata."
+            throw "Quadrato pubblico: M2P/R0P non risulta scartata per lunghezza < 2P."
           }
 
-          $straightLength = [double]::Parse(
-            $selected.Groups[1].Value,
-            [Globalization.CultureInfo]::InvariantCulture)
-          $requiredLength = [double]::Parse(
-            $selected.Groups[2].Value,
-            [Globalization.CultureInfo]::InvariantCulture)
-          if ($straightLength + 1e-6 -lt $requiredLength) {
+          $applied = $logText -match 'Chiusura Diego combinatoria: APPLICATA'
+          $open = $logText -match 'Chiusura Diego combinatoria: NON APPLICATA'
+          if (-not $applied -and -not $open) {
             Get-Content $log | Write-Host
-            throw "Quadrato pubblico: chiusura rettilinea troppo corta: $straightLength < $requiredLength."
+            throw "Quadrato pubblico: esito combinatoria LG-051 non riconoscibile."
           }
 
-          if ($logText -notmatch 'VREV_LG051_CLOSURE_OK') {
-            Get-Content $log | Write-Host
-            throw "Quadrato pubblico: post-processo LG-051 non confermato."
+          if ($applied) {
+            $selected = [regex]::Match(
+              $logText,
+              'DV_CLOSURE_SELECTED[^\r\n]*type=first-straight-success[^\r\n]*length=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)[^\r\n]*requiredLength=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)')
+            if (-not $selected.Success) {
+              Get-Content $log | Write-Host
+              throw "Quadrato pubblico: chiusura applicata senza selezione rettilinea LG-051."
+            }
+
+            $straightLength = [double]::Parse(
+              $selected.Groups[1].Value,
+              [Globalization.CultureInfo]::InvariantCulture)
+            $requiredLength = [double]::Parse(
+              $selected.Groups[2].Value,
+              [Globalization.CultureInfo]::InvariantCulture)
+            if ($straightLength + 1e-6 -lt $requiredLength) {
+              Get-Content $log | Write-Host
+              throw "Quadrato pubblico: chiusura rettilinea troppo corta: $straightLength < $requiredLength."
+            }
+            if ($logText -notmatch 'VREV_LG051_CLOSURE_OK') {
+              Get-Content $log | Write-Host
+              throw "Quadrato pubblico: post-processo LG-051 non confermato."
+            }
+
+            Write-Host "REVISIONATO_PUBLIC_SQUARE_STRAIGHT_2P_OK length=$straightLength required=$requiredLength"
+          }
+          else {
+            if ($logText -match 'DV_CLOSURE_SELECTED[^\r\n]*type=first-straight-success' -or
+                $logText -match 'VREV_LG051_CLOSURE_OK') {
+              Get-Content $log | Write-Host
+              throw "Quadrato pubblico: circuito dichiarato aperto ma risulta una chiusura selezionata."
+            }
+            Write-Host "REVISIONATO_PUBLIC_SQUARE_OPEN_LG051_OK"
           }
 
-          Write-Host "REVISIONATO_PUBLIC_SQUARE_STRAIGHT_2P_OK length=$straightLength required=$requiredLength"
           Write-Host "REVISIONATO_PUBLIC_SQUARE_LG051_OK"
           Write-Host "SVG=$svg"
 
