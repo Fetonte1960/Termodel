@@ -72,6 +72,24 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+
+### INCARICO 2026-09-30 — Verifica architetturale pubblica Vittorio_revisionato
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- rispondere alla richiesta del consulente esterno tramite la pagina pubblica `docs/modulo-spirali/sorgenti-cruciali.md`;
+- verificare se `SpiraliVittorioRevisionato` è realmente una copia stretta di `Vittorio` con ritorno parallelo e sola correzione di chiusura, oppure se contiene astrazioni/importazioni proprie di `Diego_Vittorio`;
+- non modificare geometria, motori, Golden o frontend;
+- pubblicare sulla pagina pubblica i riscontri architetturali verificabili e i riferimenti ai file;
+- al termine segnalare all'utente `aggiornati` per invitare il consulente a rileggere la pagina.
+
+Criteri di completamento:
+- confronto di `Program.cs`, `Spiralgenerator.cs`, `ChiudiSpirale.cs` e benchmark;
+- identificazione delle dipendenze dirette da Diego_Vittorio e delle astrazioni non presenti in Vittorio;
+- pagina pubblica aggiornata con esito e prossima richiesta al consulente;
+- nessuna modifica al codice geometrico.
+
+
 ### INCARICO 2026-09-30 — Documentazione pubblica sorgenti cruciali Harness Spirali
 Stato: ESEGUITO
 
