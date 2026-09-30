@@ -7,7 +7,7 @@
 > `Termodel/job` con `RUNNING -> SUCCESS/FAILED` e push telefono a
 > SUCCESS/FAILED. La regola è permanente e già verificata end-to-end.
 
-Ultimo aggiornamento: **2026-09-28**
+Ultimo aggiornamento: **2026-09-30**
 Branch GitHub di riferimento: **main**
 Repository: `https://github.com/Fetonte1960/Termodel`
 
@@ -74,7 +74,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-30 — Verifica architetturale pubblica Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - rispondere alla richiesta del consulente esterno tramite la pagina pubblica `docs/modulo-spirali/sorgenti-cruciali.md`;
@@ -83,12 +83,27 @@ Autorizzazione utente:
 - pubblicare sulla pagina pubblica i riscontri architetturali verificabili e i riferimenti ai file;
 - al termine segnalare all'utente `aggiornati` per invitare il consulente a rileggere la pagina.
 
-Criteri di completamento:
-- confronto di `Program.cs`, `Spiralgenerator.cs`, `ChiudiSpirale.cs` e benchmark;
-- identificazione delle dipendenze dirette da Diego_Vittorio e delle astrazioni non presenti in Vittorio;
-- pagina pubblica aggiornata con esito e prossima richiesta al consulente;
-- nessuna modifica al codice geometrico.
+Risultato dell'analisi:
+- il percorso pubblico di `Vittorio_revisionato` non effettua attualmente un secondo lancio autonomo del generatore per il Return;
+- il Return pubblico nasce ancora da `CreaRientro(...)`; il corpo del metodo è uguale a quello di `SpiraliVittorio/ChiudiSpirale.cs`, quindi l'origine del Return resta parallela alla Mandata;
+- `Spiralgenerator.cs` revisionato contiene però l'astrazione `SpiralGenerationInput` con `LineeCondizionamento`, `DistanzaCondizionamento` e `TerminalCenterline`, assenti in Vittorio;
+- il percorso pubblico abilita `GeneraSpirale(terminalCenterline: true)`, quindi modifica la Mandata prima della chiusura e non è una derivazione stretta closure-only;
+- `StrategiaVittorioRevisionatoBenchmark.CheckAbstraction()` esercita esplicitamente Return autonomi/condizionati con chiamate separate a `Generate(...)`; questa capacità non appartiene all'architettura desiderata del revisionato;
+- `SpiraliVittorioRevisionato/ChiudiSpirale.cs` dipende direttamente da `SpiralHeatingDiegoVittorio.ChiudiSpirale.PreparaRitornoRettilineoVittorio(...)` e `ApplicaChiusuraCombinatoriaRettilineaVittorio(...)`; `Program.cs` conserva inoltre il metodo non usato `ChiudiSpiraleFilesDiegoVittorio()`;
+- conclusione: la contaminazione architetturale Diego è confermata, ma va distinta dal runtime pubblico del Return, che è ancora parallelo Vittorio.
 
+Obiettivo architetturale registrato:
+- `Vittorio_revisionato = Vittorio invariato per Mandata + Return parallelo Vittorio + sola correzione LG-051 della chiusura/raccordatura`;
+- una futura correzione dovrà eliminare dal percorso revisionato `TerminalCenterline`, l'astrazione Return neutra/condizionata e la dipendenza diretta dal namespace `SpiralHeatingDiegoVittorio`, preservando `CreaRientro` Vittorio.
+
+Pubblicazione:
+- pagina `docs/modulo-spirali/sorgenti-cruciali.md` aggiornata con la sezione `Verifica architetturale Vittorio_revisionato — 30/09/2026`;
+- commit pubblico: `e9445a5ee88cbf9875c8ee7f91d496aa404c9c1a`.
+
+Verifica:
+- pagina riletta da GitHub dopo il commit: sezione e riferimenti presenti;
+- nessun file sorgente, Golden, Harness o frontend modificato;
+- nessuna build/esecuzione necessaria per questa fase di sola analisi documentale.
 
 ### INCARICO 2026-09-30 — Documentazione pubblica sorgenti cruciali Harness Spirali
 Stato: ESEGUITO
