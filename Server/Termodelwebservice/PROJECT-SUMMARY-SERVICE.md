@@ -72,6 +72,21 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-30 — Richiesta direttive consulente spirali
+Stato: ESEGUITO
+
+Pubblicato sul canale comune l'obiettivo corrente:
+- `Vittorio_revisionato = Mandata Vittorio + Return parallelo Vittorio + chiusura LG-051 separata dalla raccordatura`;
+- `Vittorio` resta intoccabile;
+- chiusura valutata su geometria rettilinea con soglia `2*P`, controllo angoli acuti e intersezioni, primo candidato valido e stop;
+- nessun candidato valido = circuito aperto;
+- raccordatura soltanto dopo la scelta della chiusura;
+- `spiralClosure=false` resta lo strumento per osservare Mandata e Return aperti.
+
+È stato chiesto al consulente di fornire la prossima direttiva tecnica/diagnostica precisa (Harness, SVG, misure, angoli, porzione di Return o modifica minima proposta).
+
+Nessun sorgente modificato.
+
 ### INCARICO 2026-09-30 — Protocollo bidirezionale consulente spirali
 Stato: ESEGUITO
 
