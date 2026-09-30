@@ -73,26 +73,33 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-30 — Documentazione pubblica sorgenti cruciali Harness Spirali
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
-- creare `docs/modulo-spirali/sorgenti-cruciali.md` per la documentazione pubblica fetonte.it;
+- creare `docs/modulo-spirali/sorgenti-cruciali.md` per la documentazione pubblica;
 - rendere navigabili i sorgenti cruciali di Harness, motori, linee guida e regression senza necessità di clonare il repository;
 - usare una tabella a tre colonne `Area | Path Repo | Ruolo`;
 - includere i casi `locale_1`, `locale_5`, `locale_8`, `locale_9` e il quadrato baseline;
 - includere la regola di non aggiornare alla cieca il Golden Diego_Vittorio;
 - non modificare codice, motori, Golden o frontend.
 
-Nota di verifica path:
-- nel repository corrente la directory regression effettiva è `Server/Termodelwebservice/tests/radiant-harness/baselines/`; non esiste una directory `goldens/`. La pagina pubblica userà il path reale per evitare link non validi.
+Risultato:
+- creata `docs/modulo-spirali/sorgenti-cruciali.md`;
+- aggiunto indice navigabile e tabella `Area | Path Repo | Ruolo`;
+- aggiunti link GitHub diretti a Harness, test, workflow Fast, tre motori e linee guida;
+- documentati LG-048, LG-049 e LG-051;
+- documentati i casi `locale_1`, `locale_5`, `locale_8`, `locale_9`, quadrato Diego_Vittorio e quadrato Vittorio_revisionato;
+- verificato che nel repository corrente la directory Golden effettiva è `tests/radiant-harness/baselines/`, non `goldens/`, e usato il path reale;
+- aggiunta nota esplicita: **non aggiornare il Golden Diego_Vittorio alla cieca**;
+- nessun sorgente, Golden o frontend modificato.
 
-Criteri di completamento:
-- Markdown pubblico con indice navigabile;
-- link GitHub diretti ai path reali;
-- descrizioni brevi e operative;
-- nessun riferimento a ruoli/persona esterni;
-- pubblicazione su `main`.
+Commit pagina pubblica:
+- `be35a98bc958b3f63d3d3a512cdd31775df22923`.
 
+Verifica:
+- file riletto da GitHub: tabella, indice e warning Golden presenti;
+- GitHub Pages build avviata per il commit della pagina;
+- il CNAME corrente del repository `docs/` è `www.termodel.it`; nessuna modifica al dominio/CNAME eseguita in questo incarico.
 
 ### INCARICO 2026-09-30 — Implementazione LG-051 e pubblicazione Vittorio_revisionato
 Stato: ESEGUITO — PUBBLICATO SU MAIN; DEPLOY SERVICE NON CERTIFICATO
