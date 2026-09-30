@@ -17,7 +17,8 @@ namespace SpiralHeatingVittorioRevisionato
             double distanzaRotazioneUltimoPunto,
             bool debug,
             bool usaRaccordoAdattivoDiego = false,
-            double tolleranzaDiscretizzazioneArchi = 0.005)
+            double tolleranzaDiscretizzazioneArchi = 0.005,
+            bool chiudiCircuito = true)
         {
             try
             {
@@ -133,18 +134,34 @@ namespace SpiralHeatingVittorioRevisionato
                                             .ToList(),
                                         distanzaRitorno);
 
-                        var esitoDiego =
-                            SpiralHeatingDiegoVittorio.ChiudiSpirale
-                                .ApplicaChiusuraCombinatoriaRettilineaVittorio(
-                                    spirale
-                                        .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
-                                        .ToList(),
-                                    ritornoVersoCentroBase,
-                                    distanzaRitorno);
+                        var mandataRettilineaBase = spirale
+                            .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                            .ToList();
 
-                        Console.WriteLine(
-                            $"  Chiusura Diego combinatoria: {(esitoDiego.Applicata ? "APPLICATA" : "NON APPLICATA")}; " +
-                            $"mandata={esitoDiego.Mandata.Count}; ritorno={esitoDiego.Ritorno.Count}; chiusura={esitoDiego.Chiusura.Count}.");
+                        var esitoDiego = (
+                            Mandata: mandataRettilineaBase,
+                            Ritorno: ritornoVersoCentroBase,
+                            Chiusura: new List<SpiralHeatingDiegoVittorio.Punto>(),
+                            Applicata: false);
+
+                        if (chiudiCircuito)
+                        {
+                            esitoDiego =
+                                SpiralHeatingDiegoVittorio.ChiudiSpirale
+                                    .ApplicaChiusuraCombinatoriaRettilineaVittorio(
+                                        mandataRettilineaBase,
+                                        ritornoVersoCentroBase,
+                                        distanzaRitorno);
+
+                            Console.WriteLine(
+                                $"  Chiusura Diego combinatoria: {(esitoDiego.Applicata ? "APPLICATA" : "NON APPLICATA")}; " +
+                                $"mandata={esitoDiego.Mandata.Count}; ritorno={esitoDiego.Ritorno.Count}; chiusura={esitoDiego.Chiusura.Count}.");
+                        }
+                        else
+                        {
+                            Console.WriteLine(
+                                "  VREV_CLOSURE_DISABLED: Mandata e Return lasciati aperti intenzionalmente.");
+                        }
 
                         var mandataRettilinea = esitoDiego.Mandata
                             .Select(p => new Punto(p.X, p.Y))
@@ -213,12 +230,14 @@ namespace SpiralHeatingVittorioRevisionato
                     // Punto finale del rientro (per collegare la linea di ritorno del tubo)
                     Punto fineRientro = rientro.Count > 0 ? rientro[rientro.Count - 1] : null;
 
-                    string chiusuraGptSvg = ChiusuraGPT(
-                        perimetro,
-                        spiraleArrotondata,
-                        rientro,
-                        curvaCollegamento,
-                        numeroCircuito++);
+                    string chiusuraGptSvg = chiudiCircuito
+                        ? ChiusuraGPT(
+                            perimetro,
+                            spiraleArrotondata,
+                            rientro,
+                            curvaCollegamento,
+                            numeroCircuito++)
+                        : string.Empty;
 
                     tutteLeSpiraliChiuse.Add((localeId, spiraleArrotondata, rientro, curvaCollegamento, fineRientro, chiusuraGptSvg));
                     
