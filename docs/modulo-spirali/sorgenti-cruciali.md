@@ -4,6 +4,133 @@ Questa pagina raccoglie i punti di ingresso essenziali per il collaudo e lo svil
 
 Ogni path è collegato direttamente al repository GitHub, così è possibile consultare sorgenti, casi di test e linee guida dal browser senza clonare l'intero repository.
 
+## Protocollo di collaborazione con il consulente — riepilogo operativo
+
+Questo paragrafo serve come punto di ripartenza completo nel caso in cui il consulente perda gli appunti precedenti.
+
+### Canale di comunicazione
+
+Il **canale pubblico canonico** tra ChatGPT/TermodelService e il consulente è questo file:
+
+`docs/modulo-spirali/sorgenti-cruciali.md`
+
+ChatGPT scrive qui:
+- risposte tecniche al consulente;
+- risultati di verifiche e analisi;
+- richieste di chiarimento o controproposte;
+- stato dei motori e delle decisioni geometriche;
+- riferimenti a commit, Harness, SVG e file rilevanti.
+
+Quando ChatGPT ha pubblicato qualcosa destinato al consulente, comunica a Diego una sola parola:
+
+**aggiornati**
+
+A quel punto Diego avvisa il consulente, che rilegge questa pagina pubblica e risponde con la richiesta successiva. Il consulente non deve entrare nel server TermodelService e non deve basarsi su stato locale non pubblicato: il riferimento comune è questa pagina e i file GitHub collegati da qui.
+
+### Ruoli
+
+- **Diego** decide la direzione finale del lavoro.
+- **Il consulente** fornisce analisi, proposte geometriche, richieste diagnostiche e osservazioni tecniche. Il suo parere è importante ma **non vincolante**.
+- **ChatGPT** verifica le proposte contro il repository reale, evidenzia compatibilità/rischi/alternative, le discute con Diego e implementa soltanto dopo una decisione operativa.
+
+Quindi una proposta del consulente non diventa automaticamente codice. Il flusso corretto è:
+
+```text
+consulente
+    ↓
+proposta tecnica
+    ↓
+ChatGPT verifica sul repository reale
+    ↓
+discussione con Diego
+    ↓
+decisione di Diego
+    ↓
+eventuale implementazione + test
+    ↓
+risultato pubblicato qui
+    ↓
+aggiornati
+```
+
+### Cosa stiamo facendo
+
+Stiamo lavorando sul modulo spirali di **TermodelService**, in particolare sulla relazione tra Mandata, Return e chiusura finale dei circuiti radianti.
+
+I tre riferimenti principali sono:
+
+- **`Vittorio`** — riferimento storico. È **intoccabile** e serve come baseline funzionale/geometrica.
+- **`Diego_Vittorio`** — strategia evolutiva con Return autonomo/doppio lancio, combinatoria di chiusura e altre logiche sperimentali. Non deve essere trasferita automaticamente dentro Vittorio_revisionato.
+- **`Vittorio_revisionato`** — linea sperimentale che vogliamo ricondurre a una derivazione stretta di Vittorio: Mandata Vittorio, Return parallelo Vittorio e sola correzione controllata della chiusura finale secondo LG-051.
+
+### Obiettivo architetturale di Vittorio_revisionato
+
+L'obiettivo che stiamo cercando di preservare è:
+
+```text
+Vittorio_revisionato
+    = Mandata Vittorio
+    + Return parallelo Vittorio
+    + sola logica di chiusura/raccordatura LG-051
+```
+
+Non vogliamo trasformarlo in un secondo motore indipendente simile a Diego_Vittorio.
+
+Una verifica recente ha confermato che il percorso pubblico attuale genera ancora il Return a partire da `CreaRientro(...)` di Vittorio, quindi il Return effettivo è ancora parallelo alla Mandata. Tuttavia nella cartella revisionata sono presenti astrazioni e dipendenze derivate da Diego_Vittorio che dovranno essere eliminate o isolate se vogliamo tornare a una derivazione stretta.
+
+### Regola LG-051 che stiamo usando
+
+La sequenza desiderata è:
+
+```text
+Mandata rettilinea
+        ↓
+Return rettilineo parallelo
+        ↓
+NESSUN raccordo ancora
+        ↓
+candidati di chiusura
+        ↓
+filtri:
+    lunghezza >= 2*P
+    nessun angolo acuto in Mandata
+    nessun angolo acuto in Return
+    nessuna intersezione
+        ↓
+primo candidato valido → stop
+nessun candidato valido → circuito aperto
+        ↓
+solo dopo: raccordatura finale R=0,10
+```
+
+Non vogliamo scegliere automaticamente il candidato più lungo e non vogliamo codificare `0.30 m` come costante: la soglia è `2*P`.
+
+### Strumento attuale per osservare il problema
+
+`Vittorio_revisionato` dispone ora di un controllo frontend:
+
+**Help → Motore spirali — test pubblico → Chiudi circuito**
+
+Frontend pubblico corrente: **v1.39**.
+
+Se il controllo viene modificato, il frontend seleziona automaticamente `Vittorio_revisionato`. Con chiusura disattivata viene inviato:
+
+```http
+spiralEngine=Vittorio_revisionato&spiralClosure=false
+```
+
+In questa modalità Mandata e Return vengono mostrati aperti, senza forzare la chiusura finale. Questo serve proprio a osservare il Return reale prima di decidere se modificarne la generazione.
+
+### Punto di discussione attuale
+
+Il consulente ha proposto una chirurgia basata su un nuovo `OffsetEngine.Parallel(...)` per creare il Return. La nostra obiezione è che **prima dobbiamo verificare se il Return Vittorio già esistente, osservato con `spiralClosure=false`, è geometricamente quello desiderato**.
+
+Se è già corretto, non introdurremo un nuovo algoritmo di offset: interverremo soltanto sulla chiusura LG-051. Se invece il Return aperto risulta realmente errato, allora discuteremo insieme una modifica della logica di Return.
+
+### Regola operativa per il prossimo scambio
+
+Il consulente può leggere questa sezione come base aggiornata e inviare una richiesta diagnostica o una controproposta precisa. ChatGPT la confronterà col repository reale e la discuterà con Diego prima di qualsiasi nuova modifica geometrica.
+
 ## Indice
 
 - [Mappa dei sorgenti](#mappa-dei-sorgenti)
