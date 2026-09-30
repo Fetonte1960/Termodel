@@ -1,15 +1,24 @@
 param(
   [string]$ProjectPath = "",
-  [string]$SpiralEngine = ""
+  [string]$SpiralEngine = "",
+  [string]$SpiralClosure = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+$expectedSpiralClosure = $true
+if (-not [string]::IsNullOrWhiteSpace($SpiralClosure)) {
+  if (-not [bool]::TryParse($SpiralClosure,[ref]$expectedSpiralClosure)) {
+    throw "SpiralClosure non valido: usare true oppure false."
+  }
+}
 
 $base = "http://127.0.0.1:5082"
 $env:ASPNETCORE_URLS = $base
 $env:TERMODEL_SAVED_PROJECTS_DIR = Join-Path $env:RUNNER_TEMP ("TermodelRadiantReference-" + [guid]::NewGuid().ToString("N"))
 $artifactDirName = if (-not [string]::IsNullOrWhiteSpace($SpiralEngine)) {
-  "RadiantPanelsEngineOverride-" + ($SpiralEngine -replace '[^A-Za-z0-9_-]+','_')
+  $suffix = if ([string]::IsNullOrWhiteSpace($SpiralClosure)) { "" } else { "-closure-" + $SpiralClosure.ToLowerInvariant() }
+  "RadiantPanelsEngineOverride-" + ($SpiralEngine -replace '[^A-Za-z0-9_-]+','_') + $suffix
 } elseif ([string]::IsNullOrWhiteSpace($ProjectPath)) {
   "RadiantPanelsReferenceArtifacts"
 } else {
@@ -300,8 +309,15 @@ try {
 
   $headers = @{ "X-Termodel-Project-Lock" = [string]$allocation.projectLockToken }
   $calcUri = "$base/api/calculations"
+  $calcQuery = @()
   if (-not [string]::IsNullOrWhiteSpace($SpiralEngine)) {
-    $calcUri += "?spiralEngine=" + [uri]::EscapeDataString($SpiralEngine)
+    $calcQuery += "spiralEngine=" + [uri]::EscapeDataString($SpiralEngine)
+  }
+  if (-not [string]::IsNullOrWhiteSpace($SpiralClosure)) {
+    $calcQuery += "spiralClosure=" + $expectedSpiralClosure.ToString().ToLowerInvariant()
+  }
+  if ($calcQuery.Count -gt 0) {
+    $calcUri += "?" + ($calcQuery -join "&")
   }
   $calc = Invoke-RestMethod -Uri $calcUri -Method Post -Headers $headers -ContentType "text/plain; charset=utf-8" -Body $serverProject
 
@@ -313,7 +329,10 @@ try {
   if ([string]$calc.spiralEngine -ne $expectedEngine) {
     throw "Motore spirali response inatteso: atteso '$expectedEngine', ricevuto '$($calc.spiralEngine)'."
   }
-  Write-Host "RADIANT_SPIRAL_ENGINE_REQUEST_OK engine=$($calc.spiralEngine)"
+  if ([bool]$calc.spiralClosure -ne $expectedSpiralClosure) {
+    throw "Chiusura spirale response inattesa: atteso '$expectedSpiralClosure', ricevuto '$($calc.spiralClosure)'."
+  }
+  Write-Host "RADIANT_SPIRAL_ENGINE_REQUEST_OK engine=$($calc.spiralEngine) closure=$($calc.spiralClosure)"
 
   # Regression 3D: l'artifact deve contenere vere superfici edilizie, non
   # soltanto ponti/ponteggi verdi. Questo controllo usa lo stesso model3d
@@ -489,6 +508,9 @@ try {
   if (-not [string]::IsNullOrWhiteSpace($SpiralEngine)) {
     $directQuery += "&spiralEngine=" + [uri]::EscapeDataString($SpiralEngine)
   }
+  if (-not [string]::IsNullOrWhiteSpace($SpiralClosure)) {
+    $directQuery += "&spiralClosure=" + $expectedSpiralClosure.ToString().ToLowerInvariant()
+  }
   $directResponse = Invoke-WebRequest -Uri "$base/api/calculations?$directQuery" -Method Post -ContentType "text/plain; charset=utf-8" -Body $serverProject -OutFile $directSvgPath -PassThru
 
   if ($directResponse.StatusCode -ne 200) {
@@ -498,7 +520,8 @@ try {
       $directResponse.Headers["X-Termodel-Response-Artifact"] -ne "pannelli-esecutivo-svg" -or
       $directResponse.Headers["X-Termodel-Project-Id"] -ne [string]$allocation.projectId -or
       $directResponse.Headers["X-Termodel-Artifact-Stale"] -ne "false" -or
-      $directResponse.Headers["X-Termodel-Spiral-Engine"] -ne $expectedEngine) {
+      $directResponse.Headers["X-Termodel-Spiral-Engine"] -ne $expectedEngine -or
+      $directResponse.Headers["X-Termodel-Spiral-Closure"] -ne $expectedSpiralClosure.ToString().ToLowerInvariant()) {
     throw "responseArtifact SVG: header risposta non coerenti."
   }
 
@@ -516,12 +539,20 @@ try {
   if ($SpiralEngine -eq "Vittorio_revisionato") {
     $directSvg = Get-Content -LiteralPath $directSvgPath -Raw
     if ($directSvg -notmatch [regex]::Escape("_PannelliMandata_Output")) {
-      throw "Vittorio_revisionato ibrido: layer mandata non trovato."
+      throw "Vittorio_revisionato: layer mandata non trovato."
     }
     if ($directSvg -notmatch [regex]::Escape("_PannelliRitorno_Output")) {
-      throw "Vittorio_revisionato ibrido: layer ritorno Diego_Vittorio non trovato."
+      throw "Vittorio_revisionato: layer ritorno non trovato."
     }
-    Write-Host "VITTORIO_REVISIONATO_DIEGO_CLOSURE_OK"
+    if (-not $expectedSpiralClosure -and
+        $directSvg -match [regex]::Escape("_NumeriCircuiti_Output")) {
+      throw "Vittorio_revisionato aperto: presente ancora il layer di chiusura/numerazione circuito."
+    }
+    if (-not $expectedSpiralClosure) {
+      Write-Host "VITTORIO_REVISIONATO_OPEN_CIRCUITS_OK"
+    } else {
+      Write-Host "VITTORIO_REVISIONATO_CLOSURE_MODE_OK"
+    }
   }
 
   $badArtifactResponse = Invoke-WebRequest -Uri "$base/api/calculations?responseArtifact=artifact-inesistente" -Method Post -ContentType "text/plain; charset=utf-8" -Body $serverProject -SkipHttpErrorCheck
