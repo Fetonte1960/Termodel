@@ -74,7 +74,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-09-30 — Attivazione pipeline Diego pulita su Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente: applicare, provare e pubblicare la nuova pipeline geometrica su `Vittorio_revisionato`, mantenendo checkpoint di recovery persistenti. Per questo incarico l'utente ha chiesto esplicitamente **nessuna notifica**: non usare Issue #1 e non avviare workflow che inviano ntfy.
 
@@ -96,6 +96,33 @@ Criteri di completamento:
 - nessuna modifica a frontend, `definizionedati.json` o `SpiraliVittorio`;
 - recovery e Summary aggiornati con stato reale e commit.
 
+
+
+Esito reale:
+- percorso pubblico `Vittorio_revisionato` ora:
+  `Mandata Vittorio rettilinea -> funzioni_diego.ritorno_Parallelo_diego(..., -distanzaRitorno) -> funzioni_diego.chiusura_diego(...) -> percorso unico Mandata/Chiusura/Ritorno -> funzioni_diego.raccorda_diego(...)`;
+- eliminata dal percorso pubblico la catena `ArrotondaSpirale -> CreaRientro -> PreparaRitornoRettilineoVittorio`;
+- `ritorno_Parallelo_diego` genera direttamente l'offset della spezzata rettilinea, senza dipendere dai raccordi;
+- `raccorda_diego` contiene ora la raccordatura circolare LG-051 definitiva con raggio non ridotto e discretizzazione adattiva sulla sagitta;
+- l'implementazione LG-051 duplicata in `SpiraliVittorioRevisionato/Utilityfunctions.cs` è stata rimossa;
+- `SpiraliVittorio` invariata; frontend e `definizionedati.json` invariati.
+
+Commit principali:
+- `b3e54d7ce6c9d7089a455fd2d0a0316fa6252038` — Return parallelo Diego nel percorso revisionato;
+- `86eea277f8171ea6d52afdbb1484c9b97dd35ffb` — raccordatura finale centralizzata in `funzioni_diego`;
+- `790a8025f1d2edfff834f4513d9f610ce08b89d8` — uso di `raccorda_diego` nel percorso revisionato;
+- `3eec67d65bd899d2d96e06759e877f8be738624c` — rimosso bridge raccordo superato;
+- `cdc6039084caf9310081368ad629950e9da04b3e` — Harness riallineato;
+- `761e96a41a757fbc67bf5304f2ea1b00d2344afb` e `0f36a5cd85576ad9f5665e87b8c532ed31822a80` — rimozione vecchia duplicazione LG-051 e correzione sintattica;
+- `8ab24a1c71f9de39077a9f414a09e03e1187ae5a` — tracciatura TERMODEL-SYNC aggiornata;
+- recovery finale: `009023b6c3f76643119b0822f8916de0076050cb`.
+
+Verifica reale:
+- run no-notify `36759139735`: SUCCESS; Build Harness+Core SUCCESS, 0 errori; guard statico SUCCESS; `parallel-return-check` SUCCESS su convesso/concavo/misto/lato opposto; `fillet-check` SUCCESS con `FUNZIONI_DIEGO_LG051_FILLET_OK` e sagitta massima circa 0,003407 m; quadrato pubblico SUCCESS; concavo pubblico SUCCESS;
+- run no-notify matrice `36759475306`: SUCCESS; 6 casi pubblici eseguiti (quadrato, concavo L, trapezio obliquo, connection-terminal, appartamento corrente, pannelli pubblici); tutti hanno usato `VREV_RETURN_PARALLEL_DIEGO` con offset `-0,15 m`, tutti hanno applicato la chiusura e completato la raccordatura finale;
+- i workflow temporanei no-notify sono stati rimossi dopo l'esecuzione;
+- pubblicazione verificata su GitHub `main`; deploy Render non certificato in questa fase;
+- per richiesta esplicita dell'utente non è stata usata Issue #1 e non è stata inviata notifica ntfy.
 
 ### INCARICO 2026-09-30 — Centralizzazione modifiche Diego in FunzioniDiego
 Stato: ESEGUITO
@@ -175,7 +202,7 @@ Esito reale:
 - lo stesso run fallisce successivamente sul Golden separato `Diego_Vittorio` già divergente: SVG corrente `5ddd0ffd...` contro baseline `fa8e6106...`; il nuovo helper non è richiamato dal motore e non può essere la causa di tale divergenza.
 
 ### INCARICO 2026-09-30 — Implementazione LG-051 pulita su Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente: riprendere lo sviluppo del modulo spirali sulla strategia `Vittorio_revisionato`.
 
@@ -203,6 +230,16 @@ Checkpoint diagnostico 30/09/2026:
 - quindi il Return effettivamente usato dal percorso pubblico e anche da `spiralClosure=false` NON è il Return Vittorio originale: è un nuovo offset rettilineo costruito dal codice Diego_Vittorio;
 - il baseline visivamente accettato `0df1d3bad2b9992a3cfd9af2e95f186301024f87` conteneva già questo bridge; era quindi un buon riferimento visivo, ma non una derivazione architetturalmente pulita;
 - prossima correzione da discutere/implementare: eliminare la rigenerazione Diego del Return e fare in modo che LG-051 lavori sul Return Vittorio preservato, lasciando alla logica di chiusura soltanto tagli/accorciamenti dei terminali e filtri geometrici.
+
+
+Chiusura finale dell'incarico LG-051:
+- completata la separazione effettiva fra generazione del Return, scelta della chiusura e raccordatura;
+- il Return pubblico non viene più ricostruito dal vecchio bridge Diego/Vittorio: nasce direttamente dalla Mandata rettilinea tramite `funzioni_diego.ritorno_Parallelo_diego`;
+- la chiusura resta rettilinea e combinatoria tramite `funzioni_diego.chiusura_diego`;
+- la raccordatura avviene dopo la scelta definitiva, sull'unico percorso continuo, tramite `funzioni_diego.raccorda_diego`;
+- build e test specifici conclusi con successo nei run no-notify `36759139735` e `36759475306`;
+- `SpiraliVittorio` resta invariata e non sono stati aggiornati Golden alla cieca;
+- recovery completo registrato in `docs/RECOVERY-ACTIVE.md` al commit `009023b6c3f76643119b0822f8916de0076050cb`.
 
 ### INCARICO 2026-09-30 — Richiesta direttive consulente spirali
 Stato: ESEGUITO
