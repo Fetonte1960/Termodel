@@ -73,22 +73,36 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-09-30 — Registrazione audit chiusura/raccordatura Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - registrare integralmente le decisioni dell'audit finale di `Vittorio_revisionato` nelle linee guida sviluppo spirali;
 - registrare lo stesso checkpoint nel registro di recupero chat `docs/RECOVERY-ACTIVE.md`;
 - attingere ai criteri già approvati di `Diego_Vittorio` senza modificare codice geometrico in questa fase.
 
-Criteri di completamento:
-- documentare separazione netta tra chiusura rettilinea e raccordatura successiva;
-- documentare vincoli `>=2P`, intersezioni sulla geometria risultante, esclusione angoli acuti e primo candidato valido;
-- documentare circuito aperto come feedback visivo in caso di fallimento;
-- documentare percorso unico con identità grafica dei tratti;
-- documentare raccordi circolari a raggio locale configurabile, mancato raccordo se il raggio non è contenibile, discretizzazione adattiva con tolleranza locale default 5 mm;
-- annotare controllo distanza minima dagli altri tubi come possibile perfezionamento futuro;
-- nessuna modifica al motore in questo incarico.
+Risultato:
+- creata la nuova regola **LG-051** in
+  `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`;
+- formalizzata la separazione vincolante fra chiusura rettilinea e raccordatura successiva;
+- formalizzati: segmento di chiusura `>=2P`, controllo intersezioni sulla geometria risultante, esclusione angoli acuti, arresto al primo candidato valido, circuito aperto come feedback visivo se nessun candidato è valido;
+- formalizzato il percorso geometricamente unico con identità grafica/semantica dei tratti conservata;
+- formalizzati raccordi circolari tangenti su tutti gli spigoli, raggio configurabile localmente con default corrente `0,10 m`, nessuna riduzione del raggio quando non contenibile e spigolo vivo accettabile;
+- formalizzata discretizzazione adattiva degli archi con tolleranza locale configurabile, default `5 mm`;
+- registrato come possibile perfezionamento futuro il controllo della distanza minima dagli altri tubi, non incluso nella prima implementazione;
+- esplicitati i criteri riusabili da `Diego_Vittorio` e quelli da non trasferire (Bézier nella decisione di chiusura, `>=2P` sulla curva, riduzione automatica del raggio, conteggio fisso dei segmenti);
+- registrato il debito tecnico corrente: bridge revisionato ancora non conforme a LG-051 e workflow da riallineare;
+- aggiunto checkpoint completo in `docs/RECOVERY-ACTIVE.md` con recovery point esatto per la prossima chat.
 
+Commit:
+- registrazione iniziale incarico: `0349b2f26c942e5cb5342c539cfffabf351fc63a`;
+- linee guida / LG-051: `99f796e44b5c66df03cc0d237f390f70c7ed203f`;
+- recovery chat: `30f6592d2b977f7942e4b139d5320a952b7679ce`.
+
+Verifica:
+- rilettura GitHub di LG-051 e del nuovo checkpoint Recovery: contenuti presenti;
+- nessun file sorgente del motore modificato;
+- build/test non eseguiti perché l'incarico è esclusivamente documentale;
+- stato LG-051: **progettato/documentato**, non implementato, non compilato, non testato.
 
 ### INCARICO 2026-09-28 — Istruzioni debug avanzato Harness rapido
 Stato: ESEGUITO
