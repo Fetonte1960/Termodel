@@ -1905,19 +1905,6 @@ namespace SpiralHeatingDiegoVittorio
             return rientro;
         }
 
-        // Facciata interna resa pubblica per consentire a funzioni_diego
-        // di centralizzare le personalizzazioni senza duplicare l'algoritmo.
-        public static List<Punto> RaccordaDiego(
-            List<Punto> mandata,
-            List<Punto> ritorno,
-            double raggio,
-            double? lunghezzaMinima = null) =>
-            CreaCurvaCollegamentoAdattiva(
-                mandata,
-                ritorno,
-                raggio,
-                lunghezzaMinima);
-
         // Funzione realizzata da Codex in autonomia
         private static List<Punto> CreaCurvaCollegamentoAdattiva(
             List<Punto> mandata,
