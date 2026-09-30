@@ -72,6 +72,24 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-09-30 — Registrazione audit chiusura/raccordatura Vittorio_revisionato
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- registrare integralmente le decisioni dell'audit finale di `Vittorio_revisionato` nelle linee guida sviluppo spirali;
+- registrare lo stesso checkpoint nel registro di recupero chat `docs/RECOVERY-ACTIVE.md`;
+- attingere ai criteri già approvati di `Diego_Vittorio` senza modificare codice geometrico in questa fase.
+
+Criteri di completamento:
+- documentare separazione netta tra chiusura rettilinea e raccordatura successiva;
+- documentare vincoli `>=2P`, intersezioni sulla geometria risultante, esclusione angoli acuti e primo candidato valido;
+- documentare circuito aperto come feedback visivo in caso di fallimento;
+- documentare percorso unico con identità grafica dei tratti;
+- documentare raccordi circolari a raggio locale configurabile, mancato raccordo se il raggio non è contenibile, discretizzazione adattiva con tolleranza locale default 5 mm;
+- annotare controllo distanza minima dagli altri tubi come possibile perfezionamento futuro;
+- nessuna modifica al motore in questo incarico.
+
+
 ### INCARICO 2026-09-28 — Istruzioni debug avanzato Harness rapido
 Stato: ESEGUITO
 
