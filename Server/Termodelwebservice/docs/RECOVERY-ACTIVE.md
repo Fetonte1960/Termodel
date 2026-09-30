@@ -2422,3 +2422,70 @@ Vincolo operativo di questa sessione:
 - non usare Issue #1;
 - evitare workflow con ntfy; i test automatici della fase devono usare un gate
   temporaneo privo di notifiche oppure restare locali.
+
+
+### 2026-09-30 — CHECKPOINT FINALE: pipeline Diego pulita pubblicata
+Stato: **IMPLEMENTATA, COMPILATA E TESTATA SU MAIN — NESSUNA NOTIFICA**
+
+Flusso pubblico corrente di `Vittorio_revisionato`:
+
+```text
+Mandata Vittorio rettilinea
+  -> funzioni_diego.ritorno_Parallelo_diego(..., -0,15 m)
+  -> funzioni_diego.chiusura_diego(...)
+  -> percorso unico Mandata -> Chiusura -> Ritorno
+  -> funzioni_diego.raccorda_diego(...)
+  -> output semantico Mandata / Chiusura / Ritorno
+```
+
+Cambiamenti consolidati:
+- eliminato dal percorso pubblico il passaggio
+  `ArrotondaSpirale -> CreaRientro -> PreparaRitornoRettilineoVittorio`;
+- il Return parallelo nasce direttamente dalla spezzata rettilinea e conserva
+  lo stesso lato storico del bridge precedente usando distanza con segno
+  `-distanzaRitorno`;
+- `raccorda_diego` contiene ora la raccordatura circolare LG-051 definitiva:
+  raggio richiesto non ridotto, spigolo vivo se non contenibile,
+  discretizzazione adattiva sulla sagitta;
+- l'implementazione LG-051 duplicata in
+  `SpiraliVittorioRevisionato/Utilityfunctions.cs` è stata rimossa;
+- `SpiraliVittorio` non è stata modificata;
+- nessun frontend e nessun `definizionedati.json` modificati.
+
+Commit funzionali principali:
+- `b3e54d7ce6c9d7089a455fd2d0a0316fa6252038` — attiva Return parallelo Diego;
+- `86eea277f8171ea6d52afdbb1484c9b97dd35ffb` — raccordatura finale in `funzioni_diego`;
+- `790a8025f1d2edfff834f4513d9f610ce08b89d8` — `Vittorio_revisionato` usa il raccordo centralizzato;
+- `3eec67d65bd899d2d96e06759e877f8be738624c` — rimosso bridge pubblico di raccordo superato;
+- `cdc6039084caf9310081368ad629950e9da04b3e` — test Harness riallineato;
+- `761e96a41a757fbc67bf5304f2ea1b00d2344afb` + `0f36a5cd85576ad9f5665e87b8c532ed31822a80` — rimozione vecchio raccordo revisionato e fix sintattico.
+
+Verifica reale senza ntfy:
+- workflow temporaneo no-notify run `36759139735`: SUCCESS;
+  build Harness + Core SUCCESS, 0 errori; guard statico SUCCESS;
+  `parallel-return-check` SUCCESS su concavo/convesso/misto/lato opposto;
+  `fillet-check` SUCCESS con
+  `FUNZIONI_DIEGO_LG051_FILLET_OK`, sagitta massima ~0,003407 m;
+  quadrato pubblico SUCCESS; concavo pubblico SUCCESS;
+- matrice temporanea no-notify run `36759475306`: SUCCESS;
+  6 casi pubblici eseguiti (quadrato, concavo L, trapezio obliquo,
+  connection-terminal, appartamento corrente, pannelli pubblici);
+  tutti 6 hanno usato `VREV_RETURN_PARALLEL_DIEGO` con offset `-0,15 m`;
+  tutti 6 hanno chiusura applicata e raccordatura finale confermata;
+  build SUCCESS, 0 errori;
+- i due workflow temporanei no-notify sono stati eliminati dopo il test.
+
+Rollback / recovery:
+- ultimo punto certamente precedente alla modifica funzionale:
+  `11b138506771977e0a123ac5d36c19adddb37d0a` (checkpoint documentale);
+- commit di commissione pre-fase:
+  `9809518f260c671b18b02ef6083c11f580ded862`;
+- se una chat futura trova un problema, NON aggiornare Golden alla cieca:
+  confrontare prima il percorso attuale con questi commit e con i log dei run
+  sopra.
+
+Nota operativa:
+- per richiesta esplicita dell'utente questa fase non ha usato Issue #1 e non
+  ha inviato notifiche ntfy;
+- la pubblicazione qui certificata è su GitHub `main`; il deploy Render non
+  è dichiarato verificato in questa fase.
