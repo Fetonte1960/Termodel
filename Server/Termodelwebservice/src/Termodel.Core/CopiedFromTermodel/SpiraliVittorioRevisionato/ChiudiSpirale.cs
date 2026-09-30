@@ -189,18 +189,29 @@ namespace SpiralHeatingVittorioRevisionato
                         else
                         {
                             spiraleArrotondata =
-                                GeometryUtils.ArrotondaSpiraleCircolareLg051(
-                                    mandataRettilinea,
-                                    raggioCurvatura,
-                                    tolleranzaDiscretizzazioneArchi);
+                                SpiralHeatingDiegoVittorio.funzioni_diego
+                                    .raccorda_diego(
+                                        mandataRettilinea
+                                            .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                                            .ToList(),
+                                        raggioCurvatura,
+                                        tolleranzaDiscretizzazioneArchi)
+                                    .Select(p => new Punto(p.X, p.Y))
+                                    .ToList();
+
                             rientro =
-                                GeometryUtils.ArrotondaSpiraleCircolareLg051(
-                                    ritornoVersoCentro
-                                        .AsEnumerable()
-                                        .Reverse()
-                                        .ToList(),
-                                    raggioCurvatura,
-                                    tolleranzaDiscretizzazioneArchi);
+                                SpiralHeatingDiegoVittorio.funzioni_diego
+                                    .raccorda_diego(
+                                        ritornoVersoCentro
+                                            .AsEnumerable()
+                                            .Reverse()
+                                            .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                                            .ToList(),
+                                        raggioCurvatura,
+                                        tolleranzaDiscretizzazioneArchi)
+                                    .Select(p => new Punto(p.X, p.Y))
+                                    .ToList();
+
                             curvaCollegamento = new List<Punto>();
                         }
                     }
@@ -915,12 +926,19 @@ namespace SpiralHeatingVittorioRevisionato
             for (int i = ritornoVersoCentro.Count - 2; i >= 0; i--)
                 percorso.Add(ritornoVersoCentro[i]);
 
-            List<Punto> raccordato =
-                GeometryUtils.ArrotondaSpiraleCircolareLg051(
-                    percorso,
-                    raggioCurvatura,
-                    tolleranzaDiscretizzazioneArchi,
-                    out Dictionary<int, int> transizioni);
+            List<SpiralHeatingDiegoVittorio.Punto> raccordatoDiego =
+                SpiralHeatingDiegoVittorio.funzioni_diego
+                    .raccorda_diego(
+                        percorso
+                            .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                            .ToList(),
+                        raggioCurvatura,
+                        tolleranzaDiscretizzazioneArchi,
+                        out Dictionary<int, int> transizioni);
+
+            List<Punto> raccordato = raccordatoDiego
+                .Select(p => new Punto(p.X, p.Y))
+                .ToList();
 
             if (!transizioni.TryGetValue(
                     verticeMandataChiusura,
@@ -935,20 +953,32 @@ namespace SpiralHeatingVittorioRevisionato
                 return new PercorsoRaccordatoLg051
                 {
                     Mandata =
-                        GeometryUtils.ArrotondaSpiraleCircolareLg051(
-                            mandataRettilinea,
-                            raggioCurvatura,
-                            tolleranzaDiscretizzazioneArchi),
+                        SpiralHeatingDiegoVittorio.funzioni_diego
+                            .raccorda_diego(
+                                mandataRettilinea
+                                    .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                                    .ToList(),
+                                raggioCurvatura,
+                                tolleranzaDiscretizzazioneArchi)
+                            .Select(p => new Punto(p.X, p.Y))
+                            .ToList(),
                     Chiusura = new List<Punto>
                     {
                         mandataRettilinea[^1],
                         ritornoVersoCentro[^1]
                     },
                     Ritorno =
-                        GeometryUtils.ArrotondaSpiraleCircolareLg051(
-                            ritornoVersoCentro.AsEnumerable().Reverse().ToList(),
-                            raggioCurvatura,
-                            tolleranzaDiscretizzazioneArchi)
+                        SpiralHeatingDiegoVittorio.funzioni_diego
+                            .raccorda_diego(
+                                ritornoVersoCentro
+                                    .AsEnumerable()
+                                    .Reverse()
+                                    .Select(p => new SpiralHeatingDiegoVittorio.Punto(p.X, p.Y))
+                                    .ToList(),
+                                raggioCurvatura,
+                                tolleranzaDiscretizzazioneArchi)
+                            .Select(p => new Punto(p.X, p.Y))
+                            .ToList()
                 };
             }
 
