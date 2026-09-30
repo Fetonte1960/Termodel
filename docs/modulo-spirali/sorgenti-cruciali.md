@@ -152,6 +152,19 @@ POST /api/calculations?spiralEngine=Vittorio_revisionato&spiralClosure=false
 
 Nota diagnostica: sul progetto pubblico usato nello smoke, l'SVG chiuso e quello aperto hanno lo stesso hash perché la geometria corrente non produceva comunque una chiusura applicata; il test conferma quindi il trasporto del flag e la modalità aperta, non una differenza geometrica su quel caso specifico.
 
+## Correzione UI chiusura Vittorio_revisionato — 30/09/2026
+
+Bug riprodotto da screenshot utente: il checkbox **Chiudi circuito** poteva essere disattivato mentre il motore restava **Predefinito Service**. Poiché il default pubblico è `Diego_Vittorio`, il parametro di chiusura non veniva applicato a `Vittorio_revisionato` e la chiusura rimaneva visibile.
+
+Correzione frontend v1.39:
+
+- modificando **Chiudi circuito**, il selettore motore passa automaticamente a `Vittorio_revisionato`;
+- il successivo **Aggiorna Modello** invia quindi realmente `spiralEngine=Vittorio_revisionato&spiralClosure=true|false`;
+- nessuna modifica geometrica a `Vittorio` o agli altri motori;
+- il tooltip del controllo chiarisce l'auto-selezione.
+
+Stato: implementato su `main`; verifica pubblicazione frontend/CI in corso.
+
 ## Linee guida
 
 Documento autorevole:
