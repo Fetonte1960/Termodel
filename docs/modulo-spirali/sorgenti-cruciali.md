@@ -146,7 +146,11 @@ Richiesta Service:
 POST /api/calculations?spiralEngine=Vittorio_revisionato&spiralClosure=false
 ```
 
-È stata aggiunta una regression CI dedicata che richiede esplicitamente la modalità aperta e verifica la presenza dei layer Mandata/Return e l'assenza del layer di chiusura/numerazione. **Stato al momento di questa pubblicazione: implementato; run CI finale in corso.**
+È stata aggiunta una regression CI dedicata che richiede esplicitamente la modalità aperta e verifica la presenza dei layer Mandata/Return e l'assenza del layer di chiusura/numerazione.
+
+**Verifica reale:** TermodelService Build #1196 / run `36705902144`: restore, JavaScript frontend, build .NET, smoke `Vittorio_revisionato` chiuso e smoke `spiralClosure=false` tutti **SUCCESS**. Il test aperto ha emesso `VITTORIO_REVISIONATO_OPEN_CIRCUITS_OK`. La verifica pubblica ha rilevato Render al commit `9c045895ef2f447bcde0f16729618794d7c56b3b` e frontend pubblico v1.38. Il workflow complessivo resta rosso per uno smoke separato di storage/lock che non è riuscito ad avviare il Service sulla propria porta di test; non riguarda il motore spirali.
+
+Nota diagnostica: sul progetto pubblico usato nello smoke, l'SVG chiuso e quello aperto hanno lo stesso hash perché la geometria corrente non produceva comunque una chiusura applicata; il test conferma quindi il trasporto del flag e la modalità aperta, non una differenza geometrica su quel caso specifico.
 
 ## Linee guida
 
