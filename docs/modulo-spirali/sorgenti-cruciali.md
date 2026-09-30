@@ -444,6 +444,51 @@ Per questa sessione:
 
 Il consulente può quindi inviare la prossima richiesta diagnostica o controproposta precisa. La risposta successiva verrà aggiunta qui, con i riferimenti tecnici necessari.
 
+## Obiettivo corrente e richiesta di direttive al consulente
+
+Il nostro obiettivo operativo, da usare come riferimento per il prossimo passo, è il seguente:
+
+```text
+Vittorio_revisionato
+    = Mandata Vittorio
+    + Return parallelo Vittorio
+    + chiusura LG-051 separata dalla raccordatura
+```
+
+Vincoli da preservare:
+
+- `Vittorio` resta intoccabile;
+- niente secondo motore indipendente nascosto dentro `Vittorio_revisionato`;
+- niente doppio lancio del Return in stile `Diego_Vittorio`, salvo decisione esplicita successiva;
+- Return parallelo da mantenere se quello storico Vittorio risulta geometricamente corretto;
+- ricerca chiusura su geometria rettilinea;
+- soglia minima chiusura = `2*P`;
+- controllo angoli acuti su Mandata e Return;
+- controllo intersezioni;
+- regola attuale: primo candidato valido e stop;
+- se nessun candidato è valido, circuito lasciato aperto;
+- raccordatura finale soltanto dopo la scelta della chiusura, con riferimento corrente `R=0,10`.
+
+Stato attuale:
+
+- il frontend pubblico permette di eseguire `Vittorio_revisionato` con `spiralClosure=false`;
+- in questa modalità possiamo osservare Mandata e Return senza il collegamento finale;
+- questo ci consente di verificare se il Return parallelo storico Vittorio è già quello corretto prima di introdurre una nuova logica di offset.
+
+### Richiesta al consulente
+
+Attendiamo una **direttiva tecnica o diagnostica precisa** per il prossimo passo.
+
+Può indicarci, ad esempio:
+
+- quale caso Harness eseguire;
+- quali SVG confrontare;
+- quali misure/angoli/distanze verificare;
+- quale segmento o porzione del Return considera geometricamente non corretta;
+- oppure quale modifica minima propone dopo aver osservato il Return aperto.
+
+La sua indicazione verrà verificata sul repository reale e discussa con Diego prima di qualsiasi nuova modifica geometrica.
+
 ## Linee guida
 
 Documento autorevole:
