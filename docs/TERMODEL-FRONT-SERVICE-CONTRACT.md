@@ -2181,8 +2181,42 @@ Regole:
 - `/health` continua a riportare in `spiralEngine` il default del Service e
   pubblica anche `spiralEngines`, elenco dei motori disponibili.
 
-Il frontend pubblico v1.36 espone in **Help → Motore spirali — test pubblico**
+Il frontend pubblico v1.38 espone in **Help → Motore spirali — test pubblico**
 una scelta esplicita. `Predefinito Service` non invia il parametro;
 `Vittorio_revisionato` consente di ripetere `Aggiorna Modello` su progetti
 reali senza modificare il file salvato. La provenienza dell'esecutivo runtime
 mostra il motore restituito dalla singola elaborazione.
+
+### Chiusura opzionale di Vittorio_revisionato
+
+Dal 30 settembre 2026 `POST /api/calculations` accetta anche:
+
+```http
+POST /api/calculations?spiralEngine=Vittorio_revisionato&spiralClosure=false
+```
+
+Valori ammessi per `spiralClosure`:
+
+```text
+true
+false
+```
+
+Regole:
+- il default è `true`, quindi l'omissione del parametro preserva il comportamento
+  corrente di `Vittorio_revisionato`;
+- il parametro è per-request e non viene salvato nel
+  `TERMODEL-PROJECT-TEXT-V1`;
+- con `false`, Mandata e Return vengono comunque generati e raccordati
+  singolarmente, ma non viene applicato il collegamento finale fra i due
+  terminali e non viene emessa l'etichetta di chiusura;
+- il parametro è significativo per `Vittorio_revisionato`; gli altri motori
+  mantengono il proprio comportamento;
+- la risposta manifest riporta `spiralClosure`; con
+  `responseArtifact=...` lo stesso valore è esposto nell'header
+  `X-Termodel-Spiral-Closure`.
+
+Il frontend v1.38 espone nello stesso menu Help il checkbox **Chiudi circuito**.
+Quando è selezionato `Vittorio_revisionato`, il frontend invia esplicitamente
+`spiralClosure=true|false`. La scelta è runtime del browser e non modifica il
+file progetto.
