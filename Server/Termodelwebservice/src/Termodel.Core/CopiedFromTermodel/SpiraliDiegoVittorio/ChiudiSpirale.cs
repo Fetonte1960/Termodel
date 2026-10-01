@@ -11,37 +11,6 @@ namespace SpiralHeatingDiegoVittorio
 {
     public static class ChiudiSpirale
     {
-        private const int MaxTrattiTerminaliChiusura = 2;
-
-        // Funzione realizzata da Codex in autonomia
-        private sealed class CandidatoChiusura
-        {
-            public List<Punto> Mandata { get; init; }
-            public List<Punto> Ritorno { get; init; }
-            public Punto Inizio { get; init; }
-            public Punto Fine { get; init; }
-            public string LivelloMandata { get; init; }
-            public string TentativoRitorno { get; init; }
-            public int NumeroTentativo { get; init; }
-            public int TrattiRimossiMandata { get; init; }
-            public int TrattiRimossiRitorno { get; init; }
-            public double LunghezzaRimossa { get; init; }
-            public double LunghezzaChiusura { get; init; }
-            public double QualitaMandata { get; init; }
-            public double QualitaRitorno { get; init; }
-            public double QualitaAngolare { get; init; }
-            public bool Ortogonale { get; init; }
-        }
-
-        // Funzione realizzata da Codex in autonomia
-        private sealed class ConfigurazioneTerminale
-        {
-            public List<Punto> Punti { get; init; }
-            public string Codice { get; init; }
-            public int TrattiRimossi { get; init; }
-            public double LunghezzaRimossa { get; init; }
-        }
-
         private const string DrawFilletsEnvironmentVariable =
             "TERMODEL_DIEGO_VITTORIO_DRAW_FILLETS";
         private const string DrawClosureEnvironmentVariable =
@@ -50,9 +19,6 @@ namespace SpiralHeatingDiegoVittorio
             "TERMODEL_DIEGO_VITTORIO_AUTONOMOUS_RETURN";
         private const string ReturnSideEnvironmentVariable =
             "TERMODEL_DIEGO_VITTORIO_RETURN_SIDE";
-        private const string TraceClosureEnvironmentVariable =
-            "TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE";
-
         public static void Chiudi(
             string xmlFile,
             double raggioCurvatura,
@@ -182,37 +148,31 @@ namespace SpiralHeatingDiegoVittorio
                             $"punti={rientroRettilineo.Count}.");
                     }
 
-                    CandidatoChiusura chiusuraOttimizzata = null;
+                    var chiusuraOttimizzata = (
+                        Mandata: spirale,
+                        Ritorno: rientroRettilineo,
+                        Chiusura: new List<Punto>(),
+                        Applicata: false);
+
                     if (drawClosure && autonomousReturn)
                     {
-                        // DV-TEST-002: enumerare i candidati validi mantenendo
-                        // invariati i controlli geometrici; se esistono chiusure
-                        // ortogonali scegliere la più corta, altrimenti conservare
-                        // il primo candidato valido secondo l'ordine storico.
-                        chiusuraOttimizzata = GeneraPrimaChiusuraAccettabile(
-                            spirale,
-                            rientroRettilineo,
-                            distanzaRitorno,
-                            raggioCurvatura);
-                        if (chiusuraOttimizzata == null)
+                        // La combinatoria e' ora unica e consolidata in
+                        // funzioni_diego.chiusura_diego.
+                        chiusuraOttimizzata =
+                            funzioni_diego.chiusura_diego(
+                                spirale,
+                                rientroRettilineo,
+                                distanzaRitorno);
+
+                        if (!chiusuraOttimizzata.Applicata)
                         {
                             Console.WriteLine(
-                                "  Chiusura rapida: nessuna configurazione diretta o proiezione ortogonale è accettabile; circuito lasciato aperto.");
+                                "  Chiusura rapida: nessuna configurazione valida; circuito lasciato aperto.");
                         }
                         else
                         {
                             spirale = chiusuraOttimizzata.Mandata;
                             rientroRettilineo = chiusuraOttimizzata.Ritorno;
-                            Console.WriteLine(
-                                "  Chiusura rapida: " +
-                                $"tentativo={chiusuraOttimizzata.NumeroTentativo}; " +
-                                $"sequenza={chiusuraOttimizzata.LivelloMandata}/{chiusuraOttimizzata.TentativoRitorno}; " +
-                                $"tipo={(chiusuraOttimizzata.Ortogonale ? "ortogonale" : "obliqua")}; " +
-                                $"lunghezza={chiusuraOttimizzata.LunghezzaChiusura.ToString("0.###", ci)} m; " +
-                                $"coseni={chiusuraOttimizzata.QualitaMandata.ToString("0.###", ci)}/" +
-                                $"{chiusuraOttimizzata.QualitaRitorno.ToString("0.###", ci)}; " +
-                                $"tagli={chiusuraOttimizzata.TrattiRimossiMandata}/{chiusuraOttimizzata.TrattiRimossiRitorno}; " +
-                                $"rimosso={chiusuraOttimizzata.LunghezzaRimossa.ToString("0.###", ci)} m.");
                         }
                     }
 
@@ -252,7 +212,7 @@ namespace SpiralHeatingDiegoVittorio
                     // Modificato da Codex per realizzare: rendere opzionali
                     // collegamento finale e box numerato ChiusuraGPT.
                     var curvaCollegamento = autonomousReturn
-                        ? drawClosure && chiusuraOttimizzata != null
+                        ? drawClosure && chiusuraOttimizzata.Applicata
                             ? drawFillets
                                 ? CreaCurvaCollegamentoAdattiva(
                                     spirale,
@@ -519,41 +479,43 @@ namespace SpiralHeatingDiegoVittorio
             };
         }
 
-        // Bridge pubblico minimale: non altera la procedura Diego_Vittorio.
-        // Esegue esattamente la combinatoria umana consolidata e il raccordo
-        // adattivo originale sulla configurazione da essa selezionata.
-        public static (List<Punto> Mandata, List<Punto> Ritorno, List<Punto> Raccordo, bool Applicata)
+        // Bridge di compatibilita': la combinatoria autorevole e'
+        // esclusivamente funzioni_diego.chiusura_diego.
+        public static (
+            List<Punto> Mandata,
+            List<Punto> Ritorno,
+            List<Punto> Raccordo,
+            bool Applicata)
             ApplicaChiusuraCombinatoriaConRaccordo(
                 List<Punto> mandata,
                 List<Punto> ritorno,
                 double passo,
                 double raggio)
         {
-            var candidato = GeneraPrimaChiusuraAccettabile(mandata, ritorno, passo, raggio);
-            if (candidato == null)
-                return (mandata, ritorno, new List<Punto>(), false);
+            var esito =
+                funzioni_diego.chiusura_diego(
+                    mandata,
+                    ritorno,
+                    passo);
 
-            var raccordo = CreaCurvaCollegamentoAdattiva(
-                candidato.Mandata,
-                candidato.Ritorno,
-                raggio);
+            if (!esito.Applicata)
+                return (esito.Mandata, esito.Ritorno, new List<Punto>(), false);
+
+            List<Punto> raccordo =
+                CreaCurvaCollegamentoAdattiva(
+                    esito.Mandata,
+                    esito.Ritorno,
+                    raggio);
 
             return (
-                candidato.Mandata,
-                candidato.Ritorno,
+                esito.Mandata,
+                esito.Ritorno,
                 raccordo,
                 raccordo.Count > 1);
         }
 
-        // Adattatore per il solo Return Vittorio: usa gli helper Diego_Vittorio
-        // già esistenti per ricondurre il Return raccordato alla sua polilinea
-        // rettilinea parallela PRIMA della combinatoria. Nessuna nuova euristica
-        // di chiusura viene introdotta.
-        //
-        // Convenzione geometrica vincolante:
-        // passo = P = distanza Mandata <-> Ripresa;
-        // 2*P = distanza Mandata <-> Mandata;
-        // P/2 = distanza Mandata <-> Parete.
+        // Adattatore storico mantenuto soltanto per compatibilita' esterna.
+        // Vittorio_revisionato non lo usa nel percorso pubblico corrente.
         public static List<Punto> PreparaRitornoRettilineoVittorio(
             List<Punto> mandataRettilinea,
             List<Punto> ritornoVittorioRaccordato,
@@ -567,45 +529,27 @@ namespace SpiralHeatingDiegoVittorio
             return ritornoDalCentro.AsEnumerable().Reverse().ToList();
         }
 
-        // LG-051: la combinatoria riceve esclusivamente polilinee rettilinee.
-        // Nessun raccordo, Bezier o raggio partecipa alla decisione.
-        public static (List<Punto> Mandata, List<Punto> Ritorno, List<Punto> Chiusura, bool Applicata)
+        public static (
+            List<Punto> Mandata,
+            List<Punto> Ritorno,
+            List<Punto> Chiusura,
+            bool Applicata)
             ApplicaChiusuraCombinatoriaRettilineaVittorio(
                 List<Punto> mandataRettilinea,
                 List<Punto> ritornoVersoCentro,
                 double passo)
         {
-            if (TraceClosureEnabled)
-            {
-                Console.WriteLine($"  DV_SETUP_INPUT P={passo:R} mandataCount={mandataRettilinea.Count} ritornoCount={ritornoVersoCentro.Count}");
-                for (int i = Math.Max(0, mandataRettilinea.Count - 6); i < mandataRettilinea.Count; i++)
-                    Console.WriteLine($"  DV_SETUP_SUPPLY[{i}]=({mandataRettilinea[i].X:R},{mandataRettilinea[i].Y:R})");
-                for (int i = Math.Max(0, ritornoVersoCentro.Count - 6); i < ritornoVersoCentro.Count; i++)
-                    Console.WriteLine($"  DV_SETUP_RETURN[{i}]=({ritornoVersoCentro[i].X:R},{ritornoVersoCentro[i].Y:R})");
-            }
-
-            var candidato = GeneraPrimaChiusuraAccettabile(
+            return funzioni_diego.chiusura_diego(
                 mandataRettilinea,
                 ritornoVersoCentro,
-                passo,
-                raggio: 0.0,
-                lunghezzaMinimaChiusura: 2.0 * passo,
-                preferisciTerminaleP: true,
-                applicaFiltriCordaRettilinea: true,
-                lunghezzaMinimaRaccordo: null,
-                validaSoloChiusuraRettilinea: true);
-            if (candidato == null)
-                return (mandataRettilinea, ritornoVersoCentro, new List<Punto>(), false);
-
-            return (
-                candidato.Mandata,
-                candidato.Ritorno,
-                new List<Punto> { candidato.Inizio, candidato.Fine },
-                true);
+                passo);
         }
 
-        // Compatibilita' del bridge preesistente.
-        public static (List<Punto> Mandata, List<Punto> Ritorno, List<Punto> Raccordo, bool Applicata)
+        public static (
+            List<Punto> Mandata,
+            List<Punto> Ritorno,
+            List<Punto> Raccordo,
+            bool Applicata)
             ApplicaChiusuraCombinatoriaSuRitornoVittorio(
                 List<Punto> mandataRettilinea,
                 List<Punto> ritornoVittorioRaccordato,
@@ -618,472 +562,18 @@ namespace SpiralHeatingDiegoVittorio
                     mandataRettilinea,
                     ritornoVittorioRaccordato,
                     passo);
+
             var esito =
-                ApplicaChiusuraCombinatoriaRettilineaVittorio(
+                funzioni_diego.chiusura_diego(
                     mandataRettilinea,
                     ritornoVersoCentro,
                     passo);
-            return (esito.Mandata, esito.Ritorno, esito.Chiusura, esito.Applicata);
-        }
 
-        // Funzione realizzata da Codex in autonomia
-        private static CandidatoChiusura GeneraPrimaChiusuraAccettabile(
-            List<Punto> mandataOriginale,
-            List<Punto> ritornoOriginale,
-            double passo,
-            double raggio,
-            double? lunghezzaMinimaChiusura = null,
-            bool preferisciTerminaleP = false,
-            bool applicaFiltriCordaRettilinea = true,
-            double? lunghezzaMinimaRaccordo = null,
-            bool validaSoloChiusuraRettilinea = false)
-        {
-            if (mandataOriginale == null || mandataOriginale.Count < 2 ||
-                ritornoOriginale == null || ritornoOriginale.Count < 2 ||
-                passo <= 0)
-            {
-                return null;
-            }
-
-            // Matrice combinatoria simmetrica concordata: per entrambi i lati
-            // si provano 0..2 tratti rimossi e, sul nuovo terminale, soltanto
-            // invarianza oppure lunghezza esattamente P. Se il terminale e'
-            // maggiore di P viene accorciato; se e' minore viene allungato.
-            // In questo modo si coinvolgono al massimo 3 tratti originali.
-            //
-            // Il percorso Diego_Vittorio storico conserva l'ordine I/P.
-            // L'adattatore Vittorio_revisionato conserva l'ordine P/I del
-            // bridge precedente soltanto come sequenza deterministica:
-            // LG-051 accetta la prima configurazione realmente valida.
-            (int rimossi, double? lunghezzaFinale)[] azioniTerminali =
-                preferisciTerminaleP
-                    ? new (int, double?)[]
-                    {
-                        (0, passo),
-                        (0, null),
-                        (1, passo),
-                        (1, null),
-                        (2, passo),
-                        (2, null)
-                    }
-                    : new (int, double?)[]
-                    {
-                        (0, null),
-                        (0, passo),
-                        (1, null),
-                        (1, passo),
-                        (2, null),
-                        (2, passo)
-                    };
-
-            int numeroTentativo = 0;
-
-            foreach (var azioneMandata in azioniTerminali)
-            {
-                string codiceMandata =
-                    $"M{azioneMandata.rimossi}" +
-                    (azioneMandata.lunghezzaFinale.HasValue ? "P" : "I");
-                ConfigurazioneTerminale mandata =
-                    CreaConfigurazioneTerminale(
-                        mandataOriginale,
-                        codiceMandata,
-                        azioneMandata.rimossi,
-                        azioneMandata.lunghezzaFinale);
-                if (mandata == null)
-                    continue;
-
-                foreach (var azioneRitorno in azioniTerminali)
-                {
-                    string codiceRitorno =
-                        $"R{azioneRitorno.rimossi}" +
-                        (azioneRitorno.lunghezzaFinale.HasValue ? "P" : "I");
-                    ConfigurazioneTerminale ritorno =
-                        CreaConfigurazioneTerminale(
-                            ritornoOriginale,
-                            codiceRitorno,
-                            azioneRitorno.rimossi,
-                            azioneRitorno.lunghezzaFinale);
-                    if (ritorno == null)
-                        continue;
-
-                    numeroTentativo++;
-                    if (TraceClosureEnabled)
-                    {
-                        Punto ms = mandata.Punti[^2];
-                        Punto me = mandata.Punti[^1];
-                        Punto rs = ritorno.Punti[^2];
-                        Punto re = ritorno.Punti[^1];
-                        Console.WriteLine(
-                            $"  DV_SQUARE_TRY attempt={numeroTentativo} seq={codiceMandata}/{codiceRitorno} " +
-                            $"supplyRemoved={azioneMandata.rimossi} supplyMode={(azioneMandata.lunghezzaFinale.HasValue ? "P" : "I")} " +
-                            $"supplyLast=({ms.X:R},{ms.Y:R})->({me.X:R},{me.Y:R}) supplyLastLen={ms.DistanceTo(me):R} " +
-                            $"returnRemoved={azioneRitorno.rimossi} returnMode={(azioneRitorno.lunghezzaFinale.HasValue ? "P" : "I")} " +
-                            $"returnLast=({rs.X:R},{rs.Y:R})->({re.X:R},{re.Y:R}) returnLastLen={rs.DistanceTo(re):R} " +
-                            $"endpointDistance={me.DistanceTo(re):R} required={lunghezzaMinimaChiusura.GetValueOrDefault(2.0 * passo):R}.");
-                    }
-
-                    CandidatoChiusura candidato = ValutaChiusura(
-                        mandata,
-                        ritorno,
-                        passo,
-                        numeroTentativo,
-                        lunghezzaMinimaChiusura,
-                        applicaFiltriCordaRettilinea);
-                    if (candidato == null)
-                        continue;
-
-                    if (validaSoloChiusuraRettilinea)
-                    {
-                        bool intersecaGeometriaRisultante =
-                            IntersecaTrattiNonAdiacenti(
-                                candidato.Inizio,
-                                candidato.Fine,
-                                candidato.Mandata) ||
-                            IntersecaTrattiNonAdiacenti(
-                                candidato.Inizio,
-                                candidato.Fine,
-                                candidato.Ritorno);
-                        if (intersecaGeometriaRisultante)
-                        {
-                            if (TraceClosureEnabled)
-                            {
-                                Console.WriteLine(
-                                    $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
-                                    $"seq={codiceMandata}/{codiceRitorno} " +
-                                    "reason=straight-intersection-after-trim");
-                            }
-                            continue;
-                        }
-
-                        if (TraceClosureEnabled)
-                        {
-                            Console.WriteLine(
-                                $"  DV_CLOSURE_SELECTED attempt={numeroTentativo} " +
-                                $"seq={codiceMandata}/{codiceRitorno} " +
-                                "type=first-straight-success " +
-                                $"length={candidato.LunghezzaChiusura:R} " +
-                                $"requiredLength={lunghezzaMinimaChiusura.GetValueOrDefault(2.0 * passo):R}");
-                        }
-                        return candidato;
-                    }
-
-                    // Diego_Vittorio storico: il successo resta subordinato
-                    // anche al raccordo curvo.
-                    List<Punto> raccordo = CreaCurvaCollegamentoAdattiva(
-                        candidato.Mandata,
-                        candidato.Ritorno,
-                        raggio,
-                        lunghezzaMinimaRaccordo);
-                    double lunghezzaRaccordo = LunghezzaPolilinea(raccordo);
-                    bool raccordoLibero =
-                        raccordo.Count > 1 &&
-                        (!lunghezzaMinimaRaccordo.HasValue ||
-                         lunghezzaRaccordo + 0.000001 >=
-                            lunghezzaMinimaRaccordo.Value) &&
-                        !CurvaIntersecaTrattiNonAdiacenti(
-                            raccordo,
-                            candidato.Mandata) &&
-                        !CurvaIntersecaTrattiNonAdiacenti(
-                            raccordo,
-                            candidato.Ritorno);
-                    if (!raccordoLibero)
-                    {
-                        if (TraceClosureEnabled)
-                        {
-                            string motivo =
-                                lunghezzaMinimaRaccordo.HasValue &&
-                                lunghezzaRaccordo + 0.000001 <
-                                    lunghezzaMinimaRaccordo.Value
-                                    ? "curve-length"
-                                    : "intersection-after-trim";
-                            Console.WriteLine(
-                                $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
-                                $"seq={codiceMandata}/{codiceRitorno} " +
-                                $"reason={motivo} curveLength={lunghezzaRaccordo:R} " +
-                                $"requiredCurveLength={lunghezzaMinimaRaccordo.GetValueOrDefault():R}");
-                        }
-                        continue;
-                    }
-
-                    if (TraceClosureEnabled)
-                    {
-                        Console.WriteLine(
-                            $"  DV_CLOSURE_SELECTED attempt={numeroTentativo} " +
-                            $"seq={codiceMandata}/{codiceRitorno} " +
-                            $"type=first-complete-success " +
-                            $"length={candidato.LunghezzaChiusura:R} " +
-                            $"curveLength={lunghezzaRaccordo:R} " +
-                            $"requiredCurveLength={lunghezzaMinimaRaccordo.GetValueOrDefault():R}");
-                    }
-
-                    return candidato;
-                }
-            }
-
-            return null;
-        }
-
-        private static ConfigurazioneTerminale CreaConfigurazioneTerminaleProiettata(
-            List<Punto> originale,
-            string codice,
-            int trattiRimossi,
-            Punto origineProiezione)
-        {
-            const double tolleranza = 0.000001;
-            if (originale == null ||
-                origineProiezione == null ||
-                trattiRimossi < 0 ||
-                trattiRimossi > MaxTrattiTerminaliChiusura ||
-                originale.Count - trattiRimossi < 2)
-            {
-                return null;
-            }
-
-            var punti = originale
-                .Take(originale.Count - trattiRimossi)
-                .ToList();
-            Punto a = punti[^2];
-            Punto b = punti[^1];
-            Punto proiezione = GeometryUtils.ProjectPointOnSegment(
-                origineProiezione,
-                a,
-                b);
-            if (proiezione == null ||
-                a.DistanceTo(proiezione) <= tolleranza)
-            {
-                return null;
-            }
-
-            double lunghezzaRimossa =
-                LunghezzaCodaRimossa(originale, trattiRimossi) +
-                b.DistanceTo(proiezione);
-            punti[^1] = proiezione;
-
-            return new ConfigurazioneTerminale
-            {
-                Punti = punti,
-                Codice = codice,
-                TrattiRimossi = trattiRimossi,
-                LunghezzaRimossa = lunghezzaRimossa
-            };
-        }
-
-        // Funzione realizzata da Codex in autonomia
-        private static ConfigurazioneTerminale CreaConfigurazioneTerminale(
-            List<Punto> originale,
-            string codice,
-            int trattiRimossi,
-            double? lunghezzaFinale)
-        {
-            if (trattiRimossi < 0 ||
-                trattiRimossi > MaxTrattiTerminaliChiusura ||
-                originale.Count - trattiRimossi < 2)
-            {
-                return null;
-            }
-
-            var punti = originale
-                .Take(originale.Count - trattiRimossi)
-                .ToList();
-            double lunghezzaRimossa = LunghezzaCodaRimossa(
-                originale,
-                trattiRimossi);
-
-            if (lunghezzaFinale.HasValue)
-            {
-                Punto inizio = punti[^2];
-                Punto fine = punti[^1];
-                double lunghezza = inizio.DistanceTo(fine);
-                if (lunghezza <= 0.000001)
-                    return null;
-
-                double obiettivo = lunghezzaFinale.Value;
-                double rapporto = obiettivo / lunghezza;
-                punti[^1] = new Punto(
-                    inizio.X + (fine.X - inizio.X) * rapporto,
-                    inizio.Y + (fine.Y - inizio.Y) * rapporto);
-
-                // La modalita P impone la lunghezza esatta: accorcia se il
-                // terminale e' maggiore di P e allunga se e' minore di P.
-                // LunghezzaRimossa resta una metrica di materiale eliminato,
-                // quindi non diventa negativa quando il terminale viene esteso.
-                if (lunghezza > obiettivo)
-                    lunghezzaRimossa += lunghezza - obiettivo;
-            }
-
-            return new ConfigurazioneTerminale
-            {
-                Punti = punti,
-                Codice = codice,
-                TrattiRimossi = trattiRimossi,
-                LunghezzaRimossa = lunghezzaRimossa
-            };
-        }
-
-        private static bool TraceClosureEnabled =>
-            ReadBooleanFlag(
-                TraceClosureEnvironmentVariable,
-                defaultValue: false);
-
-        // Funzione realizzata da Codex in autonomia
-        private static CandidatoChiusura ValutaChiusura(
-            ConfigurazioneTerminale mandata,
-            ConfigurazioneTerminale ritorno,
-            double passo,
-            int numeroTentativo,
-            double? lunghezzaMinimaChiusura = null,
-            bool applicaFiltriCordaRettilinea = true)
-        {
-            const double tolleranza = 0.000001;
-            Punto inizio = mandata.Punti[^1];
-            Punto fine = ritorno.Punti[^1];
-            double lunghezza = inizio.DistanceTo(fine);
-            double minimoRichiesto = lunghezzaMinimaChiusura ?? (2.0 * passo);
-            if (applicaFiltriCordaRettilinea &&
-                lunghezza < minimoRichiesto - tolleranza)
-            {
-                if (TraceClosureEnabled)
-                {
-                    Console.WriteLine(
-                        $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
-                        $"seq={mandata.Codice}/{ritorno.Codice} reason=length " +
-                        $"length={lunghezza:R} required={minimoRichiesto:R} " +
-                        $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}).");
-                }
-                return null;
-            }
-            if (!applicaFiltriCordaRettilinea &&
-                TraceClosureEnabled &&
-                lunghezza < minimoRichiesto - tolleranza)
-            {
-                Console.WriteLine(
-                    $"  DV_CLOSURE_DEFER attempt={numeroTentativo} " +
-                    $"seq={mandata.Codice}/{ritorno.Codice} check=chord-length " +
-                    $"chord={lunghezza:R} reference2P={minimoRichiesto:R}.");
-            }
-
-            Punto ingressoMandata = new Punto(
-                inizio.X - mandata.Punti[^2].X,
-                inizio.Y - mandata.Punti[^2].Y);
-            Punto uscitaRitorno = new Punto(
-                ritorno.Punti[^2].X - fine.X,
-                ritorno.Punti[^2].Y - fine.Y);
-            Punto direzioneChiusura = new Punto(
-                fine.X - inizio.X,
-                fine.Y - inizio.Y);
-            double qualitaMandata = CosenoDirezioni(
-                ingressoMandata,
-                direzioneChiusura);
-            double qualitaRitorno = CosenoDirezioni(
-                direzioneChiusura,
-                uscitaRitorno);
-            if (applicaFiltriCordaRettilinea &&
-                (qualitaMandata < -tolleranza ||
-                 qualitaRitorno < -tolleranza))
-            {
-                if (TraceClosureEnabled)
-                {
-                    Console.WriteLine(
-                        $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
-                        $"seq={mandata.Codice}/{ritorno.Codice} reason=acute " +
-                        $"cosSupply={qualitaMandata:R} cosReturn={qualitaRitorno:R} " +
-                        $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}).");
-                }
-                return null;
-            }
-            if (!applicaFiltriCordaRettilinea &&
-                TraceClosureEnabled &&
-                (qualitaMandata < -tolleranza ||
-                 qualitaRitorno < -tolleranza))
-            {
-                Console.WriteLine(
-                    $"  DV_CLOSURE_DEFER attempt={numeroTentativo} " +
-                    $"seq={mandata.Codice}/{ritorno.Codice} check=straight-chord-angle " +
-                    $"cosSupply={qualitaMandata:R} cosReturn={qualitaRitorno:R}.");
-            }
-
-            // L'intersezione non si valuta qui: questa fase sta ancora
-            // enumerando tagli/accorciamenti. La verifica appartiene alla
-            // geometria finale, dopo che il candidato selezionato è stato
-            // raccordato sui tratti effettivamente conservati.
-
-            if (TraceClosureEnabled)
-            {
-                Console.WriteLine(
-                    $"  DV_CLOSURE_ACCEPT attempt={numeroTentativo} " +
-                    $"seq={mandata.Codice}/{ritorno.Codice} " +
-                    $"start=({inizio.X:R},{inizio.Y:R}) end=({fine.X:R},{fine.Y:R}) " +
-                    $"length={lunghezza:R} cosSupply={qualitaMandata:R} " +
-                    $"cosReturn={qualitaRitorno:R}.");
-            }
-
-            bool ortogonale = Math.Abs(inizio.X - fine.X) <= tolleranza ||
-                              Math.Abs(inizio.Y - fine.Y) <= tolleranza;
-            return new CandidatoChiusura
-            {
-                Mandata = mandata.Punti,
-                Ritorno = ritorno.Punti,
-                Inizio = inizio,
-                Fine = fine,
-                LivelloMandata = mandata.Codice,
-                TentativoRitorno = ritorno.Codice,
-                NumeroTentativo = numeroTentativo,
-                TrattiRimossiMandata = mandata.TrattiRimossi,
-                TrattiRimossiRitorno = ritorno.TrattiRimossi,
-                LunghezzaRimossa = mandata.LunghezzaRimossa +
-                                    ritorno.LunghezzaRimossa,
-                LunghezzaChiusura = lunghezza,
-                QualitaMandata = qualitaMandata,
-                QualitaRitorno = qualitaRitorno,
-                QualitaAngolare = Math.Min(
-                    qualitaMandata,
-                    qualitaRitorno),
-                Ortogonale = ortogonale
-            };
-        }
-
-        // Funzione realizzata da Codex in autonomia
-        private static bool IntersecaTrattiNonAdiacenti(
-            Punto inizioChiusura,
-            Punto fineChiusura,
-            List<Punto> polilinea)
-        {
-            for (int i = 0; i < polilinea.Count - 2; i++)
-            {
-                if (SegmentiIntersecano(
-                    inizioChiusura,
-                    fineChiusura,
-                    polilinea[i],
-                    polilinea[i + 1]))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        // Funzione realizzata da Codex in autonomia
-        private static string CreaChiaveConfigurazione(
-            List<Punto> mandata,
-            List<Punto> ritorno)
-        {
-            Punto m0 = mandata[^2];
-            Punto m1 = mandata[^1];
-            Punto r0 = ritorno[^2];
-            Punto r1 = ritorno[^1];
-            return string.Join(
-                "|",
-                mandata.Count,
-                m0.X.ToString("R", CultureInfo.InvariantCulture),
-                m0.Y.ToString("R", CultureInfo.InvariantCulture),
-                m1.X.ToString("R", CultureInfo.InvariantCulture),
-                m1.Y.ToString("R", CultureInfo.InvariantCulture),
-                ritorno.Count,
-                r0.X.ToString("R", CultureInfo.InvariantCulture),
-                r0.Y.ToString("R", CultureInfo.InvariantCulture),
-                r1.X.ToString("R", CultureInfo.InvariantCulture),
-                r1.Y.ToString("R", CultureInfo.InvariantCulture));
+            return (
+                esito.Mandata,
+                esito.Ritorno,
+                esito.Chiusura,
+                esito.Applicata);
         }
 
         // Funzione realizzata da Codex in autonomia
@@ -1098,30 +588,6 @@ namespace SpiralHeatingDiegoVittorio
                 lunghezza += punti[i].DistanceTo(punti[i + 1]);
 
             return lunghezza;
-        }
-
-        private static double LunghezzaCodaRimossa(
-            List<Punto> polilinea,
-            int trattiRimossi)
-        {
-            double risultato = 0.0;
-            for (int i = 0; i < trattiRimossi; i++)
-            {
-                int fine = polilinea.Count - 1 - i;
-                risultato += polilinea[fine - 1].DistanceTo(polilinea[fine]);
-            }
-            return risultato;
-        }
-
-        // Funzione realizzata da Codex in autonomia
-        private static double CosenoDirezioni(Punto a, Punto b)
-        {
-            double lunghezzaA = Math.Sqrt(a.X * a.X + a.Y * a.Y);
-            double lunghezzaB = Math.Sqrt(b.X * b.X + b.Y * b.Y);
-            if (lunghezzaA <= 0.000001 || lunghezzaB <= 0.000001)
-                return -1.0;
-            return (a.X * b.X + a.Y * b.Y) /
-                   (lunghezzaA * lunghezzaB);
         }
 
         // Funzione realizzata da Codex in autonomia
