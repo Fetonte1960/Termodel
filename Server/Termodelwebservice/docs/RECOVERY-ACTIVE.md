@@ -1,3 +1,84 @@
+# RESTORE POINT APPROVATO — VITTORIO_REVISIONATO OFFSET-P
+
+Checkpoint: **2026-10-01 — APPROVATO VISIVAMENTE COME BASE DI RIPRISTINO**
+
+Il collaudo reale sul progetto multi-locale ha confermato come base di
+ripristino l'assetto corrente di `Vittorio_revisionato` con la sola deviazione
+chirurgica in `ComputeOffset`:
+
+```csharp
+edgeLength <= offset
+```
+
+al posto della soglia storica:
+
+```csharp
+edgeLength <= offset * 3
+```
+
+Con `offset=0,30 m`, la soglia di skip dei vertici è quindi 0,30 m anziché
+0,90 m.
+
+## Return point approvato
+
+```text
+runtime funzionale:
+6132430e7907699cbf577c2ef869ffd03117f216
+
+snapshot documentale approvato:
+edc1fc4cff0edad0700a9c9c2582b80c205efb57
+
+branch recovery:
+recovery/vittorio-revisionato-approved-offset-p-20261001
+```
+
+Questo è il **punto di ripristino prioritario** per una nuova chat o per un
+rollback futuro. Non ricostruire manualmente una configurazione precedente se
+serve tornare a questo stato.
+
+Il precedente return point pre-esperimento
+`f1544135c303abb8296ef784c86b3cca6d627e6c` resta storico, ma non è più il
+restore point preferito: il punto approvato è quello sopra.
+
+## Stato visivo approvato
+
+Il test multi-locale fornito dall'utente mostra una generazione complessivamente
+accettabile e sufficientemente stabile da diventare base di lavoro/recovery.
+
+Questo giudizio **non equivale a dichiarare risolte tutte le geometrie**.
+
+### Difetto residuo noto — strettoie
+
+Nel locale 4 del test reale resta visibile un difetto nelle zone di
+restringimento/strettoia: il percorso può produrre una geometria non
+soddisfacente nella zona stretta, con andamento locale che deve essere studiato
+separatamente.
+
+Vincoli:
+- il difetto è **APERTO**;
+- l'utente segnala che era stato tamponato in una precedente iterazione;
+- non è ancora stata ricostruita con certezza quale modifica producesse quel
+  tamponamento;
+- non correggerlo insieme ad altre modifiche centrali;
+- non usare questo difetto come motivo per abbandonare il restore point
+  approvato;
+- quando verrà affrontato, partire da questo restore point e creare un nuovo
+  return point prima di toccare l'algoritmo.
+
+## Regola per recovery di una nuova chat
+
+Prima di qualsiasi nuovo intervento su `Vittorio_revisionato`:
+1. assumere come baseline approvata il branch
+   `recovery/vittorio-revisionato-approved-offset-p-20261001`;
+2. preservare la soglia `ComputeOffset = P` finché non viene esplicitamente
+   rimessa in discussione;
+3. trattare il problema delle strettoie come missione separata;
+4. non confondere il problema strettoie con la chiusura centrale o con il
+   Return parallelo;
+5. creare sempre un nuovo return point prima di modificare la geometria.
+
+---
+
 # STATO ATTIVO — SOGLIA COMPUTEOFFSET RIDOTTA DA 3P A P
 
 Checkpoint: **2026-10-01 — modifica chirurgica pubblicata e server verificato**
