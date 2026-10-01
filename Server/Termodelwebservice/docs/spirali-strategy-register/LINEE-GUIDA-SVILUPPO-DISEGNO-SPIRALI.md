@@ -7431,9 +7431,8 @@ Dopo aver applicato eliminazioni e/o normalizzazione, il candidato viene
 valutato **sul nuovo setup geometrico risultante**. Deve essere scartato se si
 verifica anche una sola delle condizioni seguenti:
 
-1. il tratto rettilineo di chiusura generato ha lunghezza **non strettamente
-   maggiore di `2P`**; la regola definitiva è quindi `lunghezza > 2P`,
-   non `>= 2P`;
+1. il tratto rettilineo di chiusura generato ha lunghezza **almeno `2P`**;
+   la regola definitiva è quindi `lunghezza >= 2P`;
 2. l'innesto fra Mandata e tratto di chiusura forma un angolo acuto;
 3. l'innesto fra tratto di chiusura e Ripresa forma un angolo acuto;
 4. il tratto di chiusura interseca un tratto non adiacente della geometria
@@ -7455,7 +7454,7 @@ quel candidato ha già eliminato o modificato.
 Il candidato è valido soltanto se tutte le condizioni seguenti sono vere:
 
 1. il **tratto rettilineo di chiusura** tra i nuovi terminali ha lunghezza
-   `> 2P`; nel caso nominale corrente `> 0,30 m`;
+   `>= 2P`; nel caso nominale corrente `>= 0,30 m`;
 2. il tratto rettilineo non interseca alcun altro tratto della geometria
    risultante dal candidato, esclusi i due tratti terminali adiacenti ai quali
    la chiusura si innesta;
@@ -7563,7 +7562,7 @@ al presente contratto:
 Non devono invece essere trasferiti a `Vittorio_revisionato`:
 
 - l'uso di Bézier come parte della decisione di chiusura;
-- il vincolo `>2P` applicato alla lunghezza di una curva anziché al tratto
+- il vincolo `>=2P` applicato alla lunghezza di una curva anziché al tratto
   rettilineo di chiusura;
 - la riduzione automatica del raggio effettivo per adattarlo a tratti corti
   (per `Vittorio_revisionato` lo spigolo resta vivo);
@@ -7597,7 +7596,7 @@ motore.
 La futura implementazione dovrà separare i test delle due fasi.
 
 **Chiusura rettilinea:**
-- verificare lunghezza del segmento `>2P`;
+- verificare lunghezza del segmento `>=2P`;
 - verificare assenza di angoli acuti ai due innesti;
 - verificare assenza di intersezioni con la geometria risultante dal candidato;
 - verificare backtracking al candidato successivo quando uno fallisce;
