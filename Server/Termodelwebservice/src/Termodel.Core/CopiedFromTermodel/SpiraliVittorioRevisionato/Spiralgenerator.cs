@@ -15,7 +15,14 @@ namespace SpiralHeatingVittorioRevisionato
 	{
 		public List<Punto> Perimetro { get; set; } = new List<Punto>();
 		public Punto StartPoint { get; set; }
+		// Contratto storico Vittorio: una sola distanza. Resta la baseline di
+		// recovery e non cambia significato.
 		public double Distanza { get; set; }
+		// Contratto esclusivo Vittorio_revisionato: primo offset parete P/2,
+		// offset Supply successivi 2P, finalizzazione topologica storica P.
+		public double DistanzaParete { get; set; }
+		public double DistanzaMandataMandata { get; set; }
+		public double DistanzaFinalizzazione { get; set; }
 		public bool DrawSpiral { get; set; } = true;
 		public List<Punto> LineeCondizionamento { get; set; } = new List<Punto>();
 		public double DistanzaCondizionamento { get; set; }
@@ -49,6 +56,42 @@ namespace SpiralHeatingVittorioRevisionato
 				new List<Punto>(input.Perimetro),
 				input.StartPoint,
 				input.Distanza,
+				input.Distanza,
+				input.Distanza,
+				input.DrawSpiral,
+				input.LineeCondizionamento,
+				input.DistanzaCondizionamento,
+				input.TerminalCenterline);
+		}
+
+		/// <summary>
+		/// Percorso P/2-P-2P esclusivo di Vittorio_revisionato.
+		/// Generate(...) sopra resta il recovery storico a distanza unica.
+		/// </summary>
+		public static (List<Punto> spiral, List<List<Punto>> offsets) GenerateRevisionato(
+			SpiralGenerationInput input)
+		{
+			if (input == null)
+				throw new ArgumentNullException(nameof(input));
+			if (input.Perimetro == null)
+				throw new ArgumentException("Perimetro mancante.", nameof(input));
+			if (input.StartPoint == null)
+				throw new ArgumentException("StartPoint mancante.", nameof(input));
+			if (input.DistanzaParete <= 0)
+				throw new ArgumentOutOfRangeException(nameof(input.DistanzaParete));
+			if (input.DistanzaMandataMandata <= 0)
+				throw new ArgumentOutOfRangeException(nameof(input.DistanzaMandataMandata));
+			if (input.DistanzaFinalizzazione <= 0)
+				throw new ArgumentOutOfRangeException(nameof(input.DistanzaFinalizzazione));
+			if (input.DistanzaCondizionamento < 0)
+				throw new ArgumentOutOfRangeException(nameof(input.DistanzaCondizionamento));
+
+			return GenerateCore(
+				new List<Punto>(input.Perimetro),
+				input.StartPoint,
+				input.DistanzaParete,
+				input.DistanzaMandataMandata,
+				input.DistanzaFinalizzazione,
 				input.DrawSpiral,
 				input.LineeCondizionamento,
 				input.DistanzaCondizionamento,
@@ -64,6 +107,8 @@ namespace SpiralHeatingVittorioRevisionato
 				perimetro,
 				startPoint,
 				distanza,
+				distanza,
+				distanza,
 				drawSpiral,
 				null,
 				0.0,
@@ -72,7 +117,9 @@ namespace SpiralHeatingVittorioRevisionato
 		private static (List<Punto> spiral, List<List<Punto>> offsets) GenerateCore(
 			List<Punto> perimetro,
 			Punto startPoint,
-			double distanza,
+			double distanzaParete,
+			double distanzaMandataMandata,
+			double distanzaFinalizzazione,
 			bool drawSpiral,
 			List<Punto> lineeCondizionamento,
 			double distanzaCondizionamento,
@@ -90,19 +137,21 @@ namespace SpiralHeatingVittorioRevisionato
 			List<List<Punto>> offsets = new List<List<Punto>>();
 			offsets.Add(GeometryUtils.NormalizePolygon(new List<Punto>(perimetro)));
 
-			double minArea = distanza * distanza;
-
-			// Genera offset successivi
+			// Il recovery storico passa lo stesso valore a entrambe le distanze.
+			// Il percorso revisionato usa P/2 solo sul primo offset e 2P sui successivi.
 			for (int i = 0; i < 100; i++)
 			{
+				double distanzaOffset = i == 0
+					? distanzaParete
+					: distanzaMandataMandata;
 				var previousOffset = i > 0 ? offsets[offsets.Count - 2] : perimetro;
-				var nextOffset = ComputeOffset(offsets.Last(), previousOffset, distanza);
+				var nextOffset = ComputeOffset(offsets.Last(), previousOffset, distanzaOffset);
 
 				if (nextOffset == null || nextOffset.Count < 3)
 					break;
 				
 				// Correggi vertici che intersecano il perimetro precedente
-				nextOffset = FixIntersections(nextOffset, offsets.Last(), distanza);
+				nextOffset = FixIntersections(nextOffset, offsets.Last(), distanzaOffset);
 				
 				double minEdgeLength = double.MaxValue;
 				for (int j = 0; j < nextOffset.Count - 1; j++)
@@ -111,9 +160,9 @@ namespace SpiralHeatingVittorioRevisionato
 					if (edgeLen < minEdgeLength)
 						minEdgeLength = edgeLen;
 				}
-				if (minEdgeLength < distanza && minEdgeLength > 0.2)
+				if (minEdgeLength < distanzaMandataMandata && minEdgeLength > 0.2)
 					break;
-				if (minEdgeLength < distanza * 1.2 && nextOffset.Count < 5)
+				if (minEdgeLength < distanzaMandataMandata * 1.2 && nextOffset.Count < 5)
 					break;
 					
 				offsets.Add(GeometryUtils.NormalizePolygon(nextOffset));
@@ -152,7 +201,7 @@ namespace SpiralHeatingVittorioRevisionato
 				
 				double distPuntoIntersezione = ultimoPuntoSpiral.DistanceTo(puntoIntersezione);
 				
-				if (distPuntoIntersezione > distanza)
+				if (distPuntoIntersezione > distanzaMandataMandata)
 				{
 					double dx = Math.Abs(puntoIntersezione.X - ultimoPuntoSpiral.X);
 					double dy = Math.Abs(puntoIntersezione.Y - ultimoPuntoSpiral.Y);
@@ -184,7 +233,7 @@ namespace SpiralHeatingVittorioRevisionato
 						for (int j = 0; j < spiral.Count - 1; j++)
 						{
 							double dist = GeometryUtils.DistancePointToSegment(puntoIntermedio, spiral[j], spiral[j + 1]);
-							if (dist < distanza * 0.8 && dist > 0.01)
+							if (dist < distanzaMandataMandata * 0.8 && dist > 0.01)
 							{
 								isTooCloseToSpiral = true;
 								break;
@@ -250,7 +299,7 @@ namespace SpiralHeatingVittorioRevisionato
 				Punto penultimoPunto;
 
 				double distanzaSegmento = puntoIntersezione.DistanceTo(spiral[spiral.Count - 1]);
-				if (distanzaSegmento > 2 * distanza) {
+				if (distanzaSegmento > 2 * distanzaFinalizzazione) {
 					ultimoPunto = puntoIntersezione;
 					penultimoPunto = spiral[spiral.Count - 1];
 				}
@@ -260,14 +309,15 @@ namespace SpiralHeatingVittorioRevisionato
 					spiral.RemoveAt(spiral.Count - 1);
 				}
 
-				// Torna indietro di una distanza lungo l'ultimo segmento
+				// Finalizzazione topologica storica. Nel percorso revisionato resta P:
+				// la combinatoria successiva e' l'unica autorita' sui tagli finali di chiusura.
 				var direzione = GeometryUtils.Normalize(new Punto(
 					penultimoPunto.X - ultimoPunto.X,
 					penultimoPunto.Y - ultimoPunto.Y
 				));
 				var puntoFinale = new Punto(
-					ultimoPunto.X + direzione.X * distanza,
-					ultimoPunto.Y + direzione.Y * distanza
+					ultimoPunto.X + direzione.X * distanzaFinalizzazione,
+					ultimoPunto.Y + direzione.Y * distanzaFinalizzazione
 				);
 				if (usaCondizionamento &&
 					!SegmentoRispettaCondizionamento(
@@ -295,7 +345,7 @@ namespace SpiralHeatingVittorioRevisionato
 			// centrale sfruttabile, prolunga la sola mandata con una piega a p e
 			// un asse centrale. Non altera la generazione degli offset storici.
 			if (terminalCenterline)
-				TryAppendTerminalCenterline(spiral, offsets, distanza);
+				TryAppendTerminalCenterline(spiral, offsets, distanzaFinalizzazione);
 
 			return (spiral, offsets);
 		}
