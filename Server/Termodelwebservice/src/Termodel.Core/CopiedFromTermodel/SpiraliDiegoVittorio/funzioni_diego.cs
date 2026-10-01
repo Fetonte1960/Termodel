@@ -47,6 +47,14 @@ namespace SpiralHeatingDiegoVittorio
                 !double.IsFinite(passo) ||
                 passo <= TolleranzaChiusura)
             {
+                LogChiusura(
+                    "Closure.Summary",
+                    $"outcome=FAILURE attempts=0 selected=none " +
+                    $"reason=invalid-input " +
+                    $"supplyPoints={(mandataRettilinea == null ? -1 : mandataRettilinea.Count)} " +
+                    $"returnPoints={(ritornoVersoCentro == null ? -1 : ritornoVersoCentro.Count)} " +
+                    $"P={passo:R}");
+
                 return (
                     mandataRettilinea ?? new List<Punto>(),
                     ritornoVersoCentro ?? new List<Punto>(),
@@ -137,6 +145,22 @@ namespace SpiralHeatingDiegoVittorio
                             $"seq={codiceMandata}/{codiceRitorno} " +
                             $"reason=length length={lunghezzaChiusura:R} " +
                             $"required={lunghezzaMinimaChiusura:R}");
+                        LogEsitoTentativoChiusura(
+                            numeroTentativo,
+                            codiceMandata,
+                            codiceRitorno,
+                            azioneMandata.rimossi,
+                            azioneMandata.normalizzaP,
+                            ms,
+                            me,
+                            azioneRitorno.rimossi,
+                            azioneRitorno.normalizzaP,
+                            rs,
+                            re,
+                            lunghezzaChiusura,
+                            lunghezzaMinimaChiusura,
+                            "FAILURE",
+                            "length");
                         continue;
                     }
 
@@ -168,6 +192,23 @@ namespace SpiralHeatingDiegoVittorio
                             $"seq={codiceMandata}/{codiceRitorno} " +
                             $"reason=acute cosSupply={cosMandata:R} " +
                             $"cosReturn={cosRitorno:R}");
+                        LogEsitoTentativoChiusura(
+                            numeroTentativo,
+                            codiceMandata,
+                            codiceRitorno,
+                            azioneMandata.rimossi,
+                            azioneMandata.normalizzaP,
+                            ms,
+                            me,
+                            azioneRitorno.rimossi,
+                            azioneRitorno.normalizzaP,
+                            rs,
+                            re,
+                            lunghezzaChiusura,
+                            lunghezzaMinimaChiusura,
+                            "FAILURE",
+                            "acute",
+                            $"cosSupply={cosMandata:R} cosReturn={cosRitorno:R}");
                         continue;
                     }
 
@@ -193,6 +234,25 @@ namespace SpiralHeatingDiegoVittorio
                             $"seq={codiceMandata}/{codiceRitorno} " +
                             $"reason=intersection supply={intersecaMandata} " +
                             $"return={intersecaRitorno}");
+                        LogEsitoTentativoChiusura(
+                            numeroTentativo,
+                            codiceMandata,
+                            codiceRitorno,
+                            azioneMandata.rimossi,
+                            azioneMandata.normalizzaP,
+                            ms,
+                            me,
+                            azioneRitorno.rimossi,
+                            azioneRitorno.normalizzaP,
+                            rs,
+                            re,
+                            lunghezzaChiusura,
+                            lunghezzaMinimaChiusura,
+                            "FAILURE",
+                            "intersection",
+                            $"cosSupply={cosMandata:R} cosReturn={cosRitorno:R} " +
+                            $"intersectsSupply={intersecaMandata} " +
+                            $"intersectsReturn={intersecaRitorno}");
                         continue;
                     }
 
@@ -202,6 +262,25 @@ namespace SpiralHeatingDiegoVittorio
                         $"seq={codiceMandata}/{codiceRitorno} " +
                         $"length={lunghezzaChiusura:R} " +
                         $"cosSupply={cosMandata:R} cosReturn={cosRitorno:R}");
+
+                    LogEsitoTentativoChiusura(
+                        numeroTentativo,
+                        codiceMandata,
+                        codiceRitorno,
+                        azioneMandata.rimossi,
+                        azioneMandata.normalizzaP,
+                        ms,
+                        me,
+                        azioneRitorno.rimossi,
+                        azioneRitorno.normalizzaP,
+                        rs,
+                        re,
+                        lunghezzaChiusura,
+                        lunghezzaMinimaChiusura,
+                        "SUCCESS",
+                        "accepted",
+                        $"cosSupply={cosMandata:R} cosReturn={cosRitorno:R} " +
+                        "intersectsSupply=False intersectsReturn=False");
 
                     LogChiusura(
                         "Closure.Selected",
@@ -224,6 +303,13 @@ namespace SpiralHeatingDiegoVittorio
                         $"cosSupply={cosMandata:R} cosReturn={cosRitorno:R} " +
                         $"removed={azioneMandata.rimossi}/{azioneRitorno.rimossi}");
 
+                    LogChiusura(
+                        "Closure.Summary",
+                        $"outcome=SUCCESS attempts={numeroTentativo} " +
+                        $"selected={codiceMandata}/{codiceRitorno} " +
+                        $"closureLength={lunghezzaChiusura:R} " +
+                        $"required={lunghezzaMinimaChiusura:R}");
+
                     return (
                         mandata.Punti,
                         ritorno.Punti,
@@ -231,6 +317,11 @@ namespace SpiralHeatingDiegoVittorio
                         true);
                 }
             }
+
+            LogChiusura(
+                "Closure.Summary",
+                $"outcome=FAILURE attempts={numeroTentativo} selected=none " +
+                $"reason=no-valid-permutation required={lunghezzaMinimaChiusura:R}");
 
             return (
                 mandataRettilinea,
@@ -371,6 +462,47 @@ namespace SpiralHeatingDiegoVittorio
                 p.X <= Math.Max(a.X, b.X) + TolleranzaChiusura &&
                 p.Y >= Math.Min(a.Y, b.Y) - TolleranzaChiusura &&
                 p.Y <= Math.Max(a.Y, b.Y) + TolleranzaChiusura;
+        }
+
+        private static void LogEsitoTentativoChiusura(
+            int numeroTentativo,
+            string codiceMandata,
+            string codiceRitorno,
+            int mandataRimossi,
+            bool mandataNormalizzaP,
+            Punto mandataInizio,
+            Punto mandataFine,
+            int ritornoRimossi,
+            bool ritornoNormalizzaP,
+            Punto ritornoInizio,
+            Punto ritornoFine,
+            double lunghezzaChiusura,
+            double lunghezzaMinimaChiusura,
+            string esito,
+            string motivo,
+            string dettagli = null)
+        {
+            string report =
+                $"attempt={numeroTentativo} " +
+                $"seq={codiceMandata}/{codiceRitorno} " +
+                $"outcome={esito} reason={motivo} " +
+                $"supplyRemoved={mandataRimossi} " +
+                $"supplyMode={(mandataNormalizzaP ? "P" : "I")} " +
+                $"supplyLast=({mandataInizio.X:R},{mandataInizio.Y:R})->" +
+                $"({mandataFine.X:R},{mandataFine.Y:R}) " +
+                $"supplyLastLen={mandataInizio.DistanceTo(mandataFine):R} " +
+                $"returnRemoved={ritornoRimossi} " +
+                $"returnMode={(ritornoNormalizzaP ? "P" : "I")} " +
+                $"returnLast=({ritornoInizio.X:R},{ritornoInizio.Y:R})->" +
+                $"({ritornoFine.X:R},{ritornoFine.Y:R}) " +
+                $"returnLastLen={ritornoInizio.DistanceTo(ritornoFine):R} " +
+                $"closureLength={lunghezzaChiusura:R} " +
+                $"required={lunghezzaMinimaChiusura:R}";
+
+            if (!string.IsNullOrWhiteSpace(dettagli))
+                report += " " + dettagli;
+
+            LogChiusura("Closure.AttemptReport", report);
         }
 
         private static void LogChiusura(string tag, string message)
