@@ -73,6 +73,29 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-10-01 — Ripristino immediato Generate storico nel percorso pubblico Vittorio_revisionato
+Stato: COMMISSIONATO
+
+Autorizzazione utente: dopo controllo visivo del nuovo disegno pubblico giudicato disastroso, ripristinare immediatamente nel percorso pubblico di `Vittorio_revisionato` la generazione storica della Mandata usando il recovery già predisposto.
+
+Interpretazione operativa minima e reversibile:
+- cambiare soltanto il default pubblico da `GenerateRevisionato` a `Generate` storico;
+- conservare il nuovo `GenerateRevisionato` nel sorgente come candidato disattivato, senza cancellarlo;
+- non fare revert globale dei commit;
+- non modificare `SpiraliVittorio`, `SpiraliDiegoVittorio`, `funzioni_diego.chiusura_diego`, frontend, `definizionedati.json` o Golden;
+- mantenere Return/chiusura/raccordatura attuali, così il recovery resta circoscritto alla Supply come da contratto appena approvato;
+- aggiornare Recovery, linee guida spirali, README revisionato e Summary con il fallimento visivo del candidato P/2-2P;
+- pubblicare e notificare la conclusione via Issue #1.
+
+Criteri di completamento:
+- il percorso Service `Vittorio_revisionato` usa per default il `Generate` storico a distanza unica;
+- esiste ancora un opt-in esplicito al candidato `GenerateRevisionato` per future analisi, senza influire sul pubblico;
+- build e smoke `Vittorio_revisionato` eseguiti;
+- documentazione registra che il candidato P/2-2P ha fallito il controllo visivo reale dell'utente e non è approvato;
+- stessa voce aggiornata a `ESEGUITO` con commit e risultati reali.
+
+
+
 ### INCARICO 2026-10-01 — Generate storico come recovery e nuovo Generate P/2-2P per Vittorio_revisionato
 Stato: ESEGUITO
 
