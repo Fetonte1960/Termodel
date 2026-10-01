@@ -74,7 +74,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-10-01 — Rollback completo al Vittorio_revisionato funzionante pre-P/2-2P
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente: eseguire e pubblicare un ulteriore rollback fino al ripristino della situazione funzionante di `Vittorio_revisionato`, mantenendo la chiusura/combinatoria in debug già disponibile prima dell'esperimento P/2-2P.
 
@@ -93,6 +93,70 @@ Criteri di completamento:
 - pubblicazione su `main` e chiusura Issue #1 Completed se riuscito.
 
 
+
+
+Esito:
+- rollback eseguito **byte-per-byte** alla baseline `b71931e6ccb3761b05b21abd07f6d73154b13b3f` per:
+  - `SpiraliVittorioRevisionato/Program.cs`;
+  - `SpiraliVittorioRevisionato/Spiralgenerator.cs`;
+  - `RadiantPanels/StrategiaVittorioRevisionatoBenchmark.cs`;
+  - `tools/Termodel.RadiantPanels.Harness/Program.cs`;
+  - `.github/workflows/termodel-diego-vittorio-fast.yml`;
+- verifica SHA/contenuto GitHub: tutti i cinque file risultano identici alla baseline;
+- `SpiraliVittorioRevisionato/ChiudiSpirale.cs` e
+  `SpiraliDiegoVittorio/funzioni_diego.cs` erano già identici alla baseline
+  e sono rimasti invariati;
+- configurazione runtime ripristinata:
+  `PassoTubi=0,30`, `DistanzaPareti=0,30`,
+  `DistanzaRitorno=0,15`, Generate storico,
+  Return parallelo Diego e `chiusura_diego(...,0,15)`;
+- il log istituzionale della chiusura resta disponibile con categoria
+  `SpiraliDiego` e report per ogni permutazione.
+
+Commit rollback:
+- `68cbac504a9caaec6962e1373bd5b16acbaffdbe` — Program runtime;
+- `a8a772d404d4f8d588410dca82e7165b52554c92` — SpiralGenerator;
+- `409026de6e83c942b4d5e97c3e61e1e49c288703` — benchmark;
+- `4ab33f531dd0830324f7436b410dda8bbcbe2ce2` — Harness;
+- `797ceb93dad0daf8013ddd8b525603c32b335fc3` — workflow Fast.
+
+Verifica reale Fast Harness `36839123030`:
+- build Core/Harness: SUCCESS, 0 errori;
+- quadrato pubblico `Vittorio_revisionato`: SUCCESS;
+- chiusura in debug: `length=0.4 required=0.3`;
+- equivalenza iniziale `Vittorio_revisionato == Vittorio`: SUCCESS;
+- equivalenza multi-progetto: SUCCESS su 6 casi;
+- astrazione strutturale: SUCCESS;
+- rosso finale soltanto sul Golden storico separato `Diego_Vittorio`
+  (`5ddd0ffd... != fa8e6106...`), non aggiornato.
+
+Verifica Service:
+- run `36839516722`: Build succeeded;
+- smoke `Vittorio_revisionato` chiuso: SUCCESS;
+- smoke circuiti aperti: SUCCESS;
+- verifica endpoint pubblico: SUCCESS per disponibilità motore/frontend;
+- workflow complessivo rosso soltanto sul noto smoke locale storage/lock
+  `Termodel.WebService non ha risposto a /health`;
+- al momento della verifica il Render pubblico dichiarava ancora
+  `serviceCommit=084478a6...`: il deploy automatico era quindi ancora in ritardo
+  rispetto ai commit di rollback, nonostante il codice fosse già pubblicato su
+  `main`.
+
+Documentazione aggiornata:
+- Recovery: `f8f727508c1835a9cce61f6166fea8d0ab96580d`;
+- linee guida spirali: `71d829fe8fbe9157897bb8ebd24fd65a2914d5ac`;
+- README revisionato: `74207da01d3098b72b3b73655e3bb219e6d10375`;
+- TERMODEL-SYNC: `76b7b425ff8b268548615b7e89402dbd1777c2d6`.
+
+Stato reale:
+- progettato: sì;
+- implementato: sì;
+- compilato: sì;
+- Harness: sì;
+- equivalenza multi-progetto: sì;
+- pubblicato su GitHub `main`: sì;
+- deploy Render dell'ultimo commit: in propagazione al momento della verifica;
+- conferma visiva utente della baseline ripristinata: da eseguire.
 
 ### INCARICO 2026-10-01 — Ripristino immediato Generate storico nel percorso pubblico Vittorio_revisionato
 Stato: ESEGUITO
