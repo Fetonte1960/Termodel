@@ -5,84 +5,11 @@ using System.Linq;
 
 namespace SpiralHeatingVittorioRevisionato
 {
-	/// <summary>
-	/// Ingresso neutro rispetto al ruolo: lo stesso generatore Vittorio può
-	/// essere invocato per un percorso di mandata o di ritorno.
-	/// Il condizionamento è volutamente un hard gate post-generazione:
-	/// non introduce ricerca di percorsi, fallback o euristiche nuove.
-	/// </summary>
-	public sealed class SpiralGenerationInput
-	{
-		public List<Punto> Perimetro { get; set; } = new List<Punto>();
-		public Punto StartPoint { get; set; }
-		public double Distanza { get; set; }
-		public bool DrawSpiral { get; set; } = true;
-		public List<Punto> LineeCondizionamento { get; set; } = new List<Punto>();
-		public double DistanzaCondizionamento { get; set; }
-		public bool TerminalCenterline { get; set; }
-	}
-
 	public static class SpiralGenerator
 	{
-		/// <summary>
-		/// Astrazione strutturale iniziale di Vittorio.
-		/// Esegue prima il generatore storico INVARIATO; se sono presenti linee
-		/// condizionanti tronca il percorso al primo segmento che violerebbe la
-		/// distanza richiesta. Non cerca alternative e non cambia le decisioni
-		/// geometriche di Vittorio.
-		/// </summary>
-		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(
-			SpiralGenerationInput input)
-		{
-			if (input == null)
-				throw new ArgumentNullException(nameof(input));
-			if (input.Perimetro == null)
-				throw new ArgumentException("Perimetro mancante.", nameof(input));
-			if (input.StartPoint == null)
-				throw new ArgumentException("StartPoint mancante.", nameof(input));
-			if (input.Distanza <= 0)
-				throw new ArgumentOutOfRangeException(nameof(input.Distanza));
-			if (input.DistanzaCondizionamento < 0)
-				throw new ArgumentOutOfRangeException(nameof(input.DistanzaCondizionamento));
-
-			return GenerateCore(
-				new List<Punto>(input.Perimetro),
-				input.StartPoint,
-				input.Distanza,
-				input.DrawSpiral,
-				input.LineeCondizionamento,
-				input.DistanzaCondizionamento,
-				input.TerminalCenterline);
-		}
-
-		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(
-			List<Punto> perimetro,
-			Punto startPoint,
-			double distanza,
-			bool drawSpiral = true) =>
-			GenerateCore(
-				perimetro,
-				startPoint,
-				distanza,
-				drawSpiral,
-				null,
-				0.0,
-				false);
-
-		private static (List<Punto> spiral, List<List<Punto>> offsets) GenerateCore(
-			List<Punto> perimetro,
-			Punto startPoint,
-			double distanza,
-			bool drawSpiral,
-			List<Punto> lineeCondizionamento,
-			double distanzaCondizionamento,
-			bool terminalCenterline)
+		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(List<Punto> perimetro, Punto startPoint, double distanza, bool drawSpiral = true)
 		{
 			List<Punto> spiral = new List<Punto>();
-			bool usaCondizionamento =
-				lineeCondizionamento != null &&
-				lineeCondizionamento.Count >= 2 &&
-				distanzaCondizionamento > 0;
 			
 			// Verifica e correggi il senso di rotazione (deve essere antiorario)
 			perimetro = GeometryUtils.EnsureCounterClockwise(perimetro);
@@ -133,13 +60,10 @@ namespace SpiralHeatingVittorioRevisionato
 			if (offsets.Count < 2)
 				return (spiral, offsets);
 			
-			// Itera su tutti gli offset generati (dal primo all'ultimo).
-			// La sequenza e la geometria restano quelle originali di Vittorio.
-			bool stopPerCondizionamento = false;
+			// Itera su tutti gli offset generati (dal primo all'ultimo)
 			for (int offsetIdx = 1; offsetIdx < offsets.Count; offsetIdx++)
 			{
 				var currentOffset = offsets[offsetIdx];
-				int puntiPrimaOffset = spiral.Count;
 				
 				// Trova intersezione con l'offset corrente dall'ultimo punto della spirale
 				var ultimoPuntoSpiral = spiral[spiral.Count - 1];
@@ -206,44 +130,12 @@ namespace SpiralHeatingVittorioRevisionato
 					
 				}
 				
-				// Se il raccordo storico verso l'offset attraversa la geometria
-				// condizionante, il percorso indipendente si arresta qui.
-				// Non si prova un gomito alternativo: quella sarebbe già una
-				// strategia nuova, da discutere separatamente.
-				if (usaCondizionamento &&
-					!NuoviSegmentiRispettanoCondizionamento(
-						spiral,
-						puntiPrimaOffset,
-						lineeCondizionamento,
-						distanzaCondizionamento))
-				{
-					if (spiral.Count > puntiPrimaOffset)
-						spiral.RemoveRange(
-							puntiPrimaOffset,
-							spiral.Count - puntiPrimaOffset);
-					break;
-				}
-
 				// Segue tutti i vertici dell'offset corrente in ordine (senso antiorario)
 				for (int i = 0; i < currentOffset.Count; i++)
 				{
 					int vertexIndex = (startVertexIndex + i) % currentOffset.Count;
-					Punto candidato = currentOffset[vertexIndex];
-					if (usaCondizionamento &&
-						!SegmentoRispettaCondizionamento(
-							spiral[spiral.Count - 1],
-							candidato,
-							lineeCondizionamento,
-							distanzaCondizionamento))
-					{
-						stopPerCondizionamento = true;
-						break;
-					}
-					spiral.Add(candidato);
+					spiral.Add(currentOffset[vertexIndex]);
 				}
-
-				if (stopPerCondizionamento)
-					break;
 				
 				// Calcola punto finale
 				Punto ultimoPunto;
@@ -269,106 +161,10 @@ namespace SpiralHeatingVittorioRevisionato
 					ultimoPunto.X + direzione.X * distanza,
 					ultimoPunto.Y + direzione.Y * distanza
 				);
-				if (usaCondizionamento &&
-					!SegmentoRispettaCondizionamento(
-						penultimoPunto,
-						puntoFinale,
-						lineeCondizionamento,
-						distanzaCondizionamento))
-				{
-					// Nel ramo storico "corto" l'ultimo vertice era già stato
-					// rimosso per essere sostituito da puntoFinale: se il gate lo
-					// rifiuta lo ripristiniamo, senza inventare nuova geometria.
-					if (spiral.Count > 0 &&
-						spiral[spiral.Count - 1].DistanceTo(ultimoPunto) > 0.000001 &&
-						ultimoPunto != puntoIntersezione)
-					{
-						spiral.Add(ultimoPunto);
-					}
-					break;
-				}
 				spiral.Add(puntoFinale);
 			}
 
-			// Estensione terminale sperimentale e ripristinabile: quando Vittorio
-			// termina su un ultimo anello rettangolare lasciando ancora una fascia
-			// centrale sfruttabile, prolunga la sola mandata con una piega a p e
-			// un asse centrale. Non altera la generazione degli offset storici.
-			if (terminalCenterline)
-				TryAppendTerminalCenterline(spiral, offsets, distanza);
-
 			return (spiral, offsets);
-		}
-
-		private static void TryAppendTerminalCenterline(
-			List<Punto> spiral,
-			List<List<Punto>> offsets,
-			double distanza)
-		{
-			if (spiral == null || spiral.Count < 2 || offsets == null || offsets.Count < 2)
-				return;
-
-			var ring = offsets[offsets.Count - 1];
-			if (ring == null || ring.Count != 4)
-				return;
-
-			// Prima versione volutamente stretta: solo rettangoli ortogonali.
-			const double tol = 0.001;
-			for (int i = 0; i < 4; i++)
-			{
-				var a = ring[i];
-				var b = ring[(i + 1) % 4];
-				if (Math.Abs(a.X - b.X) > tol && Math.Abs(a.Y - b.Y) > tol)
-					return;
-			}
-
-			double minX = ring.Min(p => p.X), maxX = ring.Max(p => p.X);
-			double minY = ring.Min(p => p.Y), maxY = ring.Max(p => p.Y);
-			double width = maxX - minX, height = maxY - minY;
-			double shortSide = Math.Min(width, height);
-
-			// Serve spazio per un asse centrale distante almeno p dai due rami
-			// opposti; oltre 4p dovrebbe esistere un ulteriore anello completo e
-			// non interveniamo per non mascherare altri problemi.
-			if (shortSide < 2.0 * distanza - tol || shortSide >= 4.0 * distanza + tol)
-				return;
-
-			var last = spiral[spiral.Count - 1];
-			var prev = spiral[spiral.Count - 2];
-			bool lastVertical = Math.Abs(last.X - prev.X) < tol;
-			bool lastHorizontal = Math.Abs(last.Y - prev.Y) < tol;
-			if (!lastVertical && !lastHorizontal)
-				return;
-
-			double cx = (minX + maxX) / 2.0;
-			double cy = (minY + maxY) / 2.0;
-			Punto elbow;
-			Punto terminal;
-
-			if (lastVertical && width >= 2.0 * distanza - tol)
-			{
-				elbow = new Punto(cx, last.Y);
-				double targetY = Math.Abs(last.Y - minY) < Math.Abs(last.Y - maxY)
-					? maxY - distanza
-					: minY + distanza;
-				terminal = new Punto(cx, targetY);
-			}
-			else if (lastHorizontal && height >= 2.0 * distanza - tol)
-			{
-				elbow = new Punto(last.X, cy);
-				double targetX = Math.Abs(last.X - minX) < Math.Abs(last.X - maxX)
-					? maxX - distanza
-					: minX + distanza;
-				terminal = new Punto(targetX, cy);
-			}
-			else
-				return;
-
-			if (last.DistanceTo(elbow) < tol || elbow.DistanceTo(terminal) < tol)
-				return;
-
-			spiral.Add(elbow);
-			spiral.Add(terminal);
 		}
 
 		private static (Punto intersection, int nextVertexIndex) FindIntersectionWithOffset(Punto start, List<Punto> offset)
@@ -398,110 +194,6 @@ namespace SpiralHeatingVittorioRevisionato
 			
 			int nextVertex = bestSegmentIndex >= 0 ? (bestSegmentIndex + 1) % offset.Count : 0;
 			return (bestIntersection, nextVertex);
-		}
-
-		// Verifica i segmenti aggiunti dal raccordo storico verso un nuovo
-		// offset. Il primo segmento parte dall'ultimo punto già esistente.
-		private static bool NuoviSegmentiRispettanoCondizionamento(
-			List<Punto> percorso,
-			int puntiPrimaOffset,
-			List<Punto> lineeCondizionamento,
-			double distanzaMinima)
-		{
-			int primoIndiceNuovo = Math.Max(1, puntiPrimaOffset);
-			for (int i = primoIndiceNuovo; i < percorso.Count; i++)
-			{
-				if (!SegmentoRispettaCondizionamento(
-					percorso[i - 1],
-					percorso[i],
-					lineeCondizionamento,
-					distanzaMinima))
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-
-		private static bool SegmentoRispettaCondizionamento(
-			Punto inizio,
-			Punto fine,
-			List<Punto> lineeCondizionamento,
-			double distanzaMinima)
-		{
-			const double tolleranza = 0.000001;
-			for (int i = 0; i < lineeCondizionamento.Count - 1; i++)
-			{
-				if (DistanzaSegmenti(
-					inizio,
-					fine,
-					lineeCondizionamento[i],
-					lineeCondizionamento[i + 1]) <
-					distanzaMinima - tolleranza)
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-
-		private static double DistanzaSegmenti(
-			Punto a0,
-			Punto a1,
-			Punto b0,
-			Punto b1)
-		{
-			if (SegmentiIntersecano(a0, a1, b0, b1))
-				return 0.0;
-
-			return Math.Min(
-				Math.Min(
-					GeometryUtils.DistancePointToSegment(a0, b0, b1),
-					GeometryUtils.DistancePointToSegment(a1, b0, b1)),
-				Math.Min(
-					GeometryUtils.DistancePointToSegment(b0, a0, a1),
-					GeometryUtils.DistancePointToSegment(b1, a0, a1)));
-		}
-
-		private static bool SegmentiIntersecano(
-			Punto a0,
-			Punto a1,
-			Punto b0,
-			Punto b1)
-		{
-			double o1 = Orientamento(a0, a1, b0);
-			double o2 = Orientamento(a0, a1, b1);
-			double o3 = Orientamento(b0, b1, a0);
-			double o4 = Orientamento(b0, b1, a1);
-			const double tolleranza = 0.000001;
-
-			if (((o1 > tolleranza && o2 < -tolleranza) ||
-				 (o1 < -tolleranza && o2 > tolleranza)) &&
-				((o3 > tolleranza && o4 < -tolleranza) ||
-				 (o3 < -tolleranza && o4 > tolleranza)))
-			{
-				return true;
-			}
-
-			return
-				Math.Abs(o1) <= tolleranza && PuntoSulSegmento(b0, a0, a1) ||
-				Math.Abs(o2) <= tolleranza && PuntoSulSegmento(b1, a0, a1) ||
-				Math.Abs(o3) <= tolleranza && PuntoSulSegmento(a0, b0, b1) ||
-				Math.Abs(o4) <= tolleranza && PuntoSulSegmento(a1, b0, b1);
-		}
-
-		private static double Orientamento(Punto a, Punto b, Punto c) =>
-			(b.X - a.X) * (c.Y - a.Y) -
-			(b.Y - a.Y) * (c.X - a.X);
-
-		private static bool PuntoSulSegmento(Punto p, Punto a, Punto b)
-		{
-			const double tolleranza = 0.000001;
-			return
-				p.X >= Math.Min(a.X, b.X) - tolleranza &&
-				p.X <= Math.Max(a.X, b.X) + tolleranza &&
-				p.Y >= Math.Min(a.Y, b.Y) - tolleranza &&
-				p.Y <= Math.Max(a.Y, b.Y) + tolleranza;
 		}
 
 		private static List<Punto> ComputeOffset(List<Punto> polygon, List<Punto> polygon_pre, double offset)
