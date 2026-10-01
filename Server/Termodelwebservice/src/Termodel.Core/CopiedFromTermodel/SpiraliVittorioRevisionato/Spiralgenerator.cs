@@ -212,7 +212,7 @@ namespace SpiralHeatingVittorioRevisionato
 				var p2_pre = polygon_pre[(i + 1) % polygon_pre.Count];
 				double edgeLength_pre = p1_pre.DistanceTo(p2_pre);
 				
-				if (edgeLength <= offset * 3 && edgeLength_pre - edgeLength > offset)
+				if (edgeLength <= offset && edgeLength_pre - edgeLength > offset)
 				{
 					skipIndices.Add(i);
 					skipIndices.Add((i+1) % polygon.Count);
