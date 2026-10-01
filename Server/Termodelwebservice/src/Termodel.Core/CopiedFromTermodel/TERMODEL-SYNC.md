@@ -271,3 +271,16 @@ Commit funzionali principali:
 - Commit recovery: `dd7d411ab3de9223ec7d927aed407d59c60aa62e`.
 - Nessuna modifica al riferimento `SpiraliVittorio` o alla Library Desktop.
 
+
+
+### 2026-10-01 — baseline Vittorio_revisionato ripristinata dopo esperimento P/2-2P
+- Stato runtime corrente riportato alla fotografia
+  `b71931e6ccb3761b05b21abd07f6d73154b13b3f` per i file di generazione,
+  benchmark e gate interessati.
+- Configurazione corrente: Supply Vittorio a distanza unica 0,30 m,
+  Return parallelo Diego a 0,15 m, `chiusura_diego(...,0,15)`.
+- `ChiudiSpirale.cs` revisionato e `funzioni_diego.cs` non sono stati
+  revertiti perché già identici alla fotografia scelta e contengono il debug
+  istituzionale della chiusura.
+- Il tentativo P/2-2P è documentato come non approvato e non deve essere
+  riattivato senza nuova autorizzazione.
