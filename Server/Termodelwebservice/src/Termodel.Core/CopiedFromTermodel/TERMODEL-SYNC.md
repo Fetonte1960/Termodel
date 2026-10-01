@@ -234,3 +234,28 @@ successiva al deploy.
 - Il frontend v1.38 espone **Help → Motore spirali — test pubblico → Chiudi circuito**; la scelta non viene salvata nel progetto.
 - Stato duplicazione: invariato `PENDING`; nessuna modifica alla Library Desktop.
 
+
+
+### 2026-10-01 — Vittorio_revisionato: Generate storico preservato come recovery
+
+Decisione consolidata e implementata:
+- `SpiralGenerator.Generate(...)` mantiene il contratto storico Vittorio a
+  distanza unica ed è la baseline di recovery della sola Mandata;
+- `SpiralGenerator.GenerateRevisionato(...)` è il nuovo percorso Service-only
+  per `Vittorio_revisionato` con ruoli geometrici separati:
+  `DistanzaParete=P/2`, `DistanzaMandataMandata=2P`,
+  `DistanzaFinalizzazione=P`;
+- `Program.DistanzaRitorno=P`;
+- `Program.AggiornaSpiraliConChiusura(..., usaGenerateStoricoRecovery:true)`
+  permette il ripristino circoscritto della Supply storica senza revert globale;
+- il recovery non modifica `ritorno_Parallelo_diego`, `chiusura_diego` o
+  `raccorda_diego`;
+- `SpiraliVittorio` e la Library Desktop restano invariati;
+- la divergenza di `SpiraliVittorioRevisionato` rispetto alla copia Desktop è
+  intenzionale, Service-only e resta `PENDING` finché la logica non sarà
+  condivisa nel Core senza duplicazione.
+
+Commit funzionali principali:
+- `2d6dc35f58541f4a5c32e17d74a7f749659a1dd6`;
+- `4228c4b9e8a78eb4305af3a391c82815f688e1ee`.
+
