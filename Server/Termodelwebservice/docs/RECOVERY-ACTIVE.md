@@ -1,3 +1,64 @@
+# BASELINE ATTIVA — VITTORIO_REVISIONATO FUNZIONANTE PRE-P/2-2P
+
+Checkpoint: **2026-10-01 — rollback completo verificato**
+
+Questa sezione prevale su tutte le note sperimentali sottostanti relative al
+tentativo P/2-2P.
+
+Dopo due prove visive non accettabili è stata ripristinata **esattamente** la
+fotografia runtime precedente all'esperimento, identificata dal commit
+`b71931e6ccb3761b05b21abd07f6d73154b13b3f`.
+
+File riportati byte-per-byte alla baseline:
+- `SpiraliVittorioRevisionato/Program.cs`;
+- `SpiraliVittorioRevisionato/Spiralgenerator.cs`;
+- `RadiantPanels/StrategiaVittorioRevisionatoBenchmark.cs`;
+- `tools/Termodel.RadiantPanels.Harness/Program.cs`;
+- `.github/workflows/termodel-diego-vittorio-fast.yml`.
+
+Sono rimasti intenzionalmente invariati perché già identici alla baseline:
+- `SpiraliVittorioRevisionato/ChiudiSpirale.cs`;
+- `SpiraliDiegoVittorio/funzioni_diego.cs`.
+
+Configurazione attiva:
+
+```text
+PassoTubi       = 0,30 m
+DistanzaPareti  = 0,30 m
+DistanzaRitorno = 0,15 m
+
+Supply          = Generate storico Vittorio
+Return          = ritorno_Parallelo_diego(..., -0,15)
+Chiusura        = chiusura_diego(..., 0,15)
+Minimo chiusura = 2 * 0,15 = 0,30 m
+```
+
+La chiusura resta in debug tramite il log istituzionale
+`SpiraliDiego`, con `Closure.Try`, `Closure.AttemptReport`,
+`Closure.Selected` e `Closure.Summary`.
+
+Verifica Fast Harness run `36839123030`:
+- build Core/Harness: SUCCESS, 0 errori;
+- quadrato pubblico `Vittorio_revisionato`: SUCCESS;
+- chiusura: `length=0,40 m`, `required=0,30 m`;
+- equivalenza iniziale con Vittorio: SUCCESS;
+- equivalenza multi-progetto: SUCCESS su 6 casi;
+- astrazione strutturale: SUCCESS;
+- rosso finale soltanto sul Golden storico separato `Diego_Vittorio`
+  già noto e non modificato.
+
+Verifica Service Build run `36839116329`:
+- Build succeeded;
+- smoke `Vittorio_revisionato` chiuso: SUCCESS;
+- smoke circuiti aperti: SUCCESS;
+- rosso globale soltanto sul noto smoke locale storage/lock `/health`.
+
+Regola operativa: **non riattivare né ricostruire il candidato P/2-2P senza
+una nuova autorizzazione esplicita**. La baseline sopra è il punto di recovery
+corrente.
+
+---
+
 # RECOVERY ATTIVO — DEFAULT PUBBLICO RIPRISTINATO A GENERATE STORICO
 
 Checkpoint: **2026-10-01 — recovery richiesto dopo controllo visivo reale**
