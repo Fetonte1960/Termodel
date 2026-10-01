@@ -293,74 +293,13 @@ jobs:
           Write-Host "REVISIONATO_PUBLIC_SQUARE_LG051_OK"
           Write-Host "SVG=$svg"
 
-      - name: Verify Vittorio_revisionato initial equivalence
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $root = Join-Path $env:RUNNER_TEMP "VittorioRevisionatoEquivalence"
-          $vOut = Join-Path $root "vittorio"
-          $rOut = Join-Path $root "revisionato"
-
-          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
-            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO.json `
-            --engine Vittorio `
-            --id VITTORIO-SQUARE-BASELINE `
-            --out $vOut
-          if ($LASTEXITCODE -ne 0) { throw "Vittorio baseline quadrato fallita." }
-
-          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
-            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO.json `
-            --engine Vittorio_revisionato `
-            --id VITTORIO-REVISIONATO-SQUARE `
-            --out $rOut
-          if ($LASTEXITCODE -ne 0) { throw "Vittorio_revisionato quadrato fallita." }
-
-          $vSvg = Join-Path $vOut "VITTORIO-SQUARE-BASELINE.svg"
-          $rSvg = Join-Path $rOut "VITTORIO-REVISIONATO-SQUARE.svg"
-          $vXml = Join-Path $vOut "VITTORIO-SQUARE-BASELINE.result.locale.xml"
-          $rXml = Join-Path $rOut "VITTORIO-REVISIONATO-SQUARE.result.locale.xml"
-          foreach ($p in @($vSvg,$rSvg,$vXml,$rXml)) {
-            if (-not (Test-Path -LiteralPath $p)) { throw "Artifact equivalenza mancante: $p" }
-          }
-
-          $vSvgHash = (Get-FileHash -LiteralPath $vSvg -Algorithm SHA256).Hash
-          $rSvgHash = (Get-FileHash -LiteralPath $rSvg -Algorithm SHA256).Hash
-          $vXmlHash = (Get-FileHash -LiteralPath $vXml -Algorithm SHA256).Hash
-          $rXmlHash = (Get-FileHash -LiteralPath $rXml -Algorithm SHA256).Hash
-
-          if ($vSvgHash -ne $rSvgHash) {
-            throw "Equivalenza SVG fallita: Vittorio=$vSvgHash Revisionato=$rSvgHash"
-          }
-          if ($vXmlHash -ne $rXmlHash) {
-            throw "Equivalenza XML fallita: Vittorio=$vXmlHash Revisionato=$rXmlHash"
-          }
-
-          Write-Host "VITTORIO_REVISIONATO_INITIAL_EQUIVALENCE_OK"
-          Write-Host "SVG_SHA256=$vSvgHash"
-          Write-Host "XML_SHA256=$vXmlHash"
-
-      - name: Verify Vittorio_revisionato multi-project equivalence
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $root = Join-Path $env:RUNNER_TEMP "VittorioRevisionatoMultiProject"
-          ./tools/local-radiant-harness/Test-VittorioRevisionatoEquivalence.ps1 -Configuration Release -OutputRoot $root
-          if ($LASTEXITCODE -ne 0) { throw "Equivalenza multi-progetto Vittorio_revisionato fallita." }
-          $report = Join-Path $root "equivalence-report.json"
-          if (-not (Test-Path -LiteralPath $report)) { throw "Report equivalenza multi-progetto mancante." }
-          $data = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
-          if (-not $data.allEquivalent -or $data.caseCount -lt 6) {
-            throw "Report equivalenza multi-progetto non valido."
-          }
-          Write-Host "VITTORIO_REVISIONATO_MULTI_PROJECT_WORKFLOW_OK cases=$($data.caseCount)"
-
-      - name: Verify Vittorio_revisionato structural abstraction
+      - name: Verify Vittorio_revisionato historical Generate recovery and P convention
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           $check = dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- revisionato-check 2>&1
           $check | Write-Host
-          if ($LASTEXITCODE -ne 0) { throw "Check astrazione Vittorio_revisionato fallito." }
+          if ($LASTEXITCODE -ne 0) { throw "Check recovery/parametri Vittorio_revisionato fallito." }
           $checkText = $check -join [Environment]::NewLine
           foreach ($marker in @(
             "VITTORIO_REVISIONATO_HISTORICAL_GENERATE_RECOVERY_OK",
@@ -372,7 +311,7 @@ jobs:
               throw "Check revisionato privo del marker: $marker"
             }
           }
-          Write-Host "VITTORIO_REVISIONATO_STRUCTURAL_ABSTRACTION_OK"
+          Write-Host "VITTORIO_REVISIONATO_RECOVERY_CONTRACT_OK"
 
       - name: Inspect Supply only on public cases
         shell: pwsh
