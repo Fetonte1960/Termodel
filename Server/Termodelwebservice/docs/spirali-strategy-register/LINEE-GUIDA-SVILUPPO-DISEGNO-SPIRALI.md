@@ -1,3 +1,39 @@
+## BASELINE CORRENTE 01/10/2026 — Vittorio_revisionato pre-P/2-2P
+
+Questa sezione prevale sulle sezioni sperimentali sottostanti incompatibili.
+
+Il tentativo di introdurre direttamente la convenzione P/2-P-2P nella
+generazione di `Vittorio_revisionato` **non è approvato**: ha prodotto due
+risultati visivi non accettabili. È stato eseguito un rollback completo alla
+fotografia funzionante `b71931e6ccb3761b05b21abd07f6d73154b13b3f`.
+
+Configurazione corrente e autorevole:
+
+```text
+Supply: Generate storico Vittorio
+passo Supply: 0,30 m
+distanza parete: 0,30 m
+Return parallelo Diego: 0,15 m
+parametro chiusura_diego: 0,15 m
+minimo chiusura: 0,30 m
+```
+
+La chiusura combinatoria resta l'oggetto del debug corrente ed è tracciata dal
+log istituzionale categoria `SpiraliDiego`.
+
+Il Fast Harness `36839123030` ha riconfermato:
+- equivalenza `Vittorio_revisionato == Vittorio` per la generazione storica;
+- equivalenza multi-progetto su 6 casi;
+- quadrato pubblico chiuso con tratto rettilineo `0,40 >= 0,30 m`;
+- presenza del report per le permutazioni di chiusura.
+
+Fino a nuova decisione:
+- non introdurre P/2-2P nel generatore pubblico;
+- non cambiare contemporaneamente Supply, Return e semantica di P;
+- partire sempre da questa baseline quando si analizza la sola chiusura.
+
+---
+
 ## Decisione 01/10/2026 — recovery pubblico sul Generate storico
 
 Il candidato `GenerateRevisionato(...)` con Supply P/2-2P è stato provato
