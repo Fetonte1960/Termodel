@@ -1,3 +1,29 @@
+# ROLLBACK ESEGUITO 01/10/2026 — RITORNO AL RESTORE POINT APPROVATO
+
+Su decisione utente il candidato successivo con matrice `1,5P / 2P / P`
+è stato respinto dopo collaudo visivo e il runtime di `Vittorio_revisionato`
+è stato riportato al restore point approvato.
+
+Restore point autorevole:
+
+```text
+commit: 0b541f92cf74412a33d68ffc0603e3f319c4a82f
+branch: recovery/vittorio-revisionato-before-split-wall-supply-20261001
+```
+
+Rollback chirurgico:
+- `Program.cs`: ripristinato byte-per-byte al restore point;
+- `Spiralgenerator.cs`: ripristinato byte-per-byte al restore point;
+- `ChiudiSpirale.cs`: già identico al restore point, non modificato.
+
+Il candidato `1,5P / 2P / P` resta documentato soltanto come esperimento
+respinto. Non usarlo come baseline.
+
+La prossima evoluzione dovrà essere fatta una modifica alla volta, con verifica
+visiva dopo ogni singolo cambiamento.
+
+---
+
 # CANDIDATO ATTIVO — MATRICE MANDATA 1,5P / 2P CON RETURN A P
 
 Data: 2026-10-01
