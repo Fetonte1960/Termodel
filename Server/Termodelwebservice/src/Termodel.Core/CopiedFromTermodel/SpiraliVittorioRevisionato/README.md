@@ -1,3 +1,30 @@
+## Candidato 01/10/2026 — Mandata 1,5P / 2P, Return a P
+
+Il percorso pubblico `Vittorio_revisionato` separa ora i ruoli geometrici
+prima unificati nella singola distanza Vittorio:
+
+```text
+P = 0,30 m
+Mandata-Parete = 0,45 m = 1,5P
+Mandata-Mandata = 0,60 m = 2P
+Mandata-Return = 0,30 m = P
+Return-Parete risultante = 0,15 m = P/2
+Finalizzazione Mandata = 0,30 m = P
+```
+
+Il Return continua a essere costruito da
+`funzioni_diego.ritorno_Parallelo_diego`, ma l'offset passa da P/2 a P.
+La Mandata usa la struttura Vittorio con un overload revisionato che applica
+1,5P al solo primo offset e 2P agli offset successivi. La soglia
+`ComputeOffset` resta `edgeLength <= offset`.
+
+Recovery precedente:
+`0b541f92cf74412a33d68ffc0603e3f319c4a82f`,
+branch
+`recovery/vittorio-revisionato-before-split-wall-supply-20261001`.
+
+---
+
 # Strategia `Vittorio_revisionato`
 
 Nuova derivazione sperimentale creata il 28/09/2026 a partire dalla copia
