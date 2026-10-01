@@ -7393,6 +7393,58 @@ output grafico con identità/stili dei tratti conservati
 La raccordatura non può scegliere una diversa chiusura, cambiare i tagli della
 combinatoria o introdurre una seconda selezione geometrica.
 
+### Revisione finale della combinatoria — decisione utente 01/10/2026
+
+Questa sottosezione definisce la **matrice combinatoria da consolidare** per
+`Vittorio_revisionato` e prevale, per questa derivazione, su formulazioni
+precedenti o ambigue della matrice dei candidati. In questa fase la decisione è
+soltanto documentale: **nessun sorgente viene modificato**.
+
+La stessa logica deve essere applicata in modo **identico e simmetrico** a
+Mandata e Ripresa/Ritorno.
+
+Per ciascun lato la ricerca opera esclusivamente sulla finestra costituita
+dagli **ultimi tre tratti originali**. I possibili terminali sono quindi:
+
+1. terminale corrente, senza eliminare tratti;
+2. nuovo terminale dopo eliminazione dell'ultimo tratto;
+3. nuovo terminale dopo eliminazione degli ultimi due tratti.
+
+Per ciascuna delle tre posizioni terminali si provano esattamente due varianti:
+
+- **I — invariata:** non modificare la lunghezza del tratto terminale;
+- **P — normalizzata:** portare il tratto terminale a lunghezza esattamente
+  `P`.
+
+La combinatoria è quindi la stessa su entrambi i lati:
+
+```text
+0I, 0P, 1I, 1P, 2I, 2P
+```
+
+e le coppie Mandata × Ripresa vengono generate combinando tali configurazioni.
+Non fanno parte della matrice base proiezioni ortogonali `RP*`, ranking
+aggiuntivi, matrici diverse fra Mandata e Ripresa o eccezioni specifiche per
+singoli casi.
+
+Dopo aver applicato eliminazioni e/o normalizzazione, il candidato viene
+valutato **sul nuovo setup geometrico risultante**. Deve essere scartato se si
+verifica anche una sola delle condizioni seguenti:
+
+1. il tratto rettilineo di chiusura generato ha lunghezza **non strettamente
+   maggiore di `2P`**; la regola definitiva è quindi `lunghezza > 2P`,
+   non `>= 2P`;
+2. l'innesto fra Mandata e tratto di chiusura forma un angolo acuto;
+3. l'innesto fra tratto di chiusura e Ripresa forma un angolo acuto;
+4. il tratto di chiusura interseca un tratto non adiacente della geometria
+   risultante del candidato, dopo le eliminazioni/normalizzazioni applicate.
+
+I controlli non devono essere eseguiti contro segmenti che il candidato ha già
+eliminato o sostituito. Per gli aspetti non modificati da questa revisione
+resta valido il principio LG-051 di sequenza deterministica con arresto alla
+**prima configurazione valida**; se nessuna configurazione è valida, Mandata e
+Ripresa restano separate.
+
 ### Validazione di un candidato di chiusura
 
 Per ogni candidato la combinatoria deve prima applicare i propri
