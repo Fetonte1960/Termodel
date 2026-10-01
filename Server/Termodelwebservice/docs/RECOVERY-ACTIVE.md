@@ -1,3 +1,92 @@
+# RECOVERY ATTIVO — GENERATE STORICO COME BASELINE DI RIPRISTINO
+
+Checkpoint: **2026-10-01 — contratto implementato, verifica CI in corso**
+
+Questo checkpoint prevale sulle note storiche sottostanti quando si deve
+ripristinare la sola generazione della Mandata di `Vittorio_revisionato`.
+
+## Contratto di recovery
+
+Il percorso storico a distanza unica resta disponibile e deve essere
+considerato la baseline di ripristino della **sola Mandata**:
+
+```text
+SpiralGenerator.Generate(...)
+    distanza unica Vittorio
+    ↓
+baseline recovery
+```
+
+Il nuovo percorso produttivo revisionato è separato:
+
+```text
+SpiralGenerator.GenerateRevisionato(...)
+    primo offset parete = P/2
+    offset Supply successivi = 2P
+    finalizzazione topologica = P
+```
+
+Con `P=0,30 m`:
+
+```text
+DistanzaPareti = 0,15 m
+DistanzaMandataMandata = 0,60 m
+DistanzaRitorno = 0,30 m
+chiusura minima = 0,60 m
+```
+
+Il metodo pubblico:
+
+```text
+AggiornaSpiraliConChiusura(
+    chiudiCircuito,
+    usaGenerateStoricoRecovery = false)
+```
+
+usa per default il nuovo `GenerateRevisionato`. Impostando
+`usaGenerateStoricoRecovery=true` torna alla Supply storica senza revert
+globale di commit e senza modificare Return, combinatoria o raccordatura.
+
+## Confine del rollback
+
+Il recovery storico ripristina soltanto:
+
+```text
+GENERAZIONE MANDATA
+```
+
+Non ripristina né modifica:
+
+```text
+ritorno_Parallelo_diego(P)
+chiusura_diego(P)
+raccorda_diego(...)
+```
+
+Quindi un problema nel nuovo generatore può essere isolato senza perdere il
+lavoro consolidato sulla chiusura.
+
+## Vincolo di compatibilità
+
+L'overload storico `SpiralGenerator.Generate(...)` conserva il proprio
+contratto a distanza unica. Il core condiviso riceve tre distanze; il percorso
+storico gli passa lo stesso valore in tutti i ruoli, mantenendo il comportamento
+precedente. Il percorso revisionato passa invece P/2, 2P e P in modo esplicito.
+
+Commit implementativi:
+- `2d6dc35f58541f4a5c32e17d74a7f749659a1dd6` — nuovo
+  `GenerateRevisionato` e mantenimento del recovery storico;
+- `4228c4b9e8a78eb4305af3a391c82815f688e1ee` — wiring pubblico P/2-2P,
+  Return=P e switch di recovery;
+- `8a5df44ec90eea3a6cc3ec48c4ae7b53a6d60b3c`,
+  `913346cf454951c7c282307f24f2e7712bbb8c22` — gate diagnostici;
+- `207b866bc21bb634b60b8f7bd6c179560b854b4b` — gate Fast Harness.
+
+Nessuna modifica a `SpiraliVittorio`, `SpiraliDiegoVittorio`,
+`funzioni_diego.chiusura_diego`, frontend, `definizionedati.json` o Golden.
+
+---
+
 # RECOVERY PRIORITARIO — RICOSTRUZIONE STORICA VITTORIO / DIEGO_VITTORIO / VITTORIO_REVISIONATO
 
 Checkpoint: **2026-10-01 — decisione umana consolidata; nessuna modifica sorgente in questo checkpoint**
