@@ -546,7 +546,7 @@ namespace SpiralHeatingVittorioRevisionato
             SpiralHeatingDiegoVittorio.ChiudiSpirale.Chiudi(
                 xmlFile,
                 RaggioCurvatura,
-                DistanzaPareti,
+                DistanzaMandataParete,
                 DistanzaRitorno,
                 DistanzaRotazioneUltimoPunto,
                 Debug);
