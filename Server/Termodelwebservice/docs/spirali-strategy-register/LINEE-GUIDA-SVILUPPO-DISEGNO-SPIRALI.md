@@ -1,3 +1,60 @@
+## BASELINE APPROVATA 01/10/2026 — Vittorio_revisionato con soglia ComputeOffset = P
+
+Questa sezione è vincolante e prevale sulle note sperimentali precedenti
+incompatibili.
+
+Il collaudo visivo reale sul progetto multi-locale ha approvato come base di
+ripristino l'assetto:
+
+```text
+Mandata:
+  Vittorio puro come struttura
+  + unica deviazione:
+    ComputeOffset: edgeLength <= offset
+
+Return:
+  parallelo Diego corrente
+
+Chiusura:
+  chiusura_diego corrente + log istituzionale
+
+Raccordatura:
+  corrente
+```
+
+Con `offset=0,30 m`, la soglia di skip dei vertici in `ComputeOffset` è
+0,30 m. La precedente soglia 3P = 0,90 m non fa parte della baseline
+approvata.
+
+Restore point:
+
+```text
+runtime: 6132430e7907699cbf577c2ef869ffd03117f216
+snapshot: edc1fc4cff0edad0700a9c9c2582b80c205efb57
+branch: recovery/vittorio-revisionato-approved-offset-p-20261001
+```
+
+### Problema aperto separato: strettoie
+
+Il progetto multi-locale approvato come restore point mostra ancora un difetto
+locale nelle strettoie, osservato chiaramente nel locale 4. La geometria nella
+zona ristretta può risultare non soddisfacente.
+
+Questo problema:
+- è reale e va risolto in seguito;
+- non invalida la baseline approvata;
+- era stato tamponato in una precedente iterazione secondo il collaudo utente,
+  ma la causa/patch esatta non è ancora stata ricostruita con certezza;
+- deve essere affrontato con una missione dedicata e un nuovo return point;
+- non deve essere corretto contemporaneamente a chiusura centrale, semantica P,
+  Return o altre strategie.
+
+Principio operativo: **una baseline può essere approvata come restore point pur
+contenendo un difetto noto e circoscritto, purché quel difetto sia registrato e
+non venga confuso con la funzione che si sta stabilizzando.**
+
+---
+
 ## Esperimento controllato 01/10/2026 — soglia ComputeOffset 3P -> P
 
 Il test locale ha dimostrato che i due stop su `minEdgeLength` non erano la
