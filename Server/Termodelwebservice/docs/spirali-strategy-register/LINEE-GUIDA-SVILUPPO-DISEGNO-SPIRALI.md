@@ -1,3 +1,32 @@
+## Decisione 01/10/2026 — recovery pubblico sul Generate storico
+
+Il candidato `GenerateRevisionato(...)` con Supply P/2-2P è stato provato
+nel percorso pubblico e **non ha superato il controllo visivo reale
+dell'utente**. Il disegno risultante presenta una geometria non accettabile.
+
+Da questo momento, fino a nuova autorizzazione:
+
+```text
+DEFAULT PUBBLICO VITTORIO_REVISIONATO
+= Generate storico Vittorio a distanza unica
+```
+
+Il candidato P/2-2P non viene cancellato: resta disponibile esclusivamente per
+prove esplicite con `usaGenerateStoricoRecovery=false`.
+
+Il recovery è volutamente circoscritto alla Supply:
+- non modifica `SpiraliVittorio`;
+- non modifica `SpiraliDiegoVittorio`;
+- non modifica `funzioni_diego.chiusura_diego`;
+- non modifica Return, combinatoria o raccordatura;
+- non richiede revert globale dei commit.
+
+Regola operativa: **un candidato geometrico non viene promosso perché passa
+Harness/build; il controllo visivo reale resta requisito separato e può
+obbligare al recovery anche in presenza di test tecnici verdi.**
+
+---
+
 # Linee guida per lo sviluppo del disegno spirali
 
 Classificazione: **SPECIFICA VIVA — IN DEFINIZIONE**  
