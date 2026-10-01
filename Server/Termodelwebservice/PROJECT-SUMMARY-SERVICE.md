@@ -73,6 +73,31 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-10-01 — Consolidamento restore point approvato e difetto strettoie
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- dichiarare approvato come restore point lo stato corrente di `Vittorio_revisionato` con soglia `ComputeOffset` ridotta da `3P` a `P`;
+- registrare che il collaudo visivo reale sul progetto multi-locale è soddisfacente come base di ripristino;
+- registrare separatamente un difetto residuo nelle **strettoie/corridoi stretti**, visibile nel locale 4 del test fornito dall'utente: il percorso può generare una geometria non soddisfacente nella zona di restringimento;
+- precisare che tale difetto era stato tamponato in precedenti iterazioni ma non deve essere corretto in questo incarico: sarà oggetto di lavoro successivo dedicato;
+- aggiornare Recovery, linee guida spirali, registro strategie, README revisionato, TERMODEL-SYNC e Summary;
+- non modificare codice, frontend, Golden o dati.
+
+Restore point da consolidare:
+- comportamento runtime: commit funzionale `6132430e7907699cbf577c2ef869ffd03117f216`;
+- snapshot documentale corrente prima del consolidamento: `edc1fc4cff0edad0700a9c9c2582b80c205efb57`;
+- creare un branch recovery dedicato e conservarlo come punto di ritorno approvato.
+
+Criteri di completamento:
+- restore point approvato nominato con commit e branch espliciti;
+- difetto strettoie registrato come problema aperto separato, senza attribuirgli cause non ancora dimostrate;
+- linee guida spirali aggiornate affinché una chat futura non tenti di correggere il generatore centrale senza preservare il restore point;
+- nessuna modifica runtime;
+- stessa voce aggiornata a `ESEGUITO` con riferimenti ai documenti e al branch recovery.
+
+
+
 ### INCARICO 2026-10-01 — Soglia chirurgica ComputeOffset da 3P a P in Vittorio_revisionato
 Stato: ESEGUITO
 
