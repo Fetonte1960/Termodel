@@ -1,3 +1,79 @@
+# STATO ATTIVO — GENERATE VITTORIO PURO IN VITTORIO_REVISIONATO
+
+Checkpoint: **2026-10-01 — implementazione tecnica riuscita, controllo visivo utente ancora da fare**
+
+Il generatore della Mandata di `Vittorio_revisionato` è ora il vero
+`Spiralgenerator.cs` storico copiato da Vittorio al commit
+`5b8ddc11b4e23046bda1e1c5824af4d4bc084326`.
+
+Verifica sorgente:
+- SHA blob corrente `SpiraliVittorioRevisionato/Spiralgenerator.cs`:
+  `95e99c7e420dab6b102f69a16a919c2ce0856bf3`;
+- identico byte-per-byte alla copia del commit `5b8ddc11...`;
+- identico al `SpiraliVittorio/Spiralgenerator.cs` corrente salvo il namespace;
+- 270 righe in entrambi;
+- non contiene `SpiralGenerationInput`, `GenerateCore`,
+  condizionamento o `TerminalCenterline`.
+
+Percorso corrente:
+
+```text
+Mandata
+  = SpiralGenerator Vittorio puro
+
+Return
+  = ritorno_Parallelo_diego(..., -0,15)
+
+Chiusura
+  = chiusura_diego(..., 0,15)
+  + log istituzionale SpiraliDiego
+
+Raccordatura
+  = fase finale revisionato
+```
+
+Il return point precedente alla modifica resta BLOCCATO e non va cancellato:
+
+```text
+commit:
+45bff4b4d016bcd60aa0c18d26aefdcf51ad8a21
+
+branch:
+recovery/vittorio-revisionato-before-pure-vittorio-20261001
+```
+
+Se il controllo visivo reale boccia anche il generatore Vittorio puro,
+ripristinare l'intero stato da quel branch/commit; non ricostruire manualmente
+il precedente assetto.
+
+Verifica Fast Harness run `36847338021`:
+- build Core/Harness: SUCCESS;
+- Return parallelo Diego isolato: SUCCESS;
+- combinatoria `funzioni_diego`: SUCCESS;
+- quadrato pubblico `Vittorio_revisionato`: SUCCESS;
+- equivalenza iniziale con Vittorio: SUCCESS;
+- equivalenza multi-progetto: SUCCESS su 6 casi;
+- check diretto generatore puro:
+  `VITTORIO_REVISIONATO_PURE_GENERATOR_OK`,
+  `equivalentToVittorio=true`;
+- chiusura quadrato in debug: `length=0,40`, `required=0,30`;
+- workflow rosso soltanto sul Golden storico separato `Diego_Vittorio`
+  (`5ddd0ffd... != fa8e6106...`), non aggiornato.
+
+Verifica Service Build run `36847235975`:
+- Build succeeded;
+- smoke pubblico `Vittorio_revisionato` chiuso: SUCCESS;
+- smoke circuiti aperti: SUCCESS;
+- deploy pubblico verificato con
+  `serviceCommit=a56a9479cbb8d167068b24a7e45a5ebd1a4f071f`;
+- rosso globale soltanto sul noto smoke locale storage/lock `/health`.
+
+Regola di recovery chat:
+**il codice è tecnicamente verificato ma non va dichiarato visivamente
+approvato finché Diego non conferma il disegno reale.**
+
+---
+
 # RETURN POINT BLOCCATO — PRIMA DEL RIPRISTINO GENERATORE VITTORIO PURO
 
 Checkpoint: **2026-10-01 — return point vincolante prima della nuova modifica**
