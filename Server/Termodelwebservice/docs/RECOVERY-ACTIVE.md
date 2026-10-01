@@ -1,3 +1,68 @@
+# STATO ATTIVO — SOGLIA COMPUTEOFFSET RIDOTTA DA 3P A P
+
+Checkpoint: **2026-10-01 — modifica chirurgica pubblicata e server verificato**
+
+Dopo il test locale in Visual Studio, nel solo
+`SpiraliVittorioRevisionato/Spiralgenerator.cs` è stata applicata una singola
+deviazione rispetto al generatore Vittorio puro:
+
+```csharp
+// prima
+edgeLength <= offset * 3
+
+// ora
+edgeLength <= offset
+```
+
+Con `offset=0,30 m` la soglia di esclusione dei vertici in
+`ComputeOffset` passa quindi da `0,90 m` a `0,30 m`.
+
+Non sono stati modificati:
+- i due `break` su `minEdgeLength`;
+- Return parallelo Diego;
+- `chiusura_diego` e le permutazioni;
+- raccordatura;
+- frontend, `definizionedati.json` e Golden.
+
+Il generatore revisionato non è quindi più byte-identico a Vittorio: è
+**Vittorio puro + una sola deviazione sperimentale sulla soglia di
+`ComputeOffset`**.
+
+Return point obbligatorio prima di questa prova:
+
+```text
+commit:
+f1544135c303abb8296ef784c86b3cca6d627e6c
+
+branch:
+recovery/vittorio-revisionato-before-offset-threshold-20261001
+```
+
+Verifica:
+- Fast Harness run `36861645040`:
+  - build Core/Harness SUCCESS;
+  - Return parallelo Diego SUCCESS;
+  - combinatoria SUCCESS;
+  - quadrato pubblico `Vittorio_revisionato` SUCCESS;
+  - equivalenza iniziale sul quadrato SUCCESS;
+  - la vecchia equivalenza multi-progetto si interrompe su `concave-l`,
+    dove la nuova soglia produce intenzionalmente una geometria diversa da
+    Vittorio: questo gate non è più una invariabile valida per il candidato
+    corrente e non è stato nascosto o aggiornato;
+- Service Build run `36861644983`:
+  - Build succeeded;
+  - smoke `Vittorio_revisionato` chiuso SUCCESS;
+  - smoke circuiti aperti SUCCESS;
+  - verifica deploy pubblico SUCCESS con
+    `serviceCommit=6132430e7907699cbf577c2ef869ffd03117f216`;
+  - rosso globale soltanto sul noto smoke locale storage/lock `/health`.
+
+Regola di recovery chat:
+**questa modifica resta sperimentale fino al controllo visivo sul server**.
+Se il risultato reale non è accettabile, tornare al branch/commit sopra.
+
+---
+
 # STATO ATTIVO — GENERATE VITTORIO PURO IN VITTORIO_REVISIONATO
 
 Checkpoint: **2026-10-01 — implementazione tecnica riuscita, controllo visivo utente ancora da fare**
