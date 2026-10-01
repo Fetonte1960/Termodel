@@ -91,12 +91,15 @@ Recovery point creato prima delle modifiche:
 
 Valori geometrici:
 - `P = 0,30 m`;
-- parete -> primo tratto della Mandata: `P/2 = 0,15 m`;
+- parete -> primo tratto della Mandata: `1,5P = 0,45 m`;
 - Mandata -> Mandata dello stesso colore: `2P = 0,60 m`;
+- Mandata -> Return: `P = 0,30 m`;
+- parete -> Return risultante: `P/2 = 0,15 m`;
 - finalizzazione storica: `P = 0,30 m`.
 
 Criteri di completamento:
-- il generatore distingue esplicitamente primo offset e offset successivi;
+- il generatore distingue esplicitamente primo offset Mandata a `1,5P` e offset successivi Mandata a `2P`;
+- il Return parallelo usa `P` e resta quindi a `P/2` dalla parete;
 - la soglia `ComputeOffset: edgeLength <= offset` della baseline approvata resta invariata;
 - build/test disponibili eseguiti e risultati registrati;
 - documentazione aggiornata;
