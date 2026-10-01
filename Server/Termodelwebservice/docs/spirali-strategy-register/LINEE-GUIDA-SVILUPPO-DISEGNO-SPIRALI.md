@@ -1,3 +1,51 @@
+## Baseline generatore 01/10/2026 — Vittorio puro reale
+
+Per eliminare l'ambiguità accumulata sulla parola "storico", la Mandata di
+`Vittorio_revisionato` usa ora **letteralmente** il generatore Vittorio puro.
+
+Riferimento sorgente:
+
+```text
+commit copia iniziale revisionato:
+5b8ddc11b4e23046bda1e1c5824af4d4bc084326
+
+blob Spiralgenerator.cs:
+95e99c7e420dab6b102f69a16a919c2ce0856bf3
+```
+
+Il file corrente è identico a `SpiraliVittorio/Spiralgenerator.cs` salvo il
+namespace e non contiene più:
+- `SpiralGenerationInput`;
+- `GenerateCore`;
+- gate di condizionamento;
+- `TerminalCenterline`;
+- estensioni terminali successive alla copia iniziale.
+
+La catena autorizzata è quindi:
+
+```text
+Vittorio puro → Mandata
+       ↓
+ritorno_Parallelo_diego
+       ↓
+chiusura_diego + permutazioni/log
+       ↓
+raccordatura finale
+```
+
+Return point obbligatorio se questa prova fallisce visivamente:
+
+```text
+45bff4b4d016bcd60aa0c18d26aefdcf51ad8a21
+recovery/vittorio-revisionato-before-pure-vittorio-20261001
+```
+
+Il Fast Harness `36847338021` ha verificato equivalenza con Vittorio su
+6 casi e un confronto diretto del generatore puro. Questo è un requisito
+tecnico, non sostituisce l'approvazione visiva dell'utente.
+
+---
+
 ## BASELINE CORRENTE 01/10/2026 — Vittorio_revisionato pre-P/2-2P
 
 Questa sezione prevale sulle sezioni sperimentali sottostanti incompatibili.
