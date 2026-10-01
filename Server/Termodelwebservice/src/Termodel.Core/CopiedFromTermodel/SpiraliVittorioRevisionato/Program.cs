@@ -19,17 +19,20 @@ namespace SpiralHeatingVittorioRevisionato
     
     class Program
     {
-        // Parametri di posa
-        // Modificato da Codex per realizzare: passo della spirale rossa pari
-        // a 0,30 m e ritorno collocato a metà passo.
-        public const double PassoTubi = 0.30;
-        private const double DistanzaPareti = PassoTubi;
+        // Contratto geometrico locale Vittorio_revisionato:
+        // P = Mandata-Return; Mandata-Parete = 1,5P; Mandata-Mandata = 2P.
+        // Il Return parallelo a P dalla Mandata resta quindi a P/2 dalla parete.
+        public const double P = 0.30;
+        public const double PassoTubi = P;
+        private const double DistanzaMandataParete = P * 1.5;
+        private const double DistanzaMandataMandata = P * 2.0;
+        private const double DistanzaFinalizzazione = P;
         
         // Parametri chiusura spirale
         // Parametri locali Vittorio_revisionato (LG-051).
         public const double RaggioCurvatura = 0.10;
         public const double TolleranzaDiscretizzazioneArchi = 0.005;
-        private const double DistanzaRitorno = PassoTubi / 2.0;
+        private const double DistanzaRitorno = P;
         private const double DistanzaRotazioneUltimoPunto = 0.20;
         
         // Modalità debug
@@ -251,7 +254,9 @@ namespace SpiralHeatingVittorioRevisionato
                 (spiral, offsets) = SpiralGenerator.Generate(
                     perimetro,
                     lineaIngresso.PuntoInterno,
-                    DistanzaPareti,
+                    DistanzaMandataParete,
+                    DistanzaMandataMandata,
+                    DistanzaFinalizzazione,
                     true);
                 
                 // Salva spirale nel locale XML
