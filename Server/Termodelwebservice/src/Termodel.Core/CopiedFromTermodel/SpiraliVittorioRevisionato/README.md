@@ -171,3 +171,37 @@ POST /api/calculations?spiralEngine=Vittorio_revisionato&spiralClosure=false
 
 Il default di `spiralClosure` è `true`.
 
+
+
+## Milestone 5 — Generate P/2-2P con recovery storico (01/10/2026)
+
+Il percorso pubblico di `Vittorio_revisionato` adotta ora la convenzione
+geometrica già consolidata in `Diego_Vittorio`:
+
+```text
+P = 0,30 m
+parete-Mandata = P/2 = 0,15 m
+Mandata-Mandata = 2P = 0,60 m
+Mandata-Ripresa = P = 0,30 m
+chiusura minima = 2P = 0,60 m
+```
+
+Per evitare rollback globali sono mantenuti due ingressi distinti:
+- `SpiralGenerator.Generate(...)`: contratto storico Vittorio a distanza
+  unica, baseline di recovery;
+- `SpiralGenerator.GenerateRevisionato(...)`: percorso P/2-2P usato dal
+  revisionato pubblico.
+
+`AggiornaSpiraliConChiusura` accetta inoltre
+`usaGenerateStoricoRecovery=true`, che ripristina soltanto la Supply storica
+lasciando invariati Return parallelo Diego, combinatoria e raccordatura.
+
+La finalizzazione topologica interna al generatore revisionato resta a `P`;
+non decide la chiusura finale. L'autorità sui tagli/normalizzazioni terminali
+resta `funzioni_diego.chiusura_diego(...)` con matrice
+`0I,0P,1I,1P,2I,2P`.
+
+Commit funzionali:
+- `2d6dc35f58541f4a5c32e17d74a7f749659a1dd6`;
+- `4228c4b9e8a78eb4305af3a391c82815f688e1ee`.
+
