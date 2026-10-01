@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Termodel.utilities;
 
 namespace SpiralHeatingDiegoVittorio
 {
@@ -13,9 +14,6 @@ namespace SpiralHeatingDiegoVittorio
 
         private const double TolleranzaChiusura = 0.000001;
         private const int MaxTrattiTerminaliChiusura = 2;
-        private const string TraceClosureEnvironmentVariable =
-            "TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE";
-
         private sealed class ConfigurazioneTerminaleChiusura
         {
             public List<Punto> Punti { get; init; }
@@ -110,22 +108,20 @@ namespace SpiralHeatingDiegoVittorio
                     Punto rs = ritorno.Punti[^2];
                     Punto re = ritorno.Punti[^1];
 
-                    if (TraceClosureEnabled)
-                    {
-                        Console.WriteLine(
-                            $"  DV_SQUARE_TRY attempt={numeroTentativo} " +
-                            $"seq={codiceMandata}/{codiceRitorno} " +
-                            $"supplyRemoved={azioneMandata.rimossi} " +
-                            $"supplyMode={(azioneMandata.normalizzaP ? "P" : "I")} " +
-                            $"supplyLast=({ms.X:R},{ms.Y:R})->({me.X:R},{me.Y:R}) " +
-                            $"supplyLastLen={ms.DistanceTo(me):R} " +
-                            $"returnRemoved={azioneRitorno.rimossi} " +
-                            $"returnMode={(azioneRitorno.normalizzaP ? "P" : "I")} " +
-                            $"returnLast=({rs.X:R},{rs.Y:R})->({re.X:R},{re.Y:R}) " +
-                            $"returnLastLen={rs.DistanceTo(re):R} " +
-                            $"endpointDistance={me.DistanceTo(re):R} " +
-                            $"required={lunghezzaMinimaChiusura:R}.");
-                    }
+                    LogChiusura(
+                        "Closure.Try",
+                        $"attempt={numeroTentativo} " +
+                        $"seq={codiceMandata}/{codiceRitorno} " +
+                        $"supplyRemoved={azioneMandata.rimossi} " +
+                        $"supplyMode={(azioneMandata.normalizzaP ? "P" : "I")} " +
+                        $"supplyLast=({ms.X:R},{ms.Y:R})->({me.X:R},{me.Y:R}) " +
+                        $"supplyLastLen={ms.DistanceTo(me):R} " +
+                        $"returnRemoved={azioneRitorno.rimossi} " +
+                        $"returnMode={(azioneRitorno.normalizzaP ? "P" : "I")} " +
+                        $"returnLast=({rs.X:R},{rs.Y:R})->({re.X:R},{re.Y:R}) " +
+                        $"returnLastLen={rs.DistanceTo(re):R} " +
+                        $"endpointDistance={me.DistanceTo(re):R} " +
+                        $"required={lunghezzaMinimaChiusura:R}");
 
                     Punto inizio = me;
                     Punto fine = re;
@@ -135,14 +131,12 @@ namespace SpiralHeatingDiegoVittorio
                     if (lunghezzaChiusura <
                         lunghezzaMinimaChiusura - TolleranzaChiusura)
                     {
-                        if (TraceClosureEnabled)
-                        {
-                            Console.WriteLine(
-                                $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
-                                $"seq={codiceMandata}/{codiceRitorno} " +
-                                $"reason=length length={lunghezzaChiusura:R} " +
-                                $"required={lunghezzaMinimaChiusura:R}.");
-                        }
+                        LogChiusura(
+                            "Closure.Reject",
+                            $"attempt={numeroTentativo} " +
+                            $"seq={codiceMandata}/{codiceRitorno} " +
+                            $"reason=length length={lunghezzaChiusura:R} " +
+                            $"required={lunghezzaMinimaChiusura:R}");
                         continue;
                     }
 
@@ -168,14 +162,12 @@ namespace SpiralHeatingDiegoVittorio
                     if (cosMandata < -TolleranzaChiusura ||
                         cosRitorno < -TolleranzaChiusura)
                     {
-                        if (TraceClosureEnabled)
-                        {
-                            Console.WriteLine(
-                                $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
-                                $"seq={codiceMandata}/{codiceRitorno} " +
-                                $"reason=acute cosSupply={cosMandata:R} " +
-                                $"cosReturn={cosRitorno:R}.");
-                        }
+                        LogChiusura(
+                            "Closure.Reject",
+                            $"attempt={numeroTentativo} " +
+                            $"seq={codiceMandata}/{codiceRitorno} " +
+                            $"reason=acute cosSupply={cosMandata:R} " +
+                            $"cosReturn={cosRitorno:R}");
                         continue;
                     }
 
@@ -195,44 +187,42 @@ namespace SpiralHeatingDiegoVittorio
 
                     if (intersecaMandata || intersecaRitorno)
                     {
-                        if (TraceClosureEnabled)
-                        {
-                            Console.WriteLine(
-                                $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
-                                $"seq={codiceMandata}/{codiceRitorno} " +
-                                $"reason=intersection supply={intersecaMandata} " +
-                                $"return={intersecaRitorno}.");
-                        }
+                        LogChiusura(
+                            "Closure.Reject",
+                            $"attempt={numeroTentativo} " +
+                            $"seq={codiceMandata}/{codiceRitorno} " +
+                            $"reason=intersection supply={intersecaMandata} " +
+                            $"return={intersecaRitorno}");
                         continue;
                     }
 
-                    if (TraceClosureEnabled)
-                    {
-                        Console.WriteLine(
-                            $"  DV_CLOSURE_ACCEPT attempt={numeroTentativo} " +
-                            $"seq={codiceMandata}/{codiceRitorno} " +
-                            $"length={lunghezzaChiusura:R} " +
-                            $"cosSupply={cosMandata:R} cosReturn={cosRitorno:R}.");
+                    LogChiusura(
+                        "Closure.Accept",
+                        $"attempt={numeroTentativo} " +
+                        $"seq={codiceMandata}/{codiceRitorno} " +
+                        $"length={lunghezzaChiusura:R} " +
+                        $"cosSupply={cosMandata:R} cosReturn={cosRitorno:R}");
 
-                        Console.WriteLine(
-                            $"  DV_CLOSURE_SELECTED attempt={numeroTentativo} " +
-                            $"seq={codiceMandata}/{codiceRitorno} " +
-                            $"type=first-straight-success " +
-                            $"length={lunghezzaChiusura:R} " +
-                            $"requiredLength={lunghezzaMinimaChiusura:R}");
-                    }
+                    LogChiusura(
+                        "Closure.Selected",
+                        $"attempt={numeroTentativo} " +
+                        $"seq={codiceMandata}/{codiceRitorno} " +
+                        $"type=first-straight-success " +
+                        $"length={lunghezzaChiusura:R} " +
+                        $"requiredLength={lunghezzaMinimaChiusura:R}");
 
                     bool ortogonale =
                         Math.Abs(inizio.X - fine.X) <= TolleranzaChiusura ||
                         Math.Abs(inizio.Y - fine.Y) <= TolleranzaChiusura;
 
-                    Console.WriteLine(
-                        $"  Chiusura rapida: tentativo={numeroTentativo}; " +
-                        $"sequenza={codiceMandata}/{codiceRitorno}; " +
-                        $"tipo={(ortogonale ? "ortogonale" : "obliqua")}; " +
-                        $"lunghezza={lunghezzaChiusura:0.###} m; " +
-                        $"coseni={cosMandata:0.###}/{cosRitorno:0.###}; " +
-                        $"tagli={azioneMandata.rimossi}/{azioneRitorno.rimossi}.");
+                    LogChiusura(
+                        "Closure.Result",
+                        $"attempt={numeroTentativo} " +
+                        $"seq={codiceMandata}/{codiceRitorno} " +
+                        $"type={(ortogonale ? "orthogonal" : "oblique")} " +
+                        $"length={lunghezzaChiusura:R} " +
+                        $"cosSupply={cosMandata:R} cosReturn={cosRitorno:R} " +
+                        $"removed={azioneMandata.rimossi}/{azioneRitorno.rimossi}");
 
                     return (
                         mandata.Punti,
@@ -383,22 +373,14 @@ namespace SpiralHeatingDiegoVittorio
                 p.Y <= Math.Max(a.Y, b.Y) + TolleranzaChiusura;
         }
 
-        private static bool TraceClosureEnabled
+        private static void LogChiusura(string tag, string message)
         {
-            get
-            {
-                string value =
-                    Environment.GetEnvironmentVariable(
-                        TraceClosureEnvironmentVariable);
-                if (string.IsNullOrWhiteSpace(value))
-                    return false;
+            if (!TermodelLog.IsEnabled(TermodelLog.LogCategory.SpiraliDiego))
+                return;
 
-                return
-                    value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
-                    value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
-                    value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
-                    value.Equals("on", StringComparison.OrdinalIgnoreCase);
-            }
+            TermodelLog.WriteLog(
+                $"[SpiraliDiego][{tag}] {message}",
+                TermodelLog.LogCategory.SpiraliDiego);
         }
 
         /// <summary>
