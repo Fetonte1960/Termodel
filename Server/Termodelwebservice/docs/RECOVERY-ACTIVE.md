@@ -1,3 +1,40 @@
+# RETURN POINT BLOCCATO — PRIMA DEL RIPRISTINO GENERATORE VITTORIO PURO
+
+Checkpoint: **2026-10-01 — return point vincolante prima della nuova modifica**
+
+Prima di sostituire il generatore evoluto corrente di `Vittorio_revisionato`
+con il vero `Spiralgenerator.cs` storico di Vittorio è stato creato un punto
+di ritorno esplicito e separato da `main`.
+
+```text
+commit:
+45bff4b4d016bcd60aa0c18d26aefdcf51ad8a21
+
+branch:
+recovery/vittorio-revisionato-before-pure-vittorio-20261001
+```
+
+Questo return point rappresenta l'intero stato corrente prima della nuova
+commissione. Se il ripristino del generatore Vittorio puro fallisce tecnicamente
+o viene bocciato dal controllo visivo, il recovery deve ripartire da questo
+branch/commit senza ricostruire manualmente la configurazione.
+
+Il nuovo tentativo autorizzato deve modificare soltanto quanto necessario per
+ottenere nel namespace `SpiralHeatingVittorioRevisionato` il vero generatore
+storico copiato originariamente al commit
+`5b8ddc11b4e23046bda1e1c5824af4d4bc084326`, mantenendo separati:
+- Return parallelo Diego;
+- `ChiudiSpirale.cs`;
+- `funzioni_diego.chiusura_diego`;
+- log istituzionale `SpiraliDiego`.
+
+Regola per recovery di una nuova chat:
+**non usare la parola "storico" senza SHA.** Per questa missione:
+- "return point prima della prova" = `45bff4b4...`;
+- "vero SpiralGenerator Vittorio puro" = contenuto di `5b8ddc11...`.
+
+---
+
 # BASELINE ATTIVA — VITTORIO_REVISIONATO FUNZIONANTE PRE-P/2-2P
 
 Checkpoint: **2026-10-01 — rollback completo verificato**
