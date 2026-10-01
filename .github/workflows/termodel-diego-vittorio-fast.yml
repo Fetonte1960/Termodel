@@ -106,7 +106,7 @@ jobs:
             '"Closure.AttemptReport"',
             '"Closure.Selected"',
             '"Closure.Summary"',
-            '"outcome={esito}"',
+            "outcome={esito}",
             '"SUCCESS"',
             '"FAILURE"'
           )) {
