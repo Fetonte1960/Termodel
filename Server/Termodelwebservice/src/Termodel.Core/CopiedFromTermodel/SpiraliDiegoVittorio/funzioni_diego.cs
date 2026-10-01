@@ -11,9 +11,27 @@ namespace SpiralHeatingDiegoVittorio
     {
         private const double Tolleranza = 1e-9;
 
-        // Facciata unica per la chiusura Diego.
-        // L'implementazione consolidata resta temporaneamente in ChiudiSpirale
-        // per non introdurre cambiamenti geometrici durante questo riordino.
+        private const double TolleranzaChiusura = 0.000001;
+        private const int MaxTrattiTerminaliChiusura = 2;
+        private const string TraceClosureEnvironmentVariable =
+            "TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE";
+
+        private sealed class ConfigurazioneTerminaleChiusura
+        {
+            public List<Punto> Punti { get; init; }
+            public string Codice { get; init; }
+            public int TrattiRimossi { get; init; }
+        }
+
+        /// <summary>
+        /// Combinatoria rettilinea consolidata per la chiusura Diego.
+        /// Mandata e Ripresa usano la stessa matrice:
+        /// 0I, 0P, 1I, 1P, 2I, 2P.
+        /// I = terminale invariato; P = terminale normalizzato esattamente a P.
+        /// Il primo candidato con chiusura >= 2P, innesti non acuti e nessuna
+        /// intersezione del tratto di chiusura col nuovo setup viene accettato.
+        /// Nessun raccordo o curva partecipa alla scelta.
+        /// </summary>
         public static (
             List<Punto> Mandata,
             List<Punto> Ritorno,
@@ -22,11 +40,366 @@ namespace SpiralHeatingDiegoVittorio
             chiusura_diego(
                 List<Punto> mandataRettilinea,
                 List<Punto> ritornoVersoCentro,
-                double passo) =>
-            ChiudiSpirale.ApplicaChiusuraCombinatoriaRettilineaVittorio(
+                double passo)
+        {
+            if (mandataRettilinea == null ||
+                ritornoVersoCentro == null ||
+                mandataRettilinea.Count < 2 ||
+                ritornoVersoCentro.Count < 2 ||
+                !double.IsFinite(passo) ||
+                passo <= TolleranzaChiusura)
+            {
+                return (
+                    mandataRettilinea ?? new List<Punto>(),
+                    ritornoVersoCentro ?? new List<Punto>(),
+                    new List<Punto>(),
+                    false);
+            }
+
+            // Ordine definitivo approvato: I prima di P per ogni livello.
+            // La stessa sequenza viene usata sia per Mandata sia per Ripresa.
+            var azioniTerminali = new (int rimossi, bool normalizzaP)[]
+            {
+                (0, false),
+                (0, true),
+                (1, false),
+                (1, true),
+                (2, false),
+                (2, true)
+            };
+
+            int numeroTentativo = 0;
+            double lunghezzaMinimaChiusura = 2.0 * passo;
+
+            foreach (var azioneMandata in azioniTerminali)
+            {
+                string codiceMandata =
+                    $"M{azioneMandata.rimossi}" +
+                    (azioneMandata.normalizzaP ? "P" : "I");
+
+                ConfigurazioneTerminaleChiusura mandata =
+                    CreaConfigurazioneTerminaleChiusura(
+                        mandataRettilinea,
+                        codiceMandata,
+                        azioneMandata.rimossi,
+                        azioneMandata.normalizzaP,
+                        passo);
+                if (mandata == null)
+                    continue;
+
+                foreach (var azioneRitorno in azioniTerminali)
+                {
+                    string codiceRitorno =
+                        $"R{azioneRitorno.rimossi}" +
+                        (azioneRitorno.normalizzaP ? "P" : "I");
+
+                    ConfigurazioneTerminaleChiusura ritorno =
+                        CreaConfigurazioneTerminaleChiusura(
+                            ritornoVersoCentro,
+                            codiceRitorno,
+                            azioneRitorno.rimossi,
+                            azioneRitorno.normalizzaP,
+                            passo);
+                    if (ritorno == null)
+                        continue;
+
+                    numeroTentativo++;
+
+                    Punto ms = mandata.Punti[^2];
+                    Punto me = mandata.Punti[^1];
+                    Punto rs = ritorno.Punti[^2];
+                    Punto re = ritorno.Punti[^1];
+
+                    if (TraceClosureEnabled)
+                    {
+                        Console.WriteLine(
+                            $"  DV_SQUARE_TRY attempt={numeroTentativo} " +
+                            $"seq={codiceMandata}/{codiceRitorno} " +
+                            $"supplyRemoved={azioneMandata.rimossi} " +
+                            $"supplyMode={(azioneMandata.normalizzaP ? "P" : "I")} " +
+                            $"supplyLast=({ms.X:R},{ms.Y:R})->({me.X:R},{me.Y:R}) " +
+                            $"supplyLastLen={ms.DistanceTo(me):R} " +
+                            $"returnRemoved={azioneRitorno.rimossi} " +
+                            $"returnMode={(azioneRitorno.normalizzaP ? "P" : "I")} " +
+                            $"returnLast=({rs.X:R},{rs.Y:R})->({re.X:R},{re.Y:R}) " +
+                            $"returnLastLen={rs.DistanceTo(re):R} " +
+                            $"endpointDistance={me.DistanceTo(re):R} " +
+                            $"required={lunghezzaMinimaChiusura:R}.");
+                    }
+
+                    Punto inizio = me;
+                    Punto fine = re;
+                    double lunghezzaChiusura = inizio.DistanceTo(fine);
+
+                    // Regola definitiva: >= 2P.
+                    if (lunghezzaChiusura <
+                        lunghezzaMinimaChiusura - TolleranzaChiusura)
+                    {
+                        if (TraceClosureEnabled)
+                        {
+                            Console.WriteLine(
+                                $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
+                                $"seq={codiceMandata}/{codiceRitorno} " +
+                                $"reason=length length={lunghezzaChiusura:R} " +
+                                $"required={lunghezzaMinimaChiusura:R}.");
+                        }
+                        continue;
+                    }
+
+                    Punto ingressoMandata = new Punto(
+                        inizio.X - ms.X,
+                        inizio.Y - ms.Y);
+                    Punto uscitaRitorno = new Punto(
+                        rs.X - fine.X,
+                        rs.Y - fine.Y);
+                    Punto direzioneChiusura = new Punto(
+                        fine.X - inizio.X,
+                        fine.Y - inizio.Y);
+
+                    double cosMandata =
+                        CosenoDirezioniChiusura(
+                            ingressoMandata,
+                            direzioneChiusura);
+                    double cosRitorno =
+                        CosenoDirezioniChiusura(
+                            direzioneChiusura,
+                            uscitaRitorno);
+
+                    if (cosMandata < -TolleranzaChiusura ||
+                        cosRitorno < -TolleranzaChiusura)
+                    {
+                        if (TraceClosureEnabled)
+                        {
+                            Console.WriteLine(
+                                $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
+                                $"seq={codiceMandata}/{codiceRitorno} " +
+                                $"reason=acute cosSupply={cosMandata:R} " +
+                                $"cosReturn={cosRitorno:R}.");
+                        }
+                        continue;
+                    }
+
+                    // Il controllo riguarda soltanto il nuovo segmento di
+                    // chiusura contro il setup risultante dopo tagli e
+                    // normalizzazioni. I due terminali adiacenti sono esclusi.
+                    bool intersecaMandata =
+                        IntersecaTrattiNonAdiacentiChiusura(
+                            inizio,
+                            fine,
+                            mandata.Punti);
+                    bool intersecaRitorno =
+                        IntersecaTrattiNonAdiacentiChiusura(
+                            inizio,
+                            fine,
+                            ritorno.Punti);
+
+                    if (intersecaMandata || intersecaRitorno)
+                    {
+                        if (TraceClosureEnabled)
+                        {
+                            Console.WriteLine(
+                                $"  DV_CLOSURE_REJECT attempt={numeroTentativo} " +
+                                $"seq={codiceMandata}/{codiceRitorno} " +
+                                $"reason=intersection supply={intersecaMandata} " +
+                                $"return={intersecaRitorno}.");
+                        }
+                        continue;
+                    }
+
+                    if (TraceClosureEnabled)
+                    {
+                        Console.WriteLine(
+                            $"  DV_CLOSURE_ACCEPT attempt={numeroTentativo} " +
+                            $"seq={codiceMandata}/{codiceRitorno} " +
+                            $"length={lunghezzaChiusura:R} " +
+                            $"cosSupply={cosMandata:R} cosReturn={cosRitorno:R}.");
+
+                        Console.WriteLine(
+                            $"  DV_CLOSURE_SELECTED attempt={numeroTentativo} " +
+                            $"seq={codiceMandata}/{codiceRitorno} " +
+                            $"type=first-straight-success " +
+                            $"length={lunghezzaChiusura:R} " +
+                            $"requiredLength={lunghezzaMinimaChiusura:R}");
+                    }
+
+                    bool ortogonale =
+                        Math.Abs(inizio.X - fine.X) <= TolleranzaChiusura ||
+                        Math.Abs(inizio.Y - fine.Y) <= TolleranzaChiusura;
+
+                    Console.WriteLine(
+                        $"  Chiusura rapida: tentativo={numeroTentativo}; " +
+                        $"sequenza={codiceMandata}/{codiceRitorno}; " +
+                        $"tipo={(ortogonale ? "ortogonale" : "obliqua")}; " +
+                        $"lunghezza={lunghezzaChiusura:0.###} m; " +
+                        $"coseni={cosMandata:0.###}/{cosRitorno:0.###}; " +
+                        $"tagli={azioneMandata.rimossi}/{azioneRitorno.rimossi}.");
+
+                    return (
+                        mandata.Punti,
+                        ritorno.Punti,
+                        new List<Punto> { inizio, fine },
+                        true);
+                }
+            }
+
+            return (
                 mandataRettilinea,
                 ritornoVersoCentro,
-                passo);
+                new List<Punto>(),
+                false);
+        }
+
+        private static ConfigurazioneTerminaleChiusura
+            CreaConfigurazioneTerminaleChiusura(
+                List<Punto> originale,
+                string codice,
+                int trattiRimossi,
+                bool normalizzaP,
+                double passo)
+        {
+            if (originale == null ||
+                trattiRimossi < 0 ||
+                trattiRimossi > MaxTrattiTerminaliChiusura ||
+                originale.Count - trattiRimossi < 2)
+            {
+                return null;
+            }
+
+            int count = originale.Count - trattiRimossi;
+            var punti = new List<Punto>(count);
+            for (int i = 0; i < count; i++)
+                punti.Add(new Punto(originale[i].X, originale[i].Y));
+
+            if (normalizzaP)
+            {
+                Punto inizio = punti[^2];
+                Punto fine = punti[^1];
+                double lunghezza = inizio.DistanceTo(fine);
+                if (lunghezza <= TolleranzaChiusura)
+                    return null;
+
+                double rapporto = passo / lunghezza;
+                punti[^1] = new Punto(
+                    inizio.X + (fine.X - inizio.X) * rapporto,
+                    inizio.Y + (fine.Y - inizio.Y) * rapporto);
+            }
+
+            return new ConfigurazioneTerminaleChiusura
+            {
+                Punti = punti,
+                Codice = codice,
+                TrattiRimossi = trattiRimossi
+            };
+        }
+
+        private static double CosenoDirezioniChiusura(
+            Punto a,
+            Punto b)
+        {
+            double lunghezzaA = Math.Sqrt(a.X * a.X + a.Y * a.Y);
+            double lunghezzaB = Math.Sqrt(b.X * b.X + b.Y * b.Y);
+            if (lunghezzaA <= TolleranzaChiusura ||
+                lunghezzaB <= TolleranzaChiusura)
+            {
+                return -1.0;
+            }
+
+            return (a.X * b.X + a.Y * b.Y) /
+                   (lunghezzaA * lunghezzaB);
+        }
+
+        private static bool IntersecaTrattiNonAdiacentiChiusura(
+            Punto inizioChiusura,
+            Punto fineChiusura,
+            List<Punto> polilinea)
+        {
+            if (polilinea == null || polilinea.Count < 3)
+                return false;
+
+            // L'ultimo segmento e' adiacente all'innesto e viene escluso.
+            for (int i = 0; i < polilinea.Count - 2; i++)
+            {
+                if (SegmentiIntersecanoChiusura(
+                    inizioChiusura,
+                    fineChiusura,
+                    polilinea[i],
+                    polilinea[i + 1]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool SegmentiIntersecanoChiusura(
+            Punto a,
+            Punto b,
+            Punto c,
+            Punto d)
+        {
+            double o1 = OrientamentoChiusura(a, b, c);
+            double o2 = OrientamentoChiusura(a, b, d);
+            double o3 = OrientamentoChiusura(c, d, a);
+            double o4 = OrientamentoChiusura(c, d, b);
+
+            if (((o1 > TolleranzaChiusura && o2 < -TolleranzaChiusura) ||
+                 (o1 < -TolleranzaChiusura && o2 > TolleranzaChiusura)) &&
+                ((o3 > TolleranzaChiusura && o4 < -TolleranzaChiusura) ||
+                 (o3 < -TolleranzaChiusura && o4 > TolleranzaChiusura)))
+            {
+                return true;
+            }
+
+            return
+                Math.Abs(o1) <= TolleranzaChiusura &&
+                    PuntoSulSegmentoChiusura(a, b, c) ||
+                Math.Abs(o2) <= TolleranzaChiusura &&
+                    PuntoSulSegmentoChiusura(a, b, d) ||
+                Math.Abs(o3) <= TolleranzaChiusura &&
+                    PuntoSulSegmentoChiusura(c, d, a) ||
+                Math.Abs(o4) <= TolleranzaChiusura &&
+                    PuntoSulSegmentoChiusura(c, d, b);
+        }
+
+        private static double OrientamentoChiusura(
+            Punto a,
+            Punto b,
+            Punto c)
+        {
+            return (b.X - a.X) * (c.Y - a.Y) -
+                   (b.Y - a.Y) * (c.X - a.X);
+        }
+
+        private static bool PuntoSulSegmentoChiusura(
+            Punto a,
+            Punto b,
+            Punto p)
+        {
+            return
+                p.X >= Math.Min(a.X, b.X) - TolleranzaChiusura &&
+                p.X <= Math.Max(a.X, b.X) + TolleranzaChiusura &&
+                p.Y >= Math.Min(a.Y, b.Y) - TolleranzaChiusura &&
+                p.Y <= Math.Max(a.Y, b.Y) + TolleranzaChiusura;
+        }
+
+        private static bool TraceClosureEnabled
+        {
+            get
+            {
+                string value =
+                    Environment.GetEnvironmentVariable(
+                        TraceClosureEnvironmentVariable);
+                if (string.IsNullOrWhiteSpace(value))
+                    return false;
+
+                return
+                    value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+                    value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                    value.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
+                    value.Equals("on", StringComparison.OrdinalIgnoreCase);
+            }
+        }
 
         /// <summary>
         /// Raccorda una polilinea definitiva con archi circolari tangenti.
