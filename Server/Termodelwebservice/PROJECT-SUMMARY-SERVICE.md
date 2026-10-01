@@ -72,6 +72,21 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-01 — Log istituzionale combinatoria su SpiraliDiego
+Stato: COMMISSIONATO
+
+Autorizzazione utente: sostituire la diagnostica `Console.WriteLine` della combinatoria consolidata `funzioni_diego.chiusura_diego(...)` con il log istituzionale `TermodelLog`, attivato dalla categoria frontend `spiralidiego` / `TermodelLog.LogCategory.SpiraliDiego`; eseguire i test e pubblicare su `main`.
+
+Obiettivo:
+- nessun cambio geometrico;
+- mantenere gli stessi dati diagnostici dei tentativi, scarti e candidato selezionato;
+- sottotag stabili `[SpiraliDiego][Closure.*]`;
+- logging emesso solo quando è abilitata la categoria `SpiraliDiego`;
+- allineare Harness pubblico `Vittorio_revisionato` alla stessa categoria istituzionale, senza variabile ambiente privata per il trace chiusura;
+- non modificare Golden.
+
+
+
 ### INCARICO 2026-10-01 — Consolidamento definitivo combinatoria in funzioni_diego
 Stato: ESEGUITO
 
