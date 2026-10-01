@@ -112,100 +112,63 @@ public static class StrategiaVittorioRevisionatoBenchmark
         }
     }
 
-    public static StrategiaVittorioRevisionatoAbstractionCheck CheckAbstraction()
+    public static StrategiaVittorioRevisionatoPureGeneratorCheck CheckPureGenerator()
     {
-        var perimeter = new List<SpiralHeatingVittorioRevisionato.Punto>
-        {
-            new(0.0, 0.0),
-            new(4.0, 0.0),
-            new(4.0, 4.0),
-            new(0.0, 4.0)
-        };
-        var supplyStart =
-            new SpiralHeatingVittorioRevisionato.Punto(0.0, 2.0);
         const double step = 0.30;
-
-        var historical =
-            SpiralHeatingVittorioRevisionato.SpiralGenerator.Generate(
-                new List<SpiralHeatingVittorioRevisionato.Punto>(perimeter),
-                supplyStart,
-                step,
-                true);
-
-        var neutralInput = new SpiralHeatingVittorioRevisionato.SpiralGenerationInput
+        var starts = new[]
         {
-            Perimetro =
-                new List<SpiralHeatingVittorioRevisionato.Punto>(perimeter),
-            StartPoint =
-                new SpiralHeatingVittorioRevisionato.Punto(
-                    supplyStart.X,
-                    supplyStart.Y),
-            Distanza = step,
-            DrawSpiral = true
+            (X: 0.0, Y: 2.0),
+            (X: 4.0, Y: 2.0)
         };
-        var neutral =
-            SpiralHeatingVittorioRevisionato.SpiralGenerator.Generate(
-                neutralInput);
 
-        bool neutralEquivalent =
-            SamePoints(historical.spiral, neutral.spiral);
-        if (!neutralEquivalent)
+        int lastPointCount = 0;
+        foreach (var start in starts)
         {
-            throw new InvalidDataException(
-                "Astrazione Vittorio_revisionato: il percorso neutro diverge dal Generate storico.");
+            var revisionatoPerimeter =
+                new List<SpiralHeatingVittorioRevisionato.Punto>
+                {
+                    new(0.0, 0.0),
+                    new(4.0, 0.0),
+                    new(4.0, 4.0),
+                    new(0.0, 4.0)
+                };
+            var vittorioPerimeter =
+                new List<SpiralHeating.Punto>
+                {
+                    new(0.0, 0.0),
+                    new(4.0, 0.0),
+                    new(4.0, 4.0),
+                    new(0.0, 4.0)
+                };
+
+            var revisionato =
+                SpiralHeatingVittorioRevisionato.SpiralGenerator.Generate(
+                    revisionatoPerimeter,
+                    new SpiralHeatingVittorioRevisionato.Punto(start.X, start.Y),
+                    step,
+                    true);
+            var vittorio =
+                SpiralHeating.SpiralGenerator.Generate(
+                    vittorioPerimeter,
+                    new SpiralHeating.Punto(start.X, start.Y),
+                    step,
+                    true);
+
+            if (!SamePoints(revisionato.spiral, vittorio.spiral))
+            {
+                throw new InvalidDataException(
+                    $"Generate Vittorio puro: divergenza sullo start ({start.X:R},{start.Y:R}).");
+            }
+
+            lastPointCount = revisionato.spiral.Count;
         }
 
-        var returnStart =
-            new SpiralHeatingVittorioRevisionato.Punto(4.0, 2.0);
-        var unconditionedReturn =
-            SpiralHeatingVittorioRevisionato.SpiralGenerator.Generate(
-                new SpiralHeatingVittorioRevisionato.SpiralGenerationInput
-                {
-                    Perimetro =
-                        new List<SpiralHeatingVittorioRevisionato.Punto>(perimeter),
-                    StartPoint = returnStart,
-                    Distanza = step,
-                    DrawSpiral = true
-                });
-
-        var conditionedReturn =
-            SpiralHeatingVittorioRevisionato.SpiralGenerator.Generate(
-                new SpiralHeatingVittorioRevisionato.SpiralGenerationInput
-                {
-                    Perimetro =
-                        new List<SpiralHeatingVittorioRevisionato.Punto>(perimeter),
-                    StartPoint =
-                        new SpiralHeatingVittorioRevisionato.Punto(
-                            returnStart.X,
-                            returnStart.Y),
-                    Distanza = step,
-                    DrawSpiral = true,
-                    LineeCondizionamento =
-                        historical.spiral
-                            .Select(p =>
-                                new SpiralHeatingVittorioRevisionato.Punto(
-                                    p.X,
-                                    p.Y))
-                            .ToList(),
-                    DistanzaCondizionamento = step / 2.0
-                });
-
-        bool conditioningActive =
-            conditionedReturn.spiral.Count <
-            unconditionedReturn.spiral.Count;
-        if (!conditioningActive)
-        {
-            throw new InvalidDataException(
-                "Astrazione Vittorio_revisionato: la Supply non condiziona il percorso Return di prova.");
-        }
-
-        return new StrategiaVittorioRevisionatoAbstractionCheck(
-            neutralEquivalent,
-            historical.spiral.Count,
-            unconditionedReturn.spiral.Count,
-            conditionedReturn.spiral.Count,
-            step / 2.0);
+        return new StrategiaVittorioRevisionatoPureGeneratorCheck(
+            EquivalentToVittorio: true,
+            Cases: starts.Length,
+            SupplyPoints: lastPointCount);
     }
+
 
     private static bool SamePoints(
         IReadOnlyList<SpiralHeatingVittorioRevisionato.Punto> a,
@@ -227,9 +190,7 @@ public static class StrategiaVittorioRevisionatoBenchmark
     }
 }
 
-public sealed record StrategiaVittorioRevisionatoAbstractionCheck(
-    bool NeutralEquivalent,
-    int SupplyPoints,
-    int UnconditionedReturnPoints,
-    int ConditionedReturnPoints,
-    double ConditioningDistanceMeters);
+public sealed record StrategiaVittorioRevisionatoPureGeneratorCheck(
+    bool EquivalentToVittorio,
+    int Cases,
+    int SupplyPoints);
