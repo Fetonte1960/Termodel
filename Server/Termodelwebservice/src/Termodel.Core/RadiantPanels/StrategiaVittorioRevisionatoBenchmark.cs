@@ -172,7 +172,7 @@ public static class StrategiaVittorioRevisionatoBenchmark
 
     private static bool SamePoints(
         IReadOnlyList<SpiralHeatingVittorioRevisionato.Punto> a,
-        IReadOnlyList<SpiralHeatingVittorioRevisionato.Punto> b)
+        IReadOnlyList<SpiralHeating.Punto> b)
     {
         if (a.Count != b.Count)
             return false;
