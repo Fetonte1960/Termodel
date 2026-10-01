@@ -73,6 +73,27 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-10-01 — Rollback completo al Vittorio_revisionato funzionante pre-P/2-2P
+Stato: COMMISSIONATO
+
+Autorizzazione utente: eseguire e pubblicare un ulteriore rollback fino al ripristino della situazione funzionante di `Vittorio_revisionato`, mantenendo la chiusura/combinatoria in debug già disponibile prima dell'esperimento P/2-2P.
+
+Baseline esplicitamente scelta:
+- commit funzionale di riferimento: `b71931e6ccb3761b05b21abd07f6d73154b13b3f`;
+- ripristinare da quella fotografia i file runtime e i gate modificati dall'esperimento P/2-2P;
+- mantenere `ChiudiSpirale.cs` e `SpiraliDiegoVittorio/funzioni_diego.cs` nella versione corrente perché contengono la chiusura/combinatoria e il log istituzionale già presenti nella situazione funzionante oggetto del debug;
+- non modificare `SpiraliVittorio`, frontend, `definizionedati.json` o Golden.
+
+Criteri di completamento:
+- `SpiraliVittorioRevisionato/Program.cs` e `Spiralgenerator.cs` equivalenti alla baseline `b71931e6...`;
+- benchmark/Harness/workflow relativi all'esperimento P/2-2P riportati alla baseline pre-esperimento, così non impongono più i gate della convenzione fallita;
+- configurazione risultante: `PassoTubi=0,30`, `DistanzaPareti=0,30`, `DistanzaRitorno=0,15`, Generate storico, Return parallelo Diego e `chiusura_diego(...,0,15)`;
+- build e smoke `Vittorio_revisionato` eseguiti;
+- documentazione Recovery/linee guida/README/Summary aggiornata per indicare la baseline funzionante attuale e il fallimento dell'esperimento P/2-2P;
+- pubblicazione su `main` e chiusura Issue #1 Completed se riuscito.
+
+
+
 ### INCARICO 2026-10-01 — Ripristino immediato Generate storico nel percorso pubblico Vittorio_revisionato
 Stato: ESEGUITO
 
