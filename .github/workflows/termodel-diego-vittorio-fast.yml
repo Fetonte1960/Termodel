@@ -9,11 +9,15 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  # Trigger temporaneo 30/09/2026: verifica centralizzazione funzioni_diego.
+  # Trigger esteso 01/10/2026: verifica anche il vero Generate Vittorio puro
+  # usato da Vittorio_revisionato e i relativi gate.
   workflow_dispatch:
   push:
     paths:
       - '.github/workflows/termodel-diego-vittorio-fast.yml'
+      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/**'
+      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/StrategiaVittorioRevisionatoBenchmark.cs'
+      - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/Program.cs'
 
 jobs:
   fast:
@@ -342,13 +346,21 @@ jobs:
           }
           Write-Host "VITTORIO_REVISIONATO_MULTI_PROJECT_WORKFLOW_OK cases=$($data.caseCount)"
 
-      - name: Verify Vittorio_revisionato structural abstraction
+      - name: Verify Vittorio_revisionato pure Vittorio generator
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- revisionato-check
-          if ($LASTEXITCODE -ne 0) { throw "Check astrazione Vittorio_revisionato fallito." }
-          Write-Host "VITTORIO_REVISIONATO_STRUCTURAL_ABSTRACTION_OK"
+          $check = dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- revisionato-check 2>&1
+          $check | Write-Host
+          if ($LASTEXITCODE -ne 0) { throw "Check Generate Vittorio puro fallito." }
+          $checkText = $check -join [Environment]::NewLine
+          if (-not $checkText.Contains("VITTORIO_REVISIONATO_PURE_GENERATOR_OK")) {
+            throw "Marker Generate Vittorio puro mancante."
+          }
+          if (-not $checkText.Contains("equivalentToVittorio=true")) {
+            throw "Il Generate revisionato non risulta equivalente a Vittorio."
+          }
+          Write-Host "VITTORIO_REVISIONATO_PURE_GENERATOR_WORKFLOW_OK"
 
       - name: Inspect Supply only on public cases
         shell: pwsh
