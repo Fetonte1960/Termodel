@@ -1,3 +1,53 @@
+# RECOVERY FINALE — LOG ISTITUZIONALE COMBINATORIA
+
+Checkpoint: **2026-10-01 — pubblicato e verificato**
+
+Rollback pre-modifica logging:
+`96e1fcc6143b5eca6482ddae9bcae6c127bea0e3`.
+
+Modifica funzionale:
+- `SpiraliDiegoVittorio/funzioni_diego.cs::chiusura_diego(...)` non usa più
+  `Console.WriteLine` né la variabile privata
+  `TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE` per la diagnostica combinatoria;
+- tentativi, scarti, accettazione, selezione e risultato passano da
+  `TermodelLog.LogCategory.SpiraliDiego`;
+- sottotag:
+  `[SpiraliDiego][Closure.Try]`,
+  `[Closure.Reject]`, `[Closure.Accept]`,
+  `[Closure.Selected]`, `[Closure.Result]`;
+- nel frontend la diagnostica si attiva con
+  **Help → Log Aggiorna Modello → spiralidiego**;
+- nessuna modifica alla geometria della combinatoria.
+
+Commit funzionale:
+`c87ea62e44099b931651f0dc6a0700251465435f`.
+
+Wiring Harness:
+- benchmark revisionato propaga la configurazione `TermodelLog`;
+- il test pubblico revisionato abilita `SpiraliDiego` invece della vecchia
+  variabile ambiente privata.
+
+Verifica Fast Harness run `36823315279`:
+- build: **SUCCESS / 0 errori**;
+- `FUNZIONI_DIEGO_FINAL_CLOSURE_MATRIX_OK`;
+- `FUNZIONI_DIEGO_INSTITUTIONAL_CLOSURE_LOG_OK`;
+- `FUNZIONI_DIEGO_SINGLE_CLOSURE_AUTHORITY_OK`;
+- quadrato pubblico `Vittorio_revisionato`:
+  `REVISIONATO_PUBLIC_SQUARE_STRAIGHT_2P_OK length=0.4 required=0.3`;
+- `REVISIONATO_PUBLIC_SQUARE_LG051_OK`;
+- la regression `Diego_Vittorio` supera anche il nuovo controllo del log
+  istituzionale e si arresta successivamente sul Golden SVG già noto
+  `5ddd0ffd...`, diverso dalla baseline storica: Golden non aggiornato.
+
+Service Build run `36822763861`:
+- build riuscita;
+- deploy pubblico verificato con
+  `publicServiceCommit=c87ea62e44099b931651f0dc6a0700251465435f`;
+- workflow complessivo rosso sul noto smoke locale `/health`, indipendente
+  dal logging della combinatoria.
+
+---
+
 # RECOVERY PRIORITARIO — LOG ISTITUZIONALE COMBINATORIA
 
 Checkpoint: **2026-10-01 — prima della modifica logging**
