@@ -397,6 +397,8 @@ jobs:
           $caseId = "DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO"
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
             --case tests/radiant-harness/cases/DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json `
+            --log-enabled true `
+            --log-categories SpiraliDiego `
             --out $out
           if ($LASTEXITCODE -ne 0) { throw "Regression quadrato pubblico Diego_Vittorio fallita." }
 
@@ -417,8 +419,8 @@ jobs:
           if ($logText -notmatch 'Ritorno autonomo:.*punti=17') {
             throw "Regressione DV-TEST-001: Return non raggiunge i 17 punti attesi."
           }
-          if ($logText -notmatch 'Chiusura rapida: tentativo=') {
-            throw "Regressione DV-TEST-001: chiusura rapida non trovata."
+          if ($logText -notmatch '\[SpiraliDiego\]\[Closure\.Result\][^\r\n]*attempt=') {
+            throw "Regressione DV-TEST-001: esito chiusura nel log istituzionale SpiraliDiego non trovato."
           }
 
           $baselinePath = "tests/radiant-harness/baselines/DV-PUBLIC-SQUARE-LEFT-P030-DIEGO-VITTORIO.json"
