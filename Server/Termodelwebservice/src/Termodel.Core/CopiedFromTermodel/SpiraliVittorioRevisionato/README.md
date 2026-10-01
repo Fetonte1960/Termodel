@@ -389,3 +389,8 @@ iterazione. Prima di reintrodurre qualunque soluzione va ricostruito quale
 intervento fosse effettivamente responsabile e va creato un nuovo return point.
 
 Nessuna correzione strettoie è stata eseguita in questa milestone.
+
+
+Verifica automatica richiesta dopo rollback: questo aggiornamento documentale
+serve anche a rieseguire i workflow sul runtime già ripristinato, senza
+modificare i sorgenti geometrici.
