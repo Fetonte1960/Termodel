@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-01 — Rollback runtime Vittorio_revisionato al restore point approvato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - annullare il candidato geometrico pubblicato dopo il restore point;
@@ -104,6 +104,44 @@ Criteri di completamento:
 - stessa voce portata a `ESEGUITO`.
 
 
+
+
+Esito:
+- rollback runtime eseguito senza reset distruttivo della history;
+- `Program.cs` corrente identico al restore point:
+  blob `91161a6587e6b36280fa927d114380e3b4c13074`;
+- `Spiralgenerator.cs` corrente identico al restore point:
+  blob `73c7083ad61c72dac2d6afbb39465982b56d51b1`;
+- `ChiudiSpirale.cs` era già identico e non è stato modificato:
+  blob `4a3b677f1b104bedf8427009a80c7f15ab1e0d63`;
+- commit rollback runtime:
+  - Program: `a8ff01215ce521383aa495c899166b751d43b4fa`;
+  - Generator: `432190d02d6fe8dfafb4493b2b7a894242aea6a7`;
+- candidato `1,5P / 2P / P` dichiarato respinto dal collaudo visivo;
+- Recovery, linee guida, README revisionato e TERMODEL-SYNC aggiornati.
+
+Verifica reale post-rollback:
+- commit usato per la verifica/deploy:
+  `e7b65f6f0ef4734e3d21da15b6885f0c234ef032`;
+- Service Build run `36887800106`:
+  - restore SUCCESS;
+  - build SUCCESS;
+  - smoke pubblico Pannelli radianti SUCCESS;
+  - smoke pubblico `Vittorio_revisionato` SUCCESS;
+  - smoke circuiti aperti SUCCESS;
+  - deploy pubblico SUCCESS;
+  - `publicServiceCommit=e7b65f6f0ef4734e3d21da15b6885f0c234ef032`;
+  - workflow complessivo FAILURE solo sul noto smoke locale
+    project-storage/lock: `Termodel.WebService non ha risposto a /health`.
+- controllo identità file eseguito dopo il rollback: tutti e tre i file runtime
+  sopra risultano byte-per-byte uguali al restore point
+  `0b541f92cf74412a33d68ffc0603e3f319c4a82f`.
+
+Regola per il seguito:
+- partire da questo restore point;
+- introdurre **una sola modifica geometrica alla volta**;
+- verificare visivamente ogni singolo cambiamento prima di procedere al
+  successivo.
 
 ### INCARICO 2026-10-01 — Separazione offset parete / stessa spirale in Vittorio_revisionato
 Stato: ESEGUITO
