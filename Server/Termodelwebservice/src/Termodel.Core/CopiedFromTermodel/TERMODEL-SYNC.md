@@ -318,3 +318,21 @@ Commit funzionali principali:
 - Divergenza multi-progetto rispetto a Vittorio osservata su `concave-l`:
   attesa per la natura della modifica e da sottoporre a controllo visivo prima
   di consolidamento.
+
+
+### 2026-10-01 — restore point approvato Vittorio_revisionato offset-P
+- Approvato visivamente sul progetto multi-locale lo stato runtime
+  `6132430e7907699cbf577c2ef869ffd03117f216`.
+- Snapshot documentale: `edc1fc4cff0edad0700a9c9c2582b80c205efb57`.
+- Branch recovery:
+  `recovery/vittorio-revisionato-approved-offset-p-20261001`.
+- La divergenza Service-only rispetto a Vittorio resta limitata, per la
+  generazione, alla soglia `ComputeOffset`:
+  `edgeLength <= offset * 3` -> `edgeLength <= offset`.
+- Questo stato è il nuovo riferimento di recovery preferito.
+- Difetto residuo: nelle strettoie il percorso può produrre geometrie locali non
+  soddisfacenti; caso osservato nel locale 4 del test multi-locale.
+- Il difetto strettoie era stato tamponato in una precedente iterazione secondo
+  il collaudo utente, ma il collegamento causale con una specifica patch non è
+  ancora ricostruito; non sincronizzare o copiare soluzioni storiche senza
+  analisi dedicata.
