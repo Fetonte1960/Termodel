@@ -1,3 +1,37 @@
+# RECOVERY ATTIVO — DEFAULT PUBBLICO RIPRISTINATO A GENERATE STORICO
+
+Checkpoint: **2026-10-01 — recovery richiesto dopo controllo visivo reale**
+
+Il controllo visivo utente del percorso pubblico `Vittorio_revisionato` con
+Supply P/2-2P ha mostrato una geometria non accettabile, con diagonali e
+sviluppo della spirale giudicato disastroso.
+
+Decisione immediata:
+- il percorso pubblico torna a usare per default il **Generate storico
+  Vittorio a distanza unica**;
+- il candidato `GenerateRevisionato(...)` P/2-2P resta nel sorgente ma è
+  disattivato dal percorso pubblico e utilizzabile soltanto esplicitamente per
+  analisi future;
+- non viene eseguito alcun revert globale;
+- Return, combinatoria e raccordatura restano quelli correnti: il recovery è
+  circoscritto alla generazione della Supply, come previsto dal contratto.
+
+Switch attuale:
+
+```text
+AggiornaSpiraliConChiusura(
+    chiudiCircuito,
+    usaGenerateStoricoRecovery = true)
+```
+
+Per analisi controllate del candidato P/2-2P si può ancora passare
+`usaGenerateStoricoRecovery=false`; ciò non rappresenta il default pubblico.
+
+Commit di recovery:
+- `dd7d411ab3de9223ec7d927aed407d59c60aa62e`.
+
+---
+
 # RECOVERY ATTIVO — GENERATE STORICO COME BASELINE DI RIPRISTINO
 
 Checkpoint: **2026-10-01 — contratto implementato, compilato e verificato tecnicamente**
