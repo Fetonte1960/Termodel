@@ -60,13 +60,18 @@ Verifica Fast Harness run `36847338021`:
 - workflow rosso soltanto sul Golden storico separato `Diego_Vittorio`
   (`5ddd0ffd... != fa8e6106...`), non aggiornato.
 
-Verifica Service Build run `36847235975`:
+Verifica Service Build finale run `36847790853`:
 - Build succeeded;
 - smoke pubblico `Vittorio_revisionato` chiuso: SUCCESS;
 - smoke circuiti aperti: SUCCESS;
-- deploy pubblico verificato con
-  `serviceCommit=a56a9479cbb8d167068b24a7e45a5ebd1a4f071f`;
+- verifica deploy pubblico: SUCCESS con
+  `serviceCommit=c8d21f9b14c32890d9ee9e810867e3be8cc81e7d`;
 - rosso globale soltanto sul noto smoke locale storage/lock `/health`.
+
+Verifica Render dedicata run `36847813764`: **SUCCESS**.
+Il runtime pubblico ha raggiunto
+`serviceCommit=c8d21f9b14c32890d9ee9e810867e3be8cc81e7d`,
+`spiralEngine=Diego_Vittorio`.
 
 Regola di recovery chat:
 **il codice è tecnicamente verificato ma non va dichiarato visivamente
