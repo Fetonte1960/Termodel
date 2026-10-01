@@ -313,3 +313,32 @@ multi-progetto con Vittorio diverge su `concave-l`, effetto atteso da una
 modifica deliberata del generatore revisionato.
 Service Build `36861644983`: build, smoke chiuso/aperto e deploy pubblico
 SUCCESS.
+
+
+## Milestone 10 — restore point offset-P approvato visivamente (01/10/2026)
+
+Il collaudo reale sul progetto multi-locale ha approvato come base di
+ripristino la versione con soglia `ComputeOffset` ridotta da `3P` a `P`.
+
+Restore point approvato:
+- runtime funzionale:
+  `6132430e7907699cbf577c2ef869ffd03117f216`;
+- snapshot documentale:
+  `edc1fc4cff0edad0700a9c9c2582b80c205efb57`;
+- branch:
+  `recovery/vittorio-revisionato-approved-offset-p-20261001`.
+
+Il generatore va descritto quindi come **Vittorio puro + deviazione
+`ComputeOffset 3P -> P`**, non più come copia byte-identica di Vittorio.
+
+### Difetto residuo noto
+
+Nel test multi-locale resta un difetto nelle strettoie, evidenziato nel locale
+4. Il comportamento non soddisfacente nella zona ristretta è accettato come
+**problema aperto** e non come comportamento corretto.
+
+L'utente riferisce che questo difetto era stato tamponato in una precedente
+iterazione. Prima di reintrodurre qualunque soluzione va ricostruito quale
+intervento fosse effettivamente responsabile e va creato un nuovo return point.
+
+Nessuna correzione strettoie è stata eseguita in questa milestone.
