@@ -73,6 +73,30 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-10-01 — Soglia chirurgica ComputeOffset da 3P a P in Vittorio_revisionato
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- pubblicare nel solo `SpiraliVittorioRevisionato/Spiralgenerator.cs` la modifica locale già provata in Visual Studio:
+  `edgeLength <= offset * 3` -> `edgeLength <= offset`;
+- non modificare gli altri criteri di stop, Return, chiusura, raccordatura, frontend, `definizionedati.json` o Golden;
+- mantenere il vero SpiralGenerator Vittorio puro come base e limitare la deviazione a questa sola soglia;
+- verificare sul server pubblico e notificare la conclusione via Issue #1.
+
+Return point prima della modifica:
+- commit `f1544135c303abb8296ef784c86b3cca6d627e6c`;
+- branch `recovery/vittorio-revisionato-before-offset-threshold-20261001`.
+
+Criteri di completamento:
+- unica modifica algoritmica: `edgeLength <= offset` dentro `ComputeOffset`;
+- nessuna modifica ai due `break` su `minEdgeLength`;
+- build/Harness e smoke Service eseguiti;
+- deploy Render verificato sul commit finale;
+- Recovery/linee guida/Summary aggiornati con la natura sperimentale e il return point;
+- stessa voce aggiornata a `ESEGUITO` con risultati reali.
+
+
+
 ### INCARICO 2026-10-01 — Ripristino del vero SpiralGenerator Vittorio puro in Vittorio_revisionato
 Stato: ESEGUITO
 
