@@ -106,8 +106,9 @@ jobs:
             '"Closure.AttemptReport"',
             '"Closure.Selected"',
             '"Closure.Summary"',
-            '"outcome=SUCCESS"',
-            '"outcome=FAILURE"'
+            '"outcome={esito}"',
+            '"SUCCESS"',
+            '"FAILURE"'
           )) {
             if (-not $text.Contains($marker)) {
               throw "Log istituzionale combinatoria privo del marker: $marker"
