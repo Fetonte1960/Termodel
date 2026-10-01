@@ -7,7 +7,7 @@
 > `Termodel/job` con `RUNNING -> SUCCESS/FAILED` e push telefono a
 > SUCCESS/FAILED. La regola è permanente e già verificata end-to-end.
 
-Ultimo aggiornamento: **2026-09-30**
+Ultimo aggiornamento: **2026-10-01**
 Branch GitHub di riferimento: **main**
 Repository: `https://github.com/Fetonte1960/Termodel`
 
@@ -74,25 +74,46 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-10-01 — Report istituzionale per ogni permutazione chiusura SpiraliDiego
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente: estendere il log istituzionale della combinatoria `funzioni_diego.chiusura_diego(...)`, attivato dalla categoria frontend `spiralidiego` / `TermodelLog.LogCategory.SpiraliDiego`, in modo che ogni permutazione realmente tentata produca un report esplicito di successo o insuccesso con i parametri geometrici e combinatori coinvolti; eseguire i test e pubblicare su `main`.
 
-Obiettivo:
-- nessuna modifica alla geometria o all'ordine della matrice `0I, 0P, 1I, 1P, 2I, 2P`;
-- conservare il log istituzionale esistente e aggiungere un esito leggibile per ciascun tentativo;
-- per ogni permutazione registrare almeno: numero tentativo, sequenza Mandata/Ritorno, tratti rimossi, modalità I/P, terminali e relative lunghezze, distanza/lunghezza di chiusura, soglia `2P`, motivo dell'eventuale rifiuto e parametri del filtro applicato;
-- registrare esplicitamente `SUCCESS` per la prima combinazione accettata e `FAILURE` per ogni combinazione scartata;
-- registrare un riepilogo finale con numero di tentativi e candidato selezionato oppure nessuna chiusura valida;
-- logging emesso esclusivamente quando è abilitata la categoria `SpiraliDiego`;
-- nessuna modifica a frontend, `SpiraliVittorio`, `definizionedati.json` o Golden;
-- aggiornare il gate Harness del quadrato pubblico per verificare la presenza dei nuovi report istituzionali.
+Implementazione:
+- mantenuti invariati geometria, ordine e first-success della matrice `0I, 0P, 1I, 1P, 2I, 2P`;
+- aggiunto il sottotag istituzionale `[SpiraliDiego][Closure.AttemptReport]`;
+- ogni permutazione realmente valutata emette `outcome=FAILURE` quando viene scartata oppure `outcome=SUCCESS` per la prima candidata accettata;
+- ogni report contiene: `attempt`, `seq`, `reason`, `supplyRemoved`, `supplyMode`, coordinate del terminale Mandata e `supplyLastLen`, `returnRemoved`, `returnMode`, coordinate del terminale Return e `returnLastLen`, `closureLength`, soglia `required=2P`; quando pertinenti sono riportati anche `cosSupply`, `cosReturn`, `intersectsSupply` e `intersectsReturn`;
+- aggiunto `[SpiraliDiego][Closure.Summary]`: `SUCCESS` con numero tentativi e sequenza selezionata oppure `FAILURE` con `selected=none`; anche l'input non valido produce un summary esplicito a zero tentativi;
+- i log passano esclusivamente da `LogChiusura(...)`, quindi sono emessi soltanto quando `TermodelLog.LogCategory.SpiraliDiego` è attiva;
+- nessun `Console.WriteLine` e nessuna variabile ambiente privata reintrodotti;
+- frontend, `SpiraliVittorio`, `definizionedati.json`, algoritmo di chiusura e Golden invariati;
+- gate Fast Harness aggiornato per verificare sia la presenza statica dei nuovi tag sia, sul quadrato pubblico, un report FAILURE completo, un report SUCCESS completo e il summary finale coerente.
 
-Criteri di completamento:
-- Core/Harness compilano;
-- il quadrato pubblico `Vittorio_revisionato` produce report `SUCCESS/FAILURE` per i tentativi e summary finale sotto `SpiraliDiego`;
-- nessun `Console.WriteLine` o variabile ambiente privata viene reintrodotto nella combinatoria;
-- modifica pubblicata su GitHub `main`, con esito reale registrato qui.
+Commit:
+- implementazione report: `f53880584c432f7ac8168c084031020d75b45be5`;
+- gate runtime/statico iniziale: `619b56ba5f2c85366f1d73cecb1fbe6b560a5f67`;
+- correzioni del solo gate statico: `995072c99d1392ee4406c27db089d1a1627d6fcc`, `becbd04deba92e8ddf1db788e9fc04d4d72142e5`;
+- pulizia warning nullable introdotto dall'helper: `a2557abe3b7636a8b8b63d3ec1379c8575159fb0`.
+
+Verifica reale:
+- Fast Harness run `36824756038`: build Harness/Core **SUCCESS**; ritorno parallelo **SUCCESS**; gate matrice/autorità/log istituzionale **SUCCESS**; quadrato pubblico `Vittorio_revisionato` **SUCCESS** con verifica effettiva di almeno un `Closure.AttemptReport outcome=FAILURE`, del `Closure.AttemptReport outcome=SUCCESS` selezionato e del `Closure.Summary outcome=SUCCESS`; chiusura rettilinea misurata `0,4 m`, minimo `0,3 m`, `REVISIONATO_PUBLIC_SQUARE_LG051_OK`;
+- nello stesso run passano anche equivalenza iniziale, equivalenza multi-progetto, astrazione, diagnostica Supply e quadrato Diego_Vittorio; il workflow globale si ferma successivamente sul Golden storico separato `Diego_Vittorio`: SVG corrente `5ddd0ffd14ae083021853712b08dc693c35048f7cb2c10b4eb7662b5ead793e2` contro baseline `fa8e61061050a1f18026b3d2150270c013d2b4ca1d72e1f72f5fb7c21375fa39`; Golden non aggiornato;
+- Service Build finale run `36824960641`: **Build succeeded**; smoke pubblico `Vittorio_revisionato` chiuso **SUCCESS**; smoke circuiti aperti **SUCCESS**; verifica deploy pubblico **SUCCESS** con `publicServiceCommit=a2557abe3b7636a8b8b63d3ec1379c8575159fb0`;
+- il workflow Service complessivo resta rosso esclusivamente sul noto smoke locale `HTTP project storage and exclusive locks` / `Termodel.WebService non ha risposto a /health`, separato dalla modifica;
+- la pulizia finale ha eliminato il nuovo warning CS8625 sul parametro `dettagli`; restano warning nullable preesistenti del modulo.
+
+Stato finale:
+- progettato: sì;
+- implementato: sì;
+- compilato: sì;
+- eseguito: sì;
+- report FAILURE per tentativo: verificato;
+- report SUCCESS selezionato: verificato;
+- summary finale: verificato;
+- pubblicato su GitHub/main: sì;
+- deploy pubblico del commit finale: verificato;
+- geometria modificata: no;
+- Golden modificati: no.
 
 ### INCARICO 2026-10-01 — Log istituzionale combinatoria su SpiraliDiego
 Stato: ESEGUITO
