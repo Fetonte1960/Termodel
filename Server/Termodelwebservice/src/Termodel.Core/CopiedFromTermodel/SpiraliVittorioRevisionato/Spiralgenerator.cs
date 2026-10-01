@@ -7,7 +7,29 @@ namespace SpiralHeatingVittorioRevisionato
 {
 	public static class SpiralGenerator
 	{
-		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(List<Punto> perimetro, Punto startPoint, double distanza, bool drawSpiral = true)
+		// Compatibilita' col contratto storico Vittorio a distanza unica.
+		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(
+			List<Punto> perimetro,
+			Punto startPoint,
+			double distanza,
+			bool drawSpiral = true) =>
+			Generate(
+				perimetro,
+				startPoint,
+				distanza,
+				distanza,
+				distanza,
+				drawSpiral);
+
+		// Contratto Vittorio_revisionato: il primo offset e' riferito alla
+		// parete architettonica; i successivi alla stessa spirale/colore.
+		public static (List<Punto> spiral, List<List<Punto>> offsets) Generate(
+			List<Punto> perimetro,
+			Punto startPoint,
+			double distanzaParete,
+			double distanzaStessaSpirale,
+			double distanzaFinalizzazione,
+			bool drawSpiral = true)
 		{
 			List<Punto> spiral = new List<Punto>();
 			
@@ -17,19 +39,22 @@ namespace SpiralHeatingVittorioRevisionato
 			List<List<Punto>> offsets = new List<List<Punto>>();
 			offsets.Add(GeometryUtils.NormalizePolygon(new List<Punto>(perimetro)));
 
-			double minArea = distanza * distanza;
+			double minArea = distanzaFinalizzazione * distanzaFinalizzazione;
 
 			// Genera offset successivi
 			for (int i = 0; i < 100; i++)
 			{
+				double distanzaOffset = i == 0
+					? distanzaParete
+					: distanzaStessaSpirale;
 				var previousOffset = i > 0 ? offsets[offsets.Count - 2] : perimetro;
-				var nextOffset = ComputeOffset(offsets.Last(), previousOffset, distanza);
+				var nextOffset = ComputeOffset(offsets.Last(), previousOffset, distanzaOffset);
 
 				if (nextOffset == null || nextOffset.Count < 3)
 					break;
 				
 				// Correggi vertici che intersecano il perimetro precedente
-				nextOffset = FixIntersections(nextOffset, offsets.Last(), distanza);
+				nextOffset = FixIntersections(nextOffset, offsets.Last(), distanzaOffset);
 				
 				double minEdgeLength = double.MaxValue;
 				for (int j = 0; j < nextOffset.Count - 1; j++)
@@ -38,9 +63,9 @@ namespace SpiralHeatingVittorioRevisionato
 					if (edgeLen < minEdgeLength)
 						minEdgeLength = edgeLen;
 				}
-				if (minEdgeLength < distanza && minEdgeLength > 0.2)
+				if (minEdgeLength < distanzaOffset && minEdgeLength > 0.2)
 					break;
-				if (minEdgeLength < distanza * 1.2 && nextOffset.Count < 5)
+				if (minEdgeLength < distanzaOffset * 1.2 && nextOffset.Count < 5)
 					break;
 					
 				offsets.Add(GeometryUtils.NormalizePolygon(nextOffset));
@@ -63,6 +88,9 @@ namespace SpiralHeatingVittorioRevisionato
 			// Itera su tutti gli offset generati (dal primo all'ultimo)
 			for (int offsetIdx = 1; offsetIdx < offsets.Count; offsetIdx++)
 			{
+				double distanzaOffsetCorrente = offsetIdx == 1
+					? distanzaParete
+					: distanzaStessaSpirale;
 				var currentOffset = offsets[offsetIdx];
 				
 				// Trova intersezione con l'offset corrente dall'ultimo punto della spirale
@@ -76,7 +104,7 @@ namespace SpiralHeatingVittorioRevisionato
 				
 				double distPuntoIntersezione = ultimoPuntoSpiral.DistanceTo(puntoIntersezione);
 				
-				if (distPuntoIntersezione > distanza)
+				if (distPuntoIntersezione > distanzaOffsetCorrente)
 				{
 					double dx = Math.Abs(puntoIntersezione.X - ultimoPuntoSpiral.X);
 					double dy = Math.Abs(puntoIntersezione.Y - ultimoPuntoSpiral.Y);
@@ -108,7 +136,7 @@ namespace SpiralHeatingVittorioRevisionato
 						for (int j = 0; j < spiral.Count - 1; j++)
 						{
 							double dist = GeometryUtils.DistancePointToSegment(puntoIntermedio, spiral[j], spiral[j + 1]);
-							if (dist < distanza * 0.8 && dist > 0.01)
+							if (dist < distanzaStessaSpirale * 0.8 && dist > 0.01)
 							{
 								isTooCloseToSpiral = true;
 								break;
@@ -142,7 +170,7 @@ namespace SpiralHeatingVittorioRevisionato
 				Punto penultimoPunto;
 
 				double distanzaSegmento = puntoIntersezione.DistanceTo(spiral[spiral.Count - 1]);
-				if (distanzaSegmento > 2 * distanza) {
+				if (distanzaSegmento > 2 * distanzaFinalizzazione) {
 					ultimoPunto = puntoIntersezione;
 					penultimoPunto = spiral[spiral.Count - 1];
 				}
@@ -158,8 +186,8 @@ namespace SpiralHeatingVittorioRevisionato
 					penultimoPunto.Y - ultimoPunto.Y
 				));
 				var puntoFinale = new Punto(
-					ultimoPunto.X + direzione.X * distanza,
-					ultimoPunto.Y + direzione.Y * distanza
+					ultimoPunto.X + direzione.X * distanzaFinalizzazione,
+					ultimoPunto.Y + direzione.Y * distanzaFinalizzazione
 				);
 				spiral.Add(puntoFinale);
 			}
