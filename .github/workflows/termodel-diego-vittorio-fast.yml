@@ -99,8 +99,11 @@ jobs:
 
           foreach ($marker in @(
             "TermodelLog.LogCategory.SpiraliDiego",
-            "[SpiraliDiego][Closure.",
-            "LogChiusura("
+            "LogChiusura(",
+            ""Closure.Try"",
+            ""Closure.Reject"",
+            ""Closure.Accept"",
+            ""Closure.Selected""
           )) {
             if (-not $text.Contains($marker)) {
               throw "Log istituzionale combinatoria privo del marker: $marker"
