@@ -7347,6 +7347,101 @@ orario/antiorario.
 
 ---
 
+## Premessa vincolante 01/10/2026 — lineage e convenzione P di `Vittorio_revisionato`
+
+Questa premessa prevale sulle notazioni storiche sottostanti incompatibili.
+
+### Lineage del motore
+
+```text
+Vittorio storico
+    ↓
+Diego_Vittorio
+    ↓
+tentativo Return autonomo
+    ↓
+blocco della spirale Return in casi reali
+    ↓
+Vittorio_revisionato
+    ↓
+ritorno alla generazione Vittorio come base robusta
+```
+
+`Diego_Vittorio` aveva già introdotto correttamente la nuova convenzione
+geometrica e l'aveva implementata nella Supply:
+
+```text
+P = PassoTubi = 0,30 m
+Mandata-Parete  = P/2 = 0,15 m
+Mandata-Mandata = 2P  = 0,60 m
+Mandata-Ripresa = P   = 0,30 m
+```
+
+Il tentativo di generare un Return autonomo in `Diego_Vittorio` non è stato
+assunto come soluzione definitiva perché la spirale del Return può bloccarsi
+nelle geometrie reali. `Vittorio_revisionato` è stato quindi creato tornando
+alla generazione Vittorio come base più robusta.
+
+Nel passaggio sono rimaste da riallineare due responsabilità.
+
+### Parametrizzazione Supply/Return
+
+Vittorio storico usa una sola distanza geometrica nel generatore.
+`Vittorio_revisionato` deve invece conservare la semantica già implementata
+da `Diego_Vittorio`:
+
+- primo offset dalla parete: `P/2`;
+- offset Supply successivi: `2P`;
+- Return parallelo: `P`;
+- minimo della chiusura rettilinea: `2P`.
+
+Con `P=0,30 m`:
+
+```text
+parete = 0,15 m
+Supply-Supply = 0,60 m
+Supply-Return = 0,30 m
+chiusura minima = 0,60 m
+```
+
+La versione corrente di `Vittorio_revisionato` conserva ancora il contratto
+a singola `Distanza` del generatore Vittorio e i valori storici
+`DistanzaPareti=PassoTubi` / `DistanzaRitorno=PassoTubi/2`: sono da
+considerare incoerenti con questa specifica.
+
+### Responsabilità dello spazio centrale
+
+Vittorio storico accorcia automaticamente il terminale della Mandata alla fine
+della generazione per lasciare spazio nella zona centrale.
+
+Nel disegno corrente di `Vittorio_revisionato` la gestione dello spazio
+centrale deve essere **mirata e separata dalla generazione della Supply**.
+L'autorità sui tagli/accorciamenti terminali è la combinatoria:
+
+```text
+0I, 0P, 1I, 1P, 2I, 2P
+```
+
+su Mandata e Ripresa.
+
+Il generatore deve quindi occuparsi della geometria della Mandata; la
+combinatoria deve essere la sola fase che decide se mantenere, eliminare o
+normalizzare a `P` gli ultimi tratti per creare la chiusura.
+
+Regola architetturale:
+
+```text
+Supply: P/2 dalla parete, 2P fra mandate
+Return: P dalla Supply
+Chiusura: tagli/normalizzazioni terminali tramite permutazioni
+Raccordatura: solo dopo la chiusura definitiva
+```
+
+Non reintrodurre il Return autonomo come condizione necessaria e non affidare
+al generatore storico l'ottimizzazione finale dello spazio centrale.
+
+---
+
 ## LG-051 — `Vittorio_revisionato`: chiusura rettilinea completa prima della raccordatura
 
 **Stato:** DECISIONE UMANA CONSOLIDATA — 30/09/2026 — **IMPLEMENTATA E PUBBLICATA SU MAIN; CORE/HARNESS COMPILATI; DEPLOY SERVICE NON CERTIFICATO**
@@ -7358,13 +7453,16 @@ il riferimento approvato per `Diego_Vittorio`.
 
 ### Notazione locale
 
-Nel bridge `Vittorio_revisionato`:
+Nel bridge `Vittorio_revisionato` la notazione autorevole è:
 
-- `P = distanzaRitorno = 0,15 m` nel caso nominale corrente;
-- `2P = 0,30 m`;
-- `P` rappresenta la distanza Mandata-Ritorno del modello Vittorio e non va
-  confuso con la notazione storica `p = 0,30 m` usata in altre sezioni delle
-  linee guida.
+- `P = PassoTubi = 0,30 m`;
+- `DistanzaPareti = P/2 = 0,15 m`;
+- `DistanzaMandataMandata = 2P = 0,60 m`;
+- `DistanzaRitorno = P = 0,30 m`;
+- minimo della chiusura rettilinea: `2P = 0,60 m`.
+
+Le precedenti formulazioni `P=0,15 m` / `2P=0,30 m` appartengono a una
+fase storica del bridge e **non sono più autorevoli**.
 
 ### Principio architetturale vincolante
 
@@ -7431,8 +7529,8 @@ Dopo aver applicato eliminazioni e/o normalizzazione, il candidato viene
 valutato **sul nuovo setup geometrico risultante**. Deve essere scartato se si
 verifica anche una sola delle condizioni seguenti:
 
-1. il tratto rettilineo di chiusura generato ha lunghezza **almeno `2P`**;
-   la regola definitiva è quindi `lunghezza >= 2P`;
+1. il tratto rettilineo di chiusura generato ha lunghezza **inferiore a `2P`**;
+   la regola definitiva di accettazione è quindi `lunghezza >= 2P`;
 2. l'innesto fra Mandata e tratto di chiusura forma un angolo acuto;
 3. l'innesto fra tratto di chiusura e Ripresa forma un angolo acuto;
 4. il tratto di chiusura interseca un tratto non adiacente della geometria
@@ -7453,7 +7551,7 @@ alla funzione consolidata. Il Fast Harness run `36800577329` ha compilato
 Core/Harness, verificato l'autorità unica e, sul quadrato pubblico
 `Vittorio_revisionato`, ha provato la sequenza a partire da `M0I/R0I` e
 selezionato il primo candidato valido `M1P/R0P`, con chiusura rettilinea
-`0,40 m >= 2P = 0,30 m`. Il workflow prosegue poi fino al noto Golden
+`0,40 m >= 2P = 0,30 m` **secondo la vecchia convenzione oggi riconosciuta come errata**. Il workflow prosegue poi fino al noto Golden
 separato `Diego_Vittorio`, già divergente prima di questa revisione.
 
 ### Validazione di un candidato di chiusura
@@ -7466,7 +7564,7 @@ quel candidato ha già eliminato o modificato.
 Il candidato è valido soltanto se tutte le condizioni seguenti sono vere:
 
 1. il **tratto rettilineo di chiusura** tra i nuovi terminali ha lunghezza
-   `>= 2P`; nel caso nominale corrente `>= 0,30 m`;
+   `>= 2P`; nel caso nominale corrente `>= 0,60 m`;
 2. il tratto rettilineo non interseca alcun altro tratto della geometria
    risultante dal candidato, esclusi i due tratti terminali adiacenti ai quali
    la chiusura si innesta;
