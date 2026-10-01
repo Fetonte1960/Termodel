@@ -1,3 +1,23 @@
+## Rollback 01/10/2026
+
+Il candidato con:
+- Mandata-parete = 1,5P;
+- Mandata-Mandata = 2P;
+- Mandata-Return = P;
+
+è stato respinto dal collaudo visivo.
+
+Il runtime corrente è stato ripristinato byte-per-byte, per i file interessati,
+al restore point:
+
+`0b541f92cf74412a33d68ffc0603e3f319c4a82f`.
+
+Da questo punto in avanti le modifiche alla geometria delle distanze devono
+essere introdotte **una alla volta** e verificate visivamente prima della
+successiva.
+
+---
+
 ## Candidato 01/10/2026 — Mandata 1,5P / 2P, Return a P
 
 Il percorso pubblico `Vittorio_revisionato` separa ora i ruoli geometrici
