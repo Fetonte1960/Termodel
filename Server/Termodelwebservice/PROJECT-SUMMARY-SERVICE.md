@@ -149,13 +149,16 @@ Verifica reale:
   - `equivalentToVittorio=true`;
   - rosso finale soltanto sul Golden storico separato `Diego_Vittorio`
     `5ddd0ffd... != fa8e6106...`; Golden non aggiornato;
-- Service Build run `36847235975`:
+- Service Build finale run `36847790853`:
   - Build succeeded;
   - smoke pubblico `Vittorio_revisionato` chiuso SUCCESS;
   - smoke circuiti aperti SUCCESS;
-  - deploy pubblico verificato con
-    `serviceCommit=a56a9479cbb8d167068b24a7e45a5ebd1a4f071f`;
-  - rosso globale soltanto sul noto smoke locale storage/lock `/health`.
+  - verifica deploy pubblico SUCCESS con
+    `serviceCommit=c8d21f9b14c32890d9ee9e810867e3be8cc81e7d`;
+  - rosso globale soltanto sul noto smoke locale storage/lock `/health`;
+- Render Runtime Verify run `36847813764`: SUCCESS;
+  - `serviceCommit=c8d21f9b14c32890d9ee9e810867e3be8cc81e7d`;
+  - `spiralEngine=Diego_Vittorio`.
 
 Stato reale:
 - progettato: sì;
@@ -169,6 +172,15 @@ Stato reale:
 - controllo visivo utente del disegno reale: **ancora da eseguire**;
 - se il controllo visivo fallisce, il punto di ritorno obbligatorio è
   `recovery/vittorio-revisionato-before-pure-vittorio-20261001`.
+
+
+Aggiornamento finale recovery:
+- `RECOVERY-ACTIVE.md` conferma il deploy finale nel commit
+  `0bfc99a061022045cb20128bd232e86a87af5a93`;
+- il return point `45bff4b4...` / branch
+  `recovery/vittorio-revisionato-before-pure-vittorio-20261001`
+  resta obbligatoriamente disponibile finché il controllo visivo utente
+  non approva il nuovo assetto.
 
 ### INCARICO 2026-10-01 — Rollback completo al Vittorio_revisionato funzionante pre-P/2-2P
 Stato: ESEGUITO
