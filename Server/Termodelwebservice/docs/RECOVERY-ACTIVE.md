@@ -1,3 +1,19 @@
+# RECOVERY PRIORITARIO — LOG ISTITUZIONALE COMBINATORIA
+
+Checkpoint: **2026-10-01 — prima della modifica logging**
+
+Punto di rollback sicuro: `96e1fcc6143b5eca6482ddae9bcae6c127bea0e3`.
+
+Incarico: migrare la sola diagnostica della combinatoria consolidata da
+`Console.WriteLine` / `TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE` a
+`TermodelLog.LogCategory.SpiraliDiego`, attivata nel frontend dalla spunta
+`spiralidiego`.
+
+Vincolo principale: **nessuna modifica geometrica** a matrice, filtri,
+first-success, Return o raccordatura.
+
+---
+
 # RECOVERY FINALE — COMBINATORIA CONSOLIDATA IN `funzioni_diego`
 
 Checkpoint: **2026-10-01 — implementazione pubblicata e verificata tecnicamente**
