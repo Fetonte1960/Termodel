@@ -299,3 +299,22 @@ Commit funzionali principali:
 - Return point prima della modifica:
   `45bff4b4d016bcd60aa0c18d26aefdcf51ad8a21`,
   branch `recovery/vittorio-revisionato-before-pure-vittorio-20261001`.
+
+
+### 2026-10-01 — divergenza sperimentale ComputeOffset in Vittorio_revisionato
+- Base: copia Vittorio pura ripristinata il 01/10/2026.
+- Unica divergenza algoritmica corrente:
+  `edgeLength <= offset * 3` -> `edgeLength <= offset` dentro
+  `SpiraliVittorioRevisionato/Spiralgenerator.cs::ComputeOffset`.
+- Con `offset=0,30 m`, soglia skip vertici 0,90 m -> 0,30 m.
+- I due `break` su `minEdgeLength` restano invariati.
+- Return/chiusura/raccordatura non modificati.
+- Commit funzionale:
+  `6132430e7907699cbf577c2ef869ffd03117f216`.
+- Return point:
+  `f1544135c303abb8296ef784c86b3cca6d627e6c`,
+  branch
+  `recovery/vittorio-revisionato-before-offset-threshold-20261001`.
+- Divergenza multi-progetto rispetto a Vittorio osservata su `concave-l`:
+  attesa per la natura della modifica e da sottoporre a controllo visivo prima
+  di consolidamento.
