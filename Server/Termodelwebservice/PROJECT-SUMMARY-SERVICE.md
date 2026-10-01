@@ -73,9 +73,23 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-01 — Revisione finale combinatoria chiusura
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
-Registrare nelle direttive spirali, senza modifiche ai sorgenti, la logica combinatoria finale concordata: stessa logica per Mandata e Ripresa; operazioni limitate agli ultimi tre tratti terminali; variante invariata o normalizzata a P; tratto di chiusura strettamente maggiore di 2P; nessun angolo acuto ai due innesti; nessuna intersezione sul setup risultante dopo le modifiche.
+Registrata nelle direttive spirali, senza modifiche ai sorgenti, la logica combinatoria finale concordata:
+- stessa logica simmetrica per Mandata e Ripresa;
+- finestra sugli ultimi tre tratti originali, con configurazioni `0I, 0P, 1I, 1P, 2I, 2P` su entrambi i lati;
+- variante `I` invariata e variante `P` normalizzata a lunghezza esattamente `P`;
+- filtro definitivo sul tratto rettilineo di chiusura: lunghezza strettamente `> 2P`;
+- nessun angolo acuto ai due innesti;
+- nessuna intersezione sulla geometria risultante dopo tagli/normalizzazioni;
+- restano validi sequenza deterministica, first-success e circuito aperto se nessun candidato è valido.
+
+Documento aggiornato:
+`docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`
+
+Commit direttiva: `6c49132fe1e0c218d4733b0ec682f9f4524d790a`.
+
+Verifica reale: modifica esclusivamente documentale; nessun sorgente modificato, nessuna build o esecuzione dichiarata.
 
 
 
