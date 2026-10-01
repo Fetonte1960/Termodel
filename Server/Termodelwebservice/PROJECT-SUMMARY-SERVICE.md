@@ -72,6 +72,28 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+
+### INCARICO 2026-10-01 — Report istituzionale per ogni permutazione chiusura SpiraliDiego
+Stato: COMMISSIONATO
+
+Autorizzazione utente: estendere il log istituzionale della combinatoria `funzioni_diego.chiusura_diego(...)`, attivato dalla categoria frontend `spiralidiego` / `TermodelLog.LogCategory.SpiraliDiego`, in modo che ogni permutazione realmente tentata produca un report esplicito di successo o insuccesso con i parametri geometrici e combinatori coinvolti; eseguire i test e pubblicare su `main`.
+
+Obiettivo:
+- nessuna modifica alla geometria o all'ordine della matrice `0I, 0P, 1I, 1P, 2I, 2P`;
+- conservare il log istituzionale esistente e aggiungere un esito leggibile per ciascun tentativo;
+- per ogni permutazione registrare almeno: numero tentativo, sequenza Mandata/Ritorno, tratti rimossi, modalità I/P, terminali e relative lunghezze, distanza/lunghezza di chiusura, soglia `2P`, motivo dell'eventuale rifiuto e parametri del filtro applicato;
+- registrare esplicitamente `SUCCESS` per la prima combinazione accettata e `FAILURE` per ogni combinazione scartata;
+- registrare un riepilogo finale con numero di tentativi e candidato selezionato oppure nessuna chiusura valida;
+- logging emesso esclusivamente quando è abilitata la categoria `SpiraliDiego`;
+- nessuna modifica a frontend, `SpiraliVittorio`, `definizionedati.json` o Golden;
+- aggiornare il gate Harness del quadrato pubblico per verificare la presenza dei nuovi report istituzionali.
+
+Criteri di completamento:
+- Core/Harness compilano;
+- il quadrato pubblico `Vittorio_revisionato` produce report `SUCCESS/FAILURE` per i tentativi e summary finale sotto `SpiraliDiego`;
+- nessun `Console.WriteLine` o variabile ambiente privata viene reintrodotto nella combinatoria;
+- modifica pubblicata su GitHub `main`, con esito reale registrato qui.
+
 ### INCARICO 2026-10-01 — Log istituzionale combinatoria su SpiraliDiego
 Stato: ESEGUITO
 
