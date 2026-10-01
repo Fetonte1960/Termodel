@@ -280,3 +280,36 @@ Fast Harness `36847338021`: equivalenza Vittorio su 6 casi e
 Service Build `36847235975`: build e smoke revisionato SUCCESS.
 
 La promozione definitiva resta subordinata al controllo visivo reale.
+
+
+## Milestone 9 — soglia ComputeOffset 3P -> P (01/10/2026)
+
+Su prova locale Visual Studio è stata pubblicata una sola deviazione rispetto
+al generatore Vittorio puro:
+
+```csharp
+edgeLength <= offset
+```
+
+al posto di:
+
+```csharp
+edgeLength <= offset * 3
+```
+
+Con `offset=0,30 m` lo skip dei vertici non parte più a 0,90 m ma a 0,30 m.
+I due stop su `minEdgeLength` restano invariati.
+
+Commit funzionale:
+`6132430e7907699cbf577c2ef869ffd03117f216`.
+
+Return point precedente:
+`f1544135c303abb8296ef784c86b3cca6d627e6c`,
+branch
+`recovery/vittorio-revisionato-before-offset-threshold-20261001`.
+
+Fast Harness `36861645040`: quadrato pubblico SUCCESS; la vecchia equivalenza
+multi-progetto con Vittorio diverge su `concave-l`, effetto atteso da una
+modifica deliberata del generatore revisionato.
+Service Build `36861644983`: build, smoke chiuso/aperto e deploy pubblico
+SUCCESS.
