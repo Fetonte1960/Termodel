@@ -259,3 +259,15 @@ Commit funzionali principali:
 - `2d6dc35f58541f4a5c32e17d74a7f749659a1dd6`;
 - `4228c4b9e8a78eb4305af3a391c82815f688e1ee`.
 
+
+
+### 2026-10-01 — recovery pubblico dopo fallimento visivo del candidato P/2-2P
+- Il percorso pubblico `Vittorio_revisionato` usa nuovamente per default il
+  `SpiralGenerator.Generate(...)` storico a distanza unica.
+- `GenerateRevisionato(...)` resta presente ma disattivato dal default; è
+  richiamabile solo esplicitamente per analisi future.
+- La decisione nasce dal controllo visivo reale dell'utente, che ha giudicato
+  non accettabile la geometria P/2-2P pubblicata.
+- Commit recovery: `dd7d411ab3de9223ec7d927aed407d59c60aa62e`.
+- Nessuna modifica al riferimento `SpiraliVittorio` o alla Library Desktop.
+
