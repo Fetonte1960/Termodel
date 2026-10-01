@@ -44,22 +44,12 @@ static int RunVittorioRevisionatoCheck()
         StrategiaVittorioRevisionatoBenchmark.CheckAbstraction();
 
     Console.WriteLine("VITTORIO_REVISIONATO_ABSTRACTION_OK");
-    Console.WriteLine("VITTORIO_REVISIONATO_HISTORICAL_GENERATE_RECOVERY_OK");
-    Console.WriteLine("VITTORIO_REVISIONATO_P_CONVENTION_OK");
     Console.WriteLine($"neutralEquivalent={result.NeutralEquivalent.ToString().ToLowerInvariant()}");
     Console.WriteLine($"supplyPoints={result.SupplyPoints}");
     Console.WriteLine($"unconditionedReturnPoints={result.UnconditionedReturnPoints}");
     Console.WriteLine($"conditionedReturnPoints={result.ConditionedReturnPoints}");
     Console.WriteLine(
         $"conditioningDistance={result.ConditioningDistanceMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
-    Console.WriteLine(
-        $"P={result.PMeters.ToString("0.###", CultureInfo.InvariantCulture)} " +
-        $"wall={result.WallDistanceMeters.ToString("0.###", CultureInfo.InvariantCulture)} " +
-        $"supplySpacing={result.SupplyToSupplyMeters.ToString("0.###", CultureInfo.InvariantCulture)} " +
-        $"return={result.ReturnDistanceMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
-    Console.WriteLine(
-        $"measuredWall={result.MeasuredWallDistanceMeters.ToString("0.###", CultureInfo.InvariantCulture)} " +
-        $"measuredSupplySpacing={result.MeasuredSupplySpacingMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
     return 0;
 }
 
