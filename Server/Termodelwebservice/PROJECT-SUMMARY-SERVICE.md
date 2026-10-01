@@ -73,11 +73,11 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-01 — Consolidamento definitivo combinatoria in funzioni_diego
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente: consolidare la logica di chiusura approvata in `SpiraliDiegoVittorio/funzioni_diego.cs`, eliminando la duplicazione algoritmica attiva da `ChiudiSpirale.cs`, pubblicare su `main` e rendere disponibile il risultato per prove reali sul server.
 
-Contratto approvato:
+Contratto consolidato:
 - stessa logica su Mandata e Ripresa;
 - configurazioni ordinate `0I, 0P, 1I, 1P, 2I, 2P` su entrambi i lati;
 - `I` = terminale invariato; `P` = terminale normalizzato esattamente a P, accorciando o allungando;
@@ -85,15 +85,44 @@ Contratto approvato:
 - chiusura rettilinea valida se lunghezza `>=2P`;
 - nessun angolo acuto ai due innesti;
 - il solo tratto di chiusura non deve intersecare tratti non adiacenti del nuovo setup risultante dopo tagli/normalizzazioni;
-- nessun RP, ranking, preferenza P/I, Bézier o raccordo nella scelta combinatoria;
+- nessun `RP*`, ranking, preferenza P/I, Bézier o raccordo nella scelta combinatoria;
 - nessun candidato valido = circuito aperto;
 - raccordatura finale separata tramite `raccorda_diego`.
 
-Vincoli:
-- non modificare `SpiraliVittorio`, frontend o `definizionedati.json`;
-- non aggiornare Golden alla cieca;
-- mantenere rollback semplice e aggiornare Recovery/Summary con stato reale;
-- verificare Core/Harness e il percorso pubblico `Vittorio_revisionato`; pubblicare per prova server.
+Implementazione:
+- `funzioni_diego.chiusura_diego(...)` contiene ora l'implementazione autorevole della combinatoria;
+- `SpiraliDiegoVittorio/ChiudiSpirale.cs` non contiene più `GeneraPrimaChiusuraAccettabile`, `CreaConfigurazioneTerminaleProiettata`, `preferisciTerminaleP` né le relative strutture della vecchia combinatoria;
+- i bridge di compatibilità delegano alla funzione consolidata;
+- è stato mantenuto/ripristinato in `ChiudiSpirale.cs` soltanto l'helper geometrico generico `IntersecaTrattiNonAdiacenti` necessario alla verifica delle curve legacy: non costituisce una seconda combinatoria;
+- `SpiraliVittorio`, frontend e `definizionedati.json` non sono stati modificati;
+- nessun Golden aggiornato.
+
+Commit principali:
+- `b389436ddb6ad663dc662bf3224a0c8cc2f5afcd` — combinatoria reale in `funzioni_diego`;
+- `becc425dd60c716469b7a855a8e52a7f37040508` — rimozione duplicazione algoritmica da `ChiudiSpirale`;
+- `250ecf653976860f0023aaadf8e15b68823d87d1` — ripristino helper geometrico curve dopo errore di compilazione rilevato;
+- `5ab1161cae5468f99f7006ff3abb002c4e640d5b` — gate Fast Harness per matrice e autorità unica;
+- `1a03935768596cc32aca8b35129734107ed9fe78` — TERMODEL-SYNC aggiornato;
+- `e8408f95f7138e2b4d34cd8d23ec5f6b07276ac8` — direttiva LG-051 aggiornata con stato implementativo;
+- recovery finale: `53139521ccf31fb3243cfb736a13bdff134ca40d`.
+
+Verifica reale:
+- il primo tentativo di refactor ha evidenziato una dipendenza residua dell'helper geometrico `IntersecaTrattiNonAdiacenti`; l'errore è stato corretto prima della chiusura dell'incarico;
+- Service Build run `36800489515`: **Build succeeded**; workflow complessivo successivamente rosso sul noto smoke locale storage/lock `Termodel.WebService non ha risposto a /health`, indipendente dalla combinatoria;
+- nello stesso run: `PUBLIC_VITTORIO_REVISIONATO_DEPLOY_OK` e `publicServiceCommit=250ecf653976860f0023aaadf8e15b68823d87d1`;
+- Fast Harness run `36800577329`: **Build succeeded**, `RITORNO_PARALLELO_DIEGO_OK cases=4`, `FUNZIONI_DIEGO_FINAL_CLOSURE_MATRIX_OK`, `FUNZIONI_DIEGO_SINGLE_CLOSURE_AUTHORITY_OK`;
+- quadrato pubblico `Vittorio_revisionato`: la sequenza parte da `M0I/R0I`; il primo candidato valido è `M1P/R0P` al tentativo 20; chiusura rettilinea `0,40000000000000013 m`, requisito `2P=0,30 m`; `REVISIONATO_PUBLIC_SQUARE_STRAIGHT_2P_OK` e `REVISIONATO_PUBLIC_SQUARE_LG051_OK`;
+- il Fast Harness prosegue e fallisce successivamente sul Golden separato `Diego_Vittorio`, SVG corrente `5ddd0ffd14ae083021853712b08dc693c35048f7cb2c10b4eb7662b5ead793e2` contro baseline approvata: è la divergenza già nota e preesistente, non è stato aggiornato il Golden;
+- confronto Git da `c99c75693d98becc92223e1c7b5b77401fe42eca` a `5ab1161cae5468f99f7006ff3abb002c4e640d5b`: modificati soltanto workflow Fast, Recovery e i due file `SpiraliDiegoVittorio/ChiudiSpirale.cs` / `funzioni_diego.cs`.
+
+Stato finale:
+- **progettato:** sì;
+- **implementato:** sì;
+- **compilato:** sì;
+- **eseguito in Harness:** sì;
+- **pubblicato/deploy server:** sì, commit funzionale pubblico `250ecf653976860f0023aaadf8e15b68823d87d1`;
+- **testato visivamente dall'utente sul server:** ancora da fare;
+- **confrontato con Golden Diego_Vittorio:** sì, divergenza storica ancora presente e non approvata automaticamente.
 
 
 ### INCARICO 2026-10-01 — Revisione finale combinatoria chiusura
