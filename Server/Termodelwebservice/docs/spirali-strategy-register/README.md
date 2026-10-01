@@ -1,3 +1,30 @@
+## Aggiornamento operativo 01/10/2026 — restore point Vittorio_revisionato
+
+Per le attività correnti su `Vittorio_revisionato`, il restore point
+visivamente approvato è:
+
+```text
+6132430e7907699cbf577c2ef869ffd03117f216
+recovery/vittorio-revisionato-approved-offset-p-20261001
+```
+
+La variante approvata usa il generatore Vittorio come base con una sola
+deviazione controllata in `ComputeOffset`: soglia di skip dei lati
+`3P -> P`.
+
+Resta un **problema aperto nelle strettoie**, osservato nel locale 4 del test
+multi-locale: il percorso locale nella zona ristretta può essere
+geometricamente non soddisfacente. Il difetto non è ancora formalizzato come
+nuova strategia ATTIVA e non va corretto incidentalmente; sarà oggetto di una
+missione dedicata. L'utente segnala che una precedente iterazione lo aveva
+tamponato, ma prima di riusare quella soluzione va ricostruita la causa e
+verificato quale modifica fosse realmente responsabile.
+
+Questa nota prevale, per il solo stato corrente di `Vittorio_revisionato`,
+sulle descrizioni storiche sottostanti.
+
+---
+
 # Registro strategie geometriche spirali
 
 Classificazione: **AUTOREVOLE — vincoli strategici per evoluzioni future**  
