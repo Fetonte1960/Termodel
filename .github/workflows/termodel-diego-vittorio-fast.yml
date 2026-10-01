@@ -14,6 +14,9 @@ on:
   push:
     paths:
       - '.github/workflows/termodel-diego-vittorio-fast.yml'
+      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/**'
+      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/StrategiaVittorioRevisionatoBenchmark.cs'
+      - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/Program.cs'
 
 jobs:
   fast:
@@ -195,6 +198,15 @@ jobs:
             }
           }
 
+          if ($logText -notmatch 'VREV_RETURN_PARALLEL_DIEGO:[^\r\n]*offset=-0\.3(?:0+)?(?:[^0-9]|$)') {
+            Get-Content $log | Write-Host
+            throw "Quadrato pubblico: Return revisionato non risulta distante P=0,30 dalla Mandata."
+          }
+          if ($logText -notmatch '\[SpiraliDiego\]\[Closure\.Try\][^\r\n]*required=0\.6(?:0+)?(?:[^0-9]|$)') {
+            Get-Content $log | Write-Host
+            throw "Quadrato pubblico: chiusura_diego non sta usando P=0,30 / 2P=0,60."
+          }
+
           $applied = $logText -match 'Chiusura Diego combinatoria: APPLICATA'
           $open = $logText -match 'Chiusura Diego combinatoria: NON APPLICATA'
           if (-not $applied -and -not $open) {
@@ -346,8 +358,20 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- revisionato-check
+          $check = dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- revisionato-check 2>&1
+          $check | Write-Host
           if ($LASTEXITCODE -ne 0) { throw "Check astrazione Vittorio_revisionato fallito." }
+          $checkText = $check -join [Environment]::NewLine
+          foreach ($marker in @(
+            "VITTORIO_REVISIONATO_HISTORICAL_GENERATE_RECOVERY_OK",
+            "VITTORIO_REVISIONATO_P_CONVENTION_OK",
+            "P=0.3 wall=0.15 supplySpacing=0.6 return=0.3",
+            "measuredWall=0.15 measuredSupplySpacing=0.6"
+          )) {
+            if (-not $checkText.Contains($marker)) {
+              throw "Check revisionato privo del marker: $marker"
+            }
+          }
           Write-Host "VITTORIO_REVISIONATO_STRUCTURAL_ABSTRACTION_OK"
 
       - name: Inspect Supply only on public cases
