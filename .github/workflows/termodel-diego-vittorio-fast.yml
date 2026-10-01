@@ -97,6 +97,19 @@ jobs:
           }
           Write-Host "FUNZIONI_DIEGO_FINAL_CLOSURE_MATRIX_OK"
 
+          $legacyPath = "src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/ChiudiSpirale.cs"
+          $legacyText = Get-Content -LiteralPath $legacyPath -Raw
+          foreach ($forbidden in @(
+            "GeneraPrimaChiusuraAccettabile",
+            "CreaConfigurazioneTerminaleProiettata",
+            "preferisciTerminaleP"
+          )) {
+            if ($legacyText.Contains($forbidden)) {
+              throw "Duplicazione combinatoria rimasta in ChiudiSpirale: $forbidden"
+            }
+          }
+          Write-Host "FUNZIONI_DIEGO_SINGLE_CLOSURE_AUTHORITY_OK"
+
       - name: Harness quadrato Vittorio_revisionato public closure
         shell: pwsh
         env:
