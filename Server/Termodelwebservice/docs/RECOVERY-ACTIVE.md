@@ -1,3 +1,189 @@
+# RECOVERY PRIORITARIO — RICOSTRUZIONE STORICA VITTORIO / DIEGO_VITTORIO / VITTORIO_REVISIONATO
+
+Checkpoint: **2026-10-01 — decisione umana consolidata; nessuna modifica sorgente in questo checkpoint**
+
+Questa sezione **prevale su tutte le note storiche sottostanti** quando si ragiona sulla
+parametrizzazione geometrica e sulla responsabilità della chiusura centrale di
+`Vittorio_revisionato`.
+
+## Ricostruzione storica consolidata
+
+La sequenza corretta dello sviluppo è:
+
+```text
+Vittorio storico
+    ↓
+Diego_Vittorio
+    ↓
+tentativo di Return autonomo
+    ↓
+Return autonomo non affidabile: la spirale del ritorno si blocca in casi reali
+    ↓
+creazione di Vittorio_revisionato
+    ↓
+ritorno alla generazione Vittorio come base robusta
+    + riuso selettivo delle funzioni Diego per Return/chiusura/raccordatura
+```
+
+### 1. Vittorio storico
+
+`Vittorio` nasce con un solo parametro geometrico di passo nel generatore.
+Nel codice storico:
+
+```text
+PassoTubi = 0,30 m
+DistanzaPareti = PassoTubi
+```
+
+e `SpiralGenerator` usa la stessa `distanza` sia per il primo offset dalla
+parete sia per gli offset successivi.
+
+Quindi **Vittorio non implementa la convenzione moderna P/2 - P - 2P**.
+Il suo `PassoTubi` è un passo geometrico unico del generatore.
+
+Vittorio contiene inoltre una logica storica di accorciamento del terminale
+della Mandata: alla fine della generazione torna indietro lungo l'ultimo tratto
+di una quantità pari a `distanza`. Lo scopo pratico è lasciare spazio nella
+zona centrale prima della costruzione del Return/chiusura.
+
+### 2. Diego_Vittorio
+
+`Diego_Vittorio` introduce e implementa realmente la convenzione geometrica
+che oggi deve essere considerata autorevole:
+
+```text
+P = PassoTubi = 0,30 m
+
+Mandata - Parete  = P/2 = 0,15 m
+Mandata - Mandata = 2P  = 0,60 m
+Mandata - Ripresa = P   = 0,30 m
+```
+
+Il generatore Diego_Vittorio distingue infatti esplicitamente:
+
+```text
+distanzaParete
+passoMandata
+distanzaRitorno
+```
+
+e usa:
+- primo offset Supply = `P/2`;
+- offset Supply successivi = `2P`;
+- Return = `P`.
+
+Su questa base è stato tentato anche un **Return autonomo**, costruito
+indipendentemente dalla Mandata. L'esperienza sui casi reali ha mostrato però
+che il Return autonomo può bloccarsi durante lo sviluppo della propria spirale,
+in particolare nelle geometrie con strettoie/corridoi. Per questo non è stato
+assunto come base affidabile del nuovo motore.
+
+### 3. Nascita di Vittorio_revisionato
+
+`Vittorio_revisionato` nasce quindi per tornare alla **generazione Vittorio**
+come base robusta, evitando di dipendere dal Return autonomo Diego_Vittorio.
+
+Nel passaggio sono però rimaste incoerenti due responsabilità fondamentali.
+
+#### A. Parametrizzazione delle distanze
+
+La specifica moderna deve restare quella già implementata da Diego_Vittorio:
+
+```text
+P = PassoTubi
+DistanzaPareti = P/2
+DistanzaMandataMandata = 2P
+DistanzaRitorno = P
+```
+
+Nello stato corrente di `Vittorio_revisionato` questa separazione non è
+implementata nella generazione della Mandata: il generatore è tornato al
+contratto Vittorio con una sola `Distanza`.
+
+Inoltre il codice corrente contiene ancora:
+
+```text
+DistanzaPareti = PassoTubi
+DistanzaRitorno = PassoTubi / 2
+```
+
+che è incompatibile con la convenzione autorevole sopra.
+
+Con `P = 0,30 m`, i valori corretti sono:
+
+```text
+DistanzaPareti = 0,15 m
+DistanzaMandataMandata = 0,60 m
+DistanzaRitorno = 0,30 m
+chiusura minima = 2P = 0,60 m
+```
+
+Qualunque test o nota storica che per `Vittorio_revisionato` riporti
+`P=0,15`, `2P=0,30` o `required=0,30` deve essere considerato
+**storico/non autorevole**.
+
+#### B. Gestione dello spazio centrale
+
+Vittorio storico crea spazio al centro tramite un accorciamento automatico del
+terminale della Mandata durante la generazione.
+
+Nel disegno architetturale corrente questa responsabilità **non deve più essere
+affidata a un accorciamento generico del generatore**. Lo spazio centrale viene
+gestito in modo mirato dalla combinatoria di chiusura:
+
+```text
+0I, 0P, 1I, 1P, 2I, 2P
+```
+
+applicata simmetricamente a Mandata e Ripresa.
+
+La combinatoria decide esplicitamente se:
+- lasciare invariato il terminale;
+- eliminare 1 o 2 tratti terminali;
+- normalizzare il nuovo terminale a `P`;
+- accettare il primo setup che soddisfa i vincoli di chiusura.
+
+Quindi la regola architetturale da preservare è:
+
+```text
+GENERATORE
+    costruisce la Mandata con P/2 dalla parete e 2P fra mandate
+    senza decidere la chiusura centrale
+
+RETURN
+    parallelo alla Mandata a distanza P
+
+CHIUSURA
+    sola fase autorizzata a tagliare/accorciare i terminali
+    tramite le permutazioni 0I,0P,1I,1P,2I,2P
+
+RACCORDATURA
+    solo dopo la selezione definitiva
+```
+
+### Conseguenza operativa per i prossimi interventi
+
+Quando si riprenderà il codice di `Vittorio_revisionato`:
+
+1. non reinventare il Return autonomo Diego_Vittorio;
+2. mantenere la base geometrica Vittorio dove serve robustezza;
+3. ripristinare nel generatore revisionato la separazione
+   `DistanzaParete=P/2` / `DistanzaMandataMandata=2P`;
+4. impostare `DistanzaRitorno=P`;
+5. non usare l'accorciamento storico del generatore come autorità della
+   chiusura centrale;
+6. lasciare a `funzioni_diego.chiusura_diego(...)` la responsabilità mirata
+   di tagliare/normalizzare i terminali;
+7. con `P=0,30 m`, il filtro minimo della chiusura deve essere
+   `2P=0,60 m`, non `0,30 m`;
+8. aggiornare i regression test che hanno consolidato la vecchia convenzione.
+
+Nessun sorgente è stato modificato in questo checkpoint: questa è una
+**ricostruzione storica e architetturale consolidata** da usare come base del
+prossimo intervento.
+
+---
+
 # RECOVERY FINALE — LOG ISTITUZIONALE COMBINATORIA
 
 Checkpoint: **2026-10-01 — pubblicato e verificato**
