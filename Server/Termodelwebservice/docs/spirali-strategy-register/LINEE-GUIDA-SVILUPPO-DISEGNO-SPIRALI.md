@@ -1,3 +1,27 @@
+## ROLLBACK 01/10/2026 — candidato 1,5P / 2P / P respinto
+
+Il collaudo visivo del candidato pubblicato il 01/10/2026 ha evidenziato:
+- sovrapposizioni/anomalie nella zona di ingresso;
+- copertura interna insufficiente;
+- accoppiamento indesiderato fra nuove distanze fisiche di posa e soglie
+  euristiche del generatore.
+
+Decisione: **candidato respinto**.
+
+Il runtime è stato riportato allo stato del restore point:
+
+```text
+0b541f92cf74412a33d68ffc0603e3f319c4a82f
+```
+
+Regola operativa successiva:
+- modificare una sola famiglia funzionale di distanze alla volta;
+- non far dipendere automaticamente le soglie euristiche dalle distanze di
+  posa senza una decisione esplicita;
+- eseguire collaudo visivo dopo ogni singola modifica.
+
+---
+
 ## CANDIDATO IN COLLAUDO 01/10/2026 — matrice Mandata 1,5P / 2P con Return a P
 
 Questa sezione descrive il candidato pubblicato dopo il restore point approvato.
