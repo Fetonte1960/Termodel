@@ -223,3 +223,28 @@ annulla il lavoro su Return, combinatoria o raccordatura.
 Commit recovery pubblico:
 `dd7d411ab3de9223ec7d927aed407d59c60aa62e`.
 
+
+
+## Milestone 7 — rollback completo alla baseline funzionante (01/10/2026)
+
+Il recovery parziale della sola Supply non era sufficiente: aveva lasciato
+`DistanzaRitorno=P=0,30` e la nuova semantica della chiusura, creando una
+configurazione ibrida mai approvata.
+
+Su richiesta dell'utente sono stati quindi riportati byte-per-byte alla
+fotografia `b71931e6ccb3761b05b21abd07f6d73154b13b3f`:
+`Program.cs`, `Spiralgenerator.cs`, benchmark, Harness e workflow Fast.
+
+Configurazione attiva:
+- `PassoTubi=0,30`;
+- `DistanzaPareti=0,30`;
+- `DistanzaRitorno=0,15`;
+- Generate storico;
+- Return parallelo Diego;
+- combinatoria `chiusura_diego(...,0,15)`;
+- log istituzionale `SpiraliDiego` mantenuto.
+
+Fast Harness `36839123030`: equivalenza iniziale e multi-progetto (6 casi)
+SUCCESS; quadrato pubblico SUCCESS con `0,40 >= 0,30`.
+Il candidato P/2-2P resta una sperimentazione fallita e non è il percorso
+corrente.
