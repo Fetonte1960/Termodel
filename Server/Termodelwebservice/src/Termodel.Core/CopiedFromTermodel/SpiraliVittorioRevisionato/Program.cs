@@ -19,17 +19,18 @@ namespace SpiralHeatingVittorioRevisionato
     
     class Program
     {
-        // Parametri di posa
-        // Modificato da Codex per realizzare: passo della spirale rossa pari
-        // a 0,30 m e ritorno collocato a metà passo.
-        public const double PassoTubi = 0.30;
-        private const double DistanzaPareti = PassoTubi;
+        // Contratto geometrico autorevole di Vittorio_revisionato.
+        // P = Mandata-Ripresa; P/2 = Mandata-Parete; 2P = Mandata-Mandata.
+        public const double P = 0.30;
+        public const double PassoTubi = P;
+        public const double DistanzaPareti = P / 2.0;
+        public const double DistanzaMandataMandata = P * 2.0;
         
         // Parametri chiusura spirale
         // Parametri locali Vittorio_revisionato (LG-051).
         public const double RaggioCurvatura = 0.10;
         public const double TolleranzaDiscretizzazioneArchi = 0.005;
-        private const double DistanzaRitorno = PassoTubi / 2.0;
+        public const double DistanzaRitorno = P;
         private const double DistanzaRotazioneUltimoPunto = 0.20;
         
         // Modalità debug
@@ -79,7 +80,9 @@ namespace SpiralHeatingVittorioRevisionato
             AggiornaSpiraliConChiusura(chiudiCircuito: true);
         }
 
-        public static void AggiornaSpiraliConChiusura(bool chiudiCircuito)
+        public static void AggiornaSpiraliConChiusura(
+            bool chiudiCircuito,
+            bool usaGenerateStoricoRecovery = false)
         {
             // Percorso pubblico LG-051:
             // 1) Mandata Vittorio rettilinea; 2) Return parallelo Diego
@@ -92,7 +95,18 @@ namespace SpiralHeatingVittorioRevisionato
             // sperimentale interna, ma NON partecipa al percorso pubblico:
             // Vittorio_revisionato deve differire da Vittorio soltanto nella
             // fase di chiusura/raccordatura LG-051.
-            GeneraSpirale(terminalCenterline: false);
+            if (usaGenerateStoricoRecovery)
+            {
+                Console.WriteLine(
+                    "Vittorio_revisionato: RECOVERY Generate storico attivo; " +
+                    "Supply con distanza unica Vittorio.");
+                GeneraSpiraleStorica(terminalCenterline: false);
+            }
+            else
+            {
+                GeneraSpiraleRevisionata();
+            }
+
             ChiudiSpiraleFiles(
                 usaRaccordoAdattivoDiego: true,
                 chiudiCircuito: chiudiCircuito);
@@ -100,7 +114,9 @@ namespace SpiralHeatingVittorioRevisionato
 
         public static void AggiornaSpirali(bool soloMandataPerEsameVisivo)
         {
-            GeneraSpirale(soloMandataPerEsameVisivo);
+            // Overload storico usato dai benchmark di equivalenza: resta
+            // deliberatamente sul Generate a distanza unica di Vittorio.
+            GeneraSpiraleStorica(soloMandataPerEsameVisivo);
 
             if (soloMandataPerEsameVisivo)
             {
@@ -126,7 +142,23 @@ namespace SpiralHeatingVittorioRevisionato
                 StringComparison.OrdinalIgnoreCase);
             File.WriteAllText(svgFile, svg);
         }
-        static void GeneraSpirale(bool terminalCenterline = false)
+        static void GeneraSpiraleStorica(bool terminalCenterline = false)
+        {
+            GeneraSpiraleCore(
+                usaGenerateRevisionato: false,
+                terminalCenterline: terminalCenterline);
+        }
+
+        static void GeneraSpiraleRevisionata()
+        {
+            GeneraSpiraleCore(
+                usaGenerateRevisionato: true,
+                terminalCenterline: false);
+        }
+
+        static void GeneraSpiraleCore(
+            bool usaGenerateRevisionato,
+            bool terminalCenterline)
         {
             string xmlFile = "locale.xml";
             
@@ -249,19 +281,24 @@ namespace SpiralHeatingVittorioRevisionato
                 // Genera spirale (sempre generata per salvarla nell'XML)
                 List<Punto> spiral;
                 List<List<Punto>> offsets;
-                (spiral, offsets) = SpiralGenerator.Generate(
-                    new SpiralGenerationInput
-                    {
-                        Perimetro = perimetro,
-                        StartPoint = lineaIngresso.PuntoInterno,
-                        Distanza = DistanzaPareti,
-                        DrawSpiral = true,
-                        // Solo nel percorso pubblico Vittorio_revisionato:
-                        // completa l'ultima fascia rettangolare con asse centrale.
-                        // Rollback immediato: impostare false.
-                        TerminalCenterline = terminalCenterline
-                    }
-                );
+                var inputGenerazione = new SpiralGenerationInput
+                {
+                    Perimetro = perimetro,
+                    StartPoint = lineaIngresso.PuntoInterno,
+                    // Distanza resta il contratto storico di recovery.
+                    Distanza = PassoTubi,
+                    DistanzaParete = DistanzaPareti,
+                    DistanzaMandataMandata = DistanzaMandataMandata,
+                    // La finalizzazione topologica storica resta P; la chiusura
+                    // combinatoria successiva decide i tagli terminali definitivi.
+                    DistanzaFinalizzazione = P,
+                    DrawSpiral = true,
+                    TerminalCenterline = terminalCenterline
+                };
+
+                (spiral, offsets) = usaGenerateRevisionato
+                    ? SpiralGenerator.GenerateRevisionato(inputGenerazione)
+                    : SpiralGenerator.Generate(inputGenerazione);
                 
                 // Salva spirale nel locale XML
                 SalvaSpiralInLocale(locale, spiral);
