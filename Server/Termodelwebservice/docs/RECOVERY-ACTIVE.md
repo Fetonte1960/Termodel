@@ -1,3 +1,54 @@
+# CANDIDATO ATTIVO — MATRICE MANDATA 1,5P / 2P CON RETURN A P
+
+Data: 2026-10-01
+
+È stato pubblicato un nuovo candidato di `Vittorio_revisionato` mantenendo
+integro il restore point precedente.
+
+Recovery point **prima** della modifica:
+
+```text
+commit: 0b541f92cf74412a33d68ffc0603e3f319c4a82f
+branch: recovery/vittorio-revisionato-before-split-wall-supply-20261001
+```
+
+Geometria del candidato:
+
+```text
+P = 0,30 m
+Mandata-Parete = 1,5P = 0,45 m
+Mandata-Mandata = 2P = 0,60 m
+Mandata-Return = P = 0,30 m
+Return-Parete risultante = P/2 = 0,15 m
+Finalizzazione Mandata = P = 0,30 m
+```
+
+Motivazione:
+il Return parallelo si sviluppa tra Mandata e parete. Per ottenere il Return
+esterno a P/2 dalla parete, la Mandata esterna viene posta a 1,5P e il Return
+viene traslato di P verso la parete.
+
+Modifiche runtime autorizzate:
+- `Program.cs`: parametri separati e Return a P;
+- `Spiralgenerator.cs`: primo offset con distanza Mandata-parete, offset
+  successivi con distanza stessa Mandata; finalizzazione separata a P;
+- overload storico a distanza unica conservato;
+- `ComputeOffset: edgeLength <= offset` invariato.
+
+Non modificati:
+- algoritmo combinatorio `chiusura_diego`;
+- raccordatura;
+- `SpiraliVittorio`;
+- frontend;
+- Golden;
+- `definizionedati.json`;
+- problema noto delle strettoie.
+
+Questo candidato non sostituisce il recovery point finché il controllo
+tecnico e visivo non lo approva.
+
+---
+
 # RESTORE POINT APPROVATO — VITTORIO_REVISIONATO OFFSET-P
 
 Checkpoint: **2026-10-01 — APPROVATO VISIVAMENTE COME BASE DI RIPRISTINO**
