@@ -367,3 +367,21 @@ modificati.
 
 Questa divergenza resta intenzionale e Service-only; non sincronizzare verso la
 Library Desktop senza decisione esplicita.
+
+
+### 2026-10-01 — rollback Vittorio_revisionato al restore point approvato
+
+Il candidato Service-only con matrice `1,5P / 2P / P` è stato respinto dal
+collaudo visivo ed è stato annullato.
+
+Runtime ripristinato al restore point:
+- commit riferimento: `0b541f92cf74412a33d68ffc0603e3f319c4a82f`;
+- `Program.cs`: blob `91161a6587e6b36280fa927d114380e3b4c13074`;
+- `Spiralgenerator.cs`: blob `73c7083ad61c72dac2d6afbb39465982b56d51b1`;
+- `ChiudiSpirale.cs`: blob `4a3b677f1b104bedf8427009a80c7f15ab1e0d63`.
+
+Verifica diretta su GitHub: i tre file runtime correnti risultano identici al
+restore point. La futura evoluzione delle distanze deve avvenire una modifica
+alla volta, con collaudo visivo dopo ogni passaggio.
+
+Non sincronizzare il candidato respinto verso la Library Desktop.
