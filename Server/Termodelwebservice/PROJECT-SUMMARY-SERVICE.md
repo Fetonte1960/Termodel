@@ -72,6 +72,13 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-01 — Revisione finale combinatoria chiusura
+Stato: COMMISSIONATO
+
+Registrare nelle direttive spirali, senza modifiche ai sorgenti, la logica combinatoria finale concordata: stessa logica per Mandata e Ripresa; operazioni limitate agli ultimi tre tratti terminali; variante invariata o normalizzata a P; tratto di chiusura strettamente maggiore di 2P; nessun angolo acuto ai due innesti; nessuna intersezione sul setup risultante dopo le modifiche.
+
+
+
 
 ### INCARICO 2026-09-30 — Attivazione pipeline Diego pulita su Vittorio_revisionato
 Stato: ESEGUITO
