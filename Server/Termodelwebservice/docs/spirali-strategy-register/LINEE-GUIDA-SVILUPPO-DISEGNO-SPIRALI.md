@@ -7444,6 +7444,18 @@ resta valido il principio LG-051 di sequenza deterministica con arresto alla
 **prima configurazione valida**; se nessuna configurazione è valida, Mandata e
 Ripresa restano separate.
 
+**Stato implementativo 01/10/2026:** questa matrice è stata consolidata
+nell'implementazione autorevole
+`SpiraliDiegoVittorio/funzioni_diego.cs::chiusura_diego(...)`.
+`SpiraliDiegoVittorio/ChiudiSpirale.cs` non contiene più il precedente motore
+combinatorio privato e mantiene soltanto bridge di compatibilità che delegano
+alla funzione consolidata. Il Fast Harness run `36800577329` ha compilato
+Core/Harness, verificato l'autorità unica e, sul quadrato pubblico
+`Vittorio_revisionato`, ha provato la sequenza a partire da `M0I/R0I` e
+selezionato il primo candidato valido `M1P/R0P`, con chiusura rettilinea
+`0,40 m >= 2P = 0,30 m`. Il workflow prosegue poi fino al noto Golden
+separato `Diego_Vittorio`, già divergente prima di questa revisione.
+
 ### Validazione di un candidato di chiusura
 
 Per ogni candidato la combinatoria deve prima applicare i propri
