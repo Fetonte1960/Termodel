@@ -480,7 +480,7 @@ namespace SpiralHeatingDiegoVittorio
             double lunghezzaMinimaChiusura,
             string esito,
             string motivo,
-            string dettagli = null)
+            string dettagli = "")
         {
             string report =
                 $"attempt={numeroTentativo} " +
