@@ -1,6 +1,6 @@
 # RECOVERY ATTIVO — GENERATE STORICO COME BASELINE DI RIPRISTINO
 
-Checkpoint: **2026-10-01 — contratto implementato, verifica CI in corso**
+Checkpoint: **2026-10-01 — contratto implementato, compilato e verificato tecnicamente**
 
 Questo checkpoint prevale sulle note storiche sottostanti quando si deve
 ripristinare la sola generazione della Mandata di `Vittorio_revisionato`.
@@ -84,6 +84,39 @@ Commit implementativi:
 
 Nessuna modifica a `SpiraliVittorio`, `SpiraliDiegoVittorio`,
 `funzioni_diego.chiusura_diego`, frontend, `definizionedati.json` o Golden.
+
+## Verifica reale del checkpoint
+
+Fast Harness run `36835095544`:
+- build Core + Harness: **SUCCESS / 0 errori**;
+- quadrato pubblico `Vittorio_revisionato`: **SUCCESS**;
+- Return verificato a `P=0,30 m`;
+- `chiusura_diego` verificata con `required=2P=0,60 m`;
+- chiusura selezionata sul quadrato: lunghezza rettilinea `1,30 m >= 0,60 m`;
+- contratto recovery verificato:
+  `VITTORIO_REVISIONATO_HISTORICAL_GENERATE_RECOVERY_OK`;
+- parametrizzazione misurata:
+  `P=0.3 wall=0.15 supplySpacing=0.6 return=0.3`,
+  `measuredWall=0.15 measuredSupplySpacing=0.6`;
+- il workflow prosegue correttamente fino alla regression Golden separata
+  `Diego_Vittorio`, dove resta la divergenza storica
+  `5ddd0ffd... != fa8e6106...`; Golden non aggiornato.
+
+Service Build run `36835001877`:
+- soluzione: **Build succeeded**;
+- smoke pubblico `Vittorio_revisionato` chiuso: **SUCCESS**;
+- smoke pubblico `spiralClosure=false`: **SUCCESS**;
+- deploy pubblico: **SUCCESS** con
+  `publicServiceCommit=1b0f659d9113c97782b0ae5c5efb76c5defee563`;
+- workflow complessivo rosso soltanto sul noto smoke locale storage/lock
+  `Termodel.WebService non ha risposto a /health`, indipendente dalle spirali.
+
+La vecchia regression di equivalenza completa
+`Vittorio == Vittorio_revisionato` è ora **storica e non più valida come gate
+del percorso pubblico**, perché Return e parametrizzazione P sono
+intenzionalmente diversi. È stata sostituita dal gate sul `Generate` storico
+come recovery della sola Supply.
+
 
 ---
 
