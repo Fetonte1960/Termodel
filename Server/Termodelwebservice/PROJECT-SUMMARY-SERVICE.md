@@ -74,7 +74,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-10-01 — Ripristino immediato Generate storico nel percorso pubblico Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente: dopo controllo visivo del nuovo disegno pubblico giudicato disastroso, ripristinare immediatamente nel percorso pubblico di `Vittorio_revisionato` la generazione storica della Mandata usando il recovery già predisposto.
 
@@ -95,6 +95,48 @@ Criteri di completamento:
 - stessa voce aggiornata a `ESEGUITO` con commit e risultati reali.
 
 
+
+
+Esito:
+- commit funzionale `dd7d411ab3de9223ec7d927aed407d59c60aa62e`;
+- `AggiornaSpirali()` richiama esplicitamente il recovery storico;
+- `AggiornaSpiraliConChiusura(...)` ha ora
+  `usaGenerateStoricoRecovery=true` come default;
+- `GenerateRevisionato(...)` resta disponibile esclusivamente con opt-in
+  `usaGenerateStoricoRecovery=false`;
+- nessun revert globale e nessuna modifica a `SpiraliVittorio`,
+  `SpiraliDiegoVittorio`, `funzioni_diego.chiusura_diego`, frontend,
+  `definizionedati.json` o Golden.
+
+Verifica reale:
+- Fast Harness run `36837434964`: build Core/Harness SUCCESS, 0 errori;
+  ritorno parallelo e combinatoria SUCCESS; quadrato pubblico
+  `Vittorio_revisionato` eseguito col default storico e gate LG-051 SUCCESS;
+  recovery contract SUCCESS; il quadrato resta **aperto** con la combinatoria
+  corrente (`REVISIONATO_PUBLIC_SQUARE_OPEN_LG051_OK`), quindi la chiusura
+  non viene forzata;
+- lo stesso Fast run termina rosso sul Golden storico separato
+  `Diego_Vittorio` già noto (`5ddd0ffd... != fa8e6106...`), non modificato;
+- Service Build run `36837434834`: `Build succeeded`; smoke
+  `Vittorio_revisionato` chiuso SUCCESS; smoke open circuits SUCCESS;
+  deploy pubblico SUCCESS con
+  `publicServiceCommit=e81478496b30a9024d65370dc7644b4025a7cd40`;
+- il Service workflow resta rosso soltanto sul noto smoke locale storage/lock
+  `Termodel.WebService non ha risposto a /health`.
+
+Documentazione aggiornata:
+- `docs/RECOVERY-ACTIVE.md`: `b663fee531be96aaf0d19697d28d696e9e3267ae`;
+- linee guida spirali: `108396fcaa20d6bc6d0853144ba9e68f2dc91396`;
+- README revisionato: `e81478496b30a9024d65370dc7644b4025a7cd40`;
+- `TERMODEL-SYNC.md`: `5902244d6e7920e436d7d807bc8d553e9e48da4e`.
+
+Stato reale:
+- recovery progettato: sì;
+- implementato: sì;
+- compilato: sì;
+- smoke Service: sì;
+- pubblicato: sì;
+- conferma visiva utente del **recovery storico pubblicato**: ancora da eseguire.
 
 ### INCARICO 2026-10-01 — Generate storico come recovery e nuovo Generate P/2-2P per Vittorio_revisionato
 Stato: ESEGUITO
