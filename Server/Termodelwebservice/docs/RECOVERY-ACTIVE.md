@@ -1,3 +1,35 @@
+# RECOVERY PRIORITARIO — CONSOLIDAMENTO COMBINATORIA `funzioni_diego`
+
+Checkpoint: **2026-10-01 — prima di modificare i sorgenti**
+
+Incarico autorizzato: consolidare in `SpiraliDiegoVittorio/funzioni_diego.cs` la combinatoria finale approvata, pubblicare e provare il percorso `Vittorio_revisionato`.
+
+Punto di rollback sicuro prima delle modifiche funzionali:
+
+`c99c75693d98becc92223e1c7b5b77401fe42eca`
+
+Contratto da preservare:
+
+```text
+Mandata = Ripresa
+azioni: 0I, 0P, 1I, 1P, 2I, 2P
+I = invariato
+P = lunghezza terminale esattamente P
+max 36 coppie
+chiusura rettilinea >= 2P
+nessun angolo acuto ai due innesti
+il tratto di chiusura non interseca tratti non adiacenti
+  del setup risultante dopo tagli/normalizzazioni
+first-success
+nessun candidato = circuito aperto
+nessun RP/ranking/P-I/Bezier/raccordo nella selezione
+raccordatura solo dopo con raccorda_diego
+```
+
+Vincoli: `SpiraliVittorio`, frontend e `definizionedati.json` intoccabili; Golden non aggiornati automaticamente.
+
+---
+
 # PUNTO DI RIPRISTINO PRIORITARIO — VITTORIO_REVISIONATO / CONTAMINAZIONE RETURN
 
 Checkpoint: **2026-09-30 — diagnosi architetturale da cui riprendere in caso di blocco chat**
