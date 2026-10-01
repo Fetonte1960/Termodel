@@ -87,7 +87,8 @@ Registrata nelle direttive spirali, senza modifiche ai sorgenti, la logica combi
 Documento aggiornato:
 `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`
 
-Commit direttiva: `6c49132fe1e0c218d4733b0ec682f9f4524d790a`.
+Commit direttiva iniziale: `6c49132fe1e0c218d4733b0ec682f9f4524d790a`.
+Allineamento finale delle sezioni normative LG-051 al vincolo stretto `>2P`: `9f790253244da0984a1b071a275cf4bc43c14bee`.
 
 Verifica reale: modifica esclusivamente documentale; nessun sorgente modificato, nessuna build o esecuzione dichiarata.
 
