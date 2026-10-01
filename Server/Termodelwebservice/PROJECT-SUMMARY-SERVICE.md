@@ -72,6 +72,39 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-01 — Rollback runtime Vittorio_revisionato al restore point approvato
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- annullare il candidato geometrico pubblicato dopo il restore point;
+- riportare il runtime pubblico di `Vittorio_revisionato` allo stato approvato
+  del commit `0b541f92cf74412a33d68ffc0603e3f319c4a82f`;
+- eseguire un rollback chirurgico dei soli file runtime modificati
+  dall'esperimento recente, senza reset distruttivo della history;
+- preservare documentazione e history, registrando esplicitamente che il
+  candidato `1,5P / 2P / P` è stato respinto dal collaudo visivo;
+- verificare build, smoke e deploy pubblico;
+- chiudere Issue #1 come Completed per la notifica finale.
+
+Restore point autorevole:
+- commit `0b541f92cf74412a33d68ffc0603e3f319c4a82f`;
+- branch `recovery/vittorio-revisionato-before-split-wall-supply-20261001`.
+
+File runtime da confrontare/ripristinare:
+- `SpiraliVittorioRevisionato/Program.cs`;
+- `SpiraliVittorioRevisionato/Spiralgenerator.cs`;
+- `SpiraliVittorioRevisionato/ChiudiSpirale.cs` solo se differente dal restore.
+
+Criteri di completamento:
+- i file runtime interessati risultano identici al restore point;
+- build Service e Harness compilano;
+- smoke pubblico `Vittorio_revisionato` eseguito;
+- deploy pubblico verificato sul nuovo commit di rollback;
+- documentazione aggiornata con esito del rollback;
+- stessa voce portata a `ESEGUITO`.
+
+
+
 ### INCARICO 2026-10-01 — Separazione offset parete / stessa spirale in Vittorio_revisionato
 Stato: ESEGUITO
 
