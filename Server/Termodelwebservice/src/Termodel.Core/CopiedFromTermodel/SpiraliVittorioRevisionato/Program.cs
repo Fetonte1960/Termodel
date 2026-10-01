@@ -77,12 +77,14 @@ namespace SpiralHeatingVittorioRevisionato
 
         public static void AggiornaSpirali()
         {
-            AggiornaSpiraliConChiusura(chiudiCircuito: true);
+            AggiornaSpiraliConChiusura(
+                chiudiCircuito: true,
+                usaGenerateStoricoRecovery: true);
         }
 
         public static void AggiornaSpiraliConChiusura(
             bool chiudiCircuito,
-            bool usaGenerateStoricoRecovery = false)
+            bool usaGenerateStoricoRecovery = true)
         {
             // Percorso pubblico LG-051:
             // 1) Mandata Vittorio rettilinea; 2) Return parallelo Diego
@@ -91,10 +93,13 @@ namespace SpiralHeatingVittorioRevisionato
             // Con chiudiCircuito=false Mandata e Return restano entrambi
             // presenti ma non vengono collegati fra loro.
             //
+            // Recovery pubblico 01/10/2026: il candidato GenerateRevisionato
+            // P/2-2P ha fallito il controllo visivo reale. Il default torna al
+            // Generate storico Vittorio. Il candidato resta disponibile solo
+            // con usaGenerateStoricoRecovery=false per analisi future.
+            //
             // TerminalCenterline resta disponibile solo come capacità
-            // sperimentale interna, ma NON partecipa al percorso pubblico:
-            // Vittorio_revisionato deve differire da Vittorio soltanto nella
-            // fase di chiusura/raccordatura LG-051.
+            // sperimentale interna, ma NON partecipa al percorso pubblico.
             if (usaGenerateStoricoRecovery)
             {
                 Console.WriteLine(
