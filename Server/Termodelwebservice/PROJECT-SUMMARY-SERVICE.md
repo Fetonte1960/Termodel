@@ -137,10 +137,11 @@ Verifica Service:
 - verifica endpoint pubblico: SUCCESS per disponibilità motore/frontend;
 - workflow complessivo rosso soltanto sul noto smoke locale storage/lock
   `Termodel.WebService non ha risposto a /health`;
-- al momento della verifica il Render pubblico dichiarava ancora
-  `serviceCommit=084478a6...`: il deploy automatico era quindi ancora in ritardo
-  rispetto ai commit di rollback, nonostante il codice fosse già pubblicato su
-  `main`.
+- verifica dedicata Render run `36840129124`: **SUCCESS**;
+- il runtime pubblico ha raggiunto
+  `serviceCommit=dfbc805bf6437c2c12dfd6d4bee75e15298b5bba` con
+  `spiralEngine=Diego_Vittorio`; il deploy automatico del rollback è quindi
+  stato confermato end-to-end.
 
 Documentazione aggiornata:
 - Recovery: `f8f727508c1835a9cce61f6166fea8d0ab96580d`;
@@ -155,7 +156,7 @@ Stato reale:
 - Harness: sì;
 - equivalenza multi-progetto: sì;
 - pubblicato su GitHub `main`: sì;
-- deploy Render dell'ultimo commit: in propagazione al momento della verifica;
+- deploy Render della baseline rollback: verificato end-to-end;
 - conferma visiva utente della baseline ripristinata: da eseguire.
 
 ### INCARICO 2026-10-01 — Ripristino immediato Generate storico nel percorso pubblico Vittorio_revisionato
