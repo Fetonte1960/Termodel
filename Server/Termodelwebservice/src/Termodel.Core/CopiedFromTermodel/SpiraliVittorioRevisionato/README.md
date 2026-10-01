@@ -248,3 +248,35 @@ Fast Harness `36839123030`: equivalenza iniziale e multi-progetto (6 casi)
 SUCCESS; quadrato pubblico SUCCESS con `0,40 >= 0,30`.
 Il candidato P/2-2P resta una sperimentazione fallita e non è il percorso
 corrente.
+
+
+## Milestone 8 — vero SpiralGenerator Vittorio puro (01/10/2026)
+
+Per rimuovere definitivamente l'ambiguità creata dalle estensioni successive,
+`Spiralgenerator.cs` è stato sostituito con la copia originale creata nel
+revisionato al commit `5b8ddc11b4e23046bda1e1c5824af4d4bc084326`.
+
+Il file corrente:
+- ha blob SHA `95e99c7e420dab6b102f69a16a919c2ce0856bf3`;
+- ha 270 righe;
+- è identico al generatore Vittorio salvo namespace;
+- non contiene `SpiralGenerationInput`, `GenerateCore`, condizionamento o
+  `TerminalCenterline`.
+
+`Program.cs` richiama ora direttamente la firma storica:
+
+```csharp
+SpiralGenerator.Generate(perimetro, startPoint, DistanzaPareti, true)
+```
+
+Return, chiusura combinatoria e log istituzionale restano invariati.
+
+Return point dell'intero stato precedente:
+`45bff4b4d016bcd60aa0c18d26aefdcf51ad8a21`, branch
+`recovery/vittorio-revisionato-before-pure-vittorio-20261001`.
+
+Fast Harness `36847338021`: equivalenza Vittorio su 6 casi e
+`VITTORIO_REVISIONATO_PURE_GENERATOR_OK`.
+Service Build `36847235975`: build e smoke revisionato SUCCESS.
+
+La promozione definitiva resta subordinata al controllo visivo reale.
