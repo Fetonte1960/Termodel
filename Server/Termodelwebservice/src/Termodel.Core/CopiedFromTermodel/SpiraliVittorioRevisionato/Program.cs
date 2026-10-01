@@ -19,20 +19,17 @@ namespace SpiralHeatingVittorioRevisionato
     
     class Program
     {
-        // Contratto geometrico locale Vittorio_revisionato:
-        // P = Mandata-Return; Mandata-Parete = 1,5P; Mandata-Mandata = 2P.
-        // Il Return parallelo a P dalla Mandata resta quindi a P/2 dalla parete.
-        public const double P = 0.30;
-        public const double PassoTubi = P;
-        private const double DistanzaMandataParete = P * 1.5;
-        private const double DistanzaMandataMandata = P * 2.0;
-        private const double DistanzaFinalizzazione = P;
+        // Parametri di posa
+        // Modificato da Codex per realizzare: passo della spirale rossa pari
+        // a 0,30 m e ritorno collocato a metà passo.
+        public const double PassoTubi = 0.30;
+        private const double DistanzaPareti = PassoTubi;
         
         // Parametri chiusura spirale
         // Parametri locali Vittorio_revisionato (LG-051).
         public const double RaggioCurvatura = 0.10;
         public const double TolleranzaDiscretizzazioneArchi = 0.005;
-        private const double DistanzaRitorno = P;
+        private const double DistanzaRitorno = PassoTubi / 2.0;
         private const double DistanzaRotazioneUltimoPunto = 0.20;
         
         // Modalità debug
@@ -91,9 +88,9 @@ namespace SpiralHeatingVittorioRevisionato
             // Con chiudiCircuito=false Mandata e Return restano entrambi
             // presenti ma non vengono collegati fra loro.
             //
-            // La Mandata mantiene la struttura del generatore Vittorio ma
-            // usa la matrice geometrica revisionata 1,5P/2P; Return,
-            // chiusura e raccordatura restano nella pipeline LG-051.
+            // La Mandata usa il vero SpiralGenerator storico Vittorio.
+            // Vittorio_revisionato deve differire da Vittorio soltanto nella
+            // fase Return/chiusura/raccordatura LG-051.
             GeneraSpirale();
             ChiudiSpiraleFiles(
                 usaRaccordoAdattivoDiego: true,
@@ -254,9 +251,7 @@ namespace SpiralHeatingVittorioRevisionato
                 (spiral, offsets) = SpiralGenerator.Generate(
                     perimetro,
                     lineaIngresso.PuntoInterno,
-                    DistanzaMandataParete,
-                    DistanzaMandataMandata,
-                    DistanzaFinalizzazione,
+                    DistanzaPareti,
                     true);
                 
                 // Salva spirale nel locale XML
@@ -546,7 +541,7 @@ namespace SpiralHeatingVittorioRevisionato
             SpiralHeatingDiegoVittorio.ChiudiSpirale.Chiudi(
                 xmlFile,
                 RaggioCurvatura,
-                DistanzaMandataParete,
+                DistanzaPareti,
                 DistanzaRitorno,
                 DistanzaRotazioneUltimoPunto,
                 Debug);
