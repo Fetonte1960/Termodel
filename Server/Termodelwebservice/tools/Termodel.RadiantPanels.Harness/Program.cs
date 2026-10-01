@@ -40,16 +40,13 @@ static int Usage()
 
 static int RunVittorioRevisionatoCheck()
 {
-    StrategiaVittorioRevisionatoAbstractionCheck result =
-        StrategiaVittorioRevisionatoBenchmark.CheckAbstraction();
+    StrategiaVittorioRevisionatoPureGeneratorCheck result =
+        StrategiaVittorioRevisionatoBenchmark.CheckPureGenerator();
 
-    Console.WriteLine("VITTORIO_REVISIONATO_ABSTRACTION_OK");
-    Console.WriteLine($"neutralEquivalent={result.NeutralEquivalent.ToString().ToLowerInvariant()}");
+    Console.WriteLine("VITTORIO_REVISIONATO_PURE_GENERATOR_OK");
+    Console.WriteLine($"equivalentToVittorio={result.EquivalentToVittorio.ToString().ToLowerInvariant()}");
+    Console.WriteLine($"cases={result.Cases}");
     Console.WriteLine($"supplyPoints={result.SupplyPoints}");
-    Console.WriteLine($"unconditionedReturnPoints={result.UnconditionedReturnPoints}");
-    Console.WriteLine($"conditionedReturnPoints={result.ConditionedReturnPoints}");
-    Console.WriteLine(
-        $"conditioningDistance={result.ConditioningDistanceMeters.ToString("0.###", CultureInfo.InvariantCulture)}");
     return 0;
 }
 
