@@ -810,7 +810,10 @@ static int RunCopiedSpiralStrategy(
                     ? StrategiaDiegoVittorioBenchmark.RunSupplyOnly(localeXml, stepMeters, logConfiguration)
                     : StrategiaDiegoVittorioBenchmark.Run(localeXml, stepMeters, logConfiguration)
                 : selectedEngine.Equals("Vittorio_revisionato", StringComparison.OrdinalIgnoreCase)
-                    ? StrategiaVittorioRevisionatoBenchmark.Run(localeXml, publicPath: revisionatoPublic)
+                    ? StrategiaVittorioRevisionatoBenchmark.Run(
+                        localeXml,
+                        publicPath: revisionatoPublic,
+                        logConfiguration: logConfiguration)
                     : StrategiaVittorioBenchmark.Run(localeXml);
     }
     finally
