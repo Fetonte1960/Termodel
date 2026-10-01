@@ -74,7 +74,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-10-01 — Soglia chirurgica ComputeOffset da 3P a P in Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - pubblicare nel solo `SpiraliVittorioRevisionato/Spiralgenerator.cs` la modifica locale già provata in Visual Studio:
@@ -96,6 +96,57 @@ Criteri di completamento:
 - stessa voce aggiornata a `ESEGUITO` con risultati reali.
 
 
+
+
+Esito implementazione:
+- return point creato prima della modifica:
+  - commit `f1544135c303abb8296ef784c86b3cca6d627e6c`;
+  - branch `recovery/vittorio-revisionato-before-offset-threshold-20261001`;
+- unica modifica algoritmica nel commit
+  `6132430e7907699cbf577c2ef869ffd03117f216`:
+  `edgeLength <= offset * 3` -> `edgeLength <= offset`;
+- con `offset=0,30 m`, soglia skip vertici in `ComputeOffset`:
+  `0,90 m -> 0,30 m`;
+- i due `break` successivi su `minEdgeLength` sono rimasti invariati;
+- Return parallelo Diego, chiusura, permutazioni, raccordatura, frontend,
+  `definizionedati.json` e Golden non modificati.
+
+Verifica reale:
+- Fast Harness run `36861645040`:
+  - build Core/Harness SUCCESS;
+  - Return parallelo Diego SUCCESS;
+  - combinatoria consolidata SUCCESS;
+  - quadrato pubblico `Vittorio_revisionato` SUCCESS;
+  - equivalenza iniziale quadrato con Vittorio SUCCESS;
+  - il vecchio gate di equivalenza multi-progetto fallisce su `concave-l`
+    perché la nuova soglia produce deliberatamente una geometria diversa:
+    Vittorio SVG `8B969D9C...`, revisionato `EBD56C9E...`;
+  - il gate non è stato modificato o nascosto: resta evidenza che il candidato
+    non è più identico a Vittorio fuori dal quadrato;
+- Service Build run `36861644983`:
+  - Build succeeded;
+  - smoke pubblico `Vittorio_revisionato` chiuso SUCCESS;
+  - smoke circuiti aperti SUCCESS;
+  - deploy pubblico SUCCESS con
+    `publicServiceCommit=6132430e7907699cbf577c2ef869ffd03117f216`;
+  - workflow complessivo rosso soltanto sul noto smoke locale storage/lock
+    `Termodel.WebService non ha risposto a /health`.
+
+Documentazione:
+- Recovery: `55904e3d7a3891393f2c86634d382964019c2203`;
+- linee guida spirali: `d2a5309799583557ad78928a17db32e9afd41256`;
+- README revisionato: `1856257623d542c2263d919335e13add2c950358`;
+- TERMODEL-SYNC: `7e3f6214515d4a12af8801da2eb60914d2d8c9e9`.
+
+Stato reale:
+- progettato: sì;
+- implementato: sì;
+- compilato: sì;
+- smoke Service: sì;
+- pubblicato sul server: sì, commit funzionale `6132430e...`;
+- controllo visivo sul server della nuova evoluzione centrale: **da eseguire**;
+- se il controllo visivo fallisce, usare il return point
+  `recovery/vittorio-revisionato-before-offset-threshold-20261001`.
 
 ### INCARICO 2026-10-01 — Ripristino del vero SpiralGenerator Vittorio puro in Vittorio_revisionato
 Stato: ESEGUITO
