@@ -73,6 +73,32 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-10-01 — Consolidamento storico Vittorio / Diego_Vittorio / Vittorio_revisionato
+Stato: ESEGUITO
+
+Autorizzazione utente: consolidare nel registro di recovery e nelle linee guida spirali la ricostruzione storica e architetturale emersa dall'analisi, senza modificare sorgenti.
+
+Decisione consolidata:
+- `Vittorio` storico usa un solo passo geometrico e contiene l'accorciamento automatico del terminale Supply per lasciare spazio centrale;
+- `Diego_Vittorio` ha introdotto e implementato la convenzione `P=0,30`, parete `P/2`, Mandata-Mandata `2P`, Return `P`, e ha tentato un Return autonomo;
+- il Return autonomo non è risultato affidabile sui casi reali perché la spirale del Return può bloccarsi;
+- `Vittorio_revisionato` nasce tornando alla generazione Vittorio come base robusta, ma deve conservare la parametrizzazione P/2-P-2P già corretta in Diego_Vittorio;
+- nello stato corrente del revisionato la separazione `DistanzaParete=P/2` / `DistanzaMandataMandata=2P` non è implementata nella Supply e `DistanzaRitorno` è ancora impostata a `PassoTubi/2`;
+- la gestione dello spazio centrale non deve più essere affidata all'accorciamento generico storico: l'autorità sui tagli/normalizzazioni terminali è la combinatoria `0I,0P,1I,1P,2I,2P`;
+- con `P=0,30 m`, il minimo della chiusura è `2P=0,60 m`; vecchi test/note con `P=0,15` e `required=0,30` sono storici/non autorevoli.
+
+Documentazione aggiornata:
+- `docs/RECOVERY-ACTIVE.md` commit `269ca7182b4a2b53f392a7a9e7eb1cd51f786702`;
+- `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md` commit `6cddbb80c2b89c2788d46ead8d8ad552c3488327`.
+
+Verifica:
+- nessun sorgente modificato;
+- nessun frontend modificato;
+- nessun Golden modificato;
+- nessuna build richiesta perché l'incarico è esclusivamente documentale.
+
+
+
 ### INCARICO 2026-10-01 — Report istituzionale per ogni permutazione chiusura SpiraliDiego
 Stato: ESEGUITO
 
