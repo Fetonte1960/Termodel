@@ -72,6 +72,30 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-01 — Consolidamento definitivo combinatoria in funzioni_diego
+Stato: COMMISSIONATO
+
+Autorizzazione utente: consolidare la logica di chiusura approvata in `SpiraliDiegoVittorio/funzioni_diego.cs`, eliminando la duplicazione algoritmica attiva da `ChiudiSpirale.cs`, pubblicare su `main` e rendere disponibile il risultato per prove reali sul server.
+
+Contratto approvato:
+- stessa logica su Mandata e Ripresa;
+- configurazioni ordinate `0I, 0P, 1I, 1P, 2I, 2P` su entrambi i lati;
+- `I` = terminale invariato; `P` = terminale normalizzato esattamente a P, accorciando o allungando;
+- massimo 36 coppie, first-success deterministico;
+- chiusura rettilinea valida se lunghezza `>=2P`;
+- nessun angolo acuto ai due innesti;
+- il solo tratto di chiusura non deve intersecare tratti non adiacenti del nuovo setup risultante dopo tagli/normalizzazioni;
+- nessun RP, ranking, preferenza P/I, Bézier o raccordo nella scelta combinatoria;
+- nessun candidato valido = circuito aperto;
+- raccordatura finale separata tramite `raccorda_diego`.
+
+Vincoli:
+- non modificare `SpiraliVittorio`, frontend o `definizionedati.json`;
+- non aggiornare Golden alla cieca;
+- mantenere rollback semplice e aggiornare Recovery/Summary con stato reale;
+- verificare Core/Harness e il percorso pubblico `Vittorio_revisionato`; pubblicare per prova server.
+
+
 ### INCARICO 2026-10-01 — Revisione finale combinatoria chiusura
 Stato: ESEGUITO
 
@@ -79,7 +103,7 @@ Registrata nelle direttive spirali, senza modifiche ai sorgenti, la logica combi
 - stessa logica simmetrica per Mandata e Ripresa;
 - finestra sugli ultimi tre tratti originali, con configurazioni `0I, 0P, 1I, 1P, 2I, 2P` su entrambi i lati;
 - variante `I` invariata e variante `P` normalizzata a lunghezza esattamente `P`;
-- filtro definitivo sul tratto rettilineo di chiusura: lunghezza strettamente `> 2P`;
+- filtro definitivo sul tratto rettilineo di chiusura: lunghezza `>= 2P`;
 - nessun angolo acuto ai due innesti;
 - nessuna intersezione sulla geometria risultante dopo tagli/normalizzazioni;
 - restano validi sequenza deterministica, first-success e circuito aperto se nessun candidato è valido.
@@ -88,7 +112,7 @@ Documento aggiornato:
 `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`
 
 Commit direttiva iniziale: `6c49132fe1e0c218d4733b0ec682f9f4524d790a`.
-Allineamento finale delle sezioni normative LG-051 al vincolo stretto `>2P`: `9f790253244da0984a1b071a275cf4bc43c14bee`.
+La formulazione `>2P` è stata successivamente corretta dall'utente: la regola definitiva è `>=2P`; correzione documentale registrata il 01/10/2026.
 
 Verifica reale: modifica esclusivamente documentale; nessun sorgente modificato, nessuna build o esecuzione dichiarata.
 
