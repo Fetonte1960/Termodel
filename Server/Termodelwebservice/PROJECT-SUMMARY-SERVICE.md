@@ -73,6 +73,33 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-10-01 — Ripristino del vero SpiralGenerator Vittorio puro in Vittorio_revisionato
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- sostituire nel solo `Vittorio_revisionato` il generatore evoluto corrente con il vero `Spiralgenerator.cs` storico copiato da Vittorio al commit `5b8ddc11b4e23046bda1e1c5824af4d4bc084326`;
+- mantenere intatti Return parallelo Diego, `ChiudiSpirale.cs`, `funzioni_diego.chiusura_diego` e log istituzionale della chiusura;
+- adattare soltanto le chiamate e i benchmark strettamente necessari alla compilazione del generatore storico puro;
+- non modificare `SpiraliVittorio`, `SpiraliDiegoVittorio`, frontend, `definizionedati.json` o Golden;
+- bloccare lo stato corrente come return point recuperabile in caso di fallimento e registrarlo nei documenti di recovery chat;
+- pubblicare su `main`, testare e notificare tramite Issue #1.
+
+Return point vincolante prima della modifica:
+- commit: `45bff4b4d016bcd60aa0c18d26aefdcf51ad8a21`;
+- branch dedicato: `recovery/vittorio-revisionato-before-pure-vittorio-20261001`;
+- questo branch è il punto di ritorno dell'intero stato corrente se il ripristino del generatore puro non supera il controllo tecnico o visivo.
+
+Criteri di completamento:
+- `SpiraliVittorioRevisionato/Spiralgenerator.cs` uguale alla copia Vittorio del commit `5b8ddc11...` salvo namespace;
+- `Program.cs` usa la firma storica `Generate(perimetro,startPoint,distanza,true)`;
+- rimossi dal percorso revisionato i requisiti runtime di `SpiralGenerationInput`, `GenerateCore`, condizionamento e `TerminalCenterline`;
+- Return e chiusura restano quelli correnti in debug;
+- build e Fast Harness eseguiti; eventuali gate obsoleti adattati senza modificare Golden;
+- documentazione Recovery/linee guida/README/Summary aggiornata con return point e risultati;
+- stessa voce aggiornata a `ESEGUITO` se riuscito o `NOT PLANNED/FALLITO` se non riuscito.
+
+
+
 ### INCARICO 2026-10-01 — Rollback completo al Vittorio_revisionato funzionante pre-P/2-2P
 Stato: ESEGUITO
 
