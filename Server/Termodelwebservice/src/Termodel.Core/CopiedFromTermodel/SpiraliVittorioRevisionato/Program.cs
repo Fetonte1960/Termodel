@@ -88,11 +88,10 @@ namespace SpiralHeatingVittorioRevisionato
             // Con chiudiCircuito=false Mandata e Return restano entrambi
             // presenti ma non vengono collegati fra loro.
             //
-            // TerminalCenterline resta disponibile solo come capacità
-            // sperimentale interna, ma NON partecipa al percorso pubblico:
+            // La Mandata usa il vero SpiralGenerator storico Vittorio.
             // Vittorio_revisionato deve differire da Vittorio soltanto nella
-            // fase di chiusura/raccordatura LG-051.
-            GeneraSpirale(terminalCenterline: false);
+            // fase Return/chiusura/raccordatura LG-051.
+            GeneraSpirale();
             ChiudiSpiraleFiles(
                 usaRaccordoAdattivoDiego: true,
                 chiudiCircuito: chiudiCircuito);
@@ -100,7 +99,7 @@ namespace SpiralHeatingVittorioRevisionato
 
         public static void AggiornaSpirali(bool soloMandataPerEsameVisivo)
         {
-            GeneraSpirale(soloMandataPerEsameVisivo);
+            GeneraSpirale();
 
             if (soloMandataPerEsameVisivo)
             {
@@ -126,7 +125,7 @@ namespace SpiralHeatingVittorioRevisionato
                 StringComparison.OrdinalIgnoreCase);
             File.WriteAllText(svgFile, svg);
         }
-        static void GeneraSpirale(bool terminalCenterline = false)
+        static void GeneraSpirale()
         {
             string xmlFile = "locale.xml";
             
@@ -250,18 +249,10 @@ namespace SpiralHeatingVittorioRevisionato
                 List<Punto> spiral;
                 List<List<Punto>> offsets;
                 (spiral, offsets) = SpiralGenerator.Generate(
-                    new SpiralGenerationInput
-                    {
-                        Perimetro = perimetro,
-                        StartPoint = lineaIngresso.PuntoInterno,
-                        Distanza = DistanzaPareti,
-                        DrawSpiral = true,
-                        // Solo nel percorso pubblico Vittorio_revisionato:
-                        // completa l'ultima fascia rettangolare con asse centrale.
-                        // Rollback immediato: impostare false.
-                        TerminalCenterline = terminalCenterline
-                    }
-                );
+                    perimetro,
+                    lineaIngresso.PuntoInterno,
+                    DistanzaPareti,
+                    true);
                 
                 // Salva spirale nel locale XML
                 SalvaSpiralInLocale(locale, spiral);
