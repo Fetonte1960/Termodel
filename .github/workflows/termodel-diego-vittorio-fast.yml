@@ -65,6 +65,38 @@ jobs:
           dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- parallel-return-check
           if ($LASTEXITCODE -ne 0) { throw "Check ritorno parallelo Diego fallito." }
 
+      - name: Check combinatoria consolidata funzioni_diego
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $path = "src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/funzioni_diego.cs"
+          $text = Get-Content -LiteralPath $path -Raw
+          foreach ($marker in @(
+            "(0, false)",
+            "(0, true)",
+            "(1, false)",
+            "(1, true)",
+            "(2, false)",
+            "(2, true)",
+            "lunghezzaMinimaChiusura = 2.0 * passo",
+            "IntersecaTrattiNonAdiacentiChiusura",
+            "type=first-straight-success"
+          )) {
+            if (-not $text.Contains($marker)) {
+              throw "Combinatoria consolidata priva del marker: $marker"
+            }
+          }
+          foreach ($forbidden in @(
+            "preferisciTerminaleP",
+            "CreaConfigurazioneTerminaleProiettata",
+            "GeneraPrimaChiusuraAccettabile"
+          )) {
+            if ($text.Contains($forbidden)) {
+              throw "Combinatoria consolidata contiene logica superata: $forbidden"
+            }
+          }
+          Write-Host "FUNZIONI_DIEGO_FINAL_CLOSURE_MATRIX_OK"
+
       - name: Harness quadrato Vittorio_revisionato public closure
         shell: pwsh
         env:
@@ -84,9 +116,13 @@ jobs:
           $svg = Join-Path $out "$id.svg"
           if (-not (Test-Path $log) -or -not (Test-Path $svg)) { throw "Artifact quadrato pubblico mancanti." }
           $logText = Get-Content $log -Raw
-          if ($logText -notmatch 'DV_CLOSURE_REJECT[^\r\n]*seq=M2P/R0P[^\r\n]*reason=length[^\r\n]*required=0.3') {
+          if ($logText -notmatch 'DV_SQUARE_TRY[^\r\n]*attempt=1[^\r\n]*seq=M0I/R0I') {
             Get-Content $log | Write-Host
-            throw "Quadrato pubblico: M2P/R0P non risulta scartata per lunghezza < 2P."
+            throw "Quadrato pubblico: la combinatoria non parte da M0I/R0I."
+          }
+          if ($logText -match 'DV_SQUARE_TRY[^\r\n]*seq=[^\r\n]*RP') {
+            Get-Content $log | Write-Host
+            throw "Quadrato pubblico: ricomparsa una variante RP non prevista dalla combinatoria finale."
           }
 
           $applied = $logText -match 'Chiusura Diego combinatoria: APPLICATA'
