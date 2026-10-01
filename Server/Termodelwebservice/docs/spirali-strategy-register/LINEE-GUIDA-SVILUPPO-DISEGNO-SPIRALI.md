@@ -7347,6 +7347,74 @@ orario/antiorario.
 
 ---
 
+## Contratto operativo 01/10/2026 — Generate storico come recovery della Supply
+
+Per `Vittorio_revisionato` sono ora definiti due percorsi distinti e
+intenzionali.
+
+### Percorso storico di recovery
+
+```text
+SpiralGenerator.Generate(...)
+```
+
+mantiene il contratto Vittorio a **distanza unica** ed è la baseline di
+ripristino della sola Mandata. Deve restare disponibile anche dopo
+l'introduzione del nuovo generatore.
+
+Scopo del recovery:
+- isolare regressioni nella Supply senza revert globale;
+- preservare Return, combinatoria e raccordatura già consolidati;
+- permettere confronto diretto fra geometria storica e revisionata.
+
+### Percorso revisionato produttivo
+
+```text
+SpiralGenerator.GenerateRevisionato(...)
+```
+
+usa ruoli geometrici espliciti:
+
+```text
+P = 0,30 m
+primo offset parete = P/2 = 0,15 m
+offset Mandata-Mandata = 2P = 0,60 m
+finalizzazione topologica storica = P = 0,30 m
+Return parallelo = P = 0,30 m
+chiusura minima = 2P = 0,60 m
+```
+
+La finalizzazione topologica a `P` non è un ranking della chiusura e non
+sostituisce la combinatoria finale. I tagli/normalizzazioni terminali che
+determinano la chiusura restano responsabilità esclusiva di:
+
+```text
+0I, 0P, 1I, 1P, 2I, 2P
+```
+
+### Switch di recovery
+
+Il percorso pubblico espone:
+
+```text
+AggiornaSpiraliConChiusura(
+    chiudiCircuito,
+    usaGenerateStoricoRecovery = false)
+```
+
+Default: `GenerateRevisionato`.
+
+Impostando `usaGenerateStoricoRecovery=true`, viene ripristinata soltanto la
+Supply storica. Restano invariati:
+- `ritorno_Parallelo_diego(P)`;
+- `chiusura_diego(P)`;
+- raccordatura finale.
+
+Questo è il meccanismo preferito in caso di regressione del nuovo generatore:
+**prima usare il recovery circoscritto; non fare rollback globale del motore**.
+
+---
+
 ## Premessa vincolante 01/10/2026 — lineage e convenzione P di `Vittorio_revisionato`
 
 Questa premessa prevale sulle notazioni storiche sottostanti incompatibili.
