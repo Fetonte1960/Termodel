@@ -73,18 +73,44 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-01 — Log istituzionale combinatoria su SpiraliDiego
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente: sostituire la diagnostica `Console.WriteLine` della combinatoria consolidata `funzioni_diego.chiusura_diego(...)` con il log istituzionale `TermodelLog`, attivato dalla categoria frontend `spiralidiego` / `TermodelLog.LogCategory.SpiraliDiego`; eseguire i test e pubblicare su `main`.
 
-Obiettivo:
-- nessun cambio geometrico;
-- mantenere gli stessi dati diagnostici dei tentativi, scarti e candidato selezionato;
-- sottotag stabili `[SpiraliDiego][Closure.*]`;
-- logging emesso solo quando è abilitata la categoria `SpiraliDiego`;
-- allineare Harness pubblico `Vittorio_revisionato` alla stessa categoria istituzionale, senza variabile ambiente privata per il trace chiusura;
-- non modificare Golden.
+Implementazione:
+- `funzioni_diego.cs` usa ora `TermodelLog.LogCategory.SpiraliDiego`;
+- rimossi dalla diagnostica combinatoria `Console.WriteLine` e `TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE`;
+- sottotag stabili: `Closure.Try`, `Closure.Reject`, `Closure.Accept`, `Closure.Selected`, `Closure.Result`;
+- il log viene emesso soltanto se la categoria `SpiraliDiego` è attiva;
+- il frontend già espone la categoria come checkbox **spiralidiego**, quindi nessuna modifica frontend necessaria;
+- benchmark/Harness `Vittorio_revisionato` ora propaga la configurazione `TermodelLog` e il gate pubblico usa `--log-enabled true --log-categories SpiraliDiego`;
+- nessuna modifica alla matrice combinatoria, ai filtri geometrici, al Return o ai raccordi;
+- nessun Golden aggiornato.
 
+Commit:
+- funzionale: `c87ea62e44099b931651f0dc6a0700251465435f`;
+- benchmark log: `07205e6989a3b9ba0a0707921cf172cc56b3667f`;
+- Harness wiring: `8e28797ea0781d0407f5da5b8b70b26c43327eaf`;
+- gate istituzionale: `48b8080fea99554031428ca3a560fe0207d7a72a`;
+- correzioni gate: `966f1644efc8335d8653c34b5cb07fd11315eb52`, `51210be0783e322d16a4ec2efc8a6f0f1c81d720`;
+- regression log Diego_Vittorio allineata: `45794a4de9cda8e816e7a6b520e0d364f21f442b`.
+
+Verifica reale:
+- Fast Harness run `36823315279`: build **SUCCESS, 0 errori**;
+- gate matrice, autorità unica e log istituzionale: **SUCCESS**;
+- quadrato pubblico `Vittorio_revisionato`: log istituzionale letto correttamente, chiusura rettilinea `0,4 m >= 0,3 m`, LG-051 **SUCCESS**;
+- la regression successiva `Diego_Vittorio` supera il nuovo controllo `SpiraliDiego` e fallisce poi sul Golden SVG storico già noto `5ddd0ffd14ae...`: non aggiornato;
+- Service Build run `36822763861`: compilazione riuscita; deploy pubblico verificato su commit funzionale `c87ea62e...`; workflow rosso successivamente sul noto smoke locale `/health`.
+
+Stato:
+- progettato: sì;
+- implementato: sì;
+- compilato: sì;
+- eseguito: sì;
+- test categoria `SpiraliDiego`: sì;
+- pubblicato su GitHub/main: sì;
+- deploy pubblico del commit funzionale: verificato;
+- geometria modificata: no.
 
 
 ### INCARICO 2026-10-01 — Consolidamento definitivo combinatoria in funzioni_diego
