@@ -1,3 +1,47 @@
+# RECOVERY FINALE — COMBINATORIA CONSOLIDATA IN `funzioni_diego`
+
+Checkpoint: **2026-10-01 — implementazione pubblicata e verificata tecnicamente**
+
+Punto di rollback pre-funzionale:
+`c99c75693d98becc92223e1c7b5b77401fe42eca`.
+
+Implementazione autorevole:
+`Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/funzioni_diego.cs::chiusura_diego(...)`.
+
+Contratto implementato:
+```text
+Mandata = Ripresa
+0I, 0P, 1I, 1P, 2I, 2P
+P = normalizzazione esatta a P
+max 36 coppie
+chiusura rettilinea >= 2P
+nessun angolo acuto ai due innesti
+il tratto di chiusura non interseca tratti non adiacenti
+del setup risultante dopo tagli/normalizzazioni
+first-success
+nessun candidato = circuito aperto
+nessun RP/ranking/preferenza P-I/Bezier/raccordo nella selezione
+```
+
+Commit funzionali:
+- `b389436ddb6ad663dc662bf3224a0c8cc2f5afcd` — implementazione combinatoria in `funzioni_diego`;
+- `becc425dd60c716469b7a855a8e52a7f37040508` — rimozione vecchio motore combinatorio da `ChiudiSpirale`;
+- `250ecf653976860f0023aaadf8e15b68823d87d1` — ripristino del solo helper geometrico generico necessario alle curve legacy, senza reintrodurre la combinatoria;
+- `5ab1161cae5468f99f7006ff3abb002c4e640d5b` — gate Fast Harness sull'autorità unica.
+
+Verifica:
+- Service Build run `36800489515`: **Build succeeded**; workflow complessivo rosso sul noto smoke locale `/health` storage/lock indipendente;
+- nello stesso run il deploy pubblico è stato verificato con `publicServiceCommit=250ecf653976860f0023aaadf8e15b68823d87d1`;
+- Fast Harness run `36800577329`: build SUCCESS, `RITORNO_PARALLELO_DIEGO_OK`, `FUNZIONI_DIEGO_FINAL_CLOSURE_MATRIX_OK`, `FUNZIONI_DIEGO_SINGLE_CLOSURE_AUTHORITY_OK`;
+- quadrato pubblico `Vittorio_revisionato`: primo tentativo `M0I/R0I`; primo valido selezionato `M1P/R0P`; chiusura rettilinea `0,40 m`, requisito `2P=0,30 m`; `REVISIONATO_PUBLIC_SQUARE_LG051_OK`;
+- il Fast Harness fallisce successivamente sul Golden separato `Diego_Vittorio`: SVG corrente `5ddd0ffd...` contro baseline storica, divergenza già nota e preesistente;
+- nessun Golden aggiornato;
+- confronto da `c99c756...` conferma nessuna modifica a `SpiraliVittorio`, frontend o `definizionedati.json`.
+
+Resta da fare: **prova visiva/reale dell'utente sul server**. Non dichiarare il risultato visivamente approvato prima di tale prova.
+
+---
+
 # RECOVERY PRIORITARIO — CONSOLIDAMENTO COMBINATORIA `funzioni_diego`
 
 Checkpoint: **2026-10-01 — prima di modificare i sorgenti**
