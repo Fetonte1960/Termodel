@@ -114,6 +114,17 @@ public static class StrategiaVittorioRevisionatoBenchmark
 
     public static StrategiaVittorioRevisionatoAbstractionCheck CheckAbstraction()
     {
+        const double tolerance = 1e-12;
+        if (Math.Abs(SpiralHeatingVittorioRevisionato.Program.P - 0.30) > tolerance ||
+            Math.Abs(SpiralHeatingVittorioRevisionato.Program.DistanzaPareti - 0.15) > tolerance ||
+            Math.Abs(SpiralHeatingVittorioRevisionato.Program.DistanzaMandataMandata - 0.60) > tolerance ||
+            Math.Abs(SpiralHeatingVittorioRevisionato.Program.DistanzaRitorno - 0.30) > tolerance)
+        {
+            throw new InvalidDataException(
+                "Vittorio_revisionato: contratto P incoerente; attesi " +
+                "P=0,30, parete=0,15, Mandata-Mandata=0,60, Return=0,30.");
+        }
+
         var perimeter = new List<SpiralHeatingVittorioRevisionato.Punto>
         {
             new(0.0, 0.0),
@@ -153,6 +164,46 @@ public static class StrategiaVittorioRevisionatoBenchmark
         {
             throw new InvalidDataException(
                 "Astrazione Vittorio_revisionato: il percorso neutro diverge dal Generate storico.");
+        }
+
+        var revisionato =
+            SpiralHeatingVittorioRevisionato.SpiralGenerator.GenerateRevisionato(
+                new SpiralHeatingVittorioRevisionato.SpiralGenerationInput
+                {
+                    Perimetro =
+                        new List<SpiralHeatingVittorioRevisionato.Punto>(perimeter),
+                    StartPoint =
+                        new SpiralHeatingVittorioRevisionato.Punto(
+                            supplyStart.X,
+                            supplyStart.Y),
+                    Distanza = step,
+                    DistanzaParete =
+                        SpiralHeatingVittorioRevisionato.Program.DistanzaPareti,
+                    DistanzaMandataMandata =
+                        SpiralHeatingVittorioRevisionato.Program.DistanzaMandataMandata,
+                    DistanzaFinalizzazione =
+                        SpiralHeatingVittorioRevisionato.Program.P,
+                    DrawSpiral = true
+                });
+
+        if (revisionato.offsets.Count < 3)
+        {
+            throw new InvalidDataException(
+                "Generate revisionato: servono almeno due offset utili sul quadrato 4x4.");
+        }
+
+        double wallDistance =
+            revisionato.offsets[1].Min(p => p.X) - perimeter.Min(p => p.X);
+        double supplySpacing =
+            revisionato.offsets[2].Min(p => p.X) -
+            revisionato.offsets[1].Min(p => p.X);
+
+        if (Math.Abs(wallDistance - 0.15) > 0.000001 ||
+            Math.Abs(supplySpacing - 0.60) > 0.000001)
+        {
+            throw new InvalidDataException(
+                $"Generate revisionato: distanze inattese; " +
+                $"parete={wallDistance:R}, Mandata-Mandata={supplySpacing:R}.");
         }
 
         var returnStart =
@@ -204,7 +255,13 @@ public static class StrategiaVittorioRevisionatoBenchmark
             historical.spiral.Count,
             unconditionedReturn.spiral.Count,
             conditionedReturn.spiral.Count,
-            step / 2.0);
+            step / 2.0,
+            SpiralHeatingVittorioRevisionato.Program.P,
+            SpiralHeatingVittorioRevisionato.Program.DistanzaPareti,
+            SpiralHeatingVittorioRevisionato.Program.DistanzaMandataMandata,
+            SpiralHeatingVittorioRevisionato.Program.DistanzaRitorno,
+            wallDistance,
+            supplySpacing);
     }
 
     private static bool SamePoints(
@@ -232,4 +289,10 @@ public sealed record StrategiaVittorioRevisionatoAbstractionCheck(
     int SupplyPoints,
     int UnconditionedReturnPoints,
     int ConditionedReturnPoints,
-    double ConditioningDistanceMeters);
+    double ConditioningDistanceMeters,
+    double PMeters,
+    double WallDistanceMeters,
+    double SupplyToSupplyMeters,
+    double ReturnDistanceMeters,
+    double MeasuredWallDistanceMeters,
+    double MeasuredSupplySpacingMeters);
