@@ -91,9 +91,9 @@ namespace SpiralHeatingVittorioRevisionato
             // Con chiudiCircuito=false Mandata e Return restano entrambi
             // presenti ma non vengono collegati fra loro.
             //
-            // La Mandata usa il vero SpiralGenerator storico Vittorio.
-            // Vittorio_revisionato deve differire da Vittorio soltanto nella
-            // fase Return/chiusura/raccordatura LG-051.
+            // La Mandata mantiene la struttura del generatore Vittorio ma
+            // usa la matrice geometrica revisionata 1,5P/2P; Return,
+            // chiusura e raccordatura restano nella pipeline LG-051.
             GeneraSpirale();
             ChiudiSpiraleFiles(
                 usaRaccordoAdattivoDiego: true,
