@@ -336,3 +336,34 @@ Commit funzionali principali:
   il collaudo utente, ma il collegamento causale con una specifica patch non è
   ancora ricostruito; non sincronizzare o copiare soluzioni storiche senza
   analisi dedicata.
+
+
+### 2026-10-01 — Vittorio_revisionato: separazione Mandata-parete / stessa Mandata
+
+Modifica Service-only autorizzata dopo il restore point approvato.
+
+Recovery point precedente:
+- commit `0b541f92cf74412a33d68ffc0603e3f319c4a82f`;
+- branch `recovery/vittorio-revisionato-before-split-wall-supply-20261001`.
+
+Nuova matrice geometrica del candidato:
+- `P = 0,30 m`;
+- Mandata-parete `= 1,5P = 0,45 m`;
+- Mandata-Mandata stesso colore `= 2P = 0,60 m`;
+- Mandata-Return `= P = 0,30 m`;
+- Return-parete risultante `= P/2 = 0,15 m`;
+- finalizzazione storica Mandata `= P = 0,30 m`.
+
+`SpiraliVittorioRevisionato/Spiralgenerator.cs` conserva l'overload storico
+a distanza unica ma aggiunge il percorso revisionato a tre distanze. Nel ciclo
+degli offset la scelta è:
+`i == 0 ? distanzaParete : distanzaStessaSpirale`.
+La soglia approvata `ComputeOffset: edgeLength <= offset` resta invariata.
+
+`SpiraliVittorioRevisionato/Program.cs` usa la matrice sopra e porta
+`DistanzaRitorno` a `P`. Algoritmo combinatorio, raccordatura,
+`SpiraliVittorio`, frontend, Golden e `definizionedati.json` non sono stati
+modificati.
+
+Questa divergenza resta intenzionale e Service-only; non sincronizzare verso la
+Library Desktop senza decisione esplicita.
