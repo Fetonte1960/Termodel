@@ -97,6 +97,26 @@ jobs:
           }
           Write-Host "FUNZIONI_DIEGO_FINAL_CLOSURE_MATRIX_OK"
 
+          foreach ($marker in @(
+            "TermodelLog.LogCategory.SpiraliDiego",
+            "[SpiraliDiego][Closure.",
+            "LogChiusura("
+          )) {
+            if (-not $text.Contains($marker)) {
+              throw "Log istituzionale combinatoria privo del marker: $marker"
+            }
+          }
+          foreach ($forbiddenLog in @(
+            "TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE",
+            "DV_SQUARE_TRY",
+            "DV_CLOSURE_SELECTED"
+          )) {
+            if ($text.Contains($forbiddenLog)) {
+              throw "Diagnostica privata obsoleta rimasta in funzioni_diego: $forbiddenLog"
+            }
+          }
+          Write-Host "FUNZIONI_DIEGO_INSTITUTIONAL_CLOSURE_LOG_OK"
+
           $legacyPath = "src/Termodel.Core/CopiedFromTermodel/SpiraliDiegoVittorio/ChiudiSpirale.cs"
           $legacyText = Get-Content -LiteralPath $legacyPath -Raw
           foreach ($forbidden in @(
@@ -112,8 +132,6 @@ jobs:
 
       - name: Harness quadrato Vittorio_revisionato public closure
         shell: pwsh
-        env:
-          TERMODEL_DIEGO_VITTORIO_TRACE_CLOSURE: "true"
         run: |
           $ErrorActionPreference = "Stop"
           $out = Join-Path $env:RUNNER_TEMP "RevisionatoPublicSquareClosure"
@@ -122,6 +140,8 @@ jobs:
             --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO.json `
             --engine Vittorio_revisionato `
             --revisionato-public `
+            --log-enabled true `
+            --log-categories SpiraliDiego `
             --id $id `
             --out $out
           if ($LASTEXITCODE -ne 0) { throw "Harness quadrato pubblico revisionato fallito." }
@@ -129,11 +149,11 @@ jobs:
           $svg = Join-Path $out "$id.svg"
           if (-not (Test-Path $log) -or -not (Test-Path $svg)) { throw "Artifact quadrato pubblico mancanti." }
           $logText = Get-Content $log -Raw
-          if ($logText -notmatch 'DV_SQUARE_TRY[^\r\n]*attempt=1[^\r\n]*seq=M0I/R0I') {
+          if ($logText -notmatch '\[SpiraliDiego\]\[Closure\.Try\][^\r\n]*attempt=1[^\r\n]*seq=M0I/R0I') {
             Get-Content $log | Write-Host
             throw "Quadrato pubblico: la combinatoria non parte da M0I/R0I."
           }
-          if ($logText -match 'DV_SQUARE_TRY[^\r\n]*seq=[^\r\n]*RP') {
+          if ($logText -match '\[SpiraliDiego\]\[Closure\.Try\][^\r\n]*seq=[^\r\n]*RP') {
             Get-Content $log | Write-Host
             throw "Quadrato pubblico: ricomparsa una variante RP non prevista dalla combinatoria finale."
           }
@@ -148,7 +168,7 @@ jobs:
           if ($applied) {
             $selected = [regex]::Match(
               $logText,
-              'DV_CLOSURE_SELECTED[^\r\n]*type=first-straight-success[^\r\n]*length=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)[^\r\n]*requiredLength=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)')
+              '\[SpiraliDiego\]\[Closure\.Selected\][^\r\n]*type=first-straight-success[^\r\n]*length=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)[^\r\n]*requiredLength=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)')
             if (-not $selected.Success) {
               Get-Content $log | Write-Host
               throw "Quadrato pubblico: chiusura applicata senza selezione rettilinea LG-051."
@@ -172,7 +192,7 @@ jobs:
             Write-Host "REVISIONATO_PUBLIC_SQUARE_STRAIGHT_2P_OK length=$straightLength required=$requiredLength"
           }
           else {
-            if ($logText -match 'DV_CLOSURE_SELECTED[^\r\n]*type=first-straight-success' -or
+            if ($logText -match '\[SpiraliDiego\]\[Closure\.Selected\][^\r\n]*type=first-straight-success' -or
                 $logText -match 'VREV_LG051_CLOSURE_OK') {
               Get-Content $log | Write-Host
               throw "Quadrato pubblico: circuito dichiarato aperto ma risulta una chiusura selezionata."
