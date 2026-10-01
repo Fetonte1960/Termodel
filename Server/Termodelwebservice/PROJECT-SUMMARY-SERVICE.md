@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-01 — Separazione offset parete / stessa spirale in Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - partire dal restore point approvato corrente;
@@ -107,6 +107,76 @@ Criteri di completamento:
 
 
 
+
+
+Esito implementazione:
+- recovery point creato prima delle modifiche:
+  - commit `0b541f92cf74412a33d68ffc0603e3f319c4a82f`;
+  - branch `recovery/vittorio-revisionato-before-split-wall-supply-20261001`;
+- `Program.cs` usa:
+  - `P = 0,30 m`;
+  - `DistanzaMandataParete = 1,5P = 0,45 m`;
+  - `DistanzaMandataMandata = 2P = 0,60 m`;
+  - `DistanzaFinalizzazione = P = 0,30 m`;
+  - `DistanzaRitorno = P = 0,30 m`;
+- `Spiralgenerator.cs` conserva l'overload storico a distanza unica e aggiunge
+  l'overload revisionato a tre distanze;
+- nel ciclo offset:
+  `i == 0 ? distanzaParete : distanzaStessaSpirale`;
+- `ComputeOffset` resta con soglia approvata
+  `edgeLength <= offset`;
+- il Return parallelo è generato a P dalla Mandata e quindi, per il ramo
+  esterno, risulta a `1,5P - P = P/2 = 0,15 m` dalla parete;
+- algoritmo combinatorio, raccordatura, frontend, Golden,
+  `definizionedati.json` e `SpiraliVittorio` non modificati.
+
+Commit funzionali:
+- parametri Program e chiamata revisionata:
+  `e5137832a8bb4b1ce1e06e0fc295c97096ef5a39`;
+- generatore con primo offset / offset successivi separati:
+  `718a800900df244c27200c19c07650c35aa2414a`;
+- allineamento commento:
+  `01a5c92e5730c9ffbbde3943da468934af5ede22`;
+- fix compilazione helper residuo:
+  `6f8e4d165055041eda337a47251a38a7fc91eecc`.
+
+Verifica reale:
+- Service Build run `36882109963`:
+  - restore SUCCESS;
+  - build SUCCESS;
+  - smoke pubblico pannelli SUCCESS;
+  - smoke pubblico `Vittorio_revisionato` SUCCESS;
+  - smoke circuiti aperti SUCCESS;
+  - deploy pubblico verificato SUCCESS;
+  - `publicServiceCommit=6f8e4d165055041eda337a47251a38a7fc91eecc`;
+  - workflow globale FAILURE soltanto sul noto smoke locale
+    project-storage/lock: `Termodel.WebService non ha risposto a /health`;
+- Fast Harness run `36882110078`:
+  - restore/build Core+Harness SUCCESS;
+  - Return parallelo Diego SUCCESS;
+  - combinatoria consolidata SUCCESS;
+  - quadrato pubblico `Vittorio_revisionato` SUCCESS;
+  - fallisce il successivo gate storico di equivalenza SVG con Vittorio,
+    atteso perché la Mandata revisionata ora differisce intenzionalmente:
+    Vittorio `9673CD8D77A9963EC425FA69F54B8DCFF4C162312336D08D74AC722A2E0122A4`,
+    revisionato `F972A940C44BD9A9F57F14F5316477F130EB32538EB951D9B5CF08657CEE8C1E`;
+  - il gate non è stato modificato né il Golden aggiornato.
+
+Documentazione aggiornata:
+- linee guida spirali;
+- `RECOVERY-ACTIVE.md`;
+- README `SpiraliVittorioRevisionato`;
+- `TERMODEL-SYNC.md`;
+- Summary Service.
+
+Stato reale:
+- progettato: sì;
+- implementato: sì;
+- compilato: sì;
+- smoke pubblico: sì;
+- deploy pubblico: sì, commit funzionale `6f8e4d165055041eda337a47251a38a7fc91eecc`;
+- controllo visivo utente della nuova matrice 1,5P / 2P / P: da eseguire;
+- recovery point precedente preservato.
 
 ### INCARICO 2026-10-01 — Consolidamento restore point approvato e difetto strettoie
 Stato: ESEGUITO
