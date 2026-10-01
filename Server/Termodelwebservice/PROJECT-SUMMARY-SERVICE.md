@@ -74,7 +74,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-10-01 — Generate storico come recovery e nuovo Generate P/2-2P per Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - formalizzare nei documenti il contratto per cui il `Generate` storico di Vittorio/Vittorio_revisionato resta baseline di recovery della sola Mandata;
@@ -94,6 +94,58 @@ Criteri di completamento:
 - stessa voce aggiornata a `ESEGUITO` con commit e risultati reali.
 
 
+
+
+Esito implementazione:
+- `SpiralGenerator.Generate(...)` resta il percorso storico a distanza unica e baseline di recovery della sola Mandata;
+- aggiunto `SpiralGenerator.GenerateRevisionato(...)` con:
+  `DistanzaParete=P/2`, `DistanzaMandataMandata=2P`,
+  `DistanzaFinalizzazione=P`;
+- `Program` espone `P=0,30`, `DistanzaPareti=0,15`,
+  `DistanzaMandataMandata=0,60`, `DistanzaRitorno=0,30`;
+- il percorso pubblico usa il nuovo Generate revisionato;
+- `AggiornaSpiraliConChiusura(..., usaGenerateStoricoRecovery:true)`
+  ripristina soltanto la Supply storica senza revert globale;
+- `funzioni_diego.chiusura_diego` non è stata modificata e riceve ora
+  correttamente `P=0,30`, quindi `required=2P=0,60`.
+
+Commit principali:
+- commissioning: `f0aa2c179391c96b950ce4329cdd98942c894dab`;
+- Generate revisionato: `2d6dc35f58541f4a5c32e17d74a7f749659a1dd6`;
+- wiring Program/recovery: `4228c4b9e8a78eb4305af3a391c82815f688e1ee`;
+- benchmark/gate: `8a5df44ec90eea3a6cc3ec48c4ae7b53a6d60b3c`,
+  `913346cf454951c7c282307f24f2e7712bbb8c22`,
+  `abafb051ae6add95605cd1bdfc5fa37e2d232dec`;
+- recovery: `4e0a069df24c5775086e55d6d729255a0fce6a12`,
+  `9a3ad135088a460db71fa83ce980e8d3087f24cd`;
+- linee guida: `1b0f659d9113c97782b0ae5c5efb76c5defee563`;
+- `TERMODEL-SYNC`: `a38f53c7113570eadf8e57aa114c5f9c7c71cb89`;
+- README revisionato: `4d01f734d116bf8b63a316f815126524ca76ab2f`.
+
+Verifica reale:
+- Fast Harness `36835095544`: build SUCCESS, Return parallelo e combinatoria SUCCESS,
+  quadrato pubblico `Vittorio_revisionato` SUCCESS con
+  `length=1.3 required=0.6`, recovery storico SUCCESS e distanze misurate
+  `wall=0.15`, `supplySpacing=0.6`, `return=0.3`;
+- lo stesso Fast Harness si arresta successivamente sul Golden storico e separato
+  `Diego_Vittorio`: `5ddd0ffd... != fa8e6106...`; Golden non aggiornato;
+- Service Build `36835001877`: Build SUCCESS, smoke pubblico
+  `Vittorio_revisionato` chiuso SUCCESS, smoke circuiti aperti SUCCESS,
+  deploy pubblico SUCCESS con
+  `publicServiceCommit=1b0f659d9113c97782b0ae5c5efb76c5defee563`;
+- il Service workflow resta rosso soltanto sul noto smoke locale storage/lock
+  `/health`, indipendente dalle spirali.
+
+Stato reale:
+- progettato: sì;
+- implementato: sì;
+- compilato: sì;
+- eseguito in Harness: sì;
+- smoke Service: sì;
+- deploy pubblico: sì;
+- confronto visivo utente del nuovo `Vittorio_revisionato`: **ancora da fare**;
+- `SpiraliVittorio`, `SpiraliDiegoVittorio`, frontend,
+  `definizionedati.json` e Golden: non modificati.
 
 ### INCARICO 2026-10-01 — Consolidamento storico Vittorio / Diego_Vittorio / Vittorio_revisionato
 Stato: ESEGUITO
