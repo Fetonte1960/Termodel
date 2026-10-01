@@ -7455,7 +7455,7 @@ quel candidato ha già eliminato o modificato.
 Il candidato è valido soltanto se tutte le condizioni seguenti sono vere:
 
 1. il **tratto rettilineo di chiusura** tra i nuovi terminali ha lunghezza
-   `>= 2P`; nel caso nominale corrente `>= 0,30 m`;
+   `> 2P`; nel caso nominale corrente `> 0,30 m`;
 2. il tratto rettilineo non interseca alcun altro tratto della geometria
    risultante dal candidato, esclusi i due tratti terminali adiacenti ai quali
    la chiusura si innesta;
@@ -7563,7 +7563,7 @@ al presente contratto:
 Non devono invece essere trasferiti a `Vittorio_revisionato`:
 
 - l'uso di Bézier come parte della decisione di chiusura;
-- il vincolo `>=2P` applicato alla lunghezza di una curva anziché al tratto
+- il vincolo `>2P` applicato alla lunghezza di una curva anziché al tratto
   rettilineo di chiusura;
 - la riduzione automatica del raggio effettivo per adattarlo a tratti corti
   (per `Vittorio_revisionato` lo spigolo resta vivo);
@@ -7597,7 +7597,7 @@ motore.
 La futura implementazione dovrà separare i test delle due fasi.
 
 **Chiusura rettilinea:**
-- verificare lunghezza del segmento `>=2P`;
+- verificare lunghezza del segmento `>2P`;
 - verificare assenza di angoli acuti ai due innesti;
 - verificare assenza di intersezioni con la geometria risultante dal candidato;
 - verificare backtracking al candidato successivo quando uno fallisce;
