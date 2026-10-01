@@ -205,3 +205,21 @@ Commit funzionali:
 - `2d6dc35f58541f4a5c32e17d74a7f749659a1dd6`;
 - `4228c4b9e8a78eb4305af3a391c82815f688e1ee`.
 
+
+## Milestone 6 — recovery pubblico al Generate storico (01/10/2026)
+
+Il candidato P/2-2P introdotto nella Milestone 5 ha compilato e superato i gate
+tecnici dedicati, ma ha fallito il successivo controllo visivo reale
+dell'utente: la spirale pubblica risultante non è accettabile.
+
+Per questo il default pubblico è stato immediatamente riportato al
+`SpiralGenerator.Generate(...)` storico a distanza unica, usando il meccanismo
+di recovery progettato nella milestone precedente.
+
+Il candidato `GenerateRevisionato(...)` resta nel sorgente per future analisi,
+ma non è attivo per default. Il ripristino riguarda soltanto la Supply e non
+annulla il lavoro su Return, combinatoria o raccordatura.
+
+Commit recovery pubblico:
+`dd7d411ab3de9223ec7d927aed407d59c60aa62e`.
+
