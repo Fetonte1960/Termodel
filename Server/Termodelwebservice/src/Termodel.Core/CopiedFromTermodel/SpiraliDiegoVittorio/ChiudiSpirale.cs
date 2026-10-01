@@ -1525,6 +1525,32 @@ namespace SpiralHeatingDiegoVittorio
             return curva;
         }
 
+        // Helper geometrico generico usato dalla verifica delle curve.
+        // Non contiene logica combinatoria: controlla un segmento contro i
+        // tratti non adiacenti di una polilinea, escludendo il terminale.
+        private static bool IntersecaTrattiNonAdiacenti(
+            Punto inizio,
+            Punto fine,
+            List<Punto> polilinea)
+        {
+            if (polilinea == null || polilinea.Count < 3)
+                return false;
+
+            for (int i = 0; i < polilinea.Count - 2; i++)
+            {
+                if (SegmentiIntersecano(
+                    inizio,
+                    fine,
+                    polilinea[i],
+                    polilinea[i + 1]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         // Funzione realizzata da Codex in autonomia
         private static bool CurvaIntersecaTrattiNonAdiacenti(
             List<Punto> curva,
