@@ -74,7 +74,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-10-01 — Ripristino del vero SpiralGenerator Vittorio puro in Vittorio_revisionato
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - sostituire nel solo `Vittorio_revisionato` il generatore evoluto corrente con il vero `Spiralgenerator.cs` storico copiato da Vittorio al commit `5b8ddc11b4e23046bda1e1c5824af4d4bc084326`;
@@ -99,6 +99,76 @@ Criteri di completamento:
 - stessa voce aggiornata a `ESEGUITO` se riuscito o `NOT PLANNED/FALLITO` se non riuscito.
 
 
+
+
+Esito implementazione:
+- return point creato **prima** di toccare i sorgenti:
+  - commit `45bff4b4d016bcd60aa0c18d26aefdcf51ad8a21`;
+  - branch `recovery/vittorio-revisionato-before-pure-vittorio-20261001`;
+- `SpiraliVittorioRevisionato/Spiralgenerator.cs` sostituito con la copia
+  originale del commit `5b8ddc11b4e23046bda1e1c5824af4d4bc084326`;
+- blob corrente del generatore:
+  `95e99c7e420dab6b102f69a16a919c2ce0856bf3`;
+- verifica diretta: file corrente identico byte-per-byte alla copia
+  `5b8ddc11...` e identico al `SpiraliVittorio/Spiralgenerator.cs` corrente
+  salvo namespace; 270 righe entrambi;
+- eliminati dal generatore revisionato corrente
+  `SpiralGenerationInput`, `GenerateCore`, condizionamento e
+  `TerminalCenterline`;
+- `Program.cs` richiama la firma Vittorio pura
+  `Generate(perimetro,startPoint,DistanzaPareti,true)`;
+- Return parallelo Diego, `ChiudiSpirale.cs`,
+  `funzioni_diego.chiusura_diego`, permutazioni e log istituzionale
+  `SpiraliDiego` non modificati.
+
+Commit principali:
+- commissioning: `6a5514cd6c75ad1be29de5e783dda801f36c10a0`;
+- return point documentato: `54d187277c6a5ddffa35498b9a3838407fc37bf1`;
+- generatore Vittorio puro: `69adb8ac0b8d650c89e84609514326578594ce2d`;
+- wiring Program storico: `56df69b07a3138271dd4d64f6f9c16d169226a58`;
+- benchmark/harness puro:
+  `9886471e33597414ce5d465707048fe906791b2b`,
+  `0d742c418c268acbc1f5fac7b4e06ea483477342`,
+  `a56a9479cbb8d167068b24a7e45a5ebd1a4f071f`;
+- workflow Fast aggiornato: `d38045515b07be7d1c42f87df3774d3388d9f39a`;
+- Recovery: `1a979f55d8ca5d40e673a075c890cd98dd9e32ff`;
+- linee guida spirali: `af989e8be4b876f3e6eaaa4121d4a3cc52656e22`;
+- README revisionato: `90e521ea56879352ba1907905d8e8a1e407dee34`;
+- TERMODEL-SYNC: `aff91795882bfaa9f188c90da274a174ea3c0c48`.
+
+Verifica reale:
+- Fast Harness run `36847338021`:
+  - Build Core/Harness SUCCESS;
+  - Return parallelo Diego SUCCESS;
+  - combinatoria consolidata `funzioni_diego` SUCCESS;
+  - quadrato pubblico `Vittorio_revisionato` SUCCESS;
+  - chiusura debug quadrato `length=0.40 required=0.30`;
+  - equivalenza iniziale con Vittorio SUCCESS;
+  - equivalenza multi-progetto SUCCESS su 6 casi;
+  - `VITTORIO_REVISIONATO_PURE_GENERATOR_OK`;
+  - `equivalentToVittorio=true`;
+  - rosso finale soltanto sul Golden storico separato `Diego_Vittorio`
+    `5ddd0ffd... != fa8e6106...`; Golden non aggiornato;
+- Service Build run `36847235975`:
+  - Build succeeded;
+  - smoke pubblico `Vittorio_revisionato` chiuso SUCCESS;
+  - smoke circuiti aperti SUCCESS;
+  - deploy pubblico verificato con
+    `serviceCommit=a56a9479cbb8d167068b24a7e45a5ebd1a4f071f`;
+  - rosso globale soltanto sul noto smoke locale storage/lock `/health`.
+
+Stato reale:
+- progettato: sì;
+- return point bloccato: sì;
+- implementato: sì;
+- compilato: sì;
+- Harness: sì;
+- equivalenza con Vittorio: sì, 6 casi + check diretto;
+- smoke Service: sì;
+- pubblicato/deploy sorgente: sì;
+- controllo visivo utente del disegno reale: **ancora da eseguire**;
+- se il controllo visivo fallisce, il punto di ritorno obbligatorio è
+  `recovery/vittorio-revisionato-before-pure-vittorio-20261001`.
 
 ### INCARICO 2026-10-01 — Rollback completo al Vittorio_revisionato funzionante pre-P/2-2P
 Stato: ESEGUITO
