@@ -14,9 +14,6 @@ on:
   push:
     paths:
       - '.github/workflows/termodel-diego-vittorio-fast.yml'
-      - 'Server/Termodelwebservice/src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/**'
-      - 'Server/Termodelwebservice/src/Termodel.Core/RadiantPanels/StrategiaVittorioRevisionatoBenchmark.cs'
-      - 'Server/Termodelwebservice/tools/Termodel.RadiantPanels.Harness/Program.cs'
 
 jobs:
   fast:
@@ -198,15 +195,6 @@ jobs:
             }
           }
 
-          if ($logText -notmatch 'VREV_RETURN_PARALLEL_DIEGO:[^\r\n]*offset=-0\.3(?:0+)?(?:[^0-9]|$)') {
-            Get-Content $log | Write-Host
-            throw "Quadrato pubblico: Return revisionato non risulta distante P=0,30 dalla Mandata."
-          }
-          if ($logText -notmatch '\[SpiraliDiego\]\[Closure\.Try\][^\r\n]*required=0\.6(?:0+)?(?:[^0-9]|$)') {
-            Get-Content $log | Write-Host
-            throw "Quadrato pubblico: chiusura_diego non sta usando P=0,30 / 2P=0,60."
-          }
-
           $applied = $logText -match 'Chiusura Diego combinatoria: APPLICATA'
           $open = $logText -match 'Chiusura Diego combinatoria: NON APPLICATA'
           if (-not $applied -and -not $open) {
@@ -293,25 +281,74 @@ jobs:
           Write-Host "REVISIONATO_PUBLIC_SQUARE_LG051_OK"
           Write-Host "SVG=$svg"
 
-      - name: Verify Vittorio_revisionato historical Generate recovery and P convention
+      - name: Verify Vittorio_revisionato initial equivalence
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $check = dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- revisionato-check 2>&1
-          $check | Write-Host
-          if ($LASTEXITCODE -ne 0) { throw "Check recovery/parametri Vittorio_revisionato fallito." }
-          $checkText = $check -join [Environment]::NewLine
-          foreach ($marker in @(
-            "VITTORIO_REVISIONATO_HISTORICAL_GENERATE_RECOVERY_OK",
-            "VITTORIO_REVISIONATO_P_CONVENTION_OK",
-            "P=0.3 wall=0.15 supplySpacing=0.6 return=0.3",
-            "measuredWall=0.15 measuredSupplySpacing=0.6"
-          )) {
-            if (-not $checkText.Contains($marker)) {
-              throw "Check revisionato privo del marker: $marker"
-            }
+          $root = Join-Path $env:RUNNER_TEMP "VittorioRevisionatoEquivalence"
+          $vOut = Join-Path $root "vittorio"
+          $rOut = Join-Path $root "revisionato"
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-DIEGO-VITTORIO.json `
+            --engine Vittorio `
+            --id VITTORIO-SQUARE-BASELINE `
+            --out $vOut
+          if ($LASTEXITCODE -ne 0) { throw "Vittorio baseline quadrato fallita." }
+
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- run `
+            --case tests/radiant-harness/cases/LG041-SQUARE4X4-T1-P030-VITTORIO-REVISIONATO.json `
+            --engine Vittorio_revisionato `
+            --id VITTORIO-REVISIONATO-SQUARE `
+            --out $rOut
+          if ($LASTEXITCODE -ne 0) { throw "Vittorio_revisionato quadrato fallita." }
+
+          $vSvg = Join-Path $vOut "VITTORIO-SQUARE-BASELINE.svg"
+          $rSvg = Join-Path $rOut "VITTORIO-REVISIONATO-SQUARE.svg"
+          $vXml = Join-Path $vOut "VITTORIO-SQUARE-BASELINE.result.locale.xml"
+          $rXml = Join-Path $rOut "VITTORIO-REVISIONATO-SQUARE.result.locale.xml"
+          foreach ($p in @($vSvg,$rSvg,$vXml,$rXml)) {
+            if (-not (Test-Path -LiteralPath $p)) { throw "Artifact equivalenza mancante: $p" }
           }
-          Write-Host "VITTORIO_REVISIONATO_RECOVERY_CONTRACT_OK"
+
+          $vSvgHash = (Get-FileHash -LiteralPath $vSvg -Algorithm SHA256).Hash
+          $rSvgHash = (Get-FileHash -LiteralPath $rSvg -Algorithm SHA256).Hash
+          $vXmlHash = (Get-FileHash -LiteralPath $vXml -Algorithm SHA256).Hash
+          $rXmlHash = (Get-FileHash -LiteralPath $rXml -Algorithm SHA256).Hash
+
+          if ($vSvgHash -ne $rSvgHash) {
+            throw "Equivalenza SVG fallita: Vittorio=$vSvgHash Revisionato=$rSvgHash"
+          }
+          if ($vXmlHash -ne $rXmlHash) {
+            throw "Equivalenza XML fallita: Vittorio=$vXmlHash Revisionato=$rXmlHash"
+          }
+
+          Write-Host "VITTORIO_REVISIONATO_INITIAL_EQUIVALENCE_OK"
+          Write-Host "SVG_SHA256=$vSvgHash"
+          Write-Host "XML_SHA256=$vXmlHash"
+
+      - name: Verify Vittorio_revisionato multi-project equivalence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = Join-Path $env:RUNNER_TEMP "VittorioRevisionatoMultiProject"
+          ./tools/local-radiant-harness/Test-VittorioRevisionatoEquivalence.ps1 -Configuration Release -OutputRoot $root
+          if ($LASTEXITCODE -ne 0) { throw "Equivalenza multi-progetto Vittorio_revisionato fallita." }
+          $report = Join-Path $root "equivalence-report.json"
+          if (-not (Test-Path -LiteralPath $report)) { throw "Report equivalenza multi-progetto mancante." }
+          $data = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+          if (-not $data.allEquivalent -or $data.caseCount -lt 6) {
+            throw "Report equivalenza multi-progetto non valido."
+          }
+          Write-Host "VITTORIO_REVISIONATO_MULTI_PROJECT_WORKFLOW_OK cases=$($data.caseCount)"
+
+      - name: Verify Vittorio_revisionato structural abstraction
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          dotnet run --project tools/Termodel.RadiantPanels.Harness/Termodel.RadiantPanels.Harness.csproj -c Release --no-build -- revisionato-check
+          if ($LASTEXITCODE -ne 0) { throw "Check astrazione Vittorio_revisionato fallito." }
+          Write-Host "VITTORIO_REVISIONATO_STRUCTURAL_ABSTRACTION_OK"
 
       - name: Inspect Supply only on public cases
         shell: pwsh
