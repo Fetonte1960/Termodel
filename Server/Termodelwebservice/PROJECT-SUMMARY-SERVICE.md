@@ -72,6 +72,38 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-01 — Separazione offset parete / stessa spirale in Vittorio_revisionato
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- partire dal restore point approvato corrente;
+- distinguere nella generazione della Mandata di `Vittorio_revisionato` il primo offset dal perimetro architettonico dagli offset successivi rispetto alla stessa spirale;
+- usare `P/2` per il primo offset dalla parete e `2P` per gli offset successivi della stessa spirale/colore;
+- applicare la soluzione chirurgica basata sull'indice dell'offset:
+  `i == 0 ? distanzaParete : distanzaStessaSpirale`;
+- mantenere la finalizzazione storica separata a `P`;
+- non modificare Return, chiusura, raccordatura, frontend, Golden o `definizionedati.json`;
+- pubblicare la modifica e notificare a fine incarico tramite Issue #1.
+
+Recovery point creato prima delle modifiche:
+- commit: `0b541f92cf74412a33d68ffc0603e3f319c4a82f`;
+- branch: `recovery/vittorio-revisionato-before-split-wall-supply-20261001`.
+
+Valori geometrici:
+- `P = 0,30 m`;
+- parete -> primo tratto della Mandata: `P/2 = 0,15 m`;
+- Mandata -> Mandata dello stesso colore: `2P = 0,60 m`;
+- finalizzazione storica: `P = 0,30 m`.
+
+Criteri di completamento:
+- il generatore distingue esplicitamente primo offset e offset successivi;
+- la soglia `ComputeOffset: edgeLength <= offset` della baseline approvata resta invariata;
+- build/test disponibili eseguiti e risultati registrati;
+- documentazione aggiornata;
+- stessa voce portata a `ESEGUITO` con commit e stato reale.
+
+
+
 
 ### INCARICO 2026-10-01 — Consolidamento restore point approvato e difetto strettoie
 Stato: ESEGUITO
