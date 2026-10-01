@@ -1,3 +1,48 @@
+## Esperimento controllato 01/10/2026 — soglia ComputeOffset 3P -> P
+
+Il test locale ha dimostrato che i due stop su `minEdgeLength` non erano la
+causa dell'arresto centrale. La causa efficace era la prima passata di
+`ComputeOffset`, che con:
+
+```csharp
+edgeLength <= offset * 3
+```
+
+poteva scartare tutti i vertici di un rettangolo già quando il lato corto era
+`<= 0,90 m` con `offset=0,30 m`.
+
+È stata pubblicata una sola modifica algoritmica:
+
+```csharp
+edgeLength <= offset
+```
+
+quindi la soglia di skip diventa `0,30 m`.
+
+Tutto il resto del generatore e della pipeline resta invariato. In particolare
+i due `break` successivi su `minEdgeLength` restano attivi.
+
+Questa versione va descritta come:
+
+```text
+Vittorio puro
++ una sola deviazione ComputeOffset: soglia skip 3P -> P
+```
+
+e non più come "identico a Vittorio".
+
+Return point:
+`f1544135c303abb8296ef784c86b3cca6d627e6c`,
+branch
+`recovery/vittorio-revisionato-before-offset-threshold-20261001`.
+
+Il Fast Harness `36861645040` conferma che il quadrato pubblico resta valido,
+ma l'equivalenza multi-progetto con Vittorio diverge già su `concave-l`.
+Questa divergenza è coerente con lo scopo dell'esperimento e deve essere
+valutata visivamente prima di consolidare o modificare i gate di regressione.
+
+---
+
 ## Baseline generatore 01/10/2026 — Vittorio puro reale
 
 Per eliminare l'ambiguità accumulata sulla parola "storico", la Mandata di
