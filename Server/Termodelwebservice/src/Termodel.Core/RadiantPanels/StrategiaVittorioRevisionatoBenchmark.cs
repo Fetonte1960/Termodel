@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
+using Termodel.utilities;
 
 namespace Termodel.Core.RadiantPanels;
 
@@ -14,7 +15,10 @@ public static class StrategiaVittorioRevisionatoBenchmark
     private static readonly object EngineGate = new();
 
     // Funzione realizzata da Codex in autonomia
-    public static StrategiaVittorioBenchmarkSample Run(string localeXml, bool publicPath = false)
+    public static StrategiaVittorioBenchmarkSample Run(
+        string localeXml,
+        bool publicPath = false,
+        TermodelLog.LogConfiguration? logConfiguration = null)
     {
         if (string.IsNullOrWhiteSpace(localeXml))
             throw new ArgumentException("Fixture Vittorio vuota.", nameof(localeXml));
@@ -34,6 +38,7 @@ public static class StrategiaVittorioRevisionatoBenchmark
         long memoryBefore = GC.GetTotalMemory(forceFullCollection: true);
         var stopwatch = Stopwatch.StartNew();
         var diagnostics = new List<string>();
+        TermodelLog.InitializeLog(logConfiguration);
 
         try
         {
@@ -62,6 +67,8 @@ public static class StrategiaVittorioRevisionatoBenchmark
                         .Split(
                             new[] { "\r\n", "\n" },
                             StringSplitOptions.RemoveEmptyEntries));
+
+                diagnostics.AddRange(TermodelLog.Messages);
             }
 
             stopwatch.Stop();
