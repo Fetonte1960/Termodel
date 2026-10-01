@@ -73,6 +73,28 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 
+### INCARICO 2026-10-01 — Generate storico come recovery e nuovo Generate P/2-2P per Vittorio_revisionato
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- formalizzare nei documenti il contratto per cui il `Generate` storico di Vittorio/Vittorio_revisionato resta baseline di recovery della sola Mandata;
+- introdurre nel solo `Vittorio_revisionato` un percorso di generazione separato con `P=PassoTubi`, primo offset parete `P/2`, offset Mandata-Mandata `2P`;
+- impostare il Return parallelo e la chiusura con `P`, quindi soglia minima chiusura `2P`;
+- preservare un ritorno immediato al `Generate` storico senza rollback globale del motore;
+- non modificare `SpiraliVittorio`, `Diego_Vittorio`, `funzioni_diego.chiusura_diego`, frontend, `definizionedati.json` o Golden;
+- pubblicare su `main`, aggiornare recovery/linee guida/Summary e notificare la conclusione tramite Issue #1.
+
+Criteri di completamento:
+- contratto documentato in `docs/RECOVERY-ACTIVE.md` e `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`;
+- `Vittorio_revisionato` conserva un ingresso storico a distanza unica come recovery;
+- il nuovo percorso revisionato distingue esplicitamente `DistanzaParete=P/2` e `DistanzaMandataMandata=2P`;
+- `DistanzaRitorno=P` e la combinatoria riceve `P`, quindi `required=2P`;
+- il passaggio fra nuovo percorso e recovery è circoscritto e reversibile senza revert di commit;
+- build e regression mirate eseguite; eventuali anomalie non pertinenti documentate senza aggiornare Golden;
+- stessa voce aggiornata a `ESEGUITO` con commit e risultati reali.
+
+
+
 ### INCARICO 2026-10-01 — Consolidamento storico Vittorio / Diego_Vittorio / Vittorio_revisionato
 Stato: ESEGUITO
 
