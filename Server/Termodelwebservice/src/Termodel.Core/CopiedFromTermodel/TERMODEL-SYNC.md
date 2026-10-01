@@ -284,3 +284,18 @@ Commit funzionali principali:
   istituzionale della chiusura.
 - Il tentativo P/2-2P è documentato come non approvato e non deve essere
   riattivato senza nuova autorizzazione.
+
+
+### 2026-10-01 — Vittorio_revisionato riallineato al vero SpiralGenerator Vittorio
+- `SpiraliVittorioRevisionato/Spiralgenerator.cs` è stato riportato alla copia
+  originale del commit `5b8ddc11b4e23046bda1e1c5824af4d4bc084326`.
+- Blob corrente: `95e99c7e420dab6b102f69a16a919c2ce0856bf3`.
+- Il file è identico a `SpiraliVittorio/Spiralgenerator.cs` salvo namespace.
+- Le estensioni Service-only `SpiralGenerationInput`, `GenerateCore`,
+  condizionamento e `TerminalCenterline` non fanno più parte del generatore
+  revisionato corrente.
+- Return/chiusura restano integrazioni Service-only già tracciate e non sono
+  state riportate dentro il generatore.
+- Return point prima della modifica:
+  `45bff4b4d016bcd60aa0c18d26aefdcf51ad8a21`,
+  branch `recovery/vittorio-revisionato-before-pure-vittorio-20261001`.
