@@ -103,7 +103,11 @@ jobs:
             '"Closure.Try"',
             '"Closure.Reject"',
             '"Closure.Accept"',
-            '"Closure.Selected"'
+            '"Closure.AttemptReport"',
+            '"Closure.Selected"',
+            '"Closure.Summary"',
+            '"outcome=SUCCESS"',
+            '"outcome=FAILURE"'
           )) {
             if (-not $text.Contains($marker)) {
               throw "Log istituzionale combinatoria privo del marker: $marker"
@@ -161,6 +165,35 @@ jobs:
             throw "Quadrato pubblico: ricomparsa una variante RP non prevista dalla combinatoria finale."
           }
 
+          $failureReport = Get-Content $log | Where-Object {
+            $_ -match '\[SpiraliDiego\]\[Closure\.AttemptReport\]' -and
+            $_ -match 'outcome=FAILURE'
+          } | Select-Object -First 1
+          if ([string]::IsNullOrWhiteSpace($failureReport)) {
+            Get-Content $log | Write-Host
+            throw "Quadrato pubblico: manca un report FAILURE di una permutazione scartata."
+          }
+          foreach ($marker in @(
+            "attempt=",
+            "seq=",
+            "reason=",
+            "supplyRemoved=",
+            "supplyMode=",
+            "supplyLast=",
+            "supplyLastLen=",
+            "returnRemoved=",
+            "returnMode=",
+            "returnLast=",
+            "returnLastLen=",
+            "closureLength=",
+            "required="
+          )) {
+            if (-not $failureReport.Contains($marker)) {
+              Get-Content $log | Write-Host
+              throw "Quadrato pubblico: report FAILURE incompleto, manca $marker"
+            }
+          }
+
           $applied = $logText -match 'Chiusura Diego combinatoria: APPLICATA'
           $open = $logText -match 'Chiusura Diego combinatoria: NON APPLICATA'
           if (-not $applied -and -not $open) {
@@ -169,6 +202,43 @@ jobs:
           }
 
           if ($applied) {
+            $successReport = Get-Content $log | Where-Object {
+              $_ -match '\[SpiraliDiego\]\[Closure\.AttemptReport\]' -and
+              $_ -match 'outcome=SUCCESS'
+            } | Select-Object -First 1
+            if ([string]::IsNullOrWhiteSpace($successReport)) {
+              Get-Content $log | Write-Host
+              throw "Quadrato pubblico: manca il report SUCCESS della permutazione selezionata."
+            }
+            foreach ($marker in @(
+              "attempt=",
+              "seq=",
+              "reason=accepted",
+              "supplyRemoved=",
+              "supplyMode=",
+              "supplyLast=",
+              "supplyLastLen=",
+              "returnRemoved=",
+              "returnMode=",
+              "returnLast=",
+              "returnLastLen=",
+              "closureLength=",
+              "required=",
+              "cosSupply=",
+              "cosReturn=",
+              "intersectsSupply=False",
+              "intersectsReturn=False"
+            )) {
+              if (-not $successReport.Contains($marker)) {
+                Get-Content $log | Write-Host
+                throw "Quadrato pubblico: report SUCCESS incompleto, manca $marker"
+              }
+            }
+            if ($logText -notmatch '\[SpiraliDiego\]\[Closure\.Summary\][^\r\n]*outcome=SUCCESS[^\r\n]*attempts=[0-9]+[^\r\n]*selected=M[0-2][IP]/R[0-2][IP]') {
+              Get-Content $log | Write-Host
+              throw "Quadrato pubblico: summary SUCCESS della combinatoria non trovato."
+            }
+
             $selected = [regex]::Match(
               $logText,
               '\[SpiraliDiego\]\[Closure\.Selected\][^\r\n]*type=first-straight-success[^\r\n]*length=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)[^\r\n]*requiredLength=([0-9]+(?:\.[0-9]+)?(?:[Ee][+-]?[0-9]+)?)')
@@ -195,6 +265,10 @@ jobs:
             Write-Host "REVISIONATO_PUBLIC_SQUARE_STRAIGHT_2P_OK length=$straightLength required=$requiredLength"
           }
           else {
+            if ($logText -notmatch '\[SpiraliDiego\]\[Closure\.Summary\][^\r\n]*outcome=FAILURE[^\r\n]*selected=none') {
+              Get-Content $log | Write-Host
+              throw "Quadrato pubblico: summary FAILURE della combinatoria non trovato."
+            }
             if ($logText -match '\[SpiraliDiego\]\[Closure\.Selected\][^\r\n]*type=first-straight-success' -or
                 $logText -match 'VREV_LG051_CLOSURE_OK') {
               Get-Content $log | Write-Host
