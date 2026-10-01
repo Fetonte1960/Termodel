@@ -74,7 +74,7 @@ Prima di intervenire:
 
 
 ### INCARICO 2026-10-01 — Consolidamento restore point approvato e difetto strettoie
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - dichiarare approvato come restore point lo stato corrente di `Vittorio_revisionato` con soglia `ComputeOffset` ridotta da `3P` a `P`;
@@ -97,6 +97,57 @@ Criteri di completamento:
 - stessa voce aggiornata a `ESEGUITO` con riferimenti ai documenti e al branch recovery.
 
 
+
+
+Esito:
+- restore point approvato visualmente sul progetto multi-locale;
+- runtime funzionale approvato:
+  `6132430e7907699cbf577c2ef869ffd03117f216`;
+- snapshot documentale bloccato:
+  `edc1fc4cff0edad0700a9c9c2582b80c205efb57`;
+- branch recovery creato:
+  `recovery/vittorio-revisionato-approved-offset-p-20261001`;
+- questo branch/commit sostituisce come restore point preferito il precedente
+  return point pre-esperimento `f1544135...`.
+
+Stato geometrico consolidato:
+- base generatore: Vittorio puro;
+- deviazione approvata in `Vittorio_revisionato`:
+  `ComputeOffset: edgeLength <= offset * 3 -> edgeLength <= offset`;
+- con `offset=0,30 m`: soglia skip `0,90 -> 0,30 m`;
+- Return, chiusura, permutazioni e raccordatura invariati rispetto allo stato
+  già pubblicato.
+
+Problema aperto registrato:
+- nelle strettoie/corridoi stretti può comparire una geometria locale non
+  soddisfacente;
+- caso osservato visivamente nel locale 4 del progetto multi-locale fornito
+  dall'utente;
+- l'utente segnala che il difetto era stato tamponato in una iterazione
+  precedente, ma la causa/patch responsabile non è ancora stata ricostruita;
+- il difetto non invalida il restore point approvato;
+- futura correzione da affrontare come missione separata, con nuovo return
+  point, senza mescolarla a centro/Return/chiusura.
+
+Documenti aggiornati:
+- `docs/RECOVERY-ACTIVE.md`: `d0105fbe1e7a2d7fc95b94fc29bb3c5e88a49a83`;
+- `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`:
+  `0fc1760c77c3f18990839a98da7dd9b4746833e8`;
+- `docs/spirali-strategy-register/README.md`:
+  `f3167398b0f37224e8c5a73738946543643ae318`;
+- `src/Termodel.Core/CopiedFromTermodel/SpiraliVittorioRevisionato/README.md`:
+  `70d2da9bf1b8b77b667d263ad3280ee500c80cfa`;
+- `src/Termodel.Core/CopiedFromTermodel/TERMODEL-SYNC.md`:
+  `64c59b88b9fbcd07205e5cfa360da5c3a7e05d44`.
+
+Stato reale:
+- documentazione aggiornata: sì;
+- codice runtime modificato in questo incarico: no;
+- build/test aggiuntivi necessari: no, incarico documentale;
+- ultimo runtime già verificato sul server prima di questo incarico:
+  `6132430e...`;
+- restore point approvato e bloccato: sì;
+- difetto strettoie: aperto / da risolvere in seguito.
 
 ### INCARICO 2026-10-01 — Soglia chirurgica ComputeOffset da 3P a P in Vittorio_revisionato
 Stato: ESEGUITO
