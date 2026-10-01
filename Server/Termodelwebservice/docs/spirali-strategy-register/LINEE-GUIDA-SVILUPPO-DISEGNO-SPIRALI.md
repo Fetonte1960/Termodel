@@ -1,3 +1,64 @@
+## CANDIDATO IN COLLAUDO 01/10/2026 — matrice Mandata 1,5P / 2P con Return a P
+
+Questa sezione descrive il candidato pubblicato dopo il restore point approvato.
+Il restore point precedente resta intatto e recuperabile; questo candidato deve
+essere sottoposto a controllo visivo prima di essere promosso a nuova baseline.
+
+Geometria richiesta:
+
+```text
+P = 0,30 m
+
+Parete -> Mandata esterna         = 1,5P = 0,45 m
+Mandata -> Return parallelo       = P    = 0,30 m
+Parete -> Return esterno risultante
+                                  = P/2  = 0,15 m
+
+Mandata -> Mandata stesso colore  = 2P   = 0,60 m
+Return  -> Return stesso colore   = 2P   = 0,60 m
+Finalizzazione storica Mandata    = P    = 0,30 m
+```
+
+Motivazione geometrica:
+- il Return blu si sviluppa tra la Mandata rossa e la parete;
+- quindi la Mandata non deve trovarsi a P/2 dalla parete;
+- portando la Mandata esterna a 1,5P e generando il Return parallelo a P dalla
+  Mandata, il Return esterno risulta automaticamente a P/2 dalla parete;
+- due tratti dello stesso colore restano separati da 2P.
+
+Implementazione chirurgica nella Mandata:
+
+```csharp
+double distanzaOffset = i == 0
+    ? distanzaParete
+    : distanzaStessaSpirale;
+```
+
+con:
+- `distanzaParete = 1,5P`;
+- `distanzaStessaSpirale = 2P`;
+- `distanzaFinalizzazione = P`.
+
+Il generatore conserva inoltre l'overload storico a distanza unica per
+compatibilità, ma il percorso pubblico `Vittorio_revisionato` usa i tre ruoli
+separati.
+
+Vincoli preservati:
+- `ComputeOffset` resta con `edgeLength <= offset`, non `offset * 3`;
+- algoritmo combinatorio di chiusura invariato;
+- raccordatura invariata;
+- difetto noto delle strettoie non affrontato in questa modifica;
+- `SpiraliVittorio`, frontend, Golden e `definizionedati.json` invariati.
+
+Recovery point precedente alla modifica:
+
+```text
+commit: 0b541f92cf74412a33d68ffc0603e3f319c4a82f
+branch: recovery/vittorio-revisionato-before-split-wall-supply-20261001
+```
+
+---
+
 ## BASELINE APPROVATA 01/10/2026 — Vittorio_revisionato con soglia ComputeOffset = P
 
 Questa sezione è vincolante e prevale sulle note sperimentali precedenti
