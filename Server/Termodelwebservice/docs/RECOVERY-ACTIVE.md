@@ -1,3 +1,21 @@
+# RESTORE POINT APPROVATO 02/10/2026 — CHIUSURA CORRETTA E RACCORDATA
+
+Il collaudo visivo reale sul server ha approvato la chiusura e la raccordatura.
+
+Componenti funzionali approvati:
+- filtro `parallel-proximity` del commit `51682d9ae7849685b2472ae2f0cc254023fe18b1`;
+- terminale del permutatore: solo accorciamento a massimo `2P`, mai allungamento, commit `8e3ae961c233a181f15450aa3a981c7896f45541`;
+- raccordatura LG-051 invariata;
+- Mandata, Return, SpiralGenerator e raggio invariati rispetto alla baseline precedente.
+
+Esito:
+- chiusura visivamente corretta;
+- raccordi visivamente corretti;
+- stato promosso a nuova baseline di recovery.
+
+Il branch di recovery dedicato viene registrato nel Summary finale di questo incarico.
+
+---
 # AGGIORNAMENTO 02/10/2026 — TERMINALE PERMUTATORE A MASSIMO 2P
 
 È attivo un candidato limitato alla normalizzazione terminale della combinatoria di chiusura.
