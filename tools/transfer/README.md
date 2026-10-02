@@ -115,3 +115,21 @@ backup sotto `_backups`.
 - `PUBBLICA_MODIFICHE_LOCALI_NEL_GITHUB_REMOTO.cmd`, nella radice, crea il
   commit delle modifiche locali autorizzate e le pubblica sul remoto, escludendo
   `SorgentiTermodel/Work`.
+
+
+#### Nota dopo il primo test Windows del publisher sicuro
+
+Il wrapper `PUBBLICA_TERMODEL_SERVICE_LOCALE_SICURO.cmd` gestisce anche il
+caso in cui il clone contenga gia' modifiche pregresse del solo Service:
+
+- salva automaticamente tali modifiche in uno stash Git di sicurezza;
+- aggiorna il clone da `origin/main`;
+- esporta il Service locale;
+- compila prima della pubblicazione;
+- esclude automaticamente dalla pubblicazione tutti i file Markdown e ogni
+  `definizionedati.json`;
+- continua a fermarsi se trova modifiche fuori da
+  `Server/Termodelwebservice`;
+- non usa force-push.
+
+La sorgente locale Codex/Visual Studio non viene mai modificata dal wrapper.
