@@ -1,3 +1,25 @@
+## BASELINE APPROVATA 02/10/2026 — chiusura corretta e raccordata
+
+Il collaudo visivo reale sul server ha approvato il risultato ottenuto con:
+- filtro `parallel-proximity` sulla selezione della chiusura;
+- variante storica `P` del permutatore reinterpretata come solo accorciamento a massimo `2P`, senza allungamento;
+- raccordatura finale LG-051 invariata.
+
+Esito visivo approvato:
+- la falsa chiusura lunga quasi parallela non viene più selezionata;
+- il vero tratto di chiusura è corretto;
+- gli innesti Mandata -> Chiusura e Chiusura -> Return risultano raccordati correttamente;
+- la geometria complessiva del circuito è accettata come nuova baseline.
+
+Commit funzionale della normalizzazione terminale:
+`8e3ae961c233a181f15450aa3a981c7896f45541`.
+
+La modifica `parallel-proximity` resta quella del commit:
+`51682d9ae7849685b2472ae2f0cc254023fe18b1`.
+
+Da questo stato ripartire per le modifiche successive; introdurre una sola modifica geometrica alla volta e collaudarla visivamente.
+
+---
 ## CANDIDATO 02/10/2026 — variante terminale del permutatore: massimo 2P
 
 Modifica isolata approvata dopo la correzione `parallel-proximity`.
