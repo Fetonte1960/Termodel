@@ -1,3 +1,32 @@
+## Milestone 11 — filtro chiusura lunga quasi parallela < 2P (02/10/2026)
+
+Chiarita la causa del difetto visivo della chiusura.
+
+Il piccolo segmento centrale che attirava l'attenzione **non era il tratto di
+chiusura responsabile del problema**. La combinatoria aveva selezionato una
+chiusura formalmente valida ma composta da un **tratto lungo** quasi parallelo
+a un tratto non adiacente della spirale, posto a distanza inferiore a `2P`.
+
+Per evitare questa situazione,
+`SpiraliDiegoVittorio/funzioni_diego.cs::chiusura_diego(...)` scarta ora un
+candidato quando:
+- il tratto di chiusura è quasi parallelo entro 5°;
+- esiste sovrapposizione proiettata positiva;
+- il confronto riguarda il secondo o terzo tratto terminale non adiacente;
+- la distanza è strettamente `< 2P`.
+
+Il primo tratto adiacente alla chiusura è escluso dal controllo.
+
+Log diagnostico:
+`reason=parallel-proximity`.
+
+Commit:
+`51682d9ae7849685b2472ae2f0cc254023fe18b1`.
+
+Nessuna modifica a Mandata, Return, offset o SpiralGenerator.
+
+---
+
 ## Rollback 01/10/2026
 
 Il candidato con:
