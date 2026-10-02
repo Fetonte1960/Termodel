@@ -1,3 +1,36 @@
+
+# CONSOLIDAMENTO 02/10/2026 — ESECUTIVI STATICI DEI DUE ESEMPI AGGIORNATI
+
+I due esempi pubblici del progetto dispongono ora di esecutivi SVG statici
+rigenerati con il motore `Vittorio_revisionato` e consolidati direttamente
+nel repository. La loro visualizzazione dal browser non richiede un nuovo
+calcolo del Service.
+
+Esempi:
+- `docs/termodel-ui-demo/examples/pannelli-radianti.tmdl.txt`
+  -> `pannelli-radianti-esecutivo.svg`;
+- `docs/termodel-ui-demo/examples/quadrato-con-pannelli.svg`
+  -> `quadrato-con-pannelli-esecutivo.svg`.
+
+Provenienza consolidata:
+- motore: `Vittorio_revisionato`;
+- commit funzionale Service: `f73f2361977ffa887dd718931e7024e83df49fbc`;
+- workflow: `36979179620`;
+- commit artifact: `250764471dc580d6206e4813ba9e2c8a2f952a09`;
+- commit provenienza finale: `0e6331d0206d81af5ef917da16274057c9b02331`;
+- SHA-256 `pannelli-radianti-esecutivo.svg`:
+  `fe932dda57d10a8f0fdd2f3cb0eef0604aafacd78982c3e229c72fa338e57460`;
+- SHA-256 `quadrato-con-pannelli-esecutivo.svg`:
+  `bb1d34a2e9ef93692d687dec5a5c86b3591d5b0d38af23ca8ff3ecc401afe4ee`.
+
+Il catalogo `docs/termodel-ui-demo/examples/catalog.json` registra la stessa
+provenienza e continua a usare `executiveSvg` per il caricamento statico.
+
+È disponibile il workflow riusabile
+`.github/workflows/termodel-consolidate-example-executives.yml` per future
+rigenerazioni esplicite degli esecutivi consolidati. Non aggiorna Golden.
+
+---
 # CANDIDATO ATTIVO 02/10/2026 — TERMINALE CENTRALE REVERSIBILE
 
 Il commit runtime `f73f2361977ffa887dd718931e7024e83df49fbc` è stato pubblicato dal PC locale dopo build riuscita.
