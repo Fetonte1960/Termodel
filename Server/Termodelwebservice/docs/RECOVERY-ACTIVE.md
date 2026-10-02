@@ -13,7 +13,8 @@ Esito:
 - raccordi visivamente corretti;
 - stato promosso a nuova baseline di recovery.
 
-Il branch di recovery dedicato viene registrato nel Summary finale di questo incarico.
+Branch recovery dedicato:
+`recovery/vittorio-revisionato-approved-closure-raccordata-20261002`.
 
 ---
 # AGGIORNAMENTO 02/10/2026 — TERMINALE PERMUTATORE A MASSIMO 2P
