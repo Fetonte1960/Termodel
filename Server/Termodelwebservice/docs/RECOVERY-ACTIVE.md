@@ -1,3 +1,29 @@
+# AGGIORNAMENTO 02/10/2026 — TERMINALE PERMUTATORE A MASSIMO 2P
+
+È attivo un candidato limitato alla normalizzazione terminale della combinatoria di chiusura.
+
+Commit funzionale:
+`8e3ae961c233a181f15450aa3a981c7896f45541`.
+
+Comportamento:
+- la sigla storica `P` della matrice resta invariata per compatibilità;
+- se il terminale è più lungo di `2P`, viene accorciato a `2P`;
+- se è già lungo `<= 2P`, resta invariato;
+- il terminale non viene mai allungato.
+
+Scopo: conservare più lunghezza utile per la raccordatura circolare senza modificare il raggio.
+
+Non modificati:
+- Mandata;
+- Return;
+- SpiralGenerator;
+- filtro `parallel-proximity`;
+- minimo chiusura `>= 2P`;
+- `raccorda_diego`.
+
+Il restore point precedente resta valido; questa è una singola modifica successiva, da validare visivamente sul caso reale.
+
+---
 # AGGIORNAMENTO 02/10/2026 — FILTRO CHIUSURA PARALLELA < 2P
 
 Dopo il restore point approvato è stata pubblicata una modifica limitata alla
