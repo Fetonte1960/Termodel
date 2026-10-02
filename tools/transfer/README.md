@@ -56,6 +56,42 @@ Per affidare un nuovo modulo a GPT basta aggiungere un mapping. Non e necessario
 
 ## Termodel WebService
 
+### Comando consigliato dopo un lavoro locale Codex / Visual Studio
+
+Per pubblicare **solo TermodelService** dopo che Codex o Visual Studio hanno
+modificato il sorgente locale usare, dalla radice del clone:
+
+```text
+PUBBLICA_TERMODEL_SERVICE_LOCALE_SICURO.cmd
+```
+
+È il percorso consigliato perché esegue automaticamente tutta la sequenza:
+
+1. richiede il clone Git pulito e il branch `main`;
+2. aggiorna il clone con `origin/main` in fast-forward;
+3. esporta il solo mapping `TermodelWebService`;
+4. rifiuta modifiche comparse fuori da `Server/Termodelwebservice`;
+5. compila `Server/Termodelwebservice/Termodel.WebService.sln`;
+6. mostra i soli file Service pronti per il commit;
+7. chiede una sola conferma finale `S/N`;
+8. crea commit e push senza force-push.
+
+Se copia o build falliscono prima del commit, il CMD ripulisce esclusivamente
+la copia nel clone: i sorgenti locali modificati da Codex/Visual Studio
+rimangono intatti. Se invece nasce un conflitto dopo il commit, il CMD non
+forza il remoto e chiede di mostrare la schermata a ChatGPT.
+
+**Quando usarlo:** ogni volta che il lavoro corretto esiste nel
+`Termodelwebservice` locale e deve essere trasferito su GitHub.
+
+**Quando non usarlo:** per portare GitHub verso il PC. In quel caso usare il
+flusso di download/import dedicato.
+
+Il precedente `PUBBLICA_MODIFICHE_LOCALI_NEL_GITHUB_REMOTO.cmd` rimane uno
+strumento generico dell'intero clone; per il normale lavoro sul Service è
+preferibile il CMD sicuro dedicato sopra.
+
+
 Il mapping `TermodelWebService` usa direttamente la destinazione versionata
 `Server/Termodelwebservice`, invece del precedente `workspace`. Per limitare le
 operazioni a questo modulo usare:
