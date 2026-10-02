@@ -72,6 +72,32 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-02 — approvazione visiva chiusura raccordata / nuovo restore point
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- approvazione visiva del risultato sul server dopo la modifica del permutatore
+  terminale a massimo 2P;
+- consolidare questo stato come nuova baseline/restore point approvato;
+- aggiornare Summary, Recovery, linee guida spirali e README della strategia;
+- creare un branch di recovery dedicato allo stato approvato;
+- non modificare il runtime;
+- chiudere Issue #1 come Completed per la notifica finale.
+
+Stato funzionale approvato:
+- filtro di chiusura `parallel-proximity` attivo;
+- variante storica `P` del permutatore = solo accorciamento a massimo `2P`,
+  mai allungamento;
+- raccordatura finale visivamente corretta nel caso reale mostrato dall'utente;
+- Mandata, Return, SpiralGenerator e raggio restano invariati.
+
+Criteri di completamento:
+- branch recovery creato sullo stato approvato;
+- documentazione aggiornata con approvazione visiva esplicita;
+- nessun sorgente runtime modificato;
+- stessa voce portata a `ESEGUITO`.
+
+
 ### INCARICO 2026-10-02 — permutatore terminale: solo accorciamento a 2P
 Stato: ESEGUITO
 
