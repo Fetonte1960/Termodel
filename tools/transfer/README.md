@@ -133,3 +133,16 @@ caso in cui il clone contenga gia' modifiche pregresse del solo Service:
 - non usa force-push.
 
 La sorgente locale Codex/Visual Studio non viene mai modificata dal wrapper.
+
+
+#### Esclusioni locali permanenti del publisher Service
+
+Il publisher sicuro esclude inoltre, sia dalla build di verifica del clone sia
+dallo staging/push, questi due sorgenti locali:
+
+- `src/Termodel.WebService/Calculations/CalculationSnapshotStore.cs`;
+- `src/Termodel.WebService/Calculations/SavedProjectStore.cs`.
+
+I file restano intatti nel sorgente locale Codex/Visual Studio. Dopo l'export
+vengono rimossi soltanto dalla copia GitHub quando non sono versionati; se in
+futuro esistessero gia' nel repository, viene mantenuta la versione GitHub.
