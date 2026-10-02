@@ -1,3 +1,46 @@
+## CONSOLIDATO 02/10/2026 — chiusura visivamente ingannevole: tratto lungo parallelo < 2P
+
+La causa del difetto di chiusura osservato nel caso reale è ora chiarita.
+
+L'errore di interpretazione visiva era concentrarsi sul piccolo trattino
+centrale: **quel segmento corto non era il tratto di chiusura responsabile
+dell'anomalia**.
+
+La combinatoria aveva invece selezionato un candidato formalmente valido nel
+quale il vero tratto di chiusura era **lungo** e correva quasi parallelo a un
+tratto terminale non adiacente della spirale. Pur senza intersecare e pur
+superando i precedenti gate, la distanza fra i due tratti risultava
+**strettamente minore di `2P`**. Graficamente i due segmenti vicini potevano
+essere letti come parti normali della spirale, mentre il piccolo trattino
+centrale attirava erroneamente l'attenzione.
+
+Regola consolidata introdotta in
+`SpiraliDiegoVittorio/funzioni_diego.cs::chiusura_diego(...)`:
+
+```text
+quasi parallelismo entro 5°
++ sovrapposizione proiettata positiva
++ distanza < 2P
++ confronto col secondo o terzo tratto terminale non adiacente
+= candidato di chiusura RESPINTO
+```
+
+Il primo tratto direttamente adiacente alla chiusura resta escluso dal filtro.
+
+Marker diagnostico:
+
+```text
+reason=parallel-proximity
+```
+
+Commit funzionale pubblicato:
+`51682d9ae7849685b2472ae2f0cc254023fe18b1`.
+
+Importante: questa correzione riguarda **solo la selezione della chiusura**.
+Non modifica Mandata, Return, offset, SpiralGenerator o distanze di posa.
+
+---
+
 ## ROLLBACK 01/10/2026 — candidato 1,5P / 2P / P respinto
 
 Il collaudo visivo del candidato pubblicato il 01/10/2026 ha evidenziato:
