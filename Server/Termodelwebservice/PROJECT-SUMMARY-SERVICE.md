@@ -72,6 +72,33 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-02 — hardening CMD pubblicazione Service dopo primo test Windows
+Stato: COMMISSIONATO
+
+Evidenza reale:
+- prima esecuzione Windows del wrapper sicuro fermata correttamente prima di
+  qualunque commit/push perché il clone conteneva modifiche Service pregresse
+  e il CMD stesso era ancora un file non tracciato.
+
+Autorizzazione implicita dal flusso corrente:
+- rendere il wrapper realmente utilizzabile senza richiedere all'utente di
+  interpretare o ripulire manualmente Git;
+- preservare automaticamente eventuali modifiche pregresse del solo Service;
+- non perdere mai sorgenti locali Codex/Visual Studio;
+- impedire che copie locali obsolete sovrascrivano documentazione GitHub o
+  `definizionedati.json`;
+- continuare a bloccare modifiche estranee al Service;
+- mantenere build + conferma finale + no force-push.
+
+Criteri:
+- prima esecuzione gestibile anche con il CMD locale non ancora tracciato;
+- modifiche pregresse del Service conservate in uno stash di sicurezza;
+- staging limitato al Service, con esclusione automatica di documentazione
+  Markdown e `definizionedati.json`;
+- clone ripulito dalle differenze non pubblicate al termine;
+- aggiornare README e chiudere Issue #1.
+
+
 ### INCARICO 2026-10-02 — CMD unico per pubblicazione sicura del Service locale
 Stato: ESEGUITO
 
