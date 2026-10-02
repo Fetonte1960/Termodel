@@ -1,3 +1,43 @@
+## CANDIDATO 02/10/2026 — variante terminale del permutatore: massimo 2P
+
+Modifica isolata approvata dopo la correzione `parallel-proximity`.
+
+La matrice di ricerca mantiene per compatibilità le sigle storiche:
+
+```text
+0I, 0P, 1I, 1P, 2I, 2P
+```
+
+ma la semantica della variante `P` cambia:
+
+```text
+I = terminale invariato
+P = accorcia il terminale a massimo 2P; non allunga mai
+```
+
+Regola esatta:
+
+```text
+lunghezza > 2P  -> accorcia a 2P
+lunghezza <= 2P -> lascia invariato
+```
+
+Motivazione:
+- la precedente normalizzazione esatta a `P` poteva lasciare un tratto terminale troppo corto per ospitare i raccordi circolari adiacenti;
+- con il raggio corrente `R=0,10 m` e il passo chiusura `P=0,15 m`, un terminale a `P=0,15 m` può non contenere due consumi tangenti dell'ordine di `0,10 + 0,10 m`;
+- il limite `2P=0,30 m` lascia più spazio senza ridurre il raggio.
+
+Restano invariati:
+- ordine della matrice;
+- chiusura minima `>= 2P`;
+- filtro `parallel-proximity < 2P`;
+- Mandata, Return e SpiralGenerator;
+- `raccorda_diego` e `RaggioCurvatura`.
+
+Commit funzionale:
+`8e3ae961c233a181f15450aa3a981c7896f45541`.
+
+---
 ## CONSOLIDATO 02/10/2026 — chiusura visivamente ingannevole: tratto lungo parallelo < 2P
 
 La causa del difetto di chiusura osservato nel caso reale è ora chiarita.
