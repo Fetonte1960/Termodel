@@ -1,0 +1,191 @@
+name: Consolidate static example executives
+
+permissions:
+  contents: write
+  statuses: write
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/termodel-consolidate-example-executives.yml'
+
+jobs:
+  consolidate:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mark Termodel job RUNNING
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+          $body = @{
+            state = "pending"
+            context = "Termodel/job"
+            description = "RUNNING - consolidate example executives"
+            target_url = $runUrl
+          } | ConvertTo-Json
+          Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        working-directory: Server/Termodelwebservice
+        run: dotnet restore Termodel.WebService.sln
+
+      - name: Build
+        working-directory: Server/Termodelwebservice
+        run: dotnet build Termodel.WebService.sln -c Release --no-restore
+
+      - name: Generate Pannelli radianti executive
+        working-directory: Server/Termodelwebservice
+        run: ./tools/smoke-radiant-reference.ps1 -ProjectPath "../../docs/termodel-ui-demo/examples/pannelli-radianti.tmdl.txt" -SpiralEngine "Vittorio_revisionato"
+
+      - name: Generate square executive
+        working-directory: Server/Termodelwebservice
+        run: ./tools/generate-public-square-executive.ps1 -Engine "Vittorio_revisionato"
+
+      - name: Consolidate SVG files and provenance
+        id: consolidate
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $radiantSource = Join-Path $env:RUNNER_TEMP "RadiantPanelsEngineOverride-Vittorio_revisionato\response-pannelli-esecutivo.svg"
+          $squareSource = Join-Path $env:RUNNER_TEMP "PublicSquareExecutiveArtifacts\quadrato-con-pannelli-esecutivo.svg"
+          $radiantTarget = "docs/termodel-ui-demo/examples/pannelli-radianti-esecutivo.svg"
+          $squareTarget = "docs/termodel-ui-demo/examples/quadrato-con-pannelli-esecutivo.svg"
+          $catalogPath = "docs/termodel-ui-demo/examples/catalog.json"
+
+          foreach ($path in @($radiantSource,$squareSource)) {
+            if (-not (Test-Path -LiteralPath $path)) {
+              throw "Esecutivo generato mancante: $path"
+            }
+            $svg = Get-Content -LiteralPath $path -Raw
+            foreach ($marker in @(
+              "TERMODEL-PANNELLI-ESECUTIVO-SVG-V1",
+              'data-coordinate-unit="m"',
+              'data-termodel-max-y=',
+              '_PiantaPulita_Output',
+              '_PannelliMandata_Output',
+              '_PannelliRitorno_Output'
+            )) {
+              if (-not $svg.Contains($marker)) {
+                throw "Esecutivo $path privo del marker $marker"
+              }
+            }
+          }
+
+          Copy-Item -LiteralPath $radiantSource -Destination $radiantTarget -Force
+          Copy-Item -LiteralPath $squareSource -Destination $squareTarget -Force
+
+          $radiantHash = (Get-FileHash -LiteralPath $radiantTarget -Algorithm SHA256).Hash.ToLowerInvariant()
+          $squareHash = (Get-FileHash -LiteralPath $squareTarget -Algorithm SHA256).Hash.ToLowerInvariant()
+          $serviceCommit = (git log -1 --format=%H -- Server/Termodelwebservice/src).Trim()
+          if ([string]::IsNullOrWhiteSpace($serviceCommit)) { throw "Commit Service funzionale non determinato." }
+
+          $catalog = Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json
+          $generatedDate = [DateTime]::UtcNow.ToString("yyyy-MM-dd")
+
+          foreach ($item in @(
+            @{ Id = "pannelli-radianti"; Hash = $radiantHash },
+            @{ Id = "quadrato-con-pannelli"; Hash = $squareHash }
+          )) {
+            $entry = @($catalog.examples | Where-Object { $_.id -eq $item.Id })
+            if ($entry.Count -ne 1) { throw "Esempio $($item.Id) non trovato una sola volta." }
+            $prov = $entry[0].executiveProvenance
+            $prov.kind = "consolidated-example"
+            $prov.generator = "Termodel Service"
+            $prov.spiralEngine = "Vittorio_revisionato"
+            $prov.serviceCommit = $serviceCommit
+            $prov.consolidatedCommit = "PENDING"
+            $prov.generatedDate = $generatedDate
+            $prov.workflowRun = "${{ github.run_id }}"
+            $prov.svgSha256 = $item.Hash
+            if ($item.Id -eq "quadrato-con-pannelli" -and ($prov.PSObject.Properties.Name -contains "baselineHarnessSha256")) {
+              $prov.PSObject.Properties.Remove("baselineHarnessSha256")
+            }
+          }
+
+          $catalog | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $catalogPath -Encoding utf8NoBOM
+
+          git config user.name "Termodel Automation"
+          git config user.email "actions@users.noreply.github.com"
+
+          git add -- $radiantTarget $squareTarget $catalogPath
+          git commit -m "docs(examples): aggiorna esecutivi statici Vittorio_revisionato [skip ci]"
+          if ($LASTEXITCODE -ne 0) { throw "Commit artifact statici non riuscito." }
+
+          $artifactCommit = (git rev-parse HEAD).Trim()
+
+          $catalog = Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json
+          foreach ($entry in @($catalog.examples)) {
+            if ($entry.id -in @("pannelli-radianti","quadrato-con-pannelli")) {
+              $entry.executiveProvenance.consolidatedCommit = $artifactCommit
+            }
+          }
+          $catalog | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $catalogPath -Encoding utf8NoBOM
+          git add -- $catalogPath
+          git commit -m "docs(examples): fissa provenienza esecutivi consolidati [skip ci]"
+          if ($LASTEXITCODE -ne 0) { throw "Commit provenienza finale non riuscito." }
+
+          git push origin HEAD:main
+          if ($LASTEXITCODE -ne 0) { throw "Push esecutivi consolidati non riuscito." }
+
+          "radiant_sha256=$radiantHash" >> $env:GITHUB_OUTPUT
+          "square_sha256=$squareHash" >> $env:GITHUB_OUTPUT
+          "service_commit=$serviceCommit" >> $env:GITHUB_OUTPUT
+          "artifact_commit=$artifactCommit" >> $env:GITHUB_OUTPUT
+          $finalCommit = (git rev-parse HEAD).Trim()
+          "final_commit=$finalCommit" >> $env:GITHUB_OUTPUT
+
+          Write-Host "STATIC_EXECUTIVES_CONSOLIDATED_OK"
+          Write-Host "serviceCommit=$serviceCommit"
+          Write-Host "radiantSvgSha256=$radiantHash"
+          Write-Host "squareSvgSha256=$squareHash"
+          Write-Host "artifactCommit=$artifactCommit"
+          Write-Host "finalCommit=$finalCommit"
+
+      - name: Finalize Termodel job status
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $runUrl = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          $state = if ("${{ job.status }}" -eq "success") { "success" } else { "failure" }
+          $description = if ($state -eq "success") {
+            "SUCCESS - static example executives consolidated"
+          } else {
+            "FAILED - static example executives consolidation"
+          }
+          $headers = @{
+            "Authorization" = "Bearer $env:GH_TOKEN"
+            "Accept" = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+          }
+          $body = @{
+            state = $state
+            context = "Termodel/job"
+            description = $description
+            target_url = $runUrl
+          } | ConvertTo-Json
+          Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" -Method Post -Headers $headers -ContentType "application/json" -Body $body | Out-Null
