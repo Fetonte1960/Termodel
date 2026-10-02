@@ -62,9 +62,11 @@ if defined DIRTY goto :DIRTY_AFTER_PULL
 
 echo.
 echo [2/7] Copio il TermodelService locale nel clone...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%TRANSFER_PS1%" -Action export -Name TermodelWebService
-if errorlevel 1 goto :ERRORE_PRIMA_EXPORT
+rem Segno la fase come iniziata prima della copia: anche un export parziale
+rem verra' ripulito dal clone in caso di errore. I sorgenti locali non si toccano.
 set "EXPORTED=1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%TRANSFER_PS1%" -Action export -Name TermodelWebService
+if errorlevel 1 goto :ERRORE_DOPO_EXPORT
 
 set "OUTSIDE="
 for /f "delims=" %%L in ('git status --porcelain --untracked-files^=all -- . ":(exclude)Server/Termodelwebservice" ":(exclude)Server/Termodelwebservice/**"') do set "OUTSIDE=1"
