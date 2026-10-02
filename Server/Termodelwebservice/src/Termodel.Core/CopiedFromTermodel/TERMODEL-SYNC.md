@@ -426,3 +426,13 @@ Commit funzionale:
 `8e3ae961c233a181f15450aa3a981c7896f45541`.
 
 Non sincronizzare automaticamente questa semantica nella Library Desktop.
+
+### 02/10/2026 — approvazione visiva baseline chiusura raccordata
+
+Il percorso Service-only di `Vittorio_revisionato` è stato approvato visivamente sul server con:
+- filtro `parallel-proximity` in `funzioni_diego.cs` (commit `51682d9ae7849685b2472ae2f0cc254023fe18b1`);
+- variante storica `P` del permutatore = solo accorciamento a massimo `2P`, mai allungamento (commit `8e3ae961c233a181f15450aa3a981c7896f45541`);
+- raccordatura LG-051 invariata.
+
+Esito approvato: chiusura corretta e raccordata. Questo stato diventa baseline Service-only per le evoluzioni successive.
+Non sincronizzare automaticamente queste deviazioni nella Library Desktop.
