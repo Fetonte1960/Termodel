@@ -1,3 +1,23 @@
+# CANDIDATO ATTIVO 02/10/2026 — TERMINALE CENTRALE REVERSIBILE
+
+Il commit runtime `f73f2361977ffa887dd718931e7024e83df49fbc` è stato pubblicato dal PC locale dopo build riuscita.
+
+Modifica:
+- `Spiralgenerator.cs` soltanto;
+- `ComputeOffset` torna a `edgeLength <= offset * 3`;
+- aggiunto un tratto terminale centrale opzionale dopo l'ultimo anello;
+- feature flag `TERMODEL_VITTORIO_REVISIONATO_TERMINAL_SEGMENT`, attivo per default, disattivabile con `false` o `0`;
+- prova limitata a ultimo offset rettangolare ortogonale a 4 vertici;
+- controlli di distanza/intersezione prima dell'aggiunta.
+
+Questo stato è un **candidato da collaudare visivamente**.
+
+Restore point approvato precedente, da non perdere:
+`recovery/vittorio-revisionato-approved-closure-raccordata-20261002`.
+
+Se il nuovo tratto centrale produce regressioni, ripartire dal branch sopra senza modificare Golden.
+
+---
 # RESTORE POINT APPROVATO 02/10/2026 — CHIUSURA CORRETTA E RACCORDATA
 
 Il collaudo visivo reale sul server ha approvato la chiusura e la raccordatura.
