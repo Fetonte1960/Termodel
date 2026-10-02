@@ -1,3 +1,35 @@
+# AGGIORNAMENTO 02/10/2026 — FILTRO CHIUSURA PARALLELA < 2P
+
+Dopo il restore point approvato è stata pubblicata una modifica limitata alla
+selezione della chiusura in
+`SpiraliDiegoVittorio/funzioni_diego.cs`.
+
+Diagnosi consolidata:
+- il piccolo trattino centrale visibile non era il vero tratto di chiusura che
+  produceva il difetto;
+- il candidato accettato conteneva invece un tratto di chiusura lungo, quasi
+  parallelo a un tratto non adiacente della spirale;
+- la distanza fra i due tratti era strettamente minore di `2P`;
+- il candidato superava i vecchi controlli di lunghezza, angoli e
+  intersezione, quindi risultava formalmente valido pur essendo
+  geometricamente/visivamente indesiderato.
+
+Filtro aggiunto:
+- quasi parallelismo entro 5°;
+- sovrapposizione proiettata positiva;
+- controllo del secondo e terzo tratto terminale non adiacente di Mandata e
+  Return;
+- se la distanza è `< 2P`, il candidato viene respinto;
+- log: `reason=parallel-proximity`.
+
+Commit funzionale:
+`51682d9ae7849685b2472ae2f0cc254023fe18b1`.
+
+Il restore point precedente resta valido per Mandata/Return/generatore. La
+nuova modifica è esclusivamente nel filtro di chiusura.
+
+---
+
 # ROLLBACK ESEGUITO 01/10/2026 — RITORNO AL RESTORE POINT APPROVATO
 
 Su decisione utente il candidato successivo con matrice `1,5P / 2P / P`
