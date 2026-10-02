@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-02 — hardening CMD pubblicazione Service dopo primo test Windows
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Evidenza reale:
 - prima esecuzione Windows del wrapper sicuro fermata correttamente prima di
@@ -98,6 +98,31 @@ Criteri:
 - clone ripulito dalle differenze non pubblicate al termine;
 - aggiornare README e chiudere Issue #1.
 
+
+
+Esito:
+- il primo STOP Windows e' stato corretto senza perdita di dati;
+- il nuovo wrapper si auto-esegue da una copia TEMP, quindi puo' gestire
+  anche il proprio file nella radice del clone;
+- eventuali modifiche pregresse del solo Service vengono salvate in uno
+  stash automatico di sicurezza prima del pull;
+- il wrapper continua a rifiutare modifiche estranee al Service;
+- l'export dal sorgente locale viene compilato prima del commit;
+- lo staging esclude automaticamente tutti i Markdown e qualunque
+  `definizionedati.json`;
+- dopo successo/annullamento/errori pre-commit la copia nel clone viene
+  ripulita senza toccare il sorgente locale Codex/Visual Studio;
+- nessun force-push.
+
+Commit:
+- hardening CMD: `2a97b6866f4dee10dd6f21708ab59fe3ad9c16f8`;
+- documentazione transfer: `993f9427bba442e72f35ed1f6ae0b6a17d55fadf`.
+
+Verifica:
+- primo test Windows precedente: STOP corretto prima di copy/commit/push;
+- nuova versione verificata staticamente e pronta al secondo test reale
+  Windows;
+- nessuna modifica al runtime Termodel.Core/WebService eseguita da questo job.
 
 ### INCARICO 2026-10-02 — CMD unico per pubblicazione sicura del Service locale
 Stato: ESEGUITO
