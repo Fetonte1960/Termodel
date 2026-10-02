@@ -72,6 +72,40 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-02 — permutatore terminale: solo accorciamento a 2P
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- modificare esclusivamente la normalizzazione terminale del permutatore in
+  `SpiraliDiegoVittorio/funzioni_diego.cs`;
+- la variante storicamente denominata `P` non deve più portare il terminale
+  esattamente a `P`;
+- deve invece accorciare il terminale a `2P` soltanto quando la sua lunghezza
+  originale è maggiore di `2P`;
+- se il terminale è già lungo `<= 2P`, deve restare invariato;
+- non allungare mai un terminale;
+- non modificare ordine della matrice, Mandata, Return, SpiralGenerator,
+  raccordatura, raggio, filtro `parallel-proximity` o soglia minima chiusura
+  `>= 2P`;
+- pubblicare, verificare e notificare con Issue #1.
+
+Motivazione:
+- con raggio di raccordo `R=0,10 m` e passo chiusura corrente `P=0,15 m`,
+  terminali forzati a `P` possono non lasciare spazio sufficiente ai raccordi
+  adiacenti;
+- un terminale massimo `2P=0,30 m` preserva più spazio utile alla
+  raccordatura senza ridurre il raggio;
+- la modifica deve restare una prova isolata e reversibile.
+
+Criteri di completamento:
+- unica modifica funzionale nel ramo `normalizzaP` di
+  `CreaConfigurazioneTerminaleChiusura(...)`;
+- nessun allungamento dei terminali;
+- build e smoke disponibili verificati;
+- documentazione aggiornata;
+- stessa voce portata a `ESEGUITO`.
+
+
 ### INCARICO 2026-10-02 — consolidamento diagnosi chiusura parallela < 2P
 Stato: ESEGUITO
 
