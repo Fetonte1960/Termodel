@@ -1,3 +1,25 @@
+## Milestone 14 — candidato tratto terminale centrale reversibile (02/10/2026)
+
+Pubblicato dal sorgente locale Codex tramite il wrapper sicuro.
+
+Commit:
+`f73f2361977ffa887dd718931e7024e83df49fbc`.
+
+Il generatore ora:
+1. mantiene il flusso Vittorio ordinario;
+2. usa nuovamente in `ComputeOffset` la soglia storica `edgeLength <= offset * 3`;
+3. dopo l'ultimo anello prova ad aggiungere un solo tratto terminale nella fascia centrale;
+4. limita questa prima prova agli ultimi offset rettangolari ortogonali a 4 vertici;
+5. verifica distanza minima e assenza di intersezioni con Mandata non adiacente prima di aggiungere il tratto.
+
+Feature flag:
+`TERMODEL_VITTORIO_REVISIONATO_TERMINAL_SEGMENT`
+- default: attivo;
+- `false` o `0`: disattivato.
+
+Questo candidato non sostituisce ancora la baseline visivamente approvata della chiusura raccordata.
+
+---
 ## Milestone 13 — chiusura e raccordatura approvate visivamente (02/10/2026)
 
 Il risultato reale sul server è stato approvato dall'utente.
