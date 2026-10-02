@@ -1,3 +1,24 @@
+## Milestone 12 — variante terminale a massimo 2P (02/10/2026)
+
+La variante storicamente identificata con `P` nella matrice `0I,0P,1I,1P,2I,2P` non normalizza più il terminale esattamente a `P`.
+
+Nuova semantica:
+
+```text
+lunghezza > 2P  -> accorcia a 2P
+lunghezza <= 2P -> invariata
+```
+
+Non viene mai allungato un terminale.
+
+La modifica mira a lasciare spazio sufficiente ai raccordi circolari successivi mantenendo invariato il raggio prescritto.
+
+Commit:
+`8e3ae961c233a181f15450aa3a981c7896f45541`.
+
+Restano invariati combinatoria, ordine dei tentativi, minimo chiusura `2P`, filtro `parallel-proximity`, Mandata, Return, SpiralGenerator e `raccorda_diego`.
+
+---
 ## Milestone 11 — filtro chiusura lunga quasi parallela < 2P (02/10/2026)
 
 Chiarita la causa del difetto visivo della chiusura.
