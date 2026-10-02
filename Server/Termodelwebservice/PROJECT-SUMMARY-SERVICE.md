@@ -72,6 +72,27 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-02 — esclusione permanente due sorgenti locali dal publisher Service
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- modificare il CMD di pubblicazione sicura del Service affinche' escluda
+  sempre i due sorgenti locali:
+  - `CalculationSnapshotStore.cs`;
+  - `SavedProjectStore.cs`;
+- i due file devono restare intatti nel sorgente locale Codex/Visual Studio;
+- non devono essere copiati nella build di verifica del clone;
+- non devono essere staged, committati o pubblicati su GitHub;
+- mantenere tutte le altre protezioni del publisher sicuro.
+
+Criteri:
+- rimozione automatica dei due file soltanto dalla copia nel clone dopo export;
+- doppia esclusione anche nello staging Git;
+- build eseguita sullo stesso insieme di sorgenti che verrebbe pubblicato;
+- documentazione aggiornata;
+- Issue #1 chiusa Completed.
+
+
 ### INCARICO 2026-10-02 — hardening CMD pubblicazione Service dopo primo test Windows
 Stato: ESEGUITO
 
