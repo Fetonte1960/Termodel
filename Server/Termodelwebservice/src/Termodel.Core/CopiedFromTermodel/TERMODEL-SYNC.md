@@ -385,3 +385,24 @@ restore point. La futura evoluzione delle distanze deve avvenire una modifica
 alla volta, con collaudo visivo dopo ogni passaggio.
 
 Non sincronizzare il candidato respinto verso la Library Desktop.
+
+
+### 02/10/2026 — filtro Service-only sulla chiusura parallela ravvicinata
+
+`SpiraliDiegoVittorio/funzioni_diego.cs::chiusura_diego(...)` contiene
+ora un filtro aggiuntivo Service-only introdotto nel commit
+`51682d9ae7849685b2472ae2f0cc254023fe18b1`.
+
+Diagnosi consolidata:
+- il piccolo trattino centrale visibile non era il vero tratto di chiusura
+  responsabile del difetto;
+- il candidato problematico conteneva un tratto di chiusura lungo, quasi
+  parallelo a un tratto terminale non adiacente;
+- con sovrapposizione proiettata positiva e distanza `< 2P`, il candidato
+  viene ora respinto;
+- tolleranza di quasi parallelismo: 5°;
+- controllo sul secondo e terzo tratto terminale non adiacente;
+- marker diagnostico: `reason=parallel-proximity`.
+
+Questa logica non modifica Mandata, Return, offset o SpiralGenerator e non ha
+un corrispondente Desktop da sincronizzare automaticamente.
