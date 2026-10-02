@@ -72,6 +72,43 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-02 — consolidamento diagnosi chiusura parallela < 2P
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- consolidare nei registri di sviluppo la causa reale del difetto visivo
+  della chiusura;
+- chiarire che il piccolo trattino centrale osservato non era il tratto di
+  chiusura che produceva il difetto;
+- registrare che il candidato formalmente valido conteneva invece un tratto
+  di chiusura lungo, quasi parallelo a un tratto non adiacente della spirale,
+  con distanza strettamente minore di `2P`;
+- registrare che il filtro pubblicato da Codex scarta proprio questa
+  configurazione;
+- non modificare il runtime;
+- aggiornare Summary, linee guida/registro spirali, Recovery e README della
+  strategia;
+- chiudere Issue #1 come Completed per la notifica finale.
+
+Riferimento funzionale:
+- commit Codex pubblicato:
+  `51682d9ae7849685b2472ae2f0cc254023fe18b1`;
+- file:
+  `SpiraliDiegoVittorio/funzioni_diego.cs`;
+- criterio aggiunto:
+  quasi parallelismo (entro 5 gradi) + sovrapposizione proiettata +
+  distanza `< 2P` rispetto al secondo/terzo tratto terminale non adiacente
+  => candidato di chiusura respinto con
+  `reason=parallel-proximity`.
+
+Criteri di completamento:
+- diagnosi descritta in modo non ambiguo nei registri;
+- distinto chiaramente il piccolo tratto visibile dal vero tratto di chiusura
+  valutato dal filtro;
+- nessun sorgente runtime modificato;
+- stessa voce portata a `ESEGUITO`.
+
+
 ### INCARICO 2026-10-02 — esclusione permanente due sorgenti locali dal publisher Service
 Stato: ESEGUITO
 
