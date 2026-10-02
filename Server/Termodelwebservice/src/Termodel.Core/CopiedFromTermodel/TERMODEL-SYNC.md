@@ -406,3 +406,23 @@ Diagnosi consolidata:
 
 Questa logica non modifica Mandata, Return, offset o SpiralGenerator e non ha
 un corrispondente Desktop da sincronizzare automaticamente.
+
+### 02/10/2026 — permutatore chiusura: variante P limitata a massimo 2P
+
+`SpiraliDiegoVittorio/funzioni_diego.cs::chiusura_diego(...)` mantiene per
+compatibilità le sigle storiche `0I,0P,1I,1P,2I,2P`, ma la variante `P`
+non normalizza più il terminale esattamente a P.
+
+Nuova semantica Service-only:
+- se il terminale è `> 2P`, viene accorciato a `2P`;
+- se il terminale è `<= 2P`, resta invariato;
+- il terminale non viene mai allungato.
+
+Motivazione: preservare lunghezza utile per i raccordi circolari LG-051
+senza ridurre il raggio. Restano invariati filtro `parallel-proximity`,
+minimo chiusura `>=2P`, Mandata, Return, SpiralGenerator e `raccorda_diego`.
+
+Commit funzionale:
+`8e3ae961c233a181f15450aa3a981c7896f45541`.
+
+Non sincronizzare automaticamente questa semantica nella Library Desktop.
