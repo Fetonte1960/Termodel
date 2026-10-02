@@ -7,7 +7,7 @@
 > `Termodel/job` con `RUNNING -> SUCCESS/FAILED` e push telefono a
 > SUCCESS/FAILED. La regola è permanente e già verificata end-to-end.
 
-Ultimo aggiornamento: **2026-10-01**
+Ultimo aggiornamento: **2026-10-02**
 Branch GitHub di riferimento: **main**
 Repository: `https://github.com/Fetonte1960/Termodel`
 
@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-02 — consolidamento diagnosi chiusura parallela < 2P
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - consolidare nei registri di sviluppo la causa reale del difetto visivo
@@ -108,6 +108,48 @@ Criteri di completamento:
 - nessun sorgente runtime modificato;
 - stessa voce portata a `ESEGUITO`.
 
+
+
+Esito consolidato:
+- causa reale chiarita: il piccolo trattino centrale non era il tratto di
+  chiusura responsabile del difetto visivo;
+- il candidato accettato conteneva invece un tratto di chiusura lungo,
+  quasi parallelo a un tratto terminale non adiacente della spirale;
+- con sovrapposizione proiettata positiva e distanza strettamente `< 2P`,
+  questa configurazione viene ora respinta;
+- tolleranza angolare del filtro: 5°;
+- controllo limitato al secondo e terzo tratto terminale non adiacente;
+- il primo tratto adiacente resta escluso;
+- log diagnostico: `reason=parallel-proximity`.
+
+Stato runtime:
+- nessun sorgente modificato da questo incarico documentale;
+- correzione funzionale già pubblicata nel commit
+  `51682d9ae7849685b2472ae2f0cc254023fe18b1`;
+- build GitHub SUCCESS;
+- smoke Pannelli SUCCESS;
+- smoke pubblico `Vittorio_revisionato` SUCCESS;
+- smoke open circuits SUCCESS;
+- deploy pubblico SUCCESS;
+- workflow globale rosso soltanto sul noto smoke locale storage/lock.
+
+Registri aggiornati:
+- `docs/spirali-strategy-register/LINEE-GUIDA-SVILUPPO-DISEGNO-SPIRALI.md`
+  commit `b1fb47fd2da237b7a843e4c21095d3603c7d3626`;
+- `docs/RECOVERY-ACTIVE.md`
+  commit `80abf7ebf016c505e25c4630d4e60e0e3079da20`;
+- README `SpiraliVittorioRevisionato`
+  commit `545e52500639639299507c81c2b7bbb530e2bb15`;
+- `TERMODEL-SYNC.md`
+  commit `ae93cf0b7348c11c8cbeeba5305cbb48994ab4c0`.
+
+Decisione consolidata:
+- in casi analoghi non identificare la chiusura dal segmento visivamente più
+  corto o più evidente;
+- usare la geometria effettiva della combinatoria e i log per stabilire quale
+  tratto è la chiusura selezionata;
+- il filtro `parallel-proximity` è parte del criterio di validità della
+  chiusura Service-only.
 
 ### INCARICO 2026-10-02 — esclusione permanente due sorgenti locali dal publisher Service
 Stato: ESEGUITO
