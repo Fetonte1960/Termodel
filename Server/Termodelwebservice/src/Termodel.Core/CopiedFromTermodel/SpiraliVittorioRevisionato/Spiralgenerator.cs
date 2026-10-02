@@ -164,7 +164,213 @@ namespace SpiralHeatingVittorioRevisionato
 				spiral.Add(puntoFinale);
 			}
 
+			// Modificato da Codex per realizzare: prova locale e reversibile di
+			// un solo tratto nella fascia centrale dopo l'ultimo anello.
+			if (TrattoTerminaleCentraleAbilitato())
+				TryAppendTerminalCenterSegment(spiral, offsets, distanza);
+
 			return (spiral, offsets);
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static bool TrattoTerminaleCentraleAbilitato()
+		{
+			string value = Environment.GetEnvironmentVariable(
+				"TERMODEL_VITTORIO_REVISIONATO_TERMINAL_SEGMENT");
+			return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase) &&
+				!string.Equals(value, "0", StringComparison.OrdinalIgnoreCase);
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static void TryAppendTerminalCenterSegment(
+			List<Punto> spiral,
+			List<List<Punto>> offsets,
+			double distanzaStessoColore)
+		{
+			const double tolleranza = 0.001;
+			if (spiral == null || spiral.Count < 2 ||
+				offsets == null || offsets.Count < 2 ||
+				distanzaStessoColore <= tolleranza)
+				return;
+
+			var ultimoAnello = offsets[offsets.Count - 1];
+			if (ultimoAnello == null || ultimoAnello.Count != 4)
+				return;
+
+			// Prima prova volutamente stretta: solo ultimo anello rettangolare
+			// ortogonale, senza cambiare ComputeOffset o la percorrenza Vittorio.
+			for (int i = 0; i < ultimoAnello.Count; i++)
+			{
+				Punto a = ultimoAnello[i];
+				Punto b = ultimoAnello[(i + 1) % ultimoAnello.Count];
+				if (Math.Abs(a.X - b.X) > tolleranza &&
+					Math.Abs(a.Y - b.Y) > tolleranza)
+					return;
+			}
+
+			double minX = ultimoAnello.Min(p => p.X);
+			double maxX = ultimoAnello.Max(p => p.X);
+			double minY = ultimoAnello.Min(p => p.Y);
+			double maxY = ultimoAnello.Max(p => p.Y);
+			double latoCorto = Math.Min(maxX - minX, maxY - minY);
+
+			// distanzaStessoColore vale 2P: P e' la distanza Mandata-Return.
+			// Sotto due distanze stesso colore non esiste una mezzeria valida;
+			// oltre quattro va diagnosticato l'eventuale offset mancante.
+			if (latoCorto < 2.0 * distanzaStessoColore - tolleranza ||
+				latoCorto >= 4.0 * distanzaStessoColore + tolleranza)
+				return;
+
+			Punto precedente = spiral[spiral.Count - 2];
+			Punto terminale = spiral[spiral.Count - 1];
+			bool ultimoVerticale =
+				Math.Abs(terminale.X - precedente.X) <= tolleranza;
+			bool ultimoOrizzontale =
+				Math.Abs(terminale.Y - precedente.Y) <= tolleranza;
+			if (!ultimoVerticale && !ultimoOrizzontale)
+				return;
+
+			// Modificato da Codex per realizzare: usare tutta la fascia centrale
+			// disponibile e fermarsi a 2P, distanza stesso colore, dal lato
+			// opposto, non in mezzeria.
+			Punto candidato;
+			if (ultimoVerticale)
+			{
+				bool parteDalLatoDestro =
+					Math.Abs(terminale.X - maxX) <
+					Math.Abs(terminale.X - minX);
+				double targetX = parteDalLatoDestro
+					? minX + distanzaStessoColore
+					: maxX - distanzaStessoColore;
+				candidato = new Punto(targetX, terminale.Y);
+			}
+			else
+			{
+				bool parteDalLatoSuperiore =
+					Math.Abs(terminale.Y - maxY) <
+					Math.Abs(terminale.Y - minY);
+				double targetY = parteDalLatoSuperiore
+					? minY + distanzaStessoColore
+					: maxY - distanzaStessoColore;
+				candidato = new Punto(terminale.X, targetY);
+			}
+
+			double lunghezza = terminale.DistanceTo(candidato);
+			if (lunghezza < distanzaStessoColore - tolleranza ||
+				!SegmentoTerminaleRispettaMandata(
+					terminale,
+					candidato,
+					spiral,
+					distanzaStessoColore,
+					tolleranza))
+				return;
+
+			spiral.Add(candidato);
+			Console.WriteLine(
+				$"  VREV_TERMINAL_SEGMENT_OK " +
+				$"start=({terminale.X:R},{terminale.Y:R}) " +
+				$"end=({candidato.X:R},{candidato.Y:R}) " +
+				$"length={lunghezza:R} " +
+				$"sameColorDistance={distanzaStessoColore:R} " +
+				$"P={(distanzaStessoColore / 2.0):R}");
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static bool SegmentoTerminaleRispettaMandata(
+			Punto inizio,
+			Punto fine,
+			List<Punto> spiral,
+			double distanzaMinima,
+			double tolleranza)
+		{
+			// L'ultimo segmento e' adiacente al candidato e viene escluso.
+			for (int i = 0; i < spiral.Count - 2; i++)
+			{
+				double distanza = DistanzaSegmentiTerminali(
+					inizio,
+					fine,
+					spiral[i],
+					spiral[i + 1],
+					tolleranza);
+				if (distanza < distanzaMinima - tolleranza)
+					return false;
+			}
+
+			return true;
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static double DistanzaSegmentiTerminali(
+			Punto a,
+			Punto b,
+			Punto c,
+			Punto d,
+			double tolleranza)
+		{
+			if (SegmentiTerminaliIntersecano(a, b, c, d, tolleranza))
+				return 0.0;
+
+			return Math.Min(
+				Math.Min(
+					GeometryUtils.DistancePointToSegment(a, c, d),
+					GeometryUtils.DistancePointToSegment(b, c, d)),
+				Math.Min(
+					GeometryUtils.DistancePointToSegment(c, a, b),
+					GeometryUtils.DistancePointToSegment(d, a, b)));
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static bool SegmentiTerminaliIntersecano(
+			Punto a,
+			Punto b,
+			Punto c,
+			Punto d,
+			double tolleranza)
+		{
+			double o1 = OrientamentoTerminale(a, b, c);
+			double o2 = OrientamentoTerminale(a, b, d);
+			double o3 = OrientamentoTerminale(c, d, a);
+			double o4 = OrientamentoTerminale(c, d, b);
+
+			if (((o1 > tolleranza && o2 < -tolleranza) ||
+				 (o1 < -tolleranza && o2 > tolleranza)) &&
+				((o3 > tolleranza && o4 < -tolleranza) ||
+				 (o3 < -tolleranza && o4 > tolleranza)))
+				return true;
+
+			return
+				Math.Abs(o1) <= tolleranza &&
+					PuntoSulSegmentoTerminale(a, b, c, tolleranza) ||
+				Math.Abs(o2) <= tolleranza &&
+					PuntoSulSegmentoTerminale(a, b, d, tolleranza) ||
+				Math.Abs(o3) <= tolleranza &&
+					PuntoSulSegmentoTerminale(c, d, a, tolleranza) ||
+				Math.Abs(o4) <= tolleranza &&
+					PuntoSulSegmentoTerminale(c, d, b, tolleranza);
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static double OrientamentoTerminale(
+			Punto a,
+			Punto b,
+			Punto c)
+		{
+			return (b.X - a.X) * (c.Y - a.Y) -
+				(b.Y - a.Y) * (c.X - a.X);
+		}
+
+		// Funzione realizzata da Codex in autonomia
+		private static bool PuntoSulSegmentoTerminale(
+			Punto a,
+			Punto b,
+			Punto punto,
+			double tolleranza)
+		{
+			return
+				punto.X >= Math.Min(a.X, b.X) - tolleranza &&
+				punto.X <= Math.Max(a.X, b.X) + tolleranza &&
+				punto.Y >= Math.Min(a.Y, b.Y) - tolleranza &&
+				punto.Y <= Math.Max(a.Y, b.Y) + tolleranza;
 		}
 
 		private static (Punto intersection, int nextVertexIndex) FindIntersectionWithOffset(Punto start, List<Punto> offset)
@@ -212,7 +418,10 @@ namespace SpiralHeatingVittorioRevisionato
 				var p2_pre = polygon_pre[(i + 1) % polygon_pre.Count];
 				double edgeLength_pre = p1_pre.DistanceTo(p2_pre);
 				
-				if (edgeLength <= offset && edgeLength_pre - edgeLength > offset)
+				// Modificato da Codex per realizzare: test A/B locale con la soglia
+				// storica Vittorio; separa il collasso degli offset dal riempimento
+				// centrale affidato al tratto terminale reversibile.
+				if (edgeLength <= offset * 3 && edgeLength_pre - edgeLength > offset)
 				{
 					skipIndices.Add(i);
 					skipIndices.Add((i+1) % polygon.Count);
