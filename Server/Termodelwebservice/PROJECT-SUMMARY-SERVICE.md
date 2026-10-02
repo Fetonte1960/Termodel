@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-02 — consolidamento aggiornamento locale Codex f73f236
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Contesto:
 - l'utente ha eseguito il publisher sicuro dal PC locale dopo un lavoro Codex;
@@ -110,6 +110,62 @@ Criteri di completamento:
 - non modificare il runtime;
 - chiudere Issue #1 come Completed per la notifica finale.
 
+
+
+Esito:
+- aggiornamento locale già pubblicato correttamente dall'utente tramite
+  `PUBBLICA_TERMODEL_SERVICE_LOCALE_SICURO.cmd`;
+- commit runtime:
+  `f73f2361977ffa887dd718931e7024e83df49fbc`;
+- file runtime modificato:
+  `SpiraliVittorioRevisionato/Spiralgenerator.cs`;
+- `ComputeOffset` torna alla soglia storica
+  `edgeLength <= offset * 3`;
+- aggiunto tratto terminale centrale opzionale e reversibile;
+- flag:
+  `TERMODEL_VITTORIO_REVISIONATO_TERMINAL_SEGMENT`,
+  attivo per default, disattivabile con `false` o `0`;
+- prima implementazione limitata a ultimo offset rettangolare ortogonale a
+  quattro vertici;
+- controlli di distanza/intersezione impediscono l'aggiunta se il nuovo
+  segmento viola la distanza stesso-colore rispetto alla Mandata esistente.
+
+Verifica reale GitHub:
+- workflow Service Build run `36977725907`;
+- restore SUCCESS;
+- build SUCCESS;
+- smoke pubblico Pannelli radianti SUCCESS;
+- smoke pubblico `Vittorio_revisionato` SUCCESS;
+- smoke `Vittorio_revisionato` open circuits SUCCESS;
+- deploy pubblico SUCCESS;
+- server pubblico:
+  `publicServiceCommit=f73f2361977ffa887dd718931e7024e83df49fbc`;
+- workflow complessivo FAILURE soltanto sul noto smoke locale
+  project-storage/lock: `Termodel.WebService non ha risposto a /health`;
+- nessun Golden aggiornato.
+
+Stato del candidato:
+- pubblicato: sì;
+- compilato: sì;
+- smoke pubblico: sì;
+- deploy pubblico: sì;
+- collaudo visivo specifico del nuovo tratto centrale: ancora da eseguire;
+- baseline precedente preservata nel branch:
+  `recovery/vittorio-revisionato-approved-closure-raccordata-20261002`.
+
+Documentazione aggiornata:
+- linee guida spirali:
+  `ec3b5519ad8963cf75edb24e795332e9a11e30e9`;
+- Recovery:
+  `0610d6fc0943b68e2b23ea4bc4744311048f7612`;
+- README Vittorio_revisionato:
+  `5bb495ce337ad352ada50f883dc8d619292f17c4`;
+- TERMODEL-SYNC:
+  `7288213402595677f7937c974e1441f1cdff34c2`.
+
+Decisione:
+- trattare `f73f236...` come candidato da collaudare visivamente;
+- non promuoverlo a nuova baseline finché il test reale non viene approvato.
 
 ### INCARICO 2026-10-02 — approvazione visiva chiusura raccordata / nuovo restore point
 Stato: ESEGUITO
