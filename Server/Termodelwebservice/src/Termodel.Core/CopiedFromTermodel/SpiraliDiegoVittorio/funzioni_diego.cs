@@ -26,8 +26,9 @@ namespace SpiralHeatingDiegoVittorio
         /// Mandata e Ripresa usano la stessa matrice:
         /// 0I, 0P, 1I, 1P, 2I, 2P.
         /// I = terminale invariato; P = terminale normalizzato esattamente a P.
-        /// Il primo candidato con chiusura >= 2P, innesti non acuti e nessuna
-        /// intersezione del tratto di chiusura col nuovo setup viene accettato.
+        /// Il primo candidato con chiusura >= 2P, innesti non acuti, nessuna
+        /// intersezione e nessun parallelismo vicino del tratto di chiusura
+        /// col nuovo setup viene accettato.
         /// Nessun raccordo o curva partecipa alla scelta.
         /// </summary>
         public static (
@@ -256,6 +257,81 @@ namespace SpiralHeatingDiegoVittorio
                         continue;
                     }
 
+                    // Modificato da Codex per realizzare: esclusione delle chiusure
+                    // quasi parallele e sovrapposte agli ultimi tratti non adiacenti
+                    // quando la loro distanza e' strettamente minore di 2P.
+                    double distanzaMinimaParallelismi = 2.0 * passo;
+                    bool paralleloVicinoMandata =
+                        HaParallelismoVicinoChiusura(
+                            inizio,
+                            fine,
+                            mandata.Punti,
+                            distanzaMinimaParallelismi,
+                            out int trattoMandataDaFine,
+                            out double distanzaMandata,
+                            out double angoloMandata,
+                            out double sovrapposizioneMandata);
+                    bool paralleloVicinoRitorno =
+                        HaParallelismoVicinoChiusura(
+                            inizio,
+                            fine,
+                            ritorno.Punti,
+                            distanzaMinimaParallelismi,
+                            out int trattoRitornoDaFine,
+                            out double distanzaRitorno,
+                            out double angoloRitorno,
+                            out double sovrapposizioneRitorno);
+
+                    if (paralleloVicinoMandata || paralleloVicinoRitorno)
+                    {
+                        string percorso = paralleloVicinoMandata
+                            ? "supply"
+                            : "return";
+                        int trattoDaFine = paralleloVicinoMandata
+                            ? trattoMandataDaFine
+                            : trattoRitornoDaFine;
+                        double distanza = paralleloVicinoMandata
+                            ? distanzaMandata
+                            : distanzaRitorno;
+                        double angolo = paralleloVicinoMandata
+                            ? angoloMandata
+                            : angoloRitorno;
+                        double sovrapposizione = paralleloVicinoMandata
+                            ? sovrapposizioneMandata
+                            : sovrapposizioneRitorno;
+
+                        LogChiusura(
+                            "Closure.Reject",
+                            $"attempt={numeroTentativo} " +
+                            $"seq={codiceMandata}/{codiceRitorno} " +
+                            $"reason=parallel-proximity path={percorso} " +
+                            $"segmentFromEnd={trattoDaFine} " +
+                            $"distance={distanza:R} " +
+                            $"required={distanzaMinimaParallelismi:R} " +
+                            $"angle={angolo:R} overlap={sovrapposizione:R}");
+                        LogEsitoTentativoChiusura(
+                            numeroTentativo,
+                            codiceMandata,
+                            codiceRitorno,
+                            azioneMandata.rimossi,
+                            azioneMandata.normalizzaP,
+                            ms,
+                            me,
+                            azioneRitorno.rimossi,
+                            azioneRitorno.normalizzaP,
+                            rs,
+                            re,
+                            lunghezzaChiusura,
+                            lunghezzaMinimaChiusura,
+                            "FAILURE",
+                            "parallel-proximity",
+                            $"path={percorso} segmentFromEnd={trattoDaFine} " +
+                            $"distance={distanza:R} " +
+                            $"required={distanzaMinimaParallelismi:R} " +
+                            $"angle={angolo:R} overlap={sovrapposizione:R}");
+                        continue;
+                    }
+
                     LogChiusura(
                         "Closure.Accept",
                         $"attempt={numeroTentativo} " +
@@ -411,6 +487,138 @@ namespace SpiralHeatingDiegoVittorio
             }
 
             return false;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static bool HaParallelismoVicinoChiusura(
+            Punto inizioChiusura,
+            Punto fineChiusura,
+            List<Punto> polilinea,
+            double distanzaMinima,
+            out int trattoDaFine,
+            out double distanza,
+            out double angoloGradi,
+            out double sovrapposizione)
+        {
+            trattoDaFine = -1;
+            distanza = double.PositiveInfinity;
+            angoloGradi = double.NaN;
+            sovrapposizione = 0.0;
+
+            if (polilinea == null || polilinea.Count < 3)
+                return false;
+
+            double dxChiusura = fineChiusura.X - inizioChiusura.X;
+            double dyChiusura = fineChiusura.Y - inizioChiusura.Y;
+            double lunghezzaChiusura =
+                Math.Sqrt(dxChiusura * dxChiusura + dyChiusura * dyChiusura);
+            if (lunghezzaChiusura <= TolleranzaChiusura)
+                return false;
+
+            double uxChiusura = dxChiusura / lunghezzaChiusura;
+            double uyChiusura = dyChiusura / lunghezzaChiusura;
+            int ultimoIndiceSegmento = polilinea.Count - 2;
+
+            // Fra gli ultimi tre tratti il primo, direttamente adiacente alla
+            // chiusura, viene escluso. Si controllano solo il secondo e il terzo.
+            for (int posizioneDaFine = 2; posizioneDaFine <= 3; posizioneDaFine++)
+            {
+                int indice = ultimoIndiceSegmento - (posizioneDaFine - 1);
+                if (indice < 0)
+                    continue;
+
+                Punto a = polilinea[indice];
+                Punto b = polilinea[indice + 1];
+                double dx = b.X - a.X;
+                double dy = b.Y - a.Y;
+                double lunghezza = Math.Sqrt(dx * dx + dy * dy);
+                if (lunghezza <= TolleranzaChiusura)
+                    continue;
+
+                double cosenoAssoluto = Math.Abs(
+                    (dxChiusura * dx + dyChiusura * dy) /
+                    (lunghezzaChiusura * lunghezza));
+                cosenoAssoluto = Math.Max(0.0, Math.Min(1.0, cosenoAssoluto));
+                double angolo = Math.Acos(cosenoAssoluto) * 180.0 / Math.PI;
+                if (angolo > 5.0 + TolleranzaChiusura)
+                    continue;
+
+                double proiezioneA =
+                    (a.X - inizioChiusura.X) * uxChiusura +
+                    (a.Y - inizioChiusura.Y) * uyChiusura;
+                double proiezioneB =
+                    (b.X - inizioChiusura.X) * uxChiusura +
+                    (b.Y - inizioChiusura.Y) * uyChiusura;
+                double inizioSovrapposizione =
+                    Math.Max(0.0, Math.Min(proiezioneA, proiezioneB));
+                double fineSovrapposizione =
+                    Math.Min(
+                        lunghezzaChiusura,
+                        Math.Max(proiezioneA, proiezioneB));
+                double sovrapposizioneCorrente =
+                    fineSovrapposizione - inizioSovrapposizione;
+                if (sovrapposizioneCorrente <= TolleranzaChiusura)
+                    continue;
+
+                double distanzaCorrente = Math.Min(
+                    Math.Min(
+                        DistanzaPuntoSegmentoChiusura(
+                            inizioChiusura,
+                            a,
+                            b),
+                        DistanzaPuntoSegmentoChiusura(
+                            fineChiusura,
+                            a,
+                            b)),
+                    Math.Min(
+                        DistanzaPuntoSegmentoChiusura(
+                            a,
+                            inizioChiusura,
+                            fineChiusura),
+                        DistanzaPuntoSegmentoChiusura(
+                            b,
+                            inizioChiusura,
+                            fineChiusura)));
+
+                if (distanzaCorrente <
+                    distanzaMinima - TolleranzaChiusura)
+                {
+                    trattoDaFine = posizioneDaFine;
+                    distanza = distanzaCorrente;
+                    angoloGradi = angolo;
+                    sovrapposizione = sovrapposizioneCorrente;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Funzione realizzata da Codex in autonomia
+        private static double DistanzaPuntoSegmentoChiusura(
+            Punto punto,
+            Punto inizioSegmento,
+            Punto fineSegmento)
+        {
+            double dx = fineSegmento.X - inizioSegmento.X;
+            double dy = fineSegmento.Y - inizioSegmento.Y;
+            double lunghezzaQuadrata = dx * dx + dy * dy;
+            if (lunghezzaQuadrata <=
+                TolleranzaChiusura * TolleranzaChiusura)
+            {
+                return punto.DistanceTo(inizioSegmento);
+            }
+
+            double parametro =
+                ((punto.X - inizioSegmento.X) * dx +
+                 (punto.Y - inizioSegmento.Y) * dy) /
+                lunghezzaQuadrata;
+            parametro = Math.Max(0.0, Math.Min(1.0, parametro));
+
+            var proiezione = new Punto(
+                inizioSegmento.X + parametro * dx,
+                inizioSegmento.Y + parametro * dy);
+            return punto.DistanceTo(proiezione);
         }
 
         private static bool SegmentiIntersecanoChiusura(
