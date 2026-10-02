@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-02 — CMD unico per pubblicazione sicura del Service locale
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - creare un comando unico che permetta di pubblicare su GitHub le modifiche
@@ -100,6 +100,36 @@ Documentazione:
   consigliato dopo un lavoro locale Codex/Visual Studio.
 
 
+
+
+Esito:
+- creato `PUBBLICA_TERMODEL_SERVICE_LOCALE_SICURO.cmd` nella radice del clone;
+- il CMD pubblica esclusivamente `Server/Termodelwebservice`;
+- richiede clone pulito e branch `main`;
+- esegue `fetch` + `pull --ff-only` prima dell'export;
+- usa il mapping `TermodelWebService` per copiare il sorgente locale nel clone;
+- blocca la procedura se compaiono modifiche fuori dal Service;
+- compila `Server/Termodelwebservice/Termodel.WebService.sln` prima del commit;
+- mostra file e statistiche del commit;
+- chiede una sola conferma finale `S/N`;
+- usa commit + push senza force-push;
+- se export/build falliscono prima del commit, ripristina soltanto la copia
+  `Server/Termodelwebservice` nel clone e lascia intatti i sorgenti locali;
+- se nasce un conflitto dopo il commit, non forza il remoto e chiede
+  l'intervento di ChatGPT;
+- aggiornato `tools/transfer/README.md` indicando questo CMD come percorso
+  consigliato dopo un lavoro locale Codex/Visual Studio.
+
+Commit:
+- creazione CMD: `55199ce100169d85cbf947e6100a1fff6b171afb`;
+- hardening export parziale: `9b2be5e9f320befbada51a5c1d7a75f3c3199e94`;
+- documentazione transfer: `a0e3d7ec0bac2927c150894691971b68169287c1`.
+
+Verifica:
+- contenuto del CMD riletto integralmente dopo la pubblicazione;
+- non eseguito in ambiente Windows reale in questa chat: la prima esecuzione
+  sul PC dell'utente costituirà il test operativo del wrapper;
+- nessuna modifica a runtime Termodel.Core/WebService, frontend o dati.
 
 ### INCARICO 2026-10-01 — Rollback runtime Vittorio_revisionato al restore point approvato
 Stato: ESEGUITO
