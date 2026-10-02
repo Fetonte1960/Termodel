@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-02 — esclusione permanente due sorgenti locali dal publisher Service
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - modificare il CMD di pubblicazione sicura del Service affinche' escluda
@@ -92,6 +92,27 @@ Criteri:
 - documentazione aggiornata;
 - Issue #1 chiusa Completed.
 
+
+
+Esito:
+- `PUBBLICA_TERMODEL_SERVICE_LOCALE_SICURO.cmd` esclude ora esplicitamente:
+  - `CalculationSnapshotStore.cs`;
+  - `SavedProjectStore.cs`;
+- dopo l'export i due file vengono rimossi soltanto dalla copia del clone se
+  non sono versionati, quindi non partecipano neppure alla build di verifica;
+- se in futuro fossero gia' versionati, il wrapper conserva/ripristina la
+  versione GitHub e scarta soltanto la variante locale;
+- lo staging contiene una seconda esclusione esplicita degli stessi due path;
+- i sorgenti locali Codex/Visual Studio non vengono modificati.
+
+Commit:
+- publisher: `9cfba92172bf0d930a07397e5b4eaa9df2f33606`;
+- documentazione transfer: `7ad0ee9f6ae5c175524dc729f2ebca0a486cf503`.
+
+Verifica:
+- contenuto del wrapper riletto dopo la modifica;
+- esclusioni presenti sia prima della build sia nello staging;
+- secondo test Windows ancora da eseguire.
 
 ### INCARICO 2026-10-02 — hardening CMD pubblicazione Service dopo primo test Windows
 Stato: ESEGUITO
