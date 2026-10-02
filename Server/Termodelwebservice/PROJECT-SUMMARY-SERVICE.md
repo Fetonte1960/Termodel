@@ -72,6 +72,45 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-02 — consolidamento aggiornamento locale Codex f73f236
+Stato: COMMISSIONATO
+
+Contesto:
+- l'utente ha eseguito il publisher sicuro dal PC locale dopo un lavoro Codex;
+- il CMD ha compilato localmente e pubblicato su `main` il commit
+  `f73f2361977ffa887dd718931e7024e83df49fbc`;
+- il task corrente non modifica il runtime: deve analizzare, registrare e
+  notificare correttamente lo stato pubblicato.
+
+Modifica locale pubblicata:
+- file unico:
+  `SpiraliVittorioRevisionato/Spiralgenerator.cs`;
+- ripristino della soglia storica Vittorio in `ComputeOffset`:
+  `edgeLength <= offset * 3`;
+- aggiunta di un tratto terminale centrale opzionale dopo l'ultimo anello;
+- feature flag:
+  `TERMODEL_VITTORIO_REVISIONATO_TERMINAL_SEGMENT`;
+  attivo per default, disattivabile con `false` o `0`;
+- prima prova volutamente limitata all'ultimo offset rettangolare ortogonale
+  a 4 vertici;
+- il tratto terminale usa la fascia centrale disponibile e si arresta alla
+  distanza stesso-colore dal lato opposto;
+- il tratto viene aggiunto solo se conserva la distanza minima dalla Mandata
+  esistente e non interseca tratti non adiacenti.
+
+Vincolo di recovery:
+- la baseline precedentemente approvata resta disponibile sul branch
+  `recovery/vittorio-revisionato-approved-closure-raccordata-20261002`;
+- il nuovo stato `f73f236...` è un candidato e non sostituisce tale baseline
+  finché non viene approvato visivamente.
+
+Criteri di completamento:
+- registrare la modifica nei documenti di sviluppo/recovery/sync;
+- registrare build, smoke e deploy reali GitHub;
+- non modificare il runtime;
+- chiudere Issue #1 come Completed per la notifica finale.
+
+
 ### INCARICO 2026-10-02 — approvazione visiva chiusura raccordata / nuovo restore point
 Stato: ESEGUITO
 
