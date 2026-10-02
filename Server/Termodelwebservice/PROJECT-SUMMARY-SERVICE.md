@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-02 — aggiornamento esecutivi statici dei due progetti esempio
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - aggiornare gli esecutivi statici già presenti per i due esempi del progetto,
@@ -105,6 +105,64 @@ Criteri di completamento:
 - stessa voce portata a `ESEGUITO`;
 - Issue #1 chiusa Completed per la notifica finale.
 
+
+
+Esito:
+- entrambi gli esecutivi statici sono stati rigenerati in GitHub Actions usando
+  il Service compilato nello stesso run e il motore `Vittorio_revisionato`;
+- nessuna interrogazione al server pubblico è necessaria per visualizzare gli
+  esempi: il frontend continua a leggere i file indicati da
+  `examples/catalog.json::executiveSvg`;
+- aggiornati:
+  - `docs/termodel-ui-demo/examples/pannelli-radianti-esecutivo.svg`;
+  - `docs/termodel-ui-demo/examples/quadrato-con-pannelli-esecutivo.svg`;
+  - `docs/termodel-ui-demo/examples/catalog.json`;
+- nessuna modifica alla logica frontend;
+- nessuna modifica a `definizionedati.json`;
+- nessun Golden aggiornato.
+
+Provenienza:
+- motore: `Vittorio_revisionato`;
+- commit funzionale Service:
+  `f73f2361977ffa887dd718931e7024e83df49fbc`;
+- workflow consolidamento:
+  `36979179620`;
+- commit artifact:
+  `250764471dc580d6206e4813ba9e2c8a2f952a09`;
+- commit provenienza finale:
+  `0e6331d0206d81af5ef917da16274057c9b02331`.
+
+Hash correnti:
+- `pannelli-radianti-esecutivo.svg`:
+  `fe932dda57d10a8f0fdd2f3cb0eef0604aafacd78982c3e229c72fa338e57460`;
+- `quadrato-con-pannelli-esecutivo.svg`:
+  `bb1d34a2e9ef93692d687dec5a5c86b3591d5b0d38af23ca8ff3ecc401afe4ee`.
+
+Verifica reale:
+- Restore SUCCESS;
+- Build SUCCESS;
+- generazione esempio Pannelli radianti SUCCESS;
+- `RADIANT_SPIRAL_ENGINE_REQUEST_OK engine=Vittorio_revisionato closure=True`;
+- `VITTORIO_REVISIONATO_CLOSURE_MODE_OK`;
+- generazione Quadrato con pannelli SUCCESS;
+- `PUBLIC_SQUARE_EXECUTIVE_OK`;
+- verifica marker canonici di entrambi gli SVG SUCCESS;
+- commit/push automatico dei due artifact e della provenienza SUCCESS;
+- `STATIC_EXECUTIVES_CONSOLIDATED_OK`.
+
+Tooling:
+- `generate-public-square-executive.ps1` accetta ora anche
+  `Vittorio_revisionato`;
+- aggiunto workflow riusabile
+  `.github/workflows/termodel-consolidate-example-executives.yml`,
+  eseguibile manualmente per future rigenerazioni esplicite;
+- il workflow determina il commit funzionale ignorando i Markdown sotto
+  `src`, così la provenienza non viene alterata da soli aggiornamenti
+  documentali.
+
+Recovery:
+- aggiornato `docs/RECOVERY-ACTIVE.md` nel commit
+  `0cb0fa8736224fef3ad3d35d17b6f5b80a82761b`.
 
 ### INCARICO 2026-10-02 — consolidamento aggiornamento locale Codex f73f236
 Stato: ESEGUITO
