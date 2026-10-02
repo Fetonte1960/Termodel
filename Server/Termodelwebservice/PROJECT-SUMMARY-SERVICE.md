@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-02 — permutatore terminale: solo accorciamento a 2P
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - modificare esclusivamente la normalizzazione terminale del permutatore in
@@ -105,6 +105,50 @@ Criteri di completamento:
 - documentazione aggiornata;
 - stessa voce portata a `ESEGUITO`.
 
+
+
+Esito implementazione:
+- unica modifica funzionale in
+  `SpiraliDiegoVittorio/funzioni_diego.cs::CreaConfigurazioneTerminaleChiusura(...)`;
+- la variante storica `P` mantiene il nome per compatibilità ma ora significa:
+  - `lunghezza > 2P` -> accorcia a `2P`;
+  - `lunghezza <= 2P` -> invariata;
+  - nessun allungamento;
+- ordine matrice `0I,0P,1I,1P,2I,2P` invariato;
+- minimo chiusura `>=2P`, filtro `parallel-proximity`, Mandata, Return,
+  SpiralGenerator, `raccorda_diego` e raggio invariati.
+
+Commit funzionale:
+- `8e3ae961c233a181f15450aa3a981c7896f45541`.
+
+Verifica reale:
+- Service Build run `36969750621`;
+- restore SUCCESS;
+- build SUCCESS;
+- smoke pubblico Pannelli radianti SUCCESS;
+- smoke pubblico `Vittorio_revisionato` SUCCESS;
+- smoke `Vittorio_revisionato` open circuits SUCCESS;
+- verifica deploy pubblico SUCCESS;
+- il server pubblico ha riportato
+  `publicServiceCommit=cb577022468ea0996cbef89a2b6f001b1ef160ae`,
+  commit documentale successivo che include il funzionale `8e3ae961...`;
+- workflow globale FAILURE soltanto sul noto smoke locale
+  project-storage/lock: `Termodel.WebService non ha risposto a /health`;
+- nessun Golden aggiornato.
+
+Documentazione:
+- linee guida spirali: `48ef70af7b02c9c26813cad90f6430cea83b44cf`;
+- Recovery: `fa5e7ce488fdf13af122248f4b42014c90a2d7ab`;
+- README Vittorio_revisionato: `cb577022468ea0996cbef89a2b6f001b1ef160ae`;
+- TERMODEL-SYNC: `cc6a26d68c26dc65ed7eca40365978bd052804d1`.
+
+Stato:
+- progettato: sì;
+- implementato: sì;
+- compilato: sì;
+- smoke pubblico: sì;
+- deploy pubblico: sì;
+- collaudo visivo specifico del raccordo: ancora da eseguire.
 
 ### INCARICO 2026-10-02 — consolidamento diagnosi chiusura parallela < 2P
 Stato: ESEGUITO
