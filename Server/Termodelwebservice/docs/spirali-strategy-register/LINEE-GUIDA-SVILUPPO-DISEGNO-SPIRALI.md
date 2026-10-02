@@ -1,3 +1,32 @@
+## CANDIDATO 02/10/2026 — tratto terminale centrale + soglia storica 3P
+
+Aggiornamento pubblicato dal PC locale tramite il publisher sicuro del Service.
+
+Commit runtime:
+`f73f2361977ffa887dd718931e7024e83df49fbc`.
+
+Modifiche in `SpiraliVittorioRevisionato/Spiralgenerator.cs`:
+- `ComputeOffset` torna alla soglia storica Vittorio `edgeLength <= offset * 3`;
+- dopo la generazione ordinaria viene tentato un solo tratto terminale nella fascia centrale;
+- il tratto è controllato dal flag `TERMODEL_VITTORIO_REVISIONATO_TERMINAL_SEGMENT`, attivo per default e disattivabile con `false` o `0`;
+- la prima implementazione è volutamente limitata all'ultimo offset rettangolare ortogonale a 4 vertici;
+- con `distanza = 0,30 m` il tratto si arresta a `0,30 m` dal lato opposto, cioè alla distanza stesso-colore;
+- il candidato viene aggiunto solo se lungo almeno tale distanza e se non viola la distanza minima rispetto ai tratti Mandata non adiacenti.
+
+Scopo:
+- separare il comportamento di collasso degli offset dalla copertura della fascia centrale;
+- mantenere la logica storica di `ComputeOffset` e affidare il riempimento centrale a un'appendice terminale reversibile.
+
+Stato:
+- compilato e pubblicato;
+- smoke pubblico `Vittorio_revisionato` riuscito;
+- deploy pubblico riuscito;
+- **non ancora promosso a nuova baseline visiva**.
+
+Recovery precedente ancora autorevole:
+`recovery/vittorio-revisionato-approved-closure-raccordata-20261002`.
+
+---
 ## BASELINE APPROVATA 02/10/2026 — chiusura corretta e raccordata
 
 Il collaudo visivo reale sul server ha approvato il risultato ottenuto con:
