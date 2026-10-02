@@ -436,3 +436,19 @@ Il percorso Service-only di `Vittorio_revisionato` è stato approvato visivament
 
 Esito approvato: chiusura corretta e raccordata. Questo stato diventa baseline Service-only per le evoluzioni successive.
 Non sincronizzare automaticamente queste deviazioni nella Library Desktop.
+
+### 02/10/2026 — candidato Service-only: tratto terminale centrale reversibile
+
+Il commit locale Codex `f73f2361977ffa887dd718931e7024e83df49fbc` modifica solo
+`SpiraliVittorioRevisionato/Spiralgenerator.cs`.
+
+Differenze Service-only:
+- `ComputeOffset` torna alla soglia storica `edgeLength <= offset * 3`;
+- dopo l'ultimo anello viene tentato un tratto terminale centrale opzionale;
+- flag `TERMODEL_VITTORIO_REVISIONATO_TERMINAL_SEGMENT`, attivo per default e disattivabile con `false`/`0`;
+- prima prova limitata all'ultimo offset rettangolare ortogonale a 4 vertici;
+- il tratto viene aggiunto solo se rispetta la distanza stesso-colore e non interseca/si avvicina troppo a Mandata non adiacente.
+
+Questa è una sperimentazione del Service e non va sincronizzata automaticamente verso la Library Desktop.
+La baseline visivamente approvata precedente resta sul branch
+`recovery/vittorio-revisionato-approved-closure-raccordata-20261002`.
