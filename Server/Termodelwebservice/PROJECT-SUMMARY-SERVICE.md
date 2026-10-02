@@ -122,6 +122,7 @@ Decisione:
 - questo stato diventa la nuova baseline approvata;
 - le modifiche successive devono ripartire da qui e restare una alla volta,
   con collaudo visivo dopo ogni modifica.
+- branch recovery dedicato: `recovery/vittorio-revisionato-approved-closure-raccordata-20261002`.
 
 ### INCARICO 2026-10-02 — permutatore terminale: solo accorciamento a 2P
 Stato: ESEGUITO
