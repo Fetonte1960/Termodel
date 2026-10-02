@@ -1,5 +1,5 @@
 param(
-  [ValidateSet("GPT", "Vittorio", "Diego", "Diego_Vittorio")]
+  [ValidateSet("GPT", "Vittorio", "Diego", "Diego_Vittorio", "Vittorio_revisionato")]
   [string]$Engine = "GPT",
   [switch]$CaptureHarnessInput,
   [switch]$CompareHarness
