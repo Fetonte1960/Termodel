@@ -1,39 +1,59 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-cd /d "%~dp0"
+
+rem ============================================================
+rem Bootstrap: esegue una copia temporanea del CMD.
+rem Cosi' il file nella radice del clone puo' essere aggiornato/ripristinato
+rem senza interferire con il batch in esecuzione.
+rem ============================================================
+if /I "%~1"=="--RUN-TEMP" goto :RUN_TEMP
+
+set "TEMP_CMD=%TEMP%\TermodelServicePublisher_%RANDOM%_%RANDOM%.cmd"
+copy /y "%~f0" "%TEMP_CMD%" >nul
+if errorlevel 1 (
+    echo ERRORE: impossibile creare la copia temporanea del comando.
+    pause
+    exit /b 1
+)
+
+call "%TEMP_CMD%" --RUN-TEMP "%~dp0"
+set "RC=%ERRORLEVEL%"
+del /q "%TEMP_CMD%" >nul 2>&1
+exit /b %RC%
+
+:RUN_TEMP
+set "REPO_ROOT=%~2"
+cd /d "%REPO_ROOT%"
 
 title TermodelService - Pubblicazione sicura
 
 set "BRANCH=main"
 set "SERVICE_PATH=Server\Termodelwebservice"
 set "TRANSFER_PS1=tools\transfer\TermodelTransfer.ps1"
+set "SELF_NAME=PUBBLICA_TERMODEL_SERVICE_LOCALE_SICURO.cmd"
 set "EXPORTED="
-set "COMMITTED="
+set "BACKUP_STASH="
+set "STAMP="
 
 echo ============================================================
 echo   TERMODEL SERVICE - PUBBLICAZIONE SICURA
 echo   Service locale  --^>  clone GitHub  --^>  GitHub remoto
 echo ============================================================
 echo.
-echo USA QUESTO CMD quando Codex o Visual Studio hanno modificato:
-echo   C:\DOCUMENTI\termomodel\codec\Termodelwebservice\
-echo e vuoi pubblicare quelle modifiche su GitHub.
+echo Usa questo comando DOPO che Codex o Visual Studio hanno modificato
+echo il TermodelWebService locale e vuoi pubblicarlo su GitHub.
 echo.
-echo NON usarlo per scaricare GitHub verso il PC.
-echo Per quello usa:
-echo   SCARICA_GITHUB_E_PREPARA_TERMODEL_SERVICE_LOCALE.cmd
+echo Pubblica SOLO codice/file operativi di:
+echo   Server\Termodelwebservice
 echo.
-echo Questo comando:
-echo   1. controlla che il clone Git sia pulito;
-echo   2. aggiorna il clone da origin/main;
-echo   3. copia SOLO il TermodelService locale nel clone;
-echo   4. verifica che non siano comparsi cambiamenti fuori dal Service;
-echo   5. compila Termodel.WebService.sln;
-echo   6. mostra i file che verranno pubblicati;
-echo   7. chiede una sola conferma finale;
-echo   8. crea commit e push SENZA force-push.
+echo NON pubblica automaticamente:
+echo   - documentazione Markdown (*.md)
+echo   - definizionedati.json
 echo.
-echo Se qualcosa non torna, si ferma e NON pubblica.
+echo Eventuali vecchie modifiche del Service gia' presenti nel clone
+echo vengono salvate automaticamente in un backup Git di sicurezza.
+echo.
+echo Se qualcosa non torna si ferma e NON forza GitHub.
 echo ============================================================
 echo.
 
@@ -45,29 +65,56 @@ if /I not "!CURRENT_BRANCH!"=="%BRANCH%" goto :WRONGBRANCH
 
 if not exist "%TRANSFER_PS1%" goto :NOTOOL
 
-set "DIRTY="
-for /f "delims=" %%L in ('git status --porcelain --untracked-files^=all') do set "DIRTY=1"
-if defined DIRTY goto :DIRTY
-
-echo [1/7] Aggiorno il clone GitHub...
+echo [1/8] Controllo GitHub...
 git fetch origin "%BRANCH%"
 if errorlevel 1 goto :ERRORE_PRIMA_EXPORT
 
+rem Se il CMD e' stato creato a mano ed e' ancora untracked, ma esiste gia'
+rem su origin/main, rimuovo solo quella copia locale. Sto eseguendo dal TEMP.
+git ls-files --error-unmatch "%SELF_NAME%" >nul 2>&1
+if errorlevel 1 (
+    git cat-file -e "origin/%BRANCH%:%SELF_NAME%" >nul 2>&1
+    if not errorlevel 1 (
+        if exist "%SELF_NAME%" del /q "%SELF_NAME%" >nul 2>&1
+    )
+) else (
+    rem Il CMD e' uno strumento del repository: eventuali modifiche locali
+    rem al wrapper non devono bloccare la pubblicazione del Service.
+    git restore --staged --worktree -- "%SELF_NAME%" >nul 2>&1
+)
+
+echo.
+echo [2/8] Metto al sicuro eventuali vecchie modifiche del Service nel clone...
+set "SERVICE_DIRTY="
+for /f "delims=" %%L in ('git status --porcelain --untracked-files^=all -- "%SERVICE_PATH%"') do set "SERVICE_DIRTY=1"
+
+if defined SERVICE_DIRTY (
+    for /f "delims=" %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "STAMP=%%T"
+    set "BACKUP_STASH=AUTO-BACKUP-SERVICE-BEFORE-PUBLISH-!STAMP!"
+    git stash push -u -m "!BACKUP_STASH!" -- "%SERVICE_PATH%"
+    if errorlevel 1 goto :ERRORE_PRIMA_EXPORT
+    echo Backup creato: !BACKUP_STASH!
+) else (
+    echo Nessuna vecchia modifica Service da mettere al sicuro.
+)
+
+rem Fuori dal Service non deve esserci nulla di modificato.
+set "OUTSIDE="
+for /f "delims=" %%L in ('git status --porcelain --untracked-files^=all -- . ":(exclude)Server/Termodelwebservice" ":(exclude)Server/Termodelwebservice/**" ":(exclude)%SELF_NAME%"') do set "OUTSIDE=1"
+if defined OUTSIDE goto :MODIFICHE_ESTRANEE_PRIMA
+
+echo.
+echo [3/8] Aggiorno il clone da origin/main...
 git pull --ff-only origin "%BRANCH%"
 if errorlevel 1 goto :ERRORE_PRIMA_EXPORT
 
-set "DIRTY="
-for /f "delims=" %%L in ('git status --porcelain --untracked-files^=all') do set "DIRTY=1"
-if defined DIRTY goto :DIRTY_AFTER_PULL
-
 echo.
-echo [2/7] Copio il TermodelService locale nel clone...
-rem Segno la fase come iniziata prima della copia: anche un export parziale
-rem verra' ripulito dal clone in caso di errore. I sorgenti locali non si toccano.
+echo [4/8] Copio il TermodelService locale nel clone...
 set "EXPORTED=1"
 powershell -NoProfile -ExecutionPolicy Bypass -File "%TRANSFER_PS1%" -Action export -Name TermodelWebService
 if errorlevel 1 goto :ERRORE_DOPO_EXPORT
 
+rem Dopo l'export deve essere cambiato soltanto il Service.
 set "OUTSIDE="
 for /f "delims=" %%L in ('git status --porcelain --untracked-files^=all -- . ":(exclude)Server/Termodelwebservice" ":(exclude)Server/Termodelwebservice/**"') do set "OUTSIDE=1"
 if defined OUTSIDE goto :MODIFICHE_ESTRANEE
@@ -77,33 +124,44 @@ for /f "delims=" %%L in ('git status --porcelain --untracked-files^=all -- "%SER
 if not defined SERVICE_CHANGED goto :NESSUNA_MODIFICA
 
 echo.
-echo [3/7] Modifiche Service rilevate:
+echo Modifiche locali rilevate nel Service:
 git status --short -- "%SERVICE_PATH%"
 
 echo.
-echo [4/7] Compilo la soluzione prima di pubblicare...
+echo [5/8] Compilo la soluzione...
 dotnet build "%SERVICE_PATH%\Termodel.WebService.sln" -c Release --nologo
 if errorlevel 1 goto :BUILD_FAIL
 
 echo.
-echo [5/7] Preparo SOLO i file del TermodelService...
-git add -A -- "%SERVICE_PATH%"
+echo [6/8] Preparo SOLO i file operativi del TermodelService...
+echo La documentazione .md e definizionedati.json restano esclusi.
+
+git add -A -- "%SERVICE_PATH%" ^
+  ":(exclude,glob)Server/Termodelwebservice/**/*.md" ^
+  ":(exclude,glob)Server/Termodelwebservice/**/definizionedati.json"
 if errorlevel 1 goto :ERRORE_DOPO_EXPORT
 
+rem Doppio controllo: nessun file protetto deve essere staged.
+set "PROTECTED="
+for /f "delims=" %%F in ('git diff --cached --name-only') do (
+    echo %%F | findstr /I /R "\.md$ definizionedati\.json$" >nul
+    if not errorlevel 1 set "PROTECTED=1"
+)
+if defined PROTECTED goto :PROTECTED_ERROR
+
 git diff --cached --quiet
-if not errorlevel 1 goto :NESSUNA_MODIFICA_STAGED
+if not errorlevel 1 goto :SOLO_DOCUMENTAZIONE
 
 echo.
-echo File pronti per la pubblicazione:
-echo ------------------------------------------------------------
+echo ============================================================
+echo FILE CHE VERRANNO PUBBLICATI
+echo ============================================================
 git diff --cached --name-status
 echo ------------------------------------------------------------
-echo.
-echo Statistiche:
 git diff --cached --stat
 echo.
 
-echo [6/7] Tutti i controlli automatici sono superati.
+echo [7/8] Build e controlli superati.
 choice /C SN /N /M "Pubblicare adesso su GitHub? [S/N]: "
 if errorlevel 2 goto :ANNULLATO
 
@@ -111,7 +169,6 @@ echo.
 echo Creo il commit...
 git commit -m "TermodelService: aggiornamento locale verificato"
 if errorlevel 1 goto :ERRORE_DOPO_COMMIT
-set "COMMITTED=1"
 
 echo.
 echo Controllo che GitHub non sia cambiato durante la compilazione...
@@ -120,17 +177,17 @@ if errorlevel 1 goto :ERRORE_DOPO_COMMIT
 
 git merge-base --is-ancestor "origin/%BRANCH%" HEAD >nul 2>&1
 if errorlevel 1 (
-    echo GitHub e' avanzato nel frattempo. Provo un rebase sicuro...
+    echo GitHub e' avanzato. Provo un rebase sicuro...
     git pull --rebase origin "%BRANCH%"
     if errorlevel 1 goto :CONFLITTO
 )
 
 echo.
-echo [7/7] Pubblico su GitHub...
+echo [8/8] Pubblico su GitHub...
 git push origin "%BRANCH%"
 if errorlevel 1 (
     echo Il remoto potrebbe essere cambiato negli ultimi secondi.
-    echo Provo un solo aggiornamento con rebase e un nuovo push...
+    echo Provo un solo aggiornamento con rebase...
     git pull --rebase origin "%BRANCH%"
     if errorlevel 1 goto :CONFLITTO
     git push origin "%BRANCH%"
@@ -138,79 +195,89 @@ if errorlevel 1 (
 )
 
 echo.
+echo Ripulisco nel clone le sole differenze locali NON pubblicate
+echo (documentazione protetta, file temporanei). Il Service sorgente locale
+echo di Codex/Visual Studio NON viene toccato.
+git restore --staged --worktree -- "%SERVICE_PATH%" >nul 2>&1
+git clean -fd -- "%SERVICE_PATH%" >nul 2>&1
+
+echo.
 echo ============================================================
 echo   OK - TERMODEL SERVICE PUBBLICATO SU GITHUB
 echo ============================================================
 echo.
-echo La build locale del clone e' riuscita.
+echo La build locale e' riuscita.
 echo Nessun file fuori da Server\Termodelwebservice e' stato pubblicato.
-echo Ora GitHub Actions / ntfy potranno notificare le verifiche remote.
-goto :FINE
+echo Documentazione Markdown e definizionedati.json NON sono stati pubblicati.
+if defined BACKUP_STASH echo Backup di sicurezza conservato: !BACKUP_STASH!
+echo.
+echo Ora puoi chiudere questa finestra.
+goto :FINE_OK
 
 :NESSUNA_MODIFICA
 echo.
-echo Nessuna differenza tra il Service locale e quello nel clone GitHub.
+echo Nessuna differenza tra il Service locale e GitHub.
 echo Non c'e' nulla da pubblicare.
 goto :PULISCI_E_FINE
 
-:NESSUNA_MODIFICA_STAGED
+:SOLO_DOCUMENTAZIONE
 echo.
-echo Nessuna modifica Service risulta pronta dopo i controlli.
+echo Le sole differenze locali riguardano documentazione/protezioni escluse.
+echo Non pubblico nulla automaticamente.
 goto :PULISCI_E_FINE
 
 :ANNULLATO
 echo.
-echo Pubblicazione annullata dall'utente.
+echo Pubblicazione annullata.
 echo I sorgenti locali restano intatti.
 goto :PULISCI_E_FINE
 
 :BUILD_FAIL
 echo.
 echo ============================================================
-echo   STOP - LA BUILD NON E' RIUSCITA
+echo   STOP - BUILD FALLITA
 echo ============================================================
-echo Nulla e' stato pubblicato su GitHub.
-echo I sorgenti locali modificati da Codex restano intatti.
-echo La sola copia temporanea nel clone verra' ripulita.
+echo Nulla e' stato pubblicato.
+echo I sorgenti locali Codex/Visual Studio restano intatti.
 echo.
-echo Fai una foto a questa finestra e mandala a ChatGPT.
+echo Fai una foto di questa finestra e mandala a ChatGPT.
 goto :PULISCI_E_FINE
+
+:MODIFICHE_ESTRANEE_PRIMA
+echo.
+echo ============================================================
+echo   STOP - MODIFICHE ESTRANEE NEL CLONE
+echo ============================================================
+echo Ho messo al sicuro il Service, ma esistono modifiche fuori dal Service.
+echo Per sicurezza non continuo.
+echo.
+git status --short
+echo.
+echo Fai una foto e mandala a ChatGPT.
+goto :FINE
 
 :MODIFICHE_ESTRANEE
 echo.
 echo ============================================================
-echo   STOP - TROVATE MODIFICHE FUORI DAL TERMODELSERVICE
+echo   STOP - MODIFICHE FUORI DAL TERMODELSERVICE
 echo ============================================================
 echo Per sicurezza non pubblico nulla.
-echo I sorgenti locali restano intatti.
 echo.
 git status --short
 echo.
-echo Fai una foto a questa finestra e mandala a ChatGPT.
+echo Fai una foto e mandala a ChatGPT.
 goto :PULISCI_E_FINE
 
-:DIRTY
+:PROTECTED_ERROR
 echo.
 echo ============================================================
-echo   STOP - IL CLONE GITHUB NON E' PULITO
+echo   STOP - FILE PROTETTO FINITO NELLO STAGING
 echo ============================================================
-echo Ci sono modifiche gia' presenti nel clone prima di iniziare.
-echo Non faccio alcuna copia, commit o push.
+echo Per sicurezza non pubblico nulla.
+git diff --cached --name-status
 echo.
-git status --short
-echo.
-echo Fai una foto a questa finestra e mandala a ChatGPT.
-goto :FINE
-
-:DIRTY_AFTER_PULL
-echo.
-echo ============================================================
-echo   STOP - STATO GIT INATTESO DOPO L'AGGIORNAMENTO
-echo ============================================================
-git status --short
-echo.
-echo Non pubblico nulla. Manda questa schermata a ChatGPT.
-goto :FINE
+echo Fai una foto e mandala a ChatGPT.
+goto :PULISCI_E_FINE
 
 :WRONGBRANCH
 echo.
@@ -218,34 +285,34 @@ echo ============================================================
 echo   STOP - BRANCH NON CORRETTO
 echo ============================================================
 echo Branch attuale: !CURRENT_BRANCH!
-echo Questo comando pubblica soltanto il branch main.
-echo Non faccio alcuna modifica.
+echo Questo comando lavora solo su main.
 goto :FINE
 
 :NOTOOL
 echo.
-echo ERRORE: manca %TRANSFER_PS1%
-echo Non faccio alcuna modifica.
+echo ERRORE: manca:
+echo %TRANSFER_PS1%
 goto :FINE
 
 :NOTGIT
 echo.
-echo ERRORE: questo CMD deve essere eseguito dalla radice del clone GitHub.
+echo ERRORE: questo CMD deve trovarsi nella radice del clone GitHub.
 goto :FINE
 
 :ERRORE_PRIMA_EXPORT
 echo.
 echo STOP: errore prima della copia del Service locale.
 echo Nulla e' stato pubblicato.
-echo Manda questa schermata a ChatGPT.
+echo Fai una foto e mandala a ChatGPT.
 goto :FINE
 
 :ERRORE_DOPO_EXPORT
 echo.
 echo STOP: errore dopo la copia ma prima del commit.
 echo Nulla e' stato pubblicato.
-echo La copia nel clone verra' ripulita; i sorgenti locali restano intatti.
-echo Manda questa schermata a ChatGPT.
+echo La copia nel clone verra' ripristinata.
+echo I sorgenti locali restano intatti.
+echo Fai una foto e mandala a ChatGPT.
 goto :PULISCI_E_FINE
 
 :CONFLITTO
@@ -253,19 +320,19 @@ echo.
 echo ============================================================
 echo   STOP - CONFLITTO GIT
 echo ============================================================
-echo Il commit locale e' salvo ma NON forzo nulla su GitHub.
+echo Il commit locale e' salvo ma NON forzo GitHub.
 echo NON rilanciare questo CMD.
-echo Manda questa schermata a ChatGPT.
+echo Fai una foto e mandala a ChatGPT.
 goto :FINE
 
 :ERRORE_DOPO_COMMIT
 echo.
 echo ============================================================
-echo   STOP - COMMIT LOCALE CREATO, PUSH NON COMPLETATO
+echo   STOP - COMMIT CREATO, PUSH NON COMPLETATO
 echo ============================================================
-echo Il lavoro e' salvo nel clone locale ma non e' stato forzato sul remoto.
+echo Il lavoro e' salvo nel clone locale.
 echo NON rilanciare questo CMD.
-echo Manda questa schermata a ChatGPT.
+echo Fai una foto e mandala a ChatGPT.
 goto :FINE
 
 :PULISCI_E_FINE
@@ -278,8 +345,14 @@ if defined EXPORTED (
 )
 goto :FINE
 
+:FINE_OK
+echo.
+echo Premi un tasto per chiudere...
+pause >nul
+exit /b 0
+
 :FINE
 echo.
-echo Premi un tasto per chiudere questa finestra...
+echo Premi un tasto per chiudere...
 pause >nul
-endlocal
+exit /b 1
