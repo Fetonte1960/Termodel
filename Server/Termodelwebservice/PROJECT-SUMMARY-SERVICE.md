@@ -72,6 +72,35 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-02 — CMD unico per pubblicazione sicura del Service locale
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- creare un comando unico che permetta di pubblicare su GitHub le modifiche
+  fatte localmente da Codex/Visual Studio senza dover conoscere la sequenza
+  Git/transfer;
+- spiegare chiaramente quando usarlo;
+- limitare la pubblicazione a `Server/Termodelwebservice`;
+- non pubblicare modifiche estranee al Service;
+- aggiornare prima il clone da `origin/main`;
+- copiare il Service locale tramite il mapping `TermodelWebService`;
+- compilare `Termodel.WebService.sln` prima del commit;
+- chiedere una sola conferma finale `S/N`;
+- non usare force-push;
+- in caso di errore prima del commit, ripulire soltanto la copia nel clone,
+  lasciando intatti i sorgenti locali;
+- in caso di conflitto/push non risolvibile automaticamente, fermarsi e
+  chiedere all'utente di mostrare la schermata a ChatGPT.
+
+File previsto:
+- `PUBBLICA_TERMODEL_SERVICE_LOCALE_SICURO.cmd` nella radice del clone.
+
+Documentazione:
+- aggiornare `tools/transfer/README.md` indicando questo CMD come percorso
+  consigliato dopo un lavoro locale Codex/Visual Studio.
+
+
+
 ### INCARICO 2026-10-01 — Rollback runtime Vittorio_revisionato al restore point approvato
 Stato: ESEGUITO
 
