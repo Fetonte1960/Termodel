@@ -72,6 +72,40 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-02 — aggiornamento esecutivi statici dei due progetti esempio
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- aggiornare gli esecutivi statici già presenti per i due esempi del progetto,
+  così la loro visualizzazione non richiede interrogazioni al Service;
+- usare i risultati correnti del motore pubblicato;
+- mantenere il caricamento statico già previsto dal catalogo;
+- aggiornare esclusivamente gli artifact consolidati e la loro provenienza,
+  senza modificare la logica frontend salvo necessità strettamente tecnica.
+
+Esempi interessati:
+- `docs/termodel-ui-demo/examples/pannelli-radianti.tmdl.txt`
+  -> `pannelli-radianti-esecutivo.svg`;
+- `docs/termodel-ui-demo/examples/quadrato-con-pannelli.svg`
+  -> `quadrato-con-pannelli-esecutivo.svg`.
+
+Motore/Service di riferimento:
+- `Vittorio_revisionato`;
+- runtime pubblicato `f73f2361977ffa887dd718931e7024e83df49fbc`.
+
+Criteri di completamento:
+- rigenerare entrambi gli SVG esecutivi con il runtime corrente;
+- sostituire i due SVG statici nel progetto;
+- aggiornare `examples/catalog.json::executiveProvenance` con motore,
+  commit Service, data, run/origine e SHA-256 correnti;
+- verificare che i due SVG conservino i marker canonici
+  `TERMODEL-PANNELLI-ESECUTIVO-SVG-V1`, unità coordinate e layer Mandata/Return;
+- non modificare `definizionedati.json`;
+- aggiornare Summary/Recovery pertinenti;
+- stessa voce portata a `ESEGUITO`;
+- Issue #1 chiusa Completed per la notifica finale.
+
+
 ### INCARICO 2026-10-02 — consolidamento aggiornamento locale Codex f73f236
 Stato: ESEGUITO
 
