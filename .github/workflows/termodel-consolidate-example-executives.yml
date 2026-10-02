@@ -100,7 +100,7 @@ jobs:
 
           $radiantHash = (Get-FileHash -LiteralPath $radiantTarget -Algorithm SHA256).Hash.ToLowerInvariant()
           $squareHash = (Get-FileHash -LiteralPath $squareTarget -Algorithm SHA256).Hash.ToLowerInvariant()
-          $serviceCommit = (git log -1 --format=%H -- Server/Termodelwebservice/src).Trim()
+          $serviceCommit = (git log -1 --format=%H -- ":(glob)Server/Termodelwebservice/src/**" ":(exclude,glob)Server/Termodelwebservice/src/**/*.md").Trim()
           if ([string]::IsNullOrWhiteSpace($serviceCommit)) { throw "Commit Service funzionale non determinato." }
 
           $catalog = Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json
