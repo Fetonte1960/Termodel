@@ -25,7 +25,7 @@ namespace SpiralHeatingDiegoVittorio
         /// Combinatoria rettilinea consolidata per la chiusura Diego.
         /// Mandata e Ripresa usano la stessa matrice:
         /// 0I, 0P, 1I, 1P, 2I, 2P.
-        /// I = terminale invariato; P = terminale normalizzato esattamente a P.
+        /// I = terminale invariato; P = terminale accorciato a massimo 2P, senza allungamento.
         /// Il primo candidato con chiusura >= 2P, innesti non acuti, nessuna
         /// intersezione e nessun parallelismo vicino del tratto di chiusura
         /// col nuovo setup viene accettato.
@@ -435,10 +435,17 @@ namespace SpiralHeatingDiegoVittorio
                 if (lunghezza <= TolleranzaChiusura)
                     return null;
 
-                double rapporto = passo / lunghezza;
-                punti[^1] = new Punto(
-                    inizio.X + (fine.X - inizio.X) * rapporto,
-                    inizio.Y + (fine.Y - inizio.Y) * rapporto);
+                // Modificato per la prova approvata 02/10/2026:
+                // la variante storica "P" diventa un solo accorciamento
+                // a massimo 2P. Non allungare mai un terminale gia' <= 2P.
+                double lunghezzaTerminale = 2.0 * passo;
+                if (lunghezza > lunghezzaTerminale + TolleranzaChiusura)
+                {
+                    double rapporto = lunghezzaTerminale / lunghezza;
+                    punti[^1] = new Punto(
+                        inizio.X + (fine.X - inizio.X) * rapporto,
+                        inizio.Y + (fine.Y - inizio.Y) * rapporto);
+                }
             }
 
             return new ConfigurazioneTerminaleChiusura
