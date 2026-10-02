@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-02 — approvazione visiva chiusura raccordata / nuovo restore point
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - approvazione visiva del risultato sul server dopo la modifica del permutatore
@@ -97,6 +97,31 @@ Criteri di completamento:
 - nessun sorgente runtime modificato;
 - stessa voce portata a `ESEGUITO`.
 
+
+
+Esito:
+- collaudo visivo reale APPROVATO dall'utente;
+- falsa chiusura lunga quasi parallela eliminata;
+- vero tratto di chiusura corretto;
+- raccordi ai due innesti visivamente corretti;
+- nessuna modifica runtime in questa fase documentale.
+
+Baseline funzionale approvata:
+- filtro `parallel-proximity`:
+  `51682d9ae7849685b2472ae2f0cc254023fe18b1`;
+- terminale permutatore a massimo `2P`, mai allungato:
+  `8e3ae961c233a181f15450aa3a981c7896f45541`.
+
+Documentazione aggiornata:
+- linee guida spirali: `b9d48d3d7716ad3305bb037362e1cf047ed4ee36`;
+- Recovery: `096a8d459606f889891026619d6e8014a9317259`;
+- README Vittorio_revisionato: `91a9af58253cafd467462718634db308a14df024`;
+- TERMODEL-SYNC: `fe6fc2900b9c06415070e0ffd7726b9b45a864c2`.
+
+Decisione:
+- questo stato diventa la nuova baseline approvata;
+- le modifiche successive devono ripartire da qui e restare una alla volta,
+  con collaudo visivo dopo ogni modifica.
 
 ### INCARICO 2026-10-02 — permutatore terminale: solo accorciamento a 2P
 Stato: ESEGUITO
