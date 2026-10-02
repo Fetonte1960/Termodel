@@ -31,6 +31,8 @@ set "BRANCH=main"
 set "SERVICE_PATH=Server\Termodelwebservice"
 set "TRANSFER_PS1=tools\transfer\TermodelTransfer.ps1"
 set "SELF_NAME=PUBBLICA_TERMODEL_SERVICE_LOCALE_SICURO.cmd"
+set "LOCAL_ONLY_1=Server\Termodelwebservice\src\Termodel.WebService\Calculations\CalculationSnapshotStore.cs"
+set "LOCAL_ONLY_2=Server\Termodelwebservice\src\Termodel.WebService\Calculations\SavedProjectStore.cs"
 set "EXPORTED="
 set "BACKUP_STASH="
 set "STAMP="
@@ -49,6 +51,8 @@ echo.
 echo NON pubblica automaticamente:
 echo   - documentazione Markdown (*.md)
 echo   - definizionedati.json
+echo   - CalculationSnapshotStore.cs
+echo   - SavedProjectStore.cs
 echo.
 echo Eventuali vecchie modifiche del Service gia' presenti nel clone
 echo vengono salvate automaticamente in un backup Git di sicurezza.
@@ -114,6 +118,15 @@ set "EXPORTED=1"
 powershell -NoProfile -ExecutionPolicy Bypass -File "%TRANSFER_PS1%" -Action export -Name TermodelWebService
 if errorlevel 1 goto :ERRORE_DOPO_EXPORT
 
+rem I due sorgenti seguenti sono locali e NON devono partecipare ne' alla
+rem build di verifica ne' alla pubblicazione. Se un giorno fossero versionati,
+rem viene mantenuta la versione GitHub; altrimenti la copia locale viene
+rem eliminata soltanto dal clone. Il sorgente Codex/Visual Studio resta intatto.
+call :RIPRISTINA_FILE_LOCALE_ESCLUSO "%LOCAL_ONLY_1%"
+if errorlevel 1 goto :ERRORE_DOPO_EXPORT
+call :RIPRISTINA_FILE_LOCALE_ESCLUSO "%LOCAL_ONLY_2%"
+if errorlevel 1 goto :ERRORE_DOPO_EXPORT
+
 rem Dopo l'export deve essere cambiato soltanto il Service.
 set "OUTSIDE="
 for /f "delims=" %%L in ('git status --porcelain --untracked-files^=all -- . ":(exclude)Server/Termodelwebservice" ":(exclude)Server/Termodelwebservice/**"') do set "OUTSIDE=1"
@@ -134,11 +147,13 @@ if errorlevel 1 goto :BUILD_FAIL
 
 echo.
 echo [6/8] Preparo SOLO i file operativi del TermodelService...
-echo La documentazione .md e definizionedati.json restano esclusi.
+echo Restano esclusi .md, definizionedati.json e i due sorgenti locali protetti.
 
 git add -A -- "%SERVICE_PATH%" ^
   ":(exclude,glob)Server/Termodelwebservice/**/*.md" ^
-  ":(exclude,glob)Server/Termodelwebservice/**/definizionedati.json"
+  ":(exclude,glob)Server/Termodelwebservice/**/definizionedati.json" ^
+  ":(exclude)Server/Termodelwebservice/src/Termodel.WebService/Calculations/CalculationSnapshotStore.cs" ^
+  ":(exclude)Server/Termodelwebservice/src/Termodel.WebService/Calculations/SavedProjectStore.cs"
 if errorlevel 1 goto :ERRORE_DOPO_EXPORT
 
 rem Doppio controllo: nessun file protetto deve essere staged.
@@ -209,10 +224,23 @@ echo.
 echo La build locale e' riuscita.
 echo Nessun file fuori da Server\Termodelwebservice e' stato pubblicato.
 echo Documentazione Markdown e definizionedati.json NON sono stati pubblicati.
+echo CalculationSnapshotStore.cs e SavedProjectStore.cs NON sono stati pubblicati.
 if defined BACKUP_STASH echo Backup di sicurezza conservato: !BACKUP_STASH!
 echo.
 echo Ora puoi chiudere questa finestra.
 goto :FINE_OK
+
+:RIPRISTINA_FILE_LOCALE_ESCLUSO
+set "EXCLUDED_FILE=%~1"
+git ls-files --error-unmatch "%EXCLUDED_FILE%" >nul 2>&1
+if not errorlevel 1 (
+    git restore --staged --worktree -- "%EXCLUDED_FILE%" >nul 2>&1
+    if errorlevel 1 exit /b 1
+) else (
+    if exist "%EXCLUDED_FILE%" del /q "%EXCLUDED_FILE%" >nul 2>&1
+    if exist "%EXCLUDED_FILE%" exit /b 1
+)
+exit /b 0
 
 :NESSUNA_MODIFICA
 echo.
