@@ -1,3 +1,25 @@
+## Milestone 13 — chiusura e raccordatura approvate visivamente (02/10/2026)
+
+Il risultato reale sul server è stato approvato dall'utente.
+
+Configurazione consolidata:
+- `parallel-proximity` attivo sulla selezione della chiusura;
+- variante `P` del permutatore = accorciamento a massimo `2P`, senza allungamento;
+- raccordatura finale eseguita dalla pipeline LG-051 esistente;
+- nessuna modifica a Mandata, Return, SpiralGenerator o raggio.
+
+Esito visivo:
+- falsa chiusura lunga parallela eliminata;
+- chiusura corretta;
+- raccordi corretti ai due innesti.
+
+Commit funzionali:
+- `51682d9ae7849685b2472ae2f0cc254023fe18b1` — filtro `parallel-proximity`;
+- `8e3ae961c233a181f15450aa3a981c7896f45541` — terminale massimo `2P`.
+
+Questo stato è la nuova baseline approvata per le evoluzioni successive.
+
+---
 ## Milestone 12 — variante terminale a massimo 2P (02/10/2026)
 
 La variante storicamente identificata con `P` nella matrice `0I,0P,1I,1P,2I,2P` non normalizza più il terminale esattamente a `P`.
