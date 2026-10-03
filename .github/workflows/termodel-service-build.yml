@@ -95,7 +95,7 @@ jobs:
             throw "APP_VERSION frontend inattesa."
           }
           if (-not $index.Contains("./app.js?v=1.40")) {
-            throw "Cache-busting app.js v1.39 non aggiornato."
+            throw "Cache-busting app.js v1.40 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
@@ -513,8 +513,8 @@ jobs:
           if (-not $myHomeHtml.Contains("MYHOME3D MOBILE")) {
             throw "Pagina pubblica MyHome3D.html non contiene l'istruzione Mobile."
           }
-          if (-not $index.Contains("./app.js?v=1.39")) {
-            throw "Cache-busting MyHome3D v1.39 non aggiornato."
+          if (-not $index.Contains("./app.js?v=1.40")) {
+            throw "Cache-busting MyHome3D v1.40 non aggiornato."
           }
 
           foreach ($marker in @(
@@ -1333,7 +1333,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $expectedFrontend = "1.39"
+          $expectedFrontend = "1.40"
           $ready = $false
           for ($attempt = 1; $attempt -le 20; $attempt++) {
             try {
