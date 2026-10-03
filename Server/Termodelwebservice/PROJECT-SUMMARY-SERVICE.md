@@ -72,6 +72,33 @@ Prima di intervenire:
 
 ## 1.1 Registro incarichi autorizzati
 
+### INCARICO 2026-10-03 — default CAD esempio solo Mobile
+Stato: COMMISSIONATO
+
+Autorizzazione utente:
+- modificare esplicitamente il frontend `docs/termodel-ui-demo/`;
+- quando viene caricato un esempio su dispositivo Android/Mobile, il CAD 2D
+  deve partire con:
+  - `Sfondo` OFF;
+  - `Esecutivo pannelli` ON, se l'esecutivo consolidato è disponibile;
+  - `Unifilare input` OFF;
+- la regola deve valere **solo per la versione Mobile**;
+- il comportamento desktop non deve ereditare questo default Mobile;
+- mantenere il caricamento dell'esecutivo statico consolidato, senza richiesta
+  al Service quando `executiveSvg` è disponibile;
+- aggiornare versione/cache-busting frontend e verifiche automatiche;
+- non modificare API, protocolli, `definizionedati.json` o motore Service.
+
+Criteri di completamento:
+- default Mobile applicato in un unico punto dopo il caricamento esempio;
+- desktop inizializzato con i controlli CAD standard (sfondo/input visibili,
+  esecutivo non forzato);
+- `app.js`, `index.html`, `frontend-version.txt` coerenti;
+- syntax check e wiring check GitHub SUCCESS;
+- stessa voce portata a `ESEGUITO`;
+- Issue #1 chiusa Completed.
+
+
 ### INCARICO 2026-10-02 — aggiornamento esecutivi statici dei due progetti esempio
 Stato: ESEGUITO
 
