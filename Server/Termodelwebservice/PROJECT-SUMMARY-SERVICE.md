@@ -73,7 +73,7 @@ Prima di intervenire:
 ## 1.1 Registro incarichi autorizzati
 
 ### INCARICO 2026-10-03 — default CAD esempio solo Mobile
-Stato: COMMISSIONATO
+Stato: ESEGUITO
 
 Autorizzazione utente:
 - modificare esplicitamente il frontend `docs/termodel-ui-demo/`;
@@ -98,6 +98,59 @@ Criteri di completamento:
 - stessa voce portata a `ESEGUITO`;
 - Issue #1 chiusa Completed.
 
+
+
+Esito implementazione:
+- frontend aggiornato a `v1.40`;
+- `applyProjectBrowserCadInitialSetup()` distingue esplicitamente Mobile e
+  Desktop;
+- su Android/Mobile, dopo il caricamento di un esempio:
+  - `Sfondo` = OFF;
+  - `Esecutivo pannelli` = ON se l'overlay statico consolidato è disponibile;
+  - `Unifilare input` = OFF;
+- su Desktop il default Mobile non viene applicato:
+  - `Sfondo` = ON;
+  - `Esecutivo pannelli` = OFF;
+  - `Unifilare input` = ON;
+- il caricamento dell'esecutivo consolidato continua ad avvenire da
+  `executiveSvg` locale, senza interrogare il Service;
+- Help CAD Mobile aggiornato con il default;
+- titoli HTML iniziali, `APP_VERSION`, `frontend-version.txt` e
+  cache-busting `app.js?v=1.40` allineati.
+
+Commit principali:
+- comportamento frontend:
+  `3770064b5321187dd9aa19095638bd2f497284b8`;
+- cache busting v1.40:
+  `6236b29ffc92ef9cd2dd58e9ba9c58d2b51f2224`;
+- frontend-version 1.40:
+  `5aa19b8d202e6d7eb5d226c8cdf75ecf8dac3690`;
+- titoli iniziali v1.40:
+  `15a4a492253e69f32f8ece2f3cb5f50d40f23c3c`;
+- allineamenti CI finali:
+  `49e0e70773f87ac7b9800f23feaeddd2081f00aa`,
+  `13d9cd55a42df4ee6e380340cda33bebceac0d51`,
+  `37c4c5e3e2326e291e780bbd35e2b85713c5b471`.
+
+Verifica reale:
+- workflow TermodelService Build run `37117944008`;
+- JavaScript syntax SUCCESS;
+- wiring frontend SUCCESS;
+- `PROJECT_BROWSER_MOBILE_EXAMPLE_DEFAULTS_OK`;
+- build SUCCESS;
+- smoke pubblico Pannelli radianti SUCCESS;
+- smoke pubblico `Vittorio_revisionato` SUCCESS;
+- smoke open circuits SUCCESS;
+- deploy pubblico SUCCESS;
+- `publicFrontendVersion=1.40`;
+- workflow complessivo FAILURE soltanto sul noto smoke locale
+  project-storage/lock: `Termodel.WebService non ha risposto a /health`;
+- nessuna modifica a API, protocolli, motore spirali, Golden o
+  `definizionedati.json`.
+
+Recovery:
+- `docs/RECOVERY-ACTIVE.md` aggiornato nel commit
+  `d08d516018436930cec335234d9f08f2cc35d355`.
 
 ### INCARICO 2026-10-02 — aggiornamento esecutivi statici dei due progetti esempio
 Stato: ESEGUITO
