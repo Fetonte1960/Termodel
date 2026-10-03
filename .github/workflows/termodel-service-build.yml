@@ -91,16 +91,16 @@ jobs:
             }
           }
 
-          if (-not $app.Contains("const APP_VERSION = '1.39';")) {
+          if (-not $app.Contains("const APP_VERSION = '1.40';")) {
             throw "APP_VERSION frontend inattesa."
           }
-          if (-not $index.Contains("./app.js?v=1.39")) {
+          if (-not $index.Contains("./app.js?v=1.40")) {
             throw "Cache-busting app.js v1.39 non aggiornato."
           }
 
           $frontendVersionPath = "..\..\docs\termodel-ui-demo\frontend-version.txt"
           $frontendVersion = (Get-Content -LiteralPath $frontendVersionPath -Raw).Trim()
-          if ($frontendVersion -ne "1.39") {
+          if ($frontendVersion -ne "1.40") {
             throw "frontend-version.txt inatteso: $frontendVersion"
           }
 
@@ -313,6 +313,22 @@ jobs:
               throw "Wiring esempio/esecutivo mobile mancante: $marker"
             }
           }
+
+          foreach ($marker in @(
+            "if (TERMODEL_ANDROID_DEVICE) {",
+            "cadShowGeneratedExecutive.checked = executiveAvailable;",
+            "cadShowInput.checked = false;",
+            "cadShowBackground.checked = false;",
+            "Il default Mobile non deve propagarsi alla versione desktop.",
+            "cadShowGeneratedExecutive.checked = false;",
+            "cadShowInput.checked = true;",
+            "cadShowBackground.checked = true;"
+          )) {
+            if (-not $app.Contains($marker)) {
+              throw "Default CAD esempio Mobile/Desktop incompleto: $marker"
+            }
+          }
+          Write-Host "PROJECT_BROWSER_MOBILE_EXAMPLE_DEFAULTS_OK"
 
           foreach ($marker in @(
             'data-log-category="SpiraliDiego"',
