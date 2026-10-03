@@ -143,17 +143,15 @@ jobs:
 
           foreach ($marker in @(
             '"executiveProvenance"',
-            '"spiralEngine": "Diego_Vittorio"',
-            '"serviceCommit": "e23f3a6698f0166a6752fbdd3aac5fd6346cada7"',
-            '"serviceCommit": "5de2ccab955dd3146ee23089afe41fb9040eb3ac"',
-            '"consolidatedCommit": "e0121145ca88014edb6204e2d97bf99366497989"',
-            '"workflowRun": "36411641717"',
-            '"workflowRun": "36383027266"',
-            '"svgSha256": "6a1c79ed23b8dcfde6fcffb484a029f54d5355793b32422e30c6e19cca0f2a3d"',
-            '"svgSha256": "1cd73beba29edb1c44adc7dd4719123872ed58de5f9f5c901a88f39a3f52f8f6"'
+            '"spiralEngine": "Vittorio_revisionato"',
+            '"serviceCommit": "f73f2361977ffa887dd718931e7024e83df49fbc"',
+            '"consolidatedCommit": "250764471dc580d6206e4813ba9e2c8a2f952a09"',
+            '"workflowRun": "36979179620"',
+            '"svgSha256": "fe932dda57d10a8f0fdd2f3cb0eef0604aafacd78982c3e229c72fa338e57460"',
+            '"svgSha256": "bb1d34a2e9ef93692d687dec5a5c86b3591d5b0d38af23ca8ff3ecc401afe4ee"'
           )) {
             if (-not $catalog.Contains($marker)) {
-              throw "Metadata provenienza esecutivo statico Diego_Vittorio mancanti: $marker"
+              throw "Metadata provenienza esecutivi statici Vittorio_revisionato mancanti: $marker"
             }
           }
           if (-not $app.Contains("executiveProvenance:") -or
