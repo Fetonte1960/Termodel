@@ -73,7 +73,7 @@ const TERMODEL_LOG_CATEGORIES = [
   'PontiAutomatici',
   'SpiraliDiego'
 ];
-const APP_VERSION = '1.39';
+const APP_VERSION = '1.40';
 const APP_MAIN_TITLE = `Termodel 3.2 — Web — GeneraPianta + ArchivioWeb v${APP_VERSION}`;
 const APP_CAD_TITLE = `Termodel Cad 2d Versione ${APP_VERSION}`;
 const TERMODEL_FRONTEND_VERSION_URL = './frontend-version.txt';
@@ -578,6 +578,7 @@ const COMMAND_HELP = {
         <li><strong>Piano</strong>: cambia il piano del progetto visualizzato.</li>
         <li><strong>Sfondo</strong>: mostra o nasconde lo sfondo associato al piano.</li>
         <li><strong>Unifilare input</strong>: mostra o nasconde il disegno tecnico di input.</li>
+        <li><strong>Default Mobile degli esempi</strong>: Sfondo OFF, Esecutivo pannelli ON, Unifilare input OFF.</li>
         <li><strong>Filtri</strong>: apre i filtri grafici del modello 3D; le modifiche diventano effettive solo con <strong>Applica</strong>.</li>
       </ol>
       <p>Le scelte agiscono sugli stessi dati e controlli usati dal CAD completo.</p>
@@ -1256,14 +1257,29 @@ function cadUpdateExecutiveProvenance() {
 }
 
 function applyProjectBrowserCadInitialSetup() {
-  if (cadShowGeneratedExecutive) {
-    cadShowGeneratedExecutive.disabled = !cadGeneratedExecutiveAvailable();
-    cadShowGeneratedExecutive.checked = cadGeneratedExecutiveAvailable();
+  const executiveAvailable = cadGeneratedExecutiveAvailable();
+
+  if (cadShowGeneratedExecutive)
+    cadShowGeneratedExecutive.disabled = !executiveAvailable;
+
+  if (TERMODEL_ANDROID_DEVICE) {
+    // Default richiesto per MyHome3D/Mobile quando si carica un esempio:
+    // mostra subito l'esecutivo consolidato, senza sfondo e senza unifilare.
+    if (cadShowGeneratedExecutive)
+      cadShowGeneratedExecutive.checked = executiveAvailable;
+    if (cadShowInput)
+      cadShowInput.checked = false;
+    if (cadShowBackground)
+      cadShowBackground.checked = false;
+  } else {
+    // Il default Mobile non deve propagarsi alla versione desktop.
+    if (cadShowGeneratedExecutive)
+      cadShowGeneratedExecutive.checked = false;
+    if (cadShowInput)
+      cadShowInput.checked = true;
+    if (cadShowBackground)
+      cadShowBackground.checked = true;
   }
-  if (cadShowInput)
-    cadShowInput.checked = false;
-  if (cadShowBackground)
-    cadShowBackground.checked = false;
 
   applyCadLayerVisibility();
   cadUpdateControls();
