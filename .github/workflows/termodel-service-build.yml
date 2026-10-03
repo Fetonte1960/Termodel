@@ -352,7 +352,7 @@ jobs:
 
           foreach ($marker in @(
             "function applyProjectBrowserCadInitialSetup()",
-            "cadShowGeneratedExecutive.checked = cadGeneratedExecutiveAvailable();",
+            "cadShowGeneratedExecutive.checked = executiveAvailable;",
             "cadShowInput.checked = false;",
             "cadShowBackground.checked = false;",
             "function setInitialModelExplorationLocked(locked)",
