@@ -1,4 +1,44 @@
 
+# FRONTEND MOBILE 03/10/2026 — DEFAULT CAD ESEMPIO v1.40
+
+Su dispositivo Android/Mobile, dopo il caricamento di un esempio ProjectBrowser,
+il CAD 2D parte ora con la configurazione:
+
+```text
+Sfondo              OFF
+Esecutivo pannelli   ON  (se executiveSvg consolidato disponibile)
+Unifilare input      OFF
+```
+
+La regola è esplicitamente Mobile-only (`TERMODEL_ANDROID_DEVICE`).
+Su desktop il caricamento esempio ripristina i controlli CAD standard:
+
+```text
+Sfondo              ON
+Esecutivo pannelli   OFF
+Unifilare input      ON
+```
+
+Frontend:
+- `APP_VERSION = 1.40`;
+- `frontend-version.txt = 1.40`;
+- cache-busting `app.js?v=1.40`;
+- titoli iniziali HTML allineati a v1.40.
+
+Verifica GitHub run `37117944008`:
+- JavaScript syntax SUCCESS;
+- `PROJECT_BROWSER_MOBILE_EXAMPLE_DEFAULTS_OK`;
+- wiring frontend SUCCESS;
+- build SUCCESS;
+- smoke Pannelli/Vittorio_revisionato SUCCESS;
+- deploy pubblico SUCCESS;
+- `publicFrontendVersion=1.40`;
+- rosso globale soltanto sul noto smoke locale project-storage/lock `/health`.
+
+Nessuna modifica ad API, protocolli, `definizionedati.json` o motore spirali.
+
+---
+
 # CONSOLIDAMENTO 02/10/2026 — ESECUTIVI STATICI DEI DUE ESEMPI AGGIORNATI
 
 I due esempi pubblici del progetto dispongono ora di esecutivi SVG statici
