@@ -1256,6 +1256,7 @@ function cadUpdateExecutiveProvenance() {
   cadExecutiveProvenance.title = fullDetails.join('\n');
 }
 
+// Default CAD degli esempi distinto esplicitamente fra Mobile e Desktop.
 function applyProjectBrowserCadInitialSetup() {
   const executiveAvailable = cadGeneratedExecutiveAvailable();
 
